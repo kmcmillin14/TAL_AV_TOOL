@@ -1,0 +1,33 @@
+{
+  "id": "m10",
+  "name": "Toyota M10 Pallet Truck",
+  "display": {
+    "manufacturer": "Toyota Material Handling",
+    "partnership": "OEM",
+    "tHive": false,
+    "fleetSoftware": "Toyota Fleet Manager",
+    "heroImage": "/images/vehicles/m10.png",
+    "typicalLoad": "Standard Pallet",
+    "category": "Pallet Truck"
+  },
+  "transferMethods": [
+    { "method": "Fork", "loadTimeSec": 4, "unloadTimeSec": 4 }
+  ],
+  "calc": {
+    "maxWeightLbs": 2200,
+    "widthFt": 3.4,
+    "maxLiftHeightFt": 0,
+    "speedLoadedFps": 6.56,
+    "batteryKwh": 14.0,
+    "energyKwhPerFt": 0.011,
+    "priceRange": { "minUsd": 85000, "maxUsd": 115000 }
+  },
+  "specs": {
+    "tempMinF": 32,
+    "tempMaxF": 104,
+    "outdoorCapable": false,
+    "freezerCapable": false,
+    "maxRampGrade": 7,
+    "certifications": ["ISO 3691-4", "ANSI B56.5"]
+  }
+}

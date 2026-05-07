@@ -1,0 +1,33 @@
+{
+  "id": "ml2",
+  "name": "ML2 Mini Load AV",
+  "display": {
+    "manufacturer": "Bastian Solutions",
+    "partnership": "TAL Integrated",
+    "tHive": true,
+    "fleetSoftware": "BlueBotics ANT",
+    "heroImage": "/images/vehicles/ml2.png",
+    "typicalLoad": "Tote",
+    "category": "Unit Load AMR"
+  },
+  "transferMethods": [
+    { "method": "Conveyor Interface", "loadTimeSec": 3, "unloadTimeSec": 3 }
+  ],
+  "calc": {
+    "maxWeightLbs": 770,
+    "widthFt": 2.3,
+    "maxLiftHeightFt": 0,
+    "speedLoadedFps": 5.9,
+    "batteryKwh": 8.0,
+    "energyKwhPerFt": 0.008,
+    "priceRange": { "minUsd": 95000, "maxUsd": 130000 }
+  },
+  "specs": {
+    "tempMinF": 32,
+    "tempMaxF": 104,
+    "outdoorCapable": false,
+    "freezerCapable": false,
+    "maxRampGrade": 5,
+    "certifications": ["ISO 3691-4", "RIA R15.08"]
+  }
+}

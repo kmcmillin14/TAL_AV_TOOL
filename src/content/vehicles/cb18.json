@@ -1,0 +1,34 @@
+{
+  "id": "cb18",
+  "name": "CB18 AGF",
+  "display": {
+    "manufacturer": "Bastian Solutions",
+    "partnership": "TAL Integrated",
+    "tHive": true,
+    "fleetSoftware": "BlueBotics ANT",
+    "heroImage": "/images/vehicles/cb18.png",
+    "typicalLoad": "Standard Pallet",
+    "category": "Counterbalance Forklift"
+  },
+  "transferMethods": [
+    { "method": "Fork", "loadTimeSec": 5, "unloadTimeSec": 5 },
+    { "method": "Lift Platform", "loadTimeSec": 8, "unloadTimeSec": 8 }
+  ],
+  "calc": {
+    "maxWeightLbs": 3968,
+    "widthFt": 4.2,
+    "maxLiftHeightFt": 14.7,
+    "speedLoadedFps": 9.84,
+    "batteryKwh": 25.6,
+    "energyKwhPerFt": 0.019,
+    "priceRange": { "minUsd": 165000, "maxUsd": 210000 }
+  },
+  "specs": {
+    "tempMinF": 14,
+    "tempMaxF": 113,
+    "outdoorCapable": true,
+    "freezerCapable": false,
+    "maxRampGrade": 10,
+    "certifications": ["ISO 3691-4", "ANSI B56.5"]
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "id": "8tb50a",
+  "name": "Toyota 8TB50A Reach Truck",
+  "display": {
+    "manufacturer": "Toyota Material Handling",
+    "partnership": "OEM",
+    "tHive": false,
+    "fleetSoftware": "Toyota Fleet Manager",
+    "heroImage": "/images/vehicles/8tb50a.png",
+    "typicalLoad": "Standard Pallet",
+    "category": "Reach Truck"
+  },
+  "transferMethods": [
+    { "method": "Fork", "loadTimeSec": 6, "unloadTimeSec": 6 },
+    { "method": "Lift Platform", "loadTimeSec": 10, "unloadTimeSec": 10 }
+  ],
+  "calc": {
+    "maxWeightLbs": 5000,
+    "widthFt": 4.0,
+    "maxLiftHeightFt": 30.0,
+    "speedLoadedFps": 8.2,
+    "batteryKwh": 36.0,
+    "energyKwhPerFt": 0.024,
+    "priceRange": { "minUsd": 200000, "maxUsd": 275000 }
+  },
+  "specs": {
+    "tempMinF": 14,
+    "tempMaxF": 113,
+    "outdoorCapable": false,
+    "freezerCapable": false,
+    "maxRampGrade": 8,
+    "certifications": ["ISO 3691-4", "ANSI B56.5"]
+  }
+}

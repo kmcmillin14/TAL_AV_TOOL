@@ -1,0 +1,33 @@
+{
+  "id": "ebase7",
+  "name": "Oppent Ebase7 Tugger",
+  "display": {
+    "manufacturer": "Oppent",
+    "partnership": "3rd Party",
+    "tHive": false,
+    "fleetSoftware": "Oppent Fleet Manager",
+    "heroImage": "/images/vehicles/ebase7.png",
+    "typicalLoad": "Cart Train",
+    "category": "Tugger"
+  },
+  "transferMethods": [
+    { "method": "Tow / Tugger", "loadTimeSec": 10, "unloadTimeSec": 10 }
+  ],
+  "calc": {
+    "maxWeightLbs": 15000,
+    "widthFt": 2.8,
+    "maxLiftHeightFt": 0,
+    "speedLoadedFps": 5.25,
+    "batteryKwh": 18.5,
+    "energyKwhPerFt": 0.012,
+    "priceRange": { "minUsd": 70000, "maxUsd": 95000 }
+  },
+  "specs": {
+    "tempMinF": 14,
+    "tempMaxF": 122,
+    "outdoorCapable": true,
+    "freezerCapable": false,
+    "maxRampGrade": 12,
+    "certifications": ["ISO 3691-4"]
+  }
+}
