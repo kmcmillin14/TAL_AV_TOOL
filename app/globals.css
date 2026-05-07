@@ -253,7 +253,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* ============================================ WORKSPACE ============================================ */
 
-.workspace { flex: 1; padding-bottom: 80px; }
+.workspace { flex: 1; padding-bottom: 80px; width: 100%; }
+.workspace > form { width: 100%; display: block; }
 
 /* ============================================ PAGE HEADER ============================================ */
 
@@ -269,7 +270,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* ============================================ FORM ============================================ */
 
-.form-stack { padding: 24px 40px; display: flex; flex-direction: column; gap: 14px; }
+.form-stack { padding: 24px 40px; display: flex; flex-direction: column; gap: 14px; width: 100%; box-sizing: border-box; }
 
 .form-section { background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
 
@@ -286,10 +287,14 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 .form-section-body { padding: 4px 24px 22px; border-top: 1px solid var(--border); }
 
-.fld-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 18px; }
-.fld-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 18px; }
-.fld-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 18px; }
-.fld-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 18px; }
+.fld-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 18px; width: 100%; }
+.fld-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 18px; width: 100%; }
+.fld-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 18px; width: 100%; }
+.fld-row-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 18px; width: 100%; }
+@media (min-width: 1400px) {
+  .fld-grid-4 { grid-template-columns: repeat(6, 1fr); }
+  .fld-grid-3 { grid-template-columns: repeat(4, 1fr); }
+}
 .span-2 { grid-column: span 2; }
 .span-3 { grid-column: span 3; }
 .span-4 { grid-column: span 4; }
