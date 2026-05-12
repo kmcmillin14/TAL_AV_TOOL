@@ -52,7 +52,7 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
           <div className="veh-no-img">{vehicle.display.category}</div>
         )}
         {isTAL(vehicle.display.partnership)
-          ? <div className="veh-integration int-tal">TAL</div>
+          ? <img src="/assets/TAL-Logo-White.png" alt="TAL" className="veh-tal-logo" />
           : <div className="veh-integration int-3p">3rd Party</div>
         }
       </div>

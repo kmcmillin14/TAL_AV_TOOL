@@ -505,8 +505,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   letter-spacing: 0.08em; text-transform: uppercase;
   padding: 5px 12px; border-radius: 4px;
 }
-.veh-integration.int-tal {
-  background: rgba(235,10,30,0.92); color: #fff;
+.veh-tal-logo {
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  height: 20px; width: auto;
+  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
 }
 .veh-integration.int-3p {
   background: rgba(59,130,246,0.92); color: #fff;
