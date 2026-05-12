@@ -13,20 +13,15 @@ interface VehicleCardProps {
   unitSystem: UnitSystem
 }
 
-function formatPrice(minUsd: number, maxUsd: number): string {
-  const fmt = (n: number) => n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(1)}M` : `$${Math.round(n / 1000)}K`
-  return `${fmt(minUsd)} – ${fmt(maxUsd)}`
-}
-
-function PartnershipBadge({ partnership }: { partnership: Vehicle['display']['partnership'] }) {
-  const cls = partnership === 'TAL Integrated' ? 'tal-integrated'
-    : partnership === 'TAL 3rd Party' ? 'tal-3p'
-    : 'oem'
-  return <span className={`badge ${cls}`}>{partnership}</span>
+function integrationLabel(partnership: string): { label: string; cls: string } {
+  if (partnership === 'TAL Integrated') return { label: 'TAL Integrated', cls: 'int-tal' }
+  if (partnership === 'TAL 3rd Party') return { label: '3rd Party', cls: 'int-3p' }
+  return { label: 'OEM', cls: 'int-oem' }
 }
 
 export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCardProps) {
   const [showWhy, setShowWhy] = useState(false)
+  const [imgError, setImgError] = useState(false)
   const { status } = result
   const statusCls = status.toLowerCase() as 'green' | 'yellow' | 'red'
 
@@ -34,78 +29,71 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
     ? `${(vehicle.calc.maxWeightLbs * 0.453592).toFixed(0)} kg`
     : `${vehicle.calc.maxWeightLbs.toLocaleString()} lbs`
 
-  const liftDisplay = vehicle.calc.maxLiftHeightFt > 0
-    ? (unitSystem === 'metric'
-        ? `${(vehicle.calc.maxLiftHeightFt * 0.3048).toFixed(1)} m`
-        : `${vehicle.calc.maxLiftHeightFt} ft`)
-    : 'Floor level'
-
-  const widthDisplay = unitSystem === 'metric'
-    ? `${(vehicle.calc.widthFt * 0.3048).toFixed(1)} m`
-    : `${vehicle.calc.widthFt} ft`
+  const integration = integrationLabel(vehicle.display.partnership)
+  const transfers = vehicle.transferMethods.map(m => m.method).join(' / ')
 
   return (
     <div className={`veh-card ${statusCls}`}>
       <div className={`veh-status-bar ${statusCls}`} />
 
+      {/* Vehicle image */}
+      <div className="veh-img-area">
+        {vehicle.display.heroImage && !imgError ? (
+          <img
+            src={vehicle.display.heroImage}
+            alt={vehicle.name}
+            className="veh-photo"
+            onError={() => setImgError(true)}
+          />
+        ) : (
+          <div className="veh-no-img">{vehicle.display.category}</div>
+        )}
+        <div className={`veh-integration ${integration.cls}`}>{integration.label}</div>
+      </div>
+
       <div className="veh-body">
-        {/* Header: name + traffic light */}
+        {/* Name + status */}
         <div className="veh-header">
           <div className="veh-name-block">
-            <div className="veh-category-tag">{vehicle.display.category}</div>
             <div className="name">{vehicle.name}</div>
             <div className="mfr">{vehicle.display.manufacturer}</div>
           </div>
           <TrafficLight status={status} />
         </div>
 
-        {/* Badges */}
-        <div className="veh-badges">
-          <PartnershipBadge partnership={vehicle.display.partnership} />
-          {vehicle.display.tHive && (
-            <span className="badge thive">T-Hive</span>
-          )}
-        </div>
-
-        {/* Key specs */}
-        <div className="kv-list">
-          <div className="kv">
-            <span className="k">Capacity</span>
-            <span className="v">{capDisplay}</span>
+        {/* Specs grid */}
+        <div className="veh-specs">
+          <div className="veh-spec">
+            <div className="spec-label">Weight Capacity</div>
+            <div className="spec-value">{capDisplay}</div>
           </div>
-          <div className="kv">
-            <span className="k">Lift Height</span>
-            <span className="v">{liftDisplay}</span>
+          <div className="veh-spec">
+            <div className="spec-label">Payload Type</div>
+            <div className="spec-value">{vehicle.display.typicalLoad}</div>
           </div>
-          <div className="kv">
-            <span className="k">Width</span>
-            <span className="v">{widthDisplay}</span>
+          <div className="veh-spec">
+            <div className="spec-label">Transfer</div>
+            <div className="spec-value">{transfers}</div>
           </div>
-          <div className="kv">
-            <span className="k">Software</span>
-            <span className="v">{vehicle.display.fleetSoftware}</span>
-          </div>
-          <div className="kv full">
-            <span className="k">Transfer</span>
-            <span className="v">{vehicle.transferMethods.map(m => m.method).join(', ')}</span>
-          </div>
-          <div className="kv full">
-            <span className="k">Price Range</span>
-            <span className="v">{formatPrice(vehicle.calc.priceRange.minUsd, vehicle.calc.priceRange.maxUsd)}</span>
+          <div className="veh-spec">
+            <div className="spec-label">Fleet Software</div>
+            <div className="spec-value">{vehicle.display.fleetSoftware}</div>
           </div>
         </div>
 
-        {/* Typical load */}
-        <div className="veh-typical">{vehicle.display.typicalLoad}</div>
+        {/* T-Hive badge if applicable */}
+        {vehicle.display.tHive && (
+          <div className="veh-thive-badge">T-Hive Compatible</div>
+        )}
 
-        {/* Footer: Why? */}
+        {/* Footer */}
         <div className="veh-foot">
           <button
             type="button"
             className="link-btn"
             onClick={() => setShowWhy(v => !v)}
           >
-            {showWhy ? 'Hide details' : 'View qualification details'}
+            {showWhy ? 'Hide details' : 'Qualification details'}
           </button>
         </div>
 
