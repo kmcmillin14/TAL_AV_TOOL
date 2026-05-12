@@ -48,8 +48,10 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
         ) : (
           <div className="veh-no-img">{vehicle.display.category}</div>
         )}
-        <div className={`veh-integration ${integration.cls}`}>{integration.label}</div>
       </div>
+
+      {/* Integration badge below image */}
+      <div className={`veh-integration ${integration.cls}`}>{integration.label}</div>
 
       <div className="veh-body">
         {/* Name + status */}
@@ -61,27 +63,27 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
           <TrafficLight status={status} />
         </div>
 
-        {/* Specs grid */}
-        <div className="veh-specs">
-          <div className="veh-spec">
-            <div className="spec-label">Weight Capacity</div>
-            <div className="spec-value">{capDisplay}</div>
+        {/* Spec rows — single column */}
+        <div className="veh-spec-list">
+          <div className="veh-spec-row">
+            <span className="spec-k">Weight Capacity</span>
+            <span className="spec-v">{capDisplay}</span>
           </div>
-          <div className="veh-spec">
-            <div className="spec-label">Payload Type</div>
-            <div className="spec-value">{vehicle.display.typicalLoad}</div>
+          <div className="veh-spec-row">
+            <span className="spec-k">Payload Type</span>
+            <span className="spec-v">{vehicle.display.typicalLoad}</span>
           </div>
-          <div className="veh-spec">
-            <div className="spec-label">Transfer</div>
-            <div className="spec-value">{transfers}</div>
+          <div className="veh-spec-row">
+            <span className="spec-k">Transfer</span>
+            <span className="spec-v">{transfers}</span>
           </div>
-          <div className="veh-spec">
-            <div className="spec-label">Fleet Software</div>
-            <div className="spec-value">{vehicle.display.fleetSoftware}</div>
+          <div className="veh-spec-row">
+            <span className="spec-k">Fleet Software</span>
+            <span className="spec-v">{vehicle.display.fleetSoftware}</span>
           </div>
         </div>
 
-        {/* T-Hive badge if applicable */}
+        {/* T-Hive badge */}
         {vehicle.display.tHive && (
           <div className="veh-thive-badge">T-Hive Compatible</div>
         )}
