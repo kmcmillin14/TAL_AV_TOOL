@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
 }
 
 model Project {
@@ -27,8 +27,8 @@ model Project {
   step5Complete Boolean @default(false)
 
   // Section 1: What are you moving?
-  maxLoadWeightLbs         Float
-  typicalUnitType          String
+  maxLoadWeightLbs         Float   @default(0)
+  typicalUnitType          String  @default("")
   palletBottomBoard        String?
   customPalletDescription  String?
   otherUnitTypeDescription String?
@@ -37,26 +37,26 @@ model Project {
   loadHeightIn             Float?
 
   // Section 2: How is it transferred?
-  transferMethod  String
-  deliveryPattern String
+  transferMethod  String @default("")
+  deliveryPattern String @default("")
   maxLiftHeightFt Float?
 
   // Section 3: Where does it operate?
-  minAisleWidthFt Float
-  floorCondition  String
+  minAisleWidthFt Float  @default(0)
+  floorCondition  String @default("")
 
   // Section 4: Operating Schedule
-  shiftsPerDay         Int
-  hoursPerShift        Float
-  operatingDaysPattern String
+  shiftsPerDay         Int    @default(1)
+  hoursPerShift        Float  @default(8)
+  operatingDaysPattern String @default("")
   operatingDaysCustom  Json?
   breaksPerShift       Int    @default(0)
   breakDurationMin     Int    @default(0)
 
   // Section 5: Throughput & Distance
-  requiredThroughputPerHour Int
-  avgDistanceFt             Float
-  distanceType              String
+  requiredThroughputPerHour Int    @default(0)
+  avgDistanceFt             Float  @default(0)
+  distanceType              String @default("one_way")
 
   // Section 6: Labor & ROI
   operatorsPerShift Int @default(0)
