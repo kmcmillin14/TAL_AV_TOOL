@@ -13,10 +13,19 @@ interface VehicleCardProps {
   unitSystem: UnitSystem
 }
 
-function integrationLabel(partnership: string): { label: string; cls: string } {
-  if (partnership === 'TAL Integrated') return { label: 'OEM Integrated', cls: 'int-tal' }
-  if (partnership === 'TAL 3rd Party') return { label: '3rd Party', cls: 'int-3p' }
-  return { label: 'OEM', cls: 'int-oem' }
+function IntegrationBadge({ partnership }: { partnership: string }) {
+  if (partnership === 'TAL Integrated') {
+    return (
+      <div className="veh-integration int-tal">
+        <img src="/assets/TAL-Logo-White.png" alt="TAL" className="int-logo" />
+        <span>TAL Integrated</span>
+      </div>
+    )
+  }
+  if (partnership === 'TAL 3rd Party' || partnership === '3rd Party') {
+    return <div className="veh-integration int-3p">3rd Party</div>
+  }
+  return <div className="veh-integration int-oem">OEM</div>
 }
 
 export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCardProps) {
@@ -29,7 +38,6 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
     ? `${(vehicle.calc.maxWeightLbs * 0.453592).toFixed(0)} kg`
     : `${vehicle.calc.maxWeightLbs.toLocaleString()} lbs`
 
-  const integration = integrationLabel(vehicle.display.partnership)
   const transfers = vehicle.transferMethods.map(m => m.method).join(' / ')
 
   return (
@@ -48,7 +56,7 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
         ) : (
           <div className="veh-no-img">{vehicle.display.category}</div>
         )}
-        <div className={`veh-integration ${integration.cls}`}>{integration.label}</div>
+        <IntegrationBadge partnership={vehicle.display.partnership} />
       </div>
 
       <div className="veh-body">

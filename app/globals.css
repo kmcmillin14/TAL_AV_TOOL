@@ -501,19 +501,23 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* Integration badge — overlaid top-right of image */
 .veh-integration {
   position: absolute; top: 10px; right: 10px; z-index: 2;
+  display: inline-flex; align-items: center; gap: 6px;
   font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
   letter-spacing: 0.06em; text-transform: uppercase;
   padding: 5px 10px; border-radius: 4px;
 }
+.veh-integration .int-logo {
+  height: 14px; width: auto; display: block;
+}
 .veh-integration.int-tal {
-  background: rgba(235,10,30,0.9); color: #fff;
+  background: rgba(235,10,30,0.92); color: #fff;
 }
 .veh-integration.int-3p {
-  background: rgba(95,168,224,0.9); color: #fff;
+  background: rgba(59,130,246,0.92); color: #fff;
 }
 .veh-integration.int-oem {
-  background: rgba(255,255,255,0.12); color: var(--text-secondary);
-  border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);
+  background: rgba(0,0,0,0.55); color: rgba(255,255,255,0.75);
+  backdrop-filter: blur(4px);
 }
 
 /* Card body */
