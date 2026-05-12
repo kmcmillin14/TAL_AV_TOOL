@@ -94,11 +94,18 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     if (saveTimer.current) clearTimeout(saveTimer.current)
     setSaveStatus('saving')
     saveTimer.current = setTimeout(async () => {
+      const cleaned = Object.fromEntries(
+        Object.entries(data).filter(([, v]) => {
+          if (typeof v === 'number' && isNaN(v)) return false
+          if (v === '') return false
+          return true
+        })
+      )
       try {
         const res = await fetch(`/api/projects/${projectId}`, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(data),
+          body: JSON.stringify(cleaned),
         })
         if (res.ok) {
           const result = await res.json()
@@ -131,11 +138,18 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   }
 
   const onSubmit: SubmitHandler<ProjectFormData> = async (data) => {
+    const cleaned = Object.fromEntries(
+      Object.entries(data).filter(([, v]) => {
+        if (typeof v === 'number' && isNaN(v)) return false
+        if (v === '') return false
+        return true
+      })
+    )
     if (isNew) {
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(cleaned),
       })
       if (res.ok) {
         const { id } = await res.json()
@@ -149,12 +163,20 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
   const handleContinue = async () => {
     const values = getValues()
+    // Strip NaN (empty number inputs serialize to null which Zod rejects) and empty strings
+    const cleaned = Object.fromEntries(
+      Object.entries(values).filter(([, v]) => {
+        if (typeof v === 'number' && isNaN(v)) return false
+        if (v === '') return false
+        return true
+      })
+    )
     if (isNew) {
       try {
         const res = await fetch('/api/projects', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(values),
+          body: JSON.stringify(cleaned),
         })
         if (res.ok) {
           const { id } = await res.json()
