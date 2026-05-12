@@ -1,7 +1,5 @@
 'use client'
 
-import { type TrafficLightStatus } from '@/src/calc/types'
-
 export type StatusFilter = 'GREEN' | 'GREEN+YELLOW' | 'ALL'
 
 interface VehicleFiltersProps {
@@ -30,7 +28,7 @@ export default function VehicleFilters({
     <div className="veh-filter-toolbar">
       <input
         className="vf-search"
-        placeholder="Search by name or manufacturer…"
+        placeholder="Search vehicles..."
         value={search}
         onChange={e => onSearchChange(e.target.value)}
       />
@@ -40,9 +38,9 @@ export default function VehicleFilters({
         value={statusFilter}
         onChange={e => onStatusFilterChange(e.target.value as StatusFilter)}
       >
-        <option value="GREEN">🟢 Compatible only ({counts.green})</option>
-        <option value="GREEN+YELLOW">🟢🟡 Review included ({counts.green + counts.yellow})</option>
         <option value="ALL">All vehicles ({counts.green + counts.yellow + counts.red})</option>
+        <option value="GREEN">Compatible only ({counts.green})</option>
+        <option value="GREEN+YELLOW">Compatible + Review ({counts.green + counts.yellow})</option>
       </select>
 
       <select
@@ -62,15 +60,6 @@ export default function VehicleFilters({
         <option value="">All Manufacturers</option>
         {manufacturers.map(m => <option key={m}>{m}</option>)}
       </select>
-
-      <span className="pill neutral" style={{ marginLeft: 'auto', flexShrink: 0 }}>
-        <span className="dot" style={{ background: 'var(--good)' }} />
-        {counts.green}
-        <span className="dot" style={{ background: 'var(--warn)', marginLeft: 6 }} />
-        {counts.yellow}
-        <span className="dot" style={{ background: 'var(--bad)', marginLeft: 6 }} />
-        {counts.red}
-      </span>
     </div>
   )
 }
