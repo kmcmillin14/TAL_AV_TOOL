@@ -13,19 +13,14 @@ interface VehicleCardProps {
   unitSystem: UnitSystem
 }
 
-function IntegrationBadge({ partnership }: { partnership: string }) {
-  if (partnership === 'TAL Integrated') {
-    return (
-      <div className="veh-integration int-tal">
-        <img src="/assets/TAL-Logo-White.png" alt="TAL" className="int-logo" />
-        <span>TAL Integrated</span>
-      </div>
-    )
-  }
-  if (partnership === 'TAL 3rd Party' || partnership === '3rd Party') {
-    return <div className="veh-integration int-3p">3rd Party</div>
-  }
-  return <div className="veh-integration int-oem">OEM</div>
+function isTAL(partnership: string) {
+  return partnership === 'TAL Integrated'
+}
+
+function integrationDisplay(partnership: string): string {
+  if (partnership === 'TAL Integrated') return 'TAL Integrated'
+  if (partnership === 'TAL 3rd Party' || partnership === '3rd Party') return '3rd Party'
+  return 'OEM'
 }
 
 export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCardProps) {
@@ -56,7 +51,10 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
         ) : (
           <div className="veh-no-img">{vehicle.display.category}</div>
         )}
-        <IntegrationBadge partnership={vehicle.display.partnership} />
+        {isTAL(vehicle.display.partnership)
+          ? <div className="veh-integration int-tal">TAL</div>
+          : <div className="veh-integration int-3p">3rd Party</div>
+        }
       </div>
 
       <div className="veh-body">
@@ -71,6 +69,18 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
         {/* Spec rows */}
         <div className="veh-spec-list">
           <div className="veh-spec-row">
+            <span className="spec-k">OEM</span>
+            <span className="spec-v">{vehicle.display.manufacturer}</span>
+          </div>
+          <div className="veh-spec-row">
+            <span className="spec-k">Integration</span>
+            <span className="spec-v">{integrationDisplay(vehicle.display.partnership)}</span>
+          </div>
+          <div className="veh-spec-row">
+            <span className="spec-k">Fleet Management</span>
+            <span className="spec-v">{vehicle.display.fleetSoftware}</span>
+          </div>
+          <div className="veh-spec-row">
             <span className="spec-k">Weight Capacity</span>
             <span className="spec-v">{capDisplay}</span>
           </div>
@@ -81,10 +91,6 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
           <div className="veh-spec-row">
             <span className="spec-k">Transfer</span>
             <span className="spec-v">{transfers}</span>
-          </div>
-          <div className="veh-spec-row">
-            <span className="spec-k">Fleet Software</span>
-            <span className="spec-v">{vehicle.display.fleetSoftware}</span>
           </div>
         </div>
 
