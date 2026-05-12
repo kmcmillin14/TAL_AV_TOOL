@@ -36,7 +36,7 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
     <div className={`veh-card ${statusCls}`}>
       <div className={`veh-status-bar ${statusCls}`} />
 
-      {/* Vehicle image */}
+      {/* Vehicle image with integration badge overlay */}
       <div className="veh-img-area">
         {vehicle.display.heroImage && !imgError ? (
           <img
@@ -48,12 +48,10 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
         ) : (
           <div className="veh-no-img">{vehicle.display.category}</div>
         )}
+        <div className={`veh-integration ${integration.cls}`}>{integration.label}</div>
       </div>
 
       <div className="veh-body">
-        {/* Integration badge + name row */}
-        <div className={`veh-integration ${integration.cls}`}>{integration.label}</div>
-
         <div className="veh-header">
           <div className="veh-name-block">
             <div className="name">{vehicle.name}</div>

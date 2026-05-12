@@ -484,7 +484,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* Vehicle image area */
 .veh-img-area {
-  aspect-ratio: 16 / 9;
+  position: relative; aspect-ratio: 16 / 9;
   background: var(--bg-surface-2); border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
@@ -498,21 +498,22 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-disabled);
 }
 
-/* Integration badge — top of card body */
+/* Integration badge — overlaid top-right of image */
 .veh-integration {
-  display: inline-flex; align-self: flex-start;
-  font-family: var(--tal-font-numeric); font-size: 9px; font-weight: 700;
+  position: absolute; top: 10px; right: 10px; z-index: 2;
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
   letter-spacing: 0.06em; text-transform: uppercase;
-  padding: 4px 8px; border-radius: 4px;
+  padding: 5px 10px; border-radius: 4px;
 }
 .veh-integration.int-tal {
-  background: var(--accent-soft); color: var(--accent); border: 1px solid rgba(235,10,30,0.25);
+  background: rgba(235,10,30,0.9); color: #fff;
 }
 .veh-integration.int-3p {
-  background: var(--info-soft); color: var(--info); border: 1px solid rgba(95,168,224,0.25);
+  background: rgba(95,168,224,0.9); color: #fff;
 }
 .veh-integration.int-oem {
-  background: var(--bg-surface-3); color: var(--text-tertiary); border: 1px solid var(--border);
+  background: rgba(255,255,255,0.12); color: var(--text-secondary);
+  border: 1px solid rgba(255,255,255,0.2); backdrop-filter: blur(4px);
 }
 
 /* Card body */
