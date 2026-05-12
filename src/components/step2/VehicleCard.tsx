@@ -14,7 +14,7 @@ interface VehicleCardProps {
 }
 
 function integrationLabel(partnership: string): { label: string; cls: string } {
-  if (partnership === 'TAL Integrated') return { label: 'TAL Integrated', cls: 'int-tal' }
+  if (partnership === 'TAL Integrated') return { label: 'OEM Integrated', cls: 'int-tal' }
   if (partnership === 'TAL 3rd Party') return { label: '3rd Party', cls: 'int-3p' }
   return { label: 'OEM', cls: 'int-oem' }
 }
@@ -50,11 +50,10 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
         )}
       </div>
 
-      {/* Integration badge below image */}
-      <div className={`veh-integration ${integration.cls}`}>{integration.label}</div>
-
       <div className="veh-body">
-        {/* Name + status */}
+        {/* Integration badge + name row */}
+        <div className={`veh-integration ${integration.cls}`}>{integration.label}</div>
+
         <div className="veh-header">
           <div className="veh-name-block">
             <div className="name">{vehicle.name}</div>
@@ -63,7 +62,7 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
           <TrafficLight status={status} />
         </div>
 
-        {/* Spec rows — single column */}
+        {/* Spec rows */}
         <div className="veh-spec-list">
           <div className="veh-spec-row">
             <span className="spec-k">Weight Capacity</span>
@@ -82,11 +81,6 @@ export default function VehicleCard({ vehicle, result, unitSystem }: VehicleCard
             <span className="spec-v">{vehicle.display.fleetSoftware}</span>
           </div>
         </div>
-
-        {/* T-Hive badge */}
-        {vehicle.display.tHive && (
-          <div className="veh-thive-badge">T-Hive Compatible</div>
-        )}
 
         {/* Footer */}
         <div className="veh-foot">
