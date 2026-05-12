@@ -507,8 +507,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .veh-tal-logo {
   position: absolute; top: 10px; right: 10px; z-index: 2;
-  height: 20px; width: auto;
-  filter: drop-shadow(0 1px 3px rgba(0,0,0,0.4));
+  height: 28px; width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.5));
+  pointer-events: none;
 }
 .veh-integration.int-3p {
   background: rgba(59,130,246,0.92); color: #fff;
