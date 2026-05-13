@@ -4,6 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
+import { updateProject, downloadProject, importProjectFromJson } from '@/src/lib/storage'
 
 interface HeaderData {
   id: string
@@ -53,19 +54,14 @@ export default function PersistentHeader({ project, currentStep, unitSystem, onU
     }
   }, [editing])
 
-  const saveHeader = useCallback(async (patch: Partial<typeof editValues>) => {
+  const saveHeader = useCallback((patch: Partial<typeof editValues>) => {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     setSaveStatus('saving')
-    saveTimer.current = setTimeout(async () => {
+    saveTimer.current = setTimeout(() => {
       try {
-        const res = await fetch(`/api/projects/${project.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(patch),
-        })
-        if (res.ok) {
-          const data = await res.json()
-          setVersionNumber(data.versionNumber)
+        const updated = updateProject(project.id, patch)
+        if (updated) {
+          setVersionNumber(updated.versionNumber)
           setSaveStatus('saved')
           setTimeout(() => setSaveStatus('idle'), 2000)
         }
@@ -74,6 +70,24 @@ export default function PersistentHeader({ project, currentStep, unitSystem, onU
       }
     }, 800)
   }, [project.id])
+
+  const handleExport = () => downloadProject(project.id)
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const imported = importProjectFromJson(String(reader.result))
+        window.location.href = `/projects/${imported.id}/step1`
+      } catch (err) {
+        alert(`Could not import project: ${err instanceof Error ? err.message : 'Invalid file'}`)
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
 
   const commitEdit = (field: keyof typeof editValues) => {
     setEditing(null)
@@ -152,6 +166,13 @@ export default function PersistentHeader({ project, currentStep, unitSystem, onU
           >
             {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved ✓' : versionNumber}
           </span>
+          <button className="tbtn" onClick={handleExport} title="Download project as JSON">
+            Export
+          </button>
+          <label className="tbtn" title="Import a project JSON file" style={{ cursor: 'pointer' }}>
+            Import
+            <input type="file" accept="application/json,.json" onChange={handleImport} style={{ display: 'none' }} />
+          </label>
           <button className="tbtn" onClick={onUnitToggle}>
             {unitSystem === 'imperial' ? 'Imperial' : 'Metric'}
           </button>

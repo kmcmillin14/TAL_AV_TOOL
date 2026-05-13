@@ -8,6 +8,7 @@ import FormSection from './FormSection'
 import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
+import { createProject, updateProject, getProject } from '@/src/lib/storage'
 
 // Pallet dimension auto-fill (stored in inches)
 const PALLET_AUTOFILL: Record<string, { l: number; w: number; h: number }> = {
@@ -89,27 +90,22 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   }
 
   // Auto-save on blur (debounced 2 seconds)
-  const autoSave = useCallback(async (data: Partial<ProjectFormData>) => {
+  const autoSave = useCallback((data: Partial<ProjectFormData>) => {
     if (!projectId) return
     if (saveTimer.current) clearTimeout(saveTimer.current)
     setSaveStatus('saving')
-    saveTimer.current = setTimeout(async () => {
+    saveTimer.current = setTimeout(() => {
       const cleaned = Object.fromEntries(
         Object.entries(data).filter(([, v]) => {
           if (typeof v === 'number' && isNaN(v)) return false
           if (v === '') return false
           return true
         })
-      )
+      ) as Partial<ProjectFormData>
       try {
-        const res = await fetch(`/api/projects/${projectId}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cleaned),
-        })
-        if (res.ok) {
-          const result = await res.json()
-          setVersionNumber(result.versionNumber)
+        const updated = updateProject(projectId, cleaned)
+        if (updated) {
+          setVersionNumber(updated.versionNumber)
           setSaveStatus('saved')
           setTimeout(() => setSaveStatus('idle'), 2000)
         }
@@ -119,13 +115,11 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     }, 2000)
   }, [projectId])
 
-  // Fetch version on mount if editing
+  // Load version on mount if editing
   useEffect(() => {
     if (projectId) {
-      fetch(`/api/projects/${projectId}`)
-        .then(r => r.json())
-        .then(d => setVersionNumber(d.versionNumber))
-        .catch(() => {})
+      const proj = getProject(projectId)
+      if (proj) setVersionNumber(proj.versionNumber)
     }
   }, [projectId])
 
@@ -137,57 +131,39 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     }
   }
 
-  const onSubmit: SubmitHandler<ProjectFormData> = async (data) => {
+  const onSubmit: SubmitHandler<ProjectFormData> = (data) => {
     const cleaned = Object.fromEntries(
       Object.entries(data).filter(([, v]) => {
         if (typeof v === 'number' && isNaN(v)) return false
         if (v === '') return false
         return true
       })
-    )
+    ) as Partial<ProjectFormData>
     if (isNew) {
-      const res = await fetch('/api/projects', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cleaned),
-      })
-      if (res.ok) {
-        const { id } = await res.json()
-        router.push(`/projects/${id}/step2`)
-      }
+      const created = createProject(cleaned)
+      router.push(`/projects/${created.id}/step2`)
     } else {
-      await autoSave(data)
+      autoSave(data)
       router.push(`/projects/${projectId}/step2`)
     }
   }
 
-  const handleContinue = async () => {
+  const handleContinue = () => {
     const values = getValues()
-    // Strip NaN (empty number inputs serialize to null which Zod rejects) and empty strings
     const cleaned = Object.fromEntries(
       Object.entries(values).filter(([, v]) => {
         if (typeof v === 'number' && isNaN(v)) return false
         if (v === '') return false
         return true
       })
-    )
+    ) as Partial<ProjectFormData>
     if (isNew) {
       try {
-        const res = await fetch('/api/projects', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(cleaned),
-        })
-        if (res.ok) {
-          const { id } = await res.json()
-          router.push(`/projects/${id}/step2`)
-        } else {
-          const err = await res.json().catch(() => ({}))
-          setSaveStatus('idle')
-          alert(`Could not save project: ${err.error ?? res.statusText}\n\nMake sure your DATABASE_URL is set in .env and the database is running.`)
-        }
-      } catch {
-        alert('Cannot reach the server. Make sure your DATABASE_URL is set in .env and run: npx prisma migrate dev --name init')
+        const created = createProject(cleaned)
+        router.push(`/projects/${created.id}/step2`)
+      } catch (err) {
+        setSaveStatus('idle')
+        alert(`Could not save project: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
     } else {
       if (projectId) autoSave(values)

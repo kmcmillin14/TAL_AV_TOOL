@@ -11,29 +11,9 @@ import { qualifyVehicle } from '@/src/calc/trafficLight'
 import type { ApplicationRequirements } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
+import { getProject, type StoredProject } from '@/src/lib/storage'
 
-interface ProjectData {
-  id: string
-  projectName: string
-  customerName: string
-  facilityLocation?: string | null
-  versionNumber: string
-  bastianRep?: string | null
-  step1Complete: boolean
-  step2Complete: boolean
-  maxLoadWeightLbs: number
-  typicalUnitType: string
-  transferMethod: string
-  deliveryPattern: string
-  maxLiftHeightFt?: number | null
-  minAisleWidthFt: number
-  certifications: string[]
-  tempMinF?: number | null
-  tempMaxF?: number | null
-  maxRampGrade: number
-  outdoorRequired: boolean
-  freezerCapable: boolean
-}
+type ProjectData = StoredProject
 
 export default function Step2Page() {
   const params = useParams()
@@ -50,17 +30,21 @@ export default function Step2Page() {
   const [manufacturerFilter, setManufacturerFilter] = useState('')
 
   useEffect(() => {
-    Promise.all([
-      fetch(`/api/projects/${id}`).then(r => r.json()),
-      fetch('/api/vehicles').then(r => r.json()),
-    ])
-      .then(([proj, vehs]) => {
-        setProject(proj)
+    const proj = getProject(id)
+    if (!proj) {
+      setError('Project not found.')
+      setLoading(false)
+      return
+    }
+    setProject(proj)
+    fetch('/api/vehicles')
+      .then(r => r.json())
+      .then(vehs => {
         setVehicles(Array.isArray(vehs) ? vehs : [])
         setLoading(false)
       })
       .catch(() => {
-        setError('Failed to load project data.')
+        setError('Failed to load vehicle library.')
         setLoading(false)
       })
   }, [id])
@@ -125,17 +109,17 @@ export default function Step2Page() {
   if (error || !project) return (
     <div className="app-shell">
       <div className="step2-error">
-        <div className="step2-error-tag">Connection Error</div>
+        <div className="step2-error-tag">Not Found</div>
         <h1>Could not load project</h1>
-        <p>Make sure the database file exists and restart the dev server.</p>
+        <p>{error ?? 'This project does not exist in your browser. Try importing the project file or creating a new project.'}</p>
       </div>
     </div>
   )
 
   const headerData = {
     id: project.id,
-    projectName: project.projectName,
-    customerName: project.customerName,
+    projectName: project.projectName ?? 'Untitled Project',
+    customerName: project.customerName ?? '',
     facilityLocation: project.facilityLocation,
     versionNumber: project.versionNumber,
     bastianRep: project.bastianRep,
@@ -143,7 +127,7 @@ export default function Step2Page() {
     step2Complete: project.step2Complete,
   }
 
-  const hasRequirements = project.transferMethod || project.maxLoadWeightLbs > 0
+  const hasRequirements = project.transferMethod || (project.maxLoadWeightLbs ?? 0) > 0
 
   return (
     <div className="app-shell">
@@ -182,20 +166,20 @@ export default function Step2Page() {
           {project.deliveryPattern && (
             <span className="req-tag">Pattern: <strong>{project.deliveryPattern}</strong></span>
           )}
-          {project.maxLoadWeightLbs > 0 && (
+          {(project.maxLoadWeightLbs ?? 0) > 0 && (
             <span className="req-tag">
               Load: <strong>
                 {unitSystem === 'metric'
-                  ? `${(project.maxLoadWeightLbs * 0.453592).toFixed(0)} kg`
-                  : `${project.maxLoadWeightLbs.toLocaleString()} lbs`}
+                  ? `${((project.maxLoadWeightLbs ?? 0) * 0.453592).toFixed(0)} kg`
+                  : `${(project.maxLoadWeightLbs ?? 0).toLocaleString()} lbs`}
               </strong>
             </span>
           )}
-          {project.minAisleWidthFt > 0 && (
+          {(project.minAisleWidthFt ?? 0) > 0 && (
             <span className="req-tag">
               Aisle: <strong>
                 {unitSystem === 'metric'
-                  ? `${(project.minAisleWidthFt * 0.3048).toFixed(1)} m`
+                  ? `${((project.minAisleWidthFt ?? 0) * 0.3048).toFixed(1)} m`
                   : `${project.minAisleWidthFt} ft`}
               </strong>
               <span className="req-info">(info only)</span>

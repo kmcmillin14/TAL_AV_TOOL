@@ -1,35 +1,37 @@
-export const dynamic = 'force-dynamic'
+'use client'
 
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { db } from '@/src/lib/db'
+import { listProjects, importProjectFromJson, type StoredProject } from '@/src/lib/storage'
 
-async function getProjects() {
-  try {
-    return await db.project.findMany({
-      select: {
-        id: true,
-        projectName: true,
-        customerName: true,
-        facilityLocation: true,
-        versionNumber: true,
-        bastianRep: true,
-        step1Complete: true,
-        updatedAt: true,
-      },
-      orderBy: { updatedAt: 'desc' },
-      take: 20,
-    })
-  } catch {
-    return [] as { id: string; projectName: string; customerName: string; facilityLocation: string | null; versionNumber: string; bastianRep: string | null; step1Complete: boolean; updatedAt: Date }[]
+export default function HomePage() {
+  const [projects, setProjects] = useState<StoredProject[]>([])
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setProjects(listProjects())
+    setMounted(true)
+  }, [])
+
+  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      try {
+        const imported = importProjectFromJson(String(reader.result))
+        setProjects(listProjects())
+        window.location.href = `/projects/${imported.id}/step1`
+      } catch (err) {
+        alert(`Could not import project: ${err instanceof Error ? err.message : 'Invalid file'}`)
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
   }
-}
-
-export default async function HomePage() {
-  const projects = await getProjects()
 
   return (
     <div className="app-shell">
-      {/* Minimal header */}
       <header className="hero-bar">
         <div className="hero-top">
           <div className="hero-brand">
@@ -51,11 +53,17 @@ export default async function HomePage() {
             and generate customer-facing proposals.
           </p>
 
-          <Link href="/projects/new" className="btn primary" style={{ display: 'inline-flex' }}>
-            + New Project
-          </Link>
+          <div className="row" style={{ gap: 10 }}>
+            <Link href="/projects/new" className="btn primary" style={{ display: 'inline-flex' }}>
+              + New Project
+            </Link>
+            <label className="btn ghost" style={{ display: 'inline-flex', cursor: 'pointer' }}>
+              Import Project
+              <input type="file" accept="application/json,.json" onChange={handleImport} style={{ display: 'none' }} />
+            </label>
+          </div>
 
-          {projects.length > 0 && (
+          {mounted && projects.length > 0 && (
             <>
               <h2 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)', margin: '32px 0 12px', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                 Recent Projects
@@ -82,10 +90,10 @@ export default async function HomePage() {
             </>
           )}
 
-          {projects.length === 0 && (
+          {mounted && projects.length === 0 && (
             <div className="empty-state" style={{ marginTop: 48, textAlign: 'left', padding: 0 }}>
               <p style={{ color: 'var(--text-tertiary)', fontSize: 13 }}>
-                No projects yet. Create your first project to get started.
+                No projects yet. Create your first project or import an existing one.
               </p>
             </div>
           )}
