@@ -122,7 +122,16 @@ export function createProject(input: PartialProjectFormData): StoredProject {
   return project
 }
 
-export function updateProject(id: string, input: PartialProjectFormData): StoredProject | null {
+export interface MetaOverrides {
+  versionNumber?: string
+  createdAt?: string
+}
+
+export function updateProject(
+  id: string,
+  input: PartialProjectFormData,
+  meta?: MetaOverrides,
+): StoredProject | null {
   const data = partialProjectSchema.parse(input)
   const all = readAll()
   const idx = all.findIndex(p => p.id === id)
@@ -132,9 +141,9 @@ export function updateProject(id: string, input: PartialProjectFormData): Stored
     ...existing,
     ...data,
     id: existing.id,
-    createdAt: existing.createdAt,
+    createdAt: meta?.createdAt ?? existing.createdAt,
     updatedAt: new Date().toISOString(),
-    versionNumber: incrementVersion(existing.versionNumber),
+    versionNumber: meta?.versionNumber ?? incrementVersion(existing.versionNumber),
   }
   all[idx] = updated
   writeAll(all)
@@ -156,11 +165,10 @@ export function exportProjectJson(id: string): string | null {
 }
 
 export function downloadProject(id: string): void {
-  const json = exportProjectJson(id)
-  if (!json) return
-  const project = getProject(id)!
+  const project = getProject(id)
+  if (!project) return
   const filename = `${(project.projectName || 'project').replace(/[^a-z0-9-_]+/gi, '_')}_${project.versionNumber}.json`
-  const blob = new Blob([json], { type: 'application/json' })
+  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

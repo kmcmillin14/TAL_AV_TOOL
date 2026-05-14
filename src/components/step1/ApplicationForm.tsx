@@ -199,7 +199,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="page-header">
         <div className="page-title">
-          <span className="step-num">Step 01 / 05</span>
+          <span className="step-num">Step 01 / 06</span>
           <h1>Application Requirements</h1>
           <div className="desc">
             Capture load specs, transfer method, operating schedule, and environment.

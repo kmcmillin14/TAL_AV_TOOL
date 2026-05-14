@@ -3,23 +3,31 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
-import ApplicationForm from '@/src/components/step1/ApplicationForm'
 import { getProject, type StoredProject } from '@/src/lib/storage'
 import type { UnitSystem } from '@/src/lib/utils/units'
 
-export default function Step1Page() {
+type StepId = 3 | 4 | 5 | 6
+
+interface Props {
+  stepId: StepId
+  title: string
+  desc: string
+  comingSoon: string
+}
+
+export default function StepPlaceholder({ stepId, title, desc, comingSoon }: Props) {
   const params = useParams()
   const id = params.id as string
   const [project, setProject] = useState<StoredProject | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [loaded, setLoaded] = useState(false)
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
 
   useEffect(() => {
     setProject(getProject(id))
-    setLoading(false)
+    setLoaded(true)
   }, [id])
 
-  if (loading) return (
+  if (!loaded) return (
     <div className="app-shell">
       <div style={{ padding: 40, color: 'var(--text-tertiary)' }}>Loading…</div>
     </div>
@@ -44,17 +52,29 @@ export default function Step1Page() {
           createdAt: project.createdAt,
           step1Complete: project.step1Complete,
           step2Complete: project.step2Complete,
+          shiftsPerDay: project.shiftsPerDay,
+          hoursPerShift: project.hoursPerShift,
+          operatingDaysPattern: project.operatingDaysPattern,
         }}
-        currentStep={1}
+        currentStep={stepId}
+        showKpis
         unitSystem={unitSystem}
         onUnitToggle={() => setUnitSystem(u => u === 'imperial' ? 'metric' : 'imperial')}
       />
+
       <div className="workspace">
-        <ApplicationForm
-          initialData={project as Parameters<typeof ApplicationForm>[0]['initialData']}
-          projectId={id}
-          unitSystem={unitSystem}
-        />
+        <div className="page-header">
+          <div className="page-title">
+            <span className="step-num">Step {String(stepId).padStart(2, '0')} / 06</span>
+            <h1>{title}</h1>
+            <div className="desc">{desc}</div>
+          </div>
+        </div>
+
+        <div className="empty-state" style={{ marginTop: 40 }}>
+          <h3>Coming soon</h3>
+          <p>{comingSoon}</p>
+        </div>
       </div>
     </div>
   )

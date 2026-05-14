@@ -123,6 +123,7 @@ export default function Step2Page() {
     facilityLocation: project.facilityLocation,
     versionNumber: project.versionNumber,
     bastianRep: project.bastianRep,
+    createdAt: project.createdAt,
     step1Complete: project.step1Complete,
     step2Complete: project.step2Complete,
   }
@@ -142,7 +143,7 @@ export default function Step2Page() {
         {/* Page header */}
         <div className="page-header">
           <div className="page-title">
-            <span className="step-num">Step 02 / 05</span>
+            <span className="step-num">Step 02 / 06</span>
             <h1>Vehicle Compatibility</h1>
             <div className="desc">
               Informational only — vehicles evaluated against your requirements. No selection required.
