@@ -12,6 +12,7 @@ export const projectSchema = z.object({
   customerName: z.string().optional(),
   facilityLocation: z.string().optional(),
   bastianRep: z.string().optional(),
+  opportunityNumber: z.string().optional(),
 
   // Section 1
   maxLoadWeightLbs: z.number().min(0).optional(),

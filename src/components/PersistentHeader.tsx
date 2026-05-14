@@ -13,6 +13,7 @@ interface HeaderData {
   facilityLocation?: string | null
   versionNumber: string
   bastianRep?: string | null
+  opportunityNumber?: string | null
   createdAt?: string
   step1Complete: boolean
   step2Complete: boolean
@@ -41,7 +42,7 @@ interface PersistentHeaderProps {
   totals?: HeaderTotals
 }
 
-type EditField = 'projectName' | 'customerName' | 'facilityLocation' | 'bastianRep' | 'versionNumber' | 'createdAt'
+type EditField = 'projectName' | 'customerName' | 'facilityLocation' | 'bastianRep' | 'opportunityNumber' | 'versionNumber' | 'createdAt'
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 const STEPS: ReadonlyArray<{ id: StepId; label: string; desc: string }> = [
@@ -69,20 +70,6 @@ function utilizationPill(u: number | null | undefined): { cls: string; txt: stri
   return { cls: 'bad', txt: 'Low' }
 }
 
-function toDateInput(iso?: string): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  return d.toISOString().slice(0, 10)
-}
-
-function toDisplayDate(iso?: string): string {
-  if (!iso) return '—'
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return '—'
-  return d.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
-}
-
 export default function PersistentHeader({
   project,
   currentStep,
@@ -98,6 +85,7 @@ export default function PersistentHeader({
     customerName: project.customerName,
     facilityLocation: project.facilityLocation || '',
     bastianRep: project.bastianRep || '',
+    opportunityNumber: project.opportunityNumber || '',
     versionNumber: project.versionNumber,
     createdAt: project.createdAt || new Date().toISOString(),
   })
@@ -172,12 +160,13 @@ export default function PersistentHeader({
 
   const originalValue = (field: EditField): string => {
     switch (field) {
-      case 'projectName':      return project.projectName
-      case 'customerName':     return project.customerName
-      case 'facilityLocation': return project.facilityLocation ?? ''
-      case 'bastianRep':       return project.bastianRep ?? ''
-      case 'versionNumber':    return project.versionNumber
-      case 'createdAt':        return project.createdAt ?? ''
+      case 'projectName':       return project.projectName
+      case 'customerName':      return project.customerName
+      case 'facilityLocation':  return project.facilityLocation ?? ''
+      case 'bastianRep':        return project.bastianRep ?? ''
+      case 'opportunityNumber': return project.opportunityNumber ?? ''
+      case 'versionNumber':     return project.versionNumber
+      case 'createdAt':         return project.createdAt ?? ''
     }
   }
 
@@ -205,40 +194,42 @@ export default function PersistentHeader({
   const hoursPerDay = shifts * hours
   const utilPill = utilizationPill(totals?.utilization)
 
-  const renderCell = (field: EditField, label: string, displayValue: string, opts?: { type?: 'text' | 'date' }) => {
+  const renderInlineItem = (
+    field: EditField,
+    label: string,
+    displayValue: string,
+    maxWidth: number,
+    placeholder?: string,
+  ) => {
     const isEditing = editing === field
-    const inputType = opts?.type ?? 'text'
     return (
       <button
         type="button"
-        className="hero-meta-cell"
+        className="hero-meta-item"
         onClick={() => !isEditing && setEditing(field)}
+        style={{ maxWidth: maxWidth + 80 }}
       >
-        <span className="hero-meta-label">{label}</span>
+        <span className="label">{label}</span>
         {isEditing ? (
           <input
             ref={inputRef}
-            type={inputType}
+            type="text"
             className="hero-meta-input"
-            value={inputType === 'date' ? toDateInput(editValues.createdAt) : (editValues[field] || '')}
-            onChange={e => {
-              const v = e.target.value
-              if (field === 'createdAt') {
-                const iso = v ? new Date(v + 'T00:00:00').toISOString() : ''
-                setEditValues(s => ({ ...s, createdAt: iso }))
-              } else {
-                setEditValues(s => ({ ...s, [field]: v }))
-              }
-            }}
+            placeholder={placeholder}
+            value={editValues[field] || ''}
+            onChange={e => setEditValues(s => ({ ...s, [field]: e.target.value }))}
             onBlur={() => commitEdit(field)}
             onKeyDown={e => {
               if (e.key === 'Enter') commitEdit(field)
               if (e.key === 'Escape') setEditing(null)
             }}
             onClick={e => e.stopPropagation()}
+            style={{ maxWidth }}
           />
         ) : (
-          <span className="hero-meta-value">{displayValue || '—'}</span>
+          <span className="value" style={{ maxWidth }}>
+            {displayValue || <span className="placeholder">{placeholder || '—'}</span>}
+          </span>
         )}
       </button>
     )
@@ -266,10 +257,14 @@ export default function PersistentHeader({
           </div>
         </div>
 
-        <div className="hero-meta-grid">
-          {renderCell('projectName',   'Project',  editValues.projectName)}
-          {renderCell('customerName',  'Customer', editValues.customerName)}
-          {renderCell('versionNumber', 'Revision', editValues.versionNumber)}
+        <div className="hero-meta-line">
+          {renderInlineItem('versionNumber',    'REV',      editValues.versionNumber, 90)}
+          <span className="hero-meta-sep" aria-hidden />
+          {renderInlineItem('opportunityNumber','OPP',      editValues.opportunityNumber, 140, 'OPP-XXXXXX')}
+          <span className="hero-meta-sep" aria-hidden />
+          {renderInlineItem('customerName',     'CUSTOMER', editValues.customerName, 220)}
+          <span className="hero-meta-sep" aria-hidden />
+          {renderInlineItem('projectName',      'PROJECT',  editValues.projectName, 320)}
         </div>
 
         <div className="hero-actions">

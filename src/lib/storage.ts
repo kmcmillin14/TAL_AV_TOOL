@@ -19,6 +19,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   customerName: '',
   facilityLocation: undefined,
   bastianRep: undefined,
+  opportunityNumber: undefined,
   versionNumber: 'v1.0',
   step1Complete: false,
   step2Complete: false,
