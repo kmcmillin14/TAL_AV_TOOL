@@ -30,7 +30,7 @@ export interface HeaderTotals {
   bottleneck?: string
 }
 
-type StepId = 1 | 2 | 3 | 4 | 5 | 6
+type StepId = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 interface PersistentHeaderProps {
   project: HeaderData
@@ -45,6 +45,7 @@ type EditField = 'projectName' | 'customerName' | 'facilityLocation' | 'bastianR
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 const STEPS: ReadonlyArray<{ id: StepId; label: string; desc: string }> = [
+  { id: 0, label: 'Start',       desc: 'Import or create' },
   { id: 1, label: 'Application', desc: 'Load, transfer, environment' },
   { id: 2, label: 'Vehicles',    desc: 'Compatibility & qualification' },
   { id: 3, label: 'Flows',       desc: 'Material flow modeling' },

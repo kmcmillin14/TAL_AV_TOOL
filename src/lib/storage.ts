@@ -105,6 +105,18 @@ export function getProject(id: string): StoredProject | null {
   return readAll().find(p => p.id === id) ?? null
 }
 
+export function findOrCreateEntryProject(): StoredProject {
+  const all = readAll()
+  const empty = all.find(p =>
+    (!p.projectName || p.projectName === 'Untitled Project') &&
+    !p.customerName &&
+    !p.facilityLocation &&
+    !p.bastianRep
+  )
+  if (empty) return empty
+  return createProject({})
+}
+
 export function createProject(input: PartialProjectFormData): StoredProject {
   const data = partialProjectSchema.parse(input)
   const now = new Date().toISOString()
