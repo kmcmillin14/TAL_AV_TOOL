@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
-import { updateProject, downloadProject, importProjectFromJson } from '@/src/lib/storage'
+import { updateProject, downloadProject } from '@/src/lib/storage'
 
 interface HeaderData {
   id: string
@@ -103,9 +103,11 @@ export default function PersistentHeader({
   })
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [menuOpen, setMenuOpen] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -118,6 +120,20 @@ export default function PersistentHeader({
     if (saveTimer.current) clearTimeout(saveTimer.current)
     if (idleTimer.current) clearTimeout(idleTimer.current)
   }, [])
+
+  useEffect(() => {
+    if (!menuOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [menuOpen])
 
   const saveMeta = useCallback((patch: Partial<typeof editValues>) => {
     if (saveTimer.current) clearTimeout(saveTimer.current)
@@ -149,23 +165,9 @@ export default function PersistentHeader({
     }, 400)
   }, [project.id])
 
-  const handleExport = () => downloadProject(project.id)
-
-  const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const imported = importProjectFromJson(String(reader.result))
-        window.location.href = `/projects/${imported.id}/step1`
-      } catch (err) {
-        alert(`Could not import project: ${err instanceof Error ? err.message : 'Invalid file'}`)
-      }
-    }
-    reader.onerror = () => alert('Could not read the selected file.')
-    reader.readAsText(file)
-    e.target.value = ''
+  const handleExport = () => {
+    downloadProject(project.id)
+    setMenuOpen(false)
   }
 
   const originalValue = (field: EditField): string => {
@@ -275,19 +277,50 @@ export default function PersistentHeader({
 
         <div className="hero-actions">
           <span className={`save-status ${saveStatus}`}>{statusText}</span>
-          <button className="tbtn" onClick={handleExport} title="Download project as JSON">
-            Export
-          </button>
-          <label className="tbtn" title="Import a project JSON file" style={{ cursor: 'pointer' }}>
-            Import
-            <input type="file" accept="application/json,.json" onChange={handleImport} style={{ display: 'none' }} />
-          </label>
-          <button className="tbtn" onClick={onUnitToggle}>
-            {unitSystem === 'imperial' ? 'Imperial' : 'Metric'}
-          </button>
-          <button className="tbtn" onClick={toggleTheme} title="Toggle theme">
+
+          <div className="unit-toggle">
+            <span className={`unit-toggle-label ${unitSystem === 'imperial' ? 'active' : ''}`}>Imperial</span>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={unitSystem === 'metric'}
+              aria-label="Toggle units"
+              className="unit-toggle-track"
+              onClick={onUnitToggle}
+            >
+              <span className="unit-toggle-thumb" />
+            </button>
+            <span className={`unit-toggle-label ${unitSystem === 'metric' ? 'active' : ''}`}>Metric</span>
+          </div>
+
+          <button className="tbtn-icon" onClick={toggleTheme} aria-label="Toggle theme">
             <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
           </button>
+
+          <div className="header-menu-wrap" ref={menuRef}>
+            <button
+              type="button"
+              className="tbtn-icon"
+              aria-label="More actions"
+              aria-haspopup="menu"
+              aria-expanded={menuOpen}
+              onClick={() => setMenuOpen(o => !o)}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                <circle cx="12" cy="5" r="2" />
+                <circle cx="12" cy="12" r="2" />
+                <circle cx="12" cy="19" r="2" />
+              </svg>
+            </button>
+            {menuOpen && (
+              <div className="header-menu-popover" role="menu">
+                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExport}>
+                  <span>Export project</span>
+                  <span className="hint">.json</span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

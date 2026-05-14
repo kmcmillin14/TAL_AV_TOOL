@@ -1,99 +1,27 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import Icon from '@/src/design-system/components/Icon'
-import {
-  getProject,
-  updateProject,
-  importProjectFromJson,
-  type StoredProject,
-} from '@/src/lib/storage'
+import { getProject, importProjectFromJson, type StoredProject } from '@/src/lib/storage'
 import type { UnitSystem } from '@/src/lib/utils/units'
-
-type DraftFields = {
-  projectName: string
-  customerName: string
-  facilityLocation: string
-  versionNumber: string
-  createdAt: string
-  bastianRep: string
-}
-
-function toDateInput(iso?: string): string {
-  if (!iso) return ''
-  const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return ''
-  return d.toISOString().slice(0, 10)
-}
 
 export default function Step0Page() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
   const fileRef = useRef<HTMLInputElement>(null)
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [project, setProject] = useState<StoredProject | null>(null)
   const [loaded, setLoaded] = useState(false)
-  const [draft, setDraft] = useState<DraftFields>({
-    projectName: '',
-    customerName: '',
-    facilityLocation: '',
-    versionNumber: 'v1.0',
-    createdAt: new Date().toISOString(),
-    bastianRep: '',
-  })
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
   const [importError, setImportError] = useState<string | null>(null)
 
   useEffect(() => {
-    const p = getProject(id)
-    if (p) {
-      setProject(p)
-      setDraft({
-        projectName: p.projectName === 'Untitled Project' ? '' : (p.projectName ?? ''),
-        customerName: p.customerName ?? '',
-        facilityLocation: p.facilityLocation ?? '',
-        versionNumber: p.versionNumber ?? 'v1.0',
-        createdAt: p.createdAt ?? new Date().toISOString(),
-        bastianRep: p.bastianRep ?? '',
-      })
-    }
+    setProject(getProject(id))
     setLoaded(true)
   }, [id])
-
-  useEffect(() => () => {
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-  }, [])
-
-  const save = useCallback((patch: Partial<DraftFields>) => {
-    if (!project) return
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    saveTimer.current = setTimeout(() => {
-      const formPatch: Record<string, unknown> = {}
-      const metaPatch: { versionNumber?: string; createdAt?: string } = {}
-      if (patch.projectName !== undefined)      formPatch.projectName = patch.projectName || 'Untitled Project'
-      if (patch.customerName !== undefined)     formPatch.customerName = patch.customerName
-      if (patch.facilityLocation !== undefined) formPatch.facilityLocation = patch.facilityLocation
-      if (patch.bastianRep !== undefined)       formPatch.bastianRep = patch.bastianRep
-      if (patch.versionNumber !== undefined)    metaPatch.versionNumber = patch.versionNumber
-      if (patch.createdAt !== undefined)        metaPatch.createdAt = patch.createdAt
-      const updated = updateProject(project.id, formPatch, Object.keys(metaPatch).length ? metaPatch : undefined)
-      if (updated) setProject(updated)
-    }, 400)
-  }, [project])
-
-  const update = (field: keyof DraftFields, value: string) => {
-    setDraft(d => ({ ...d, [field]: value }))
-    if (field === 'createdAt') {
-      const iso = value ? new Date(value + 'T00:00:00').toISOString() : new Date().toISOString()
-      save({ createdAt: iso })
-    } else {
-      save({ [field]: value })
-    }
-  }
 
   const handleImportClick = () => fileRef.current?.click()
 
@@ -132,12 +60,12 @@ export default function Step0Page() {
       <PersistentHeader
         project={{
           id: project.id,
-          projectName: draft.projectName || 'Untitled Project',
-          customerName: draft.customerName,
-          facilityLocation: draft.facilityLocation,
-          versionNumber: draft.versionNumber,
-          bastianRep: draft.bastianRep,
-          createdAt: draft.createdAt,
+          projectName: project.projectName ?? 'Untitled Project',
+          customerName: project.customerName ?? '',
+          facilityLocation: project.facilityLocation,
+          versionNumber: project.versionNumber,
+          bastianRep: project.bastianRep,
+          createdAt: project.createdAt,
           step1Complete: project.step1Complete,
           step2Complete: project.step2Complete,
           shiftsPerDay: project.shiftsPerDay,
@@ -155,76 +83,12 @@ export default function Step0Page() {
             <span className="step-num">Step 00 / 06</span>
             <h1>Project Setup</h1>
             <div className="desc">
-              Identify the project. Then choose how to provide the application details.
+              Choose how to provide application details. Project header info is editable in the bar above.
             </div>
           </div>
         </div>
 
-        <div className="form-stack">
-          <div className="form-section">
-            <h3><span className="sec-num">01.</span> Project Information</h3>
-            <div className="fld-grid-4">
-              <div className="fld">
-                <label>Project Name</label>
-                <input
-                  type="text"
-                  placeholder="Acme Distribution Center - West"
-                  value={draft.projectName}
-                  onChange={e => update('projectName', e.target.value)}
-                />
-              </div>
-              <div className="fld">
-                <label>Customer</label>
-                <input
-                  type="text"
-                  placeholder="Acme Logistics"
-                  value={draft.customerName}
-                  onChange={e => update('customerName', e.target.value)}
-                />
-              </div>
-              <div className="fld">
-                <label>Location</label>
-                <input
-                  type="text"
-                  placeholder="Phoenix, AZ"
-                  value={draft.facilityLocation}
-                  onChange={e => update('facilityLocation', e.target.value)}
-                />
-              </div>
-              <div className="fld">
-                <label>TAL Engineer</label>
-                <input
-                  type="text"
-                  placeholder="M. Rodriguez"
-                  value={draft.bastianRep}
-                  onChange={e => update('bastianRep', e.target.value)}
-                />
-              </div>
-              <div className="fld">
-                <label>Revision</label>
-                <input
-                  type="text"
-                  className="mono"
-                  placeholder="v1.0"
-                  value={draft.versionNumber}
-                  onChange={e => update('versionNumber', e.target.value)}
-                />
-                <div className="help">Auto-increments on saves elsewhere; override here</div>
-              </div>
-              <div className="fld">
-                <label>Date</label>
-                <input
-                  type="date"
-                  className="mono"
-                  value={toDateInput(draft.createdAt)}
-                  onChange={e => update('createdAt', e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="decision-options-vertical" style={{ marginTop: 28 }}>
+        <div className="decision-pair">
           <button type="button" className="decision-card-v" onClick={handleImportClick}>
             <div className="dc-icon" aria-hidden>
               <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -239,6 +103,10 @@ export default function Step0Page() {
             </div>
             <div className="dc-badge">Recommended for returning projects</div>
           </button>
+
+          <div className="decision-or" aria-hidden>
+            <span className="decision-or-chip">OR</span>
+          </div>
 
           <button
             type="button"
@@ -257,7 +125,7 @@ export default function Step0Page() {
               <h3>Fill Application Form</h3>
               <p>Manually enter project information, operating schedule, and environmental requirements.</p>
             </div>
-            <div className="dc-badge">Continue to Step 01</div>
+            <div className="dc-badge">Start from scratch</div>
           </button>
         </div>
 
