@@ -198,7 +198,6 @@ export default function PersistentHeader({
     field: EditField,
     label: string,
     displayValue: string,
-    maxWidth: number,
     placeholder?: string,
   ) => {
     const isEditing = editing === field
@@ -207,7 +206,6 @@ export default function PersistentHeader({
         type="button"
         className="hero-meta-item"
         onClick={() => !isEditing && setEditing(field)}
-        style={{ maxWidth: maxWidth + 80 }}
       >
         <span className="label">{label}</span>
         {isEditing ? (
@@ -224,10 +222,10 @@ export default function PersistentHeader({
               if (e.key === 'Escape') setEditing(null)
             }}
             onClick={e => e.stopPropagation()}
-            style={{ maxWidth }}
+            size={Math.max(8, (editValues[field] || '').length + 2)}
           />
         ) : (
-          <span className="value" style={{ maxWidth }}>
+          <span className="value">
             {displayValue || <span className="placeholder">{placeholder || '—'}</span>}
           </span>
         )}
@@ -258,13 +256,13 @@ export default function PersistentHeader({
         </div>
 
         <div className="hero-meta-line">
-          {renderInlineItem('versionNumber',    'REV',      editValues.versionNumber, 90)}
+          {renderInlineItem('versionNumber',    'REV',      editValues.versionNumber)}
           <span className="hero-meta-sep" aria-hidden />
-          {renderInlineItem('opportunityNumber','OPP',      editValues.opportunityNumber, 140, 'OPP-XXXXXX')}
+          {renderInlineItem('opportunityNumber','OPP',      editValues.opportunityNumber, 'OPP-XXXXXX')}
           <span className="hero-meta-sep" aria-hidden />
-          {renderInlineItem('customerName',     'CUSTOMER', editValues.customerName, 220)}
+          {renderInlineItem('customerName',     'CUSTOMER', editValues.customerName)}
           <span className="hero-meta-sep" aria-hidden />
-          {renderInlineItem('projectName',      'PROJECT',  editValues.projectName, 320)}
+          {renderInlineItem('projectName',      'PROJECT',  editValues.projectName)}
         </div>
 
         <div className="hero-actions">
