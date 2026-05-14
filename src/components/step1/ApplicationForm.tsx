@@ -10,6 +10,8 @@ import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schem
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject } from '@/src/lib/storage'
 
+
+
 // Pallet dimension auto-fill (stored in inches)
 const PALLET_AUTOFILL: Record<string, { l: number; w: number; h: number }> = {
   GMA:  { l: 48, w: 40, h: 5.7 },
@@ -28,15 +30,23 @@ const INTERLOCKS = ['High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems',
 const DUST_MOISTURE_OPTS = ['None', 'Dusty environment', 'Wash-down required', 'High humidity', 'Outdoor exposure']
 
 interface Props {
-  initialData?: Partial<ProjectFormData>
+  initialData?: Partial<ProjectFormData> & { createdAt?: string }
   projectId?: string
   unitSystem: UnitSystem
+}
+
+function toDateInput(iso?: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return d.toISOString().slice(0, 10)
 }
 
 export default function ApplicationForm({ initialData, projectId, unitSystem }: Props) {
   const router = useRouter()
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
   const [versionNumber, setVersionNumber] = useState(initialData ? 'loading…' : 'v1.0')
+  const [proposalDate, setProposalDate] = useState(initialData?.createdAt || new Date().toISOString())
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isNew = !projectId
 
@@ -667,9 +677,43 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        {/* ===== Section 8: Dealer Information ===== */}
-        <FormSection sectionNum="08" title="Dealer Information">
+        {/* ===== Section 8: Dealer & Contact ===== */}
+        <FormSection sectionNum="08" title="Dealer &amp; Contact">
           <div className="fld-grid-4">
+            <div className="fld">
+              <label>Facility Location</label>
+              <input
+                type="text"
+                placeholder="e.g. Phoenix, AZ"
+                {...register('facilityLocation', { onBlur: onBlurSave })}
+              />
+            </div>
+            <div className="fld">
+              <label>TAL Engineer</label>
+              <input
+                type="text"
+                placeholder="e.g. M. Rodriguez"
+                {...register('bastianRep', { onBlur: onBlurSave })}
+              />
+            </div>
+            <div className="fld">
+              <label>Proposal Date</label>
+              <input
+                type="date"
+                className="mono"
+                value={toDateInput(proposalDate)}
+                onChange={e => {
+                  const v = e.target.value
+                  const iso = v ? new Date(v + 'T00:00:00').toISOString() : new Date().toISOString()
+                  setProposalDate(iso)
+                  if (projectId) updateProject(projectId, {}, { createdAt: iso })
+                }}
+              />
+              <div className="help">Used on customer-facing proposal output</div>
+            </div>
+          </div>
+
+          <div className="fld-grid-4" style={{ marginTop: 14 }}>
             <div className="fld">
               <label>OEM Dealer</label>
               <Controller

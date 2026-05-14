@@ -267,12 +267,9 @@ export default function PersistentHeader({
         </div>
 
         <div className="hero-meta-grid">
-          {renderCell('projectName',      'Project',      editValues.projectName)}
-          {renderCell('customerName',     'Customer',     editValues.customerName)}
-          {renderCell('facilityLocation', 'Location',     editValues.facilityLocation)}
-          {renderCell('versionNumber',    'Revision',     editValues.versionNumber)}
-          {renderCell('createdAt',        'Date',         toDisplayDate(editValues.createdAt), { type: 'date' })}
-          {renderCell('bastianRep',       'TAL Engineer', editValues.bastianRep)}
+          {renderCell('projectName',   'Project',  editValues.projectName)}
+          {renderCell('customerName',  'Customer', editValues.customerName)}
+          {renderCell('versionNumber', 'Revision', editValues.versionNumber)}
         </div>
 
         <div className="hero-actions">
