@@ -13,6 +13,7 @@ export const projectSchema = z.object({
   facilityLocation: z.string().optional(),
   bastianRep: z.string().optional(),
   opportunityNumber: z.string().optional(),
+  opportunityType: z.enum(['opp', 'lead']).optional(),
 
   // Section 1
   maxLoadWeightLbs: z.number().min(0).optional(),

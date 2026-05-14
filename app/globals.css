@@ -177,6 +177,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .app-name .product { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; color: var(--text-primary); }
 .app-name .version { font-family: var(--tal-font-numeric); font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.04em; }
 .app-name .product-sub { font-family: var(--tal-font-numeric); font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.14em; text-transform: uppercase; }
+.app-name .product-rev { font-family: var(--tal-font-numeric); font-size: 10px; letter-spacing: 0.14em; color: var(--text-tertiary); font-weight: 500; margin-top: 2px; }
 
 /* Inline hero meta — reads like a sentence, grows with content, wraps when wide */
 .hero-meta-line {
@@ -253,6 +254,31 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   .hero-top { padding: 0 16px; }
   .hero-meta-sep { display: none; }
 }
+
+/* OPP / LEAD dropdown disguised as a label */
+.opp-prefix-select {
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  line-height: inherit;
+  transition: color 0.12s ease;
+}
+.opp-prefix-select:hover { color: var(--text-secondary); }
+.opp-prefix-select:focus {
+  outline: none;
+  color: var(--accent);
+}
+.opp-item .value { cursor: pointer; }
 
 .hero-actions { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
 

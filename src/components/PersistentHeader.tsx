@@ -14,6 +14,7 @@ interface HeaderData {
   versionNumber: string
   bastianRep?: string | null
   opportunityNumber?: string | null
+  opportunityType?: 'opp' | 'lead'
   createdAt?: string
   step1Complete: boolean
   step2Complete: boolean
@@ -86,6 +87,7 @@ export default function PersistentHeader({
     facilityLocation: project.facilityLocation || '',
     bastianRep: project.bastianRep || '',
     opportunityNumber: project.opportunityNumber || '',
+    opportunityType: (project.opportunityType ?? 'opp') as 'opp' | 'lead',
     versionNumber: project.versionNumber,
     createdAt: project.createdAt || new Date().toISOString(),
   })
@@ -196,7 +198,7 @@ export default function PersistentHeader({
 
   const renderInlineItem = (
     field: EditField,
-    label: string,
+    label: string | null,
     displayValue: string,
     placeholder?: string,
   ) => {
@@ -207,7 +209,7 @@ export default function PersistentHeader({
         className="hero-meta-item"
         onClick={() => !isEditing && setEditing(field)}
       >
-        <span className="label">{label}</span>
+        {label && <span className="label">{label}</span>}
         {isEditing ? (
           <input
             ref={inputRef}
@@ -251,18 +253,59 @@ export default function PersistentHeader({
           <div className="divider" />
           <div className="app-name">
             <div className="product">Fleet Calculator</div>
-            <div className="product-sub mono">Enterprise AGV / AMR Sizing</div>
+            <div className="product-rev mono">v0.1.0</div>
           </div>
         </div>
 
         <div className="hero-meta-line">
-          {renderInlineItem('versionNumber',    'REV',      editValues.versionNumber)}
+          {renderInlineItem('versionNumber', 'REV', editValues.versionNumber)}
           <span className="hero-meta-sep" aria-hidden />
-          {renderInlineItem('opportunityNumber','OPP',      editValues.opportunityNumber, 'OPP-XXXXXX')}
+
+          <div className="hero-meta-item opp-item">
+            <select
+              className="opp-prefix-select"
+              value={editValues.opportunityType}
+              onChange={e => {
+                const t = e.target.value as 'opp' | 'lead'
+                setEditValues(s => ({ ...s, opportunityType: t }))
+                saveMeta({ opportunityType: t } as Partial<typeof editValues>)
+              }}
+              aria-label="Opportunity prefix"
+            >
+              <option value="opp">OPP</option>
+              <option value="lead">LEAD</option>
+            </select>
+            {editing === 'opportunityNumber' ? (
+              <input
+                ref={inputRef}
+                type="text"
+                className="hero-meta-input"
+                placeholder="XXXXXXX"
+                value={editValues.opportunityNumber || ''}
+                onChange={e => setEditValues(s => ({ ...s, opportunityNumber: e.target.value }))}
+                onBlur={() => commitEdit('opportunityNumber')}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') commitEdit('opportunityNumber')
+                  if (e.key === 'Escape') setEditing(null)
+                }}
+                size={Math.max(8, (editValues.opportunityNumber || '').length + 2)}
+              />
+            ) : (
+              <span
+                className="value"
+                onClick={() => setEditing('opportunityNumber')}
+                role="button"
+                tabIndex={0}
+              >
+                {editValues.opportunityNumber || <span className="placeholder">XXXXXXX</span>}
+              </span>
+            )}
+          </div>
+
           <span className="hero-meta-sep" aria-hidden />
-          {renderInlineItem('customerName',     'CUSTOMER', editValues.customerName)}
+          {renderInlineItem('customerName', 'CUSTOMER', editValues.customerName)}
           <span className="hero-meta-sep" aria-hidden />
-          {renderInlineItem('projectName',      'PROJECT',  editValues.projectName)}
+          {renderInlineItem('projectName',  'PROJECT',  editValues.projectName)}
         </div>
 
         <div className="hero-actions">
