@@ -118,7 +118,7 @@ export default function Step2Page() {
 
   const headerData = {
     id: project.id,
-    projectName: project.projectName ?? 'Untitled Project',
+    projectName: project.projectName ?? '',
     customerName: project.customerName ?? '',
     facilityLocation: project.facilityLocation,
     versionNumber: project.versionNumber,

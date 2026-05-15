@@ -239,7 +239,7 @@ export default function PersistentHeader({
     saveStatus === 'saving' ? 'Saving…' :
     saveStatus === 'saved'  ? 'Saved ✓' :
     saveStatus === 'error'  ? 'Save failed' :
-    editValues.versionNumber
+    ''
 
   return (
     <header className="hero-bar">
@@ -253,11 +253,14 @@ export default function PersistentHeader({
           <div className="divider" />
           <div className="app-name">
             <div className="product">Fleet Calculator</div>
-            <div className="product-rev mono">v0.1</div>
+            <div className="product-rev mono">V1.0</div>
           </div>
         </div>
 
         <div className="hero-meta-line">
+          {renderInlineItem('versionNumber', 'REV', editValues.versionNumber, 'v1.0')}
+          <span className="hero-meta-sep" aria-hidden />
+
           <div className="hero-meta-item opp-item">
             <select
               className="opp-prefix-select"

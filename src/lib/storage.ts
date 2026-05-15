@@ -15,13 +15,13 @@ export interface StoredProject extends PartialProjectFormData {
 }
 
 const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> => ({
-  projectName: 'Untitled Project',
+  projectName: '',
   customerName: '',
   facilityLocation: undefined,
   bastianRep: undefined,
   opportunityNumber: undefined,
   opportunityType: 'opp',
-  versionNumber: 'v1.0',
+  versionNumber: '',
   step1Complete: false,
   step2Complete: false,
   step3Complete: false,
@@ -73,15 +73,6 @@ function generateId(): string {
   return 'p_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 }
 
-function incrementVersion(current: string): string {
-  const match = current.match(/^v(\d+)\.(\d+)$/)
-  if (!match) return 'v1.1'
-  const major = parseInt(match[1], 10)
-  const minor = parseInt(match[2], 10)
-  if (minor >= 9) return `v${major + 1}.0`
-  return `v${major}.${minor + 1}`
-}
-
 function readAll(): StoredProject[] {
   if (typeof window === 'undefined') return []
   try {
@@ -110,7 +101,7 @@ export function getProject(id: string): StoredProject | null {
 export function findOrCreateEntryProject(): StoredProject {
   const all = readAll()
   const empty = all.find(p =>
-    (!p.projectName || p.projectName === 'Untitled Project') &&
+    !p.projectName &&
     !p.customerName &&
     !p.facilityLocation &&
     !p.bastianRep
@@ -125,7 +116,7 @@ export function createProject(input: PartialProjectFormData): StoredProject {
   const project: StoredProject = {
     ...defaultFields(),
     ...data,
-    projectName: data.projectName ?? 'Untitled Project',
+    projectName: data.projectName ?? '',
     id: generateId(),
     createdAt: now,
     updatedAt: now,
@@ -157,7 +148,7 @@ export function updateProject(
     id: existing.id,
     createdAt: meta?.createdAt ?? existing.createdAt,
     updatedAt: new Date().toISOString(),
-    versionNumber: meta?.versionNumber ?? incrementVersion(existing.versionNumber),
+    versionNumber: meta?.versionNumber ?? existing.versionNumber,
   }
   all[idx] = updated
   writeAll(all)
@@ -208,7 +199,7 @@ export function importProjectFromJson(json: string): StoredProject {
     versionNumber: typeof (parsed as Record<string, unknown>).versionNumber === 'string'
       ? (parsed as Record<string, string>).versionNumber
       : 'v1.0',
-    projectName: data.projectName ?? 'Imported Project',
+    projectName: data.projectName ?? '',
     id: generateId(),
     createdAt: now,
     updatedAt: now,

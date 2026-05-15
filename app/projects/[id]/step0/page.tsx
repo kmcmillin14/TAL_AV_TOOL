@@ -60,7 +60,7 @@ export default function Step0Page() {
       <PersistentHeader
         project={{
           id: project.id,
-          projectName: project.projectName ?? 'Untitled Project',
+          projectName: project.projectName ?? '',
           customerName: project.customerName ?? '',
           facilityLocation: project.facilityLocation,
           versionNumber: project.versionNumber,
