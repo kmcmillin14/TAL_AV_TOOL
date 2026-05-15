@@ -4,169 +4,222 @@
 import type { GateResult, QualificationResult, ApplicationRequirements } from './types'
 import type { Vehicle } from '../lib/vehicleLibrary'
 
+const SKIP_REASON = 'No requirement provided'
+
+function skippedGate(
+  gateId: string,
+  name: string,
+  severity: 'hard' | 'soft',
+  vehicleValue: string,
+  unit?: string,
+): GateResult {
+  return {
+    gateId,
+    name,
+    severity,
+    passed: true,
+    skipped: true,
+    skipReason: SKIP_REASON,
+    vehicleValue,
+    requiredValue: '—',
+    unit,
+    reason: 'Not evaluated — no requirement provided',
+  }
+}
+
 export function qualifyVehicle(vehicle: Vehicle, app: ApplicationRequirements): QualificationResult {
   const hardGates: GateResult[] = []
   const softPreferences: GateResult[] = []
 
-  // HARD GATE 1: Weight capacity (only if a weight requirement was set)
-  if (app.maxLoadWeightLbs && app.maxLoadWeightLbs > 0) {
+  // HARD GATE: Weight capacity
+  const weightReq = app.maxLoadWeightLbs
+  if (weightReq && weightReq > 0) {
+    const passed = vehicle.calc.maxWeightLbs >= weightReq
+    const delta = vehicle.calc.maxWeightLbs - weightReq
     hardGates.push({
+      gateId: 'weight',
       name: 'Weight Capacity',
-      vehicleValue: `${vehicle.calc.maxWeightLbs.toLocaleString()} lbs`,
-      requiredValue: `${app.maxLoadWeightLbs.toLocaleString()} lbs`,
-      passed: vehicle.calc.maxWeightLbs >= app.maxLoadWeightLbs,
-      reason: vehicle.calc.maxWeightLbs < app.maxLoadWeightLbs
-        ? `Vehicle rated ${vehicle.calc.maxWeightLbs.toLocaleString()} lbs, need ${app.maxLoadWeightLbs.toLocaleString()} lbs`
-        : undefined,
-    })
-  }
-
-  // HARD GATE 2: Lift height (only if delivery pattern requires height AND lift height was set)
-  const requiresLift = app.deliveryPattern &&
-    (app.deliveryPattern.includes('Height') || app.deliveryPattern === 'Height-Height' ||
-     app.deliveryPattern === 'Floor-Height' || app.deliveryPattern === 'Height-Floor')
-
-  if (requiresLift && app.maxLiftHeightFt != null && app.maxLiftHeightFt > 0) {
-    const passed = vehicle.calc.maxLiftHeightFt >= app.maxLiftHeightFt
-    hardGates.push({
-      name: 'Lift Height',
-      vehicleValue: `${vehicle.calc.maxLiftHeightFt} ft`,
-      requiredValue: `${app.maxLiftHeightFt} ft`,
+      severity: 'hard',
       passed,
-      reason: !passed
-        ? `Vehicle lifts to ${vehicle.calc.maxLiftHeightFt} ft, need ${app.maxLiftHeightFt} ft`
-        : undefined,
+      skipped: false,
+      vehicleValue: `${vehicle.calc.maxWeightLbs.toLocaleString()} lbs`,
+      requiredValue: `${weightReq.toLocaleString()} lbs`,
+      vehicleNumeric: vehicle.calc.maxWeightLbs,
+      requiredNumeric: weightReq,
+      unit: 'lbs',
+      delta,
+      reason: passed
+        ? `Rated ${vehicle.calc.maxWeightLbs.toLocaleString()} lbs vs. ${weightReq.toLocaleString()} lbs required (${delta.toLocaleString()} lbs headroom)`
+        : `Vehicle rated ${vehicle.calc.maxWeightLbs.toLocaleString()} lbs, need ${weightReq.toLocaleString()} lbs (${Math.abs(delta).toLocaleString()} lbs short)`,
+    })
+  } else {
+    hardGates.push(skippedGate('weight', 'Weight Capacity', 'hard', `${vehicle.calc.maxWeightLbs.toLocaleString()} lbs`, 'lbs'))
+  }
+
+  // HARD GATE: Lift height (only meaningful when delivery pattern involves height)
+  const requiresLift = !!app.deliveryPattern && (
+    app.deliveryPattern.includes('Height') ||
+    app.deliveryPattern === 'Floor-Height' ||
+    app.deliveryPattern === 'Height-Floor' ||
+    app.deliveryPattern === 'Height-Height'
+  )
+  const liftReq = app.maxLiftHeightFt
+  if (requiresLift && liftReq != null && liftReq > 0) {
+    const vehLift = vehicle.calc.maxLiftHeightFt ?? 0
+    const passed = vehLift >= liftReq
+    const delta = vehLift - liftReq
+    hardGates.push({
+      gateId: 'lift_height',
+      name: 'Lift Height',
+      severity: 'hard',
+      passed,
+      skipped: false,
+      vehicleValue: `${vehLift} ft`,
+      requiredValue: `${liftReq} ft`,
+      vehicleNumeric: vehLift,
+      requiredNumeric: liftReq,
+      unit: 'ft',
+      delta,
+      reason: passed
+        ? `Lifts to ${vehLift} ft vs. ${liftReq} ft required`
+        : `Lifts to ${vehLift} ft, need ${liftReq} ft (${Math.abs(delta).toFixed(1)} ft short)`,
+    })
+  } else {
+    const reason = !requiresLift
+      ? 'Delivery pattern does not involve height'
+      : SKIP_REASON
+    hardGates.push({
+      ...skippedGate('lift_height', 'Lift Height', 'hard', `${vehicle.calc.maxLiftHeightFt ?? 0} ft`, 'ft'),
+      skipReason: reason,
+      reason: `Not evaluated — ${reason.toLowerCase()}`,
     })
   }
 
-  // HARD GATE 3: Transfer method (only if a method was specified)
-  if (app.transferMethod && app.transferMethod.length > 0) {
-    const supportsMethod = vehicle.transferMethods.some(
-      tm => tm.method.toLowerCase() === app.transferMethod.toLowerCase()
-    )
+  // HARD GATE: Transfer method
+  const transferReq = app.transferMethod?.trim()
+  if (transferReq) {
+    const methods = vehicle.transferMethods.map(tm => tm.method)
+    const supports = methods.some(m => m.toLowerCase() === transferReq.toLowerCase())
     hardGates.push({
+      gateId: 'transfer_method',
       name: 'Transfer Method',
-      vehicleValue: vehicle.transferMethods.map(tm => tm.method).join(', '),
-      requiredValue: app.transferMethod,
-      passed: supportsMethod,
-      reason: !supportsMethod
-        ? `Vehicle supports: ${vehicle.transferMethods.map(tm => tm.method).join(', ')}`
-        : undefined,
+      severity: 'hard',
+      passed: supports,
+      skipped: false,
+      vehicleValue: methods.join(', ') || '—',
+      requiredValue: transferReq,
+      reason: supports
+        ? `Supports ${transferReq}`
+        : `Does not support ${transferReq}. Supports: ${methods.join(', ') || 'none'}`,
     })
+  } else {
+    hardGates.push(skippedGate('transfer_method', 'Transfer Method', 'hard', vehicle.transferMethods.map(tm => tm.method).join(', ') || '—'))
   }
 
-  // HARD GATE 4: Certifications (ALL required must be present)
-  const requiredCerts = app.certifications?.filter(c => c.length > 0) || []
-  if (requiredCerts.length > 0) {
-    const hasCerts = requiredCerts.every(c =>
-      vehicle.specs.certifications.map(vc => vc.toLowerCase()).includes(c.toLowerCase())
-    )
-    const missing = requiredCerts.filter(
-      c => !vehicle.specs.certifications.map(vc => vc.toLowerCase()).includes(c.toLowerCase())
-    )
-    hardGates.push({
-      name: 'Certifications',
-      vehicleValue: vehicle.specs.certifications.join(', ') || 'None',
-      requiredValue: requiredCerts.join(', '),
-      passed: hasCerts,
-      reason: !hasCerts ? `Missing: ${missing.join(', ')}` : undefined,
-    })
-  }
-
-  // HARD GATE 5: Temperature range (if provided)
+  // HARD GATE: Min temperature
   if (app.tempMinF != null) {
     const passed = vehicle.specs.tempMinF <= app.tempMinF
+    const delta = app.tempMinF - vehicle.specs.tempMinF
     hardGates.push({
+      gateId: 'temp_min',
       name: 'Min Temperature',
+      severity: 'hard',
+      passed,
+      skipped: false,
       vehicleValue: `${vehicle.specs.tempMinF}°F`,
       requiredValue: `${app.tempMinF}°F`,
-      passed,
-      reason: !passed
-        ? `Vehicle rated to ${vehicle.specs.tempMinF}°F, need ${app.tempMinF}°F`
-        : undefined,
+      vehicleNumeric: vehicle.specs.tempMinF,
+      requiredNumeric: app.tempMinF,
+      unit: '°F',
+      delta,
+      reason: passed
+        ? `Rated to ${vehicle.specs.tempMinF}°F vs. ${app.tempMinF}°F required`
+        : `Rated only to ${vehicle.specs.tempMinF}°F, need ${app.tempMinF}°F`,
     })
+  } else {
+    hardGates.push(skippedGate('temp_min', 'Min Temperature', 'hard', `${vehicle.specs.tempMinF}°F`, '°F'))
   }
+
+  // HARD GATE: Max temperature
   if (app.tempMaxF != null) {
     const passed = vehicle.specs.tempMaxF >= app.tempMaxF
+    const delta = vehicle.specs.tempMaxF - app.tempMaxF
     hardGates.push({
+      gateId: 'temp_max',
       name: 'Max Temperature',
+      severity: 'hard',
+      passed,
+      skipped: false,
       vehicleValue: `${vehicle.specs.tempMaxF}°F`,
       requiredValue: `${app.tempMaxF}°F`,
-      passed,
-      reason: !passed
-        ? `Vehicle rated to ${vehicle.specs.tempMaxF}°F, need ${app.tempMaxF}°F`
-        : undefined,
+      vehicleNumeric: vehicle.specs.tempMaxF,
+      requiredNumeric: app.tempMaxF,
+      unit: '°F',
+      delta,
+      reason: passed
+        ? `Rated to ${vehicle.specs.tempMaxF}°F vs. ${app.tempMaxF}°F required`
+        : `Rated only to ${vehicle.specs.tempMaxF}°F, need ${app.tempMaxF}°F`,
     })
+  } else {
+    hardGates.push(skippedGate('temp_max', 'Max Temperature', 'hard', `${vehicle.specs.tempMaxF}°F`, '°F'))
   }
 
-  // HARD GATE 6: Ramp grade (if provided and > 0)
+  // HARD GATE: Ramp grade
   if (app.maxRampGrade != null && app.maxRampGrade > 0) {
     const passed = vehicle.specs.maxRampGrade >= app.maxRampGrade
+    const delta = vehicle.specs.maxRampGrade - app.maxRampGrade
     hardGates.push({
+      gateId: 'ramp',
       name: 'Ramp Grade',
+      severity: 'hard',
+      passed,
+      skipped: false,
       vehicleValue: `${vehicle.specs.maxRampGrade}%`,
       requiredValue: `${app.maxRampGrade}%`,
+      vehicleNumeric: vehicle.specs.maxRampGrade,
+      requiredNumeric: app.maxRampGrade,
+      unit: '%',
+      delta,
+      reason: passed
+        ? `Handles ${vehicle.specs.maxRampGrade}% vs. ${app.maxRampGrade}% required`
+        : `Handles only ${vehicle.specs.maxRampGrade}%, need ${app.maxRampGrade}%`,
+    })
+  } else {
+    hardGates.push(skippedGate('ramp', 'Ramp Grade', 'hard', `${vehicle.specs.maxRampGrade}%`, '%'))
+  }
+
+  // SOFT PREFERENCE: Certifications (any missing → YELLOW, not RED)
+  const requiredCerts = app.certifications?.filter(c => c && c.length > 0) ?? []
+  if (requiredCerts.length > 0) {
+    const vehicleCertsLower = vehicle.specs.certifications.map(c => c.toLowerCase())
+    const missing = requiredCerts.filter(c => !vehicleCertsLower.includes(c.toLowerCase()))
+    const passed = missing.length === 0
+    softPreferences.push({
+      gateId: 'certifications',
+      name: 'Certifications',
+      severity: 'soft',
       passed,
-      reason: !passed
-        ? `Vehicle handles ${vehicle.specs.maxRampGrade}%, need ${app.maxRampGrade}%`
-        : undefined,
+      skipped: false,
+      vehicleValue: vehicle.specs.certifications.join(', ') || 'None listed',
+      requiredValue: requiredCerts.join(', '),
+      reason: passed
+        ? `All required certifications listed`
+        : `Not listed: ${missing.join(', ')} — verify availability with vendor`,
     })
+  } else {
+    softPreferences.push(skippedGate('certifications', 'Certifications', 'soft', vehicle.specs.certifications.join(', ') || 'None listed'))
   }
 
-  // If ANY hard gate fails → RED
-  if (hardGates.some(g => !g.passed)) {
-    return { status: 'RED', hardGates, softPreferences: [] }
+  // ────────────────────────────────────────────────────────────
+  // Decide status — non-skipped failures only
+  // ────────────────────────────────────────────────────────────
+  const hardFail = hardGates.some(g => !g.skipped && !g.passed)
+  if (hardFail) {
+    return { status: 'RED', hardGates, softPreferences }
   }
 
-  // SOFT PREFERENCE 1: Payload headroom < 10% (only if weight was set)
-  if (app.maxLoadWeightLbs && app.maxLoadWeightLbs > 0) {
-    const headroom = (vehicle.calc.maxWeightLbs - app.maxLoadWeightLbs) / app.maxLoadWeightLbs
-    softPreferences.push({
-      name: 'Payload Headroom',
-      vehicleValue: `${vehicle.calc.maxWeightLbs.toLocaleString()} lbs (${(headroom * 100).toFixed(0)}% margin)`,
-      requiredValue: `${app.maxLoadWeightLbs.toLocaleString()} lbs`,
-      passed: headroom >= 0.10,
-      reason: headroom < 0.10
-        ? `Only ${(headroom * 100).toFixed(1)}% margin — tight fit, verify with applications engineer`
-        : undefined,
-    })
-  }
-
-  // SOFT PREFERENCE 2: Aisle clearance < 1 ft (informational only — not a hard gate)
-  if (app.minAisleWidthFt && app.minAisleWidthFt > 0) {
-    const clearance = app.minAisleWidthFt - vehicle.calc.widthFt
-    softPreferences.push({
-      name: 'Aisle Clearance',
-      vehicleValue: `${vehicle.calc.widthFt} ft wide`,
-      requiredValue: `${app.minAisleWidthFt} ft aisle`,
-      passed: clearance >= 1.0,
-      reason: clearance < 1.0
-        ? `Only ${clearance.toFixed(1)} ft clearance — verify with site survey`
-        : undefined,
-    })
-  }
-
-  // SOFT PREFERENCE 3: Load type match (only if both are set)
-  if (app.typicalUnitType && app.typicalUnitType.length > 0) {
-    const loadMatch =
-      vehicle.display.typicalLoad === app.typicalUnitType ||
-      (app.typicalUnitType.toLowerCase().includes('pallet') &&
-       vehicle.display.typicalLoad?.toLowerCase().includes('pallet')) ||
-      (app.typicalUnitType.toLowerCase().includes('tote') &&
-       vehicle.display.typicalLoad?.toLowerCase().includes('tote'))
-
-    softPreferences.push({
-      name: 'Load Type Match',
-      vehicleValue: vehicle.display.typicalLoad,
-      requiredValue: app.typicalUnitType,
-      passed: loadMatch,
-      reason: !loadMatch
-        ? `Vehicle designed for ${vehicle.display.typicalLoad}, you need ${app.typicalUnitType}`
-        : undefined,
-    })
-  }
-
-  if (softPreferences.some(p => !p.passed)) {
+  const softFail = softPreferences.some(g => !g.skipped && !g.passed)
+  if (softFail) {
     return { status: 'YELLOW', hardGates, softPreferences }
   }
 
