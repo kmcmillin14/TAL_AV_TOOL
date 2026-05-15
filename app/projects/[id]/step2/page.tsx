@@ -62,6 +62,9 @@ export default function Step2Page() {
     maxRampGrade: project?.maxRampGrade ?? 0,
     outdoorRequired: project?.outdoorRequired ?? false,
     freezerCapable: project?.freezerCapable ?? false,
+    loadLengthIn: project?.loadLengthIn,
+    loadWidthIn: project?.loadWidthIn,
+    loadHeightIn: project?.loadHeightIn,
   }), [project])
 
   const qualifiedVehicles = useMemo(

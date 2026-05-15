@@ -19,10 +19,14 @@ const fixtureVehicle = (overrides: Partial<Vehicle> = {}): Vehicle => ({
   transferMethods: [
     { method: 'Fork', loadTimeSec: 5, unloadTimeSec: 5 },
   ],
+  payloadTypes: ['Standard Pallet'],
   calc: {
     maxWeightLbs: 4000,
     widthFt: 4,
     maxLiftHeightFt: 15,
+    maxLoadLengthIn: 48,
+    maxLoadWidthIn: 48,
+    maxLoadHeightIn: 60,
     speedLoadedFps: 8,
     batteryKwh: 24,
     energyKwhPerFt: 0.02,
@@ -262,6 +266,130 @@ describe('qualifyVehicle — certifications gate (soft)', () => {
     expect(result.status).toBe('GREEN')
     const certs = result.softPreferences.find(g => g.gateId === 'certifications')!
     expect(certs.passed).toBe(true)
+  })
+})
+
+describe('qualifyVehicle — outdoor gate', () => {
+  it('skips when outdoor is not required', () => {
+    const result = qualifyVehicle(fixtureVehicle(), emptyApp)
+    const outdoor = result.hardGates.find(g => g.gateId === 'outdoor')!
+    expect(outdoor.skipped).toBe(true)
+  })
+
+  it('passes when outdoor required and vehicle is outdoor-capable', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle({ specs: { ...fixtureVehicle().specs, outdoorCapable: true } }),
+      { ...emptyApp, outdoorRequired: true },
+    )
+    expect(result.status).toBe('GREEN')
+    const outdoor = result.hardGates.find(g => g.gateId === 'outdoor')!
+    expect(outdoor.passed).toBe(true)
+  })
+
+  it('fails when outdoor required and vehicle is not outdoor-capable', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle(),
+      { ...emptyApp, outdoorRequired: true },
+    )
+    expect(result.status).toBe('RED')
+    const outdoor = result.hardGates.find(g => g.gateId === 'outdoor')!
+    expect(outdoor.passed).toBe(false)
+  })
+})
+
+describe('qualifyVehicle — freezer gate', () => {
+  it('skips when freezer is not required', () => {
+    const result = qualifyVehicle(fixtureVehicle(), emptyApp)
+    const freezer = result.hardGates.find(g => g.gateId === 'freezer')!
+    expect(freezer.skipped).toBe(true)
+  })
+
+  it('passes when freezer required and vehicle is freezer-capable', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle({ specs: { ...fixtureVehicle().specs, freezerCapable: true } }),
+      { ...emptyApp, freezerCapable: true },
+    )
+    expect(result.status).toBe('GREEN')
+  })
+
+  it('fails when freezer required and vehicle is not freezer-capable', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle(),
+      { ...emptyApp, freezerCapable: true },
+    )
+    expect(result.status).toBe('RED')
+  })
+})
+
+describe('qualifyVehicle — load dimension gates', () => {
+  it('skips load gates when no dimensions provided', () => {
+    const result = qualifyVehicle(fixtureVehicle(), emptyApp)
+    expect(result.hardGates.find(g => g.gateId === 'load_length')!.skipped).toBe(true)
+    expect(result.hardGates.find(g => g.gateId === 'load_width')!.skipped).toBe(true)
+    expect(result.hardGates.find(g => g.gateId === 'load_height')!.skipped).toBe(true)
+  })
+
+  it('passes when load fits within deck dimensions', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle(),
+      { ...emptyApp, loadLengthIn: 40, loadWidthIn: 40, loadHeightIn: 48 },
+    )
+    expect(result.status).toBe('GREEN')
+  })
+
+  it('fails when load exceeds any deck dimension', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle(),
+      { ...emptyApp, loadLengthIn: 60 },
+    )
+    expect(result.status).toBe('RED')
+    const gate = result.hardGates.find(g => g.gateId === 'load_length')!
+    expect(gate.passed).toBe(false)
+    expect(gate.reason).toContain('12 in short')
+  })
+
+  it('skips load gates when vehicle has no load deck (tugger)', () => {
+    const tugger = fixtureVehicle({
+      calc: {
+        ...fixtureVehicle().calc,
+        maxLoadLengthIn: null,
+        maxLoadWidthIn: null,
+        maxLoadHeightIn: null,
+      },
+    })
+    const result = qualifyVehicle(tugger, { ...emptyApp, loadLengthIn: 40 })
+    const gate = result.hardGates.find(g => g.gateId === 'load_length')!
+    expect(gate.skipped).toBe(true)
+    expect(gate.skipReason).toBe('Vehicle has no load deck')
+  })
+})
+
+describe('qualifyVehicle — payload type gate', () => {
+  it('skips when no typical unit type is set', () => {
+    const result = qualifyVehicle(fixtureVehicle(), emptyApp)
+    const gate = result.hardGates.find(g => g.gateId === 'payload_type')!
+    expect(gate.skipped).toBe(true)
+  })
+
+  it('passes when vehicle handles the requested unit type', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle(),
+      { ...emptyApp, typicalUnitType: 'Standard Pallet' },
+    )
+    expect(result.status).toBe('GREEN')
+    const gate = result.hardGates.find(g => g.gateId === 'payload_type')!
+    expect(gate.passed).toBe(true)
+  })
+
+  it('fails when vehicle does not handle the requested unit type', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle({ payloadTypes: ['Tote'] }),
+      { ...emptyApp, typicalUnitType: 'Standard Pallet' },
+    )
+    expect(result.status).toBe('RED')
+    const gate = result.hardGates.find(g => g.gateId === 'payload_type')!
+    expect(gate.passed).toBe(false)
+    expect(gate.reason).toContain('Does not carry Standard Pallet')
   })
 })
 

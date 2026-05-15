@@ -9,6 +9,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject } from '@/src/lib/storage'
+import { TRANSFER_METHODS, TYPICAL_UNIT_TYPES } from '@/src/lib/constants/enums'
 
 
 
@@ -19,10 +20,8 @@ const PALLET_AUTOFILL: Record<string, { l: number; w: number; h: number }> = {
   CHEP: { l: 45.9, w: 45.9, h: 5.9 },
 }
 
-const UNIT_TYPES = ['Standard Pallet', 'Tote', 'Cart', 'Roll', 'IBC', 'Coil', 'Rack', 'Other']
 const PALLET_SUBTYPES = ['GMA (48×40)', 'Euro (47.2×31.5)', 'CHEP (45.9×45.9)', 'Custom']
 const BOTTOM_BOARDS = ['Stringer (3-way entry)', 'Block (4-way entry)', 'Euro-style block']
-const TRANSFER_METHODS = ['Fork', 'Tow / Tugger', 'Conveyor Interface', 'Lift Platform']
 const DELIVERY_PATTERNS = ['Floor-Floor', 'Floor-Height', 'Height-Floor', 'Height-Height', 'Conveyor-Conveyor']
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
 const CERTIFICATIONS = ['ISO 3691-4', 'ANSI B56.5', 'RIA R15.08', 'Cleanroom', 'Food Grade', 'ATEX', 'IECEx', 'VDA 5050']
@@ -261,7 +260,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 defaultValue={initialData?.typicalUnitType || ''}
               >
                 <option value="" disabled>Select type…</option>
-                {UNIT_TYPES.map(t => <option key={t}>{t}</option>)}
+                {TYPICAL_UNIT_TYPES.map(t => <option key={t}>{t}</option>)}
               </select>
             </div>
 
