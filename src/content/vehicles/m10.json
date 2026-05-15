@@ -8,18 +8,30 @@
     "fleetSoftware": "Toyota Fleet Manager",
     "heroImage": "/images/vehicles/m10.png",
     "typicalLoad": "Standard Pallet",
-    "category": "Pallet Truck"
+    "category": "Pallet Truck",
+    "navigationType": "natural"
   },
   "transferMethods": [
     { "method": "Fork", "loadTimeSec": 4, "unloadTimeSec": 4 }
   ],
+  "payloadTypes": ["Standard Pallet"],
   "calc": {
     "maxWeightLbs": 2200,
     "widthFt": 3.4,
-    "maxLiftHeightFt": 0,
+    "lengthFt": 7.0,
+    "heightFt": 5.0,
+    "turningRadiusFt": 6.0,
+    "maxLiftHeightFt": null,
+    "maxLoadLengthIn": 48,
+    "maxLoadWidthIn": 40,
+    "maxLoadHeightIn": 60,
     "speedLoadedFps": 6.56,
+    "speedUnloadedFps": 7.5,
     "batteryKwh": 14.0,
     "energyKwhPerFt": 0.011,
+    "chargeKw": 3.0,
+    "chargeTimeMin": 75,
+    "chargerType": "opportunity",
     "priceRange": { "minUsd": 85000, "maxUsd": 115000 }
   },
   "specs": {

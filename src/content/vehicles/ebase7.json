@@ -8,18 +8,30 @@
     "fleetSoftware": "Oppent Fleet Manager",
     "heroImage": "/images/vehicles/ebase7.png",
     "typicalLoad": "Cart Train",
-    "category": "Tugger"
+    "category": "Tugger",
+    "navigationType": "magnetic"
   },
   "transferMethods": [
     { "method": "Tow / Tugger", "loadTimeSec": 10, "unloadTimeSec": 10 }
   ],
+  "payloadTypes": ["Cart"],
   "calc": {
     "maxWeightLbs": 15000,
     "widthFt": 2.8,
-    "maxLiftHeightFt": 0,
+    "lengthFt": 5.5,
+    "heightFt": 4.0,
+    "turningRadiusFt": 6.5,
+    "maxLiftHeightFt": null,
+    "maxLoadLengthIn": null,
+    "maxLoadWidthIn": null,
+    "maxLoadHeightIn": null,
     "speedLoadedFps": 5.25,
+    "speedUnloadedFps": 6.5,
     "batteryKwh": 18.5,
     "energyKwhPerFt": 0.012,
+    "chargeKw": 2.0,
+    "chargeTimeMin": 60,
+    "chargerType": "opportunity",
     "priceRange": { "minUsd": 70000, "maxUsd": 95000 }
   },
   "specs": {
@@ -28,6 +40,6 @@
     "outdoorCapable": true,
     "freezerCapable": false,
     "maxRampGrade": 12,
-    "certifications": ["ISO 3691-4"]
+    "certifications": ["ISO 3691-4", "ANSI B56.5"]
   }
 }

@@ -8,19 +8,31 @@
     "fleetSoftware": "BlueBotics ANT",
     "heroImage": "/images/vehicles/cb18.png",
     "typicalLoad": "Standard Pallet",
-    "category": "Counterbalance Forklift"
+    "category": "Counterbalance Forklift",
+    "navigationType": "lidar_slam"
   },
   "transferMethods": [
     { "method": "Fork", "loadTimeSec": 5, "unloadTimeSec": 5 },
     { "method": "Lift Platform", "loadTimeSec": 8, "unloadTimeSec": 8 }
   ],
+  "payloadTypes": ["Standard Pallet", "Rack", "IBC"],
   "calc": {
     "maxWeightLbs": 3968,
     "widthFt": 4.2,
+    "lengthFt": 7.5,
+    "heightFt": 7.0,
+    "turningRadiusFt": 7.5,
     "maxLiftHeightFt": 14.7,
+    "maxLoadLengthIn": 48,
+    "maxLoadWidthIn": 48,
+    "maxLoadHeightIn": 72,
     "speedLoadedFps": 9.84,
+    "speedUnloadedFps": 11.5,
     "batteryKwh": 25.6,
     "energyKwhPerFt": 0.019,
+    "chargeKw": 5.0,
+    "chargeTimeMin": 90,
+    "chargerType": "opportunity",
     "priceRange": { "minUsd": 165000, "maxUsd": 210000 }
   },
   "specs": {

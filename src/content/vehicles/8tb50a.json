@@ -8,19 +8,31 @@
     "fleetSoftware": "Toyota Fleet Manager",
     "heroImage": "/images/vehicles/8tb50a.png",
     "typicalLoad": "Standard Pallet",
-    "category": "Reach Truck"
+    "category": "Reach Truck",
+    "navigationType": "natural"
   },
   "transferMethods": [
     { "method": "Fork", "loadTimeSec": 6, "unloadTimeSec": 6 },
     { "method": "Lift Platform", "loadTimeSec": 10, "unloadTimeSec": 10 }
   ],
+  "payloadTypes": ["Standard Pallet", "Rack"],
   "calc": {
     "maxWeightLbs": 5000,
     "widthFt": 4.0,
+    "lengthFt": 8.0,
+    "heightFt": 8.5,
+    "turningRadiusFt": 6.5,
     "maxLiftHeightFt": 30.0,
+    "maxLoadLengthIn": 48,
+    "maxLoadWidthIn": 48,
+    "maxLoadHeightIn": 72,
     "speedLoadedFps": 8.2,
+    "speedUnloadedFps": 9.5,
     "batteryKwh": 36.0,
     "energyKwhPerFt": 0.024,
+    "chargeKw": 6.0,
+    "chargeTimeMin": 90,
+    "chargerType": "shift_swap",
     "priceRange": { "minUsd": 200000, "maxUsd": 275000 }
   },
   "specs": {

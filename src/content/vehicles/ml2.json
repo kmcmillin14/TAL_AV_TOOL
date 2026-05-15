@@ -8,18 +8,30 @@
     "fleetSoftware": "BlueBotics ANT",
     "heroImage": "/images/vehicles/ml2.png",
     "typicalLoad": "Tote",
-    "category": "Unit Load AMR"
+    "category": "Unit Load AMR",
+    "navigationType": "lidar_slam"
   },
   "transferMethods": [
     { "method": "Conveyor Interface", "loadTimeSec": 3, "unloadTimeSec": 3 }
   ],
+  "payloadTypes": ["Tote"],
   "calc": {
     "maxWeightLbs": 770,
     "widthFt": 2.3,
-    "maxLiftHeightFt": 0,
+    "lengthFt": 3.0,
+    "heightFt": 4.5,
+    "turningRadiusFt": 2.5,
+    "maxLiftHeightFt": null,
+    "maxLoadLengthIn": 24,
+    "maxLoadWidthIn": 16,
+    "maxLoadHeightIn": 14,
     "speedLoadedFps": 5.9,
+    "speedUnloadedFps": 6.5,
     "batteryKwh": 8.0,
     "energyKwhPerFt": 0.008,
+    "chargeKw": 1.5,
+    "chargeTimeMin": 30,
+    "chargerType": "opportunity",
     "priceRange": { "minUsd": 95000, "maxUsd": 130000 }
   },
   "specs": {
@@ -28,6 +40,6 @@
     "outdoorCapable": false,
     "freezerCapable": false,
     "maxRampGrade": 5,
-    "certifications": ["ISO 3691-4", "RIA R15.08"]
+    "certifications": ["ISO 3691-4", "ANSI/RIA R15.08-1"]
   }
 }

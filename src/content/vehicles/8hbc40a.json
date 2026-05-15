@@ -8,18 +8,30 @@
     "fleetSoftware": "Toyota Fleet Manager",
     "heroImage": "/images/vehicles/8hbc40a.jpg",
     "typicalLoad": "Standard Pallet",
-    "category": "Narrow-Aisle Reach Truck"
+    "category": "Narrow-Aisle Reach Truck",
+    "navigationType": "natural"
   },
   "transferMethods": [
     { "method": "Fork", "loadTimeSec": 6, "unloadTimeSec": 6 }
   ],
+  "payloadTypes": ["Standard Pallet", "Rack"],
   "calc": {
     "maxWeightLbs": 4000,
     "widthFt": 3.2,
+    "lengthFt": 9.0,
+    "heightFt": 9.0,
+    "turningRadiusFt": 4.5,
     "maxLiftHeightFt": 25.0,
+    "maxLoadLengthIn": 48,
+    "maxLoadWidthIn": 48,
+    "maxLoadHeightIn": 72,
     "speedLoadedFps": 7.5,
+    "speedUnloadedFps": 8.5,
     "batteryKwh": 24.0,
     "energyKwhPerFt": 0.018,
+    "chargeKw": 4.0,
+    "chargeTimeMin": 90,
+    "chargerType": "shift_swap",
     "priceRange": { "minUsd": 180000, "maxUsd": 240000 }
   },
   "specs": {
