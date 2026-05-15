@@ -41,7 +41,7 @@ function GateRow({ gate }: { gate: GateResult }) {
       <div className="col-status">
         <StatusBadge gate={gate} />
         {gate.reason && (
-          <span style={{ color: reasonColor(gate), fontSize: 10, marginLeft: 6 }}>
+          <span className="gate-reason" style={{ color: reasonColor(gate) }}>
             {gate.reason}
           </span>
         )}
