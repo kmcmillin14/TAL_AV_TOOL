@@ -253,14 +253,11 @@ export default function PersistentHeader({
           <div className="divider" />
           <div className="app-name">
             <div className="product">Fleet Calculator</div>
-            <div className="product-rev mono">v0.1.0</div>
+            <div className="product-rev mono">v0.1</div>
           </div>
         </div>
 
         <div className="hero-meta-line">
-          {renderInlineItem('versionNumber', 'REV', editValues.versionNumber)}
-          <span className="hero-meta-sep" aria-hidden />
-
           <div className="hero-meta-item opp-item">
             <select
               className="opp-prefix-select"
