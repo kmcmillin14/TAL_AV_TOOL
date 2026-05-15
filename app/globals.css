@@ -683,39 +683,40 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .why-row {
   display: grid;
-  grid-template-columns: 140px minmax(100px, 1fr) minmax(100px, 1fr) minmax(220px, 2fr);
-  gap: 16px;
+  grid-template-columns: 1.1fr 1fr 1fr 2fr;
+  gap: 12px;
   align-items: start;
-  padding: 10px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border);
   font-size: 12px;
   line-height: 1.4;
+  min-width: 0;
 }
 .why-row:last-child { border-bottom: none; }
+.why-row > * { min-width: 0; }
 .why-row .col-name { color: var(--text-secondary); font-weight: 600; }
 .why-row .col-vehicle { font-family: var(--tal-font-numeric); color: var(--text-primary); word-break: break-word; }
 .why-row .col-required { font-family: var(--tal-font-numeric); color: var(--text-tertiary); word-break: break-word; }
 .why-row .col-status {
-  display: flex;
-  flex-direction: column;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
   gap: 4px;
-  align-items: flex-start;
-  min-width: 0;
 }
-.why-row .col-status > span { line-height: 1.3; }
+.why-row .col-status > * { line-height: 1.3; }
 .why-row .col-status .gate-reason {
   color: var(--text-tertiary);
   font-size: 11px;
   line-height: 1.4;
-  margin-left: 0;
 }
-@media (max-width: 900px) {
+@media (max-width: 720px) {
   .why-row {
     grid-template-columns: 1fr 1fr;
     grid-template-areas:
       'name name'
       'vehicle required'
       'status status';
+    row-gap: 4px;
   }
   .why-row .col-name { grid-area: name; }
   .why-row .col-vehicle { grid-area: vehicle; }
