@@ -25,21 +25,26 @@ export default function Step0Page() {
 
   const handleImportClick = () => fileRef.current?.click()
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     setImportError(null)
-    const reader = new FileReader()
-    reader.onload = () => {
-      try {
-        const imported = importProjectFromJson(String(reader.result))
-        router.push(`/projects/${imported.id}/step1`)
-      } catch (err) {
-        setImportError(err instanceof Error ? err.message : 'Could not parse file.')
+
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+
+    try {
+      let imported: StoredProject
+      if (isPdf) {
+        const { parseProjectPdf } = await import('@/src/lib/pdfImport')
+        imported = await parseProjectPdf(file)
+      } else {
+        const text = await file.text()
+        imported = importProjectFromJson(text)
       }
+      router.push(`/projects/${imported.id}/step1`)
+    } catch (err) {
+      setImportError(err instanceof Error ? err.message : 'Could not parse file.')
     }
-    reader.onerror = () => setImportError('Could not read the selected file.')
-    reader.readAsText(file)
     e.target.value = ''
   }
 
@@ -99,7 +104,7 @@ export default function Step0Page() {
             </div>
             <div className="dc-content">
               <h3>Import Existing Checklist</h3>
-              <p>Upload a previously saved JSON file with project details, flows, and vehicle selections.</p>
+              <p>Upload a previously exported proposal (.pdf) or data file (.json) to restore a project.</p>
             </div>
             <div className="dc-badge">Recommended for returning projects</div>
           </button>
@@ -147,7 +152,7 @@ export default function Step0Page() {
         <input
           ref={fileRef}
           type="file"
-          accept=".json,application/json"
+          accept=".pdf,.json,application/pdf,application/json"
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />

@@ -189,19 +189,42 @@ export function downloadProject(id: string): void {
 
 export function importProjectFromJson(json: string): StoredProject {
   const parsed = JSON.parse(json)
-  const data = partialProjectSchema.parse(parsed)
+
+  // Detect wrapped envelope: { schemaVersion, exportedAt?, project }
+  const isWrapped =
+    parsed != null &&
+    typeof parsed === 'object' &&
+    typeof (parsed as Record<string, unknown>).schemaVersion === 'number' &&
+    (parsed as Record<string, unknown>).project != null &&
+    typeof (parsed as Record<string, unknown>).project === 'object'
+
+  let rawProject: Record<string, unknown>
+  if (isWrapped) {
+    const version = (parsed as Record<string, number>).schemaVersion
+    if (version > SCHEMA_VERSION) {
+      throw new Error(
+        'This file was created with a newer version of the calculator. Update the app to import it.',
+      )
+    }
+    // Future: run migrations forward when version < SCHEMA_VERSION
+    rawProject = (parsed as Record<string, Record<string, unknown>>).project
+  } else {
+    rawProject = parsed as Record<string, unknown>
+  }
+
+  const data = partialProjectSchema.parse(rawProject)
   const now = new Date().toISOString()
   const imported: StoredProject = {
     ...defaultFields(),
     ...data,
-    step1Complete: Boolean((parsed as Record<string, unknown>).step1Complete),
-    step2Complete: Boolean((parsed as Record<string, unknown>).step2Complete),
-    step3Complete: Boolean((parsed as Record<string, unknown>).step3Complete),
-    step4Complete: Boolean((parsed as Record<string, unknown>).step4Complete),
-    step5Complete: Boolean((parsed as Record<string, unknown>).step5Complete),
-    versionNumber: typeof (parsed as Record<string, unknown>).versionNumber === 'string'
-      ? (parsed as Record<string, string>).versionNumber
-      : 'v1.0',
+    step1Complete: Boolean(rawProject.step1Complete),
+    step2Complete: Boolean(rawProject.step2Complete),
+    step3Complete: Boolean(rawProject.step3Complete),
+    step4Complete: Boolean(rawProject.step4Complete),
+    step5Complete: Boolean(rawProject.step5Complete),
+    versionNumber: typeof rawProject.versionNumber === 'string'
+      ? rawProject.versionNumber
+      : '',
     projectName: data.projectName ?? '',
     id: generateId(),
     createdAt: now,
