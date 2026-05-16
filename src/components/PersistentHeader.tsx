@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import { updateProject, downloadProject, getProject } from '@/src/lib/storage'
-import { downloadProjectBundle } from '@/src/lib/pdfExport'
+import { downloadProjectPdf } from '@/src/lib/pdfExport'
 
 interface HeaderData {
   id: string
@@ -161,12 +161,12 @@ export default function PersistentHeader({
     setMenuOpen(false)
   }
 
-  const handleExportBundle = async () => {
+  const handleExportPdf = async () => {
     setMenuOpen(false)
     const current = getProject(project.id)
     if (!current) return
     try {
-      await downloadProjectBundle(current)
+      await downloadProjectPdf(current)
     } catch (err) {
       alert(`Could not generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
@@ -359,9 +359,9 @@ export default function PersistentHeader({
             </button>
             {menuOpen && (
               <div className="header-menu-popover" role="menu">
-                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportBundle}>
+                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPdf}>
                   <span>Export proposal</span>
-                  <span className="hint">.pdf + .json</span>
+                  <span className="hint">.pdf</span>
                 </button>
                 <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
                   <span>Export data only</span>

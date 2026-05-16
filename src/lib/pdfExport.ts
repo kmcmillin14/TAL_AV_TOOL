@@ -299,10 +299,8 @@ function triggerDownload(blob: Blob, name: string) {
   URL.revokeObjectURL(url)
 }
 
-/** Download both .pdf and .json for the given project. */
-export async function downloadProjectBundle(project: StoredProject): Promise<void> {
+/** Download the project as a single PDF with embedded JSON attachment. */
+export async function downloadProjectPdf(project: StoredProject): Promise<void> {
   const pdfBlob = await exportProjectPdf(project)
   triggerDownload(pdfBlob, filename(project, 'pdf'))
-  // Slight delay so browsers handle two downloads sequentially.
-  setTimeout(() => triggerDownload(projectJsonBlob(project), filename(project, 'json')), 250)
 }
