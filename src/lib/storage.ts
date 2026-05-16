@@ -2,6 +2,9 @@ import { partialProjectSchema, type PartialProjectFormData } from './validations
 
 const STORAGE_KEY = 'tal:projects'
 
+/** Embedded JSON payload schema version. Bump when the project shape changes. */
+export const SCHEMA_VERSION = 1
+
 export interface StoredProject extends PartialProjectFormData {
   id: string
   createdAt: string

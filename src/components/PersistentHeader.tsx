@@ -4,7 +4,8 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
-import { updateProject, downloadProject } from '@/src/lib/storage'
+import { updateProject, downloadProject, getProject } from '@/src/lib/storage'
+import { downloadProjectBundle } from '@/src/lib/pdfExport'
 
 interface HeaderData {
   id: string
@@ -155,9 +156,20 @@ export default function PersistentHeader({
     }, 400)
   }, [project.id])
 
-  const handleExport = () => {
+  const handleExportJson = () => {
     downloadProject(project.id)
     setMenuOpen(false)
+  }
+
+  const handleExportBundle = async () => {
+    setMenuOpen(false)
+    const current = getProject(project.id)
+    if (!current) return
+    try {
+      await downloadProjectBundle(current)
+    } catch (err) {
+      alert(`Could not generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
   }
 
   const originalValue = (field: EditField): string => {
@@ -347,8 +359,12 @@ export default function PersistentHeader({
             </button>
             {menuOpen && (
               <div className="header-menu-popover" role="menu">
-                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExport}>
-                  <span>Export project</span>
+                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportBundle}>
+                  <span>Export proposal</span>
+                  <span className="hint">.pdf + .json</span>
+                </button>
+                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
+                  <span>Export data only</span>
                   <span className="hint">.json</span>
                 </button>
               </div>
