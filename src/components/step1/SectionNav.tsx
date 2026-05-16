@@ -53,10 +53,8 @@ export default function SectionNav({ values }: Props) {
   return (
     <nav className="section-nav" aria-label="Section navigation">
       <div className="section-nav-progress">
-        <div className="section-nav-progress-text">
-          <span className="section-nav-progress-pct">{pct}%</span>
-          <span className="section-nav-progress-stat">{filled}/{total} required</span>
-        </div>
+        <div className="section-nav-progress-pct">{pct}%</div>
+        <div className="section-nav-progress-stat">{filled} of {total} required</div>
         <div className="section-nav-progress-bar">
           <div className="section-nav-progress-fill" style={{ width: `${pct}%` }} />
         </div>

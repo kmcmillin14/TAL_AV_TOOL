@@ -389,37 +389,37 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .section-nav {
   position: sticky;
-  top: 24px;
+  top: 160px;
   padding: 14px 12px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 6px;
   align-self: start;
-  max-height: calc(100vh - 48px);
+  max-height: calc(100vh - 180px);
   overflow-y: auto;
+  z-index: 5;
 }
 .section-nav-progress {
-  padding: 4px 8px 12px;
+  padding: 6px 8px 14px;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 8px;
-}
-.section-nav-progress-text {
-  display: flex; align-items: baseline; gap: 8px;
-  margin-bottom: 6px;
+  margin-bottom: 10px;
 }
 .section-nav-progress-pct {
   font-family: var(--tal-font-numeric);
-  font-size: 18px; font-weight: 700;
+  font-size: 24px; font-weight: 700;
   color: var(--accent);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
 }
 .section-nav-progress-stat {
   font-family: var(--tal-font-numeric);
-  font-size: 10px; letter-spacing: 0.08em;
+  font-size: 10px; letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--text-tertiary);
+  margin: 4px 0 10px;
 }
 .section-nav-progress-bar {
-  height: 3px;
+  height: 6px;
   background: var(--bg-surface-3);
   border-radius: 999px;
   overflow: hidden;
@@ -428,6 +428,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   height: 100%;
   background: linear-gradient(90deg, var(--accent), var(--accent-hover));
   transition: width 0.25s ease;
+  border-radius: 999px;
 }
 .section-nav-title {
   font-family: var(--tal-font-numeric);
