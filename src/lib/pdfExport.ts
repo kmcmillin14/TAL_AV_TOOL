@@ -93,6 +93,34 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
   const H = 792
   const MX = 56
 
+  // ─────────── text-wrapping helper ───────────
+  type PDFFont = Awaited<ReturnType<typeof pdfDoc.embedFont>>
+  const wrapText = (text: string, useFont: PDFFont, size: number, maxWidth: number): string[] => {
+    if (!text) return ['']
+    const paragraphs = text.split(/\n+/)
+    const out: string[] = []
+    for (const para of paragraphs) {
+      const words = para.split(/\s+/).filter(Boolean)
+      if (words.length === 0) {
+        out.push('')
+        continue
+      }
+      let current = ''
+      for (const word of words) {
+        const candidate = current ? `${current} ${word}` : word
+        const w = useFont.widthOfTextAtSize(candidate, size)
+        if (w > maxWidth && current) {
+          out.push(current)
+          current = word
+        } else {
+          current = candidate
+        }
+      }
+      if (current) out.push(current)
+    }
+    return out
+  }
+
   let logoImg: Awaited<ReturnType<typeof pdfDoc.embedPng>> | null = null
   try {
     const logoRes = await fetch('/assets/TAL-Logo-Black.png')
@@ -124,11 +152,17 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
       color: RULE,
     })
 
-    page.drawText(project.projectName || 'Untitled Project', {
-      x: MX, y: H - 200, size: 28, font: bold, color: TEXT,
-    })
+    const nameLines = wrapText(
+      project.projectName || 'Untitled Project',
+      bold, 28, W - 2 * MX,
+    )
+    let titleY = H - 200
+    for (const line of nameLines) {
+      page.drawText(line, { x: MX, y: titleY, size: 28, font: bold, color: TEXT })
+      titleY -= 34
+    }
     page.drawText(project.customerName || 'Customer —', {
-      x: MX, y: H - 230, size: 14, font, color: MUTED,
+      x: MX, y: titleY + 4, size: 14, font, color: MUTED,
     })
 
     // Meta block
@@ -139,7 +173,7 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
       ['Revision',     project.versionNumber || '—'],
       ['Date',         formatDate(project.createdAt)],
     ]
-    let y = H - 290
+    let y = titleY - 50
     for (const [k, v] of rows) {
       page.drawText(k.toUpperCase(), { x: MX, y, size: 8, font: bold, color: MUTED })
       page.drawText(v, { x: MX + 110, y, size: 11, font, color: TEXT })
@@ -188,12 +222,20 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
       page.drawText(title, { x: MX, y, size: 10, font: bold, color: TEXT })
       y -= lineH + sectionGapBottom
     }
+    const VALUE_X = MX + 200
+    const VALUE_WIDTH = W - VALUE_X - MX
     const row = (label: string, value: string | number | null | undefined) => {
-      ensureRoom(lineH)
-      page.drawText(label, { x: MX, y, size: 9, font, color: MUTED })
       const display = value == null || value === '' ? '—' : String(value)
-      page.drawText(display, { x: MX + 200, y, size: 10, font, color: TEXT })
-      y -= lineH
+      const lines = wrapText(display, font, 10, VALUE_WIDTH)
+      const rowH = Math.max(lineH, lines.length * (lineH - 2))
+      ensureRoom(rowH)
+      page.drawText(label, { x: MX, y, size: 9, font, color: MUTED })
+      let ly = y
+      for (const line of lines) {
+        page.drawText(line, { x: VALUE_X, y: ly, size: 10, font, color: TEXT })
+        ly -= lineH - 2
+      }
+      y -= rowH
     }
 
     drawHeader()
@@ -300,9 +342,13 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
       y -= 16
 
       const reason = statusReasonSummary(result)
-      const wrap = reason.length > 110 ? `${reason.slice(0, 107)}…` : reason
-      page.drawText(wrap, { x: MX + 18, y, size: 8, font: mono, color: MUTED })
-      y -= 22
+      const reasonLines = wrapText(reason, mono, 8, W - MX - 18 - MX)
+      for (const line of reasonLines.slice(0, 3)) {
+        if (y < 80) break
+        page.drawText(line, { x: MX + 18, y, size: 8, font: mono, color: MUTED })
+        y -= 10
+      }
+      y -= 8
     }
   }
 
