@@ -10,6 +10,9 @@ import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schem
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject } from '@/src/lib/storage'
 import { TRANSFER_METHODS, TYPICAL_UNIT_TYPES } from '@/src/lib/constants/enums'
+import { FORM_SECTIONS, sectionStatus } from '@/src/lib/constants/sections'
+import SectionNav from './SectionNav'
+import ProgressStrip from './ProgressStrip'
 
 
 
@@ -70,6 +73,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     },
   })
 
+  const formValues = watch()
   const typicalUnitType = watch('typicalUnitType')
   const deliveryPattern = watch('deliveryPattern')
   const oemDealer = watch('oemDealer')
@@ -225,10 +229,20 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </div>
       </div>
 
+      <ProgressStrip values={formValues} />
+
+      <div className="form-with-nav">
+        <SectionNav values={formValues} />
+
       <div className="form-stack">
 
         {/* ===== Section 1: What are you moving? ===== */}
-        <FormSection sectionNum="01" title="What are you moving?">
+        <FormSection
+          sectionNum="01"
+          title="What are you moving?"
+          id={FORM_SECTIONS[0].id}
+          status={sectionStatus(FORM_SECTIONS[0], formValues)}
+        >
           <div className="fld-grid-4">
             <div className="fld">
               <label>Max Load Weight <span className="req">*</span></label>
@@ -353,7 +367,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 2: How is it transferred? ===== */}
-        <FormSection sectionNum="02" title="How is it transferred?">
+        <FormSection
+          sectionNum="02"
+          title="How is it transferred?"
+          id={FORM_SECTIONS[1].id}
+          status={sectionStatus(FORM_SECTIONS[1], formValues)}
+        >
           <div className="fld-grid-3">
             <div className="fld">
               <label>Transfer Method <span className="req">*</span></label>
@@ -408,7 +427,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 3: Where does it operate? ===== */}
-        <FormSection sectionNum="03" title="Where does it operate?">
+        <FormSection
+          sectionNum="03"
+          title="Where does it operate?"
+          id={FORM_SECTIONS[2].id}
+          status={sectionStatus(FORM_SECTIONS[2], formValues)}
+        >
           <div className="fld-grid-3">
             <div className="fld">
               <label>Min Aisle Width ({dLabel}) <span className="req">*</span></label>
@@ -450,7 +474,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 4: Operating Schedule ===== */}
-        <FormSection sectionNum="04" title="Operating Schedule">
+        <FormSection
+          sectionNum="04"
+          title="Operating Schedule"
+          id={FORM_SECTIONS[3].id}
+          status={sectionStatus(FORM_SECTIONS[3], formValues)}
+        >
           <div className="fld-row-3">
             <div className="fld">
               <label>Shifts per Day <span className="req">*</span></label>
@@ -547,7 +576,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 5: Throughput & Distance ===== */}
-        <FormSection sectionNum="05" title="Throughput &amp; Distance">
+        <FormSection
+          sectionNum="05"
+          title="Throughput &amp; Distance"
+          id={FORM_SECTIONS[4].id}
+          status={sectionStatus(FORM_SECTIONS[4], formValues)}
+        >
           <div className="fld-row-3">
             <div className="fld">
               <label>Required Throughput (peak) <span className="req">*</span></label>
@@ -619,7 +653,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 6: Labor & ROI ===== */}
-        <FormSection sectionNum="06" title="Labor &amp; ROI">
+        <FormSection
+          sectionNum="06"
+          title="Labor &amp; ROI"
+          id={FORM_SECTIONS[5].id}
+          status={sectionStatus(FORM_SECTIONS[5], formValues)}
+        >
           <div className="fld-grid-4">
             <div className="fld">
               <label>Operators per Shift</label>
@@ -636,7 +675,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 7: Ramps & Inclines ===== */}
-        <FormSection sectionNum="07" title="Ramps &amp; Inclines">
+        <FormSection
+          sectionNum="07"
+          title="Ramps &amp; Inclines"
+          id={FORM_SECTIONS[6].id}
+          status={sectionStatus(FORM_SECTIONS[6], formValues)}
+        >
           <div className="fld-grid-4">
             <div className="fld">
               <label>Ramp Distance ({dLabel})</label>
@@ -677,7 +721,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 8: Dealer & Contact ===== */}
-        <FormSection sectionNum="08" title="Dealer &amp; Contact">
+        <FormSection
+          sectionNum="08"
+          title="Dealer &amp; Contact"
+          id={FORM_SECTIONS[7].id}
+          status={sectionStatus(FORM_SECTIONS[7], formValues)}
+        >
           <div className="fld-grid-4">
             <div className="fld">
               <label>Facility Location</label>
@@ -758,7 +807,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 9: Certifications ===== */}
-        <FormSection sectionNum="09" title="Certifications &amp; Compliance">
+        <FormSection
+          sectionNum="09"
+          title="Certifications &amp; Compliance"
+          id={FORM_SECTIONS[8].id}
+          status={sectionStatus(FORM_SECTIONS[8], formValues)}
+        >
           <div className="fld-grid-4">
             <div className="fld span-4">
               <label>Required Certifications</label>
@@ -788,7 +842,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 10: Equipment Integration ===== */}
-        <FormSection sectionNum="10" title="Equipment Integration">
+        <FormSection
+          sectionNum="10"
+          title="Equipment Integration"
+          id={FORM_SECTIONS[9].id}
+          status={sectionStatus(FORM_SECTIONS[9], formValues)}
+        >
           <div className="fld-grid-4">
             <div className="fld span-4">
               <label>Required Interlocks</label>
@@ -852,7 +911,14 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 11: Environment (collapsed) ===== */}
-        <FormSection sectionNum="11" title="Environment" collapsible defaultOpen={false}>
+        <FormSection
+          sectionNum="11"
+          title="Environment"
+          id={FORM_SECTIONS[10].id}
+          status={sectionStatus(FORM_SECTIONS[10], formValues)}
+          collapsible
+          defaultOpen={false}
+        >
           <div className="fld-row-3">
             <div className="fld">
               <label>Min Temperature ({tLabel})</label>
@@ -930,7 +996,14 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 12: Software (collapsed) ===== */}
-        <FormSection sectionNum="12" title="Software Integration" collapsible defaultOpen={false}>
+        <FormSection
+          sectionNum="12"
+          title="Software Integration"
+          id={FORM_SECTIONS[11].id}
+          status={sectionStatus(FORM_SECTIONS[11], formValues)}
+          collapsible
+          defaultOpen={false}
+        >
           <div className="fld-grid-4">
             <div className="fld">
               <label>WMS Required?</label>
@@ -959,7 +1032,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 13: Project Notes (always visible) ===== */}
-        <FormSection sectionNum="13" title="Project Notes">
+        <FormSection
+          sectionNum="13"
+          title="Project Notes"
+          id={FORM_SECTIONS[12].id}
+          status={sectionStatus(FORM_SECTIONS[12], formValues)}
+        >
           <div className="fld-grid-4">
             <div className="fld span-4">
               <label>Notes</label>
@@ -974,6 +1052,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
       </div>
+      </div>{/* /form-with-nav */}
 
       {/* Step navigation */}
       <div className="step-nav">
