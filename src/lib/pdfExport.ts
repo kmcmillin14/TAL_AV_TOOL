@@ -155,72 +155,116 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
     })
   }
 
-  // ─────────── PAGE 2: APPLICATION REQUIREMENTS ───────────
+  // ─────────── APPLICATION REQUIREMENTS (auto-paginates) ───────────
   {
-    const page = pdfDoc.addPage([W, H])
-    page.drawText('APPLICATION REQUIREMENTS', {
-      x: MX, y: H - 60, size: 10, font: bold, color: TAL_RED,
-    })
-    page.drawLine({
-      start: { x: MX, y: H - 70 },
-      end: { x: W - MX, y: H - 70 },
-      thickness: 0.5, color: RULE,
-    })
-
-    let y = H - 100
+    let page = pdfDoc.addPage([W, H])
+    let y = 0
     const lineH = 16
+    const sectionGapTop = 10
+    const sectionGapBottom = 4
+    const bottomMargin = 70
 
+    const drawHeader = () => {
+      page.drawText('APPLICATION REQUIREMENTS', {
+        x: MX, y: H - 60, size: 10, font: bold, color: TAL_RED,
+      })
+      page.drawLine({
+        start: { x: MX, y: H - 70 },
+        end: { x: W - MX, y: H - 70 },
+        thickness: 0.5, color: RULE,
+      })
+      y = H - 100
+    }
+    const ensureRoom = (needed: number) => {
+      if (y - needed < bottomMargin) {
+        page = pdfDoc.addPage([W, H])
+        drawHeader()
+        page.drawText('(continued)', { x: W - MX - 60, y: H - 60, size: 8, font, color: MUTED })
+      }
+    }
     const sec = (title: string) => {
-      y -= 8
+      ensureRoom(lineH + sectionGapTop + sectionGapBottom)
+      y -= sectionGapTop
       page.drawText(title, { x: MX, y, size: 10, font: bold, color: TEXT })
-      y -= lineH + 2
+      y -= lineH + sectionGapBottom
     }
     const row = (label: string, value: string | number | null | undefined) => {
-      if (y < 80) return
+      ensureRoom(lineH)
       page.drawText(label, { x: MX, y, size: 9, font, color: MUTED })
       const display = value == null || value === '' ? '—' : String(value)
       page.drawText(display, { x: MX + 200, y, size: 10, font, color: TEXT })
       y -= lineH
     }
 
-    sec('What are you moving?')
+    drawHeader()
+
+    sec('Section 1 — What are you moving?')
     row('Max load weight', project.maxLoadWeightLbs ? `${project.maxLoadWeightLbs.toLocaleString()} lbs` : null)
     row('Unit / load type', project.typicalUnitType)
+    row('Pallet subtype', project.palletBottomBoard)
+    row('Custom pallet', project.customPalletDescription)
+    row('Other unit description', project.otherUnitTypeDescription)
     row('Load (L × W × H)', joinList([
       project.loadLengthIn ? `${project.loadLengthIn} in` : null,
       project.loadWidthIn  ? `${project.loadWidthIn} in`  : null,
       project.loadHeightIn ? `${project.loadHeightIn} in` : null,
     ]))
 
-    sec('How is it transferred?')
+    sec('Section 2 — How is it transferred?')
     row('Transfer method', project.transferMethod)
     row('Delivery pattern', project.deliveryPattern)
     row('Max lift height', project.maxLiftHeightFt != null ? `${project.maxLiftHeightFt} ft` : null)
 
-    sec('Where does it operate?')
+    sec('Section 3 — Where does it operate?')
     row('Min aisle width', project.minAisleWidthFt ? `${project.minAisleWidthFt} ft` : null)
     row('Floor condition', project.floorCondition)
-    row('Min temp', project.tempMinF != null ? `${project.tempMinF}°F` : null)
-    row('Max temp', project.tempMaxF != null ? `${project.tempMaxF}°F` : null)
-    row('Outdoor required', project.outdoorRequired ? 'Yes' : 'No')
-    row('Freezer required', project.freezerCapable ? 'Yes' : 'No')
-    row('Max ramp grade', project.maxRampGrade ? `${project.maxRampGrade}%` : null)
 
-    sec('Operating schedule')
+    sec('Section 4 — Operating schedule')
     row('Shifts / day', project.shiftsPerDay)
     row('Hours / shift', project.hoursPerShift)
     row('Operating days', project.operatingDaysPattern)
+    row('Operating days (custom)', Array.isArray(project.operatingDaysCustom) ? project.operatingDaysCustom.join(', ') : null)
+    row('Breaks / shift', project.breaksPerShift)
+    row('Break duration', project.breakDurationMin ? `${project.breakDurationMin} min` : null)
 
-    sec('Throughput & distance')
+    sec('Section 5 — Throughput & distance')
     row('Required throughput', project.requiredThroughputPerHour ? `${project.requiredThroughputPerHour} moves/hr` : null)
     row('Average distance', project.avgDistanceFt ? `${project.avgDistanceFt} ft` : null)
     row('Distance type', project.distanceType)
 
-    sec('Certifications')
-    row('Required', (project.certifications ?? []).join(', ') || null)
+    sec('Section 6 — Labor & ROI')
+    row('Operators / shift', project.operatorsPerShift)
 
-    sec('Notes')
-    row('Project notes', project.projectNotes)
+    sec('Section 7 — Ramps & inclines')
+    row('Ramp distance', project.rampDistanceFt ? `${project.rampDistanceFt} ft` : null)
+    row('Max ramp grade', project.maxRampGrade ? `${project.maxRampGrade}%` : null)
+
+    sec('Section 8 — Dealer & Contact')
+    row('OEM dealer', project.oemDealer)
+    row('Dealership name', project.dealershipName)
+    row('Dealer representative', project.dealerRep)
+
+    sec('Section 9 — Certifications')
+    row('Required certifications', (project.certifications ?? []).join(', ') || null)
+
+    sec('Section 10 — Equipment integration')
+    row('Required interlocks', (project.interlocks ?? []).join(', ') || null)
+    row('Other AGVs on site', project.otherAGVs ? 'Yes' : 'No')
+    row('Other AGV vendor', project.otherAGVVendor)
+
+    sec('Section 11 — Environment')
+    row('Min temperature', project.tempMinF != null ? `${project.tempMinF}°F` : null)
+    row('Max temperature', project.tempMaxF != null ? `${project.tempMaxF}°F` : null)
+    row('Outdoor required', project.outdoorRequired ? 'Yes' : 'No')
+    row('Freezer required', project.freezerCapable ? 'Yes' : 'No')
+    row('Dust / moisture', project.dustMoisture)
+
+    sec('Section 12 — Software integration')
+    row('WMS required', project.wmsRequired ? 'Yes' : 'No')
+    row('WMS vendor', project.wmsVendor)
+
+    sec('Section 13 — Project notes')
+    row('Notes', project.projectNotes)
   }
 
   // ─────────── PAGE 3: VEHICLE COMPATIBILITY ───────────
