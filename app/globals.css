@@ -612,46 +612,18 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .veh-card-back { transform: rotateY(180deg); overflow-y: auto; }
 
-/* Back title strip — single distributed row */
+/* Back title strip — just the vehicle name */
 .veh-back-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-surface-2);
   flex-shrink: 0;
-  min-width: 0;
 }
 .veh-back-title .bt-name {
   font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.01em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.veh-back-title .bt-sep {
-  color: var(--text-disabled);
-  font-weight: 400;
-  flex-shrink: 0;
-}
-.veh-back-title .bt-mfr {
-  font-family: var(--tal-font-numeric);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-  min-width: 0;
-  flex: 1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.veh-back-title .bt-status {
-  margin-left: auto;
-  flex-shrink: 0;
 }
 
 /* Back tab bar */

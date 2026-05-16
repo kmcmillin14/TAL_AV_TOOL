@@ -125,9 +125,6 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
         <div className="veh-card-face veh-card-back" aria-hidden={!isBack}>
           <div className="veh-back-title">
             <span className="bt-name">{vehicle.name}</span>
-            <span className="bt-sep" aria-hidden>·</span>
-            <span className="bt-mfr">{vehicle.display.manufacturer}</span>
-            <span className="bt-status"><TrafficLight status={status} /></span>
           </div>
 
           <div className="veh-back-tabs" role="tablist" aria-label="Vehicle details">
