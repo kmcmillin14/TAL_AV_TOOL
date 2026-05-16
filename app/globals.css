@@ -573,11 +573,17 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 @media (max-width: 1000px) { .veh-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .veh-grid { grid-template-columns: 1fr; } }
 
-/* Vehicle card */
+/* Vehicle card — flip-card wrapper */
 .veh-card {
-  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px;
-  overflow: hidden; transition: border-color 0.15s, box-shadow 0.2s;
+  position: relative;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  transition: border-color 0.15s, box-shadow 0.2s;
   display: flex; flex-direction: column;
+  min-height: 600px;
+  perspective: 1400px;
+  overflow: hidden;
 }
 .veh-card:hover {
   border-color: var(--border-strong);
@@ -586,6 +592,123 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .veh-card.green:hover { border-color: var(--good); }
 .veh-card.yellow:hover { border-color: var(--warn); }
 .veh-card.red:hover { border-color: var(--bad); }
+
+.veh-card-inner {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  transform-style: preserve-3d;
+  transition: transform 0.5s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+.veh-card-inner.flipped { transform: rotateY(180deg); }
+
+.veh-card-face {
+  position: absolute;
+  inset: 0;
+  display: flex; flex-direction: column;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+.veh-card-back { transform: rotateY(180deg); overflow-y: auto; }
+
+/* Back tab bar */
+.veh-back-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-surface-2);
+  flex-shrink: 0;
+}
+.veh-back-tab {
+  font-family: var(--tal-font-numeric);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.veh-back-tab:hover { color: var(--text-secondary); background: var(--bg-hover); }
+.veh-back-tab.on {
+  color: var(--text-primary);
+  background: var(--bg-surface-3);
+  border-color: var(--border-strong);
+}
+.veh-back-close {
+  margin-left: auto;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.12s ease;
+}
+.veh-back-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  border-color: var(--border-strong);
+}
+
+.veh-back-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+/* Spec sheet (back of card, 'Specs' tab) */
+.spec-sheet { display: flex; flex-direction: column; gap: 16px; }
+.spec-sheet-section {
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.spec-sheet-title {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding: 8px 12px;
+  background: var(--bg-surface-3);
+  border-bottom: 1px solid var(--border);
+}
+.spec-sheet-rows {
+  display: flex; flex-direction: column;
+}
+.spec-sheet-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--border);
+  font-size: 12px;
+}
+.spec-sheet-row:last-child { border-bottom: none; }
+.spec-sheet-k {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.spec-sheet-v {
+  font-weight: 600;
+  color: var(--text-primary);
+  text-align: right;
+  word-break: break-word;
+}
 
 .veh-status-bar { height: 3px; width: 100%; }
 .veh-status-bar.green { background: var(--good); }

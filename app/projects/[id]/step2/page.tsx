@@ -103,6 +103,8 @@ export default function Step2Page() {
     return true
   }), [qualifiedVehicles, statusFilter, search, categoryFilter, manufacturerFilter])
 
+  const filterKey = `${statusFilter}|${search}|${categoryFilter}|${manufacturerFilter}`
+
   if (loading) return (
     <div className="app-shell">
       <div className="step2-loading">Loading vehicles...</div>
@@ -218,7 +220,7 @@ export default function Step2Page() {
         ) : (
           <div className="veh-grid">
             {filtered.map(({ vehicle, result }) => (
-              <VehicleCard key={vehicle.id} vehicle={vehicle} result={result} unitSystem={unitSystem} />
+              <VehicleCard key={vehicle.id} vehicle={vehicle} result={result} unitSystem={unitSystem} filterKey={filterKey} />
             ))}
           </div>
         )}
