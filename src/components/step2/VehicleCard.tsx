@@ -123,6 +123,14 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
 
         {/* ───────── BACK ───────── */}
         <div className="veh-card-face veh-card-back" aria-hidden={!isBack}>
+          <div className="veh-back-title">
+            <div className="veh-name-block">
+              <div className="name">{vehicle.name}</div>
+              <div className="mfr">{vehicle.display.manufacturer}</div>
+            </div>
+            <TrafficLight status={status} />
+          </div>
+
           <div className="veh-back-tabs" role="tablist" aria-label="Vehicle details">
             <button
               type="button"
