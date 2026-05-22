@@ -1316,10 +1316,14 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   transition: all 0.12s;
   padding: 0;
 }
-.tbtn-icon:hover {
+.tbtn-icon:hover:not(:disabled) {
   background: var(--bg-hover);
   color: var(--text-primary);
   border-color: var(--border-strong);
+}
+.tbtn-icon:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
 }
 .tbtn-icon svg { width: 14px; height: 14px; display: block; }
 
@@ -1350,6 +1354,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-family: inherit;
 }
 .header-menu-item:hover { background: var(--bg-hover); }
+.header-menu-item.destructive { color: var(--bad); }
+.header-menu-item.destructive:hover { background: var(--bad-soft); }
+.header-menu-sep {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
+}
 .header-menu-item .hint {
   margin-left: auto;
   font-family: var(--tal-font-numeric); font-size: 10px;

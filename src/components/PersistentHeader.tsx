@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
-import { updateProject, downloadProject, getProject } from '@/src/lib/storage'
+import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject } from '@/src/lib/storage'
 import { downloadProjectPdf } from '@/src/lib/pdfExport'
 
 interface HeaderData {
@@ -170,6 +170,28 @@ export default function PersistentHeader({
     } catch (err) {
       alert(`Could not generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
+  }
+
+  const [undoAvailable, setUndoAvailable] = useState(false)
+  useEffect(() => {
+    setUndoAvailable(canUndo(project.id))
+    const interval = setInterval(() => setUndoAvailable(canUndo(project.id)), 1000)
+    return () => clearInterval(interval)
+  }, [project.id])
+
+  const handleUndo = () => {
+    const restored = undoLastChange(project.id)
+    if (restored) window.location.reload()
+  }
+
+  const handleClearAll = () => {
+    setMenuOpen(false)
+    const ok = window.confirm(
+      'Clear ALL project data? This resets every field on this project to blank. You can undo immediately after if it was a mistake.',
+    )
+    if (!ok) return
+    const cleared = clearProject(project.id)
+    if (cleared) window.location.reload()
   }
 
   const originalValue = (field: EditField): string => {
@@ -338,6 +360,19 @@ export default function PersistentHeader({
             <span className={`unit-toggle-label ${unitSystem === 'metric' ? 'active' : ''}`}>Metric</span>
           </div>
 
+          <button
+            type="button"
+            className="tbtn-icon"
+            onClick={handleUndo}
+            disabled={!undoAvailable}
+            aria-label="Undo last change"
+            title={undoAvailable ? 'Undo last change' : 'Nothing to undo'}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M9 14L4 9l5-5" />
+              <path d="M4 9h10a6 6 0 0 1 0 12h-3" />
+            </svg>
+          </button>
           <button className="tbtn-icon" onClick={toggleTheme} aria-label="Toggle theme">
             <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
           </button>
@@ -366,6 +401,16 @@ export default function PersistentHeader({
                 <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
                   <span>Export data only</span>
                   <span className="hint">.json</span>
+                </button>
+                <div className="header-menu-sep" aria-hidden />
+                <button
+                  type="button"
+                  className="header-menu-item destructive"
+                  role="menuitem"
+                  onClick={handleClearAll}
+                >
+                  <span>Clear all data</span>
+                  <span className="hint">reset</span>
                 </button>
               </div>
             )}

@@ -15,6 +15,8 @@ export interface StoredProject extends PartialProjectFormData {
   step3Complete: boolean
   step4Complete: boolean
   step5Complete: boolean
+  /** Snapshot of the project as it was BEFORE the most recent updateProject call. Single-level undo. */
+  _undoSnapshot?: Omit<StoredProject, '_undoSnapshot'>
 }
 
 const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> => ({
@@ -145,9 +147,13 @@ export function updateProject(
   const idx = all.findIndex(p => p.id === id)
   if (idx === -1) return null
   const existing = all[idx]
+  // Capture the pre-change state for single-level undo.
+  const { _undoSnapshot: _ignore, ...snapshot } = existing
+  void _ignore
   const updated: StoredProject = {
     ...existing,
     ...data,
+    _undoSnapshot: snapshot,
     id: existing.id,
     createdAt: meta?.createdAt ?? existing.createdAt,
     updatedAt: new Date().toISOString(),
@@ -164,6 +170,57 @@ export function deleteProject(id: string): boolean {
   if (next.length === all.length) return false
   writeAll(next)
   return true
+}
+
+/** Whether the given project has an undo snapshot available. */
+export function canUndo(id: string): boolean {
+  const project = getProject(id)
+  return !!project?._undoSnapshot
+}
+
+/**
+ * Revert the project to its state before the last updateProject call.
+ * Returns the restored project, or null if there's nothing to undo.
+ */
+export function undoLastChange(id: string): StoredProject | null {
+  const all = readAll()
+  const idx = all.findIndex(p => p.id === id)
+  if (idx === -1) return null
+  const existing = all[idx]
+  if (!existing._undoSnapshot) return null
+  const restored: StoredProject = {
+    ...existing._undoSnapshot,
+    updatedAt: new Date().toISOString(),
+    // After undo, there's no further snapshot to revert to (single-level).
+    _undoSnapshot: undefined,
+  }
+  all[idx] = restored
+  writeAll(all)
+  return restored
+}
+
+/**
+ * Reset every data field on the project to defaults while keeping its
+ * id and createdAt. Captures an undo snapshot first so the user can
+ * recover from a misclick on the Clear All confirm.
+ */
+export function clearProject(id: string): StoredProject | null {
+  const all = readAll()
+  const idx = all.findIndex(p => p.id === id)
+  if (idx === -1) return null
+  const existing = all[idx]
+  const { _undoSnapshot: _ignore, ...snapshot } = existing
+  void _ignore
+  const cleared: StoredProject = {
+    ...defaultFields(),
+    id: existing.id,
+    createdAt: existing.createdAt,
+    updatedAt: new Date().toISOString(),
+    _undoSnapshot: snapshot,
+  }
+  all[idx] = cleared
+  writeAll(all)
+  return cleared
 }
 
 export function exportProjectJson(id: string): string | null {

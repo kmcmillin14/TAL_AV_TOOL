@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
@@ -44,12 +44,26 @@ function toDateInput(iso?: string): string {
   return d.toISOString().slice(0, 10)
 }
 
+// Empty strings and NaN mean "the user cleared this field". Keep the key with
+// `undefined` so the spread merge in updateProject removes the prior value
+// (JSON.stringify drops undefined keys). Dropping the entry instead, as the
+// previous code did, left ghost values in storage that Step 2 kept qualifying
+// against.
+function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFormData> {
+  return Object.fromEntries(
+    Object.entries(data).map(([k, v]) => {
+      if (typeof v === 'number' && Number.isNaN(v)) return [k, undefined]
+      if (v === '') return [k, undefined]
+      return [k, v]
+    })
+  ) as Partial<ProjectFormData>
+}
+
 export default function ApplicationForm({ initialData, projectId, unitSystem }: Props) {
   const router = useRouter()
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle')
   const [versionNumber, setVersionNumber] = useState(initialData ? 'loading…' : 'v1.0')
   const [proposalDate, setProposalDate] = useState(initialData?.createdAt || new Date().toISOString())
-  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isNew = !projectId
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -102,30 +116,22 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     }
   }
 
-  // Auto-save on blur (debounced 2 seconds)
+  // Save synchronously on blur. The previous 2-second debounce raced router
+  // navigation: clicking Continue scheduled the write, then router.push ran
+  // immediately, so Step 2 mounted and read storage before the timer fired.
   const autoSave = useCallback((data: Partial<ProjectFormData>) => {
     if (!projectId) return
-    if (saveTimer.current) clearTimeout(saveTimer.current)
-    setSaveStatus('saving')
-    saveTimer.current = setTimeout(() => {
-      const cleaned = Object.fromEntries(
-        Object.entries(data).filter(([, v]) => {
-          if (typeof v === 'number' && isNaN(v)) return false
-          if (v === '') return false
-          return true
-        })
-      ) as Partial<ProjectFormData>
-      try {
-        const updated = updateProject(projectId, cleaned)
-        if (updated) {
-          setVersionNumber(updated.versionNumber)
-          setSaveStatus('saved')
-          setTimeout(() => setSaveStatus('idle'), 2000)
-        }
-      } catch {
-        setSaveStatus('idle')
+    const cleaned = cleanFormData(data)
+    try {
+      const updated = updateProject(projectId, cleaned)
+      if (updated) {
+        setVersionNumber(updated.versionNumber)
+        setSaveStatus('saved')
+        setTimeout(() => setSaveStatus('idle'), 2000)
       }
-    }, 2000)
+    } catch {
+      setSaveStatus('idle')
+    }
   }, [projectId])
 
   // Load version on mount if editing
@@ -136,26 +142,29 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     }
   }, [projectId])
 
+  // Persist on every form change, not just on blur. macOS doesn't shift focus
+  // (and so doesn't fire blur) when the user clicks a <button> like a step
+  // dot in PersistentHeader — so a blur-only save would leak stale data into
+  // Step 2 on step-dot navigation. Saving on every change keeps storage live.
+  useEffect(() => {
+    if (!projectId) return
+    const subscription = watch(values => {
+      autoSave(values as Partial<ProjectFormData>)
+    })
+    return () => subscription.unsubscribe()
+  }, [watch, autoSave, projectId])
+
   const onBlurSave = () => {
-    const values = watch()
-    // Only attempt auto-save when at least the required fields have values
-    if (values.projectName && values.customerName && projectId) {
-      autoSave(values)
-    }
+    if (!projectId) return
+    autoSave(watch())
   }
 
   const onSubmit: SubmitHandler<ProjectFormData> = (data) => {
-    const cleaned = Object.fromEntries(
-      Object.entries(data).filter(([, v]) => {
-        if (typeof v === 'number' && isNaN(v)) return false
-        if (v === '') return false
-        return true
-      })
-    ) as Partial<ProjectFormData>
+    const cleaned = cleanFormData(data)
     if (isNew) {
       const created = createProject(cleaned)
       router.push(`/projects/${created.id}/step2`)
-    } else {
+    } else if (projectId) {
       autoSave(data)
       router.push(`/projects/${projectId}/step2`)
     }
@@ -163,13 +172,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
   const handleContinue = () => {
     const values = getValues()
-    const cleaned = Object.fromEntries(
-      Object.entries(values).filter(([, v]) => {
-        if (typeof v === 'number' && isNaN(v)) return false
-        if (v === '') return false
-        return true
-      })
-    ) as Partial<ProjectFormData>
+    const cleaned = cleanFormData(values)
     if (isNew) {
       try {
         const created = createProject(cleaned)
@@ -178,8 +181,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         setSaveStatus('idle')
         alert(`Could not save project: ${err instanceof Error ? err.message : 'Unknown error'}`)
       }
-    } else {
-      if (projectId) autoSave(values)
+    } else if (projectId) {
+      autoSave(values)
       router.push(`/projects/${projectId}/step2`)
     }
   }
@@ -219,8 +222,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </div>
         <div className="row" style={{ gap: 10 }}>
-          <span className={`save-status${saveStatus === 'saving' ? ' saving' : saveStatus === 'saved' ? ' saved' : ''}`}>
-            {saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved ✓' : versionNumber}
+          <span className={`save-status${saveStatus === 'saved' ? ' saved' : ''}`}>
+            {saveStatus === 'saved' ? 'Saved ✓' : versionNumber}
           </span>
           <span className="pill neutral">
             <Icon name="info" size={11} />

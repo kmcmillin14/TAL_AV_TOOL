@@ -49,6 +49,22 @@ export default function Step2Page() {
       })
   }, [id])
 
+  // Re-read storage when another tab writes (cross-tab 'storage' event) or
+  // when this tab regains focus (covers same-tab edits that happened between
+  // mount and return, e.g. via PersistentHeader meta inputs).
+  useEffect(() => {
+    const refresh = () => {
+      const proj = getProject(id)
+      if (proj) setProject(proj)
+    }
+    window.addEventListener('storage', refresh)
+    window.addEventListener('focus', refresh)
+    return () => {
+      window.removeEventListener('storage', refresh)
+      window.removeEventListener('focus', refresh)
+    }
+  }, [id])
+
   const appReq = useMemo((): ApplicationRequirements => ({
     maxLoadWeightLbs: project?.maxLoadWeightLbs ?? 0,
     typicalUnitType: project?.typicalUnitType ?? '',
