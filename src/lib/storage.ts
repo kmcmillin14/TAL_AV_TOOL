@@ -62,6 +62,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   dealerRep: undefined,
   certifications: [],
   interlocks: [],
+  flows: [],
   otherAGVs: false,
   otherAGVVendor: undefined,
   tempMinF: undefined,

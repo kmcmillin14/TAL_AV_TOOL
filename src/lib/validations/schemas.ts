@@ -7,6 +7,19 @@ export const projectHeaderSchema = z.object({
   bastianRep: z.string().optional(),
 })
 
+export const flowSchema = z.object({
+  id: z.string(),
+  origin: z.string().default(''),
+  destination: z.string().default(''),
+  distanceFt: z.number().min(0).default(0),
+  thruPerHr: z.number().min(0).default(0),
+  weightLbs: z.number().min(0).default(0),
+  turns: z.number().int().min(0).default(0),
+  liftHeightFt: z.number().min(0).default(0),
+  vehicleId: z.string().optional(),
+  transferMethodIdx: z.number().int().min(0).optional(),
+})
+
 export const projectSchema = z.object({
   projectName: z.string().optional(),
   customerName: z.string().optional(),
@@ -64,6 +77,7 @@ export const projectSchema = z.object({
 
   // Section 10
   interlocks: z.array(z.string()).default([]),
+  flows: z.array(flowSchema).default([]),
   otherAGVs: z.boolean().default(false),
   otherAGVVendor: z.string().optional(),
 
