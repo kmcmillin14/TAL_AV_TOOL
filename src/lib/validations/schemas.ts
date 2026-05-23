@@ -13,7 +13,6 @@ export const flowSchema = z.object({
   destination: z.string().default(''),
   distanceFt: z.number().min(0).default(0),
   thruPerHr: z.number().min(0).default(0),
-  weightLbs: z.number().min(0).default(0),
   turns: z.number().int().min(0).default(0),
   liftHeightFt: z.number().min(0).default(0),
   vehicleId: z.string().optional(),

@@ -36,7 +36,6 @@ describe('flows round-trip', () => {
         destination: 'B',
         distanceFt: 100,
         thruPerHr: 10,
-        weightLbs: 500,
         turns: 1,
         liftHeightFt: 0,
         vehicleId: 'cb18',

@@ -153,7 +153,7 @@ describe('flowDerived (orchestrator)', () => {
   it('returns nulls when vehicle is undefined', () => {
     const flow: Flow = {
       id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 100, thruPerHr: 10, weightLbs: 500, turns: 0, liftHeightFt: 0,
+      distanceFt: 100, thruPerHr: 10, turns: 0, liftHeightFt: 0,
     }
     expect(flowDerived(flow, undefined)).toEqual({
       cycleSeconds: null,
@@ -165,7 +165,7 @@ describe('flowDerived (orchestrator)', () => {
   it('ties cycle → raw together (Fork transfer, with turns)', () => {
     const flow: Flow = {
       id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 100, thruPerHr: 30, weightLbs: 500, turns: 1, liftHeightFt: 0,
+      distanceFt: 100, thruPerHr: 30, turns: 1, liftHeightFt: 0,
       vehicleId: 'cb18', transferMethodIdx: 0,
     }
     const d = flowDerived(flow, cb18Veh)
@@ -178,7 +178,7 @@ describe('flowDerived (orchestrator)', () => {
   it('threads liftHeightFt through to cycleSeconds (Lift Platform)', () => {
     const flow: Flow = {
       id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 0, thruPerHr: 60, weightLbs: 500, turns: 0, liftHeightFt: 13,
+      distanceFt: 0, thruPerHr: 60, turns: 0, liftHeightFt: 13,
       vehicleId: 'cb18', transferMethodIdx: 1,
     }
     const d = flowDerived(flow, cb18Veh)
@@ -195,11 +195,11 @@ import { groupSummary } from '../flowMetrics'
 
 describe('groupSummary', () => {
   const cb18Flows: Flow[] = [
-    { id: '1', origin: 'Dock A',    destination: 'Storage 1', distanceFt: 590, thruPerHr: 45, weightLbs: 1984, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-    { id: '2', origin: 'Storage 1', destination: 'Pack Line', distanceFt: 394, thruPerHr: 30, weightLbs: 1764, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-    { id: '4', origin: 'Dock A',    destination: 'Storage 2', distanceFt: 722, thruPerHr: 38, weightLbs: 2425, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-    { id: '5', origin: 'Storage 2', destination: 'Pack Line', distanceFt: 476, thruPerHr: 25, weightLbs: 2094, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-    { id: '6', origin: 'Inbound',   destination: 'Storage 1', distanceFt: 312, thruPerHr: 22, weightLbs: 2646, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+    { id: '1', origin: 'Dock A',    destination: 'Storage 1', distanceFt: 590, thruPerHr: 45, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+    { id: '2', origin: 'Storage 1', destination: 'Pack Line', distanceFt: 394, thruPerHr: 30, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+    { id: '4', origin: 'Dock A',    destination: 'Storage 2', distanceFt: 722, thruPerHr: 38, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+    { id: '5', origin: 'Storage 2', destination: 'Pack Line', distanceFt: 476, thruPerHr: 25, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+    { id: '6', origin: 'Inbound',   destination: 'Storage 1', distanceFt: 312, thruPerHr: 22, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
   ]
   const derivedCb18 = new Map([
     ['1', { cycleSeconds: 138, rawVehicles: 1.725, breakdown: null }],
@@ -220,9 +220,9 @@ describe('groupSummary', () => {
   })
 
   const ml2Flows: Flow[] = [
-    { id: '3', origin: 'Pack Line', destination: 'Dock B',    distanceFt: 295, thruPerHr: 15, weightLbs: 110, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
-    { id: '7', origin: 'Pick Wall', destination: 'Pack Line', distanceFt: 197, thruPerHr: 28, weightLbs:  77, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
-    { id: '8', origin: 'Storage 1', destination: 'Pick Wall', distanceFt: 246, thruPerHr: 18, weightLbs:  62, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
+    { id: '3', origin: 'Pack Line', destination: 'Dock B',    distanceFt: 295, thruPerHr: 15, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
+    { id: '7', origin: 'Pick Wall', destination: 'Pack Line', distanceFt: 197, thruPerHr: 28, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
+    { id: '8', origin: 'Storage 1', destination: 'Pick Wall', distanceFt: 246, thruPerHr: 18, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
   ]
   const derivedMl2 = new Map([
     ['3', { cycleSeconds: 118, rawVehicles: 0.492, breakdown: null }],
@@ -253,7 +253,7 @@ describe('groupSummary', () => {
   it('skips flows assigned to other vehicles', () => {
     const mixed: Flow[] = [
       ...cb18Flows,
-      { id: 'X', origin: '', destination: '', distanceFt: 100, thruPerHr: 99, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
+      { id: 'X', origin: '', destination: '', distanceFt: 100, thruPerHr: 99, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
     ]
     const derived = new Map(derivedCb18)
     derived.set('X', { cycleSeconds: 50, rawVehicles: 1.0, breakdown: null })
@@ -270,14 +270,14 @@ import { projectFlowSummary } from '../flowMetrics'
 describe('projectFlowSummary', () => {
   it('matches verification totals: 8 flows · 221 thru · 8 base fleet', () => {
     const allFlows: Flow[] = [
-      { id: '1', origin: '', destination: '', distanceFt: 1, thruPerHr: 45, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-      { id: '2', origin: '', destination: '', distanceFt: 1, thruPerHr: 30, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-      { id: '3', origin: '', destination: '', distanceFt: 1, thruPerHr: 15, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
-      { id: '4', origin: '', destination: '', distanceFt: 1, thruPerHr: 38, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-      { id: '5', origin: '', destination: '', distanceFt: 1, thruPerHr: 25, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-      { id: '6', origin: '', destination: '', distanceFt: 1, thruPerHr: 22, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-      { id: '7', origin: '', destination: '', distanceFt: 1, thruPerHr: 28, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
-      { id: '8', origin: '', destination: '', distanceFt: 1, thruPerHr: 18, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
+      { id: '1', origin: '', destination: '', distanceFt: 1, thruPerHr: 45, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+      { id: '2', origin: '', destination: '', distanceFt: 1, thruPerHr: 30, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+      { id: '3', origin: '', destination: '', distanceFt: 1, thruPerHr: 15, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
+      { id: '4', origin: '', destination: '', distanceFt: 1, thruPerHr: 38, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+      { id: '5', origin: '', destination: '', distanceFt: 1, thruPerHr: 25, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+      { id: '6', origin: '', destination: '', distanceFt: 1, thruPerHr: 22, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+      { id: '7', origin: '', destination: '', distanceFt: 1, thruPerHr: 28, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
+      { id: '8', origin: '', destination: '', distanceFt: 1, thruPerHr: 18, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
     ]
     const derived = new Map([
       ['1', { cycleSeconds: 138, rawVehicles: 1.725, breakdown: null }],

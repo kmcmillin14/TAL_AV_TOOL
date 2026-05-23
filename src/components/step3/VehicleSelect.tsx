@@ -6,11 +6,10 @@ import { vehicleColor } from './vehicleColor'
 interface Props {
   vehicles: Vehicle[]
   value?: string
-  flowWeightLbs: number
   onChange: (vehicleId: string | undefined) => void
 }
 
-export default function VehicleSelect({ vehicles, value, flowWeightLbs, onChange }: Props) {
+export default function VehicleSelect({ vehicles, value, onChange }: Props) {
   return (
     <select
       className="flow-veh-select"
@@ -18,21 +17,9 @@ export default function VehicleSelect({ vehicles, value, flowWeightLbs, onChange
       onChange={e => onChange(e.target.value || undefined)}
     >
       <option value="">— pick vehicle —</option>
-      {vehicles.map(v => {
-        const overweight = flowWeightLbs > v.calc.maxWeightLbs
-        return (
-          <option
-            key={v.id}
-            value={v.id}
-            disabled={overweight}
-            title={overweight
-              ? `Exceeds ${v.calc.maxWeightLbs.toLocaleString()} lb max load`
-              : undefined}
-          >
-            {v.name}{overweight ? '  (over max load)' : ''}
-          </option>
-        )
-      })}
+      {vehicles.map(v => (
+        <option key={v.id} value={v.id}>{v.name}</option>
+      ))}
     </select>
   )
 }

@@ -52,7 +52,6 @@ export interface Flow {
   destination: string
   distanceFt: number           // ≥ 0; one-way
   thruPerHr: number            // cycles/hr, ≥ 0
-  weightLbs: number            // ≥ 0
   turns: number                // count, integer ≥ 0
   liftHeightFt: number         // ft, ≥ 0; total vertical travel per cycle
   vehicleId?: string

@@ -25,7 +25,6 @@ function emptyFlow(): Flow {
     destination: '',
     distanceFt: 0,
     thruPerHr: 0,
-    weightLbs: 0,
     turns: 0,
     liftHeightFt: 0,
   }
@@ -47,7 +46,6 @@ export default function FlowsTable({
   const add = () => onFlowsChange([...flows, emptyFlow()])
 
   const distLabel = metric ? 'Distance (m)' : 'Distance (ft)'
-  const weightLabel = metric ? 'Weight (kg)' : 'Weight (lbs)'
   const liftLabel = metric ? 'Lift (m)' : 'Lift (ft)'
 
   return (
@@ -77,7 +75,6 @@ export default function FlowsTable({
                   <th>Destination</th>
                   <th className="flow-th-num">{distLabel}</th>
                   <th className="flow-th-num">Thru/hr</th>
-                  <th className="flow-th-num">{weightLabel}</th>
                   <th className="flow-th-num">Turns</th>
                   <th className="flow-th-num">{liftLabel}</th>
                   <th>Vehicle</th>

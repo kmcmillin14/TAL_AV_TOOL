@@ -45,9 +45,6 @@ export default function FlowRow({
   const distDisplay = metric
     ? (flow.distanceFt / FT_PER_M).toFixed(0)
     : flow.distanceFt.toString()
-  const weightDisplay = metric
-    ? (flow.weightLbs / LBS_PER_KG).toFixed(0)
-    : flow.weightLbs.toString()
   const liftDisplay = metric
     ? (flow.liftHeightFt / FT_PER_M).toFixed(1)
     : flow.liftHeightFt.toString()
@@ -55,10 +52,6 @@ export default function FlowRow({
   const setDistance = (input: string) => {
     const n = clampNum(input)
     onChange({ ...flow, distanceFt: metric ? n * FT_PER_M : n })
-  }
-  const setWeight = (input: string) => {
-    const n = clampNum(input)
-    onChange({ ...flow, weightLbs: metric ? n * LBS_PER_KG : n })
   }
   const setLift = (input: string) => {
     const n = clampNum(input)
@@ -68,9 +61,6 @@ export default function FlowRow({
   const selectedVehicle = flow.vehicleId
     ? vehicles.find(v => v.id === flow.vehicleId)
     : undefined
-  const overweight = selectedVehicle
-    ? flow.weightLbs > selectedVehicle.calc.maxWeightLbs
-    : false
 
   const rawDisplay =
     derived.rawVehicles == null ? '—' : derived.rawVehicles.toFixed(3)
@@ -126,21 +116,6 @@ export default function FlowRow({
       </td>
       <td className="flow-cell-wrap">
         <input
-          className={`flow-cell mono ${overweight ? 'flow-cell-bad' : ''}`}
-          type="number"
-          min="0"
-          inputMode="decimal"
-          value={weightDisplay}
-          onChange={e => setWeight(e.target.value)}
-          title={
-            overweight && selectedVehicle
-              ? `Exceeds ${selectedVehicle.name} max load (${selectedVehicle.calc.maxWeightLbs.toLocaleString()} lb)`
-              : undefined
-          }
-        />
-      </td>
-      <td className="flow-cell-wrap">
-        <input
           className="flow-cell mono"
           type="number"
           min="0"
@@ -171,7 +146,6 @@ export default function FlowRow({
         <VehicleSelect
           vehicles={vehicles}
           value={flow.vehicleId}
-          flowWeightLbs={flow.weightLbs}
           onChange={vid => onChange({ ...flow, vehicleId: vid })}
         />
       </td>
