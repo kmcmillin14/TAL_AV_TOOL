@@ -46,13 +46,15 @@ export interface ApplicationRequirements {
 
 // ---- Step 3: Material Flows ----
 
+export type RouteLayout = 'low' | 'medium' | 'high'
+
 export interface Flow {
   id: string
   origin: string
   destination: string
-  distanceFt: number           // ≥ 0; one-way
+  distanceFt: number           // ≥ 0; one-way (cycle multiplies by 2 for round-trip)
   thruPerHr: number            // cycles/hr, ≥ 0
-  turns: number                // count, integer ≥ 0
+  routeLayout: RouteLayout     // path geometry: low (50%) / medium (70%) / high (90%) of rated cruise
   liftHeightFt: number         // ft, ≥ 0; total vertical travel per cycle
   customDelaySec: number       // s, ≥ 0; ad-hoc per-flow time (handoffs, queueing, doors)
   vehicleId?: string
@@ -65,12 +67,13 @@ export interface CycleBreakdown {
   loadSec: number
   unloadSec: number
   liftTimeSec: number
-  turnPenaltySec: number
   customDelaySec: number
   totalSec: number
   // Display-only context (not used in any sum)
   methodName: string
   liftHeightFt: number
+  routeLayout: RouteLayout
+  routeLayoutFactor: number
 }
 
 export interface FlowDerived {
@@ -96,8 +99,15 @@ export interface ProjectFlowSummary {
   totalBaseFleet: number
 }
 
-/** Global per-turn cycle penalty in seconds. Applied as `turns × TURN_TIME_SEC`. */
-export const TURN_TIME_SEC = 4
+/** Route-layout speed factor map. Engineers pick low/medium/high per flow;
+ *  the calc scales rated cruise speed by this fraction to get effective
+ *  travel speed. Low captures dense aisles and many turns; High captures
+ *  open straightaways and few turns. */
+export const ROUTE_LAYOUT_FACTORS: Record<RouteLayout, number> = {
+  low: 0.5,
+  medium: 0.7,
+  high: 0.9,
+}
 
 /** Default project-level buffer fraction used by Step 5. Declared here for
  *  cross-step visibility — Step 3 does not use it. */

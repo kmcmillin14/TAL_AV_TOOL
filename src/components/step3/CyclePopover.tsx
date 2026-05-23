@@ -65,10 +65,6 @@ export default function CyclePopover({ breakdown, onClose, triggerRef }: Props) 
           <dd className="mono">{fmt(breakdown.liftTimeSec)}</dd>
         </div>
         <div className="cycle-popover-row">
-          <dt>Turns</dt>
-          <dd className="mono">{fmt(breakdown.turnPenaltySec)}</dd>
-        </div>
-        <div className="cycle-popover-row">
           <dt>Custom delay</dt>
           <dd className="mono">{fmt(breakdown.customDelaySec)}</dd>
         </div>

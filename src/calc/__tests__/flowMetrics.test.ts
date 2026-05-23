@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
-import { cycleSeconds } from '../flowMetrics'
-import { TURN_TIME_SEC } from '../types'
+import { cycleSeconds, routeLayoutFactor } from '../flowMetrics'
+import { ROUTE_LAYOUT_FACTORS } from '../types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
 const cb18: Pick<Vehicle, 'calc' | 'transferMethods'> = {
@@ -22,41 +22,58 @@ const noLiftSpeed: Pick<Vehicle, 'calc' | 'transferMethods'> = {
   ],
 }
 
-describe('cycleSeconds', () => {
-  it('sums travel-loaded + travel-empty + load + unload + turns × TURN_TIME_SEC', () => {
-    // distance 100 ft, Fork transfer (no lift), 2 turns, liftHeight 0:
-    //   loaded   100 / 9.84 ≈ 10.16 s
-    //   empty    100 / 11.5 ≈  8.70 s
-    //   load + unload          = 10 s
-    //   turns 2 × 4            =  8 s
-    //   total                 ≈ 36.86 s
-    expect(cycleSeconds(100, cb18 as Vehicle, 2, 0, 0)).toBeCloseTo(36.86, 1)
+describe('routeLayoutFactor', () => {
+  it('maps low/medium/high to 0.5/0.7/0.9', () => {
+    expect(routeLayoutFactor('low')).toBe(0.5)
+    expect(routeLayoutFactor('medium')).toBe(0.7)
+    expect(routeLayoutFactor('high')).toBe(0.9)
   })
 
-  it('handles zero turns', () => {
-    expect(cycleSeconds(100, cb18 as Vehicle, 0, 0, 0)).toBeCloseTo(28.86, 1)
+  it('pins the constants exported on the type module', () => {
+    expect(ROUTE_LAYOUT_FACTORS.low).toBe(0.5)
+    expect(ROUTE_LAYOUT_FACTORS.medium).toBe(0.7)
+    expect(ROUTE_LAYOUT_FACTORS.high).toBe(0.9)
+  })
+})
+
+describe('cycleSeconds', () => {
+  it('medium routeLayout (×0.7): travel + load + unload', () => {
+    // distance 100 ft, Fork, medium routeLayout, no lift, no delay
+    //   effective speed loaded = 9.84 × 0.7 = 6.888 fps → 100 / 6.888 ≈ 14.52 s
+    //   effective speed empty  = 11.5 × 0.7 = 8.05  fps → 100 / 8.05  ≈ 12.42 s
+    //   load + unload                                  = 10 s
+    //   total                                          ≈ 36.94 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 0, 0)).toBeCloseTo(36.94, 1)
+  })
+
+  it('high routeLayout (×0.9): faster travel', () => {
+    // 100 / (9.84*0.9) + 100 / (11.5*0.9) + 10 = 11.29 + 9.66 + 10 = 30.96 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 'high', 0, 0)).toBeCloseTo(30.96, 1)
+  })
+
+  it('low routeLayout (×0.5): much slower travel', () => {
+    // 100 / (9.84*0.5) + 100 / (11.5*0.5) + 10 = 20.33 + 17.39 + 10 = 47.72 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 'low', 0, 0)).toBeCloseTo(47.72, 1)
   })
 
   it('uses transferMethodIdx to pick load/unload times', () => {
-    // distance 100 ft, Lift Platform (idx 1) with liftHeightFt = 0,
-    // so no lift time is added even though lifts: true:
-    //   10.16 + 8.70 + 8 + 8 = 34.86 s
-    expect(cycleSeconds(100, cb18 as Vehicle, 0, 0, 0, 1)).toBeCloseTo(34.86, 1)
+    // medium routeLayout, Lift Platform (idx 1), liftHeightFt 0:
+    //   14.52 + 12.42 + 8 + 8 = 42.94 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 0, 0, 1)).toBeCloseTo(42.94, 1)
   })
 
   it('defaults transferMethodIdx to 0 when omitted', () => {
-    expect(cycleSeconds(100, cb18 as Vehicle, 0, 0)).toBeCloseTo(28.86, 1)
+    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 0)).toBeCloseTo(36.94, 1)
   })
 
   it('returns load+unload only when distance is 0 and no lift', () => {
-    expect(cycleSeconds(0, cb18 as Vehicle, 0, 0, 0)).toBeCloseTo(10, 5)
+    expect(cycleSeconds(0, cb18 as Vehicle, 'medium', 0, 0)).toBeCloseTo(10, 5)
   })
 
   it('adds liftHeightFt / liftSpeedFps for lifts:true transfer methods', () => {
-    // distance 0, Lift Platform (idx 1), turns 0, liftHeightFt = 10 ft,
-    // liftSpeedFps = 0.65 → liftTime = 10 / 0.65 = 15.38 s
-    //   load + unload = 16, + lift 15.38 = 31.38 s
-    expect(cycleSeconds(0, cb18 as Vehicle, 0, 10, 0, 1)).toBeCloseTo(31.38, 1)
+    // distance 0, Lift Platform (idx 1), liftHeightFt = 10 ft, liftSpeedFps = 0.65
+    //   liftTime = 10 / 0.65 = 15.38 s; load + unload = 16, + 15.38 = 31.38 s
+    expect(cycleSeconds(0, cb18 as Vehicle, 'medium', 10, 0, 1)).toBeCloseTo(31.38, 1)
   })
 
   it('uses the spec example: liftHeight 10 ft at 0.5 fps → +20 s', () => {
@@ -64,55 +81,51 @@ describe('cycleSeconds', () => {
       calc: { speedLoadedFps: 5, speedUnloadedFps: 5, liftSpeedFps: 0.5 } as Vehicle['calc'],
       transferMethods: [{ method: 'Lift', loadTimeSec: 0, unloadTimeSec: 0, lifts: true }],
     }
-    // distance 0, no turns, liftHeight 10, liftSpeed 0.5 → 20 s exactly
-    expect(cycleSeconds(0, v as Vehicle, 0, 10, 0)).toBeCloseTo(20, 5)
+    // distance 0 (routeLayout irrelevant when distance is 0), liftHeight 10, liftSpeed 0.5 → 20 s exactly
+    expect(cycleSeconds(0, v as Vehicle, 'medium', 10, 0)).toBeCloseTo(20, 5)
   })
 
   it('ignores liftHeightFt when the transfer method does not have lifts: true', () => {
-    // Fork (idx 0) has no lifts flag. liftHeightFt provided but should add 0.
-    //   100 ft → 10.16 + 8.70 + 5 + 5 = 28.86 s; lift adds nothing.
-    expect(cycleSeconds(100, cb18 as Vehicle, 0, 50, 0)).toBeCloseTo(28.86, 1)
+    // Fork (idx 0) in this fixture has no lifts flag. liftHeightFt provided but adds 0.
+    //   medium routeLayout: 14.52 + 12.42 + 5 + 5 = 36.94 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 50, 0)).toBeCloseTo(36.94, 1)
   })
 
   it('adds 0 lift time when liftSpeedFps is missing on the vehicle', () => {
-    // Transfer claims lifts: true but vehicle has no liftSpeedFps → graceful 0.
-    //   100 ft loaded at 9.84 = 10.16 s + 100/11.5 = 8.70 + 16 (load+unload) = 34.86 s
-    expect(cycleSeconds(100, noLiftSpeed as Vehicle, 0, 10, 0)).toBeCloseTo(34.86, 1)
+    // Transfer has lifts:true but vehicle has no liftSpeedFps → graceful 0.
+    //   medium: 14.52 + 12.42 + 8 + 8 = 42.94 s
+    expect(cycleSeconds(100, noLiftSpeed as Vehicle, 'medium', 10, 0)).toBeCloseTo(42.94, 1)
   })
 
   it('returns null when distance is negative', () => {
-    expect(cycleSeconds(-1, cb18 as Vehicle, 0, 0, 0)).toBeNull()
-  })
-
-  it('returns null when turns is negative', () => {
-    expect(cycleSeconds(100, cb18 as Vehicle, -1, 0, 0)).toBeNull()
+    expect(cycleSeconds(-1, cb18 as Vehicle, 'medium', 0, 0)).toBeNull()
   })
 
   it('returns null when liftHeightFt is negative', () => {
-    expect(cycleSeconds(100, cb18 as Vehicle, 0, -1, 0)).toBeNull()
+    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', -1, 0)).toBeNull()
+  })
+
+  it('returns null when customDelaySec is negative', () => {
+    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 0, -1)).toBeNull()
   })
 
   it('returns null when vehicle has no transferMethods', () => {
     const broken: Pick<Vehicle, 'calc' | 'transferMethods'> = { ...cb18, transferMethods: [] }
-    expect(cycleSeconds(100, broken, 0, 0, 0)).toBeNull()
+    expect(cycleSeconds(100, broken, 'medium', 0, 0)).toBeNull()
   })
 
   it('returns null when transferMethodIdx is out of range', () => {
-    expect(cycleSeconds(100, cb18, 0, 0, 0, 99)).toBeNull()
+    expect(cycleSeconds(100, cb18, 'medium', 0, 0, 99)).toBeNull()
   })
 
   it('returns null when speedLoadedFps is 0', () => {
     const broken: Pick<Vehicle, 'calc' | 'transferMethods'> = { ...cb18, calc: { ...cb18.calc, speedLoadedFps: 0 } }
-    expect(cycleSeconds(100, broken, 0, 0, 0)).toBeNull()
+    expect(cycleSeconds(100, broken, 'medium', 0, 0)).toBeNull()
   })
 
   it('returns null when speedUnloadedFps is 0', () => {
     const broken: Pick<Vehicle, 'calc' | 'transferMethods'> = { ...cb18, calc: { ...cb18.calc, speedUnloadedFps: 0 } }
-    expect(cycleSeconds(100, broken, 0, 0, 0)).toBeNull()
-  })
-
-  it('pins TURN_TIME_SEC at 4 (changes here are a spec change)', () => {
-    expect(TURN_TIME_SEC).toBe(4)
+    expect(cycleSeconds(100, broken, 'medium', 0, 0)).toBeNull()
   })
 })
 
@@ -153,7 +166,7 @@ describe('flowDerived (orchestrator)', () => {
   it('returns nulls when vehicle is undefined', () => {
     const flow: Flow = {
       id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 100, thruPerHr: 10, turns: 0, liftHeightFt: 0, customDelaySec: 0,
+      distanceFt: 100, thruPerHr: 10, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0,
     }
     expect(flowDerived(flow, undefined)).toEqual({
       cycleSeconds: null,
@@ -162,23 +175,23 @@ describe('flowDerived (orchestrator)', () => {
     })
   })
 
-  it('ties cycle → raw together (Fork transfer, with turns)', () => {
+  it('ties cycle → raw together (Fork, medium routeLayout)', () => {
     const flow: Flow = {
       id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 100, thruPerHr: 30, turns: 1, liftHeightFt: 0, customDelaySec: 0,
+      distanceFt: 100, thruPerHr: 30, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0,
       vehicleId: 'cb18', transferMethodIdx: 0,
     }
     const d = flowDerived(flow, cb18Veh)
-    // cycle = 10.16 + 8.70 + 5 + 5 + 4 = 32.86 s
-    expect(d.cycleSeconds).toBeCloseTo(32.86, 1)
-    // raw = 30 × 32.86 / 3600 ≈ 0.274
-    expect(d.rawVehicles).toBeCloseTo(0.274, 3)
+    // medium ×0.7: 14.52 + 12.42 + 5 + 5 = 36.94 s
+    expect(d.cycleSeconds).toBeCloseTo(36.94, 1)
+    // raw = 30 × 36.94 / 3600 ≈ 0.308
+    expect(d.rawVehicles).toBeCloseTo(0.308, 3)
   })
 
   it('threads liftHeightFt through to cycleSeconds (Lift Platform)', () => {
     const flow: Flow = {
       id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 0, thruPerHr: 60, turns: 0, liftHeightFt: 13, customDelaySec: 0,
+      distanceFt: 0, thruPerHr: 60, routeLayout: 'medium', liftHeightFt: 13, customDelaySec: 0,
       vehicleId: 'cb18', transferMethodIdx: 1,
     }
     const d = flowDerived(flow, cb18Veh)
@@ -195,11 +208,11 @@ import { groupSummary } from '../flowMetrics'
 
 describe('groupSummary', () => {
   const cb18Flows: Flow[] = [
-    { id: '1', origin: 'Dock A',    destination: 'Storage 1', distanceFt: 590, thruPerHr: 45, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
-    { id: '2', origin: 'Storage 1', destination: 'Pack Line', distanceFt: 394, thruPerHr: 30, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
-    { id: '4', origin: 'Dock A',    destination: 'Storage 2', distanceFt: 722, thruPerHr: 38, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
-    { id: '5', origin: 'Storage 2', destination: 'Pack Line', distanceFt: 476, thruPerHr: 25, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
-    { id: '6', origin: 'Inbound',   destination: 'Storage 1', distanceFt: 312, thruPerHr: 22, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+    { id: '1', origin: 'Dock A',    destination: 'Storage 1', distanceFt: 590, thruPerHr: 45, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+    { id: '2', origin: 'Storage 1', destination: 'Pack Line', distanceFt: 394, thruPerHr: 30, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+    { id: '4', origin: 'Dock A',    destination: 'Storage 2', distanceFt: 722, thruPerHr: 38, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+    { id: '5', origin: 'Storage 2', destination: 'Pack Line', distanceFt: 476, thruPerHr: 25, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+    { id: '6', origin: 'Inbound',   destination: 'Storage 1', distanceFt: 312, thruPerHr: 22, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
   ]
   const derivedCb18 = new Map([
     ['1', { cycleSeconds: 138, rawVehicles: 1.725, breakdown: null }],
@@ -220,9 +233,9 @@ describe('groupSummary', () => {
   })
 
   const ml2Flows: Flow[] = [
-    { id: '3', origin: 'Pack Line', destination: 'Dock B',    distanceFt: 295, thruPerHr: 15, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
-    { id: '7', origin: 'Pick Wall', destination: 'Pack Line', distanceFt: 197, thruPerHr: 28, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
-    { id: '8', origin: 'Storage 1', destination: 'Pick Wall', distanceFt: 246, thruPerHr: 18, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+    { id: '3', origin: 'Pack Line', destination: 'Dock B',    distanceFt: 295, thruPerHr: 15, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+    { id: '7', origin: 'Pick Wall', destination: 'Pack Line', distanceFt: 197, thruPerHr: 28, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+    { id: '8', origin: 'Storage 1', destination: 'Pick Wall', distanceFt: 246, thruPerHr: 18, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
   ]
   const derivedMl2 = new Map([
     ['3', { cycleSeconds: 118, rawVehicles: 0.492, breakdown: null }],
@@ -253,7 +266,7 @@ describe('groupSummary', () => {
   it('skips flows assigned to other vehicles', () => {
     const mixed: Flow[] = [
       ...cb18Flows,
-      { id: 'X', origin: '', destination: '', distanceFt: 100, thruPerHr: 99, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+      { id: 'X', origin: '', destination: '', distanceFt: 100, thruPerHr: 99, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
     ]
     const derived = new Map(derivedCb18)
     derived.set('X', { cycleSeconds: 50, rawVehicles: 1.0, breakdown: null })
@@ -270,14 +283,14 @@ import { projectFlowSummary } from '../flowMetrics'
 describe('projectFlowSummary', () => {
   it('matches verification totals: 8 flows · 221 thru · 8 base fleet', () => {
     const allFlows: Flow[] = [
-      { id: '1', origin: '', destination: '', distanceFt: 1, thruPerHr: 45, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
-      { id: '2', origin: '', destination: '', distanceFt: 1, thruPerHr: 30, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
-      { id: '3', origin: '', destination: '', distanceFt: 1, thruPerHr: 15, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
-      { id: '4', origin: '', destination: '', distanceFt: 1, thruPerHr: 38, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
-      { id: '5', origin: '', destination: '', distanceFt: 1, thruPerHr: 25, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
-      { id: '6', origin: '', destination: '', distanceFt: 1, thruPerHr: 22, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
-      { id: '7', origin: '', destination: '', distanceFt: 1, thruPerHr: 28, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
-      { id: '8', origin: '', destination: '', distanceFt: 1, thruPerHr: 18, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+      { id: '1', origin: '', destination: '', distanceFt: 1, thruPerHr: 45, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+      { id: '2', origin: '', destination: '', distanceFt: 1, thruPerHr: 30, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+      { id: '3', origin: '', destination: '', distanceFt: 1, thruPerHr: 15, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+      { id: '4', origin: '', destination: '', distanceFt: 1, thruPerHr: 38, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+      { id: '5', origin: '', destination: '', distanceFt: 1, thruPerHr: 25, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+      { id: '6', origin: '', destination: '', distanceFt: 1, thruPerHr: 22, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+      { id: '7', origin: '', destination: '', distanceFt: 1, thruPerHr: 28, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+      { id: '8', origin: '', destination: '', distanceFt: 1, thruPerHr: 18, routeLayout: 'medium', liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
     ]
     const derived = new Map([
       ['1', { cycleSeconds: 138, rawVehicles: 1.725, breakdown: null }],
@@ -308,45 +321,60 @@ describe('projectFlowSummary', () => {
 import { cycleBreakdown } from '../flowMetrics'
 
 describe('cycleBreakdown', () => {
-  it('returns components that sum to totalSec (CB18, 100 ft, 2 turns, Fork, 0 lift)', () => {
-    const b = cycleBreakdown(100, cb18 as Vehicle, 2, 0, 0)
+  it('returns components that sum to totalSec (CB18, 100 ft, medium routeLayout, Fork, 0 lift)', () => {
+    const b = cycleBreakdown(100, cb18 as Vehicle, 'medium', 0, 0)
     expect(b).not.toBeNull()
     if (!b) return
-    expect(b.travelLoadedSec).toBeCloseTo(100 / 9.84, 3)
-    expect(b.travelEmptySec).toBeCloseTo(100 / 11.5, 3)
+    // medium factor 0.7
+    expect(b.travelLoadedSec).toBeCloseTo(100 / (9.84 * 0.7), 3)
+    expect(b.travelEmptySec).toBeCloseTo(100 / (11.5 * 0.7), 3)
     expect(b.loadSec).toBe(5)
     expect(b.unloadSec).toBe(5)
     expect(b.liftTimeSec).toBe(0)
-    expect(b.turnPenaltySec).toBe(8)
     expect(b.customDelaySec).toBe(0)
     expect(b.methodName).toBe('Fork')
     expect(b.liftHeightFt).toBe(0)
+    expect(b.routeLayout).toBe('medium')
+    expect(b.routeLayoutFactor).toBe(0.7)
     const sum = b.travelLoadedSec + b.travelEmptySec
               + b.loadSec + b.unloadSec
-              + b.liftTimeSec + b.turnPenaltySec
+              + b.liftTimeSec
               + b.customDelaySec
     expect(b.totalSec).toBeCloseTo(sum, 5)
   })
 
+  it('routeLayout choice scales travel speed (loaded + empty)', () => {
+    const low = cycleBreakdown(100, cb18 as Vehicle, 'low', 0, 0)!
+    const med = cycleBreakdown(100, cb18 as Vehicle, 'medium', 0, 0)!
+    const hi  = cycleBreakdown(100, cb18 as Vehicle, 'high', 0, 0)!
+    expect(low.travelLoadedSec).toBeGreaterThan(med.travelLoadedSec)
+    expect(med.travelLoadedSec).toBeGreaterThan(hi.travelLoadedSec)
+    // load + unload identical across the three
+    expect(low.loadSec).toBe(med.loadSec)
+    expect(med.loadSec).toBe(hi.loadSec)
+  })
+
   it('includes customDelaySec in totalSec', () => {
-    const b = cycleBreakdown(100, cb18 as Vehicle, 0, 0, 30, 0)
+    const b = cycleBreakdown(100, cb18 as Vehicle, 'medium', 0, 30, 0)
     expect(b).not.toBeNull()
     if (!b) return
     expect(b.customDelaySec).toBe(30)
-    // base (no delay, no turns, no lift): 100/9.84 + 100/11.5 + 5 + 5 = 28.86
-    expect(b.totalSec).toBeCloseTo(28.86 + 30, 1)
+    // base (medium, no lift): 14.52 + 12.42 + 5 + 5 = 36.94 s; + 30 = 66.94 s
+    expect(b.totalSec).toBeCloseTo(36.94 + 30, 1)
   })
 
   it('returns null when customDelaySec is negative', () => {
-    expect(cycleBreakdown(100, cb18 as Vehicle, 0, 0, -1, 0)).toBeNull()
+    expect(cycleBreakdown(100, cb18 as Vehicle, 'medium', 0, -1, 0)).toBeNull()
   })
 
-  it('echoes methodName and liftHeightFt for popover display', () => {
-    const b = cycleBreakdown(0, cb18 as Vehicle, 0, 4, 0, 1)
+  it('echoes methodName, liftHeightFt, routeLayout, and factor for popover display', () => {
+    const b = cycleBreakdown(0, cb18 as Vehicle, 'high', 4, 0, 1)
     expect(b).not.toBeNull()
     if (!b) return
     expect(b.methodName).toBe('Lift Platform')
     expect(b.liftHeightFt).toBe(4)
+    expect(b.routeLayout).toBe('high')
+    expect(b.routeLayoutFactor).toBe(0.9)
   })
 
   it('adds lift time when transfer method has lifts: true and liftSpeedFps > 0', () => {
@@ -360,22 +388,22 @@ describe('cycleBreakdown', () => {
         { method: 'Lift Platform', loadTimeSec: 8, unloadTimeSec: 8, lifts: true },
       ],
     }
-    const b = cycleBreakdown(0, lifter as Vehicle, 0, 10, 0)
+    // distance 0 → travel is 0 regardless of routeLayout; 10 ft / 0.5 fps = 20 s
+    const b = cycleBreakdown(0, lifter as Vehicle, 'medium', 10, 0)
     expect(b).not.toBeNull()
     if (!b) return
-    expect(b.liftTimeSec).toBe(20)        // 10 ft / 0.5 fps = 20 s
+    expect(b.liftTimeSec).toBe(20)
     expect(b.totalSec).toBeCloseTo(8 + 8 + 20, 5)
   })
 
   it('returns null for the same edge cases as cycleSeconds', () => {
-    expect(cycleBreakdown(-1, cb18 as Vehicle, 0, 0, 0)).toBeNull()
-    expect(cycleBreakdown(100, cb18 as Vehicle, -1, 0, 0)).toBeNull()
-    expect(cycleBreakdown(100, cb18 as Vehicle, 0, -1, 0)).toBeNull()
-    expect(cycleBreakdown(100, cb18 as Vehicle, 0, 0, 0, 99)).toBeNull()
+    expect(cycleBreakdown(-1, cb18 as Vehicle, 'medium', 0, 0)).toBeNull()
+    expect(cycleBreakdown(100, cb18 as Vehicle, 'medium', -1, 0)).toBeNull()
+    expect(cycleBreakdown(100, cb18 as Vehicle, 'medium', 0, 0, 99)).toBeNull()
     const noTransfers: Pick<Vehicle, 'calc' | 'transferMethods'> = {
       ...cb18,
       transferMethods: [],
     }
-    expect(cycleBreakdown(100, noTransfers as Vehicle, 0, 0, 0)).toBeNull()
+    expect(cycleBreakdown(100, noTransfers as Vehicle, 'medium', 0, 0)).toBeNull()
   })
 })

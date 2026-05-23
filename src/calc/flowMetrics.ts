@@ -1,12 +1,17 @@
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import { TURN_TIME_SEC } from './types'
+import { ROUTE_LAYOUT_FACTORS } from './types'
 import type {
   Flow,
   FlowDerived,
   CycleBreakdown,
   GroupSummary,
   ProjectFlowSummary,
+  RouteLayout,
 } from './types'
+
+export function routeLayoutFactor(layout: RouteLayout): number {
+  return ROUTE_LAYOUT_FACTORS[layout]
+}
 
 /**
  * Per-component breakdown of a flow's round-trip cycle time. Pure.
@@ -20,13 +25,12 @@ import type {
 export function cycleBreakdown(
   distanceFt: number,
   vehicle: Pick<Vehicle, 'calc' | 'transferMethods'>,
-  turns: number,
+  routeLayout: RouteLayout,
   liftHeightFt: number,
   customDelaySec: number,
   transferMethodIdx: number = 0,
 ): CycleBreakdown | null {
   if (distanceFt < 0) return null
-  if (turns < 0) return null
   if (liftHeightFt < 0) return null
   if (customDelaySec < 0) return null
   if (!vehicle.transferMethods || vehicle.transferMethods.length === 0) return null
@@ -38,19 +42,21 @@ export function cycleBreakdown(
   if (!sLoaded || sLoaded <= 0) return null
   if (!sEmpty || sEmpty <= 0) return null
 
-  const travelLoadedSec = distanceFt / sLoaded
-  const travelEmptySec = distanceFt / sEmpty
+  const factor = routeLayoutFactor(routeLayout)
+  const effectiveLoaded = sLoaded * factor
+  const effectiveEmpty = sEmpty * factor
+  const travelLoadedSec = distanceFt / effectiveLoaded
+  const travelEmptySec = distanceFt / effectiveEmpty
   const loadSec = transfer.loadTimeSec
   const unloadSec = transfer.unloadTimeSec
   const liftSpeed = vehicle.calc.liftSpeedFps
   const liftTimeSec = transfer.lifts && liftSpeed && liftSpeed > 0
     ? liftHeightFt / liftSpeed
     : 0
-  const turnPenaltySec = turns * TURN_TIME_SEC
   const totalSec =
     travelLoadedSec + travelEmptySec +
     loadSec + unloadSec +
-    liftTimeSec + turnPenaltySec +
+    liftTimeSec +
     customDelaySec
 
   return {
@@ -59,11 +65,12 @@ export function cycleBreakdown(
     loadSec,
     unloadSec,
     liftTimeSec,
-    turnPenaltySec,
     customDelaySec,
     totalSec,
     methodName: transfer.method,
     liftHeightFt,
+    routeLayout,
+    routeLayoutFactor: factor,
   }
 }
 
@@ -81,12 +88,12 @@ export function cycleBreakdown(
 export function cycleSeconds(
   distanceFt: number,
   vehicle: Pick<Vehicle, 'calc' | 'transferMethods'>,
-  turns: number,
+  routeLayout: RouteLayout,
   liftHeightFt: number,
   customDelaySec: number = 0,
   transferMethodIdx: number = 0,
 ): number | null {
-  return cycleBreakdown(distanceFt, vehicle, turns, liftHeightFt, customDelaySec, transferMethodIdx)?.totalSec ?? null
+  return cycleBreakdown(distanceFt, vehicle, routeLayout, liftHeightFt, customDelaySec, transferMethodIdx)?.totalSec ?? null
 }
 
 /**
@@ -120,7 +127,7 @@ export function flowDerived(
   const breakdown = cycleBreakdown(
     flow.distanceFt ?? 0,
     vehicle,
-    flow.turns ?? 0,
+    flow.routeLayout ?? 'medium',
     flow.liftHeightFt ?? 0,
     flow.customDelaySec ?? 0,
     flow.transferMethodIdx ?? 0,

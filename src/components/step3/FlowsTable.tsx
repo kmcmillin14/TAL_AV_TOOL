@@ -25,7 +25,7 @@ function emptyFlow(): Flow {
     destination: '',
     distanceFt: 0,
     thruPerHr: 0,
-    turns: 0,
+    routeLayout: 'medium',
     liftHeightFt: 0,
     customDelaySec: 0,
   }
@@ -78,7 +78,7 @@ export default function FlowsTable({
                   <th>Destination</th>
                   <th className="flow-th-num">{distLabel}</th>
                   <th className="flow-th-num">Thru/hr</th>
-                  <th className="flow-th-num">Turns</th>
+                  <th className="flow-th-num">Route Layout</th>
                   <th className="flow-th-num">{liftLabel}</th>
                   <th className="flow-th-num" title="Ad-hoc time added to every cycle (handoffs, queueing, doors)">Delay (s)</th>
                   <th className="flow-th-num">Cycle</th>

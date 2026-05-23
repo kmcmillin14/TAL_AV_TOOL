@@ -36,7 +36,7 @@ describe('flows round-trip', () => {
         destination: 'B',
         distanceFt: 100,
         thruPerHr: 10,
-        turns: 1,
+        routeLayout: 'medium',
         liftHeightFt: 0,
         customDelaySec: 0,
         vehicleId: 'cb18',
@@ -48,7 +48,7 @@ describe('flows round-trip', () => {
     expect(read?.flows?.[0]).toMatchObject({
       id: 'f1',
       distanceFt: 100,
-      turns: 1,
+      routeLayout: 'medium',
       vehicleId: 'cb18',
     })
   })

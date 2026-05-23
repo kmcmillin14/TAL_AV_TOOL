@@ -147,20 +147,9 @@ export default function FlowRow({
         />
       </td>
       <td className="flow-cell-wrap">
-        <input
-          className="flow-cell mono"
-          type="number"
-          min="0"
-          step="1"
-          inputMode="numeric"
-          value={flow.turns}
-          onChange={e =>
-            onChange({
-              ...flow,
-              turns: Math.floor(clampNum(e.target.value)),
-            })
-          }
-        />
+        <span className="flow-cell-readonly mono" title="Route layout — picker added in next commit">
+          {flow.routeLayout}
+        </span>
       </td>
       <td className="flow-cell-wrap">
         <input
