@@ -97,6 +97,7 @@ export default function FlowsTable({
                       derivedByFlowId.get(f.id) ?? {
                         cycleSeconds: null,
                         rawVehicles: null,
+                        breakdown: null,
                       }
                     }
                     unitSystem={unitSystem}

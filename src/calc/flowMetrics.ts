@@ -1,31 +1,29 @@
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { TURN_TIME_SEC } from './types'
-import type { Flow, FlowDerived, GroupSummary, ProjectFlowSummary } from './types'
+import type {
+  Flow,
+  FlowDerived,
+  CycleBreakdown,
+  GroupSummary,
+  ProjectFlowSummary,
+} from './types'
 
 /**
- * Round-trip cycle time for one move on a flow, in seconds.
+ * Per-component breakdown of a flow's round-trip cycle time. Pure.
  *
- *   cycle = (distance / speedLoaded)         // travel out, loaded
- *         + (distance / speedUnloaded)       // travel back, empty
- *         + load + unload                    // transfer method's static times
- *         + (lifts ? liftHeightFt / liftSpeedFps : 0)
- *         + turns × TURN_TIME_SEC
+ *   travelLoaded + travelEmpty + load + unload + lift + turns = total
  *
- * `liftHeightFt` is the per-cycle total vertical travel of the load (engineer
- * enters the sum across all lift events in one cycle). Only added when the
- * chosen transfer method has `lifts: true` AND the vehicle declares a
- * positive `liftSpeedFps`. Otherwise lift time is 0 (does not error).
- *
- * Returns `null` when inputs make the calculation undefined. Callers display
- * "—" rather than render a number.
+ * `liftTimeSec` is 0 unless the chosen transfer method has `lifts: true`
+ * AND the vehicle declares a positive `liftSpeedFps`. Returns `null` for
+ * the same input conditions that make `cycleSeconds` undefined.
  */
-export function cycleSeconds(
+export function cycleBreakdown(
   distanceFt: number,
   vehicle: Pick<Vehicle, 'calc' | 'transferMethods'>,
   turns: number,
   liftHeightFt: number,
   transferMethodIdx: number = 0,
-): number | null {
+): CycleBreakdown | null {
   if (distanceFt < 0) return null
   if (turns < 0) return null
   if (liftHeightFt < 0) return null
@@ -38,18 +36,50 @@ export function cycleSeconds(
   if (!sLoaded || sLoaded <= 0) return null
   if (!sEmpty || sEmpty <= 0) return null
 
-  const travelLoaded = distanceFt / sLoaded
-  const travelEmpty = distanceFt / sEmpty
-
+  const travelLoadedSec = distanceFt / sLoaded
+  const travelEmptySec = distanceFt / sEmpty
+  const loadSec = transfer.loadTimeSec
+  const unloadSec = transfer.unloadTimeSec
   const liftSpeed = vehicle.calc.liftSpeedFps
-  const liftTime = transfer.lifts && liftSpeed && liftSpeed > 0
+  const liftTimeSec = transfer.lifts && liftSpeed && liftSpeed > 0
     ? liftHeightFt / liftSpeed
     : 0
+  const turnPenaltySec = turns * TURN_TIME_SEC
+  const totalSec =
+    travelLoadedSec + travelEmptySec +
+    loadSec + unloadSec +
+    liftTimeSec + turnPenaltySec
 
-  return travelLoaded + travelEmpty
-       + transfer.loadTimeSec + transfer.unloadTimeSec
-       + liftTime
-       + turns * TURN_TIME_SEC
+  return {
+    travelLoadedSec,
+    travelEmptySec,
+    loadSec,
+    unloadSec,
+    liftTimeSec,
+    turnPenaltySec,
+    totalSec,
+  }
+}
+
+/**
+ * Round-trip cycle time in seconds. Thin delegate over `cycleBreakdown`.
+ *
+ *   cycle = (distance / speedLoaded) + (distance / speedUnloaded)
+ *         + load + unload
+ *         + (lifts ? liftHeightFt / liftSpeedFps : 0)
+ *         + turns × TURN_TIME_SEC
+ *
+ * Returns `null` when inputs make the calculation undefined. Callers display
+ * "—" rather than render a number.
+ */
+export function cycleSeconds(
+  distanceFt: number,
+  vehicle: Pick<Vehicle, 'calc' | 'transferMethods'>,
+  turns: number,
+  liftHeightFt: number,
+  transferMethodIdx: number = 0,
+): number | null {
+  return cycleBreakdown(distanceFt, vehicle, turns, liftHeightFt, transferMethodIdx)?.totalSec ?? null
 }
 
 /**
@@ -67,23 +97,27 @@ export function rawVehicles(
 }
 
 /**
- * Compose `cycleSeconds` and `rawVehicles` for one flow. Pure wrapper.
+ * Compose `cycleBreakdown` and `rawVehicles` for one flow. Pure wrapper.
+ * The breakdown is precomputed once per flow so the UI can render the
+ * per-component popover without recomputing.
  */
 export function flowDerived(
   flow: Flow,
   vehicle: Vehicle | undefined,
 ): FlowDerived {
-  if (!vehicle) return { cycleSeconds: null, rawVehicles: null }
-  const cycle = cycleSeconds(
+  if (!vehicle) return { cycleSeconds: null, rawVehicles: null, breakdown: null }
+  const breakdown = cycleBreakdown(
     flow.distanceFt,
     vehicle,
     flow.turns,
     flow.liftHeightFt,
     flow.transferMethodIdx ?? 0,
   )
+  const cycle = breakdown?.totalSec ?? null
   return {
     cycleSeconds: cycle,
     rawVehicles: rawVehicles(flow.thruPerHr, cycle),
+    breakdown,
   }
 }
 

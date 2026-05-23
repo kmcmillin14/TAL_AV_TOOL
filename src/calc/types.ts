@@ -59,9 +59,20 @@ export interface Flow {
   transferMethodIdx?: number   // defaults to 0
 }
 
+export interface CycleBreakdown {
+  travelLoadedSec: number
+  travelEmptySec: number
+  loadSec: number
+  unloadSec: number
+  liftTimeSec: number
+  turnPenaltySec: number
+  totalSec: number
+}
+
 export interface FlowDerived {
   cycleSeconds: number | null
   rawVehicles: number | null   // fractional; demand-only
+  breakdown: CycleBreakdown | null
 }
 
 export interface GroupSummary {

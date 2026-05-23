@@ -158,6 +158,7 @@ describe('flowDerived (orchestrator)', () => {
     expect(flowDerived(flow, undefined)).toEqual({
       cycleSeconds: null,
       rawVehicles: null,
+      breakdown: null,
     })
   })
 
@@ -201,11 +202,11 @@ describe('groupSummary', () => {
     { id: '6', origin: 'Inbound',   destination: 'Storage 1', distanceFt: 312, thruPerHr: 22, weightLbs: 2646, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
   ]
   const derivedCb18 = new Map([
-    ['1', { cycleSeconds: 138, rawVehicles: 1.725 }],
-    ['2', { cycleSeconds:  98, rawVehicles: 0.817 }],
-    ['4', { cycleSeconds: 165, rawVehicles: 1.742 }],
-    ['5', { cycleSeconds: 115, rawVehicles: 0.799 }],
-    ['6', { cycleSeconds:  81, rawVehicles: 0.495 }],
+    ['1', { cycleSeconds: 138, rawVehicles: 1.725, breakdown: null }],
+    ['2', { cycleSeconds:  98, rawVehicles: 0.817, breakdown: null }],
+    ['4', { cycleSeconds: 165, rawVehicles: 1.742, breakdown: null }],
+    ['5', { cycleSeconds: 115, rawVehicles: 0.799, breakdown: null }],
+    ['6', { cycleSeconds:  81, rawVehicles: 0.495, breakdown: null }],
   ])
 
   it('aggregates the CB18 group per the verification table', () => {
@@ -224,9 +225,9 @@ describe('groupSummary', () => {
     { id: '8', origin: 'Storage 1', destination: 'Pick Wall', distanceFt: 246, thruPerHr: 18, weightLbs:  62, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
   ]
   const derivedMl2 = new Map([
-    ['3', { cycleSeconds: 118, rawVehicles: 0.492 }],
-    ['7', { cycleSeconds:  85, rawVehicles: 0.661 }],
-    ['8', { cycleSeconds: 101, rawVehicles: 0.505 }],
+    ['3', { cycleSeconds: 118, rawVehicles: 0.492, breakdown: null }],
+    ['7', { cycleSeconds:  85, rawVehicles: 0.661, breakdown: null }],
+    ['8', { cycleSeconds: 101, rawVehicles: 0.505, breakdown: null }],
   ])
 
   it('aggregates the ML2 group per the verification table', () => {
@@ -255,7 +256,7 @@ describe('groupSummary', () => {
       { id: 'X', origin: '', destination: '', distanceFt: 100, thruPerHr: 99, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
     ]
     const derived = new Map(derivedCb18)
-    derived.set('X', { cycleSeconds: 50, rawVehicles: 1.0 })
+    derived.set('X', { cycleSeconds: 50, rawVehicles: 1.0, breakdown: null })
     const g = groupSummary('cb18', mixed, derived)
     expect(g.flowsCount).toBe(5)            // ML2 flow not counted
     expect(g.baseThru).toBe(160)
@@ -279,14 +280,14 @@ describe('projectFlowSummary', () => {
       { id: '8', origin: '', destination: '', distanceFt: 1, thruPerHr: 18, weightLbs: 0, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
     ]
     const derived = new Map([
-      ['1', { cycleSeconds: 138, rawVehicles: 1.725 }],
-      ['2', { cycleSeconds:  98, rawVehicles: 0.817 }],
-      ['3', { cycleSeconds: 118, rawVehicles: 0.492 }],
-      ['4', { cycleSeconds: 165, rawVehicles: 1.742 }],
-      ['5', { cycleSeconds: 115, rawVehicles: 0.799 }],
-      ['6', { cycleSeconds:  81, rawVehicles: 0.495 }],
-      ['7', { cycleSeconds:  85, rawVehicles: 0.661 }],
-      ['8', { cycleSeconds: 101, rawVehicles: 0.505 }],
+      ['1', { cycleSeconds: 138, rawVehicles: 1.725, breakdown: null }],
+      ['2', { cycleSeconds:  98, rawVehicles: 0.817, breakdown: null }],
+      ['3', { cycleSeconds: 118, rawVehicles: 0.492, breakdown: null }],
+      ['4', { cycleSeconds: 165, rawVehicles: 1.742, breakdown: null }],
+      ['5', { cycleSeconds: 115, rawVehicles: 0.799, breakdown: null }],
+      ['6', { cycleSeconds:  81, rawVehicles: 0.495, breakdown: null }],
+      ['7', { cycleSeconds:  85, rawVehicles: 0.661, breakdown: null }],
+      ['8', { cycleSeconds: 101, rawVehicles: 0.505, breakdown: null }],
     ])
     const s = projectFlowSummary(allFlows, derived)
     expect(s.totalFlows).toBe(8)
@@ -301,5 +302,55 @@ describe('projectFlowSummary', () => {
     expect(s.totalThru).toBe(0)
     expect(s.totalRawFleet).toBe(0)
     expect(s.totalBaseFleet).toBe(0)
+  })
+})
+
+import { cycleBreakdown } from '../flowMetrics'
+
+describe('cycleBreakdown', () => {
+  it('returns components that sum to totalSec (CB18, 100 ft, 2 turns, Fork, 0 lift)', () => {
+    const b = cycleBreakdown(100, cb18 as Vehicle, 2, 0, 0)
+    expect(b).not.toBeNull()
+    if (!b) return
+    expect(b.travelLoadedSec).toBeCloseTo(100 / 9.84, 3)
+    expect(b.travelEmptySec).toBeCloseTo(100 / 11.5, 3)
+    expect(b.loadSec).toBe(5)
+    expect(b.unloadSec).toBe(5)
+    expect(b.liftTimeSec).toBe(0)
+    expect(b.turnPenaltySec).toBe(8)
+    const sum = b.travelLoadedSec + b.travelEmptySec
+              + b.loadSec + b.unloadSec
+              + b.liftTimeSec + b.turnPenaltySec
+    expect(b.totalSec).toBeCloseTo(sum, 5)
+  })
+
+  it('adds lift time when transfer method has lifts: true and liftSpeedFps > 0', () => {
+    const lifter: Pick<Vehicle, 'calc' | 'transferMethods'> = {
+      calc: {
+        speedLoadedFps: 9.84,
+        speedUnloadedFps: 11.5,
+        liftSpeedFps: 0.5,
+      } as Vehicle['calc'],
+      transferMethods: [
+        { method: 'Lift Platform', loadTimeSec: 8, unloadTimeSec: 8, lifts: true },
+      ],
+    }
+    const b = cycleBreakdown(0, lifter as Vehicle, 0, 10, 0)
+    expect(b).not.toBeNull()
+    if (!b) return
+    expect(b.liftTimeSec).toBe(20)        // 10 ft / 0.5 fps = 20 s
+    expect(b.totalSec).toBeCloseTo(8 + 8 + 20, 5)
+  })
+
+  it('returns null for the same edge cases as cycleSeconds', () => {
+    expect(cycleBreakdown(-1, cb18 as Vehicle, 0, 0, 0)).toBeNull()
+    expect(cycleBreakdown(100, cb18 as Vehicle, -1, 0, 0)).toBeNull()
+    expect(cycleBreakdown(100, cb18 as Vehicle, 0, -1, 0)).toBeNull()
+    expect(cycleBreakdown(100, cb18 as Vehicle, 0, 0, 99)).toBeNull()
+    const noTransfers: Pick<Vehicle, 'calc' | 'transferMethods'> = {
+      ...cb18,
+      transferMethods: [],
+    }
+    expect(cycleBreakdown(100, noTransfers as Vehicle, 0, 0, 0)).toBeNull()
   })
 })
