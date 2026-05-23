@@ -7,6 +7,10 @@ export interface TransferMethod {
   method: string
   loadTimeSec: number
   unloadTimeSec: number
+  /** True when this transfer method lifts the load vertically. When true, Step 3
+   *  derives an additional lift time from the per-flow `liftHeightFt` and the
+   *  vehicle's `calc.liftSpeedFps`. Defaults to false. */
+  lifts?: boolean
 }
 
 export type Partnership = 'TAL Integrated' | 'TAL 3rd Party' | 'OEM' | '3rd Party'
@@ -36,6 +40,9 @@ export interface VehicleCalc {
   maxLoadHeightIn?: number | null
   speedLoadedFps: number
   speedUnloadedFps?: number
+  /** Vertical lift speed in feet per second. Required when any transfer method
+   *  on this vehicle has `lifts: true`. Step 3 uses it to derive lift cycle time. */
+  liftSpeedFps?: number
   batteryKwh: number
   energyKwhPerFt: number
   chargeKw?: number
