@@ -12,7 +12,7 @@
     "navigationType": "natural"
   },
   "transferMethods": [
-    { "method": "Fork", "loadTimeSec": 6, "unloadTimeSec": 6 },
+    { "method": "Fork", "loadTimeSec": 6, "unloadTimeSec": 6, "lifts": true },
     { "method": "Lift Platform", "loadTimeSec": 10, "unloadTimeSec": 10, "lifts": true }
   ],
   "payloadTypes": ["Standard Pallet", "Rack"],

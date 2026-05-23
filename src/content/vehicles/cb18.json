@@ -12,7 +12,7 @@
     "navigationType": "lidar_slam"
   },
   "transferMethods": [
-    { "method": "Fork", "loadTimeSec": 5, "unloadTimeSec": 5 },
+    { "method": "Fork", "loadTimeSec": 5, "unloadTimeSec": 5, "lifts": true },
     { "method": "Lift Platform", "loadTimeSec": 8, "unloadTimeSec": 8, "lifts": true }
   ],
   "payloadTypes": ["Standard Pallet", "Rack", "IBC"],
