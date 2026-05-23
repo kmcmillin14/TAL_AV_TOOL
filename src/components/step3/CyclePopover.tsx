@@ -34,6 +34,12 @@ export default function CyclePopover({ breakdown, onClose, triggerRef }: Props) 
     }
   }, [onClose, triggerRef])
 
+  const method = breakdown.methodName || 'Transfer'
+  const liftLabel =
+    breakdown.liftHeightFt > 0
+      ? `${method} — lift (${breakdown.liftHeightFt.toFixed(1)} ft)`
+      : `${method} — lift`
+
   return (
     <div ref={popoverRef} className="cycle-popover" role="dialog" aria-label="Cycle breakdown">
       <div className="cycle-popover-title">Cycle breakdown</div>
@@ -47,20 +53,24 @@ export default function CyclePopover({ breakdown, onClose, triggerRef }: Props) 
           <dd className="mono">{fmt(breakdown.travelEmptySec)}</dd>
         </div>
         <div className="cycle-popover-row">
-          <dt>Load</dt>
+          <dt>{method} — load</dt>
           <dd className="mono">{fmt(breakdown.loadSec)}</dd>
         </div>
         <div className="cycle-popover-row">
-          <dt>Unload</dt>
+          <dt>{method} — unload</dt>
           <dd className="mono">{fmt(breakdown.unloadSec)}</dd>
         </div>
         <div className="cycle-popover-row">
-          <dt>Lift</dt>
+          <dt>{liftLabel}</dt>
           <dd className="mono">{fmt(breakdown.liftTimeSec)}</dd>
         </div>
         <div className="cycle-popover-row">
           <dt>Turns</dt>
           <dd className="mono">{fmt(breakdown.turnPenaltySec)}</dd>
+        </div>
+        <div className="cycle-popover-row">
+          <dt>Custom delay</dt>
+          <dd className="mono">{fmt(breakdown.customDelaySec)}</dd>
         </div>
         <div className="cycle-popover-row total">
           <dt>Total</dt>
