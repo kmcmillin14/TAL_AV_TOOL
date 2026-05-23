@@ -75,6 +75,15 @@ export default function FlowRow({
     <tr className="flow-row">
       <td className="flow-row-num mono">{String(index + 1).padStart(2, '0')}</td>
 
+      <td className="flow-veh-cell">
+        <VehicleDot vehicleId={flow.vehicleId} />
+        <VehicleSelect
+          vehicles={vehicles}
+          value={flow.vehicleId}
+          onChange={vid => onChange({ ...flow, vehicleId: vid })}
+        />
+      </td>
+
       <td className="flow-cell-wrap">
         <input
           className="flow-cell"
@@ -138,15 +147,6 @@ export default function FlowRow({
           inputMode="decimal"
           value={liftDisplay}
           onChange={e => setLift(e.target.value)}
-        />
-      </td>
-
-      <td className="flow-veh-cell">
-        <VehicleDot vehicleId={flow.vehicleId} />
-        <VehicleSelect
-          vehicles={vehicles}
-          value={flow.vehicleId}
-          onChange={vid => onChange({ ...flow, vehicleId: vid })}
         />
       </td>
 
