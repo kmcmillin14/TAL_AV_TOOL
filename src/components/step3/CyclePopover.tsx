@@ -13,6 +13,13 @@ function fmt(sec: number): string {
   return `${sec.toFixed(1)}s`
 }
 
+function layoutLabel(layout: string): string {
+  if (layout === 'low') return 'Low'
+  if (layout === 'medium') return 'Medium'
+  if (layout === 'high') return 'High'
+  return layout
+}
+
 export default function CyclePopover({ breakdown, onClose, triggerRef }: Props) {
   const popoverRef = useRef<HTMLDivElement>(null)
 
@@ -42,13 +49,19 @@ export default function CyclePopover({ breakdown, onClose, triggerRef }: Props) 
 
   return (
     <div ref={popoverRef} className="cycle-popover" role="dialog" aria-label="Cycle breakdown">
-      <div className="cycle-popover-title">Cycle breakdown</div>
+      <div className="cycle-popover-head">
+        <span className="cycle-popover-title">Cycle breakdown</span>
+        <span className="cycle-popover-tag">
+          Route layout: {layoutLabel(breakdown.routeLayout)} (×{breakdown.routeLayoutFactor})
+        </span>
+      </div>
       <dl className="cycle-popover-list">
-        <div className="cycle-popover-row">
+        <div className="cycle-popover-subhead">Round-trip travel</div>
+        <div className="cycle-popover-row cycle-popover-row-indent">
           <dt>Travel loaded</dt>
           <dd className="mono">{fmt(breakdown.travelLoadedSec)}</dd>
         </div>
-        <div className="cycle-popover-row">
+        <div className="cycle-popover-row cycle-popover-row-indent">
           <dt>Travel empty</dt>
           <dd className="mono">{fmt(breakdown.travelEmptySec)}</dd>
         </div>

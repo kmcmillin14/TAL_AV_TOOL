@@ -1921,10 +1921,14 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   display: inline-block;
 }
 .flow-calc-trigger {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 4px;
-  padding: 4px 8px;
+  padding: 6px 10px;
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-feature-settings: var(--tal-numeric-features);
@@ -1932,7 +1936,30 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-primary);
   cursor: pointer;
   transition: background 0.1s ease, border-color 0.1s ease;
+  min-width: 90px;
 }
+.flow-calc-value {
+  text-align: right;
+}
+
+/* ---- Step 3 — Cycle anatomy bar ---- */
+.cycle-anatomy-bar {
+  display: flex;
+  height: 4px;
+  width: 100%;
+  border-radius: 2px;
+  overflow: hidden;
+  background: var(--bg-input);
+}
+.cab-seg {
+  display: block;
+  min-width: 0;
+  transition: flex-grow 0.15s ease;
+}
+.cab-travel   { background: var(--info); }
+.cab-transfer { background: var(--text-secondary); }
+.cab-lift     { background: var(--warn); }
+.cab-delay    { background: var(--accent); }
 .flow-calc-trigger:hover:not(:disabled) {
   background: var(--bg-input);
   border-color: var(--border);
@@ -1959,13 +1986,43 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   border-radius: 6px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
+.cycle-popover-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin-bottom: 10px;
+}
 .cycle-popover-title {
   font-family: var(--tal-font-numeric);
   font-size: 10px; font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--text-tertiary);
-  margin-bottom: 10px;
+}
+.cycle-popover-tag {
+  font-family: var(--tal-font-numeric);
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+  background: var(--accent-soft);
+  padding: 2px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.cycle-popover-subhead {
+  font-family: var(--tal-font-numeric);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed var(--border);
+}
+.cycle-popover-row-indent {
+  padding-left: 12px;
 }
 .cycle-popover-list {
   display: flex; flex-direction: column;

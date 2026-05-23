@@ -8,6 +8,7 @@ import VehicleSelect, { VehicleDot } from './VehicleSelect'
 import MethodSelect from './MethodSelect'
 import RouteLayoutSelect from './RouteLayoutSelect'
 import CyclePopover from './CyclePopover'
+import CycleAnatomyBar from './CycleAnatomyBar'
 
 interface Props {
   index: number
@@ -173,7 +174,8 @@ export default function FlowRow({
             aria-expanded={cycleOpen}
             title={cycleDisabled ? undefined : 'Click for cycle breakdown'}
           >
-            {fmtCycle(derived.cycleSeconds)}
+            {derived.breakdown && <CycleAnatomyBar breakdown={derived.breakdown} />}
+            <span className="flow-calc-value">{fmtCycle(derived.cycleSeconds)}</span>
           </button>
           {cycleOpen && derived.breakdown && (
             <CyclePopover
