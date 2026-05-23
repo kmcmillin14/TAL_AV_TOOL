@@ -1367,3 +1367,334 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-tertiary);
   letter-spacing: 0.08em;
 }
+
+/* ============================================ STEP 3 — MATERIAL FLOWS ============================================ */
+
+.step3-totals {
+  display: flex; gap: 24px; align-items: flex-start;
+  padding: 4px 0;
+}
+.step3-total {
+  display: flex; flex-direction: column; gap: 4px;
+  min-width: 86px;
+}
+.step3-total .lbl {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.step3-total .val {
+  font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--tal-numeric-features);
+  font-size: 22px; font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+}
+.step3-total.accent .val { color: var(--accent); }
+
+.flow-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 14px;
+  margin: 24px 0 20px;
+}
+.flow-group-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px 20px;
+  position: relative;
+  transition: border-color 0.15s ease;
+}
+.flow-group-card:hover { border-color: var(--border-strong); }
+.flow-group-head {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 12px;
+}
+.veh-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 999px;
+  border: 1px solid;
+  background: rgba(255, 255, 255, 0.02);
+  font-family: var(--tal-font-family);
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0.01em;
+}
+.veh-dot {
+  display: inline-block;
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.veh-dot-empty {
+  background: transparent;
+  border: 1px dashed var(--border-strong);
+}
+.flow-group-count {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.flow-group-mfr {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-top: 6px;
+}
+.flow-group-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px 18px;
+  margin-top: 16px;
+}
+.flow-group-stat .lbl {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.flow-group-stat .val {
+  font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--tal-numeric-features);
+  font-size: 24px; font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  margin-top: 4px;
+  line-height: 1.1;
+}
+.flow-group-stat .val .unit {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin-left: 4px;
+  letter-spacing: 0;
+}
+.flow-group-stat .val.green  { color: var(--good); }
+.flow-group-stat .val.yellow { color: var(--warn); }
+.flow-group-stat .val.red    { color: var(--bad);  }
+.flow-group-stat .val.mono   { font-variant-numeric: tabular-nums; }
+.flow-group-stat .derivation {
+  margin-top: 6px;
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+}
+
+.flows-table-wrap {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 14px 16px 16px;
+  margin-bottom: 24px;
+}
+.flows-table-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 4px 4px 14px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.flows-count {
+  font-family: var(--tal-font-numeric);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+.flows-count strong {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.flows-empty {
+  text-align: center;
+  padding: 60px 32px;
+  color: var(--text-tertiary);
+}
+.flows-empty h3 {
+  font-size: 16px; font-weight: 600;
+  color: var(--text-secondary);
+  margin: 0 0 8px 0;
+}
+.flows-empty p {
+  font-size: 13px;
+  margin: 0 auto;
+  max-width: 420px;
+  line-height: 1.5;
+}
+
+.flows-scroll {
+  overflow-x: auto;
+  margin: 0 -4px;
+}
+.flows-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--tal-font-family);
+  font-size: 13px;
+  table-layout: auto;
+}
+.flows-table thead th {
+  text-align: left;
+  font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  border-bottom: 1px solid var(--border);
+  padding: 10px 10px;
+  white-space: nowrap;
+  background: var(--bg-surface);
+}
+.flows-table thead th.flow-th-num { text-align: right; }
+.flows-table thead th.flow-th-act { width: 32px; }
+.flows-table tbody td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.flow-row:hover { background: rgba(255, 255, 255, 0.012); }
+.flow-row-num {
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  padding-left: 10px;
+  width: 36px;
+}
+.flow-cell-wrap { min-width: 80px; }
+.flow-cell {
+  width: 100%;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 6px 8px;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: inherit;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+.flow-cell::placeholder { color: var(--text-disabled); }
+.flow-cell:hover {
+  background: var(--bg-input);
+  border-color: var(--border);
+}
+.flow-cell:focus {
+  background: var(--bg-input);
+  border-color: var(--border-strong);
+  outline: none;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.flow-cell.mono {
+  font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--tal-numeric-features);
+  text-align: right;
+}
+.flow-cell.flow-cell-bad {
+  color: var(--bad);
+  border-color: var(--bad-soft);
+  background: var(--bad-soft);
+}
+.flow-cell.flow-cell-warn { color: var(--warn); }
+.flow-cell-bad:focus {
+  box-shadow: 0 0 0 3px var(--bad-soft);
+}
+/* Hide native number-spinner controls — they fight tabular-num alignment */
+.flow-cell[type='number']::-webkit-outer-spin-button,
+.flow-cell[type='number']::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.flow-cell[type='number'] { -moz-appearance: textfield; }
+
+.flow-veh-cell {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 6px;
+  min-width: 160px;
+}
+.flow-veh-select {
+  flex: 1;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 6px 8px;
+  font-family: var(--tal-font-family);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+.flow-veh-select:hover {
+  background: var(--bg-input);
+  border-color: var(--border);
+}
+.flow-veh-select:focus {
+  outline: none;
+  background: var(--bg-input);
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.flow-veh-select option { background: var(--bg-surface-2); color: var(--text-primary); }
+.flow-veh-select option:disabled { color: var(--text-disabled); }
+
+.flow-calc {
+  font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--tal-numeric-features);
+  text-align: right;
+  color: var(--text-primary);
+  padding-right: 12px;
+  white-space: nowrap;
+}
+.flow-calc.flow-cell-warn { color: var(--warn); font-weight: 600; }
+
+.flow-row-act { width: 32px; text-align: right; padding-right: 8px; }
+.flow-delete {
+  background: transparent;
+  color: var(--text-tertiary);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  width: 26px; height: 26px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+.flow-delete:hover {
+  background: var(--bad-soft);
+  color: var(--bad);
+  border-color: var(--bad-soft);
+}
+
+.flows-add-bottom {
+  display: inline-flex; align-items: center; gap: 6px;
+  margin-top: 12px;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 8px 14px;
+  font-family: var(--tal-font-family);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.flows-add-bottom:hover {
+  border-color: var(--border-strong);
+  border-style: solid;
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+@media (max-width: 900px) {
+  .step3-totals { gap: 16px; flex-wrap: wrap; }
+  .flow-group-stats { grid-template-columns: 1fr 1fr; }
+}
