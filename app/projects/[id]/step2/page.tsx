@@ -12,6 +12,7 @@ import type { ApplicationRequirements } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import { getProject, type StoredProject } from '@/src/lib/storage'
+import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 
 type ProjectData = StoredProject
 
@@ -37,10 +38,9 @@ export default function Step2Page() {
       return
     }
     setProject(proj)
-    fetch('/api/vehicles')
-      .then(r => r.json())
+    fetchVehiclesCached()
       .then(vehs => {
-        setVehicles(Array.isArray(vehs) ? vehs : [])
+        setVehicles(vehs)
         setLoading(false)
       })
       .catch(() => {

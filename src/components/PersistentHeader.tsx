@@ -6,6 +6,7 @@ import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject } from '@/src/lib/storage'
 import { downloadProjectPdf } from '@/src/lib/pdfExport'
+import { prefetchVehicles } from '@/src/lib/vehicleCache'
 
 interface HeaderData {
   id: string
@@ -178,6 +179,17 @@ export default function PersistentHeader({
     const interval = setInterval(() => setUndoAvailable(canUndo(project.id)), 1000)
     return () => clearInterval(interval)
   }, [project.id])
+
+  // Warm every step route + the vehicle library so step-dot navigation is
+  // instant. router.prefetch on a non-current route triggers Next.js to
+  // compile + RSC-fetch that page in the background; vehicle prefetch
+  // means Step 2 lands with the grid populated instead of a "Loading" flash.
+  useEffect(() => {
+    for (let i = 0; i <= 6; i++) {
+      if (i !== currentStep) router.prefetch(`/projects/${project.id}/step${i}`)
+    }
+    prefetchVehicles()
+  }, [project.id, currentStep, router])
 
   const handleUndo = () => {
     const restored = undoLastChange(project.id)
