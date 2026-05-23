@@ -26,7 +26,6 @@ Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, St
 - `destination` — free text (e.g. "Storage 1")
 - `distanceFt` — one-way distance, feet, ≥ 0
 - `thruPerHr` — cycles per hour, ≥ 0
-- `weightLbs` — per-cycle load weight, lbs, ≥ 0
 - `turns` — number of 90°+ turns per round trip, integer ≥ 0
 - `liftHeightFt` — total vertical travel of the load per cycle, feet, ≥ 0. 0 when transfer method does not lift. Engineer enters the per-cycle total (e.g., 4 ft for a single Floor→Height delivery; 8 ft for Height-Height = 4 up + 4 down).
 - `vehicleId` — id of a vehicle from `src/content/vehicles/*.json`
@@ -116,7 +115,7 @@ fleetTotal    = Σ fleetPerGroup
 
 ### Hard gates per flow
 
-A vehicle is **disabled** in the row's dropdown when `flow.weightLbs > vehicle.calc.maxWeightLbs`. Hard gate; no override. Matches Step 2's rule.
+Step 3 imposes **no** per-flow hard gates. Step 2 already qualifies the vehicle library against the project-wide `maxLoadWeightLbs`; engineers picking a vehicle here have already seen that qualification matrix. Per-flow weight is not collected.
 
 ### UI behavior
 
@@ -141,7 +140,7 @@ A vehicle is **disabled** in the row's dropdown when `flow.weightLbs > vehicle.c
    - CB18: `groupRaw ≈ 5.58`, `baseFleet = 6`.
    - ML2:  `groupRaw ≈ 1.66`, `baseFleet = 2`.
 2. Editing any flow field instantly re-derives all downstream numbers — no save button, no page reload.
-3. Picking a vehicle whose `maxWeightLbs` is less than the row's `weightLbs` is not possible (disabled in dropdown).
+3. Every vehicle is selectable in every row's dropdown. Step 2's traffic-light matrix already qualifies vehicles against project-wide weight.
 4. Reloading the page restores all flows and computed values.
 5. Calc engine (`src/calc/flowMetrics.ts`) has zero React, fetch, or localStorage imports.
 6. All Vitest cases for cycle / raw / group / project pass.
