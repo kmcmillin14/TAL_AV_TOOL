@@ -5,7 +5,7 @@ import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import VehicleSelect, { VehicleDot } from './VehicleSelect'
-import TransferMethodChips from './TransferMethodChips'
+import MethodSelect, { MethodMeta } from './MethodSelect'
 import CyclePopover from './CyclePopover'
 
 interface Props {
@@ -19,7 +19,6 @@ interface Props {
 }
 
 const FT_PER_M = 3.28084
-const LBS_PER_KG = 2.20462
 
 function fmtCycle(sec: number | null): string {
   if (sec == null) return '—'
@@ -78,34 +77,34 @@ export default function FlowRow({
       ? 'flow-cell-warn'
       : ''
 
+  const methodIdx = flow.transferMethodIdx ?? 0
+
   return (
     <tr className="flow-row">
       <td className="flow-row-num mono">{String(index + 1).padStart(2, '0')}</td>
 
       <td className="flow-veh-cell">
-        <div className="flow-veh-stack">
-          <div className="flow-veh-row">
-            <VehicleDot vehicle={selectedVehicle} />
-            <VehicleSelect
-              vehicles={vehicles}
-              value={flow.vehicleId}
-              onChange={vid =>
-                onChange({
-                  ...flow,
-                  vehicleId: vid,
-                  transferMethodIdx: vid ? 0 : undefined,
-                })
-              }
-            />
-          </div>
-          {selectedVehicle && (
-            <TransferMethodChips
-              methods={selectedVehicle.transferMethods}
-              activeIdx={flow.transferMethodIdx ?? 0}
-              onChange={idx => onChange({ ...flow, transferMethodIdx: idx })}
-            />
-          )}
-        </div>
+        <VehicleDot vehicle={selectedVehicle} />
+        <VehicleSelect
+          vehicles={vehicles}
+          value={flow.vehicleId}
+          onChange={vid =>
+            onChange({
+              ...flow,
+              vehicleId: vid,
+              transferMethodIdx: vid ? 0 : undefined,
+            })
+          }
+        />
+      </td>
+
+      <td className="flow-method-cell">
+        <MethodSelect
+          vehicle={selectedVehicle}
+          value={methodIdx}
+          onChange={idx => onChange({ ...flow, transferMethodIdx: idx })}
+        />
+        <MethodMeta vehicle={selectedVehicle} methodIdx={methodIdx} />
       </td>
 
       <td className="flow-cell-wrap">
@@ -171,6 +170,18 @@ export default function FlowRow({
           inputMode="decimal"
           value={liftDisplay}
           onChange={e => setLift(e.target.value)}
+        />
+      </td>
+      <td className="flow-cell-wrap">
+        <input
+          className="flow-cell mono"
+          type="number"
+          min="0"
+          inputMode="decimal"
+          value={flow.customDelaySec}
+          onChange={e =>
+            onChange({ ...flow, customDelaySec: clampNum(e.target.value) })
+          }
         />
       </td>
 

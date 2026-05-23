@@ -73,12 +73,14 @@ export default function FlowsTable({
                 <tr>
                   <th className="flow-th-num">#</th>
                   <th>Vehicle</th>
+                  <th>Method</th>
                   <th>Origin</th>
                   <th>Destination</th>
                   <th className="flow-th-num">{distLabel}</th>
                   <th className="flow-th-num">Thru/hr</th>
                   <th className="flow-th-num">Turns</th>
                   <th className="flow-th-num">{liftLabel}</th>
+                  <th className="flow-th-num" title="Ad-hoc time added to every cycle (handoffs, queueing, doors)">Delay (s)</th>
                   <th className="flow-th-num">Cycle</th>
                   <th className="flow-th-num" title="Fractional raw demand: thru × cycle / 3600">Raw veh</th>
                   <th className="flow-th-act"></th>

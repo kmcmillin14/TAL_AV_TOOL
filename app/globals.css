@@ -1709,46 +1709,62 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   .flow-group-stats { grid-template-columns: 1fr 1fr; }
 }
 
-/* ---- Step 3 — transfer-method chips ---- */
-.flow-veh-cell { padding: 6px 6px; min-width: 180px; }
-.flow-veh-stack { display: flex; flex-direction: column; gap: 6px; }
-.flow-veh-row { display: flex; align-items: center; gap: 8px; }
-.transfer-chips {
-  display: flex; flex-wrap: wrap; gap: 4px;
-  padding-left: 16px;
+/* ---- Step 3 — Vehicle + Method cells ---- */
+.flow-veh-cell {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 6px;
+  min-width: 160px;
 }
-.transfer-chip {
+.flow-method-cell {
+  padding: 6px 6px;
+  min-width: 150px;
+  vertical-align: middle;
+}
+.flow-method-select {
+  width: 100%;
   background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 2px 10px;
-  font-family: var(--tal-font-numeric);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  color: var(--text-tertiary);
+  color: var(--text-primary);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-family: var(--tal-font-family);
+  font-size: 12px;
   cursor: pointer;
-  transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
+  transition: background 0.1s ease, border-color 0.1s ease;
 }
-.transfer-chip:hover {
-  background: var(--bg-hover);
-  border-color: var(--border-strong);
-  color: var(--text-secondary);
+.flow-method-select:hover {
+  background: var(--bg-input);
+  border-color: var(--border);
 }
-.transfer-chip.active {
-  background: var(--accent-soft);
-  border-color: var(--accent);
-  color: var(--accent);
-}
-.transfer-chip:focus-visible {
+.flow-method-select:focus {
   outline: none;
-  box-shadow: 0 0 0 2px var(--accent-soft);
+  background: var(--bg-input);
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 3px var(--accent-soft);
 }
-.transfer-chip-static {
-  padding-left: 16px;
+.flow-method-select option { background: var(--bg-surface-2); color: var(--text-primary); }
+.flow-method-static {
+  display: inline-block;
+  padding: 4px 6px;
+  font-family: var(--tal-font-family);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+.flow-method-empty {
+  display: inline-block;
+  padding: 4px 6px;
+  color: var(--text-disabled);
   font-family: var(--tal-font-numeric);
-  font-size: 10px;
+}
+.flow-method-meta {
+  display: block;
+  margin-top: 3px;
+  padding: 0 6px;
+  font-family: var(--tal-font-numeric);
+  font-size: 9.5px;
   letter-spacing: 0.04em;
   color: var(--text-tertiary);
+  line-height: 1.2;
 }
 
 /* ---- Step 3 — cycle breakdown popover ---- */
