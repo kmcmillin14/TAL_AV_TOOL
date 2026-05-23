@@ -5,7 +5,7 @@ import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import VehicleSelect, { VehicleDot } from './VehicleSelect'
-import MethodSelect, { MethodMeta } from './MethodSelect'
+import MethodSelect from './MethodSelect'
 import CyclePopover from './CyclePopover'
 
 interface Props {
@@ -47,17 +47,10 @@ export default function FlowRow({
   const distDisplay = metric
     ? (flow.distanceFt / FT_PER_M).toFixed(0)
     : flow.distanceFt.toString()
-  const liftDisplay = metric
-    ? (flow.liftHeightFt / FT_PER_M).toFixed(1)
-    : flow.liftHeightFt.toString()
 
   const setDistance = (input: string) => {
     const n = clampNum(input)
     onChange({ ...flow, distanceFt: metric ? n * FT_PER_M : n })
-  }
-  const setLift = (input: string) => {
-    const n = clampNum(input)
-    onChange({ ...flow, liftHeightFt: metric ? n * FT_PER_M : n })
   }
 
   const selectedVehicle = flow.vehicleId
@@ -101,10 +94,12 @@ export default function FlowRow({
       <td className="flow-method-cell">
         <MethodSelect
           vehicle={selectedVehicle}
-          value={methodIdx}
-          onChange={idx => onChange({ ...flow, transferMethodIdx: idx })}
+          methodIdx={methodIdx}
+          liftHeightFt={flow.liftHeightFt}
+          unitSystem={unitSystem}
+          onMethodChange={idx => onChange({ ...flow, transferMethodIdx: idx })}
+          onLiftChange={ft => onChange({ ...flow, liftHeightFt: ft })}
         />
-        <MethodMeta vehicle={selectedVehicle} methodIdx={methodIdx} />
       </td>
 
       <td className="flow-cell-wrap">
@@ -150,16 +145,6 @@ export default function FlowRow({
         <span className="flow-cell-readonly mono" title="Route layout — picker added in next commit">
           {flow.routeLayout}
         </span>
-      </td>
-      <td className="flow-cell-wrap">
-        <input
-          className="flow-cell mono"
-          type="number"
-          min="0"
-          inputMode="decimal"
-          value={liftDisplay}
-          onChange={e => setLift(e.target.value)}
-        />
       </td>
       <td className="flow-cell-wrap">
         <input

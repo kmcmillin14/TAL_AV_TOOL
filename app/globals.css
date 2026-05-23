@@ -1759,15 +1759,73 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-disabled);
   font-family: var(--tal-font-numeric);
 }
-.flow-method-meta {
-  display: block;
-  margin-top: 3px;
-  padding: 0 6px;
+.flow-method-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.flow-method-impact {
   font-family: var(--tal-font-numeric);
-  font-size: 9.5px;
+  font-size: 10px;
+  color: var(--text-tertiary);
+  margin-left: 2px;
+}
+.flow-method-lift {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 14px;
+  padding: 3px 8px;
+  background: var(--bg-input);
+  border-left: 2px solid var(--good);
+  border-radius: 0 4px 4px 0;
+  transition: border-color 0.15s ease;
+}
+.flow-method-lift.required {
+  border-left-color: var(--accent);
+}
+.flow-method-lift-label {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
   letter-spacing: 0.04em;
   color: var(--text-tertiary);
-  line-height: 1.2;
+  text-transform: uppercase;
+}
+.flow-method-lift-input {
+  width: 48px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 2px 4px;
+  font-family: var(--tal-font-numeric);
+  font-size: 12px;
+  text-align: right;
+  color: var(--text-primary);
+}
+.flow-method-lift-input:hover {
+  border-color: var(--border);
+}
+.flow-method-lift-input:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.flow-method-lift-input::-webkit-outer-spin-button,
+.flow-method-lift-input::-webkit-inner-spin-button {
+  -webkit-appearance: none; margin: 0;
+}
+.flow-method-lift-input { -moz-appearance: textfield; }
+.flow-method-lift-unit {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  color: var(--text-tertiary);
+}
+.flow-method-lift-required {
+  font-family: var(--tal-font-family);
+  font-size: 10px;
+  color: var(--accent);
+  font-style: italic;
+  margin-left: 4px;
 }
 
 /* ---- Step 3 — Route Layout segmented control ---- */
