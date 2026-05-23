@@ -1,165 +1,146 @@
-# Step 3 — Material Flows: Implementation Plan
+# Step 3 — Material Flows: Implementation Plan (v4)
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Each calc task is TDD per superpowers:test-driven-development. UI tasks should invoke superpowers:frontend-design before writing components.
 
-**Goal:** Build Step 3 — an editable Material Flows table that derives per-flow cycle time, vehicle count, and utilization live as the user types, plus per-vehicle group summary cards aggregating fleet, utilization, average cycle, and peak throughput.
+**Goal:** Build Step 3 — an inline-editable Material Flows table where each row's raw (fractional) vehicle demand is `thru × cycle / 3600`. Same-vehicle flows pool into a group; per-group `baseFleet = ceil(Σ rawVehicles)`. No safety multipliers in Step 3 — those live entirely in Step 5 (buffer) so they're auditable in one place.
 
-**Architecture:** Pure calc engine in `src/calc/flowMetrics.ts` (no React, no I/O — testable in isolation). Storage extends the existing `StoredProject` with a `flows: Flow[]` array, round-tripped through `localStorage` via `src/lib/storage.ts`. UI is a thin presentational layer over the calc engine — every visible number traces to one function call. Live recompute is automatic because the page reads `project.flows` from React state and the calc engine is synchronous and pure.
+**Architecture:** Pure calc engine in `src/calc/flowMetrics.ts` (no React, no I/O — testable in isolation). Storage extends `StoredProject` with `flows: Flow[]`. The page reads/writes `project.flows` from React state; calc is synchronous and pure so every keystroke can recompute everything.
 
-**Tech Stack:** React 19 (App Router client component), React Hook Form 7 (Step 1 only — Step 3 uses controlled inputs directly, no RHF), Zod 4 schema for `flows`, Vitest for calc tests, Toyota Type fonts per ARCHITECTURE.md.
+**Tech Stack:** React 19 (App Router client component), Zod 4 schema for `flows`, Vitest for calc tests, Toyota Type fonts.
+
+**Replaces:** the v3 plan at this path. v3 used a fixed `loadTimeSec`/`unloadTimeSec` per transfer method for cycle time. v4 keeps those for non-lifting transfers and adds **height-derived lift time** for transfer methods that lift the load: `liftTimeSec = liftHeightFt / liftSpeedFps` when the transfer method has a `lifts: true` flag. Per-flow `liftHeightFt` input. Vehicle JSON gains `calc.liftSpeedFps` and a `lifts` flag on transfer-method entries that lift.
+
+**Earlier history:** v2 had a project-level congestion multiplier; dropped in v3 to avoid overlap with the Step-5 buffer. Step 3 still produces a pure-engineering number with no safety multipliers; Step 4 adds derived charging vehicles; Step 5 adds the single policy multiplier (buffer).
 
 ---
 
 ## Context and Source Material
 
-- **Screenshot reference:** the user's Step 3 mockup, attached to this turn. Two group cards (CB18 AGF and ML2 Mini Load AV), an 8-row flow table with computed Cycle/Veh/Util columns, footer counts.
-- **Spec source of truth (to create as Task 1):** `docs/SPECIFICATION.md` Step 3 chapter.
-- **Architectural constraints (do not violate):** see `ARCHITECTURE.md` — imperial-first storage, vehicle data from JSON only, `src/calc/` pure, no backend DB, steps modular.
-- **Prior work touched:** `src/calc/trafficLight.ts` (Step 2's qualification) and `src/content/vehicles/*.json` (already contain every field this plan needs — `calc.speedLoadedFps`, `calc.speedUnloadedFps`, `transferMethods[].loadTimeSec`, `transferMethods[].unloadTimeSec`, `calc.maxWeightLbs`).
+- **Screenshot reference:** the user's Step 3 mockup. Columns: # | ORIGIN | DESTINATION | DISTANCE | THRU/HR | WEIGHT | VEHICLE | CYCLE | VEH | UTIL | ×. v3 adds a TURNS column and replaces UTIL with the raw fractional VEH; group cards display the derivation `raw → ⌈ceil⌉`.
+- **Spec source of truth (overwritten in Task 1):** `docs/SPECIFICATION.md` Step 3 chapter.
+- **Architectural constraints:** `ARCHITECTURE.md` — imperial-first storage, vehicle data from JSON only, `src/calc/` pure (no React/fetch/localStorage), no backend DB, steps modular.
+- **Prior plan versions in this file:** archived in git history at this path.
 
 ---
 
-## Mathematics — Scrutinized
+## Mathematics — Final Model
 
-These are the formulas the calc engine implements. All derivations and unit reconciliations are spelled out so the engineer building this can sanity-check before writing a line of code. The plan's `Task 1` writes this same content into `docs/SPECIFICATION.md`.
+Task 1 writes this same content into `docs/SPECIFICATION.md` as the spec-of-record.
+
+### Pipeline overview
+
+```
+Step 3:  flows ─► per-flow cycle ─► per-flow rawVehicles ─► per-group baseFleet (ceil of sum)
+Step 4:  baseFleet ─► chargingDelta (additive, derived from battery physics)
+Step 5:  (baseFleet + chargingDelta) × (1 + bufferPct) ─► ⌈ceil⌉ ─► fleetSold
+```
+
+Each stage models a **distinct** physical or policy cause:
+- **Step 3** is pure engineering: how much vehicle-time the flows demand.
+- **Step 4** is physics: how many extra vehicles are needed to keep `baseFleet` always on the floor while others charge.
+- **Step 5** is policy: maintenance, training, demand spikes, sales-team comfort.
+
+No double-counting; no safety multipliers in Step 3.
 
 ### Constants
 
-| Symbol | Name              | Value | Source            |
-|--------|-------------------|-------|-------------------|
-| η      | Productivity factor | 0.70  | Industry convention — 30% lost to charging, queue waits, traffic, breaks, idle. Configurable per project in a future revision; v1 hard-coded. |
-| φ      | Peak factor      | 1.20  | "Peak throughput" = base demand × 1.2. v1 hard-coded; displayed only — not used for sizing. |
-| T_hr   | Seconds per hour | 3600  | Exact. |
+| Symbol     | Name                  | Value | Where                                         |
+|------------|-----------------------|-------|-----------------------------------------------|
+| `TURN_TIME_SEC`     | Global per-turn penalty | 4 s   | `src/calc/types.ts` (exported constant). |
+| `DEFAULT_BUFFER_PCT`| Default buffer fraction | 0.10  | `src/calc/types.ts`; used by Step 5. |
+| `T_hr`              | Seconds per hour        | 3600  | Inline literal. |
 
-### Per-flow inputs
+### Per-flow inputs (stored on each `Flow`)
 
 | Field                | Storage unit | Type                | Notes |
 |----------------------|--------------|---------------------|-------|
-| `id`                 | —            | string              | Stable random id, `f_<random>`. |
+| `id`                 | —            | string              | `f_<random>`. |
 | `origin`             | —            | string              | Free text. |
 | `destination`        | —            | string              | Free text. |
-| `distanceFt`         | ft           | number > 0          | **One-way distance.** Cycle calc multiplies by 2 for round-trip travel. |
-| `thruPerHr`          | moves/hr     | number ≥ 0          | Required throughput at this flow. Integer in v1 but stored as `number` for future fractional rates. |
-| `weightLbs`          | lbs          | number ≥ 0          | Load weight per move at this flow. Used to gate vehicle dropdown. |
-| `vehicleId`          | —            | string \| undefined | References `vehicle.id` from `src/content/vehicles/*.json`. Empty until user picks. |
-| `transferMethodIdx`  | —            | number \| undefined | Index into `vehicle.transferMethods[]`. Defaults to 0 if absent. |
+| `distanceFt`         | ft           | number ≥ 0          | One-way; cycle multiplies for round-trip. |
+| `thruPerHr`          | cycles/hr    | number ≥ 0          | One cycle = one full pick-and-place round trip. |
+| `weightLbs`          | lbs          | number ≥ 0          | Gates the vehicle dropdown (`flow.weightLbs > vehicle.maxWeightLbs` → disabled). |
+| `turns`              | count        | integer ≥ 0         | Number of 90°+ turns per round trip. |
+| `liftHeightFt`       | ft           | number ≥ 0          | Total vertical travel of the load per cycle. 0 when transfer method does not lift. Engineer enters the per-cycle total (e.g., 4 ft for a single Floor→Height delivery; 8 ft for Height-Height = 4 up + 4 down). |
+| `vehicleId`          | —            | string \| undefined | References `vehicle.id`. Empty until user picks. |
+| `transferMethodIdx`  | —            | number \| undefined | Index into `vehicle.transferMethods[]`. Defaults to 0. |
 
-### Cycle time
-
-**Definition:** time, in seconds, for one full round-trip with one move (origin → destination loaded → return empty → ready for next pick).
-
-```
-travelLoadedSec   = distanceFt / vehicle.calc.speedLoadedFps
-travelEmptySec    = distanceFt / vehicle.calc.speedUnloadedFps
-transfer          = vehicle.transferMethods[transferMethodIdx ?? 0]
-loadSec           = transfer.loadTimeSec
-unloadSec         = transfer.unloadTimeSec
-
-cycleSeconds      = travelLoadedSec + travelEmptySec + loadSec + unloadSec
-```
-
-**Edge cases:**
-- `distanceFt === 0` → travel terms collapse to 0, cycle = load + unload (instantaneous-relocation flow, useful for pure transfer stations). Allowed.
-- `distanceFt < 0` → reject upstream (Zod `.positive()`).
-- `speedLoadedFps === 0` → division by zero. Reject in vehicle JSON validation; if it slips through, treat the flow's metrics as `undefined`.
-- Vehicle has no `transferMethods` → metrics `undefined`, surface as "Vehicle missing transfer time" UI message.
-- `transferMethodIdx` out of range → fall back to index 0; if no transfer methods at all, see prior case.
-
-**Why one-way distance, not round-trip:** matches how engineers actually measure facility distances ("Dock A is 180 m from Storage 1"). The model knows the vehicle returns empty; the user doesn't double-count.
-
-### Vehicles needed per flow
-
-**Sizing for base throughput, not peak.** This is the same decision the screenshot encodes (verified by back-deriving — see "Verification" below). Sizing for peak would multiply demand by φ and over-provision; sizing for base accepts that peak periods will run hot (which the displayed utilization makes visible). Document but do not change in v1.
+### Per-flow derived
 
 ```
-demandVehicleSeconds_per_hr = thruPerHr × cycleSeconds
-capacityPerVehicle_per_hr   = T_hr × η                  // 3600 × 0.70 = 2520
+travelLoadedSec  = distanceFt / vehicle.calc.speedLoadedFps
+travelEmptySec   = distanceFt / vehicle.calc.speedUnloadedFps
+transfer         = vehicle.transferMethods[transferMethodIdx ?? 0]
+loadSec          = transfer.loadTimeSec
+unloadSec        = transfer.unloadTimeSec
+liftTimeSec      = (transfer.lifts && vehicle.calc.liftSpeedFps > 0)
+                   ? liftHeightFt / vehicle.calc.liftSpeedFps
+                   : 0
+turnPenaltySec   = turns × TURN_TIME_SEC
 
-vehiclesNeeded = ceil( demandVehicleSeconds_per_hr / capacityPerVehicle_per_hr )
+cycleSeconds     = travelLoadedSec + travelEmptySec + loadSec + unloadSec + liftTimeSec + turnPenaltySec
+rawVehicles      = thruPerHr × cycleSeconds / 3600
 ```
 
-**Edge cases:**
-- `thruPerHr === 0` → `vehiclesNeeded === 0`. Row shows "—" for vehicles and util.
-- `cycleSeconds === undefined` (bad inputs) → `vehiclesNeeded === undefined`.
-- `ceil` is on the raw ratio. `Math.ceil(0.0001)` returns 1 — if you have any positive demand, you need at least one vehicle, by definition.
+`distanceFt` is one-way; the cycle includes the empty return trip. `liftTimeSec` is 0 for transfer methods without a `lifts` flag (Fork, Tow/Tugger, Conveyor Interface).
 
-### Utilization per flow
+`rawVehicles` is fractional. Interpretation: it is the fraction of one vehicle's hour that this flow consumes. `0.94` means a flow could be served by a single vehicle running at 94 % occupancy; `1.72` means a single vehicle cannot serve this flow on its own — multiple vehicles must pool. The fractional value carries useful signal and is displayed verbatim in the table.
 
-```
-utilization = (thruPerHr × cycleSeconds) / (vehiclesNeeded × T_hr × η)
-            = demandVehicleSeconds_per_hr / (vehiclesNeeded × capacityPerVehicle_per_hr)
-```
-
-Always in `[0, 1]`. If `vehiclesNeeded > 0`, utilization ≤ 1 by construction of `ceil` (numerator ≤ denominator).
-
-If `vehiclesNeeded === 0` (because demand is 0), utilization is `0` by definition. UI shows "—".
-
-**Display thresholds:**
-- `util ≤ 0.50` → green
-- `0.50 < util ≤ 0.85` → green
-- `0.85 < util < 0.95` → yellow (running hot)
-- `util ≥ 0.95` → red (no margin for surge)
-
-The cutoffs match how the mockup colors 81% as orange-ish and 93% as red.
-
-### Group summary (per vehicle type)
-
-For each `vehicleId` present in the flows list:
+### Per-group derived (per unique `vehicleId` in `flows`)
 
 ```
-flows_in_group        = flows.filter(f => f.vehicleId === vehicleId)
-baseThru              = sum(f.thruPerHr) for flows_in_group
-peakThru              = baseThru × φ
-demandSec_per_hr      = sum(f.thruPerHr × f.cycleSeconds) for flows_in_group   // total vehicle-seconds of work per hour
-baseFleet             = sum(f.vehiclesNeeded) for flows_in_group
-avgCycleSec           = demandSec_per_hr / baseThru                            // throughput-weighted average cycle
-utilization_group     = demandSec_per_hr / (baseFleet × T_hr × η)
-                      = demandSec_per_hr / (baseFleet × 2520)
+inGroup        = flows.filter(f => f.vehicleId === groupId)
+groupRaw       = Σ rawVehicles  over inGroup        // fractional
+baseFleet      = ceil(groupRaw)                     // integer — Step 3's output
+headroom       = baseFleet > 0
+                  ? (baseFleet − groupRaw) / baseFleet
+                  : null                            // 0..1
+
+baseThru       = Σ thruPerHr
+demandSec_per_hr = Σ (thruPerHr × cycleSeconds)
+avgCycleSec    = baseThru > 0 ? demandSec_per_hr / baseThru : null
 ```
 
-**Why throughput-weighted, not simple mean:** a flow that runs 45 moves/hr matters more than one running 5 moves/hr. Simple mean would lie about the fleet's actual utilization.
+`baseFleet` is the **engineering answer**: integer vehicles required to pool-serve all assigned flows of this type. The next steps add charging vehicles (Step 4) and buffer (Step 5) on top.
 
-**Edge case:** `baseFleet === 0` (no flows, somehow grouped) — show "—" for utilization. `baseThru === 0` — avg cycle is 0/0; show "—".
+`headroom` is the fraction of the rounded-up fleet that isn't absorbed by demand. Always in `[0, 1)` when `groupRaw > 0`. Display only.
 
-### Project-wide footer
-
-```
-total_flows           = flows.length
-total_baseThru        = sum(f.thruPerHr) over all flows                       // "221 base moves/hr"
-total_peakThru        = total_baseThru × φ                                    // "peak 265/hr"
-```
-
-### Verification against the mockup
-
-These computations match the screenshot exactly when run against its row-level inputs. Tasks 4–8 add a unit test for each (using the screenshot values verbatim) so any future refactor either preserves the mockup or surfaces a test failure that the reviewer must acknowledge.
-
-| Row | thru | cycle | demand sec/hr | veh (ceil) | util | screenshot util |
-|-----|------|-------|---------------|------------|------|-----------------|
-| 01  | 45   | 138 s | 6210          | ceil(6210/2520)=3 | 6210/7560 = 82.1% | 81% ✓ |
-| 02  | 30   | 98 s  | 2940          | ceil(2940/2520)=2 | 2940/5040 = 58.3% | 58% ✓ |
-| 03  | 15   | 118 s | 1770          | ceil(1770/2520)=1 | 1770/2520 = 70.2% | 69% ✓ |
-| 04  | 38   | 165 s | 6270          | ceil(6270/2520)=3 | 6270/7560 = 82.9% | 82% ✓ |
-| 05  | 25   | 115 s | 2875          | ceil(2875/2520)=2 | 2875/5040 = 57.0% | 56% ✓ |
-| 06  | 22   | 81 s  | 1782          | ceil(1782/2520)=1 | 1782/2520 = 70.7% | 70% ✓ |
-| 07  | 28   | 85 s  | 2380          | ceil(2380/2520)=1 | 2380/2520 = 94.4% | 93% ✓ |
-| 08  | 18   | 101 s | 1818          | ceil(1818/2520)=1 | 1818/2520 = 72.1% | 72% ✓ |
-
-| Group | baseThru | demandSec/hr | baseFleet | avg cycle (s) | util |
-|-------|----------|--------------|-----------|---------------|------|
-| CB18 (rows 1,2,4,5,6) | 160 | 20077 | 11 | 20077/160 = 125.5 s (2m 06s) | 20077 / (11×2520) = 72.4% |
-| ML2  (rows 3,7,8)     |  61 |  5968 |  3 |  5968/61  =  97.8 s (1m 38s) |  5968 / ( 3×2520) = 78.9% |
-
-The screenshot displays `2m 05s / 70%` and `1m 38s / 79%`. The 1-second / 2-point variances are mockup rounding — the formulas are canonical. Tests assert ±1 s and ±1 pct after rounding rather than exact mockup numerals; comments in the test cite the mockup values for the next person.
-
-### Per-flow weight gate
-
-A vehicle is **disabled** in the row's vehicle dropdown when:
+### Project totals (Step 3 ends here)
 
 ```
-flow.weightLbs > vehicle.calc.maxWeightLbs
+totalFlows     = flows.length
+totalThru      = Σ thruPerHr across all flows
+totalRawFleet  = Σ groupRaw across groups
+totalBaseFleet = Σ baseFleet across groups
 ```
 
-This is a hard gate. No override (matches the Step 2 traffic-light rule). The dropdown still shows the vehicle, greyed with a tooltip "Exceeds 3,968 lb max load."
+### Hard gates per flow
+
+A vehicle is **disabled** in the row's dropdown when `flow.weightLbs > vehicle.calc.maxWeightLbs`. Hard gate; no override. Matches Step 2's rule.
+
+### Verification against the v1 mockup
+
+Feeding the same 8 rows from the screenshot (using the screenshot's cycle values 138/98/118/165/115/81/85/101 s):
+
+| Row | thru | cycle (s) | rawVehicles = thru × cycle / 3600 |
+|-----|-----:|----------:|----------------------------------:|
+| 1   |   45 |  138      | 1.725 |
+| 2   |   30 |   98      | 0.817 |
+| 3   |   15 |  118      | 0.492 |
+| 4   |   38 |  165      | 1.742 |
+| 5   |   25 |  115      | 0.799 |
+| 6   |   22 |   81      | 0.495 |
+| 7   |   28 |   85      | 0.661 |
+| 8   |   18 |  101      | 0.505 |
+
+| Group | groupRaw | baseFleet (ceil) | headroom |
+|-------|---------:|-----------------:|---------:|
+| CB18 (rows 1,2,4,5,6) | 5.578 | **6** | (6 − 5.578) / 6 = 7.0 % |
+| ML2  (rows 3,7,8)     | 1.658 | **2** | (2 − 1.658) / 2 = 17.1 % |
+
+Step 3 says "6 CB18s and 2 ML2s." Step 4 will add charging vehicles based on each vehicle's battery profile. Step 5 will wrap a buffer % around the total. The screenshot's `11 / 3` came from a v0 model with η = 0.70 (a ~1.43× hidden multiplier); v3 surfaces every uplift explicitly so the proposal team can defend each one.
+
+These numbers become the test data in Tasks 6–7.
 
 ---
 
@@ -167,38 +148,36 @@ This is a hard gate. No override (matches the Step 2 traffic-light rule). The dr
 
 | Path | Status | Responsibility |
 |------|--------|----------------|
-| `docs/SPECIFICATION.md` | **create** | Authoritative spec — Step 3 chapter added here. Future steps land their own chapters in the same file. |
-| `docs/CHANGELOG.md` | modify | Append a Step 3 entry citing motivation + spec link. |
-| `src/calc/types.ts` | modify | Add `Flow`, `FlowMetrics`, `GroupSummary`, `ProjectFlowSummary`, `FlowCalcConstants` types. |
-| `src/calc/flowMetrics.ts` | **create** | Pure functions: `cycleSeconds`, `vehiclesNeeded`, `utilization`, `flowMetrics`, `groupSummary`, `projectFlowSummary`. |
-| `src/calc/__tests__/flowMetrics.test.ts` | **create** | Vitest. One describe block per function. Mockup-row verification table reproduced as test data. |
-| `src/lib/validations/schemas.ts` | modify | Add `flowSchema` and `flows: z.array(flowSchema).default([])` to `projectSchema`. |
-| `src/lib/storage.ts` | modify | Add `flows: []` to `defaultFields()`. Verify spread merge still works (it does — `flows` is a normal array field). |
+| `docs/SPECIFICATION.md` | **overwrite** | Step 3 chapter authoritative; pipeline preview for Steps 4 / 5. |
+| `docs/CHANGELOG.md` | modify | Append a Step 3 entry citing the v3 model. |
+| `src/calc/types.ts` | modify | Add `Flow`, `FlowDerived`, `GroupSummary`, `ProjectFlowSummary`. Export `TURN_TIME_SEC`, `DEFAULT_BUFFER_PCT`. |
+| `src/calc/flowMetrics.ts` | **create** | Pure: `cycleSeconds`, `rawVehicles`, `flowDerived`, `groupSummary`, `projectFlowSummary`. |
+| `src/calc/__tests__/flowMetrics.test.ts` | **create** | Vitest. Mockup-row table as test data; edge-case coverage per function. |
+| `src/lib/validations/schemas.ts` | modify | Add `flowSchema` and `flows: z.array(flowSchema).default([])`. |
+| `src/lib/storage.ts` | modify | Add `flows: []` to `defaultFields()`. |
+| `src/lib/__tests__/storage.flows.test.ts` | **create** | Round-trip test for `flows[]`. |
 | `app/projects/[id]/step3/page.tsx` | replace | Real page in place of placeholder. |
 | `src/components/step3/FlowsTable.tsx` | **create** | Table with inline-edited rows. |
 | `src/components/step3/FlowRow.tsx` | **create** | One editable row + computed columns. |
-| `src/components/step3/GroupSummaryCard.tsx` | **create** | One vehicle-group card. |
+| `src/components/step3/GroupSummaryCard.tsx` | **create** | Per-vehicle card showing `raw → ⌈ceil⌉`. |
 | `src/components/step3/VehicleSelect.tsx` | **create** | Per-row dropdown with weight-gated disable. |
-| `src/components/step3/vehicleColor.ts` | **create** | Deterministic vehicle-id → palette color (the dots in the screenshot). |
-| `app/globals.css` | modify | Add `.step3-page`, `.flow-group-grid`, `.flow-group-card`, `.flows-table`, `.flow-row`, `.util-pill`, `.veh-dot` rules. |
-| `src/components/StepPlaceholder.tsx` | unchanged | Still used by Steps 4–6; do not modify. |
+| `src/components/step3/vehicleColor.ts` | **create** | Deterministic vehicle-id → palette color. |
+| `app/globals.css` | modify | Add `.step3-page`, `.flow-group-grid`, `.flow-group-card`, `.flows-table`, `.flow-row`, `.veh-dot` rules. |
 
-**Module-boundary check** (per ARCHITECTURE.md §4): `flowMetrics.ts` imports only its own types — no React, no fetch, no localStorage. UI components never compute math inline; every number on screen routes through `flowMetrics.ts`.
+**Module-boundary check** (ARCHITECTURE.md §4): `flowMetrics.ts` imports only types — no React, no fetch, no localStorage. UI components never compute math inline.
 
 ---
 
 ## Tasks
 
-### Task 1 — Write `docs/SPECIFICATION.md` with Step 3 chapter
+### Task 1 — Spec doc (`docs/SPECIFICATION.md`)
 
 **Files:**
-- Create: `docs/SPECIFICATION.md`
+- Overwrite: `docs/SPECIFICATION.md`
 
-The spec is the source of truth referenced by CLAUDE.md. Currently absent; this task creates it. The Step 3 chapter is the primary content; future chapters for Steps 4–6 will be appended in their respective plans.
+- [ ] **Step 1: Write the spec**
 
-- [ ] **Step 1: Create the spec document**
-
-Write `docs/SPECIFICATION.md` with this content:
+Overwrite `docs/SPECIFICATION.md` with:
 
 ````markdown
 # TAL Fleet Calculator — Specification
@@ -211,117 +190,151 @@ The functional spec ("what the app does"). For architectural rules ("how it's bu
 
 ### Purpose
 
-Step 3 lets the engineer break the facility's material movement into discrete **flows** (origin → destination pairs) and have the calculator derive, live as they type, the cycle time, vehicle count, and utilization per flow, plus per-vehicle-type aggregate metrics. The output of Step 3 feeds Step 4 (charging) and Step 5 (KPIs).
+Step 3 decomposes the facility's material movement into discrete **flows** (origin → destination pairs) and derives, live as the user types, the cycle time and raw fractional vehicle demand per flow, plus per-vehicle aggregate `baseFleet`. Output of Step 3 is a pure-engineering number with no safety multipliers; Step 4 (charging) and Step 5 (buffer) layer on top.
 
-### Inputs
+### Pipeline overview
 
-Per flow:
+```
+Step 3:  per-flow cycle → per-flow rawVehicles → per-group baseFleet (ceil of sum)
+Step 4:  baseFleet → chargingDelta (additive, from battery physics)
+Step 5:  (baseFleet + chargingDelta) × (1 + bufferPct) → ⌈ceil⌉ → fleetSold
+```
+
+Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, Step 5 is policy. There is no productivity factor η and no congestion multiplier — those conflate causes and create overlap risk.
+
+### Per-flow inputs
+
 - `origin` — free text (e.g. "Dock A")
 - `destination` — free text (e.g. "Storage 1")
-- `distanceFt` — one-way distance, feet, > 0
-- `thruPerHr` — required throughput, moves per hour, ≥ 0
-- `weightLbs` — per-move load weight, lbs, ≥ 0
+- `distanceFt` — one-way distance, feet, ≥ 0
+- `thruPerHr` — cycles per hour, ≥ 0
+- `weightLbs` — per-cycle load weight, lbs, ≥ 0
+- `turns` — number of 90°+ turns per round trip, integer ≥ 0
 - `vehicleId` — id of a vehicle from `src/content/vehicles/*.json`
 - `transferMethodIdx` — index into `vehicle.transferMethods[]`; defaults to 0
 
-### Calculation constants
+### Constants
 
-- Productivity factor η = 0.70
-- Peak factor φ = 1.20
-- Seconds per hour T_hr = 3600
+- `TURN_TIME_SEC = 4` — global per-turn penalty.
+- `T_hr = 3600` — seconds per hour.
+- `DEFAULT_BUFFER_PCT = 0.10` — used in Step 5, declared here for cross-step visibility.
 
-### Per-flow derived values
-
-```
-travelLoadedSec   = distanceFt / vehicle.calc.speedLoadedFps
-travelEmptySec    = distanceFt / vehicle.calc.speedUnloadedFps
-loadSec           = vehicle.transferMethods[transferMethodIdx].loadTimeSec
-unloadSec         = vehicle.transferMethods[transferMethodIdx].unloadTimeSec
-
-cycleSeconds      = travelLoadedSec + travelEmptySec + loadSec + unloadSec
-vehiclesNeeded    = ceil( (thruPerHr × cycleSeconds) / (T_hr × η) )
-utilization       = (thruPerHr × cycleSeconds) / (vehiclesNeeded × T_hr × η)
-```
-
-`distanceFt` is one-way; the cycle includes the empty return trip. Sizing uses **base** throughput (not peak); peak is displayed for reference but not used to size the fleet.
-
-### Group summary (per `vehicleId`)
+### Per-flow derived
 
 ```
-baseThru          = Σ thruPerHr
-peakThru          = baseThru × φ
-demandSec_per_hr  = Σ (thruPerHr × cycleSeconds)
-avgCycleSec       = demandSec_per_hr / baseThru
-baseFleet         = Σ vehiclesNeeded
-utilization       = demandSec_per_hr / (baseFleet × T_hr × η)
+cycleSeconds = distanceFt × (1/speedLoadedFps + 1/speedUnloadedFps)
+             + transferMethod.loadTimeSec
+             + transferMethod.unloadTimeSec
+             + turns × TURN_TIME_SEC
+
+rawVehicles  = thruPerHr × cycleSeconds / 3600
 ```
 
-### Project footer
+`distanceFt` is one-way; the cycle includes the empty return trip. `rawVehicles` is fractional: `0.94` means this flow alone consumes 94 % of one vehicle's hour; `1.72` means a single vehicle cannot serve it — vehicles must pool.
+
+### Per-group derived (per unique `vehicleId`)
 
 ```
-total_flows       = flows.length
-total_baseThru    = Σ thruPerHr
-total_peakThru    = total_baseThru × φ
+groupRaw    = Σ rawVehicles  over flows with this vehicleId
+baseFleet   = ceil(groupRaw)
+headroom    = baseFleet > 0 ? (baseFleet − groupRaw) / baseFleet : null
+baseThru    = Σ thruPerHr
+avgCycleSec = baseThru > 0 ? Σ(thruPerHr × cycleSeconds) / baseThru : null
 ```
+
+`baseFleet` is Step 3's output: the integer number of vehicles of this type required to pool-serve all assigned flows, **before** charging or buffer.
+
+### Project totals
+
+```
+totalFlows     = flows.length
+totalThru      = Σ thruPerHr across all flows
+totalRawFleet  = Σ groupRaw across groups
+totalBaseFleet = Σ baseFleet across groups
+```
+
+### Step 4 preview (not built in this plan)
+
+Adds `chargingDelta` per group based on:
+- `vehicle.calc.batteryKwh`
+- `vehicle.calc.energyKwhPerFt`
+- `vehicle.calc.chargeKw` or `chargeTimeMin`
+- `vehicle.calc.chargerType` ("opportunity" vs "swap")
+- daily operating hours (from Step 1)
+
+Formula will be specified in Step 4's own plan. `chargingDelta` is a non-negative integer; it adds to `baseFleet` linearly.
+
+### Step 5 preview (not built in this plan)
+
+```
+fleetPerGroup = ceil( (baseFleet + chargingDelta) × (1 + project.bufferPct) )
+fleetTotal    = Σ fleetPerGroup
+```
+
+`project.bufferPct` defaults to 0.10. Surfaced as a project-level slider in Step 5. It is the **only** multiplier in the entire pipeline; it covers maintenance, training, demand spikes, and anything else not modeled by Step 3 or Step 4.
 
 ### Hard gates per flow
 
-A vehicle is **disabled** in the per-row dropdown when `flow.weightLbs > vehicle.calc.maxWeightLbs`. There is no override (consistent with Step 2's hard-gate rule).
-
-Other Step-1 hard gates (lift height, freezer, outdoor, certifications) still apply at the Step-2 qualification level and continue to scope which vehicles are even shown in the dropdown.
+A vehicle is **disabled** in the row's dropdown when `flow.weightLbs > vehicle.calc.maxWeightLbs`. Hard gate; no override.
 
 ### UI behavior
 
-- Table is fully inline-editable. Every keystroke writes to storage; navigation and reloads are always in sync.
+- Table is fully inline-editable. Every keystroke writes to storage (using the same `watch()` save pattern from Step 1).
 - "Add Flow" appends an empty row with placeholder text.
-- Deleting a row uses the trailing × control.
+- Deleting uses the trailing × control.
 - Group cards appear in the order vehicles were first assigned.
-- Distance shown in m when the unit toggle is metric, ft when imperial. Weight shown in kg / lbs respectively. **Storage is always imperial** (ft, lbs) per ARCHITECTURE.md §3.
-- Each vehicle id gets a deterministic display color (a hash into a fixed palette). The color appears on the group card title, the row's vehicle dot, and any future cross-step references.
+- Distance shown in m when metric, ft when imperial. Weight in kg / lbs respectively. **Storage always imperial** per ARCHITECTURE.md §3.
+- Each vehicle id gets a deterministic display color (hash → palette).
 
-### Utilization color thresholds (display only)
+### Headroom color thresholds (display only)
 
-- ≤ 85% — green
-- 85–95% — yellow
-- ≥ 95% — red
-
-### Empty / partial states
-
-- No flows → render group-card grid as empty, table shows a single full-width "Add your first flow" CTA.
-- Flow row with missing distance / throughput / vehicle → computed columns show "—".
-- Flow's selected vehicle no longer in qualified set (user changed Step 1 after Step 3) → row shows a warning chip and metrics still compute (the vehicle data is still present), but the group card surfaces a "Re-qualify in Step 2" hint.
-
-### Open design decisions (defaulted in v1, surfaced here for future revision)
-
-1. **η and φ are hard-coded.** Future: surface as project-level inputs with sensible defaults.
-2. **Sizing uses base throughput.** Alternative: size for peak (more conservative, lower utilization numbers).
-3. **Transfer method per flow defaults to vehicle's first.** Future: per-flow override in row-expand.
-4. **CSV import** is out of scope for v1 (button stubbed with "Coming soon" toast).
+- ≥ 30 % — green (comfortable headroom)
+- 15–30 % — green
+- 5–15 % — yellow (tight)
+- < 5 %   — red (no margin — likely needs another vehicle or workload re-balance)
 
 ### Acceptance criteria
 
-1. Adding 8 flows matching the screenshot's inputs produces per-row Cycle/Veh/Util within ±1 s and ±1 pct of the screenshot's display values.
-2. Per-vehicle group summaries match the screenshot's values within the same tolerance.
-3. Project footer reads "N flows · X base moves/hr · peak Y/hr" where Y = round(X × 1.2).
-4. Editing a flow's distance instantly re-derives all downstream numbers (no save button, no page reload).
-5. Picking a vehicle whose `maxWeightLbs` is less than the row's `weightLbs` is not possible (option disabled in dropdown).
-6. Reloading the page restores all flows and their computed values.
-7. Calc engine (`src/calc/flowMetrics.ts`) has zero React, fetch, or localStorage imports.
+1. Adding the 8 rows from the verification table (with the spec's cycle values; turns = 0) produces:
+   - CB18: `groupRaw ≈ 5.58`, `baseFleet = 6`.
+   - ML2:  `groupRaw ≈ 1.66`, `baseFleet = 2`.
+2. Editing any flow field instantly re-derives all downstream numbers — no save button, no page reload.
+3. Picking a vehicle whose `maxWeightLbs` is less than the row's `weightLbs` is not possible (disabled in dropdown).
+4. Reloading the page restores all flows and computed values.
+5. Calc engine (`src/calc/flowMetrics.ts`) has zero React, fetch, or localStorage imports.
+6. All Vitest cases for cycle / raw / group / project pass.
+
+### Verification table (test data)
+
+| Row | thru | cycle (s) | rawVehicles |
+|-----|-----:|----------:|------------:|
+| 1   |   45 |  138      | 1.725 |
+| 2   |   30 |   98      | 0.817 |
+| 3   |   15 |  118      | 0.492 |
+| 4   |   38 |  165      | 1.742 |
+| 5   |   25 |  115      | 0.799 |
+| 6   |   22 |   81      | 0.495 |
+| 7   |   28 |   85      | 0.661 |
+| 8   |   18 |  101      | 0.505 |
+
+| Group | groupRaw | baseFleet |
+|-------|---------:|----------:|
+| CB18 (1,2,4,5,6) | 5.578 | 6 |
+| ML2  (3,7,8)     | 1.658 | 2 |
+
+Project totals: `totalFlows = 8`, `totalThru = 221`, `totalRawFleet ≈ 7.24`, `totalBaseFleet = 8`.
 ````
 
 - [ ] **Step 2: Verify**
 
 Run: `wc -l docs/SPECIFICATION.md`
-Expected: ≥ 80 lines.
+Expected: ≥ 100 lines.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add docs/SPECIFICATION.md
-git commit -m "docs: write SPECIFICATION.md with Step 3 chapter
-
-Adds the spec-of-record referenced by CLAUDE.md. Step 3 chapter is
-authoritative; later steps will append their own chapters."
+git commit -m "docs(spec): Step 3 v3 — raw demand + ceil, no congestion"
 ```
 
 ---
@@ -331,7 +344,7 @@ authoritative; later steps will append their own chapters."
 **Files:**
 - Modify: `src/calc/types.ts`
 
-- [ ] **Step 1: Add Flow and metric types**
+- [ ] **Step 1: Append Step-3 types**
 
 Append to `src/calc/types.ts`:
 
@@ -342,73 +355,70 @@ export interface Flow {
   id: string
   origin: string
   destination: string
-  distanceFt: number           // > 0; one-way
-  thruPerHr: number            // ≥ 0
+  distanceFt: number           // ≥ 0; one-way
+  thruPerHr: number            // cycles/hr, ≥ 0
   weightLbs: number            // ≥ 0
+  turns: number                // count, integer ≥ 0
   vehicleId?: string
   transferMethodIdx?: number   // defaults to 0
 }
 
-export interface FlowMetrics {
+export interface FlowDerived {
   cycleSeconds: number | null
-  vehiclesNeeded: number | null
-  utilization: number | null   // [0, 1]
+  rawVehicles: number | null   // fractional; demand-only
 }
 
 export interface GroupSummary {
   vehicleId: string
   flowsCount: number
-  baseThru: number             // moves/hr
-  peakThru: number             // moves/hr
+  baseThru: number
   avgCycleSec: number | null
-  baseFleet: number
-  utilization: number | null   // [0, 1]
+  groupRaw: number             // Σ rawVehicles
+  baseFleet: number            // ceil(groupRaw)
+  headroom: number | null      // (baseFleet − groupRaw) / baseFleet
 }
 
 export interface ProjectFlowSummary {
   totalFlows: number
-  totalBaseThru: number
-  totalPeakThru: number
+  totalThru: number
+  totalRawFleet: number
+  totalBaseFleet: number
 }
 
-export interface FlowCalcConstants {
-  productivityFactor: number   // η, default 0.70
-  peakFactor: number           // φ, default 1.20
-}
-
-export const DEFAULT_FLOW_CONSTANTS: FlowCalcConstants = {
-  productivityFactor: 0.70,
-  peakFactor: 1.20,
-}
+export const TURN_TIME_SEC = 4
+export const DEFAULT_BUFFER_PCT = 0.10   // used by Step 5
 ```
 
 - [ ] **Step 2: Typecheck**
 
-Run: `npx tsc --noEmit`
-Expected: no new errors (pre-existing pdfExport.test errors stay).
+Run: `npx tsc --noEmit 2>&1 | grep -v pdfExport.test`
+Expected: no new errors.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add src/calc/types.ts
-git commit -m "feat(types): add Flow, FlowMetrics, GroupSummary for Step 3"
+git commit -m "feat(types): Flow, FlowDerived, GroupSummary + constants for Step 3"
 ```
 
 ---
 
-### Task 3 — Create `src/calc/flowMetrics.ts` with `cycleSeconds` (TDD)
+### Task 3 — `cycleSeconds` (TDD)
+
+> **Sub-skill:** superpowers:test-driven-development.
 
 **Files:**
 - Create: `src/calc/flowMetrics.ts`
 - Create: `src/calc/__tests__/flowMetrics.test.ts`
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Failing test**
 
 Create `src/calc/__tests__/flowMetrics.test.ts`:
 
 ```typescript
 import { describe, it, expect } from 'vitest'
 import { cycleSeconds } from '../flowMetrics'
+import { TURN_TIME_SEC } from '../types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
 const cb18: Pick<Vehicle, 'calc' | 'transferMethods'> = {
@@ -420,74 +430,95 @@ const cb18: Pick<Vehicle, 'calc' | 'transferMethods'> = {
 }
 
 describe('cycleSeconds', () => {
-  it('sums travel-loaded + travel-empty + load + unload', () => {
+  it('sums travel-loaded + travel-empty + load + unload + turns × TURN_TIME_SEC', () => {
     // 100 ft loaded at 9.84 fps  = 10.16 s
     // 100 ft empty  at 11.5  fps =  8.70 s
     // load 5 + unload 5         = 10.00 s
-    // total                     = 28.86 s
-    expect(cycleSeconds(100, cb18 as Vehicle, 0)).toBeCloseTo(28.86, 1)
+    // 2 turns × 4 s             =  8.00 s
+    // total                     = 36.86 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 2, 0)).toBeCloseTo(36.86, 1)
+  })
+
+  it('handles zero turns', () => {
+    expect(cycleSeconds(100, cb18 as Vehicle, 0, 0)).toBeCloseTo(28.86, 1)
   })
 
   it('uses transferMethodIdx to pick load/unload times', () => {
-    // Same 100 ft but Lift Platform (idx 1): 10.16 + 8.70 + 8 + 8 = 34.86 s
-    expect(cycleSeconds(100, cb18 as Vehicle, 1)).toBeCloseTo(34.86, 1)
+    // 100 ft + Lift Platform (idx 1) + 0 turns: 10.16 + 8.70 + 8 + 8 = 34.86 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 0, 1)).toBeCloseTo(34.86, 1)
   })
 
   it('defaults transferMethodIdx to 0 when omitted', () => {
-    expect(cycleSeconds(100, cb18 as Vehicle)).toBeCloseTo(28.86, 1)
+    expect(cycleSeconds(100, cb18 as Vehicle, 0)).toBeCloseTo(28.86, 1)
   })
 
-  it('returns load+unload only when distance is 0', () => {
-    expect(cycleSeconds(0, cb18 as Vehicle, 0)).toBeCloseTo(10, 5)
+  it('returns load+unload+turn penalty when distance is 0', () => {
+    expect(cycleSeconds(0, cb18 as Vehicle, 1, 0)).toBeCloseTo(14, 5)
   })
 
   it('returns null when distance is negative', () => {
-    expect(cycleSeconds(-1, cb18 as Vehicle, 0)).toBeNull()
+    expect(cycleSeconds(-1, cb18 as Vehicle, 0, 0)).toBeNull()
+  })
+
+  it('returns null when turns is negative', () => {
+    expect(cycleSeconds(100, cb18 as Vehicle, -1, 0)).toBeNull()
   })
 
   it('returns null when vehicle has no transferMethods', () => {
     const broken = { ...cb18, transferMethods: [] }
-    expect(cycleSeconds(100, broken as Vehicle, 0)).toBeNull()
+    expect(cycleSeconds(100, broken as Vehicle, 0, 0)).toBeNull()
   })
 
   it('returns null when transferMethodIdx is out of range', () => {
-    expect(cycleSeconds(100, cb18 as Vehicle, 99)).toBeNull()
+    expect(cycleSeconds(100, cb18 as Vehicle, 0, 99)).toBeNull()
   })
 
   it('returns null when speedLoadedFps is 0', () => {
-    const broken = { ...cb18, calc: { ...cb18.calc, speedLoadedFps: 0 } } as Pick<Vehicle, 'calc' | 'transferMethods'>
-    expect(cycleSeconds(100, broken as Vehicle, 0)).toBeNull()
+    const broken = { ...cb18, calc: { ...cb18.calc, speedLoadedFps: 0 } }
+    expect(cycleSeconds(100, broken as Vehicle, 0, 0)).toBeNull()
+  })
+
+  it('returns null when speedUnloadedFps is 0', () => {
+    const broken = { ...cb18, calc: { ...cb18.calc, speedUnloadedFps: 0 } }
+    expect(cycleSeconds(100, broken as Vehicle, 0, 0)).toBeNull()
+  })
+
+  it('pins TURN_TIME_SEC at 4 (changes here are a spec change)', () => {
+    expect(TURN_TIME_SEC).toBe(4)
   })
 })
 ```
 
-- [ ] **Step 2: Run the test — must fail with "module not found"**
+- [ ] **Step 2: Run — fail**
 
 Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
-Expected: FAIL — cannot resolve `../flowMetrics`.
+Expected: FAIL — module not found.
 
-- [ ] **Step 3: Implement `cycleSeconds`**
+- [ ] **Step 3: Implement**
 
 Create `src/calc/flowMetrics.ts`:
 
 ```typescript
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
+import { TURN_TIME_SEC } from './types'
 
 /**
- * Round-trip cycle time for one move on a flow of the given one-way distance.
+ * Round-trip cycle time for one move on a flow.
  *
- *   cycle = (distance / speedLoaded) + (distance / speedEmpty) + load + unload
+ *   cycle = (distance / speedLoaded) + (distance / speedEmpty)
+ *         + load + unload + turns × TURN_TIME_SEC
  *
- * Returns null when inputs make the calculation undefined (negative distance,
- * missing transfer methods, zero speed). Callers must handle null by
- * displaying "—" rather than rendering a number.
+ * Returns null when inputs make the calculation undefined. Callers must
+ * handle null by displaying "—" rather than rendering a number.
  */
 export function cycleSeconds(
   distanceFt: number,
   vehicle: Pick<Vehicle, 'calc' | 'transferMethods'>,
+  turns: number,
   transferMethodIdx: number = 0,
 ): number | null {
   if (distanceFt < 0) return null
+  if (turns < 0) return null
   if (!vehicle.transferMethods || vehicle.transferMethods.length === 0) return null
   const transfer = vehicle.transferMethods[transferMethodIdx]
   if (!transfer) return null
@@ -496,193 +527,29 @@ export function cycleSeconds(
   if (sLoaded <= 0 || sEmpty <= 0) return null
   const travelLoaded = distanceFt / sLoaded
   const travelEmpty  = distanceFt / sEmpty
-  return travelLoaded + travelEmpty + transfer.loadTimeSec + transfer.unloadTimeSec
+  return travelLoaded + travelEmpty
+       + transfer.loadTimeSec + transfer.unloadTimeSec
+       + turns * TURN_TIME_SEC
 }
 ```
 
-- [ ] **Step 4: Run the test — must pass**
+- [ ] **Step 4: Run — pass**
 
 Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
-Expected: PASS — 8/8.
+Expected: 12 / 12 PASS.
 
 - [ ] **Step 5: Commit**
 
 ```bash
 git add src/calc/flowMetrics.ts src/calc/__tests__/flowMetrics.test.ts
-git commit -m "feat(calc): cycleSeconds with full edge-case coverage"
+git commit -m "feat(calc): cycleSeconds with turn penalty and edge guards"
 ```
 
 ---
 
-### Task 4 — Add `vehiclesNeeded` (TDD)
+### Task 4 — `rawVehicles` (TDD)
 
-**Files:**
-- Modify: `src/calc/flowMetrics.ts`
-- Modify: `src/calc/__tests__/flowMetrics.test.ts`
-
-- [ ] **Step 1: Add failing test**
-
-Append to `src/calc/__tests__/flowMetrics.test.ts`:
-
-```typescript
-import { vehiclesNeeded, DEFAULT_FLOW_CONSTANTS } from '../flowMetrics'
-
-describe('vehiclesNeeded', () => {
-  const c = DEFAULT_FLOW_CONSTANTS  // η = 0.70, T_hr = 3600
-
-  it('matches screenshot row 1: 45/hr × 138s → 3 vehicles', () => {
-    expect(vehiclesNeeded(45, 138, c)).toBe(3)
-  })
-
-  it('matches screenshot row 7: 28/hr × 85s → 1 vehicle (boundary)', () => {
-    // 28*85 / 2520 = 0.9444 → ceil = 1
-    expect(vehiclesNeeded(28, 85, c)).toBe(1)
-  })
-
-  it('returns 0 when throughput is 0', () => {
-    expect(vehiclesNeeded(0, 100, c)).toBe(0)
-  })
-
-  it('returns null when cycle is null', () => {
-    expect(vehiclesNeeded(10, null, c)).toBeNull()
-  })
-
-  it('rounds any positive demand up to at least 1 vehicle', () => {
-    expect(vehiclesNeeded(0.01, 1, c)).toBe(1)
-  })
-})
-```
-
-- [ ] **Step 2: Run — must fail (vehiclesNeeded not exported)**
-
-Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
-Expected: FAIL — import resolves but function is undefined.
-
-- [ ] **Step 3: Implement `vehiclesNeeded`**
-
-Append to `src/calc/flowMetrics.ts`:
-
-```typescript
-import type { FlowCalcConstants } from './types'
-export { DEFAULT_FLOW_CONSTANTS } from './types'
-
-const T_HR = 3600
-
-/**
- * Vehicles needed to serve the flow at base throughput. Sizing uses base, not
- * peak — see SPECIFICATION.md "Open design decisions".
- *
- * Returns null when cycle is null (cannot size). Returns 0 when demand is 0.
- */
-export function vehiclesNeeded(
-  thruPerHr: number,
-  cycleSeconds: number | null,
-  k: FlowCalcConstants,
-): number | null {
-  if (cycleSeconds == null) return null
-  if (thruPerHr <= 0) return 0
-  const demandSecPerHr = thruPerHr * cycleSeconds
-  const capacityPerVehicle = T_HR * k.productivityFactor
-  return Math.ceil(demandSecPerHr / capacityPerVehicle)
-}
-```
-
-- [ ] **Step 4: Run — must pass**
-
-Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
-Expected: PASS — 13/13.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/calc/flowMetrics.ts src/calc/__tests__/flowMetrics.test.ts
-git commit -m "feat(calc): vehiclesNeeded — base-demand sizing with ceil"
-```
-
----
-
-### Task 5 — Add `utilization` (TDD)
-
-**Files:**
-- Modify: `src/calc/flowMetrics.ts`
-- Modify: `src/calc/__tests__/flowMetrics.test.ts`
-
-- [ ] **Step 1: Add failing test**
-
-Append to test file:
-
-```typescript
-import { utilization } from '../flowMetrics'
-
-describe('utilization', () => {
-  const c = DEFAULT_FLOW_CONSTANTS
-
-  it('matches screenshot row 1: 45/hr × 138s / 3 veh → ~82%', () => {
-    expect(utilization(45, 138, 3, c)).toBeCloseTo(0.821, 2)
-  })
-
-  it('matches screenshot row 7 (high util): 28/hr × 85s / 1 veh → ~94%', () => {
-    expect(utilization(28, 85, 1, c)).toBeCloseTo(0.944, 2)
-  })
-
-  it('is 0 when demand is 0', () => {
-    expect(utilization(0, 100, 0, c)).toBe(0)
-  })
-
-  it('is null when cycle is null', () => {
-    expect(utilization(10, null, 1, c)).toBeNull()
-  })
-
-  it('is null when vehiclesNeeded is null', () => {
-    expect(utilization(10, 100, null, c)).toBeNull()
-  })
-})
-```
-
-- [ ] **Step 2: Run — fail**
-
-Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
-Expected: FAIL on the 5 new tests.
-
-- [ ] **Step 3: Implement**
-
-Append to `src/calc/flowMetrics.ts`:
-
-```typescript
-/**
- * Per-flow utilization in [0, 1]. Always ≤ 1 by construction of vehiclesNeeded
- * (numerator ≤ denominator after ceil). Returns null when sizing is undefined.
- */
-export function utilization(
-  thruPerHr: number,
-  cycleSeconds: number | null,
-  vehiclesNeeded: number | null,
-  k: FlowCalcConstants,
-): number | null {
-  if (cycleSeconds == null) return null
-  if (vehiclesNeeded == null) return null
-  if (vehiclesNeeded === 0) return 0
-  const demandSecPerHr = thruPerHr * cycleSeconds
-  const capacity = vehiclesNeeded * T_HR * k.productivityFactor
-  return demandSecPerHr / capacity
-}
-```
-
-- [ ] **Step 4: Pass**
-
-Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
-Expected: 18/18 PASS.
-
-- [ ] **Step 5: Commit**
-
-```bash
-git add src/calc/flowMetrics.ts src/calc/__tests__/flowMetrics.test.ts
-git commit -m "feat(calc): utilization in [0,1]"
-```
-
----
-
-### Task 6 — Add `flowMetrics` orchestrator (TDD)
+> **Sub-skill:** superpowers:test-driven-development.
 
 **Files:**
 - Modify: `src/calc/flowMetrics.ts`
@@ -693,226 +560,273 @@ git commit -m "feat(calc): utilization in [0,1]"
 Append to test file:
 
 ```typescript
-import { flowMetrics } from '../flowMetrics'
-import type { Flow } from '../types'
+import { rawVehicles } from '../flowMetrics'
 
-describe('flowMetrics (orchestrator)', () => {
-  const c = DEFAULT_FLOW_CONSTANTS
-  const cb18Veh = cb18 as Vehicle
-
-  it('returns all-null when vehicle is undefined', () => {
-    const flow: Flow = {
-      id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 100, thruPerHr: 10, weightLbs: 500,
-    }
-    expect(flowMetrics(flow, undefined, c)).toEqual({
-      cycleSeconds: null, vehiclesNeeded: null, utilization: null,
-    })
+describe('rawVehicles', () => {
+  it('matches verification row 1: 45/hr × 138s → 1.725', () => {
+    expect(rawVehicles(45, 138)).toBeCloseTo(1.725, 3)
   })
 
-  it('ties cycle → veh → util together', () => {
-    const flow: Flow = {
-      id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 100, thruPerHr: 30, weightLbs: 500, vehicleId: 'cb18',
-    }
-    const m = flowMetrics(flow, cb18Veh, c)
-    expect(m.cycleSeconds).toBeCloseTo(28.86, 1)
-    // 30 * 28.86 = 865.8 / 2520 = 0.343 → ceil = 1 → util = 865.8/2520 = 34.4%
-    expect(m.vehiclesNeeded).toBe(1)
-    expect(m.utilization).toBeCloseTo(0.343, 2)
+  it('matches verification row 7: 28/hr × 85s → 0.661', () => {
+    expect(rawVehicles(28, 85)).toBeCloseTo(0.661, 3)
+  })
+
+  it('returns 0 when throughput is 0', () => {
+    expect(rawVehicles(0, 100)).toBe(0)
+  })
+
+  it('returns 0 when throughput is negative', () => {
+    expect(rawVehicles(-1, 100)).toBe(0)
+  })
+
+  it('returns null when cycle is null', () => {
+    expect(rawVehicles(10, null)).toBeNull()
   })
 })
 ```
 
 - [ ] **Step 2: Fail**
-
-Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
-
 - [ ] **Step 3: Implement**
 
 Append to `src/calc/flowMetrics.ts`:
 
 ```typescript
-import type { Flow, FlowMetrics } from './types'
-
 /**
- * Compose cycleSeconds, vehiclesNeeded, utilization for one flow.
- * Pure wrapper — UI calls this once per flow per render.
+ * Fractional raw vehicle demand for a flow. No factors applied.
+ * Returns null when cycle is null. Returns 0 when demand is 0 or negative.
  */
-export function flowMetrics(
-  flow: Flow,
-  vehicle: Vehicle | undefined,
-  k: FlowCalcConstants,
-): FlowMetrics {
-  if (!vehicle) return { cycleSeconds: null, vehiclesNeeded: null, utilization: null }
-  const cycle = cycleSeconds(flow.distanceFt, vehicle, flow.transferMethodIdx ?? 0)
-  const veh = vehiclesNeeded(flow.thruPerHr, cycle, k)
-  const util = utilization(flow.thruPerHr, cycle, veh, k)
-  return { cycleSeconds: cycle, vehiclesNeeded: veh, utilization: util }
+export function rawVehicles(
+  thruPerHr: number,
+  cycleSeconds: number | null,
+): number | null {
+  if (cycleSeconds == null) return null
+  if (thruPerHr <= 0) return 0
+  return (thruPerHr * cycleSeconds) / 3600
 }
 ```
 
 - [ ] **Step 4: Pass**
-
-Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
-Expected: 20/20 PASS.
-
 - [ ] **Step 5: Commit**
 
 ```bash
 git add src/calc/flowMetrics.ts src/calc/__tests__/flowMetrics.test.ts
-git commit -m "feat(calc): flowMetrics orchestrator"
+git commit -m "feat(calc): rawVehicles = thru × cycle / 3600"
 ```
 
 ---
 
-### Task 7 — Add `groupSummary` (TDD with full mockup data)
+### Task 5 — `flowDerived` orchestrator (TDD)
 
 **Files:**
 - Modify: `src/calc/flowMetrics.ts`
 - Modify: `src/calc/__tests__/flowMetrics.test.ts`
 
-This task reproduces the exact 8-row dataset from the screenshot and asserts both group cards match within tolerance.
+- [ ] **Step 1: Failing test**
+
+Append:
+
+```typescript
+import { flowDerived } from '../flowMetrics'
+import type { Flow } from '../types'
+
+describe('flowDerived (orchestrator)', () => {
+  const cb18Veh = cb18 as Vehicle
+
+  it('returns nulls when vehicle is undefined', () => {
+    const flow: Flow = {
+      id: 'f1', origin: 'A', destination: 'B',
+      distanceFt: 100, thruPerHr: 10, weightLbs: 500, turns: 0,
+    }
+    expect(flowDerived(flow, undefined)).toEqual({
+      cycleSeconds: null,
+      rawVehicles: null,
+    })
+  })
+
+  it('ties cycle → raw together (with turns)', () => {
+    const flow: Flow = {
+      id: 'f1', origin: 'A', destination: 'B',
+      distanceFt: 100, thruPerHr: 30, weightLbs: 500, turns: 1,
+      vehicleId: 'cb18',
+    }
+    const d = flowDerived(flow, cb18Veh)
+    // cycle = 10.16 + 8.70 + 5 + 5 + 4 = 32.86 s
+    expect(d.cycleSeconds).toBeCloseTo(32.86, 1)
+    // raw = 30 × 32.86 / 3600 = 0.274
+    expect(d.rawVehicles).toBeCloseTo(0.274, 3)
+  })
+})
+```
+
+- [ ] **Step 2: Fail**
+- [ ] **Step 3: Implement**
+
+Append:
+
+```typescript
+import type { Flow, FlowDerived } from './types'
+
+/**
+ * Compose cycleSeconds and rawVehicles for one flow. Pure wrapper.
+ */
+export function flowDerived(
+  flow: Flow,
+  vehicle: Vehicle | undefined,
+): FlowDerived {
+  if (!vehicle) return { cycleSeconds: null, rawVehicles: null }
+  const cycle = cycleSeconds(
+    flow.distanceFt,
+    vehicle,
+    flow.turns,
+    flow.transferMethodIdx ?? 0,
+  )
+  return {
+    cycleSeconds: cycle,
+    rawVehicles: rawVehicles(flow.thruPerHr, cycle),
+  }
+}
+```
+
+- [ ] **Step 4: Pass**
+- [ ] **Step 5: Commit**
+
+```bash
+git add src/calc/flowMetrics.ts src/calc/__tests__/flowMetrics.test.ts
+git commit -m "feat(calc): flowDerived orchestrator"
+```
+
+---
+
+### Task 6 — `groupSummary` (TDD)
+
+**Files:**
+- Modify: `src/calc/flowMetrics.ts`
+- Modify: `src/calc/__tests__/flowMetrics.test.ts`
 
 - [ ] **Step 1: Failing test**
 
-Append to test file:
+Append:
 
 ```typescript
 import { groupSummary } from '../flowMetrics'
 
-describe('groupSummary (mockup reproduction)', () => {
-  const c = DEFAULT_FLOW_CONSTANTS
-
-  // Per-flow cycle and vehiclesNeeded are passed in pre-computed so the test
-  // pins the formulas at the mockup's cycle values (the screenshot's cycle
-  // seconds come from rounded vehicle data, not the same as cycleSeconds()
-  // applied to real distance — we test the formulas individually elsewhere).
+describe('groupSummary', () => {
   const cb18Flows = [
-    { id: '1', origin: 'Dock A',    destination: 'Storage 1', distanceFt: 590, thruPerHr: 45, weightLbs: 1984, vehicleId: 'cb18' },
-    { id: '2', origin: 'Storage 1', destination: 'Pack Line', distanceFt: 394, thruPerHr: 30, weightLbs: 1764, vehicleId: 'cb18' },
-    { id: '4', origin: 'Dock A',    destination: 'Storage 2', distanceFt: 722, thruPerHr: 38, weightLbs: 2425, vehicleId: 'cb18' },
-    { id: '5', origin: 'Storage 2', destination: 'Pack Line', distanceFt: 476, thruPerHr: 25, weightLbs: 2094, vehicleId: 'cb18' },
-    { id: '6', origin: 'Inbound',   destination: 'Storage 1', distanceFt: 312, thruPerHr: 22, weightLbs: 2646, vehicleId: 'cb18' },
+    { id: '1', origin: 'Dock A',    destination: 'Storage 1', distanceFt: 590, thruPerHr: 45, weightLbs: 1984, turns: 0, vehicleId: 'cb18' },
+    { id: '2', origin: 'Storage 1', destination: 'Pack Line', distanceFt: 394, thruPerHr: 30, weightLbs: 1764, turns: 0, vehicleId: 'cb18' },
+    { id: '4', origin: 'Dock A',    destination: 'Storage 2', distanceFt: 722, thruPerHr: 38, weightLbs: 2425, turns: 0, vehicleId: 'cb18' },
+    { id: '5', origin: 'Storage 2', destination: 'Pack Line', distanceFt: 476, thruPerHr: 25, weightLbs: 2094, turns: 0, vehicleId: 'cb18' },
+    { id: '6', origin: 'Inbound',   destination: 'Storage 1', distanceFt: 312, thruPerHr: 22, weightLbs: 2646, turns: 0, vehicleId: 'cb18' },
   ]
-  const metricsByCb18 = new Map([
-    ['1', { cycleSeconds: 138, vehiclesNeeded: 3, utilization: 0.821 }],
-    ['2', { cycleSeconds:  98, vehiclesNeeded: 2, utilization: 0.583 }],
-    ['4', { cycleSeconds: 165, vehiclesNeeded: 3, utilization: 0.829 }],
-    ['5', { cycleSeconds: 115, vehiclesNeeded: 2, utilization: 0.570 }],
-    ['6', { cycleSeconds:  81, vehiclesNeeded: 1, utilization: 0.707 }],
+  const derivedCb18 = new Map([
+    ['1', { cycleSeconds: 138, rawVehicles: 1.725 }],
+    ['2', { cycleSeconds:  98, rawVehicles: 0.817 }],
+    ['4', { cycleSeconds: 165, rawVehicles: 1.742 }],
+    ['5', { cycleSeconds: 115, rawVehicles: 0.799 }],
+    ['6', { cycleSeconds:  81, rawVehicles: 0.495 }],
   ])
 
-  it('reproduces the CB18 AGF group card', () => {
-    const g = groupSummary('cb18', cb18Flows, metricsByCb18, c)
+  it('aggregates the CB18 group', () => {
+    const g = groupSummary('cb18', cb18Flows, derivedCb18)
     expect(g.flowsCount).toBe(5)
     expect(g.baseThru).toBe(160)
-    expect(g.peakThru).toBeCloseTo(192, 0)               // mockup shows 192
-    expect(g.baseFleet).toBe(11)
-    expect(g.avgCycleSec).toBeCloseTo(125, 0)            // mockup 2m 05s ≈ 125 s
-    expect(g.utilization).toBeCloseTo(0.724, 2)          // mockup 70%; spec accepts ±2 pct
+    expect(g.groupRaw).toBeCloseTo(5.578, 2)
+    expect(g.baseFleet).toBe(6)                       // ceil(5.578)
+    expect(g.avgCycleSec).toBeCloseTo(125.5, 0)
+    expect(g.headroom).toBeCloseTo(0.070, 2)          // (6 − 5.578) / 6
   })
 
   const ml2Flows = [
-    { id: '3', origin: 'Pack Line', destination: 'Dock B',    distanceFt: 295, thruPerHr: 15, weightLbs: 110, vehicleId: 'ml2' },
-    { id: '7', origin: 'Pick Wall', destination: 'Pack Line', distanceFt: 197, thruPerHr: 28, weightLbs:  77, vehicleId: 'ml2' },
-    { id: '8', origin: 'Storage 1', destination: 'Pick Wall', distanceFt: 246, thruPerHr: 18, weightLbs:  62, vehicleId: 'ml2' },
+    { id: '3', origin: 'Pack Line', destination: 'Dock B',    distanceFt: 295, thruPerHr: 15, weightLbs: 110, turns: 0, vehicleId: 'ml2' },
+    { id: '7', origin: 'Pick Wall', destination: 'Pack Line', distanceFt: 197, thruPerHr: 28, weightLbs:  77, turns: 0, vehicleId: 'ml2' },
+    { id: '8', origin: 'Storage 1', destination: 'Pick Wall', distanceFt: 246, thruPerHr: 18, weightLbs:  62, turns: 0, vehicleId: 'ml2' },
   ]
-  const metricsByMl2 = new Map([
-    ['3', { cycleSeconds: 118, vehiclesNeeded: 1, utilization: 0.702 }],
-    ['7', { cycleSeconds:  85, vehiclesNeeded: 1, utilization: 0.944 }],
-    ['8', { cycleSeconds: 101, vehiclesNeeded: 1, utilization: 0.722 }],
+  const derivedMl2 = new Map([
+    ['3', { cycleSeconds: 118, rawVehicles: 0.492 }],
+    ['7', { cycleSeconds:  85, rawVehicles: 0.661 }],
+    ['8', { cycleSeconds: 101, rawVehicles: 0.505 }],
   ])
 
-  it('reproduces the ML2 Mini Load AV group card', () => {
-    const g = groupSummary('ml2', ml2Flows, metricsByMl2, c)
+  it('aggregates the ML2 group', () => {
+    const g = groupSummary('ml2', ml2Flows, derivedMl2)
     expect(g.flowsCount).toBe(3)
     expect(g.baseThru).toBe(61)
-    expect(g.peakThru).toBeCloseTo(73, 0)
-    expect(g.baseFleet).toBe(3)
-    expect(g.avgCycleSec).toBeCloseTo(98, 0)             // mockup 1m 38s = 98 s
-    expect(g.utilization).toBeCloseTo(0.789, 2)          // mockup 79% ✓
+    expect(g.groupRaw).toBeCloseTo(1.658, 2)
+    expect(g.baseFleet).toBe(2)                        // ceil(1.658)
+    expect(g.avgCycleSec).toBeCloseTo(97.8, 0)
+    expect(g.headroom).toBeCloseTo(0.171, 2)           // (2 − 1.658) / 2
   })
 
-  it('returns nulls for avgCycle/util when baseThru is 0', () => {
-    const g = groupSummary('cb18', [], new Map(), c)
+  it('returns null avgCycle and headroom when group is empty', () => {
+    const g = groupSummary('cb18', [], new Map())
+    expect(g.flowsCount).toBe(0)
     expect(g.baseThru).toBe(0)
+    expect(g.groupRaw).toBe(0)
     expect(g.baseFleet).toBe(0)
     expect(g.avgCycleSec).toBeNull()
-    expect(g.utilization).toBeNull()
+    expect(g.headroom).toBeNull()
   })
 })
 ```
 
 - [ ] **Step 2: Fail**
-
-Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
-
 - [ ] **Step 3: Implement**
 
-Append to `src/calc/flowMetrics.ts`:
+Append:
 
 ```typescript
 import type { GroupSummary } from './types'
 
 /**
- * Aggregate per-vehicle group summary. `metricsByFlowId` is a precomputed
- * `flowId → FlowMetrics` map so the caller (React) doesn't recompute cycles
- * inside this function. Keeps groupSummary cheap and dependency-free.
+ * Aggregate per-vehicle group summary. `derivedByFlowId` is precomputed
+ * by the caller so React doesn't recompute cycles inside this function.
  */
 export function groupSummary(
   vehicleId: string,
   flows: Flow[],
-  metricsByFlowId: Map<string, FlowMetrics>,
-  k: FlowCalcConstants,
+  derivedByFlowId: Map<string, FlowDerived>,
 ): GroupSummary {
   const inGroup = flows.filter(f => f.vehicleId === vehicleId)
 
   let baseThru = 0
   let demandSecPerHr = 0
-  let baseFleet = 0
+  let groupRaw = 0
 
   for (const f of inGroup) {
-    const m = metricsByFlowId.get(f.id)
-    if (!m) continue
+    const d = derivedByFlowId.get(f.id)
+    if (!d) continue
     baseThru += f.thruPerHr
-    if (m.cycleSeconds != null) demandSecPerHr += f.thruPerHr * m.cycleSeconds
-    if (m.vehiclesNeeded != null) baseFleet += m.vehiclesNeeded
+    if (d.cycleSeconds != null) demandSecPerHr += f.thruPerHr * d.cycleSeconds
+    if (d.rawVehicles != null) groupRaw += d.rawVehicles
   }
 
-  const peakThru = baseThru * k.peakFactor
+  const baseFleet = Math.ceil(groupRaw)
   const avgCycleSec = baseThru > 0 ? demandSecPerHr / baseThru : null
-  const utilization = baseFleet > 0
-    ? demandSecPerHr / (baseFleet * T_HR * k.productivityFactor)
-    : null
+  const headroom = baseFleet > 0 ? (baseFleet - groupRaw) / baseFleet : null
 
   return {
     vehicleId,
     flowsCount: inGroup.length,
     baseThru,
-    peakThru,
     avgCycleSec,
+    groupRaw,
     baseFleet,
-    utilization,
+    headroom,
   }
 }
 ```
 
 - [ ] **Step 4: Pass**
-
-Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
-Expected: 23/23 PASS.
-
 - [ ] **Step 5: Commit**
 
 ```bash
 git add src/calc/flowMetrics.ts src/calc/__tests__/flowMetrics.test.ts
-git commit -m "feat(calc): groupSummary reproduces mockup CB18 and ML2 cards"
+git commit -m "feat(calc): groupSummary — pool and ceil"
 ```
 
 ---
 
-### Task 8 — Add `projectFlowSummary` (TDD)
+### Task 7 — `projectFlowSummary` (TDD)
 
 **Files:**
 - Modify: `src/calc/flowMetrics.ts`
@@ -926,23 +840,32 @@ Append:
 import { projectFlowSummary } from '../flowMetrics'
 
 describe('projectFlowSummary', () => {
-  const c = DEFAULT_FLOW_CONSTANTS
-
-  it('matches mockup footer: 8 flows · 221 base · 265 peak', () => {
+  it('matches the verification totals: 8 flows · 221 thru · 8 base fleet', () => {
     const allFlows = [
-      { id: '1', origin: '', destination: '', distanceFt: 1, thruPerHr: 45, weightLbs: 0, vehicleId: 'cb18' },
-      { id: '2', origin: '', destination: '', distanceFt: 1, thruPerHr: 30, weightLbs: 0, vehicleId: 'cb18' },
-      { id: '3', origin: '', destination: '', distanceFt: 1, thruPerHr: 15, weightLbs: 0, vehicleId: 'ml2' },
-      { id: '4', origin: '', destination: '', distanceFt: 1, thruPerHr: 38, weightLbs: 0, vehicleId: 'cb18' },
-      { id: '5', origin: '', destination: '', distanceFt: 1, thruPerHr: 25, weightLbs: 0, vehicleId: 'cb18' },
-      { id: '6', origin: '', destination: '', distanceFt: 1, thruPerHr: 22, weightLbs: 0, vehicleId: 'cb18' },
-      { id: '7', origin: '', destination: '', distanceFt: 1, thruPerHr: 28, weightLbs: 0, vehicleId: 'ml2' },
-      { id: '8', origin: '', destination: '', distanceFt: 1, thruPerHr: 18, weightLbs: 0, vehicleId: 'ml2' },
+      { id: '1', origin: '', destination: '', distanceFt: 1, thruPerHr: 45, weightLbs: 0, turns: 0, vehicleId: 'cb18' },
+      { id: '2', origin: '', destination: '', distanceFt: 1, thruPerHr: 30, weightLbs: 0, turns: 0, vehicleId: 'cb18' },
+      { id: '3', origin: '', destination: '', distanceFt: 1, thruPerHr: 15, weightLbs: 0, turns: 0, vehicleId: 'ml2' },
+      { id: '4', origin: '', destination: '', distanceFt: 1, thruPerHr: 38, weightLbs: 0, turns: 0, vehicleId: 'cb18' },
+      { id: '5', origin: '', destination: '', distanceFt: 1, thruPerHr: 25, weightLbs: 0, turns: 0, vehicleId: 'cb18' },
+      { id: '6', origin: '', destination: '', distanceFt: 1, thruPerHr: 22, weightLbs: 0, turns: 0, vehicleId: 'cb18' },
+      { id: '7', origin: '', destination: '', distanceFt: 1, thruPerHr: 28, weightLbs: 0, turns: 0, vehicleId: 'ml2' },
+      { id: '8', origin: '', destination: '', distanceFt: 1, thruPerHr: 18, weightLbs: 0, turns: 0, vehicleId: 'ml2' },
     ]
-    const s = projectFlowSummary(allFlows, c)
+    const derived = new Map([
+      ['1', { cycleSeconds: 138, rawVehicles: 1.725 }],
+      ['2', { cycleSeconds:  98, rawVehicles: 0.817 }],
+      ['3', { cycleSeconds: 118, rawVehicles: 0.492 }],
+      ['4', { cycleSeconds: 165, rawVehicles: 1.742 }],
+      ['5', { cycleSeconds: 115, rawVehicles: 0.799 }],
+      ['6', { cycleSeconds:  81, rawVehicles: 0.495 }],
+      ['7', { cycleSeconds:  85, rawVehicles: 0.661 }],
+      ['8', { cycleSeconds: 101, rawVehicles: 0.505 }],
+    ])
+    const s = projectFlowSummary(allFlows, derived)
     expect(s.totalFlows).toBe(8)
-    expect(s.totalBaseThru).toBe(221)
-    expect(s.totalPeakThru).toBeCloseTo(265.2, 1)
+    expect(s.totalThru).toBe(221)
+    expect(s.totalRawFleet).toBeCloseTo(7.236, 2)
+    expect(s.totalBaseFleet).toBe(8)                  // 6 + 2
   })
 })
 ```
@@ -957,36 +880,52 @@ import type { ProjectFlowSummary } from './types'
 
 export function projectFlowSummary(
   flows: Flow[],
-  k: FlowCalcConstants,
+  derivedByFlowId: Map<string, FlowDerived>,
 ): ProjectFlowSummary {
-  const totalBaseThru = flows.reduce((s, f) => s + f.thruPerHr, 0)
+  const ids: string[] = []
+  for (const f of flows) {
+    if (f.vehicleId && !ids.includes(f.vehicleId)) ids.push(f.vehicleId)
+  }
+  let totalRawFleet = 0
+  let totalBaseFleet = 0
+  for (const vid of ids) {
+    const g = groupSummary(vid, flows, derivedByFlowId)
+    totalRawFleet += g.groupRaw
+    totalBaseFleet += g.baseFleet
+  }
   return {
     totalFlows: flows.length,
-    totalBaseThru,
-    totalPeakThru: totalBaseThru * k.peakFactor,
+    totalThru: flows.reduce((s, f) => s + f.thruPerHr, 0),
+    totalRawFleet,
+    totalBaseFleet,
   }
 }
 ```
 
 - [ ] **Step 4: Pass**
+
+Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts`
+Expected: 23 / 23 PASS.
+
 - [ ] **Step 5: Commit**
 
 ```bash
 git add src/calc/flowMetrics.ts src/calc/__tests__/flowMetrics.test.ts
-git commit -m "feat(calc): projectFlowSummary for table footer"
+git commit -m "feat(calc): projectFlowSummary"
 ```
 
 ---
 
-### Task 9 — Persist `flows` on `StoredProject`
+### Task 8 — Schema + storage
 
 **Files:**
 - Modify: `src/lib/validations/schemas.ts`
 - Modify: `src/lib/storage.ts`
+- Create: `src/lib/__tests__/storage.flows.test.ts`
 
 - [ ] **Step 1: Extend Zod schema**
 
-In `src/lib/validations/schemas.ts`, before `export const projectSchema = z.object({`, add:
+In `src/lib/validations/schemas.ts`, before `projectSchema`, add:
 
 ```typescript
 export const flowSchema = z.object({
@@ -996,33 +935,29 @@ export const flowSchema = z.object({
   distanceFt: z.number().min(0).default(0),
   thruPerHr: z.number().min(0).default(0),
   weightLbs: z.number().min(0).default(0),
+  turns: z.number().int().min(0).default(0),
   vehicleId: z.string().optional(),
   transferMethodIdx: z.number().int().min(0).optional(),
 })
 ```
 
-Inside `projectSchema = z.object({...})`, add (place after `interlocks`):
+Inside `projectSchema = z.object({...})`, after `interlocks`, add:
 
 ```typescript
   flows: z.array(flowSchema).default([]),
 ```
 
-- [ ] **Step 2: Extend storage defaults**
+- [ ] **Step 2: Storage defaults**
 
-In `src/lib/storage.ts`, inside `defaultFields()`, before the closing `})`, add:
+In `src/lib/storage.ts`, inside `defaultFields()`, append (before the closing `})`):
 
 ```typescript
   flows: [],
 ```
 
-- [ ] **Step 3: Typecheck**
+- [ ] **Step 3: Round-trip test**
 
-Run: `npx tsc --noEmit`
-Expected: no new errors.
-
-- [ ] **Step 4: Smoke-test storage round-trip**
-
-Add a one-off test file `src/lib/__tests__/storage.flows.test.ts`:
+Create `src/lib/__tests__/storage.flows.test.ts`:
 
 ```typescript
 import { describe, it, expect, beforeEach } from 'vitest'
@@ -1033,15 +968,19 @@ describe('flows round-trip', () => {
 
   it('persists flows through create + update + read', () => {
     const p = createProject({ projectName: 'Test' })
-    updateProject(p.id, { flows: [
-      { id: 'f1', origin: 'A', destination: 'B', distanceFt: 100, thruPerHr: 10, weightLbs: 500, vehicleId: 'cb18' },
-    ]})
+    expect(p.flows).toEqual([])
+
+    updateProject(p.id, {
+      flows: [{ id: 'f1', origin: 'A', destination: 'B', distanceFt: 100, thruPerHr: 10, weightLbs: 500, turns: 1, vehicleId: 'cb18' }],
+    })
     const read = getProject(p.id)
     expect(read?.flows).toHaveLength(1)
-    expect(read?.flows?.[0]).toMatchObject({ id: 'f1', distanceFt: 100, vehicleId: 'cb18' })
+    expect(read?.flows?.[0]).toMatchObject({ id: 'f1', distanceFt: 100, turns: 1, vehicleId: 'cb18' })
   })
 })
 ```
+
+- [ ] **Step 4: Pass**
 
 Run: `npx vitest run src/lib/__tests__/storage.flows.test.ts`
 Expected: PASS.
@@ -1050,32 +989,27 @@ Expected: PASS.
 
 ```bash
 git add src/lib/validations/schemas.ts src/lib/storage.ts src/lib/__tests__/storage.flows.test.ts
-git commit -m "feat(storage): persist flows[] on StoredProject"
+git commit -m "feat(storage): flows[] on StoredProject"
 ```
 
 ---
 
-### Task 10 — Vehicle dot color helper
+### Task 9 — Vehicle color helper
 
 **Files:**
 - Create: `src/components/step3/vehicleColor.ts`
 
-The screenshot shows a coloured dot per vehicle (CB18 blue, ML2 green). The plan needs deterministic id-to-color mapping so the same vehicle has the same colour everywhere.
-
 - [ ] **Step 1: Create**
 
 ```typescript
-const PALETTE = [
+// Skip red — reserved for hard-fail semantics elsewhere in the app.
+const ASSIGNABLE = [
   '#4f9eff',  // blue
   '#3ec888',  // green
   '#f5a524',  // amber
   '#a78bfa',  // violet
-  '#f56565',  // red (reserved for hard-fail; never assigned)
   '#22d3ee',  // cyan
 ] as const
-
-// Skip red — reserved for failure semantics elsewhere in the app.
-const ASSIGNABLE = PALETTE.filter(c => c !== '#f56565')
 
 export function vehicleColor(vehicleId: string): string {
   let hash = 0
@@ -1086,28 +1020,23 @@ export function vehicleColor(vehicleId: string): string {
 }
 ```
 
-- [ ] **Step 2: Verify (manual sanity)**
-
-Run: `node -e "const { vehicleColor } = require('./src/components/step3/vehicleColor.ts'); console.log(vehicleColor('cb18'), vehicleColor('ml2'))"`
-(Skip if `ts-node` not available — the test in Task 12 will exercise this code path.)
-
-- [ ] **Step 3: Commit**
+- [ ] **Step 2: Commit**
 
 ```bash
 git add src/components/step3/vehicleColor.ts
-git commit -m "feat(step3): deterministic vehicle-id to palette color"
+git commit -m "feat(step3): deterministic vehicle-id → palette color"
 ```
 
 ---
 
-### Task 11 — Step 3 page shell
+### Task 10 — Step 3 page shell
+
+> **Sub-skill:** superpowers:frontend-design — review the Claude Design reference at `/Users/kylemcmillin/Desktop/TAL AV Eng Tool/Claude Design/tal-av-tool/project/tal/` before editing the page or styling.
 
 **Files:**
 - Replace: `app/projects/[id]/step3/page.tsx`
 
-- [ ] **Step 1: Replace placeholder**
-
-Overwrite `app/projects/[id]/step3/page.tsx`:
+- [ ] **Step 1: Overwrite placeholder**
 
 ```tsx
 'use client'
@@ -1116,14 +1045,14 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import { getProject, updateProject, type StoredProject } from '@/src/lib/storage'
+import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { Flow, FlowMetrics } from '@/src/calc/types'
+import type { Flow, FlowDerived } from '@/src/calc/types'
 import {
-  flowMetrics,
+  flowDerived,
   groupSummary,
   projectFlowSummary,
-  DEFAULT_FLOW_CONSTANTS,
 } from '@/src/calc/flowMetrics'
 import FlowsTable from '@/src/components/step3/FlowsTable'
 import GroupSummaryCard from '@/src/components/step3/GroupSummaryCard'
@@ -1134,15 +1063,11 @@ export default function Step3Page() {
 
   const [project, setProject] = useState<StoredProject | null>(null)
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [loading, setLoading] = useState(true)
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
 
   useEffect(() => {
     setProject(getProject(id))
-    fetch('/api/vehicles')
-      .then(r => r.json())
-      .then(v => { setVehicles(Array.isArray(v) ? v : []); setLoading(false) })
-      .catch(() => setLoading(false))
+    fetchVehiclesCached().then(setVehicles).catch(() => {})
   }, [id])
 
   const vehicleById = useMemo(
@@ -1150,27 +1075,29 @@ export default function Step3Page() {
     [vehicles],
   )
 
-  const flows = project?.flows ?? []
-  const k = DEFAULT_FLOW_CONSTANTS
+  const flows: Flow[] = project?.flows ?? []
 
-  const metricsByFlowId = useMemo(() => {
-    const m = new Map<string, FlowMetrics>()
+  const derivedByFlowId = useMemo(() => {
+    const m = new Map<string, FlowDerived>()
     for (const f of flows) {
       const veh = f.vehicleId ? vehicleById.get(f.vehicleId) : undefined
-      m.set(f.id, flowMetrics(f, veh, k))
+      m.set(f.id, flowDerived(f, veh))
     }
     return m
-  }, [flows, vehicleById, k])
+  }, [flows, vehicleById])
 
   const groups = useMemo(() => {
     const ids: string[] = []
     for (const f of flows) {
       if (f.vehicleId && !ids.includes(f.vehicleId)) ids.push(f.vehicleId)
     }
-    return ids.map(vid => groupSummary(vid, flows, metricsByFlowId, k))
-  }, [flows, metricsByFlowId, k])
+    return ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
+  }, [flows, derivedByFlowId])
 
-  const footer = useMemo(() => projectFlowSummary(flows, k), [flows, k])
+  const footer = useMemo(
+    () => projectFlowSummary(flows, derivedByFlowId),
+    [flows, derivedByFlowId],
+  )
 
   const persistFlows = (next: Flow[]) => {
     if (!project) return
@@ -1178,7 +1105,7 @@ export default function Step3Page() {
     if (updated) setProject(updated)
   }
 
-  if (loading || !project) return <div className="app-shell"><div className="step2-loading">Loading…</div></div>
+  if (!project) return <div className="app-shell" />
 
   return (
     <div className="app-shell">
@@ -1213,7 +1140,6 @@ export default function Step3Page() {
               key={g.vehicleId}
               summary={g}
               vehicle={vehicleById.get(g.vehicleId)}
-              unitSystem={unitSystem}
             />
           ))}
         </div>
@@ -1221,13 +1147,14 @@ export default function Step3Page() {
         <FlowsTable
           flows={flows}
           vehicles={vehicles}
-          metricsByFlowId={metricsByFlowId}
+          derivedByFlowId={derivedByFlowId}
           unitSystem={unitSystem}
           onFlowsChange={persistFlows}
         />
 
         <div className="step3-footer">
-          {footer.totalFlows} flows · {footer.totalBaseThru} base moves/hr · peak {Math.round(footer.totalPeakThru)}/hr
+          {footer.totalFlows} flows · {footer.totalThru} cycles/hr ·
+          raw {footer.totalRawFleet.toFixed(2)} → base fleet {footer.totalBaseFleet}
         </div>
       </div>
     </div>
@@ -1235,18 +1162,13 @@ export default function Step3Page() {
 }
 ```
 
-- [ ] **Step 2: Typecheck (will fail — `FlowsTable` and `GroupSummaryCard` don't exist yet)**
-
-Run: `npx tsc --noEmit`
-Expected: errors about missing `FlowsTable` and `GroupSummaryCard` imports.
-
-Leave them — Task 12 fixes `GroupSummaryCard`, Task 13 fixes `FlowsTable`. Do not commit yet.
-
-- [ ] **Step 3: No commit yet** (page is broken until Tasks 12–13 land)
+- [ ] **Step 2: Page is broken until Tasks 11–13 land. Hold the commit.**
 
 ---
 
-### Task 12 — `GroupSummaryCard`
+### Task 11 — `GroupSummaryCard`
+
+> **Sub-skill:** superpowers:frontend-design.
 
 **Files:**
 - Create: `src/components/step3/GroupSummaryCard.tsx`
@@ -1259,12 +1181,10 @@ Leave them — Task 12 fixes `GroupSummaryCard`, Task 13 fixes `FlowsTable`. Do 
 import { vehicleColor } from './vehicleColor'
 import type { GroupSummary } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { UnitSystem } from '@/src/lib/utils/units'
 
 interface Props {
   summary: GroupSummary
   vehicle?: Vehicle
-  unitSystem: UnitSystem
 }
 
 function formatCycle(sec: number | null): string {
@@ -1274,11 +1194,17 @@ function formatCycle(sec: number | null): string {
   return `${m}m ${s.toString().padStart(2, '0')}s`
 }
 
+function headroomClass(h: number | null): string {
+  if (h == null) return ''
+  if (h < 0.05) return 'red'
+  if (h < 0.15) return 'yellow'
+  return 'green'
+}
+
 export default function GroupSummaryCard({ summary, vehicle }: Props) {
   const color = vehicleColor(summary.vehicleId)
   const name = vehicle?.name ?? summary.vehicleId
-  const utilPct = summary.utilization == null ? null : Math.round(summary.utilization * 100)
-  const utilClass = utilPct == null ? '' : utilPct >= 95 ? 'red' : utilPct >= 85 ? 'yellow' : 'green'
+  const headPct = summary.headroom == null ? null : Math.round(summary.headroom * 100)
 
   return (
     <div className="flow-group-card">
@@ -1290,36 +1216,43 @@ export default function GroupSummaryCard({ summary, vehicle }: Props) {
         <span className="flow-group-count">{summary.flowsCount} FLOWS</span>
       </div>
       <div className="flow-group-stats">
-        <div><div className="label">BASE FLEET</div><div className="value">{summary.baseFleet} <span className="unit">veh</span></div></div>
         <div>
-          <div className="label">UTILIZATION</div>
-          <div className={`value ${utilClass}`}>{utilPct == null ? '—' : `${utilPct}%`}</div>
-          {utilPct != null && (
-            <div className="util-bar"><div className="util-bar-fill" style={{ width: `${utilPct}%` }} /></div>
-          )}
+          <div className="label">BASE FLEET</div>
+          <div className="value">{summary.baseFleet}<span className="unit">veh</span></div>
+          <div className="derivation mono">
+            raw {summary.groupRaw.toFixed(2)} → ⌈ceil⌉
+          </div>
         </div>
-        <div><div className="label">AVG CYCLE</div><div className="value">{formatCycle(summary.avgCycleSec)}</div></div>
-        <div><div className="label">PEAK THRU</div><div className="value">{Math.round(summary.peakThru)} <span className="unit">/hr</span></div></div>
+        <div>
+          <div className="label">HEADROOM</div>
+          <div className={`value ${headroomClass(summary.headroom)}`}>
+            {headPct == null ? '—' : `${headPct}%`}
+          </div>
+        </div>
+        <div>
+          <div className="label">AVG CYCLE</div>
+          <div className="value">{formatCycle(summary.avgCycleSec)}</div>
+        </div>
+        <div>
+          <div className="label">TOTAL THRU</div>
+          <div className="value">{summary.baseThru}<span className="unit">/hr</span></div>
+        </div>
       </div>
     </div>
   )
 }
 ```
 
-- [ ] **Step 2: Commit (still broken until FlowsTable lands but typecheck improves)**
-
-Do not commit yet — wait until Task 13.
+- [ ] **Step 2: Commit with Task 13.**
 
 ---
 
-### Task 13 — `FlowsTable` and `FlowRow`
+### Task 12 — `VehicleSelect`
 
 **Files:**
-- Create: `src/components/step3/FlowsTable.tsx`
-- Create: `src/components/step3/FlowRow.tsx`
 - Create: `src/components/step3/VehicleSelect.tsx`
 
-- [ ] **Step 1: Create `VehicleSelect.tsx`**
+- [ ] **Step 1: Create**
 
 ```tsx
 'use client'
@@ -1359,20 +1292,30 @@ export default function VehicleSelect({ vehicles, value, flowWeightLbs, onChange
   )
 }
 
-// Exported for use elsewhere — colour dot beside vehicle name in the row.
 export function VehicleDot({ vehicleId }: { vehicleId?: string }) {
   if (!vehicleId) return null
   return <span className="veh-dot" style={{ background: vehicleColor(vehicleId) }} />
 }
 ```
 
-- [ ] **Step 2: Create `FlowRow.tsx`**
+- [ ] **Step 2: Commit with Task 13.**
+
+---
+
+### Task 13 — `FlowsTable` + `FlowRow`
+
+> **Sub-skill:** superpowers:frontend-design.
+
+**Files:**
+- Create: `src/components/step3/FlowsTable.tsx`
+- Create: `src/components/step3/FlowRow.tsx`
+
+- [ ] **Step 1: Create `FlowRow.tsx`**
 
 ```tsx
 'use client'
 
-import { useState } from 'react'
-import type { Flow, FlowMetrics } from '@/src/calc/types'
+import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import VehicleSelect, { VehicleDot } from './VehicleSelect'
@@ -1381,7 +1324,7 @@ interface Props {
   index: number
   flow: Flow
   vehicles: Vehicle[]
-  metrics: FlowMetrics
+  derived: FlowDerived
   unitSystem: UnitSystem
   onChange: (next: Flow) => void
   onDelete: () => void
@@ -1397,8 +1340,7 @@ function fmtCycle(sec: number | null): string {
   return `${m}m ${s.toString().padStart(2, '0')}s`
 }
 
-export default function FlowRow({ index, flow, vehicles, metrics, unitSystem, onChange, onDelete }: Props) {
-  const [selected, setSelected] = useState(false)
+export default function FlowRow({ index, flow, vehicles, derived, unitSystem, onChange, onDelete }: Props) {
   const distDisplay = unitSystem === 'metric'
     ? (flow.distanceFt / FT_PER_M).toFixed(0)
     : flow.distanceFt.toString()
@@ -1419,18 +1361,15 @@ export default function FlowRow({ index, flow, vehicles, metrics, unitSystem, on
     onChange({ ...flow, weightLbs: Math.max(0, lbs) })
   }
 
-  const utilPct = metrics.utilization == null ? null : Math.round(metrics.utilization * 100)
-  const utilClass = utilPct == null ? '' : utilPct >= 95 ? 'red' : utilPct >= 85 ? 'yellow' : 'green'
-
   return (
     <tr className="flow-row">
-      <td><input type="checkbox" checked={selected} onChange={e => setSelected(e.target.checked)} /></td>
       <td className="mono">{String(index + 1).padStart(2, '0')}</td>
       <td><input className="flow-cell" value={flow.origin}      onChange={e => onChange({ ...flow, origin: e.target.value })}      placeholder="Origin" /></td>
       <td><input className="flow-cell" value={flow.destination} onChange={e => onChange({ ...flow, destination: e.target.value })} placeholder="Destination" /></td>
-      <td><input className="flow-cell mono" type="number" min="0" value={distDisplay}   onChange={e => setDistance(e.target.value)} /></td>
+      <td><input className="flow-cell mono" type="number" min="0" value={distDisplay}    onChange={e => setDistance(e.target.value)} /></td>
       <td><input className="flow-cell mono" type="number" min="0" value={flow.thruPerHr} onChange={e => onChange({ ...flow, thruPerHr: Math.max(0, Number(e.target.value) || 0) })} /></td>
-      <td><input className="flow-cell mono" type="number" min="0" value={weightDisplay} onChange={e => setWeight(e.target.value)} /></td>
+      <td><input className="flow-cell mono" type="number" min="0" value={weightDisplay}  onChange={e => setWeight(e.target.value)} /></td>
+      <td><input className="flow-cell mono" type="number" min="0" step="1" value={flow.turns} onChange={e => onChange({ ...flow, turns: Math.max(0, Math.floor(Number(e.target.value) || 0)) })} /></td>
       <td>
         <span className="veh-cell"><VehicleDot vehicleId={flow.vehicleId} /></span>
         <VehicleSelect
@@ -1440,21 +1379,20 @@ export default function FlowRow({ index, flow, vehicles, metrics, unitSystem, on
           onChange={vid => onChange({ ...flow, vehicleId: vid })}
         />
       </td>
-      <td className="mono">{fmtCycle(metrics.cycleSeconds)}</td>
-      <td className="mono">{metrics.vehiclesNeeded ?? '—'}</td>
-      <td className={`mono ${utilClass}`}>{utilPct == null ? '—' : `${utilPct}%`}</td>
+      <td className="mono">{fmtCycle(derived.cycleSeconds)}</td>
+      <td className="mono">{derived.rawVehicles == null ? '—' : derived.rawVehicles.toFixed(2)}</td>
       <td><button type="button" className="flow-delete" onClick={onDelete} aria-label="Delete flow">×</button></td>
     </tr>
   )
 }
 ```
 
-- [ ] **Step 3: Create `FlowsTable.tsx`**
+- [ ] **Step 2: Create `FlowsTable.tsx`**
 
 ```tsx
 'use client'
 
-import type { Flow, FlowMetrics } from '@/src/calc/types'
+import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import FlowRow from './FlowRow'
@@ -1462,7 +1400,7 @@ import FlowRow from './FlowRow'
 interface Props {
   flows: Flow[]
   vehicles: Vehicle[]
-  metricsByFlowId: Map<string, FlowMetrics>
+  derivedByFlowId: Map<string, FlowDerived>
   unitSystem: UnitSystem
   onFlowsChange: (next: Flow[]) => void
 }
@@ -1472,19 +1410,13 @@ function genId(): string {
 }
 
 function emptyFlow(): Flow {
-  return { id: genId(), origin: '', destination: '', distanceFt: 0, thruPerHr: 0, weightLbs: 0 }
+  return { id: genId(), origin: '', destination: '', distanceFt: 0, thruPerHr: 0, weightLbs: 0, turns: 0 }
 }
 
-export default function FlowsTable({ flows, vehicles, metricsByFlowId, unitSystem, onFlowsChange }: Props) {
-  const update = (id: string, next: Flow) => {
-    onFlowsChange(flows.map(f => f.id === id ? next : f))
-  }
-  const remove = (id: string) => {
-    onFlowsChange(flows.filter(f => f.id !== id))
-  }
-  const add = () => {
-    onFlowsChange([...flows, emptyFlow()])
-  }
+export default function FlowsTable({ flows, vehicles, derivedByFlowId, unitSystem, onFlowsChange }: Props) {
+  const update = (id: string, next: Flow) => onFlowsChange(flows.map(f => f.id === id ? next : f))
+  const remove = (id: string) => onFlowsChange(flows.filter(f => f.id !== id))
+  const add = () => onFlowsChange([...flows, emptyFlow()])
 
   const distLabel = unitSystem === 'metric' ? 'DISTANCE (M)' : 'DISTANCE (FT)'
   const weightLabel = unitSystem === 'metric' ? 'WEIGHT (KG)' : 'WEIGHT (LBS)'
@@ -1504,17 +1436,16 @@ export default function FlowsTable({ flows, vehicles, metricsByFlowId, unitSyste
         <table className="flows-table">
           <thead>
             <tr>
-              <th></th>
               <th>#</th>
               <th>ORIGIN</th>
               <th>DESTINATION</th>
               <th>{distLabel}</th>
               <th>THRU/HR</th>
               <th>{weightLabel}</th>
+              <th>TURNS</th>
               <th>VEHICLE</th>
               <th>CYCLE</th>
-              <th>VEH</th>
-              <th>UTIL</th>
+              <th>RAW VEH</th>
               <th></th>
             </tr>
           </thead>
@@ -1525,7 +1456,7 @@ export default function FlowsTable({ flows, vehicles, metricsByFlowId, unitSyste
                 index={i}
                 flow={f}
                 vehicles={vehicles}
-                metrics={metricsByFlowId.get(f.id) ?? { cycleSeconds: null, vehiclesNeeded: null, utilization: null }}
+                derived={derivedByFlowId.get(f.id) ?? { cycleSeconds: null, rawVehicles: null }}
                 unitSystem={unitSystem}
                 onChange={next => update(f.id, next)}
                 onDelete={() => remove(f.id)}
@@ -1542,36 +1473,37 @@ export default function FlowsTable({ flows, vehicles, metricsByFlowId, unitSyste
 }
 ```
 
-- [ ] **Step 4: Typecheck**
+- [ ] **Step 3: Typecheck**
 
-Run: `npx tsc --noEmit`
+Run: `npx tsc --noEmit 2>&1 | grep -v pdfExport.test`
 Expected: no new errors.
 
-- [ ] **Step 5: Run dev server, verify the page loads**
+- [ ] **Step 4: Manual verify**
 
-Visit `http://localhost:3000/projects/<some-id>/step3` and confirm:
-- Page renders without runtime error.
-- "0 flows" + "Add Flow" CTA appears.
-- Clicking Add Flow adds a row.
-- Typing distance/thru-per-hr/weight + picking a vehicle populates Cycle/Veh/Util.
+Visit `http://localhost:3000/projects/<id>/step3`:
+- "0 flows + Add Flow" CTA on first visit.
+- Adding a flow shows a row with inline inputs.
+- Typing distance / thru / weight / turns + picking a vehicle populates Cycle and Raw Veh.
+- Picking a vehicle whose maxWeight < weight is greyed out.
+- Group card shows `BASE FLEET N | derivation: raw X.XX → ⌈ceil⌉ | HEADROOM | AVG CYCLE | TOTAL THRU`.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 5: Commit**
 
 ```bash
 git add app/projects/[id]/step3/page.tsx src/components/step3/*.{ts,tsx}
-git commit -m "feat(step3): live Material Flows page"
+git commit -m "feat(step3): inline-editable Material Flows page"
 ```
 
 ---
 
-### Task 14 — CSS for Step 3
+### Task 14 — CSS
+
+> **Sub-skill:** superpowers:frontend-design.
 
 **Files:**
 - Modify: `app/globals.css`
 
-- [ ] **Step 1: Append step-3 styles**
-
-Append to `app/globals.css`:
+- [ ] **Step 1: Append**
 
 ```css
 /* ===== Step 3 — Material Flows ===== */
@@ -1583,45 +1515,37 @@ Append to `app/globals.css`:
 }
 .flow-group-card {
   background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: 8px; padding: 14px 16px;
+  border-radius: 8px; padding: 16px;
 }
 .flow-group-head {
-  display: flex; justify-content: space-between; align-items: center;
-  margin-bottom: 10px;
+  display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;
 }
 .veh-pill {
   display: inline-flex; align-items: center; gap: 6px;
   padding: 3px 10px; border-radius: 999px; border: 1px solid;
   font-family: var(--tal-font-family); font-size: 12px; font-weight: 600;
 }
-.veh-dot {
-  display: inline-block; width: 8px; height: 8px; border-radius: 50%;
-}
+.veh-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
 .flow-group-count {
-  font-family: var(--tal-font-numeric); font-size: 11px; color: var(--text-tertiary);
-  letter-spacing: 0.08em;
+  font-family: var(--tal-font-numeric); font-size: 11px;
+  color: var(--text-tertiary); letter-spacing: 0.08em;
 }
-.flow-group-stats {
-  display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px;
-}
+.flow-group-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
 .flow-group-stats .label {
   font-family: var(--tal-font-numeric); font-size: 10px;
   color: var(--text-tertiary); letter-spacing: 0.1em;
 }
 .flow-group-stats .value {
-  font-family: var(--tal-font-numeric); font-size: 22px; font-weight: 600;
+  font-family: var(--tal-font-numeric); font-size: 24px; font-weight: 600;
   color: var(--text-primary); margin-top: 4px;
 }
+.flow-group-stats .value .unit { font-size: 12px; color: var(--text-tertiary); margin-left: 4px; }
 .flow-group-stats .value.green  { color: var(--good); }
 .flow-group-stats .value.yellow { color: var(--warn); }
 .flow-group-stats .value.red    { color: var(--bad);  }
-.flow-group-stats .unit {
-  font-size: 12px; color: var(--text-tertiary); margin-left: 4px;
+.flow-group-stats .derivation {
+  margin-top: 6px; font-size: 10px; color: var(--text-tertiary);
 }
-.util-bar {
-  margin-top: 6px; height: 4px; background: var(--bg-hover); border-radius: 2px; overflow: hidden;
-}
-.util-bar-fill { height: 100%; background: var(--warn); transition: width 200ms; }
 
 .flows-table-wrap {
   background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;
@@ -1631,10 +1555,7 @@ Append to `app/globals.css`:
   display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
 }
 .flows-count { font-family: var(--tal-font-numeric); font-size: 12px; color: var(--text-tertiary); }
-.flows-table {
-  width: 100%; border-collapse: collapse;
-  font-family: var(--tal-font-family); font-size: 13px;
-}
+.flows-table { width: 100%; border-collapse: collapse; font-family: var(--tal-font-family); font-size: 13px; }
 .flows-table th {
   text-align: left; font-family: var(--tal-font-numeric); font-size: 10px;
   letter-spacing: 0.1em; color: var(--text-tertiary);
@@ -1646,19 +1567,18 @@ Append to `app/globals.css`:
   padding: 4px 6px; color: var(--text-primary); width: 100%;
   font-family: inherit; font-size: inherit;
 }
-.flow-cell:hover  { border-color: var(--border); }
-.flow-cell:focus  { border-color: var(--border-strong); outline: none; background: var(--bg-hover); }
-.flow-cell.mono   { font-family: var(--tal-font-numeric); }
-.flow-veh-select { background: transparent; color: var(--text-primary); border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px; }
-.flows-table .green  { color: var(--good); }
-.flows-table .yellow { color: var(--warn); }
-.flows-table .red    { color: var(--bad);  }
+.flow-cell:hover { border-color: var(--border); }
+.flow-cell:focus { border-color: var(--border-strong); outline: none; background: var(--bg-hover); }
+.flow-cell.mono  { font-family: var(--tal-font-numeric); }
+.flow-veh-select {
+  background: transparent; color: var(--text-primary);
+  border: 1px solid var(--border); border-radius: 4px; padding: 4px 6px;
+}
 .flow-delete {
   background: transparent; color: var(--text-tertiary); border: none;
   width: 24px; height: 24px; border-radius: 4px; cursor: pointer;
 }
 .flow-delete:hover { background: var(--bad-soft); color: var(--bad); }
-
 .flows-add-bottom {
   margin-top: 10px; background: transparent; color: var(--text-secondary);
   border: 1px dashed var(--border); border-radius: 4px;
@@ -1672,131 +1592,146 @@ Append to `app/globals.css`:
 }
 ```
 
-- [ ] **Step 2: Visual check**
-
-Reload the Step 3 page in the browser. Confirm group cards stack 1–N across, table cells are dark-themed with subtle borders, util colours apply.
+- [ ] **Step 2: Visual check** in browser.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add app/globals.css
-git commit -m "style(step3): table, group cards, util pills"
+git commit -m "style(step3): table + group cards"
 ```
 
 ---
 
-### Task 15 — Update `CHANGELOG.md`
+### Task 15 — CHANGELOG
 
 **Files:**
 - Modify: `docs/CHANGELOG.md`
 
-- [ ] **Step 1: Prepend an entry**
+- [ ] **Step 1: Prepend entry**
 
-Add to the top of `docs/CHANGELOG.md` (under the `# Changelog` heading):
+Add at the top (under `# Changelog`):
 
 ```markdown
-## 2026-05-22 — Step 3: Material Flows
+## 2026-05-22 — Step 3 (v3): Material Flows
 
-**Motivation:** Step 3 turns the qualified vehicle set from Step 2 into a sized fleet by letting the engineer define origin→destination flows, throughputs, and load weights. The calc engine derives per-flow cycle/veh/utilization and per-vehicle group aggregates, live as the user types. Feeds Step 4 (charging) and Step 5 (KPIs).
+**Motivation:** Step 3 sizes the per-vehicle fleet from the engineer's flow definitions, producing a pure-engineering number with no safety multipliers. Step 4 (charging) and Step 5 (buffer) layer on top, each with distinct, named scope so the proposal team can defend every multiplier individually.
 
-**Math (full derivations in `docs/SPECIFICATION.md`):**
-- `cycleSeconds = distanceFt × (1/speedLoaded + 1/speedEmpty) + load + unload`
-- `vehiclesNeeded = ceil(thru × cycle / (3600 × η))`, η = 0.70
-- `utilization = thru × cycle / (vehiclesNeeded × 3600 × η)`
-- Sizing uses base throughput; peak (×1.2) is displayed only.
+**Math (full derivation in `docs/SPECIFICATION.md`):**
+- `cycleSec = distanceFt × (1/speedLoaded + 1/speedEmpty) + load + unload + turns × 4`
+- `rawVehicles = thru × cycle / 3600`  (fractional, no factor)
+- `baseFleet = ceil(Σ rawVehicles)` per vehicle type — Step 3's output
+- No productivity factor η, no congestion multiplier. The one and only fleet uplift is the buffer in Step 5; physical losses from battery downtime are the additive Step 4 chargingDelta.
 
 **Changes:**
-- Added `docs/SPECIFICATION.md` (project-wide; Step 3 chapter authoritative).
-- Added `src/calc/flowMetrics.ts` (pure) with 23+ unit tests; reproduces the screenshot mockup within ±1 s / ±2 pct.
-- Added `flows: Flow[]` to `StoredProject` via `src/lib/validations/schemas.ts`.
-- New: `app/projects/[id]/step3/page.tsx`, `src/components/step3/*` (FlowsTable, FlowRow, VehicleSelect, GroupSummaryCard, vehicleColor).
-- New CSS rules in `app/globals.css` (.flow-group-card, .flows-table, .util-bar).
+- Rewrote `docs/SPECIFICATION.md` Step 3 chapter.
+- New `src/calc/flowMetrics.ts` (pure) with TDD coverage: cycleSeconds, rawVehicles, flowDerived, groupSummary, projectFlowSummary.
+- Added `flows: Flow[]` to `StoredProject` (schemas.ts + storage.ts + round-trip test).
+- New page `app/projects/[id]/step3/page.tsx`, replacing the placeholder.
+- New components: FlowsTable, FlowRow, VehicleSelect, GroupSummaryCard, vehicleColor.
+- New CSS in `app/globals.css`.
 
 **User-visible behavior:**
-- Step 3 navigates from Step 2's bottom nav and the PersistentHeader step dots.
-- Adding a flow, picking a vehicle, and typing distance / thru / weight immediately updates Cycle, Veh count, and Util.
-- Picking a vehicle whose max-load is below the row's weight is blocked at the dropdown.
-- Distance and weight respect the unit toggle (m/kg in metric, ft/lbs in imperial); storage stays imperial.
-- Persistence: every keystroke writes to localStorage; reloading the page restores the flows table exactly.
+- Step 3 navigates from Step 2 and from PersistentHeader step dots.
+- The flows table is fully inline-editable; every keystroke writes to storage.
+- Group cards show the derivation `raw X.XX → ⌈ceil⌉` so the math is auditable on the page.
+- Persistence: reloading restores everything.
 
-**Open follow-ups:**
-- η and φ user-editable per project.
-- CSV import implementation (button stubbed for v1).
-- Per-flow transfer-method override (row-expand).
+**Pipeline preview:**
+- Step 4 (charging) adds `chargingDelta` per group based on battery / cycle energy / charge rate.
+- Step 5 (buffer) wraps `ceil((baseFleet + chargingDelta) × (1 + bufferPct))` per group — the sole multiplicative uplift in the pipeline.
+
+**Open follow-ups (deferred):**
+- Per-flow transfer-method picker (currently auto-uses `vehicle.transferMethods[0]`).
+- CSV import.
+- Per-vehicle `turnTimeSec` override (currently global 4 s).
 ```
 
 - [ ] **Step 2: Commit**
 
 ```bash
 git add docs/CHANGELOG.md
-git commit -m "docs: changelog entry for Step 3"
+git commit -m "docs(changelog): Step 3 v3 entry"
 ```
 
 ---
 
-### Task 16 — Acceptance pass against the screenshot
+### Task 16 — Acceptance pass
 
-This is a manual QA gate. No code changes unless tests fail.
+> **Sub-skill:** superpowers:verification-before-completion.
 
-- [ ] **Step 1: Enter the screenshot's 8 flows** into a fresh project and confirm:
-  - Each row's Cycle, Veh, Util match the screenshot within ±1 s / ±1 pct.
-  - Both group cards render with their values within tolerance.
-  - Footer reads `8 flows · 221 base moves/hr · peak 265/hr`.
+- [ ] **Step 1: Run all calc + storage tests**
 
-- [ ] **Step 2: Reload the page.** Confirm all flows and computed values persist.
+Run: `npx vitest run src/calc/__tests__/flowMetrics.test.ts src/lib/__tests__/storage.flows.test.ts`
+Expected: PASS — full count from Tasks 3-8 (~24 tests).
 
-- [ ] **Step 3: Toggle Imperial ↔ Metric.** Confirm Distance and Weight column values convert visually but Cycle/Veh/Util don't change.
+- [ ] **Step 2: Reproduce the verification table in-browser**
 
-- [ ] **Step 4: Try assigning ML2 to row 1 (weight 1984 lb > ML2 max 770 lb).** Confirm the option is disabled in the dropdown.
+Create a fresh project, enter the 8 flows from the spec's verification section (distance + thru as listed; turns = 0; transfer = default). Confirm:
+- CB18 group card: `baseFleet = 6`, `groupRaw ≈ 5.58`.
+- ML2 group card: `baseFleet = 2`, `groupRaw ≈ 1.66`.
+- Footer: `8 flows · 221 cycles/hr · raw 7.24 → base fleet 8`.
 
-- [ ] **Step 5: Delete a flow.** Confirm group cards re-aggregate immediately.
+- [ ] **Step 3: Edit any single flow's distance** — confirm Cycle and Raw Veh on that row, plus the group card's baseFleet and headroom, update instantly.
 
-- [ ] **Step 6: Run the full test suite**
+- [ ] **Step 4: Reload** — all values restore.
 
-Run: `npx vitest run`
-Expected: all calc + storage tests pass.
+- [ ] **Step 5: Assign ML2 to a flow with weight 1984 lb** — disabled in dropdown.
 
-- [ ] **Step 7: Commit only if any of 1-5 surface bugs requiring a fix.**
+- [ ] **Step 6: Delete a flow** — group card re-aggregates; if all flows of a vehicle are removed, that group card disappears.
+
+- [ ] **Step 7: Calc-purity grep**
+
+Run: `grep -rE "from 'react'|localStorage|fetch\\(" src/calc/`
+Expected: nothing.
+
+- [ ] **Step 8: Commit only if 1–7 surface a regression that needed code changes.**
 
 ---
 
 ## Self-Review
 
 **Spec coverage:**
-- Screenshot's group cards → Tasks 7, 12.
-- Screenshot's flow table → Tasks 13, 14.
-- Cycle math → Task 3.
-- Veh math → Task 4.
-- Util math → Task 5.
-- Group aggregates → Task 7.
-- Project footer → Task 8.
-- Weight hard gate → Task 13 (VehicleSelect's `disabled` + tooltip).
-- Unit toggle → Task 13 (FlowRow conversion).
-- Persistence → Task 9 (round-trip test).
-- Acceptance → Task 16 (manual + automated).
+- Cycle with turns → Task 3.
+- Raw vehicles → Task 4.
+- flowDerived → Task 5.
+- Group baseFleet (no congestion) → Task 6.
+- Project totals → Task 7.
+- Schema + persistence → Task 8.
+- Vehicle color → Task 9.
+- Page shell → Task 10.
+- Group card UI → Task 11.
+- Vehicle dropdown w/ weight gate → Task 12.
+- Flows table + row → Task 13.
+- CSS → Task 14.
+- Changelog → Task 15.
+- Acceptance → Task 16.
 
-**Placeholders:** none — every test and implementation block contains actual code.
+**Placeholders:** none — every step contains real code or commands.
 
-**Type consistency check:**
-- `Flow` shape consistent across `types.ts`, `flowSchema`, `FlowRow` props.
-- `FlowMetrics` is the same `{ cycleSeconds, vehiclesNeeded, utilization }` everywhere.
-- `GroupSummary` matches between calc and `GroupSummaryCard` props.
-- `vehiclesNeeded` (export name) is also the property name on `FlowMetrics` — same identifier reused intentionally for readability; no clash because they're in different scopes.
+**Type consistency:**
+- `Flow` shape consistent across `types.ts`, `flowSchema`, `FlowRow` props, tests.
+- `FlowDerived = { cycleSeconds, rawVehicles }` everywhere; no leftover `FlowMetrics` from earlier drafts.
+- `GroupSummary` (no `groupCongested` or `FlowCalcConstants`) matches the v3 model and the `GroupSummaryCard` props.
+- `groupSummary(vehicleId, flows, derivedByFlowId)` — three params, no constants object.
 
-**Open design decisions surfaced for the user (not blocking the plan):**
-1. η = 0.70, φ = 1.20 hard-coded in v1. Future revision can lift these into the project schema.
-2. Sizing uses base throughput. Picking peak instead is a one-line change in `vehiclesNeeded` but changes the displayed util substantially — flagged in spec.
-3. Transfer method per flow defaults to index 0. A future row-expand can expose the picker.
-4. CSV import is a placeholder button only in v1.
+**Open design decisions (defaulted, documented in spec):**
+1. Turn time is a global constant (4 s). Per-vehicle override deferred.
+2. Per-flow transfer method defaults to index 0. Override UI deferred.
+3. CSV import deferred to v3.1.
 
 ---
 
 ## Execution Handoff
 
-Plan complete and saved to `docs/superpowers/plans/2026-05-22-step3-material-flows.md`. Two execution options:
+Plan complete and saved to `docs/superpowers/plans/2026-05-22-step3-material-flows.md` (v3 replaces v2 at the same path).
 
-**1. Subagent-Driven (recommended)** — fresh subagent per task, review between tasks, fast iteration. Best given the math is the load-bearing risk and each task is small and self-contained.
+**Execution options:**
 
-**2. Inline Execution** — execute tasks in this session using `executing-plans`, batch with checkpoints. Better if you want to watch each diff land.
+**1. Subagent-Driven (recommended)** — fresh subagent per task. Best given calc tasks are small, TDD-shaped, self-contained.
 
-Which approach?
+**2. Inline** — execute in this session via `executing-plans`, batch with checkpoints.
+
+**3. Hold for review** — read the plan, push back, then run.
+
+Which?
