@@ -85,7 +85,7 @@ export default function FlowRow({
       <td className="flow-veh-cell">
         <div className="flow-veh-stack">
           <div className="flow-veh-row">
-            <VehicleDot vehicleId={flow.vehicleId} />
+            <VehicleDot vehicle={selectedVehicle} />
             <VehicleSelect
               vehicles={vehicles}
               value={flow.vehicleId}
