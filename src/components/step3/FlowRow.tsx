@@ -6,6 +6,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import VehicleSelect, { VehicleDot } from './VehicleSelect'
 import MethodSelect from './MethodSelect'
+import RouteLayoutSelect from './RouteLayoutSelect'
 import CyclePopover from './CyclePopover'
 
 interface Props {
@@ -141,10 +142,11 @@ export default function FlowRow({
           }
         />
       </td>
-      <td className="flow-cell-wrap">
-        <span className="flow-cell-readonly mono" title="Route layout — picker added in next commit">
-          {flow.routeLayout}
-        </span>
+      <td className="flow-route-cell">
+        <RouteLayoutSelect
+          value={flow.routeLayout}
+          onChange={layout => onChange({ ...flow, routeLayout: layout })}
+        />
       </td>
       <td className="flow-cell-wrap">
         <input

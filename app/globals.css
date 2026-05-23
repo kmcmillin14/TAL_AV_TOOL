@@ -1873,6 +1873,44 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-size: 12px;
 }
 
+/* ---- Step 3 — Zone header row + zone-end dividers ---- */
+.flow-zone-row .flow-zone-th {
+  font-family: var(--tal-font-numeric);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  background: var(--bg-surface-2);
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--border-strong);
+}
+.flow-zone-row .flow-zone-th:not(:last-child) {
+  border-right: 2px solid var(--border-strong);
+}
+.flows-table thead th.flow-th-zone-end {
+  border-right: 2px solid var(--border-strong);
+}
+.flows-table tbody td.flow-cell-wrap:nth-child(6),
+.flows-table tbody td.flow-cell-wrap:nth-child(9),
+.flows-table tbody td.flow-calc-cell {
+  /* zone-end vertical dividers carry down into the body */
+}
+.flow-th-suffix {
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  color: var(--text-tertiary);
+  text-transform: none;
+}
+
+/* ---- Step 3 — Route Layout cell wrapper ---- */
+.flow-route-cell {
+  padding: 6px 8px;
+  vertical-align: middle;
+  text-align: center;
+}
+
 /* ---- Step 3 — cycle breakdown popover ---- */
 .flow-calc-cell {
   padding: 4px 6px;

@@ -69,18 +69,45 @@ export default function FlowsTable({
           <div className="flows-scroll">
             <table className="flows-table">
               <thead>
+                <tr className="flow-zone-row">
+                  <th className="flow-zone-th" colSpan={3}>Vehicle</th>
+                  <th className="flow-zone-th" colSpan={3}>Route</th>
+                  <th className="flow-zone-th" colSpan={3}>Profile</th>
+                  <th className="flow-zone-th" colSpan={2}>Result</th>
+                  <th className="flow-zone-th"></th>
+                </tr>
                 <tr>
                   <th className="flow-th-num">#</th>
                   <th>Vehicle</th>
-                  <th>Method</th>
+                  <th>Transfer Method</th>
                   <th>Origin</th>
                   <th>Destination</th>
-                  <th className="flow-th-num">{distLabel}</th>
-                  <th className="flow-th-num">Thru/hr</th>
-                  <th className="flow-th-num">Route Layout</th>
-                  <th className="flow-th-num" title="Ad-hoc time added to every cycle (handoffs, queueing, doors)">Delay (s)</th>
+                  <th
+                    className="flow-th-num flow-th-zone-end"
+                    title="One-way distance, feet. The cycle includes the return trip — loaded out, empty back."
+                  >
+                    {distLabel} <span className="flow-th-suffix">· one-way</span>
+                  </th>
+                  <th className="flow-th-num" title="Cycles per hour. One cycle = one full round-trip pick-and-place.">Thru/hr</th>
+                  <th
+                    className="flow-th-num"
+                    title="How the path geometry slows the vehicle vs its rated cruise speed. Low (50%): lots of turns, tight corners, blind intersections, frequent slowdowns. Med (70%): mix of straightaways and turns, typical warehouse traffic. High (90%): mostly straightaways, open lanes, few turns."
+                  >
+                    Route Layout
+                  </th>
+                  <th
+                    className="flow-th-num flow-th-zone-end"
+                    title="Ad-hoc per-flow time — handoffs, queueing, doors. Adds directly to the cycle."
+                  >
+                    Delay (s)
+                  </th>
                   <th className="flow-th-num">Cycle</th>
-                  <th className="flow-th-num" title="Fractional raw demand: thru × cycle / 3600">Raw veh</th>
+                  <th
+                    className="flow-th-num flow-th-zone-end"
+                    title="Fractional raw demand: thru × cycle / 3600. Per-vehicle baseFleet = ⌈Σ raw⌉."
+                  >
+                    Raw veh
+                  </th>
                   <th className="flow-th-act"></th>
                 </tr>
               </thead>
