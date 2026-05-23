@@ -24,13 +24,13 @@ Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, St
 
 - `origin` — free text (e.g. "Dock A")
 - `destination` — free text (e.g. "Storage 1")
-- `distanceFt` — one-way distance, feet, ≥ 0
-- `thruPerHr` — cycles per hour, ≥ 0
-- `turns` — number of 90°+ turns per round trip, integer ≥ 0
+- `distanceFt` — **one-way** distance in feet, ≥ 0. The cycle multiplies by 2: vehicle travels loaded out and empty back.
+- `thruPerHr` — cycles per hour, ≥ 0. One cycle = one full round-trip pick-and-place.
+- `routeLayout` — `'low' | 'medium' | 'high'`. Path geometry slows the vehicle relative to its rated cruise speed. Low (50%): lots of turns, tight corners, blind intersections, frequent slowdowns. Medium (70%): mix of straightaways and turns, typical warehouse traffic. High (90%): mostly straightaways, open lanes, few turns. Defaults to `'medium'`.
 - `liftHeightFt` — total vertical travel of the load per cycle, feet, ≥ 0. 0 when transfer method does not lift. Engineer enters the per-cycle total (e.g., 4 ft for a single Floor→Height delivery; 8 ft for Height-Height = 4 up + 4 down).
-- `customDelaySec` — ad-hoc per-flow time added to the cycle, seconds, ≥ 0. Covers manual handoffs, door/elevator waits, queueing, or any other delay not modeled by travel/load/unload/lift/turns. Defaults to 0.
+- `customDelaySec` — ad-hoc per-flow time added to the cycle, seconds, ≥ 0. Covers manual handoffs, door/elevator waits, queueing, or any other delay not modeled by travel/load/unload/lift. Defaults to 0.
 - `vehicleId` — id of a vehicle from `src/content/vehicles/*.json`
-- `transferMethodIdx` — index into `vehicle.transferMethods[]`; defaults to 0. Surfaced in the UI as a dedicated **Method** column whose options are scoped to the selected vehicle.
+- `transferMethodIdx` — index into `vehicle.transferMethods[]`; defaults to 0. Surfaced in the UI as a dedicated **Transfer Method** column whose options are scoped to the selected vehicle.
 
 ### Vehicle JSON additions for Step 3
 
@@ -43,32 +43,32 @@ In the current library: CB18 and 8tb50a (counterbalance forklifts) get `liftSpee
 
 ### Constants
 
-- `TURN_TIME_SEC = 4` — global per-turn penalty.
+- `ROUTE_LAYOUT_FACTORS = { low: 0.5, medium: 0.7, high: 0.9 }` — effective-speed multipliers applied to rated cruise.
 - `T_hr = 3600` — seconds per hour.
 - `DEFAULT_BUFFER_PCT = 0.10` — used in Step 5, declared in `src/calc/types.ts` for cross-step visibility.
 
 ### Per-flow derived
 
 ```
-travelLoadedSec  = distanceFt / vehicle.calc.speedLoadedFps
-travelEmptySec   = distanceFt / vehicle.calc.speedUnloadedFps
+factor           = ROUTE_LAYOUT_FACTORS[routeLayout]            // 0.5 / 0.7 / 0.9
+travelLoadedSec  = distanceFt / (vehicle.calc.speedLoadedFps × factor)
+travelEmptySec   = distanceFt / (vehicle.calc.speedUnloadedFps × factor)
 transfer         = vehicle.transferMethods[transferMethodIdx ?? 0]
 loadSec          = transfer.loadTimeSec
 unloadSec        = transfer.unloadTimeSec
 liftTimeSec      = (transfer.lifts && vehicle.calc.liftSpeedFps > 0)
                    ? liftHeightFt / vehicle.calc.liftSpeedFps
                    : 0
-turnPenaltySec   = turns × TURN_TIME_SEC
 
 cycleSeconds     = travelLoadedSec + travelEmptySec
                  + loadSec + unloadSec
-                 + liftTimeSec + turnPenaltySec
+                 + liftTimeSec
                  + customDelaySec
 
 rawVehicles      = thruPerHr × cycleSeconds / 3600
 ```
 
-`distanceFt` is one-way; the cycle includes the empty return trip.
+`distanceFt` is **one-way**; the cycle includes the empty return trip (both travel components run at the route-layout-derated speed).
 
 `liftTimeSec` is 0 for non-lifting transfers (Tow/Tugger, Conveyor Interface). For lifting transfers (now including Fork on counterbalance forklifts), the engineer enters the per-cycle total `liftHeightFt`; the vehicle's `liftSpeedFps` does the conversion. `customDelaySec` is engineer-entered with no upper bound; it adds directly to the cycle.
 
@@ -138,32 +138,37 @@ Step 3 imposes **no** per-flow hard gates. Step 2 already qualifies the vehicle 
 
 ### Acceptance criteria
 
-1. Adding the 8 rows from the verification table (using the spec's cycle values; turns = 0; liftHeightFt = 0) produces:
-   - CB18: `groupRaw ≈ 5.58`, `baseFleet = 6`.
-   - ML2:  `groupRaw ≈ 1.66`, `baseFleet = 2`.
+1. Adding the 8 rows from the verification table (with `routeLayout = 'medium'` (factor 0.7), `liftHeightFt = 0`, default transfer method) produces:
+   - CB18: `groupRaw ≈ 6.77`, `baseFleet = 7`.
+   - ML2:  `groupRaw ≈ 1.95`, `baseFleet = 2`.
 2. Editing any flow field instantly re-derives all downstream numbers — no save button, no page reload.
 3. Every vehicle is selectable in every row's dropdown. Step 2's traffic-light matrix already qualifies vehicles against project-wide weight.
 4. Reloading the page restores all flows and computed values.
 5. Calc engine (`src/calc/flowMetrics.ts`) has zero React, fetch, or localStorage imports.
 6. All Vitest cases for cycle / raw / group / project pass.
-7. A flow with a lifting transfer method and `liftHeightFt = 10` against a vehicle with `liftSpeedFps = 0.5` adds exactly 20 s to its `cycleSeconds`.
+7. A flow with a lifting transfer method and `liftHeightFt = 10` against a vehicle with `liftSpeedFps = 0.5` adds exactly 20 s to its `cycleSeconds` (independent of `routeLayout`, since lift time is not derated).
+8. Changing a flow from `routeLayout = 'medium'` to `'high'` (factor 0.7 → 0.9) reduces travel time by ~22% (`(0.9-0.7)/0.9 = 22%`).
 
 ### Verification table (test data)
 
-| Row | thru | cycle (s) | rawVehicles |
-|-----|-----:|----------:|------------:|
-| 1   |   45 |  138      | 1.725 |
-| 2   |   30 |   98      | 0.817 |
-| 3   |   15 |  118      | 0.492 |
-| 4   |   38 |  165      | 1.742 |
-| 5   |   25 |  115      | 0.799 |
-| 6   |   22 |   81      | 0.495 |
-| 7   |   28 |   85      | 0.661 |
-| 8   |   18 |  101      | 0.505 |
+Vehicles: **CB18** (Fork, sL = 9.84 fps, sU = 11.5 fps, load+unload = 10s) · **ML2** (Conveyor Interface, sL = 5.9 fps, sU = 6.5 fps, load+unload = 6s). All rows: `routeLayout = 'medium'` (factor 0.7), `liftHeightFt = 0`, `customDelaySec = 0`.
 
-| Group | groupRaw | baseFleet |
-|-------|---------:|----------:|
-| CB18 (1,2,4,5,6) | 5.578 | 6 |
-| ML2  (3,7,8)     | 1.658 | 2 |
+| Row | Vehicle | Distance (ft) | Thru/hr | cycle (s) | rawVehicles |
+|-----|---------|-----:|-----:|--------:|-----------:|
+| 1   | CB18    |  590 |   45 | 168.95  | 2.112 |
+| 2   | CB18    |  394 |   30 | 116.14  | 0.968 |
+| 3   | ML2     |  295 |   15 | 142.26  | 0.593 |
+| 4   | CB18    |  722 |   38 | 204.51  | 2.159 |
+| 5   | CB18    |  476 |   25 | 138.24  | 0.960 |
+| 6   | CB18    |  312 |   22 |  94.05  | 0.575 |
+| 7   | ML2     |  197 |   28 |  97.00  | 0.754 |
+| 8   | ML2     |  246 |   18 | 119.63  | 0.598 |
 
-Project totals: `totalFlows = 8`, `totalThru = 221`, `totalRawFleet ≈ 7.24`, `totalBaseFleet = 8`.
+| Group | groupRaw | baseFleet | headroom |
+|-------|---------:|----------:|---------:|
+| CB18 (1, 2, 4, 5, 6) | 6.773 | **7** | (7 − 6.773) / 7 ≈ 3.2% |
+| ML2  (3, 7, 8)       | 1.945 | **2** | (2 − 1.945) / 2 ≈ 2.7% |
+
+Project totals: `totalFlows = 8`, `totalThru = 221`, `totalRawFleet ≈ 8.72`, `totalBaseFleet = 9`.
+
+Both groups land in the **red** headroom band (< 5%) — engineers reviewing this should consider another vehicle or workload rebalance. Compared to the pre-R3 model (CB18 = 6, ML2 = 2, total = 8), the route-layout factor adds one CB18; this matches the calc team's view that the prior `distance / cruise_speed` model was optimistic.
