@@ -28,8 +28,9 @@ Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, St
 - `thruPerHr` — cycles per hour, ≥ 0
 - `turns` — number of 90°+ turns per round trip, integer ≥ 0
 - `liftHeightFt` — total vertical travel of the load per cycle, feet, ≥ 0. 0 when transfer method does not lift. Engineer enters the per-cycle total (e.g., 4 ft for a single Floor→Height delivery; 8 ft for Height-Height = 4 up + 4 down).
+- `customDelaySec` — ad-hoc per-flow time added to the cycle, seconds, ≥ 0. Covers manual handoffs, door/elevator waits, queueing, or any other delay not modeled by travel/load/unload/lift/turns. Defaults to 0.
 - `vehicleId` — id of a vehicle from `src/content/vehicles/*.json`
-- `transferMethodIdx` — index into `vehicle.transferMethods[]`; defaults to 0
+- `transferMethodIdx` — index into `vehicle.transferMethods[]`; defaults to 0. Surfaced in the UI as a dedicated **Method** column whose options are scoped to the selected vehicle.
 
 ### Vehicle JSON additions for Step 3
 
@@ -38,7 +39,7 @@ Vehicles with a lift-capable transfer method gain two fields:
 - `calc.liftSpeedFps` — vertical lift speed in feet per second (e.g., 0.5 fps for a standard mast).
 - `transferMethods[i].lifts: true` — flag identifying which transfer methods derive their cycle time from height. Vehicles without any lifting transfer method omit both.
 
-In the current library: CB18 ("Lift Platform") and 8tb50a ("Lift Platform") get `liftSpeedFps` and the `lifts: true` flag on the Lift Platform entry. Other vehicles are unchanged.
+In the current library: CB18 and 8tb50a (counterbalance forklifts) get `liftSpeedFps` and the `lifts: true` flag on **both** their Fork and Lift Platform transfer methods — forks physically rise to clear the load, so the lift action consumes time even when the engineer thinks of it as "just forking." Other vehicles are unchanged.
 
 ### Constants
 
@@ -62,13 +63,14 @@ turnPenaltySec   = turns × TURN_TIME_SEC
 cycleSeconds     = travelLoadedSec + travelEmptySec
                  + loadSec + unloadSec
                  + liftTimeSec + turnPenaltySec
+                 + customDelaySec
 
 rawVehicles      = thruPerHr × cycleSeconds / 3600
 ```
 
 `distanceFt` is one-way; the cycle includes the empty return trip.
 
-`liftTimeSec` is 0 for non-lifting transfers (Fork, Tow/Tugger, Conveyor Interface). For lifting transfers, the engineer enters the per-cycle total `liftHeightFt`; the vehicle's `liftSpeedFps` does the conversion.
+`liftTimeSec` is 0 for non-lifting transfers (Tow/Tugger, Conveyor Interface). For lifting transfers (now including Fork on counterbalance forklifts), the engineer enters the per-cycle total `liftHeightFt`; the vehicle's `liftSpeedFps` does the conversion. `customDelaySec` is engineer-entered with no upper bound; it adds directly to the cycle.
 
 `rawVehicles` is fractional. `0.94` means this flow alone consumes 94 % of one vehicle's hour; `1.72` means a single vehicle cannot serve it — vehicles must pool.
 
