@@ -54,6 +54,7 @@ export interface Flow {
   thruPerHr: number            // cycles/hr, ≥ 0
   turns: number                // count, integer ≥ 0
   liftHeightFt: number         // ft, ≥ 0; total vertical travel per cycle
+  customDelaySec: number       // s, ≥ 0; ad-hoc per-flow time (handoffs, queueing, doors)
   vehicleId?: string
   transferMethodIdx?: number   // defaults to 0
 }
@@ -65,7 +66,11 @@ export interface CycleBreakdown {
   unloadSec: number
   liftTimeSec: number
   turnPenaltySec: number
+  customDelaySec: number
   totalSec: number
+  // Display-only context (not used in any sum)
+  methodName: string
+  liftHeightFt: number
 }
 
 export interface FlowDerived {

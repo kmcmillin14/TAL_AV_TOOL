@@ -38,6 +38,7 @@ describe('flows round-trip', () => {
         thruPerHr: 10,
         turns: 1,
         liftHeightFt: 0,
+        customDelaySec: 0,
         vehicleId: 'cb18',
       }],
     })

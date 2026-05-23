@@ -27,6 +27,7 @@ function emptyFlow(): Flow {
     thruPerHr: 0,
     turns: 0,
     liftHeightFt: 0,
+    customDelaySec: 0,
   }
 }
 

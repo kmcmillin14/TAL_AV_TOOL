@@ -22,11 +22,13 @@ export function cycleBreakdown(
   vehicle: Pick<Vehicle, 'calc' | 'transferMethods'>,
   turns: number,
   liftHeightFt: number,
+  customDelaySec: number,
   transferMethodIdx: number = 0,
 ): CycleBreakdown | null {
   if (distanceFt < 0) return null
   if (turns < 0) return null
   if (liftHeightFt < 0) return null
+  if (customDelaySec < 0) return null
   if (!vehicle.transferMethods || vehicle.transferMethods.length === 0) return null
   const transfer = vehicle.transferMethods[transferMethodIdx]
   if (!transfer) return null
@@ -48,7 +50,8 @@ export function cycleBreakdown(
   const totalSec =
     travelLoadedSec + travelEmptySec +
     loadSec + unloadSec +
-    liftTimeSec + turnPenaltySec
+    liftTimeSec + turnPenaltySec +
+    customDelaySec
 
   return {
     travelLoadedSec,
@@ -57,7 +60,10 @@ export function cycleBreakdown(
     unloadSec,
     liftTimeSec,
     turnPenaltySec,
+    customDelaySec,
     totalSec,
+    methodName: transfer.method,
+    liftHeightFt,
   }
 }
 
@@ -77,9 +83,10 @@ export function cycleSeconds(
   vehicle: Pick<Vehicle, 'calc' | 'transferMethods'>,
   turns: number,
   liftHeightFt: number,
+  customDelaySec: number = 0,
   transferMethodIdx: number = 0,
 ): number | null {
-  return cycleBreakdown(distanceFt, vehicle, turns, liftHeightFt, transferMethodIdx)?.totalSec ?? null
+  return cycleBreakdown(distanceFt, vehicle, turns, liftHeightFt, customDelaySec, transferMethodIdx)?.totalSec ?? null
 }
 
 /**
@@ -106,11 +113,16 @@ export function flowDerived(
   vehicle: Vehicle | undefined,
 ): FlowDerived {
   if (!vehicle) return { cycleSeconds: null, rawVehicles: null, breakdown: null }
+  // Defensive `?? 0` on each numeric flow field: stored projects from prior
+  // schema versions may have missing keys at runtime even though TS sees them
+  // as required. Zod's .default(0) covers parses, but localStorage reads on
+  // pre-existing data don't currently re-parse.
   const breakdown = cycleBreakdown(
-    flow.distanceFt,
+    flow.distanceFt ?? 0,
     vehicle,
-    flow.turns,
-    flow.liftHeightFt,
+    flow.turns ?? 0,
+    flow.liftHeightFt ?? 0,
+    flow.customDelaySec ?? 0,
     flow.transferMethodIdx ?? 0,
   )
   const cycle = breakdown?.totalSec ?? null

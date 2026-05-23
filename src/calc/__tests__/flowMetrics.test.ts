@@ -41,7 +41,7 @@ describe('cycleSeconds', () => {
     // distance 100 ft, Lift Platform (idx 1) with liftHeightFt = 0,
     // so no lift time is added even though lifts: true:
     //   10.16 + 8.70 + 8 + 8 = 34.86 s
-    expect(cycleSeconds(100, cb18 as Vehicle, 0, 0, 1)).toBeCloseTo(34.86, 1)
+    expect(cycleSeconds(100, cb18 as Vehicle, 0, 0, 0, 1)).toBeCloseTo(34.86, 1)
   })
 
   it('defaults transferMethodIdx to 0 when omitted', () => {
@@ -56,7 +56,7 @@ describe('cycleSeconds', () => {
     // distance 0, Lift Platform (idx 1), turns 0, liftHeightFt = 10 ft,
     // liftSpeedFps = 0.65 → liftTime = 10 / 0.65 = 15.38 s
     //   load + unload = 16, + lift 15.38 = 31.38 s
-    expect(cycleSeconds(0, cb18 as Vehicle, 0, 10, 1)).toBeCloseTo(31.38, 1)
+    expect(cycleSeconds(0, cb18 as Vehicle, 0, 10, 0, 1)).toBeCloseTo(31.38, 1)
   })
 
   it('uses the spec example: liftHeight 10 ft at 0.5 fps → +20 s', () => {
@@ -98,7 +98,7 @@ describe('cycleSeconds', () => {
   })
 
   it('returns null when transferMethodIdx is out of range', () => {
-    expect(cycleSeconds(100, cb18, 0, 0, 99)).toBeNull()
+    expect(cycleSeconds(100, cb18, 0, 0, 0, 99)).toBeNull()
   })
 
   it('returns null when speedLoadedFps is 0', () => {
@@ -153,7 +153,7 @@ describe('flowDerived (orchestrator)', () => {
   it('returns nulls when vehicle is undefined', () => {
     const flow: Flow = {
       id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 100, thruPerHr: 10, turns: 0, liftHeightFt: 0,
+      distanceFt: 100, thruPerHr: 10, turns: 0, liftHeightFt: 0, customDelaySec: 0,
     }
     expect(flowDerived(flow, undefined)).toEqual({
       cycleSeconds: null,
@@ -165,7 +165,7 @@ describe('flowDerived (orchestrator)', () => {
   it('ties cycle → raw together (Fork transfer, with turns)', () => {
     const flow: Flow = {
       id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 100, thruPerHr: 30, turns: 1, liftHeightFt: 0,
+      distanceFt: 100, thruPerHr: 30, turns: 1, liftHeightFt: 0, customDelaySec: 0,
       vehicleId: 'cb18', transferMethodIdx: 0,
     }
     const d = flowDerived(flow, cb18Veh)
@@ -178,7 +178,7 @@ describe('flowDerived (orchestrator)', () => {
   it('threads liftHeightFt through to cycleSeconds (Lift Platform)', () => {
     const flow: Flow = {
       id: 'f1', origin: 'A', destination: 'B',
-      distanceFt: 0, thruPerHr: 60, turns: 0, liftHeightFt: 13,
+      distanceFt: 0, thruPerHr: 60, turns: 0, liftHeightFt: 13, customDelaySec: 0,
       vehicleId: 'cb18', transferMethodIdx: 1,
     }
     const d = flowDerived(flow, cb18Veh)
@@ -195,11 +195,11 @@ import { groupSummary } from '../flowMetrics'
 
 describe('groupSummary', () => {
   const cb18Flows: Flow[] = [
-    { id: '1', origin: 'Dock A',    destination: 'Storage 1', distanceFt: 590, thruPerHr: 45, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-    { id: '2', origin: 'Storage 1', destination: 'Pack Line', distanceFt: 394, thruPerHr: 30, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-    { id: '4', origin: 'Dock A',    destination: 'Storage 2', distanceFt: 722, thruPerHr: 38, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-    { id: '5', origin: 'Storage 2', destination: 'Pack Line', distanceFt: 476, thruPerHr: 25, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-    { id: '6', origin: 'Inbound',   destination: 'Storage 1', distanceFt: 312, thruPerHr: 22, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
+    { id: '1', origin: 'Dock A',    destination: 'Storage 1', distanceFt: 590, thruPerHr: 45, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+    { id: '2', origin: 'Storage 1', destination: 'Pack Line', distanceFt: 394, thruPerHr: 30, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+    { id: '4', origin: 'Dock A',    destination: 'Storage 2', distanceFt: 722, thruPerHr: 38, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+    { id: '5', origin: 'Storage 2', destination: 'Pack Line', distanceFt: 476, thruPerHr: 25, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+    { id: '6', origin: 'Inbound',   destination: 'Storage 1', distanceFt: 312, thruPerHr: 22, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
   ]
   const derivedCb18 = new Map([
     ['1', { cycleSeconds: 138, rawVehicles: 1.725, breakdown: null }],
@@ -220,9 +220,9 @@ describe('groupSummary', () => {
   })
 
   const ml2Flows: Flow[] = [
-    { id: '3', origin: 'Pack Line', destination: 'Dock B',    distanceFt: 295, thruPerHr: 15, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
-    { id: '7', origin: 'Pick Wall', destination: 'Pack Line', distanceFt: 197, thruPerHr: 28, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
-    { id: '8', origin: 'Storage 1', destination: 'Pick Wall', distanceFt: 246, thruPerHr: 18, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
+    { id: '3', origin: 'Pack Line', destination: 'Dock B',    distanceFt: 295, thruPerHr: 15, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+    { id: '7', origin: 'Pick Wall', destination: 'Pack Line', distanceFt: 197, thruPerHr: 28, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+    { id: '8', origin: 'Storage 1', destination: 'Pick Wall', distanceFt: 246, thruPerHr: 18, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
   ]
   const derivedMl2 = new Map([
     ['3', { cycleSeconds: 118, rawVehicles: 0.492, breakdown: null }],
@@ -253,7 +253,7 @@ describe('groupSummary', () => {
   it('skips flows assigned to other vehicles', () => {
     const mixed: Flow[] = [
       ...cb18Flows,
-      { id: 'X', origin: '', destination: '', distanceFt: 100, thruPerHr: 99, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
+      { id: 'X', origin: '', destination: '', distanceFt: 100, thruPerHr: 99, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
     ]
     const derived = new Map(derivedCb18)
     derived.set('X', { cycleSeconds: 50, rawVehicles: 1.0, breakdown: null })
@@ -270,14 +270,14 @@ import { projectFlowSummary } from '../flowMetrics'
 describe('projectFlowSummary', () => {
   it('matches verification totals: 8 flows · 221 thru · 8 base fleet', () => {
     const allFlows: Flow[] = [
-      { id: '1', origin: '', destination: '', distanceFt: 1, thruPerHr: 45, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-      { id: '2', origin: '', destination: '', distanceFt: 1, thruPerHr: 30, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-      { id: '3', origin: '', destination: '', distanceFt: 1, thruPerHr: 15, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
-      { id: '4', origin: '', destination: '', distanceFt: 1, thruPerHr: 38, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-      { id: '5', origin: '', destination: '', distanceFt: 1, thruPerHr: 25, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-      { id: '6', origin: '', destination: '', distanceFt: 1, thruPerHr: 22, turns: 0, liftHeightFt: 0, vehicleId: 'cb18' },
-      { id: '7', origin: '', destination: '', distanceFt: 1, thruPerHr: 28, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
-      { id: '8', origin: '', destination: '', distanceFt: 1, thruPerHr: 18, turns: 0, liftHeightFt: 0, vehicleId: 'ml2' },
+      { id: '1', origin: '', destination: '', distanceFt: 1, thruPerHr: 45, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+      { id: '2', origin: '', destination: '', distanceFt: 1, thruPerHr: 30, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+      { id: '3', origin: '', destination: '', distanceFt: 1, thruPerHr: 15, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+      { id: '4', origin: '', destination: '', distanceFt: 1, thruPerHr: 38, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+      { id: '5', origin: '', destination: '', distanceFt: 1, thruPerHr: 25, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+      { id: '6', origin: '', destination: '', distanceFt: 1, thruPerHr: 22, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'cb18' },
+      { id: '7', origin: '', destination: '', distanceFt: 1, thruPerHr: 28, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
+      { id: '8', origin: '', destination: '', distanceFt: 1, thruPerHr: 18, turns: 0, liftHeightFt: 0, customDelaySec: 0, vehicleId: 'ml2' },
     ]
     const derived = new Map([
       ['1', { cycleSeconds: 138, rawVehicles: 1.725, breakdown: null }],
@@ -318,10 +318,35 @@ describe('cycleBreakdown', () => {
     expect(b.unloadSec).toBe(5)
     expect(b.liftTimeSec).toBe(0)
     expect(b.turnPenaltySec).toBe(8)
+    expect(b.customDelaySec).toBe(0)
+    expect(b.methodName).toBe('Fork')
+    expect(b.liftHeightFt).toBe(0)
     const sum = b.travelLoadedSec + b.travelEmptySec
               + b.loadSec + b.unloadSec
               + b.liftTimeSec + b.turnPenaltySec
+              + b.customDelaySec
     expect(b.totalSec).toBeCloseTo(sum, 5)
+  })
+
+  it('includes customDelaySec in totalSec', () => {
+    const b = cycleBreakdown(100, cb18 as Vehicle, 0, 0, 30, 0)
+    expect(b).not.toBeNull()
+    if (!b) return
+    expect(b.customDelaySec).toBe(30)
+    // base (no delay, no turns, no lift): 100/9.84 + 100/11.5 + 5 + 5 = 28.86
+    expect(b.totalSec).toBeCloseTo(28.86 + 30, 1)
+  })
+
+  it('returns null when customDelaySec is negative', () => {
+    expect(cycleBreakdown(100, cb18 as Vehicle, 0, 0, -1, 0)).toBeNull()
+  })
+
+  it('echoes methodName and liftHeightFt for popover display', () => {
+    const b = cycleBreakdown(0, cb18 as Vehicle, 0, 4, 0, 1)
+    expect(b).not.toBeNull()
+    if (!b) return
+    expect(b.methodName).toBe('Lift Platform')
+    expect(b.liftHeightFt).toBe(4)
   })
 
   it('adds lift time when transfer method has lifts: true and liftSpeedFps > 0', () => {
@@ -346,7 +371,7 @@ describe('cycleBreakdown', () => {
     expect(cycleBreakdown(-1, cb18 as Vehicle, 0, 0, 0)).toBeNull()
     expect(cycleBreakdown(100, cb18 as Vehicle, -1, 0, 0)).toBeNull()
     expect(cycleBreakdown(100, cb18 as Vehicle, 0, -1, 0)).toBeNull()
-    expect(cycleBreakdown(100, cb18 as Vehicle, 0, 0, 99)).toBeNull()
+    expect(cycleBreakdown(100, cb18 as Vehicle, 0, 0, 0, 99)).toBeNull()
     const noTransfers: Pick<Vehicle, 'calc' | 'transferMethods'> = {
       ...cb18,
       transferMethods: [],
