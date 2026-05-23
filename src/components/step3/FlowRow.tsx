@@ -4,6 +4,7 @@ import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import VehicleSelect, { VehicleDot } from './VehicleSelect'
+import TransferMethodChips from './TransferMethodChips'
 
 interface Props {
   index: number
@@ -76,12 +77,29 @@ export default function FlowRow({
       <td className="flow-row-num mono">{String(index + 1).padStart(2, '0')}</td>
 
       <td className="flow-veh-cell">
-        <VehicleDot vehicleId={flow.vehicleId} />
-        <VehicleSelect
-          vehicles={vehicles}
-          value={flow.vehicleId}
-          onChange={vid => onChange({ ...flow, vehicleId: vid })}
-        />
+        <div className="flow-veh-stack">
+          <div className="flow-veh-row">
+            <VehicleDot vehicleId={flow.vehicleId} />
+            <VehicleSelect
+              vehicles={vehicles}
+              value={flow.vehicleId}
+              onChange={vid =>
+                onChange({
+                  ...flow,
+                  vehicleId: vid,
+                  transferMethodIdx: vid ? 0 : undefined,
+                })
+              }
+            />
+          </div>
+          {selectedVehicle && (
+            <TransferMethodChips
+              methods={selectedVehicle.transferMethods}
+              activeIdx={flow.transferMethodIdx ?? 0}
+              onChange={idx => onChange({ ...flow, transferMethodIdx: idx })}
+            />
+          )}
+        </div>
       </td>
 
       <td className="flow-cell-wrap">
