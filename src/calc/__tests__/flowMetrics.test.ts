@@ -93,22 +93,22 @@ describe('cycleSeconds', () => {
   })
 
   it('returns null when vehicle has no transferMethods', () => {
-    const broken = { ...cb18, transferMethods: [] }
-    expect(cycleSeconds(100, broken as Vehicle, 0, 0, 0)).toBeNull()
+    const broken: Pick<Vehicle, 'calc' | 'transferMethods'> = { ...cb18, transferMethods: [] }
+    expect(cycleSeconds(100, broken, 0, 0, 0)).toBeNull()
   })
 
   it('returns null when transferMethodIdx is out of range', () => {
-    expect(cycleSeconds(100, cb18 as Vehicle, 0, 0, 99)).toBeNull()
+    expect(cycleSeconds(100, cb18, 0, 0, 99)).toBeNull()
   })
 
   it('returns null when speedLoadedFps is 0', () => {
-    const broken = { ...cb18, calc: { ...cb18.calc, speedLoadedFps: 0 } }
-    expect(cycleSeconds(100, broken as Vehicle, 0, 0, 0)).toBeNull()
+    const broken: Pick<Vehicle, 'calc' | 'transferMethods'> = { ...cb18, calc: { ...cb18.calc, speedLoadedFps: 0 } }
+    expect(cycleSeconds(100, broken, 0, 0, 0)).toBeNull()
   })
 
   it('returns null when speedUnloadedFps is 0', () => {
-    const broken = { ...cb18, calc: { ...cb18.calc, speedUnloadedFps: 0 } }
-    expect(cycleSeconds(100, broken as Vehicle, 0, 0, 0)).toBeNull()
+    const broken: Pick<Vehicle, 'calc' | 'transferMethods'> = { ...cb18, calc: { ...cb18.calc, speedUnloadedFps: 0 } }
+    expect(cycleSeconds(100, broken, 0, 0, 0)).toBeNull()
   })
 
   it('pins TURN_TIME_SEC at 4 (changes here are a spec change)', () => {
