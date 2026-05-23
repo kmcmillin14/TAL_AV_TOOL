@@ -16,7 +16,7 @@ import {
   projectFlowSummary,
 } from '@/src/calc/flowMetrics'
 import FlowsTable from '@/src/components/step3/FlowsTable'
-import GroupSummaryCard from '@/src/components/step3/GroupSummaryCard'
+import GroupSummaryStrip from '@/src/components/step3/GroupSummaryStrip'
 
 export default function Step3Page() {
   const params = useParams()
@@ -170,17 +170,7 @@ export default function Step3Page() {
           </div>
         </div>
 
-        {groups.length > 0 && (
-          <div className="flow-group-grid">
-            {groups.map(g => (
-              <GroupSummaryCard
-                key={g.vehicleId}
-                summary={g}
-                vehicle={vehicleById.get(g.vehicleId)}
-              />
-            ))}
-          </div>
-        )}
+        <GroupSummaryStrip groups={groups} vehicleById={vehicleById} />
 
         <FlowsTable
           flows={flows}
