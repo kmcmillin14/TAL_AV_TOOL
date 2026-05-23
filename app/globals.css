@@ -1698,3 +1698,126 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   .step3-totals { gap: 16px; flex-wrap: wrap; }
   .flow-group-stats { grid-template-columns: 1fr 1fr; }
 }
+
+/* ---- Step 3 — transfer-method chips ---- */
+.flow-veh-cell { padding: 6px 6px; min-width: 180px; }
+.flow-veh-stack { display: flex; flex-direction: column; gap: 6px; }
+.flow-veh-row { display: flex; align-items: center; gap: 8px; }
+.transfer-chips {
+  display: flex; flex-wrap: wrap; gap: 4px;
+  padding-left: 16px;
+}
+.transfer-chip {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+  cursor: pointer;
+  transition: background 0.1s ease, border-color 0.1s ease, color 0.1s ease;
+}
+.transfer-chip:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-strong);
+  color: var(--text-secondary);
+}
+.transfer-chip.active {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.transfer-chip:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.transfer-chip-static {
+  padding-left: 16px;
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
+}
+
+/* ---- Step 3 — cycle breakdown popover ---- */
+.flow-calc-cell {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border);
+}
+.flow-calc-wrap {
+  position: relative;
+  display: inline-block;
+}
+.flow-calc-trigger {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--tal-numeric-features);
+  font-size: 13px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background 0.1s ease, border-color 0.1s ease;
+}
+.flow-calc-trigger:hover:not(:disabled) {
+  background: var(--bg-input);
+  border-color: var(--border);
+}
+.flow-calc-trigger:focus-visible {
+  outline: none;
+  background: var(--bg-input);
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.flow-calc-trigger:disabled {
+  cursor: default;
+  color: var(--text-tertiary);
+}
+.cycle-popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  min-width: 220px;
+  padding: 12px 14px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.cycle-popover-title {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 10px;
+}
+.cycle-popover-list {
+  display: flex; flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+.cycle-popover-row {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 16px;
+  font-family: var(--tal-font-family);
+  font-size: 12px;
+}
+.cycle-popover-row dt { color: var(--text-secondary); margin: 0; }
+.cycle-popover-row dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+}
+.cycle-popover-row.total {
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border);
+  font-weight: 700;
+}
+.cycle-popover-row.total dt { color: var(--text-primary); }
+.cycle-popover-row.total dd { color: var(--accent); }
