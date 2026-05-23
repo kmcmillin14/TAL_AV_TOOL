@@ -1,10 +1,12 @@
 'use client'
 
+import { useRef, useState } from 'react'
 import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import VehicleSelect, { VehicleDot } from './VehicleSelect'
 import TransferMethodChips from './TransferMethodChips'
+import CyclePopover from './CyclePopover'
 
 interface Props {
   index: number
@@ -62,6 +64,10 @@ export default function FlowRow({
   const selectedVehicle = flow.vehicleId
     ? vehicles.find(v => v.id === flow.vehicleId)
     : undefined
+
+  const [cycleOpen, setCycleOpen] = useState(false)
+  const cycleTriggerRef = useRef<HTMLButtonElement>(null)
+  const cycleDisabled = derived.cycleSeconds == null || derived.breakdown == null
 
   const rawDisplay =
     derived.rawVehicles == null ? '—' : derived.rawVehicles.toFixed(3)
@@ -168,7 +174,29 @@ export default function FlowRow({
         />
       </td>
 
-      <td className="flow-calc mono">{fmtCycle(derived.cycleSeconds)}</td>
+      <td className="flow-calc-cell">
+        <div className="flow-calc-wrap">
+          <button
+            ref={cycleTriggerRef}
+            type="button"
+            className="flow-calc-trigger mono"
+            disabled={cycleDisabled}
+            onClick={() => setCycleOpen(o => !o)}
+            aria-haspopup="dialog"
+            aria-expanded={cycleOpen}
+            title={cycleDisabled ? undefined : 'Click for cycle breakdown'}
+          >
+            {fmtCycle(derived.cycleSeconds)}
+          </button>
+          {cycleOpen && derived.breakdown && (
+            <CyclePopover
+              breakdown={derived.breakdown}
+              triggerRef={cycleTriggerRef}
+              onClose={() => setCycleOpen(false)}
+            />
+          )}
+        </div>
+      </td>
       <td className={`flow-calc mono ${rawTone}`}>{rawDisplay}</td>
 
       <td className="flow-row-act">
