@@ -1517,13 +1517,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .veh-thumb {
   display: inline-block;
   object-fit: contain;
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: 3px;
   flex-shrink: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
 }
-.veh-thumb-sm { width: 32px; height: 18px; padding: 1px; }
-.veh-thumb-lg { width: 40px; height: 22px; padding: 2px; }
+.veh-thumb-sm { width: 32px; height: 18px; }
+.veh-thumb-lg { width: 40px; height: 22px; }
 
 .flows-table-wrap {
   background: var(--bg-surface);
@@ -1616,28 +1616,26 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   padding-left: 10px;
   width: 36px;
 }
-.flow-cell-wrap { min-width: 80px; }
+.flow-cell-wrap { min-width: 80px; padding: 2px 8px !important; }
 .flow-cell {
   width: 100%;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 4px;
-  padding: 6px 8px;
+  padding: 4px 6px;
   color: var(--text-primary);
   font-family: inherit;
   font-size: inherit;
-  transition: background 0.1s ease, border-color 0.1s ease;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
 }
 .flow-cell::placeholder { color: var(--text-disabled); }
 .flow-cell:hover {
-  background: var(--bg-input);
   border-color: var(--border);
 }
 .flow-cell:focus {
-  background: var(--bg-input);
   border-color: var(--border-strong);
   outline: none;
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 .flow-cell.mono {
   font-family: var(--tal-font-numeric);
@@ -1673,21 +1671,19 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-primary);
   border: 1px solid transparent;
   border-radius: 4px;
-  padding: 6px 8px;
+  padding: 4px 6px;
   font-family: var(--tal-font-family);
   font-size: 13px;
   cursor: pointer;
-  transition: background 0.1s ease, border-color 0.1s ease;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
 }
 .flow-veh-select:hover {
-  background: var(--bg-input);
   border-color: var(--border);
 }
 .flow-veh-select:focus {
   outline: none;
-  background: var(--bg-input);
   border-color: var(--border-strong);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 .flow-veh-select option { background: var(--bg-surface-2); color: var(--text-primary); }
 .flow-veh-select option:disabled { color: var(--text-disabled); }
@@ -1698,10 +1694,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-feature-settings: var(--tal-numeric-features);
   text-align: right;
   color: var(--text-primary);
-  padding-right: 12px;
+  font-size: 15px;
+  font-weight: 700;
+  padding-right: 14px !important;
   white-space: nowrap;
 }
-.flow-calc.flow-cell-warn { color: var(--warn); font-weight: 600; }
+.flow-calc.flow-cell-warn { color: var(--warn); }
 
 .flow-row-act { width: 32px; text-align: right; padding-right: 8px; }
 .flow-delete {
@@ -1768,17 +1766,15 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-family: var(--tal-font-family);
   font-size: 12px;
   cursor: pointer;
-  transition: background 0.1s ease, border-color 0.1s ease;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
 }
 .flow-method-select:hover {
-  background: var(--bg-input);
   border-color: var(--border);
 }
 .flow-method-select:focus {
   outline: none;
-  background: var(--bg-input);
   border-color: var(--border-strong);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 .flow-method-select option { background: var(--bg-surface-2); color: var(--text-primary); }
 .flow-method-static {
@@ -1813,17 +1809,17 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .flow-method-lift {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 8px;
-  background: var(--bg-input);
-  border-left: 2px solid var(--good);
-  border-radius: 0 4px 4px 0;
-  transition: border-color 0.15s ease;
+  gap: 4px;
   flex-shrink: 0;
 }
-.flow-method-lift.required {
-  border-left-color: var(--accent);
-  background: var(--accent-soft);
+.flow-method-lift.required .flow-method-lift-input {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent-soft);
+}
+.flow-method-lift.required .flow-method-lift-label::after {
+  content: '*';
+  color: var(--accent);
+  margin-left: 1px;
 }
 .flow-method-lift-label {
   font-family: var(--tal-font-numeric);
@@ -1833,18 +1829,19 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   text-transform: uppercase;
 }
 .flow-method-lift-input {
-  width: 48px;
+  width: 42px;
   background: transparent;
-  border: 1px solid transparent;
+  border: 1px solid var(--border);
   border-radius: 4px;
   padding: 2px 4px;
   font-family: var(--tal-font-numeric);
   font-size: 12px;
   text-align: right;
   color: var(--text-primary);
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
 }
 .flow-method-lift-input:hover {
-  border-color: var(--border);
+  border-color: var(--border-strong);
 }
 .flow-method-lift-input:focus {
   outline: none;
@@ -1861,15 +1858,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-size: 10px;
   color: var(--text-tertiary);
 }
-.flow-method-lift-required {
-  font-family: var(--tal-font-numeric);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--accent);
-  margin-left: 4px;
-}
+/* The "required" pill is no longer rendered (R4) — the input border + label
+   asterisk carry the signal. Keep the rule as a no-op safety net in case any
+   legacy markup still references it. */
+.flow-method-lift-required { display: none; }
 
 /* ---- Step 3 — Route Layout segmented control ---- */
 .route-layout-control {
@@ -1969,17 +1961,29 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   align-items: stretch;
   gap: 4px;
   background: transparent;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 6px 10px;
+  border: none;
+  padding: 4px 10px 4px 6px;
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-feature-settings: var(--tal-numeric-features);
-  font-size: 13px;
+  font-size: 16px;
+  font-weight: 700;
   color: var(--text-primary);
   cursor: pointer;
-  transition: background 0.1s ease, border-color 0.1s ease;
-  min-width: 90px;
+  transition: opacity 0.1s ease;
+  min-width: 86px;
+  letter-spacing: -0.01em;
+}
+.flow-calc-trigger:hover:not(:disabled) { opacity: 0.85; }
+.flow-calc-trigger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  border-radius: 4px;
+}
+.flow-calc-trigger:disabled {
+  cursor: default;
+  color: var(--text-tertiary);
+  font-weight: 500;
 }
 .flow-calc-value {
   text-align: right;
@@ -2003,20 +2007,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .cab-transfer { background: var(--text-secondary); }
 .cab-lift     { background: var(--warn); }
 .cab-delay    { background: var(--accent); }
-.flow-calc-trigger:hover:not(:disabled) {
-  background: var(--bg-input);
-  border-color: var(--border);
-}
-.flow-calc-trigger:focus-visible {
-  outline: none;
-  background: var(--bg-input);
-  border-color: var(--border-strong);
-  box-shadow: 0 0 0 3px var(--accent-soft);
-}
-.flow-calc-trigger:disabled {
-  cursor: default;
-  color: var(--text-tertiary);
-}
 .cycle-popover {
   position: absolute;
   top: calc(100% + 6px);

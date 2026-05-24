@@ -103,9 +103,6 @@ export default function MethodSelect({
             aria-label="Lift height"
           />
           <span className="flow-method-lift-unit">{liftUnit}</span>
-          {liftRequired && (
-            <span className="flow-method-lift-required" aria-live="polite">required</span>
-          )}
         </div>
       )}
     </div>
