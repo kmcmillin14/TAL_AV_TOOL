@@ -52,4 +52,39 @@ describe('flows round-trip', () => {
       vehicleId: 'cb18',
     })
   })
+
+  it('persists sectionName when set; leaves it undefined when not', () => {
+    const p = createProject({ projectName: 'Sections' })
+
+    updateProject(p.id, {
+      flows: [
+        {
+          id: 'f1',
+          origin: 'Dock',
+          destination: 'Storage',
+          distanceFt: 100,
+          thruPerHr: 10,
+          routeLayout: 'medium',
+          liftHeightFt: 0,
+          customDelaySec: 0,
+          sectionName: 'Phase 1',
+        },
+        {
+          id: 'f2',
+          origin: 'Storage',
+          destination: 'Pack',
+          distanceFt: 200,
+          thruPerHr: 12,
+          routeLayout: 'medium',
+          liftHeightFt: 0,
+          customDelaySec: 0,
+          // no sectionName
+        },
+      ],
+    })
+
+    const read = getProject(p.id)
+    expect(read?.flows?.[0]?.sectionName).toBe('Phase 1')
+    expect(read?.flows?.[1]?.sectionName).toBeUndefined()
+  })
 })

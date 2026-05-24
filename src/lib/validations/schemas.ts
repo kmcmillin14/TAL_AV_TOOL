@@ -18,6 +18,7 @@ export const flowSchema = z.object({
   customDelaySec: z.number().min(0).default(0),
   vehicleId: z.string().optional(),
   transferMethodIdx: z.number().int().min(0).optional(),
+  sectionName: z.string().optional(),
 })
 
 export const projectSchema = z.object({

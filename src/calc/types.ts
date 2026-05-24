@@ -59,6 +59,7 @@ export interface Flow {
   customDelaySec: number       // s, ≥ 0; ad-hoc per-flow time (handoffs, queueing, doors)
   vehicleId?: string
   transferMethodIdx?: number   // defaults to 0
+  sectionName?: string         // optional engineer-named section for visual grouping
 }
 
 export interface CycleBreakdown {
