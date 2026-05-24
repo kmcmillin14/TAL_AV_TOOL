@@ -1444,7 +1444,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .fleet-ribbon-chips {
   display: inline-flex;
   align-items: center;
-  gap: 0;
+  gap: 18px;
   flex-wrap: wrap;
   justify-content: flex-end;
 }
@@ -1458,11 +1458,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 0 14px;
+  padding: 0;
   line-height: 22px;
-}
-.fr-chip[data-not-first] {
-  border-left: 1px solid var(--border);
 }
 .fr-chip-name {
   font-family: var(--tal-font-family);
@@ -1564,7 +1561,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   table-layout: auto;
 }
 .flows-table thead th {
-  text-align: left;
+  text-align: center;
   font-family: var(--tal-font-numeric);
   font-size: 10px; font-weight: 700;
   letter-spacing: 0.12em;
@@ -1575,34 +1572,23 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   white-space: nowrap;
   background: var(--bg-surface);
 }
-.flows-table thead th.flow-th-num { text-align: right; }
+.flows-table thead th.flow-th-num { text-align: center; }
 .flows-table thead th.flow-th-act { width: 32px; }
 .flows-table tbody td {
-  padding: 2px 6px;
+  padding: 2px 10px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
 .flow-row { transition: background 0.1s ease; }
 .flow-row:hover { background: rgba(255, 255, 255, 0.02); }
-/* Zone-divider lines carried down from the zone header — same column boundaries.
-   For 13 columns: zones end after #4 (Destination), #7 (Thru), #10 (Delay), #12 (Raw veh). */
-.flows-table tbody td:nth-child(5),
-.flows-table tbody td:nth-child(8),
-.flows-table tbody td:nth-child(11) {
-  border-left: 1px solid var(--border);
-}
-.flows-table thead tr:nth-child(2) th:nth-child(5),
-.flows-table thead tr:nth-child(2) th:nth-child(8),
-.flows-table thead tr:nth-child(2) th:nth-child(11) {
-  border-left: 1px solid var(--border);
-}
-.flow-row-num {
+/* (Zone-divider vertical lines removed — they landed on only some boundaries
+    which made the grid look uneven. The colored zone headers carry the grouping.) */
+.flow-row-num-old-rule {
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
-  padding-left: 10px;
   width: 36px;
 }
-.flow-cell-wrap { min-width: 80px; padding: 2px 8px !important; }
+.flow-cell-wrap { min-width: 80px; text-align: center; }
 .flow-cell {
   width: 100%;
   background: transparent;
@@ -1612,6 +1598,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-primary);
   font-family: inherit;
   font-size: inherit;
+  text-align: center;
   transition: border-color 0.1s ease, box-shadow 0.1s ease;
 }
 .flow-cell::placeholder { color: var(--text-disabled); }
@@ -1627,7 +1614,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-feature-settings: var(--tal-numeric-features);
-  text-align: right;
+  text-align: center;
 }
 .flow-cell.flow-cell-bad {
   color: var(--bad);
@@ -1678,11 +1665,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-feature-settings: var(--tal-numeric-features);
-  text-align: right;
+  text-align: center;
   color: var(--text-primary);
   font-size: 15px;
   font-weight: 700;
-  padding-right: 14px !important;
   white-space: nowrap;
 }
 .flow-calc.flow-cell-warn { color: var(--warn); }
@@ -1853,10 +1839,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .flow-row-num {
   display: flex !important;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
-  padding-left: 10px;
   white-space: nowrap;
 }
 .flow-row-index {
@@ -1985,14 +1971,14 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* ---- Step 3 — Section header rows ---- */
 .flow-section-row > td {
-  padding: 8px 12px !important;
+  padding: 8px 12px;
   background: var(--bg-surface-2);
-  border-top: 1px solid var(--border-strong);
-  border-bottom: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border);
 }
 .flow-section-head {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
 }
 .flow-section-name {
@@ -2031,7 +2017,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-tertiary);
 }
 .flow-section-add {
-  margin-left: auto;
   background: transparent;
   color: var(--text-secondary);
   border: 1px dashed var(--border);
@@ -2104,14 +2089,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-tertiary);
   background: var(--bg-surface-2);
   padding: 6px 10px;
-  text-align: left;
-  border-bottom: 1px solid var(--border-strong);
-}
-.flow-zone-row .flow-zone-th:not(:last-child) {
-  border-right: 2px solid var(--border-strong);
-}
-.flows-table thead th.flow-th-zone-end {
-  border-right: 2px solid var(--border-strong);
+  text-align: center;
+  border-bottom: 1px solid var(--border);
 }
 .flows-table tbody td.flow-cell-wrap:nth-child(6),
 .flows-table tbody td.flow-cell-wrap:nth-child(9),
@@ -2148,7 +2127,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   gap: 4px;
   background: transparent;
   border: none;
-  padding: 4px 10px 4px 6px;
+  padding: 4px 8px;
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-feature-settings: var(--tal-numeric-features);
@@ -2159,6 +2138,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   transition: opacity 0.1s ease;
   min-width: 86px;
   letter-spacing: -0.01em;
+  margin: 0 auto;
 }
 .flow-calc-trigger:hover:not(:disabled) { opacity: 0.85; }
 .flow-calc-trigger:focus-visible {
@@ -2172,7 +2152,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-weight: 500;
 }
 .flow-calc-value {
-  text-align: right;
+  text-align: center;
 }
 
 /* ---- Step 3 — Cycle anatomy bar ---- */

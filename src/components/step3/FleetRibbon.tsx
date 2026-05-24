@@ -60,12 +60,12 @@ export default function FleetRibbon({ groups, totals, vehicleById }: Props) {
             Assign a vehicle to a flow to size the fleet.
           </span>
         )}
-        {populatedGroups.map((g, i) => {
+        {populatedGroups.map(g => {
           const vehicle = vehicleById.get(g.vehicleId)
           const name = vehicle?.name ?? g.vehicleId
           const tone = headroomTone(g.headroom)
           return (
-            <span className="fr-chip" key={g.vehicleId} data-not-first={i > 0 || undefined}>
+            <span className="fr-chip" key={g.vehicleId}>
               <VehicleDot vehicle={vehicle} size="sm" />
               <span className="fr-chip-name">{name}</span>
               <span className={`fr-chip-count mono ${tone}`}>×{g.baseFleet}</span>
