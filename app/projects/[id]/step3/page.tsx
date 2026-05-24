@@ -16,7 +16,7 @@ import {
   projectFlowSummary,
 } from '@/src/calc/flowMetrics'
 import FlowsTable from '@/src/components/step3/FlowsTable'
-import GroupSummaryStrip from '@/src/components/step3/GroupSummaryStrip'
+import FleetRibbon from '@/src/components/step3/FleetRibbon'
 
 export default function Step3Page() {
   const params = useParams()
@@ -150,27 +150,9 @@ export default function Step3Page() {
               charging, Step 5 adds buffer.
             </div>
           </div>
-          <div className="step3-totals">
-            <div className="step3-total">
-              <div className="lbl">Flows</div>
-              <div className="val mono">{totals.totalFlows}</div>
-            </div>
-            <div className="step3-total">
-              <div className="lbl">Cycles/hr</div>
-              <div className="val mono">{totals.totalThru}</div>
-            </div>
-            <div className="step3-total">
-              <div className="lbl">Raw demand</div>
-              <div className="val mono">{totals.totalRawFleet.toFixed(2)}</div>
-            </div>
-            <div className="step3-total accent">
-              <div className="lbl">Base Fleet</div>
-              <div className="val mono">{totals.totalBaseFleet}</div>
-            </div>
-          </div>
         </div>
 
-        <GroupSummaryStrip groups={groups} vehicleById={vehicleById} />
+        <FleetRibbon groups={groups} totals={totals} vehicleById={vehicleById} />
 
         <FlowsTable
           flows={flows}

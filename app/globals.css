@@ -1370,139 +1370,125 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* ============================================ STEP 3 — MATERIAL FLOWS ============================================ */
 
-.step3-totals {
-  display: flex; gap: 24px; align-items: flex-start;
-  padding: 4px 0;
+/* ---- Step 3 — FleetRibbon (single-row summary) ---- */
+.fleet-ribbon {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 40px;
+  padding: 6px 14px;
+  margin: 16px 0 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  font-family: var(--tal-font-family);
+  flex-wrap: wrap;
 }
-.step3-total {
-  display: flex; flex-direction: column; gap: 4px;
-  min-width: 86px;
+.fleet-ribbon-totals {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.step3-total .lbl {
-  font-family: var(--tal-font-numeric);
-  font-size: 10px; font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
+.fr-total {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
 }
-.step3-total .val {
+.fr-total .val {
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-feature-settings: var(--tal-numeric-features);
-  font-size: 22px; font-weight: 700;
+  font-size: 14px;
+  font-weight: 700;
   color: var(--text-primary);
+}
+.fr-total .lbl {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.fr-sep {
+  color: var(--text-disabled);
+  margin: 0 2px;
+}
+.fr-arrow {
+  color: var(--text-tertiary);
+  margin: 0 6px;
+  font-size: 14px;
+}
+.fr-fleet {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.fr-fleet .val {
+  font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--tal-numeric-features);
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--accent);
   letter-spacing: -0.01em;
-  line-height: 1.1;
 }
-.step3-total.accent .val { color: var(--accent); }
-
-/* ---- Step 3 — Group summary strip (compact) ---- */
-.flow-group-strip {
-  display: flex; flex-direction: column;
-  gap: 4px;
-  margin: 16px 0 12px;
+.fr-fleet .lbl {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
-.flow-group-row {
-  display: flex; align-items: center;
-  gap: 28px;
-  padding: 8px 14px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  min-height: 40px;
-  transition: border-color 0.15s ease;
+.fleet-ribbon-chips {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
-.flow-group-row:hover { border-color: var(--border-strong); }
-.flow-group-row-empty {
-  background: transparent;
-  border-style: dashed;
-  justify-content: center;
-  padding: 14px 14px;
-}
-.flow-group-empty-msg {
+.fr-empty {
   font-family: var(--tal-font-family);
   font-size: 12.5px;
   color: var(--text-tertiary);
-  letter-spacing: 0.01em;
+  font-style: italic;
 }
-.flow-group-id {
-  display: flex; align-items: center; gap: 10px;
-  min-width: 220px;
-}
-.flow-group-name {
-  display: inline-flex; align-items: baseline;
+.fr-chip {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
+  padding: 0 14px;
+  line-height: 22px;
+}
+.fr-chip[data-not-first] {
+  border-left: 1px solid var(--border);
+}
+.fr-chip-name {
   font-family: var(--tal-font-family);
-  font-size: 13px; font-weight: 600;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--text-primary);
-  line-height: 1.2;
+  white-space: nowrap;
 }
-.flow-group-name-sep {
-  color: var(--text-disabled);
-  font-weight: 400;
-}
-.flow-group-name-mfr {
-  font-family: var(--tal-font-numeric);
-  font-size: 10px;
-  font-weight: 400;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.flow-group-fleet {
-  display: inline-flex; align-items: baseline;
-  gap: 8px;
-}
-.flow-group-fleet .val {
+.fr-chip-count {
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-feature-settings: var(--tal-numeric-features);
-  font-size: 26px; font-weight: 700;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.02em;
-  line-height: 1;
+  letter-spacing: -0.01em;
 }
-.flow-group-fleet .lbl {
-  font-family: var(--tal-font-numeric);
-  font-size: 9.5px; font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.flow-group-fleet .derivation {
-  font-family: var(--tal-font-numeric);
-  font-size: 10px;
-  color: var(--text-tertiary);
-  letter-spacing: 0.02em;
-  margin-left: 4px;
-}
-.flow-group-seg {
-  display: inline-flex; align-items: baseline; gap: 8px;
-}
-.flow-group-seg .lbl {
-  font-family: var(--tal-font-numeric);
-  font-size: 9.5px; font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.flow-group-seg .val {
+.fr-chip-count.good { color: var(--good); }
+.fr-chip-count.warn { color: var(--warn); }
+.fr-chip-count.bad  { color: var(--bad); }
+.fr-chip-raw {
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
-  font-feature-settings: var(--tal-numeric-features);
-  font-size: 16px; font-weight: 700;
-  color: var(--text-primary);
-  line-height: 1.1;
-}
-.flow-group-seg .val.green  { color: var(--good); }
-.flow-group-seg .val.yellow { color: var(--warn); }
-.flow-group-seg .val.red    { color: var(--bad);  }
-.flow-group-seg-trail {
-  margin-left: auto;
-  font-family: var(--tal-font-numeric);
-  font-size: 11px;
-  color: var(--text-secondary);
-  letter-spacing: 0.02em;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--text-tertiary);
 }
 .veh-dot {
   display: inline-block;
