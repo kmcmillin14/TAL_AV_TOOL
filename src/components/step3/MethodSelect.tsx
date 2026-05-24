@@ -87,8 +87,8 @@ export default function MethodSelect({
     )
 
   return (
-    <div className="flow-method-stack">
-      {Picker}
+    <div className="flow-method-row">
+      <div className="flow-method-picker">{Picker}</div>
       {isLifting && (
         <div className={`flow-method-lift ${liftRequired ? 'required' : ''}`}>
           <span className="flow-method-lift-label">Lift</span>
@@ -104,7 +104,7 @@ export default function MethodSelect({
           />
           <span className="flow-method-lift-unit">{liftUnit}</span>
           {liftRequired && (
-            <span className="flow-method-lift-required" aria-live="polite">← required</span>
+            <span className="flow-method-lift-required" aria-live="polite">required</span>
           )}
         </div>
       )}

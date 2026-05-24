@@ -1396,29 +1396,28 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .step3-total.accent .val { color: var(--accent); }
 
-/* ---- Step 3 — Group summary strip ---- */
+/* ---- Step 3 — Group summary strip (compact) ---- */
 .flow-group-strip {
   display: flex; flex-direction: column;
-  gap: 6px;
-  margin: 18px 0 18px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 8px;
+  gap: 4px;
+  margin: 16px 0 12px;
 }
 .flow-group-row {
   display: flex; align-items: center;
-  gap: 24px;
-  padding: 8px 12px;
-  background: var(--bg-base);
+  gap: 28px;
+  padding: 8px 14px;
+  background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 6px;
-  min-height: 52px;
+  min-height: 40px;
+  transition: border-color 0.15s ease;
 }
+.flow-group-row:hover { border-color: var(--border-strong); }
 .flow-group-row-empty {
   background: transparent;
   border-style: dashed;
   justify-content: center;
+  padding: 14px 14px;
 }
 .flow-group-empty-msg {
   font-family: var(--tal-font-family);
@@ -1428,28 +1427,57 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .flow-group-id {
   display: flex; align-items: center; gap: 10px;
-  min-width: 180px;
+  min-width: 220px;
 }
 .flow-group-name {
-  display: flex; flex-direction: column;
-  line-height: 1.2;
-}
-.flow-group-name-primary {
+  display: inline-flex; align-items: baseline;
+  gap: 6px;
   font-family: var(--tal-font-family);
   font-size: 13px; font-weight: 600;
   color: var(--text-primary);
+  line-height: 1.2;
+}
+.flow-group-name-sep {
+  color: var(--text-disabled);
+  font-weight: 400;
 }
 .flow-group-name-mfr {
   font-family: var(--tal-font-numeric);
-  font-size: 9.5px;
-  letter-spacing: 0.08em;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-tertiary);
-  margin-top: 2px;
+}
+.flow-group-fleet {
+  display: inline-flex; align-items: baseline;
+  gap: 8px;
+}
+.flow-group-fleet .val {
+  font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: var(--tal-numeric-features);
+  font-size: 26px; font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+.flow-group-fleet .lbl {
+  font-family: var(--tal-font-numeric);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.flow-group-fleet .derivation {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  color: var(--text-tertiary);
+  letter-spacing: 0.02em;
+  margin-left: 4px;
 }
 .flow-group-seg {
-  display: flex; align-items: center;
-  gap: 8px;
+  display: inline-flex; align-items: baseline; gap: 8px;
 }
 .flow-group-seg .lbl {
   font-family: var(--tal-font-numeric);
@@ -1462,19 +1490,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-feature-settings: var(--tal-numeric-features);
-  font-size: 18px; font-weight: 700;
+  font-size: 16px; font-weight: 700;
   color: var(--text-primary);
-  letter-spacing: -0.01em;
+  line-height: 1.1;
 }
 .flow-group-seg .val.green  { color: var(--good); }
 .flow-group-seg .val.yellow { color: var(--warn); }
 .flow-group-seg .val.red    { color: var(--bad);  }
-.flow-group-seg .derivation {
-  font-family: var(--tal-font-numeric);
-  font-size: 10px;
-  color: var(--text-tertiary);
-  letter-spacing: 0.02em;
-}
 .flow-group-seg-trail {
   margin-left: auto;
   font-family: var(--tal-font-numeric);
@@ -1570,11 +1592,24 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .flows-table thead th.flow-th-num { text-align: right; }
 .flows-table thead th.flow-th-act { width: 32px; }
 .flows-table tbody td {
-  padding: 4px 6px;
+  padding: 2px 6px;
   border-bottom: 1px solid var(--border);
   vertical-align: middle;
 }
-.flow-row:hover { background: rgba(255, 255, 255, 0.012); }
+.flow-row { transition: background 0.1s ease; }
+.flow-row:hover { background: rgba(255, 255, 255, 0.02); }
+/* Zone-divider lines carried down from the zone header — same column boundaries.
+   For 13 columns: zones end after #4 (Destination), #7 (Thru), #10 (Delay), #12 (Raw veh). */
+.flows-table tbody td:nth-child(5),
+.flows-table tbody td:nth-child(8),
+.flows-table tbody td:nth-child(11) {
+  border-left: 1px solid var(--border);
+}
+.flows-table thead tr:nth-child(2) th:nth-child(5),
+.flows-table thead tr:nth-child(2) th:nth-child(8),
+.flows-table thead tr:nth-child(2) th:nth-child(11) {
+  border-left: 1px solid var(--border);
+}
 .flow-row-num {
   color: var(--text-tertiary);
   font-variant-numeric: tabular-nums;
@@ -1759,10 +1794,15 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-disabled);
   font-family: var(--tal-font-numeric);
 }
-.flow-method-stack {
+/* Inline layout: dropdown on the left, optional Lift input on the right */
+.flow-method-row {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
+  align-items: center;
+  gap: 8px;
+}
+.flow-method-picker {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .flow-method-impact {
   font-family: var(--tal-font-numeric);
@@ -1774,15 +1814,16 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  margin-left: 14px;
   padding: 3px 8px;
   background: var(--bg-input);
   border-left: 2px solid var(--good);
   border-radius: 0 4px 4px 0;
   transition: border-color 0.15s ease;
+  flex-shrink: 0;
 }
 .flow-method-lift.required {
   border-left-color: var(--accent);
+  background: var(--accent-soft);
 }
 .flow-method-lift-label {
   font-family: var(--tal-font-numeric);
@@ -1821,10 +1862,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-tertiary);
 }
 .flow-method-lift-required {
-  font-family: var(--tal-font-family);
-  font-size: 10px;
+  font-family: var(--tal-font-numeric);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   color: var(--accent);
-  font-style: italic;
   margin-left: 4px;
 }
 

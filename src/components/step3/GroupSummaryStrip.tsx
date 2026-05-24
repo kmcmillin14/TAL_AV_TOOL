@@ -49,14 +49,15 @@ export default function GroupSummaryStrip({ groups, vehicleById }: Props) {
             <div className="flow-group-id">
               <VehicleDot vehicle={vehicle} size="lg" />
               <div className="flow-group-name">
-                <span className="flow-group-name-primary">{name}</span>
+                {name}
+                {mfr && <span className="flow-group-name-sep">·</span>}
                 {mfr && <span className="flow-group-name-mfr">{mfr}</span>}
               </div>
             </div>
 
-            <div className="flow-group-seg">
-              <span className="lbl">Base Fleet</span>
+            <div className="flow-group-fleet">
               <span className="val mono">{g.baseFleet}</span>
+              <span className="lbl">Base Fleet</span>
               <span className="derivation mono">
                 raw {g.groupRaw.toFixed(2)} → ⌈ceil⌉
               </span>
@@ -69,11 +70,10 @@ export default function GroupSummaryStrip({ groups, vehicleById }: Props) {
               </span>
             </div>
 
-            <div className="flow-group-seg flow-group-seg-trail">
-              <span className="mono">
-                {g.flowsCount} {g.flowsCount === 1 ? 'flow' : 'flows'} ·
-                {' '}{g.baseThru}/hr · cycle {formatCycle(g.avgCycleSec)}
-              </span>
+            <div className="flow-group-seg flow-group-seg-trail mono">
+              {g.flowsCount} {g.flowsCount === 1 ? 'flow' : 'flows'}
+              {' · '}{g.baseThru}/hr
+              {' · cycle '}{formatCycle(g.avgCycleSec)}
             </div>
           </div>
         )

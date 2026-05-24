@@ -12,7 +12,7 @@
     "navigationType": "natural"
   },
   "transferMethods": [
-    { "method": "Fork", "loadTimeSec": 6, "unloadTimeSec": 6 }
+    { "method": "Fork", "loadTimeSec": 6, "unloadTimeSec": 6, "lifts": true }
   ],
   "payloadTypes": ["Standard Pallet", "Rack"],
   "calc": {
@@ -27,6 +27,7 @@
     "maxLoadHeightIn": 72,
     "speedLoadedFps": 7.5,
     "speedUnloadedFps": 8.5,
+    "liftSpeedFps": 0.6,
     "batteryKwh": 24.0,
     "energyKwhPerFt": 0.018,
     "chargeKw": 4.0,
