@@ -1849,6 +1849,72 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
    legacy markup still references it. */
 .flow-method-lift-required { display: none; }
 
+/* ---- Step 3 — Section header rows ---- */
+.flow-section-row > td {
+  padding: 8px 12px !important;
+  background: var(--bg-surface-2);
+  border-top: 1px solid var(--border-strong);
+  border-bottom: 1px solid var(--border-strong);
+}
+.flow-section-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.flow-section-name {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-family: var(--tal-font-family);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: -0.01em;
+  flex: 0 1 auto;
+  min-width: 120px;
+  max-width: 320px;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
+}
+.flow-section-name::placeholder {
+  color: var(--text-disabled);
+  font-weight: 500;
+  font-style: italic;
+}
+.flow-section-name:hover {
+  border-color: var(--border);
+}
+.flow-section-name:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.flow-section-count {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
+.flow-section-add {
+  margin-left: auto;
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px dashed var(--border);
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: var(--tal-font-family);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+.flow-section-add:hover {
+  border-style: solid;
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
 /* ---- Step 3 — Route Layout segmented control ---- */
 .route-layout-control {
   display: inline-flex;

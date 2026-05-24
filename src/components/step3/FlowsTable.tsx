@@ -112,24 +112,91 @@ export default function FlowsTable({
                 </tr>
               </thead>
               <tbody>
-                {flows.map((f, i) => (
-                  <FlowRow
-                    key={f.id}
-                    index={i}
-                    flow={f}
-                    vehicles={vehicles}
-                    derived={
-                      derivedByFlowId.get(f.id) ?? {
-                        cycleSeconds: null,
-                        rawVehicles: null,
-                        breakdown: null,
-                      }
+                {(() => {
+                  // Render flows with section header rows inserted at boundaries
+                  // where the previous flow's sectionName differs from this one's.
+                  // Only renders headers when ANY flow has a sectionName set;
+                  // otherwise the table looks identical to the pre-section state.
+                  const anySectioned = flows.some(f => f.sectionName != null)
+                  const rows: React.ReactNode[] = []
+                  let prevSection: string | undefined = undefined
+                  let sectionFlowCounts: Map<string | undefined, number> | null = null
+                  if (anySectioned) {
+                    sectionFlowCounts = new Map()
+                    for (const f of flows) {
+                      const key = f.sectionName ?? undefined
+                      sectionFlowCounts.set(key, (sectionFlowCounts.get(key) ?? 0) + 1)
                     }
-                    unitSystem={unitSystem}
-                    onChange={next => update(f.id, next)}
-                    onDelete={() => remove(f.id)}
-                  />
-                ))}
+                  }
+                  flows.forEach((f, i) => {
+                    const cur = f.sectionName ?? undefined
+                    if (anySectioned && (i === 0 || cur !== prevSection)) {
+                      const count = sectionFlowCounts?.get(cur) ?? 0
+                      const display = cur ?? 'Ungrouped'
+                      rows.push(
+                        <tr key={`section-${cur ?? '__none__'}-${i}`} className="flow-section-row">
+                          <td colSpan={13}>
+                            <div className="flow-section-head">
+                              <input
+                                className="flow-section-name"
+                                value={cur ?? ''}
+                                placeholder="Ungrouped"
+                                aria-label="Section name"
+                                onChange={e => {
+                                  const next = e.target.value.trim() || undefined
+                                  // Rename every flow currently in this section
+                                  onFlowsChange(
+                                    flows.map(fl =>
+                                      (fl.sectionName ?? undefined) === cur
+                                        ? { ...fl, sectionName: next }
+                                        : fl
+                                    )
+                                  )
+                                }}
+                              />
+                              <span className="flow-section-count mono">
+                                {count} {count === 1 ? 'flow' : 'flows'}
+                              </span>
+                              <button
+                                type="button"
+                                className="flow-section-add"
+                                onClick={() =>
+                                  onFlowsChange([
+                                    ...flows,
+                                    { ...emptyFlow(), sectionName: cur },
+                                  ])
+                                }
+                                title={cur ? `Add a flow to "${display}"` : 'Add an ungrouped flow'}
+                              >
+                                + Add to {display}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    }
+                    prevSection = cur
+                    rows.push(
+                      <FlowRow
+                        key={f.id}
+                        index={i}
+                        flow={f}
+                        vehicles={vehicles}
+                        derived={
+                          derivedByFlowId.get(f.id) ?? {
+                            cycleSeconds: null,
+                            rawVehicles: null,
+                            breakdown: null,
+                          }
+                        }
+                        unitSystem={unitSystem}
+                        onChange={next => update(f.id, next)}
+                        onDelete={() => remove(f.id)}
+                      />
+                    )
+                  })
+                  return rows
+                })()}
               </tbody>
             </table>
           </div>
