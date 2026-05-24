@@ -98,9 +98,9 @@ export default function FlowsTable({
                   <th className="flow-th-num" title="Cycles per hour. One cycle = one full round-trip pick-and-place.">Thru/hr</th>
                   <th
                     className="flow-th-num"
-                    title="How the path geometry slows the vehicle vs its rated cruise speed. Low (50%): lots of turns, tight corners, blind intersections, frequent slowdowns. Med (70%): mix of straightaways and turns, typical warehouse traffic. High (90%): mostly straightaways, open lanes, few turns."
+                    title="Effective travel speed per route conditions. Tight aisles = 50% of rated cruise · Mixed traffic = 70% · Open straightaway = 90%."
                   >
-                    Route Layout
+                    Speeds Used
                   </th>
                   <th className="flow-th-num">Cycle</th>
                   <th

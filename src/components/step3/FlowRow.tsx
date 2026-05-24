@@ -6,7 +6,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import VehicleSelect, { VehicleDot } from './VehicleSelect'
 import MethodSelect from './MethodSelect'
-import RouteLayoutSelect from './RouteLayoutSelect'
+import SpeedsUsedSelect from './SpeedsUsedSelect'
 import CyclePopover from './CyclePopover'
 import CycleAnatomyBar from './CycleAnatomyBar'
 import SectionPicker from './SectionPicker'
@@ -154,8 +154,9 @@ export default function FlowRow({
         />
       </td>
       <td className="flow-route-cell">
-        <RouteLayoutSelect
+        <SpeedsUsedSelect
           value={flow.routeLayout}
+          vehicle={selectedVehicle}
           onChange={layout => onChange({ ...flow, routeLayout: layout })}
         />
       </td>
