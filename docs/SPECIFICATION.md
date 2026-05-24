@@ -28,7 +28,6 @@ Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, St
 - `thruPerHr` — cycles per hour, ≥ 0. One cycle = one full round-trip pick-and-place.
 - `routeLayout` — `'low' | 'medium' | 'high'`. Path geometry slows the vehicle relative to its rated cruise speed. Low (50%): lots of turns, tight corners, blind intersections, frequent slowdowns. Medium (70%): mix of straightaways and turns, typical warehouse traffic. High (90%): mostly straightaways, open lanes, few turns. Defaults to `'medium'`.
 - `liftHeightFt` — total vertical travel of the load per cycle, feet, ≥ 0. 0 when transfer method does not lift. Engineer enters the per-cycle total (e.g., 4 ft for a single Floor→Height delivery; 8 ft for Height-Height = 4 up + 4 down).
-- `customDelaySec` — ad-hoc per-flow time added to the cycle, seconds, ≥ 0. Covers manual handoffs, door/elevator waits, queueing, or any other delay not modeled by travel/load/unload/lift. Defaults to 0.
 - `vehicleId` — id of a vehicle from `src/content/vehicles/*.json`
 - `transferMethodIdx` — index into `vehicle.transferMethods[]`; defaults to 0. Surfaced in the UI as a dedicated **Transfer Method** column whose options are scoped to the selected vehicle.
 
@@ -63,14 +62,13 @@ liftTimeSec      = (transfer.lifts && vehicle.calc.liftSpeedFps > 0)
 cycleSeconds     = travelLoadedSec + travelEmptySec
                  + loadSec + unloadSec
                  + liftTimeSec
-                 + customDelaySec
 
 rawVehicles      = thruPerHr × cycleSeconds / 3600
 ```
 
 `distanceFt` is **one-way**; the cycle includes the empty return trip (both travel components run at the route-layout-derated speed).
 
-`liftTimeSec` is 0 for non-lifting transfers (Tow/Tugger, Conveyor Interface). For lifting transfers (now including Fork on counterbalance forklifts), the engineer enters the per-cycle total `liftHeightFt`; the vehicle's `liftSpeedFps` does the conversion. `customDelaySec` is engineer-entered with no upper bound; it adds directly to the cycle.
+`liftTimeSec` is 0 for non-lifting transfers (Tow/Tugger, Conveyor Interface). For lifting transfers (now including Fork on counterbalance forklifts), the engineer enters the per-cycle total `liftHeightFt`; the vehicle's `liftSpeedFps` does the conversion.
 
 `rawVehicles` is fractional. `0.94` means this flow alone consumes 94 % of one vehicle's hour; `1.72` means a single vehicle cannot serve it — vehicles must pool.
 

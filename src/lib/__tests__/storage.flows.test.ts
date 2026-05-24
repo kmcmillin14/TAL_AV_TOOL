@@ -38,7 +38,6 @@ describe('flows round-trip', () => {
         thruPerHr: 10,
         routeLayout: 'medium',
         liftHeightFt: 0,
-        customDelaySec: 0,
         vehicleId: 'cb18',
       }],
     })
@@ -66,7 +65,6 @@ describe('flows round-trip', () => {
           thruPerHr: 10,
           routeLayout: 'medium',
           liftHeightFt: 0,
-          customDelaySec: 0,
           sectionName: 'Phase 1',
         },
         {
@@ -77,7 +75,6 @@ describe('flows round-trip', () => {
           thruPerHr: 12,
           routeLayout: 'medium',
           liftHeightFt: 0,
-          customDelaySec: 0,
           // no sectionName
         },
       ],

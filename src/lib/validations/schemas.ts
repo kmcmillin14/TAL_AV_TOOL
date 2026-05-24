@@ -15,7 +15,6 @@ export const flowSchema = z.object({
   thruPerHr: z.number().min(0).default(0),
   routeLayout: z.enum(['low', 'medium', 'high']).default('medium'),
   liftHeightFt: z.number().min(0).default(0),
-  customDelaySec: z.number().min(0).default(0),
   vehicleId: z.string().optional(),
   transferMethodIdx: z.number().int().min(0).optional(),
   sectionName: z.string().optional(),

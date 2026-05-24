@@ -48,12 +48,6 @@ export default function CycleAnatomyBar({ breakdown }: Props) {
           ? `Lift (${breakdown.liftHeightFt.toFixed(1)} ft): ${fmt(breakdown.liftTimeSec)}`
           : `Lift: ${fmt(breakdown.liftTimeSec)}`,
     },
-    {
-      label: 'delay',
-      sec: breakdown.customDelaySec,
-      cls: 'cab-delay',
-      tooltip: `Custom delay: ${fmt(breakdown.customDelaySec)}`,
-    },
   ]
 
   const total = breakdown.totalSec

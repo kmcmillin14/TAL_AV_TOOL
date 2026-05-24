@@ -27,12 +27,10 @@ export function cycleBreakdown(
   vehicle: Pick<Vehicle, 'calc' | 'transferMethods'>,
   routeLayout: RouteLayout,
   liftHeightFt: number,
-  customDelaySec: number,
   transferMethodIdx: number = 0,
 ): CycleBreakdown | null {
   if (distanceFt < 0) return null
   if (liftHeightFt < 0) return null
-  if (customDelaySec < 0) return null
   if (!vehicle.transferMethods || vehicle.transferMethods.length === 0) return null
   const transfer = vehicle.transferMethods[transferMethodIdx]
   if (!transfer) return null
@@ -56,8 +54,7 @@ export function cycleBreakdown(
   const totalSec =
     travelLoadedSec + travelEmptySec +
     loadSec + unloadSec +
-    liftTimeSec +
-    customDelaySec
+    liftTimeSec
 
   return {
     travelLoadedSec,
@@ -65,7 +62,6 @@ export function cycleBreakdown(
     loadSec,
     unloadSec,
     liftTimeSec,
-    customDelaySec,
     totalSec,
     methodName: transfer.method,
     liftHeightFt,
@@ -90,10 +86,9 @@ export function cycleSeconds(
   vehicle: Pick<Vehicle, 'calc' | 'transferMethods'>,
   routeLayout: RouteLayout,
   liftHeightFt: number,
-  customDelaySec: number = 0,
   transferMethodIdx: number = 0,
 ): number | null {
-  return cycleBreakdown(distanceFt, vehicle, routeLayout, liftHeightFt, customDelaySec, transferMethodIdx)?.totalSec ?? null
+  return cycleBreakdown(distanceFt, vehicle, routeLayout, liftHeightFt, transferMethodIdx)?.totalSec ?? null
 }
 
 /**
@@ -129,7 +124,6 @@ export function flowDerived(
     vehicle,
     flow.routeLayout ?? 'medium',
     flow.liftHeightFt ?? 0,
-    flow.customDelaySec ?? 0,
     flow.transferMethodIdx ?? 0,
   )
   const cycle = breakdown?.totalSec ?? null

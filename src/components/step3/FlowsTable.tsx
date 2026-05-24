@@ -27,7 +27,6 @@ function emptyFlow(): Flow {
     thruPerHr: 0,
     routeLayout: 'medium',
     liftHeightFt: 0,
-    customDelaySec: 0,
   }
 }
 
@@ -80,7 +79,7 @@ export default function FlowsTable({
                 <tr className="flow-zone-row">
                   <th className="flow-zone-th" colSpan={3}>What&apos;s Moving</th>
                   <th className="flow-zone-th" colSpan={3}>From → To</th>
-                  <th className="flow-zone-th" colSpan={3}>How Often</th>
+                  <th className="flow-zone-th" colSpan={2}>How Often</th>
                   <th className="flow-zone-th" colSpan={2}>Fleet Need</th>
                   <th className="flow-zone-th"></th>
                 </tr>
@@ -102,12 +101,6 @@ export default function FlowsTable({
                     title="How the path geometry slows the vehicle vs its rated cruise speed. Low (50%): lots of turns, tight corners, blind intersections, frequent slowdowns. Med (70%): mix of straightaways and turns, typical warehouse traffic. High (90%): mostly straightaways, open lanes, few turns."
                   >
                     Route Layout
-                  </th>
-                  <th
-                    className="flow-th-num flow-th-zone-end"
-                    title="Ad-hoc per-flow time — handoffs, queueing, doors. Adds directly to the cycle."
-                  >
-                    Delay (s)
                   </th>
                   <th className="flow-th-num">Cycle</th>
                   <th
@@ -143,7 +136,7 @@ export default function FlowsTable({
                       const display = cur ?? 'Ungrouped'
                       rows.push(
                         <tr key={`section-${cur ?? '__none__'}-${i}`} className="flow-section-row">
-                          <td colSpan={13}>
+                          <td colSpan={11}>
                             <div className="flow-section-head">
                               <input
                                 className="flow-section-name"

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-24 — Step 3 round 5: canonical column lineup + bulk sections + lift inline time + header polish
+
+**Motivation:** R4 (`93ea057`) landed visual cohesion + named sections (via per-row pill) + FleetRibbon. First-use feedback pushed back on a few things: the table accreted columns engineers don't actually use, the THRU/HR label reads abrasive, the per-row section picker is clumsy, lift height has no visible time consequence, and Imperial/Metric doesn't fit the TAL header aesthetic. R5 rebuilds toward the canonical shape engineers would draw on paper: Vehicle Type · Transfer Method · Origin · Destination · Distance · Throughput per Hour · Speeds Used · Cycle · Demand.
+
+**Changes (incremental rollout across this and following commits):**
+- **Delay column gone.** `customDelaySec` removed from Flow, CycleBreakdown, flowSchema, and the calc. Cycle = travel + load + unload + lift. Old exports with `customDelaySec` parse cleanly (Zod strips it).
+- **Route Layout pills replaced with Speeds Used.** Same `routeLayout` data field, new dropdown UI labeled by route conditions with the resulting effective fps shown alongside (e.g. `Mixed traffic — 6.9 / 8.1 fps`).
+- **Lift inline time.** When the active transfer method lifts, the height input now has a `→ 6.2s` chip next to it showing the derived seconds the lift adds.
+- **Canonical column lineup + full-word labels.** "Thru/hr" → "Throughput per Hour"; "Raw veh" → "Demand"; "Vehicle" → "Vehicle Type"; "Method" → "Transfer Method." Zone labels: `Vehicle · Route · Pace · Fleet Need`.
+- **Header hierarchy.** Zone band gains accent red color and heavier weight; column labels sit in sentence case + smaller / muted secondary. Distinct visual languages.
+- **Sections wholesale redesign.** Per-row SectionPicker pill + popover GONE. In-table section header rows GONE. Replaced by row checkboxes + a contextual `[N selected] [Group as ▾] [Ungroup] [Delete] [Clear]` toolbar that appears when any row is selected. Per-row section badge under the vehicle picker shows the assigned name.
+- **Imperial/Metric segmented pill.** PersistentHeader's floating switch becomes a small `[Imperial | Metric]` segmented pill matching the TAL header aesthetic.
+
+**Back-compat:** Zod silently strips legacy `customDelaySec`. `sectionName` (added in R4) is preserved.
+
 ## 2026-05-23 — Step 3 round 3: route-layout travel model + UI redesign
 
 **Motivation:** Round 2 (`dd6c299`) added the Method picker, custom delay, and cycle popover. First-use feedback surfaced more problems: the Method + Lift columns felt redundant (the lift value is required for lifting methods but nothing in the UI couples them); engineers don't actually count "90°+ turns"; the travel calc undercounts on short flows because it ignores acceleration; and the round-trip behavior of the cycle is invisible in the UI.

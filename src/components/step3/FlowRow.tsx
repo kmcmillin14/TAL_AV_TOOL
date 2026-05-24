@@ -159,18 +159,6 @@ export default function FlowRow({
           onChange={layout => onChange({ ...flow, routeLayout: layout })}
         />
       </td>
-      <td className="flow-cell-wrap">
-        <input
-          className="flow-cell mono"
-          type="number"
-          min="0"
-          inputMode="decimal"
-          value={flow.customDelaySec}
-          onChange={e =>
-            onChange({ ...flow, customDelaySec: clampNum(e.target.value) })
-          }
-        />
-      </td>
 
       <td className="flow-calc-cell">
         <div className="flow-calc-wrap">

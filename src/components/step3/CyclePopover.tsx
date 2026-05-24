@@ -77,10 +77,6 @@ export default function CyclePopover({ breakdown, onClose, triggerRef }: Props) 
           <dt>{liftLabel}</dt>
           <dd className="mono">{fmt(breakdown.liftTimeSec)}</dd>
         </div>
-        <div className="cycle-popover-row">
-          <dt>Custom delay</dt>
-          <dd className="mono">{fmt(breakdown.customDelaySec)}</dd>
-        </div>
         <div className="cycle-popover-row total">
           <dt>Total</dt>
           <dd className="mono">{fmt(breakdown.totalSec)}</dd>
