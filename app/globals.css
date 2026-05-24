@@ -1849,6 +1849,140 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
    legacy markup still references it. */
 .flow-method-lift-required { display: none; }
 
+/* ---- Step 3 — Per-row section indicator pill + popover ---- */
+.flow-row-num {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-tertiary);
+  font-variant-numeric: tabular-nums;
+  padding-left: 10px;
+  white-space: nowrap;
+}
+.flow-row-index {
+  font-family: var(--tal-font-numeric);
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.flow-section-picker {
+  position: relative;
+  display: inline-flex;
+}
+.flow-section-pill {
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 1px 8px;
+  font-family: var(--tal-font-family);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--text-secondary);
+  cursor: pointer;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transition: border-color 0.1s ease, color 0.1s ease, background 0.1s ease;
+}
+.flow-section-pill:hover {
+  border-color: var(--border-strong);
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+.flow-section-pill.ungrouped {
+  border-style: dashed;
+  color: var(--text-tertiary);
+}
+.flow-section-popover {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 25;
+  min-width: 200px;
+  padding: 10px 12px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+}
+.flow-section-popover-head {
+  font-family: var(--tal-font-numeric);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-bottom: 8px;
+}
+.flow-section-list {
+  list-style: none;
+  margin: 0 0 6px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.flow-section-option {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-family: var(--tal-font-family);
+  font-size: 12px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: background 0.1s ease, color 0.1s ease;
+}
+.flow-section-option:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+.flow-section-option.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.flow-section-new {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+.flow-section-new-input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-family: var(--tal-font-family);
+  font-size: 12px;
+  color: var(--text-primary);
+}
+.flow-section-new-input::placeholder { color: var(--text-disabled); }
+.flow-section-new-input:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+}
+.flow-section-new-submit {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-family: var(--tal-font-family);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.flow-section-new-submit:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 /* ---- Step 3 — Section header rows ---- */
 .flow-section-row > td {
   padding: 8px 12px !important;

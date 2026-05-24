@@ -48,6 +48,14 @@ export default function FlowsTable({
 
   const distLabel = metric ? 'Distance (m)' : 'Distance (ft)'
 
+  // Unique section names, preserving first-encountered insertion order.
+  const allSections: string[] = []
+  for (const f of flows) {
+    if (f.sectionName && !allSections.includes(f.sectionName)) {
+      allSections.push(f.sectionName)
+    }
+  }
+
   return (
     <div className="flows-table-wrap">
       <div className="flows-table-head">
@@ -190,6 +198,7 @@ export default function FlowsTable({
                           }
                         }
                         unitSystem={unitSystem}
+                        allSections={allSections}
                         onChange={next => update(f.id, next)}
                         onDelete={() => remove(f.id)}
                       />
