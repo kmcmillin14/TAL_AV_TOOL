@@ -70,10 +70,10 @@ export default function FlowsTable({
             <table className="flows-table">
               <thead>
                 <tr className="flow-zone-row">
-                  <th className="flow-zone-th" colSpan={3}>Vehicle</th>
-                  <th className="flow-zone-th" colSpan={3}>Route</th>
-                  <th className="flow-zone-th" colSpan={3}>Profile</th>
-                  <th className="flow-zone-th" colSpan={2}>Result</th>
+                  <th className="flow-zone-th" colSpan={3}>What&apos;s Moving</th>
+                  <th className="flow-zone-th" colSpan={3}>From → To</th>
+                  <th className="flow-zone-th" colSpan={3}>How Often</th>
+                  <th className="flow-zone-th" colSpan={2}>Fleet Need</th>
                   <th className="flow-zone-th"></th>
                 </tr>
                 <tr>
