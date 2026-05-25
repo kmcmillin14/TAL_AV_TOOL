@@ -1895,12 +1895,19 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   text-align: center !important;
   padding: 4px 6px !important;
 }
-/* Section-tie left-edge bar: painted via box-shadow on the leftmost cell of
-   every row that has a sectionName. Adjacent rows with the same sectionName
-   share the same color (deterministic hash → palette), so the eye sees a
-   continuous colored stripe down the grouped block. 5 px wide for visibility. */
-.flow-cell-select.has-section {
-  box-shadow: inset 5px 0 0 var(--section-bar-color, transparent);
+.flow-cell-select { position: relative; }
+/* Section-tie left-edge bar: rendered as a real <span> inside the leftmost
+   cell of every row that has a sectionName. Adjacent rows with the same
+   sectionName share the same color (deterministic hash → palette), so the
+   eye sees a continuous colored stripe down the grouped block. A real
+   element (not a ::before / box-shadow) avoids border-collapse clipping. */
+.flow-section-bar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  pointer-events: none;
 }
 .flow-cell-select input[type='checkbox'] {
   accent-color: var(--accent);

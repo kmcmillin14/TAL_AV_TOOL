@@ -81,14 +81,15 @@ export default function FlowRow({
 
   return (
     <tr className={`flow-row ${selected ? 'selected' : ''}`}>
-      <td
-        className={`flow-cell-select ${flow.sectionName ? 'has-section' : ''}`}
-        style={
-          flow.sectionName
-            ? ({ '--section-bar-color': sectionColor(flow.sectionName) } as React.CSSProperties)
-            : undefined
-        }
-      >
+      <td className="flow-cell-select">
+        {flow.sectionName && (
+          <span
+            className="flow-section-bar"
+            style={{ background: sectionColor(flow.sectionName) }}
+            aria-hidden="true"
+            title={`Section: ${flow.sectionName}`}
+          />
+        )}
         <input
           type="checkbox"
           checked={selected}
