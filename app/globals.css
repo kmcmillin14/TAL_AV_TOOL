@@ -1562,13 +1562,14 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .flows-table thead th {
   text-align: center;
-  font-family: var(--tal-font-numeric);
-  font-size: 10px; font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
+  font-family: var(--tal-font-family);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--text-secondary);
   border-bottom: 1px solid var(--border);
-  padding: 10px 10px;
+  padding: 8px 10px;
   white-space: nowrap;
   background: var(--bg-surface);
 }
@@ -2082,13 +2083,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* ---- Step 3 — Zone header row + zone-end dividers ---- */
 .flow-zone-row .flow-zone-th {
   font-family: var(--tal-font-numeric);
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--text-tertiary);
+  color: var(--accent);
   background: var(--bg-surface-2);
-  padding: 6px 10px;
+  padding: 8px 10px;
   text-align: center;
   border-bottom: 1px solid var(--border);
 }
