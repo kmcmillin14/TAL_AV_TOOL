@@ -20,9 +20,10 @@ const FT_PER_M = 3.28084
  *  the engineer picks a new preset. */
 const LIFT_PRESETS_FT: ReadonlyArray<number> = [0, 2, 4, 6, 8, 10]
 
-function impactLabel(m: TransferMethod): string {
+function impactTooltip(m: TransferMethod): string {
   const total = (m.loadTimeSec ?? 0) + (m.unloadTimeSec ?? 0)
-  return m.lifts ? `+${total}s · lifts` : `+${total}s`
+  const lifts = m.lifts ? ', lifts the load' : ''
+  return `${m.method} — load ${m.loadTimeSec}s + unload ${m.unloadTimeSec}s (+${total}s)${lifts}`
 }
 
 function nearestPreset(ft: number): number {
@@ -35,15 +36,12 @@ function nearestPreset(ft: number): number {
  * Per-row transfer-method cell.
  *
  * When the active method has `lifts: true`, the cell renders TWO chained
- * dropdowns: a method picker and a Lift-height picker with preset
- * options. The inline derived `→ N.Ns` chip sits next to the height
- * dropdown so engineers see the time cost of their height choice.
+ * dropdowns: a method picker on top and a Lift-height picker below.
+ * Both dropdowns clip to the cell width via the global .flows-table select
+ * rule; option labels are kept short and the full description lives in
+ * the option's `title` tooltip.
  *
- * When the method doesn't lift, only the method picker renders (no
- * height dropdown, no chip).
- *
- * Single-method vehicles still render as static text instead of a
- * dropdown for the method itself.
+ * When the method doesn't lift, only the method picker renders.
  */
 export default function MethodSelect({
   vehicle,
@@ -81,8 +79,8 @@ export default function MethodSelect({
 
   const MethodPicker =
     methods.length === 1 ? (
-      <span className="flow-method-static" title={impactLabel(active)}>
-        {active.method}  <span className="flow-method-impact">({impactLabel(active)})</span>
+      <span className="flow-method-static" title={impactTooltip(active)}>
+        {active.method}
       </span>
     ) : (
       <select
@@ -90,10 +88,11 @@ export default function MethodSelect({
         value={methodIdx}
         onChange={e => onMethodChange(Number(e.target.value))}
         aria-label="Transfer method"
+        title={impactTooltip(active)}
       >
         {methods.map((m, i) => (
-          <option key={`${m.method}-${i}`} value={i}>
-            {m.method}  ({impactLabel(m)})
+          <option key={`${m.method}-${i}`} value={i} title={impactTooltip(m)}>
+            {m.method}
           </option>
         ))}
       </select>
@@ -104,12 +103,12 @@ export default function MethodSelect({
       <div className="flow-method-picker">{MethodPicker}</div>
       {isLifting && (
         <div className={`flow-method-lift ${liftRequired ? 'required' : ''}`}>
-          <span className="flow-method-lift-label">Lift</span>
           <select
             className="flow-method-lift-select"
             value={displayedHeightFt}
             onChange={e => onLiftChange(Number(e.target.value))}
             aria-label="Lift height"
+            title={`Lift adds ${liftTimeSec.toFixed(1)} s to the cycle`}
           >
             {LIFT_PRESETS_FT.map(ft => (
               <option key={ft} value={ft}>
@@ -117,9 +116,6 @@ export default function MethodSelect({
               </option>
             ))}
           </select>
-          <span className="flow-method-lift-time mono" aria-label={`Adds ${liftTimeSec.toFixed(1)} seconds`}>
-            → {liftTimeSec.toFixed(1)}s
-          </span>
         </div>
       )}
     </div>
