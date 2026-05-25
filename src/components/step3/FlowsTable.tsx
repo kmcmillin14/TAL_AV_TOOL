@@ -119,7 +119,7 @@ export default function FlowsTable({
               <thead>
                 <tr className="flow-zone-row">
                   <th className="flow-zone-th"></th>
-                  <th className="flow-zone-th" colSpan={3}>Vehicle</th>
+                  <th className="flow-zone-th" colSpan={2}>Vehicle</th>
                   <th className="flow-zone-th" colSpan={3}>Route</th>
                   <th className="flow-zone-th" colSpan={2}>Pace</th>
                   <th className="flow-zone-th" colSpan={2}>Fleet Need</th>
@@ -134,7 +134,6 @@ export default function FlowsTable({
                       aria-label="Select all flows"
                     />
                   </th>
-                  <th className="flow-th-num">#</th>
                   <th>Vehicle Type</th>
                   <th>Transfer Method</th>
                   <th>Origin</th>
