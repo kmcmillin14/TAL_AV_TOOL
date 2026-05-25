@@ -118,17 +118,17 @@ export default function FlowsTable({
             <table className="flows-table">
               <colgroup>
                 <col style={{ width: '36px' }} />
-                <col style={{ width: '44px' }} />
-                <col style={{ width: '180px' }} />
-                <col style={{ width: '220px' }} />
-                <col style={{ width: '140px' }} />
-                <col style={{ width: '140px' }} />
-                <col style={{ width: '110px' }} />
-                <col style={{ width: '130px' }} />
-                <col style={{ width: '200px' }} />
-                <col style={{ width: '110px' }} />
-                <col style={{ width: '110px' }} />
                 <col style={{ width: '36px' }} />
+                <col style={{ width: '140px' }} />
+                <col style={{ width: '170px' }} />
+                <col style={{ width: '110px' }} />
+                <col style={{ width: '110px' }} />
+                <col style={{ width: '90px' }} />
+                <col style={{ width: '100px' }} />
+                <col style={{ width: '150px' }} />
+                <col style={{ width: '90px' }} />
+                <col style={{ width: '90px' }} />
+                <col style={{ width: '32px' }} />
               </colgroup>
               <thead>
                 <tr className="flow-zone-row">
@@ -150,27 +150,27 @@ export default function FlowsTable({
                     />
                   </th>
                   <th className="flow-th-num">#</th>
-                  <th>Vehicle Type</th>
-                  <th>Transfer Method</th>
-                  <th>Origin</th>
-                  <th>Destination</th>
+                  <th>Vehicle</th>
+                  <th>Method</th>
+                  <th>From</th>
+                  <th>To</th>
                   <th
                     className="flow-th-num flow-th-zone-end"
                     title="One-way distance, feet. The cycle includes the return trip — loaded out, empty back."
                   >
-                    {distLabel} <span className="flow-th-suffix">· one-way</span>
+                    {distLabel}
                   </th>
                   <th
                     className="flow-th-num"
                     title="Cycles per hour. One cycle = one full round-trip pick-and-place."
                   >
-                    Throughput per Hour
+                    Per Hour
                   </th>
                   <th
                     className="flow-th-num"
                     title="Effective travel speed per route conditions. Tight aisles = 50% of rated cruise · Mixed traffic = 70% · Open straightaway = 90%."
                   >
-                    Speeds Used
+                    Speeds
                   </th>
                   <th className="flow-th-num flow-th-output">Cycle</th>
                   <th

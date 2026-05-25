@@ -101,27 +101,18 @@ export default function FlowRow({
       </td>
 
       <td className="flow-veh-cell">
-        <div className="flow-veh-stack">
-          <div className="flow-veh-row">
-            <VehicleDot vehicle={selectedVehicle} />
-            <VehicleSelect
-              vehicles={vehicles}
-              value={flow.vehicleId}
-              onChange={vid =>
-                onChange({
-                  ...flow,
-                  vehicleId: vid,
-                  transferMethodIdx: vid ? 0 : undefined,
-                })
-              }
-            />
-          </div>
-          {flow.sectionName && (
-            <span className="flow-section-badge" title={`Section: ${flow.sectionName}`}>
-              {flow.sectionName}
-            </span>
-          )}
-        </div>
+        <VehicleDot vehicle={selectedVehicle} />
+        <VehicleSelect
+          vehicles={vehicles}
+          value={flow.vehicleId}
+          onChange={vid =>
+            onChange({
+              ...flow,
+              vehicleId: vid,
+              transferMethodIdx: vid ? 0 : undefined,
+            })
+          }
+        />
       </td>
 
       <td className="flow-method-cell">

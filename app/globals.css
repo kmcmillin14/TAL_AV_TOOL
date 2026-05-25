@@ -1758,14 +1758,18 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-disabled);
   font-family: var(--tal-font-numeric);
 }
-/* Inline layout: dropdown on the left, optional Lift input on the right */
+/* Vertical stack: method dropdown on top, optional Lift cascade beneath.
+   With the narrower Transfer Method cell (170 px) and the cascade dropdown,
+   horizontal layout crushes the method picker down to its chevron. Stacking
+   gives both dropdowns full width inside the cell. */
 .flow-method-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
 }
 .flow-method-picker {
-  flex: 1 1 auto;
+  width: 100%;
   min-width: 0;
 }
 .flow-method-impact {
@@ -1775,7 +1779,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   margin-left: 2px;
 }
 .flow-method-lift {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
@@ -1872,20 +1876,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   width: 32px;
   text-align: center !important;
   padding: 4px 6px !important;
-  position: relative;
 }
-/* Section-tie left-edge bar: rendered on the leftmost cell of every row
-   that has a sectionName. Adjacent rows with the same sectionName
-   share the same color (deterministic hash → palette), so the eye sees
-   a continuous colored stripe down the grouped block. */
-.flow-cell-select.has-section::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  width: 3px;
-  background: var(--section-bar-color, transparent);
+/* Section-tie left-edge bar: painted via box-shadow on the leftmost cell of
+   every row that has a sectionName. Adjacent rows with the same sectionName
+   share the same color (deterministic hash → palette), so the eye sees a
+   continuous colored stripe down the grouped block. 5 px wide for visibility. */
+.flow-cell-select.has-section {
+  box-shadow: inset 5px 0 0 var(--section-bar-color, transparent);
 }
 .flow-cell-select input[type='checkbox'] {
   accent-color: var(--accent);
