@@ -6,6 +6,7 @@ interface Props {
   vehicle?: Vehicle
   methodIdx: number
   liftHeightFt: number
+  liftTimeSec: number
   unitSystem: 'imperial' | 'metric'
   onMethodChange: (idx: number) => void
   onLiftChange: (ft: number) => void
@@ -39,6 +40,7 @@ export default function MethodSelect({
   vehicle,
   methodIdx,
   liftHeightFt,
+  liftTimeSec,
   unitSystem,
   onMethodChange,
   onLiftChange,
@@ -103,6 +105,9 @@ export default function MethodSelect({
             aria-label="Lift height"
           />
           <span className="flow-method-lift-unit">{liftUnit}</span>
+          <span className="flow-method-lift-time mono" aria-label={`Adds ${liftTimeSec.toFixed(1)} seconds`}>
+            → {liftTimeSec.toFixed(1)}s
+          </span>
         </div>
       )}
     </div>

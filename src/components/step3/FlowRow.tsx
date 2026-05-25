@@ -108,6 +108,7 @@ export default function FlowRow({
           vehicle={selectedVehicle}
           methodIdx={methodIdx}
           liftHeightFt={flow.liftHeightFt}
+          liftTimeSec={derived.breakdown?.liftTimeSec ?? 0}
           unitSystem={unitSystem}
           onMethodChange={idx => onChange({ ...flow, transferMethodIdx: idx })}
           onLiftChange={ft => onChange({ ...flow, liftHeightFt: ft })}

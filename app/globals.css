@@ -1830,6 +1830,18 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-size: 10px;
   color: var(--text-tertiary);
 }
+.flow-method-lift-time {
+  font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-left: 4px;
+  letter-spacing: 0.01em;
+}
+.flow-method-lift.required .flow-method-lift-time {
+  color: var(--text-tertiary);
+}
 /* The "required" pill is no longer rendered (R4) — the input border + label
    asterisk carry the signal. Keep the rule as a no-op safety net in case any
    legacy markup still references it. */
