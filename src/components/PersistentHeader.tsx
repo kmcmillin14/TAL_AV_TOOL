@@ -357,19 +357,25 @@ export default function PersistentHeader({
         <div className="hero-actions">
           <span className={`save-status ${saveStatus}`}>{statusText}</span>
 
-          <div className="unit-toggle">
-            <span className={`unit-toggle-label ${unitSystem === 'imperial' ? 'active' : ''}`}>Imperial</span>
+          <div className="unit-pill" role="radiogroup" aria-label="Units">
             <button
               type="button"
-              role="switch"
-              aria-checked={unitSystem === 'metric'}
-              aria-label="Toggle units"
-              className="unit-toggle-track"
-              onClick={onUnitToggle}
+              role="radio"
+              aria-checked={unitSystem === 'imperial'}
+              className={`unit-pill-btn ${unitSystem === 'imperial' ? 'active' : ''}`}
+              onClick={() => { if (unitSystem !== 'imperial') onUnitToggle() }}
             >
-              <span className="unit-toggle-thumb" />
+              Imperial
             </button>
-            <span className={`unit-toggle-label ${unitSystem === 'metric' ? 'active' : ''}`}>Metric</span>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={unitSystem === 'metric'}
+              className={`unit-pill-btn ${unitSystem === 'metric' ? 'active' : ''}`}
+              onClick={() => { if (unitSystem !== 'metric') onUnitToggle() }}
+            >
+              Metric
+            </button>
           </div>
 
           <button

@@ -1263,46 +1263,41 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* ============================================ HEADER — UNIT TOGGLE + OVERFLOW MENU ============================================ */
 
-.unit-toggle {
-  display: inline-flex; align-items: center; gap: 8px;
-  font-family: var(--tal-font-numeric);
-  font-size: 11px;
-  letter-spacing: 0.04em;
+.unit-pill {
+  display: inline-flex;
+  align-items: stretch;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px;
   user-select: none;
 }
-.unit-toggle-label {
+.unit-pill-btn {
+  background: transparent;
   color: var(--text-tertiary);
-  transition: color 0.15s ease, font-weight 0.15s ease;
-}
-.unit-toggle-label.active {
-  color: var(--text-primary);
-  font-weight: 600;
-}
-.unit-toggle-track {
-  position: relative;
-  width: 36px; height: 20px;
-  background: var(--bg-surface-3);
-  border: 1px solid var(--border-strong);
+  border: 1px solid transparent;
   border-radius: 999px;
+  padding: 3px 12px;
+  font-family: var(--tal-font-numeric);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease;
-  padding: 0;
+  transition: background 0.1s ease, color 0.1s ease, border-color 0.1s ease;
 }
-.unit-toggle-track:hover { border-color: var(--text-tertiary); }
-.unit-toggle-track[aria-checked="true"] {
+.unit-pill-btn:hover:not(.active) {
+  color: var(--text-secondary);
+  background: var(--bg-hover);
+}
+.unit-pill-btn.active {
   background: var(--accent-soft);
+  color: var(--accent);
   border-color: var(--accent);
 }
-.unit-toggle-thumb {
-  position: absolute; top: 2px; left: 2px;
-  width: 14px; height: 14px;
-  background: var(--text-primary);
-  border-radius: 50%;
-  transition: transform 0.18s ease, background 0.18s ease;
-}
-.unit-toggle-track[aria-checked="true"] .unit-toggle-thumb {
-  transform: translateX(16px);
-  background: var(--accent);
+.unit-pill-btn:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 .tbtn-icon {
