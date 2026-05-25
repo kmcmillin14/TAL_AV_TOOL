@@ -9,6 +9,7 @@ import MethodSelect from './MethodSelect'
 import SpeedsUsedSelect from './SpeedsUsedSelect'
 import CyclePopover from './CyclePopover'
 import CycleAnatomyBar from './CycleAnatomyBar'
+import { sectionColor } from './sectionColor'
 
 interface Props {
   index: number
@@ -80,7 +81,14 @@ export default function FlowRow({
 
   return (
     <tr className={`flow-row ${selected ? 'selected' : ''}`}>
-      <td className="flow-cell-select">
+      <td
+        className={`flow-cell-select ${flow.sectionName ? 'has-section' : ''}`}
+        style={
+          flow.sectionName
+            ? ({ '--section-bar-color': sectionColor(flow.sectionName) } as React.CSSProperties)
+            : undefined
+        }
+      >
         <input
           type="checkbox"
           checked={selected}
