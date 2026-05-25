@@ -9,7 +9,6 @@ import MethodSelect from './MethodSelect'
 import SpeedsUsedSelect from './SpeedsUsedSelect'
 import CyclePopover from './CyclePopover'
 import CycleAnatomyBar from './CycleAnatomyBar'
-import SectionPicker from './SectionPicker'
 
 interface Props {
   index: number
@@ -17,7 +16,8 @@ interface Props {
   vehicles: Vehicle[]
   derived: FlowDerived
   unitSystem: UnitSystem
-  allSections: string[]
+  selected: boolean
+  onToggleSelect: () => void
   onChange: (next: Flow) => void
   onDelete: () => void
 }
@@ -43,7 +43,8 @@ export default function FlowRow({
   vehicles,
   derived,
   unitSystem,
-  allSections,
+  selected,
+  onToggleSelect,
   onChange,
   onDelete,
 }: Props) {
@@ -78,29 +79,41 @@ export default function FlowRow({
   const methodIdx = flow.transferMethodIdx ?? 0
 
   return (
-    <tr className="flow-row">
+    <tr className={`flow-row ${selected ? 'selected' : ''}`}>
+      <td className="flow-cell-select">
+        <input
+          type="checkbox"
+          checked={selected}
+          onChange={onToggleSelect}
+          aria-label={`Select flow ${index + 1}`}
+        />
+      </td>
       <td className="flow-row-num mono">
         <span className="flow-row-index">{String(index + 1).padStart(2, '0')}</span>
-        <SectionPicker
-          currentSection={flow.sectionName}
-          allSections={allSections}
-          onChange={next => onChange({ ...flow, sectionName: next })}
-        />
       </td>
 
       <td className="flow-veh-cell">
-        <VehicleDot vehicle={selectedVehicle} />
-        <VehicleSelect
-          vehicles={vehicles}
-          value={flow.vehicleId}
-          onChange={vid =>
-            onChange({
-              ...flow,
-              vehicleId: vid,
-              transferMethodIdx: vid ? 0 : undefined,
-            })
-          }
-        />
+        <div className="flow-veh-stack">
+          <div className="flow-veh-row">
+            <VehicleDot vehicle={selectedVehicle} />
+            <VehicleSelect
+              vehicles={vehicles}
+              value={flow.vehicleId}
+              onChange={vid =>
+                onChange({
+                  ...flow,
+                  vehicleId: vid,
+                  transferMethodIdx: vid ? 0 : undefined,
+                })
+              }
+            />
+          </div>
+          {flow.sectionName && (
+            <span className="flow-section-badge" title={`Section: ${flow.sectionName}`}>
+              {flow.sectionName}
+            </span>
+          )}
+        </div>
       </td>
 
       <td className="flow-method-cell">

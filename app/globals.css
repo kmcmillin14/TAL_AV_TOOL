@@ -1863,49 +1863,120 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-size: 11px;
   color: var(--text-tertiary);
 }
-.flow-section-picker {
-  position: relative;
-  display: inline-flex;
+/* ---- Step 3 — Row select checkbox cell + selected row state ---- */
+.flow-th-select, .flow-cell-select {
+  width: 32px;
+  text-align: center !important;
+  padding: 4px 6px !important;
 }
-.flow-section-pill {
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  padding: 1px 8px;
-  font-family: var(--tal-font-family);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  color: var(--text-secondary);
+.flow-cell-select input[type='checkbox'] {
+  accent-color: var(--accent);
   cursor: pointer;
-  max-width: 100px;
+}
+.flow-th-select input[type='checkbox'] {
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.flow-row.selected {
+  background: var(--accent-soft);
+}
+.flow-row.selected:hover {
+  background: var(--accent-soft);
+}
+
+/* ---- Step 3 — Section badge (under vehicle dropdown) ---- */
+.flow-section-badge {
+  display: inline-block;
+  padding: 1px 8px;
+  font-family: var(--tal-font-numeric);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-radius: 999px;
+  margin-left: 16px;
+  max-width: 140px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  transition: border-color 0.1s ease, color 0.1s ease, background 0.1s ease;
 }
-.flow-section-pill:hover {
+
+/* ---- Step 3 — Bulk-action toolbar (above table when selection > 0) ---- */
+.flow-bulk-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 8px 14px;
+  margin-bottom: 8px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+}
+.flow-bulk-count {
+  font-family: var(--tal-font-family);
+  font-size: 12px;
+  color: var(--accent);
+  margin-right: 4px;
+}
+.flow-bulk-count strong { font-weight: 700; }
+.flow-bulk-group {
+  position: relative;
+  display: inline-flex;
+}
+.flow-bulk-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 4px 12px;
+  font-family: var(--tal-font-family);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+.flow-bulk-btn:hover {
   border-color: var(--border-strong);
   color: var(--text-primary);
   background: var(--bg-hover);
 }
-.flow-section-pill.ungrouped {
-  border-style: dashed;
-  color: var(--text-tertiary);
+.flow-bulk-btn.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
 }
-.flow-section-popover {
+.flow-bulk-btn.primary:hover {
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+.flow-bulk-btn.danger {
+  color: var(--bad);
+  border-color: var(--bad-soft);
+}
+.flow-bulk-btn.danger:hover {
+  background: var(--bad-soft);
+  color: var(--bad);
+  border-color: var(--bad);
+}
+.flow-bulk-btn.ghost {
+  margin-left: auto;
+  border-color: transparent;
+}
+.flow-bulk-popover {
   position: absolute;
-  top: calc(100% + 4px);
+  top: calc(100% + 6px);
   left: 0;
   z-index: 25;
-  min-width: 200px;
+  min-width: 220px;
   padding: 10px 12px;
   background: var(--bg-surface-2);
   border: 1px solid var(--border-strong);
   border-radius: 6px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
 }
-.flow-section-popover-head {
+.flow-bulk-popover-head {
   font-family: var(--tal-font-numeric);
   font-size: 9.5px;
   font-weight: 700;
@@ -1914,7 +1985,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-tertiary);
   margin-bottom: 8px;
 }
-.flow-section-list {
+.flow-bulk-section-list {
   list-style: none;
   margin: 0 0 6px 0;
   padding: 0;
@@ -1922,7 +1993,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   flex-direction: column;
   gap: 2px;
 }
-.flow-section-option {
+.flow-bulk-section-option {
   width: 100%;
   text-align: left;
   background: transparent;
@@ -1935,22 +2006,18 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   cursor: pointer;
   transition: background 0.1s ease, color 0.1s ease;
 }
-.flow-section-option:hover {
+.flow-bulk-section-option:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
-.flow-section-option.active {
-  background: var(--accent-soft);
-  color: var(--accent);
-}
-.flow-section-new {
+.flow-bulk-new {
   display: flex;
   gap: 6px;
   margin-top: 8px;
   padding-top: 8px;
   border-top: 1px dashed var(--border);
 }
-.flow-section-new-input {
+.flow-bulk-new-input {
   flex: 1;
   background: var(--bg-input);
   border: 1px solid var(--border);
@@ -1960,13 +2027,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-size: 12px;
   color: var(--text-primary);
 }
-.flow-section-new-input::placeholder { color: var(--text-disabled); }
-.flow-section-new-input:focus {
+.flow-bulk-new-input::placeholder { color: var(--text-disabled); }
+.flow-bulk-new-input:focus {
   outline: none;
   border-color: var(--border-strong);
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
-.flow-section-new-submit {
+.flow-bulk-new-submit {
   background: var(--accent);
   color: white;
   border: none;
@@ -1977,74 +2044,9 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-weight: 600;
   cursor: pointer;
 }
-.flow-section-new-submit:disabled {
+.flow-bulk-new-submit:disabled {
   opacity: 0.4;
   cursor: not-allowed;
-}
-
-/* ---- Step 3 — Section header rows ---- */
-.flow-section-row > td {
-  padding: 8px 12px;
-  background: var(--bg-surface-2);
-  border-bottom: 1px solid var(--border);
-}
-.flow-section-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-.flow-section-name {
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 3px 6px;
-  font-family: var(--tal-font-family);
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
-  flex: 0 1 auto;
-  min-width: 120px;
-  max-width: 320px;
-  transition: border-color 0.1s ease, box-shadow 0.1s ease;
-}
-.flow-section-name::placeholder {
-  color: var(--text-disabled);
-  font-weight: 500;
-  font-style: italic;
-}
-.flow-section-name:hover {
-  border-color: var(--border);
-}
-.flow-section-name:focus {
-  outline: none;
-  border-color: var(--border-strong);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-.flow-section-count {
-  font-family: var(--tal-font-numeric);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.flow-section-add {
-  background: transparent;
-  color: var(--text-secondary);
-  border: 1px dashed var(--border);
-  border-radius: 4px;
-  padding: 4px 10px;
-  font-family: var(--tal-font-family);
-  font-size: 11px;
-  cursor: pointer;
-  transition: all 0.1s ease;
-}
-.flow-section-add:hover {
-  border-style: solid;
-  border-color: var(--border-strong);
-  color: var(--text-primary);
-  background: var(--bg-hover);
 }
 
 /* ---- Step 3 — Speeds Used dropdown ---- */

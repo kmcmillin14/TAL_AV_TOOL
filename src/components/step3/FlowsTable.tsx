@@ -1,10 +1,12 @@
 'use client'
 
+import { useState } from 'react'
 import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import Icon from '@/src/design-system/components/Icon'
 import FlowRow from './FlowRow'
+import FlowsBulkToolbar from './FlowsBulkToolbar'
 
 interface Props {
   flows: Flow[]
@@ -38,21 +40,52 @@ export default function FlowsTable({
   onFlowsChange,
 }: Props) {
   const metric = unitSystem === 'metric'
+  const [selected, setSelected] = useState<Set<string>>(new Set())
 
   const update = (id: string, next: Flow) =>
     onFlowsChange(flows.map(f => (f.id === id ? next : f)))
-  const remove = (id: string) =>
+  const remove = (id: string) => {
     onFlowsChange(flows.filter(f => f.id !== id))
+    const next = new Set(selected)
+    next.delete(id)
+    setSelected(next)
+  }
   const add = () => onFlowsChange([...flows, emptyFlow()])
 
   const distLabel = metric ? 'Distance (m)' : 'Distance (ft)'
 
-  // Unique section names, preserving first-encountered insertion order.
+  // Unique section names, first-encountered order.
   const allSections: string[] = []
   for (const f of flows) {
     if (f.sectionName && !allSections.includes(f.sectionName)) {
       allSections.push(f.sectionName)
     }
+  }
+
+  // Selection helpers
+  const toggleRow = (id: string) => {
+    const next = new Set(selected)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    setSelected(next)
+  }
+  const allRowIds = flows.map(f => f.id)
+  const allSelected = flows.length > 0 && allRowIds.every(id => selected.has(id))
+  const toggleAll = () => {
+    if (allSelected) setSelected(new Set())
+    else setSelected(new Set(allRowIds))
+  }
+  const clearSelection = () => setSelected(new Set())
+  const bulkAssign = (sectionName: string | undefined) => {
+    onFlowsChange(
+      flows.map(f =>
+        selected.has(f.id) ? { ...f, sectionName } : f,
+      ),
+    )
+  }
+  const bulkDelete = () => {
+    onFlowsChange(flows.filter(f => !selected.has(f.id)))
+    clearSelection()
   }
 
   return (
@@ -66,10 +99,18 @@ export default function FlowsTable({
         </button>
       </div>
 
+      <FlowsBulkToolbar
+        selectedCount={selected.size}
+        existingSections={allSections}
+        onAssign={bulkAssign}
+        onDelete={bulkDelete}
+        onClear={clearSelection}
+      />
+
       {flows.length === 0 ? (
         <div className="flows-empty">
           <h3>No flows yet</h3>
-          <p>Click <strong>Add Flow</strong> to model an origin → destination route. Cycle time and raw vehicle demand recompute as you type.</p>
+          <p>Click <strong>Add Flow</strong> to model an origin → destination route. Cycle time and demand recompute as you type.</p>
         </div>
       ) : (
         <>
@@ -77,6 +118,7 @@ export default function FlowsTable({
             <table className="flows-table">
               <thead>
                 <tr className="flow-zone-row">
+                  <th className="flow-zone-th"></th>
                   <th className="flow-zone-th" colSpan={3}>Vehicle</th>
                   <th className="flow-zone-th" colSpan={3}>Route</th>
                   <th className="flow-zone-th" colSpan={2}>Pace</th>
@@ -84,6 +126,14 @@ export default function FlowsTable({
                   <th className="flow-zone-th"></th>
                 </tr>
                 <tr>
+                  <th className="flow-th-select">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      onChange={toggleAll}
+                      aria-label="Select all flows"
+                    />
+                  </th>
                   <th className="flow-th-num">#</th>
                   <th>Vehicle Type</th>
                   <th>Transfer Method</th>
@@ -118,92 +168,26 @@ export default function FlowsTable({
                 </tr>
               </thead>
               <tbody>
-                {(() => {
-                  // Render flows with section header rows inserted at boundaries
-                  // where the previous flow's sectionName differs from this one's.
-                  // Only renders headers when ANY flow has a sectionName set;
-                  // otherwise the table looks identical to the pre-section state.
-                  const anySectioned = flows.some(f => f.sectionName != null)
-                  const rows: React.ReactNode[] = []
-                  let prevSection: string | undefined = undefined
-                  let sectionFlowCounts: Map<string | undefined, number> | null = null
-                  if (anySectioned) {
-                    sectionFlowCounts = new Map()
-                    for (const f of flows) {
-                      const key = f.sectionName ?? undefined
-                      sectionFlowCounts.set(key, (sectionFlowCounts.get(key) ?? 0) + 1)
+                {flows.map((f, i) => (
+                  <FlowRow
+                    key={f.id}
+                    index={i}
+                    flow={f}
+                    vehicles={vehicles}
+                    derived={
+                      derivedByFlowId.get(f.id) ?? {
+                        cycleSeconds: null,
+                        rawVehicles: null,
+                        breakdown: null,
+                      }
                     }
-                  }
-                  flows.forEach((f, i) => {
-                    const cur = f.sectionName ?? undefined
-                    if (anySectioned && (i === 0 || cur !== prevSection)) {
-                      const count = sectionFlowCounts?.get(cur) ?? 0
-                      const display = cur ?? 'Ungrouped'
-                      rows.push(
-                        <tr key={`section-${cur ?? '__none__'}-${i}`} className="flow-section-row">
-                          <td colSpan={11}>
-                            <div className="flow-section-head">
-                              <input
-                                className="flow-section-name"
-                                value={cur ?? ''}
-                                placeholder="Ungrouped"
-                                aria-label="Section name"
-                                onChange={e => {
-                                  const next = e.target.value.trim() || undefined
-                                  // Rename every flow currently in this section
-                                  onFlowsChange(
-                                    flows.map(fl =>
-                                      (fl.sectionName ?? undefined) === cur
-                                        ? { ...fl, sectionName: next }
-                                        : fl
-                                    )
-                                  )
-                                }}
-                              />
-                              <span className="flow-section-count mono">
-                                {count} {count === 1 ? 'flow' : 'flows'}
-                              </span>
-                              <button
-                                type="button"
-                                className="flow-section-add"
-                                onClick={() =>
-                                  onFlowsChange([
-                                    ...flows,
-                                    { ...emptyFlow(), sectionName: cur },
-                                  ])
-                                }
-                                title={cur ? `Add a flow to "${display}"` : 'Add an ungrouped flow'}
-                              >
-                                + Add to {display}
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    }
-                    prevSection = cur
-                    rows.push(
-                      <FlowRow
-                        key={f.id}
-                        index={i}
-                        flow={f}
-                        vehicles={vehicles}
-                        derived={
-                          derivedByFlowId.get(f.id) ?? {
-                            cycleSeconds: null,
-                            rawVehicles: null,
-                            breakdown: null,
-                          }
-                        }
-                        unitSystem={unitSystem}
-                        allSections={allSections}
-                        onChange={next => update(f.id, next)}
-                        onDelete={() => remove(f.id)}
-                      />
-                    )
-                  })
-                  return rows
-                })()}
+                    unitSystem={unitSystem}
+                    selected={selected.has(f.id)}
+                    onToggleSelect={() => toggleRow(f.id)}
+                    onChange={next => update(f.id, next)}
+                    onDelete={() => remove(f.id)}
+                  />
+                ))}
               </tbody>
             </table>
           </div>
