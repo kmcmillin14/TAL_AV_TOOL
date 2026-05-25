@@ -1553,7 +1553,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   border-collapse: collapse;
   font-family: var(--tal-font-family);
   font-size: 13px;
-  table-layout: auto;
+  table-layout: fixed;
 }
 .flows-table thead th {
   text-align: center;

@@ -116,8 +116,23 @@ export default function FlowsTable({
         <>
           <div className="flows-scroll">
             <table className="flows-table">
+              <colgroup>
+                <col style={{ width: '36px' }} />
+                <col style={{ width: '44px' }} />
+                <col style={{ width: '180px' }} />
+                <col style={{ width: '220px' }} />
+                <col style={{ width: '140px' }} />
+                <col style={{ width: '140px' }} />
+                <col style={{ width: '110px' }} />
+                <col style={{ width: '130px' }} />
+                <col style={{ width: '200px' }} />
+                <col style={{ width: '110px' }} />
+                <col style={{ width: '110px' }} />
+                <col style={{ width: '36px' }} />
+              </colgroup>
               <thead>
                 <tr className="flow-zone-row">
+                  <th className="flow-zone-th"></th>
                   <th className="flow-zone-th"></th>
                   <th className="flow-zone-th" colSpan={2}>Vehicle</th>
                   <th className="flow-zone-th" colSpan={3}>Route</th>
@@ -134,6 +149,7 @@ export default function FlowsTable({
                       aria-label="Select all flows"
                     />
                   </th>
+                  <th className="flow-th-num">#</th>
                   <th>Vehicle Type</th>
                   <th>Transfer Method</th>
                   <th>Origin</th>

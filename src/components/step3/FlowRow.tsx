@@ -88,6 +88,9 @@ export default function FlowRow({
           aria-label={`Select flow ${index + 1}`}
         />
       </td>
+      <td className="flow-row-num mono">
+        <span className="flow-row-index">{String(index + 1).padStart(2, '0')}</span>
+      </td>
 
       <td className="flow-veh-cell">
         <div className="flow-veh-stack">
