@@ -119,16 +119,16 @@ export default function FlowsTable({
               <colgroup>
                 <col style={{ width: '36px' }} />
                 <col style={{ width: '36px' }} />
-                <col style={{ width: '140px' }} />
+                <col style={{ width: '150px' }} />
                 <col style={{ width: '170px' }} />
                 <col style={{ width: '110px' }} />
                 <col style={{ width: '110px' }} />
-                <col style={{ width: '90px' }} />
                 <col style={{ width: '100px' }} />
-                <col style={{ width: '150px' }} />
-                <col style={{ width: '90px' }} />
-                <col style={{ width: '90px' }} />
-                <col style={{ width: '32px' }} />
+                <col style={{ width: '100px' }} />
+                <col style={{ width: '160px' }} />
+                <col style={{ width: '100px' }} />
+                <col style={{ width: '100px' }} />
+                <col style={{ width: '36px' }} />
               </colgroup>
               <thead>
                 <tr className="flow-zone-row">
