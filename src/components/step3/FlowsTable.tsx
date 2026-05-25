@@ -52,7 +52,7 @@ export default function FlowsTable({
   }
   const add = () => onFlowsChange([...flows, emptyFlow()])
 
-  const distLabel = metric ? 'Distance (m)' : 'Distance (ft)'
+  const distLabel = metric ? 'Round Trip Distance (m)' : 'Round Trip Distance (ft)'
 
   // Unique section names, first-encountered order.
   const allSections: string[] = []
@@ -117,29 +117,20 @@ export default function FlowsTable({
           <div className="flows-scroll">
             <table className="flows-table">
               <colgroup>
-                <col style={{ width: '36px' }} />
-                <col style={{ width: '36px' }} />
+                <col style={{ width: '40px' }} />
+                <col style={{ width: '40px' }} />
+                <col style={{ width: '180px' }} />
+                <col style={{ width: '230px' }} />
+                <col style={{ width: '140px' }} />
+                <col style={{ width: '140px' }} />
                 <col style={{ width: '150px' }} />
+                <col style={{ width: '120px' }} />
                 <col style={{ width: '170px' }} />
-                <col style={{ width: '110px' }} />
-                <col style={{ width: '110px' }} />
-                <col style={{ width: '100px' }} />
-                <col style={{ width: '100px' }} />
-                <col style={{ width: '160px' }} />
-                <col style={{ width: '100px' }} />
-                <col style={{ width: '100px' }} />
-                <col style={{ width: '36px' }} />
+                <col style={{ width: '140px' }} />
+                <col style={{ width: '120px' }} />
+                <col style={{ width: '40px' }} />
               </colgroup>
               <thead>
-                <tr className="flow-zone-row">
-                  <th className="flow-zone-th"></th>
-                  <th className="flow-zone-th"></th>
-                  <th className="flow-zone-th" colSpan={2}>Vehicle</th>
-                  <th className="flow-zone-th" colSpan={3}>Route</th>
-                  <th className="flow-zone-th" colSpan={2}>Pace</th>
-                  <th className="flow-zone-th" colSpan={2}>Fleet Need</th>
-                  <th className="flow-zone-th"></th>
-                </tr>
                 <tr>
                   <th className="flow-th-select">
                     <input
@@ -150,34 +141,39 @@ export default function FlowsTable({
                     />
                   </th>
                   <th className="flow-th-num">#</th>
-                  <th>Vehicle</th>
-                  <th>Method</th>
-                  <th>From</th>
-                  <th>To</th>
+                  <th>Vehicle Type</th>
+                  <th>Transfer Type</th>
+                  <th>Origin</th>
+                  <th>Destination</th>
                   <th
-                    className="flow-th-num flow-th-zone-end"
-                    title="One-way distance, feet. The cycle includes the return trip — loaded out, empty back."
+                    className="flow-th-num"
+                    title="Round trip distance — total feet traveled per cycle (out loaded, back empty)."
                   >
                     {distLabel}
                   </th>
                   <th
                     className="flow-th-num"
-                    title="Cycles per hour. One cycle = one full round-trip pick-and-place."
+                    title="Throughput — cycles per hour. One cycle = one full pick-and-place round trip."
                   >
-                    Per Hour
+                    Throughput
                   </th>
                   <th
                     className="flow-th-num"
                     title="Effective travel speed per route conditions. Tight aisles = 50% of rated cruise · Mixed traffic = 70% · Open straightaway = 90%."
                   >
-                    Speeds
+                    Vehicle Speed
                   </th>
-                  <th className="flow-th-num flow-th-output">Cycle</th>
                   <th
-                    className="flow-th-num flow-th-output flow-th-zone-end"
-                    title="Fractional vehicle demand: throughput × cycle / 3600. Per-vehicle base fleet = ⌈Σ demand⌉."
+                    className="flow-th-num flow-th-output"
+                    title="Cycle Time — time to complete one full route (load + travel out + unload + travel back + lift + delay)."
                   >
-                    Demand
+                    Cycle Time
+                  </th>
+                  <th
+                    className="flow-th-num flow-th-output"
+                    title="Fleet Count — fractional vehicle demand: throughput × cycle / 3600. Per-vehicle base fleet = ⌈Σ demand⌉."
+                  >
+                    Fleet Count
                   </th>
                   <th className="flow-th-act"></th>
                 </tr>

@@ -51,13 +51,15 @@ export default function FlowRow({
 }: Props) {
   const metric = unitSystem === 'metric'
 
+  const roundTripFt = flow.distanceFt * 2
   const distDisplay = metric
-    ? (flow.distanceFt / FT_PER_M).toFixed(0)
-    : flow.distanceFt.toString()
+    ? (roundTripFt / FT_PER_M).toFixed(0)
+    : roundTripFt.toString()
 
   const setDistance = (input: string) => {
     const n = clampNum(input)
-    onChange({ ...flow, distanceFt: metric ? n * FT_PER_M : n })
+    const oneWay = (metric ? n * FT_PER_M : n) / 2
+    onChange({ ...flow, distanceFt: oneWay })
   }
 
   const selectedVehicle = flow.vehicleId
