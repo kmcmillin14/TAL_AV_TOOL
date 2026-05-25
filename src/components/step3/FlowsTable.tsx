@@ -77,15 +77,15 @@ export default function FlowsTable({
             <table className="flows-table">
               <thead>
                 <tr className="flow-zone-row">
-                  <th className="flow-zone-th" colSpan={3}>What&apos;s Moving</th>
-                  <th className="flow-zone-th" colSpan={3}>From → To</th>
-                  <th className="flow-zone-th" colSpan={2}>How Often</th>
+                  <th className="flow-zone-th" colSpan={3}>Vehicle</th>
+                  <th className="flow-zone-th" colSpan={3}>Route</th>
+                  <th className="flow-zone-th" colSpan={2}>Pace</th>
                   <th className="flow-zone-th" colSpan={2}>Fleet Need</th>
                   <th className="flow-zone-th"></th>
                 </tr>
                 <tr>
                   <th className="flow-th-num">#</th>
-                  <th>Vehicle</th>
+                  <th>Vehicle Type</th>
                   <th>Transfer Method</th>
                   <th>Origin</th>
                   <th>Destination</th>
@@ -95,7 +95,12 @@ export default function FlowsTable({
                   >
                     {distLabel} <span className="flow-th-suffix">· one-way</span>
                   </th>
-                  <th className="flow-th-num" title="Cycles per hour. One cycle = one full round-trip pick-and-place.">Thru/hr</th>
+                  <th
+                    className="flow-th-num"
+                    title="Cycles per hour. One cycle = one full round-trip pick-and-place."
+                  >
+                    Throughput per Hour
+                  </th>
                   <th
                     className="flow-th-num"
                     title="Effective travel speed per route conditions. Tight aisles = 50% of rated cruise · Mixed traffic = 70% · Open straightaway = 90%."
@@ -105,9 +110,9 @@ export default function FlowsTable({
                   <th className="flow-th-num">Cycle</th>
                   <th
                     className="flow-th-num flow-th-zone-end"
-                    title="Fractional raw demand: thru × cycle / 3600. Per-vehicle baseFleet = ⌈Σ raw⌉."
+                    title="Fractional vehicle demand: throughput × cycle / 3600. Per-vehicle base fleet = ⌈Σ demand⌉."
                   >
-                    Raw veh
+                    Demand
                   </th>
                   <th className="flow-th-act"></th>
                 </tr>
