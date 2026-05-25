@@ -1549,11 +1549,29 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   margin: 0 -4px;
 }
 .flows-table {
-  width: 100%;
+  width: auto;
   border-collapse: collapse;
   font-family: var(--tal-font-family);
   font-size: 13px;
   table-layout: fixed;
+}
+/* Every <select> inside the flows table clips to its cell.
+   min-width: 0 lets the select shrink below its content's intrinsic
+   width when nested in a flex container — without it the browser
+   keeps the select at content width regardless of the cell's declared
+   width, causing visual overflow into adjacent columns. */
+.flows-table select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* Top-align every data cell so single-line content sits at the top
+   of the row alongside multi-line stacks (e.g. Method cell's cascade). */
+.flows-table tbody td {
+  vertical-align: top;
 }
 .flows-table thead th {
   text-align: center;
