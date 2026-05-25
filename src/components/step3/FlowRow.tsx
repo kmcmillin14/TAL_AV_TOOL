@@ -104,18 +104,20 @@ export default function FlowRow({
       </td>
 
       <td className="flow-veh-cell">
-        <VehicleDot vehicle={selectedVehicle} />
-        <VehicleSelect
-          vehicles={vehicles}
-          value={flow.vehicleId}
-          onChange={vid =>
-            onChange({
-              ...flow,
-              vehicleId: vid,
-              transferMethodIdx: vid ? 0 : undefined,
-            })
-          }
-        />
+        <div className="flow-veh-inner">
+          <VehicleDot vehicle={selectedVehicle} />
+          <VehicleSelect
+            vehicles={vehicles}
+            value={flow.vehicleId}
+            onChange={vid =>
+              onChange({
+                ...flow,
+                vehicleId: vid,
+                transferMethodIdx: vid ? 0 : undefined,
+              })
+            }
+          />
+        </div>
       </td>
 
       <td className="flow-method-cell">

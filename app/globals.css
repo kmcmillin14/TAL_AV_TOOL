@@ -1730,10 +1730,19 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   .flow-group-seg-trail { margin-left: 0; }
 }
 
-/* ---- Step 3 — Vehicle + Method cells ---- */
+/* ---- Step 3 — Vehicle + Method cells ----
+   IMPORTANT: never set `display: flex` on a <td>. Browsers handle it
+   inconsistently and it breaks `table-layout: fixed` colgroup widths.
+   Wrap the cell's children in `.flow-veh-inner` and put the flex
+   container there. */
 .flow-veh-cell {
-  display: flex; align-items: center; gap: 6px;
   padding: 4px 6px;
+}
+.flow-veh-inner {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
 }
 .flow-method-cell {
   padding: 4px 6px;
