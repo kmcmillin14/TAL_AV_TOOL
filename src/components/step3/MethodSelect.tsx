@@ -14,27 +14,36 @@ interface Props {
 
 const FT_PER_M = 3.28084
 
+/** Preset lift heights in feet. Engineers pick from these in the cascade
+ *  dropdown. Stored values that don't match a preset snap visually to the
+ *  nearest one but the underlying stored value is left untouched until
+ *  the engineer picks a new preset. */
+const LIFT_PRESETS_FT: ReadonlyArray<number> = [0, 2, 4, 6, 8, 10]
+
 function impactLabel(m: TransferMethod): string {
   const total = (m.loadTimeSec ?? 0) + (m.unloadTimeSec ?? 0)
   return m.lifts ? `+${total}s · lifts` : `+${total}s`
 }
 
-function clampNum(input: string, min = 0): number {
-  const n = Number(input)
-  if (!Number.isFinite(n)) return min
-  return Math.max(min, n)
+function nearestPreset(ft: number): number {
+  return LIFT_PRESETS_FT.reduce((best, cur) =>
+    Math.abs(cur - ft) < Math.abs(best - ft) ? cur : best,
+  LIFT_PRESETS_FT[0])
 }
 
 /**
- * Per-row transfer-method cell. Combines:
- *   1. The method picker (dropdown OR static text for single-method vehicles).
- *   2. A conditional Lift (ft) sub-row that appears only when the active
- *      method has `lifts: true`. When the value is 0, the input gets a
- *      red-tinted left border and a "required" affordance — no hard block
- *      (cycle still computes; the engineer is just visibly nudged).
+ * Per-row transfer-method cell.
  *
- * Lift is shown in metric when the page is in metric mode (m) and stored
- * in imperial (ft).
+ * When the active method has `lifts: true`, the cell renders TWO chained
+ * dropdowns: a method picker and a Lift-height picker with preset
+ * options. The inline derived `→ N.Ns` chip sits next to the height
+ * dropdown so engineers see the time cost of their height choice.
+ *
+ * When the method doesn't lift, only the method picker renders (no
+ * height dropdown, no chip).
+ *
+ * Single-method vehicles still render as static text instead of a
+ * dropdown for the method itself.
  */
 export default function MethodSelect({
   vehicle,
@@ -57,18 +66,20 @@ export default function MethodSelect({
   const isLifting = active?.lifts === true
 
   const metric = unitSystem === 'metric'
-  const liftDisplay = metric
-    ? (liftHeightFt / FT_PER_M).toFixed(1)
-    : liftHeightFt.toString()
   const liftUnit = metric ? 'm' : 'ft'
   const liftRequired = isLifting && liftHeightFt === 0
 
-  const setLift = (input: string) => {
-    const n = clampNum(input)
-    onLiftChange(metric ? n * FT_PER_M : n)
+  // Snap the displayed selection to the nearest preset for visual stability
+  const displayedHeightFt = nearestPreset(liftHeightFt)
+
+  const formatPresetLabel = (ft: number): string => {
+    if (metric) {
+      return `${(ft / FT_PER_M).toFixed(1)} ${liftUnit}`
+    }
+    return `${ft} ${liftUnit}`
   }
 
-  const Picker =
+  const MethodPicker =
     methods.length === 1 ? (
       <span className="flow-method-static" title={impactLabel(active)}>
         {active.method}  <span className="flow-method-impact">({impactLabel(active)})</span>
@@ -90,21 +101,22 @@ export default function MethodSelect({
 
   return (
     <div className="flow-method-row">
-      <div className="flow-method-picker">{Picker}</div>
+      <div className="flow-method-picker">{MethodPicker}</div>
       {isLifting && (
         <div className={`flow-method-lift ${liftRequired ? 'required' : ''}`}>
           <span className="flow-method-lift-label">Lift</span>
-          <input
-            className="flow-method-lift-input mono"
-            type="number"
-            min="0"
-            inputMode="decimal"
-            value={liftDisplay}
-            onChange={e => setLift(e.target.value)}
-            placeholder="0"
+          <select
+            className="flow-method-lift-select"
+            value={displayedHeightFt}
+            onChange={e => onLiftChange(Number(e.target.value))}
             aria-label="Lift height"
-          />
-          <span className="flow-method-lift-unit">{liftUnit}</span>
+          >
+            {LIFT_PRESETS_FT.map(ft => (
+              <option key={ft} value={ft}>
+                {formatPresetLabel(ft)}
+              </option>
+            ))}
+          </select>
           <span className="flow-method-lift-time mono" aria-label={`Adds ${liftTimeSec.toFixed(1)} seconds`}>
             → {liftTimeSec.toFixed(1)}s
           </span>
