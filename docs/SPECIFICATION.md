@@ -26,7 +26,7 @@ Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, St
 - `destination` — free text (e.g. "Storage 1")
 - `distanceFt` — **one-way** distance in feet, ≥ 0. The cycle multiplies by 2: vehicle travels loaded out and empty back.
 - `thruPerHr` — cycles per hour, ≥ 0. One cycle = one full round-trip pick-and-place.
-- `routeLayout` — `'low' | 'medium' | 'high'`. Path geometry slows the vehicle relative to its rated cruise speed. Low (50%): lots of turns, tight corners, blind intersections, frequent slowdowns. Medium (70%): mix of straightaways and turns, typical warehouse traffic. High (90%): mostly straightaways, open lanes, few turns. Defaults to `'medium'`.
+- `routeLayout` — `'low' | 'medium' | 'high'`. The vehicle's **route-average** speed as a fraction of its rated cruise. This is an *average over the whole route*, not an instantaneous cap: a vehicle accelerates, decelerates, and rounds corners, so it never sustains rated cruise end-to-end. **70% (High/Open) is the realistic ceiling** — open lanes, low traffic, few turns. Medium/Mixed (50%): typical warehouse mix of straightaways and turns. Low/Congested (30%): heavy traffic, lots of turns, tight corners, blind intersections, frequent slowdowns. Defaults to `'medium'`. Surfaced in the UI as **Route Average Speed** — a tiered dropdown listing each tier's % and condition (highest first).
 - `liftHeightFt` — total vertical travel of the load per cycle, feet, ≥ 0. 0 when transfer method does not lift. Engineer enters the per-cycle total (e.g., 4 ft for a single Floor→Height delivery; 8 ft for Height-Height = 4 up + 4 down).
 - `vehicleId` — id of a vehicle from `src/content/vehicles/*.json`
 - `transferMethodIdx` — index into `vehicle.transferMethods[]`; defaults to 0. Surfaced in the UI as a dedicated **Transfer Method** column whose options are scoped to the selected vehicle.
@@ -42,7 +42,7 @@ In the current library: CB18 and 8tb50a (counterbalance forklifts) get `liftSpee
 
 ### Constants
 
-- `ROUTE_LAYOUT_FACTORS = { low: 0.5, medium: 0.7, high: 0.9 }` — effective-speed multipliers applied to rated cruise.
+- `ROUTE_LAYOUT_FACTORS = { low: 0.3, medium: 0.5, high: 0.7 }` — route-average speed multipliers applied to rated cruise. The scale tops out at `0.7`: even the best-case open-lane *average* is ~70% of rated, because no route sustains full cruise (accel/decel/turns).
 - `T_hr = 3600` — seconds per hour.
 - `DEFAULT_BUFFER_PCT = 0.10` — used in Step 5, declared in `src/calc/types.ts` for cross-step visibility.
 
@@ -120,12 +120,23 @@ Step 3 imposes **no** per-flow hard gates. Step 2 already qualifies the vehicle 
 ### UI behavior
 
 - Table is fully inline-editable. Every keystroke writes to storage (using the same `watch()` save pattern from Step 1).
-- "Add Flow" appends an empty row.
-- Deleting uses the trailing × control.
-- Group cards appear in the order vehicles were first assigned.
-- Distance shown in m / weight in kg when the unit toggle is metric, ft / lbs in imperial. **Storage always imperial** per ARCHITECTURE.md §3.
-- Each vehicle id gets a deterministic display color (hash → palette).
-- The LIFT (FT) column is always present; engineer leaves it at 0 for non-lifting flows.
+- Columns are organized into three visual bands: **Vehicle** (`# · Vehicle · Transfer Type`), **Route Input** (`Route Average Speed · Origin · Destination · Distance (Round Trip) · Throughput (Moves per Hour)`), and **Output** (`Cycle Time · Vehicle Count`). The Output band is visually distinct.
+- Top-right action cluster: **`+Group`** (creates a new named group), **`+Flow`** (appends an empty row), **`Copy Flow`** (duplicates the selected rows — or the last flow if none selected — with fresh ids).
+- Deleting a flow uses the trailing × control.
+- **Route Average Speed** is a tiered dropdown, highest first: `70% · Open, low traffic` / `50% · Mixed traffic` / `30% · Congested, many turns`, showing the resulting effective loaded/empty fps for the selected vehicle.
+- **Cycle Time** renders as whole seconds (e.g. `234s`) with the inline anatomy bar and click-through breakdown popover. **Vehicle Count** renders fractional `rawVehicles` to 2 dp (e.g. `2.34 vehicles`); the integer `⌈baseFleet⌉` appears only in the summary box.
+- Distance shown in m when the unit toggle is metric, ft in imperial. **Storage always imperial** per ARCHITECTURE.md §3.
+- The Vehicle cell renders the vehicle's `heroImage` thumbnail, falling back to a deterministic per-vehicle color dot (hash → palette) on image error.
+
+### Groups (organizational zones)
+
+Groups are named, organizational zones (e.g. "ASRS", "Dock") — they structure the table visually but do **not** change fleet sizing: demand still pools **per `vehicleId`** across the whole project (`⌈Σ raw CB18⌉`, `⌈Σ raw ML2⌉`). A CB18 used in two different groups shares one pool.
+
+- Group names live at the project level in `flowGroups: string[]` (ordered; Zod `.default([])`). The effective group list rendered in the UI is `flowGroups ∪ distinct flow.sectionName` so legacy projects that only carry `sectionName` still display.
+- Each flow references its group via the existing `flow.sectionName` (no flow-schema change). Flows with no `sectionName` render in an **Ungrouped** band.
+- `+Group` appends a new, inline-renamable group. Rows belonging to a group are rendered contiguously with a colored vertical tab (rotated label) on the far left; color is the deterministic `sectionColor` hash of the group name.
+- A **per-row group dropdown** reassigns a row's group (existing groups · Ungrouped · New group…).
+- Deleting a group un-assigns its member flows (sets `sectionName` to `undefined`); it does not delete the flows.
 
 ### Headroom color thresholds (display only)
 
@@ -136,37 +147,37 @@ Step 3 imposes **no** per-flow hard gates. Step 2 already qualifies the vehicle 
 
 ### Acceptance criteria
 
-1. Adding the 8 rows from the verification table (with `routeLayout = 'medium'` (factor 0.7), `liftHeightFt = 0`, default transfer method) produces:
-   - CB18: `groupRaw ≈ 6.77`, `baseFleet = 7`.
-   - ML2:  `groupRaw ≈ 1.95`, `baseFleet = 2`.
+1. Adding the 8 rows from the verification table (with `routeLayout = 'medium'` (factor 0.5), `liftHeightFt = 0`, default transfer method) produces:
+   - CB18: `groupRaw ≈ 9.31`, `baseFleet = 10`.
+   - ML2:  `groupRaw ≈ 2.68`, `baseFleet = 3`.
 2. Editing any flow field instantly re-derives all downstream numbers — no save button, no page reload.
 3. Every vehicle is selectable in every row's dropdown. Step 2's traffic-light matrix already qualifies vehicles against project-wide weight.
 4. Reloading the page restores all flows and computed values.
 5. Calc engine (`src/calc/flowMetrics.ts`) has zero React, fetch, or localStorage imports.
 6. All Vitest cases for cycle / raw / group / project pass.
 7. A flow with a lifting transfer method and `liftHeightFt = 10` against a vehicle with `liftSpeedFps = 0.5` adds exactly 20 s to its `cycleSeconds` (independent of `routeLayout`, since lift time is not derated).
-8. Changing a flow from `routeLayout = 'medium'` to `'high'` (factor 0.7 → 0.9) reduces travel time by ~22% (`(0.9-0.7)/0.9 = 22%`).
+8. Changing a flow from `routeLayout = 'medium'` to `'high'` (factor 0.5 → 0.7) reduces travel time by ~29% (`(0.7-0.5)/0.7 = 28.6%`).
 
 ### Verification table (test data)
 
-Vehicles: **CB18** (Fork, sL = 9.84 fps, sU = 11.5 fps, load+unload = 10s) · **ML2** (Conveyor Interface, sL = 5.9 fps, sU = 6.5 fps, load+unload = 6s). All rows: `routeLayout = 'medium'` (factor 0.7), `liftHeightFt = 0`, `customDelaySec = 0`.
+Vehicles: **CB18** (Fork, sL = 9.84 fps, sU = 11.5 fps, load+unload = 10s) · **ML2** (Conveyor Interface, sL = 5.9 fps, sU = 6.5 fps, load+unload = 6s). All rows: `routeLayout = 'medium'` (factor 0.5), `liftHeightFt = 0`.
 
 | Row | Vehicle | Distance (ft) | Thru/hr | cycle (s) | rawVehicles |
 |-----|---------|-----:|-----:|--------:|-----------:|
-| 1   | CB18    |  590 |   45 | 168.95  | 2.112 |
-| 2   | CB18    |  394 |   30 | 116.14  | 0.968 |
-| 3   | ML2     |  295 |   15 | 142.26  | 0.593 |
-| 4   | CB18    |  722 |   38 | 204.51  | 2.159 |
-| 5   | CB18    |  476 |   25 | 138.24  | 0.960 |
-| 6   | CB18    |  312 |   22 |  94.05  | 0.575 |
-| 7   | ML2     |  197 |   28 |  97.00  | 0.754 |
-| 8   | ML2     |  246 |   18 | 119.63  | 0.598 |
+| 1   | CB18    |  590 |   45 | 232.53  | 2.907 |
+| 2   | CB18    |  394 |   30 | 158.60  | 1.322 |
+| 3   | ML2     |  295 |   15 | 196.77  | 0.820 |
+| 4   | CB18    |  722 |   38 | 282.31  | 2.980 |
+| 5   | CB18    |  476 |   25 | 189.53  | 1.316 |
+| 6   | CB18    |  312 |   22 | 127.68  | 0.780 |
+| 7   | ML2     |  197 |   28 | 133.40  | 1.038 |
+| 8   | ML2     |  246 |   18 | 165.08  | 0.825 |
 
 | Group | groupRaw | baseFleet | headroom |
 |-------|---------:|----------:|---------:|
-| CB18 (1, 2, 4, 5, 6) | 6.773 | **7** | (7 − 6.773) / 7 ≈ 3.2% |
-| ML2  (3, 7, 8)       | 1.945 | **2** | (2 − 1.945) / 2 ≈ 2.7% |
+| CB18 (1, 2, 4, 5, 6) | 9.305 | **10** | (10 − 9.305) / 10 ≈ 7.0% |
+| ML2  (3, 7, 8)       | 2.683 | **3** | (3 − 2.683) / 3 ≈ 10.6% |
 
-Project totals: `totalFlows = 8`, `totalThru = 221`, `totalRawFleet ≈ 8.72`, `totalBaseFleet = 9`.
+Project totals: `totalFlows = 8`, `totalThru = 221`, `totalRawFleet ≈ 11.99`, `totalBaseFleet = 13`.
 
-Both groups land in the **red** headroom band (< 5%) — engineers reviewing this should consider another vehicle or workload rebalance. Compared to the pre-R3 model (CB18 = 6, ML2 = 2, total = 8), the route-layout factor adds one CB18; this matches the calc team's view that the prior `distance / cruise_speed` model was optimistic.
+Both groups land in the **yellow** headroom band (5–15%) — tight but workable. Compared to the prior model where `medium = 0.7`, dropping the medium route-average factor to `0.5` (R6: 70% is the realistic best-case *average*, not 90%) raises CB18 from 7 → 10 and ML2 from 2 → 3 (total 9 → 13). The calc team's position is that a sustained-cruise assumption materially undercounts on real routes.

@@ -18,61 +18,52 @@ function headroomTone(h: number | null): 'good' | 'warn' | 'bad' | '' {
 }
 
 /**
- * Single-row summary surface for Step 3. Replaces the old page-header KPI
- * strip + the per-vehicle GroupSummaryStrip.
+ * Top-left summary box for Step 3. One line per vehicle type that has flows:
  *
- * Left half: project totals (flows · cycles/hr · raw → ⌈base fleet⌉).
- * Right half: one chip per vehicle that actually has flows assigned —
- *   [thumb] CB18 ×7 (raw 6.77)
- * with the ×N count tinted by headroom band.
+ *   CB18   9.31 → 10
+ *   ML2    2.68 → 3
+ *   TOTAL        13
+ *   2 Flows · 86 moves/hour
+ *
+ * `raw → ⌈baseFleet⌉` per the per-vehicle pool; TOTAL = Σ baseFleet. The ceil
+ * count is tinted by its headroom band. Groups (zones) do not appear here —
+ * fleet sizing pools per vehicleId, not per group.
  */
 export default function FleetRibbon({ groups, totals, vehicleById }: Props) {
   const populatedGroups = groups.filter(g => g.flowsCount > 0)
   const hasFleet = totals.totalBaseFleet > 0
 
   return (
-    <div className="fleet-ribbon">
-      <div className="fleet-ribbon-totals">
-        <span className="fr-total">
-          <span className="val mono">{totals.totalFlows}</span>
-          <span className="lbl">{totals.totalFlows === 1 ? 'flow' : 'flows'}</span>
-        </span>
-        <span className="fr-sep">·</span>
-        <span className="fr-total">
-          <span className="val mono">{totals.totalThru}</span>
-          <span className="lbl">/hr</span>
-        </span>
-        <span className="fr-sep">·</span>
-        <span className="fr-total">
-          <span className="lbl">raw</span>
-          <span className="val mono">{totals.totalRawFleet.toFixed(2)}</span>
-        </span>
-        <span className="fr-arrow">→</span>
-        <span className="fr-fleet">
-          <span className="val mono">⌈{totals.totalBaseFleet}⌉</span>
-          <span className="lbl">{totals.totalBaseFleet === 1 ? 'vehicle' : 'vehicles'}</span>
-        </span>
-      </div>
+    <div className="fleet-summary">
+      {!hasFleet ? (
+        <div className="fs-empty">Assign a vehicle to a flow to size the fleet.</div>
+      ) : (
+        <ul className="fs-lines">
+          {populatedGroups.map(g => {
+            const vehicle = vehicleById.get(g.vehicleId)
+            const name = vehicle?.name ?? g.vehicleId
+            const tone = headroomTone(g.headroom)
+            return (
+              <li className="fs-line" key={g.vehicleId}>
+                <VehicleDot vehicle={vehicle} size="sm" />
+                <span className="fs-name">{name}</span>
+                <span className="fs-raw mono">{g.groupRaw.toFixed(2)}</span>
+                <span className="fs-arrow">→</span>
+                <span className={`fs-fleet mono ${tone}`}>{g.baseFleet}</span>
+              </li>
+            )
+          })}
+          <li className="fs-line fs-total">
+            <span className="fs-name">TOTAL</span>
+            <span className="fs-fleet mono">{totals.totalBaseFleet}</span>
+          </li>
+        </ul>
+      )}
 
-      <div className="fleet-ribbon-chips">
-        {!hasFleet && (
-          <span className="fr-empty">
-            Assign a vehicle to a flow to size the fleet.
-          </span>
-        )}
-        {populatedGroups.map(g => {
-          const vehicle = vehicleById.get(g.vehicleId)
-          const name = vehicle?.name ?? g.vehicleId
-          const tone = headroomTone(g.headroom)
-          return (
-            <span className="fr-chip" key={g.vehicleId}>
-              <VehicleDot vehicle={vehicle} size="sm" />
-              <span className="fr-chip-name">{name}</span>
-              <span className={`fr-chip-count mono ${tone}`}>×{g.baseFleet}</span>
-              <span className="fr-chip-raw mono">raw {g.groupRaw.toFixed(2)}</span>
-            </span>
-          )
-        })}
+      <div className="fs-meta mono">
+        {totals.totalFlows} {totals.totalFlows === 1 ? 'Flow' : 'Flows'}
+        <span className="fs-dot">·</span>
+        {totals.totalThru} moves/hour
       </div>
     </div>
   )

@@ -23,47 +23,47 @@ const noLiftSpeed: Pick<Vehicle, 'calc' | 'transferMethods'> = {
 }
 
 describe('routeLayoutFactor', () => {
-  it('maps low/medium/high to 0.5/0.7/0.9', () => {
-    expect(routeLayoutFactor('low')).toBe(0.5)
-    expect(routeLayoutFactor('medium')).toBe(0.7)
-    expect(routeLayoutFactor('high')).toBe(0.9)
+  it('maps low/medium/high to 0.3/0.5/0.7 (route-average; 0.7 ceiling)', () => {
+    expect(routeLayoutFactor('low')).toBe(0.3)
+    expect(routeLayoutFactor('medium')).toBe(0.5)
+    expect(routeLayoutFactor('high')).toBe(0.7)
   })
 
   it('pins the constants exported on the type module', () => {
-    expect(ROUTE_LAYOUT_FACTORS.low).toBe(0.5)
-    expect(ROUTE_LAYOUT_FACTORS.medium).toBe(0.7)
-    expect(ROUTE_LAYOUT_FACTORS.high).toBe(0.9)
+    expect(ROUTE_LAYOUT_FACTORS.low).toBe(0.3)
+    expect(ROUTE_LAYOUT_FACTORS.medium).toBe(0.5)
+    expect(ROUTE_LAYOUT_FACTORS.high).toBe(0.7)
   })
 })
 
 describe('cycleSeconds', () => {
-  it('medium routeLayout (×0.7): travel + load + unload', () => {
+  it('medium routeLayout (×0.5): travel + load + unload', () => {
     // distance 100 ft, Fork, medium routeLayout, no lift, no delay
-    //   effective speed loaded = 9.84 × 0.7 = 6.888 fps → 100 / 6.888 ≈ 14.52 s
-    //   effective speed empty  = 11.5 × 0.7 = 8.05  fps → 100 / 8.05  ≈ 12.42 s
+    //   effective speed loaded = 9.84 × 0.5 = 4.92 fps → 100 / 4.92 ≈ 20.33 s
+    //   effective speed empty  = 11.5 × 0.5 = 5.75 fps → 100 / 5.75 ≈ 17.39 s
     //   load + unload                                  = 10 s
-    //   total                                          ≈ 36.94 s
-    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 0, 0)).toBeCloseTo(36.94, 1)
+    //   total                                          ≈ 47.72 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 0, 0)).toBeCloseTo(47.72, 1)
   })
 
-  it('high routeLayout (×0.9): faster travel', () => {
-    // 100 / (9.84*0.9) + 100 / (11.5*0.9) + 10 = 11.29 + 9.66 + 10 = 30.96 s
-    expect(cycleSeconds(100, cb18 as Vehicle, 'high', 0, 0)).toBeCloseTo(30.96, 1)
+  it('high routeLayout (×0.7): faster travel', () => {
+    // 100 / (9.84*0.7) + 100 / (11.5*0.7) + 10 = 14.52 + 12.42 + 10 = 36.94 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 'high', 0, 0)).toBeCloseTo(36.94, 1)
   })
 
-  it('low routeLayout (×0.5): much slower travel', () => {
-    // 100 / (9.84*0.5) + 100 / (11.5*0.5) + 10 = 20.33 + 17.39 + 10 = 47.72 s
-    expect(cycleSeconds(100, cb18 as Vehicle, 'low', 0, 0)).toBeCloseTo(47.72, 1)
+  it('low routeLayout (×0.3): much slower travel', () => {
+    // 100 / (9.84*0.3) + 100 / (11.5*0.3) + 10 = 33.88 + 28.99 + 10 = 72.86 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 'low', 0, 0)).toBeCloseTo(72.86, 1)
   })
 
   it('uses transferMethodIdx to pick load/unload times', () => {
     // medium routeLayout, Lift Platform (idx 1), liftHeightFt 0:
-    //   14.52 + 12.42 + 8 + 8 = 42.94 s
-    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 0, 1)).toBeCloseTo(42.94, 1)
+    //   20.33 + 17.39 + 8 + 8 = 53.72 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 0, 1)).toBeCloseTo(53.72, 1)
   })
 
   it('defaults transferMethodIdx to 0 when omitted', () => {
-    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 0)).toBeCloseTo(36.94, 1)
+    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 0)).toBeCloseTo(47.72, 1)
   })
 
   it('returns load+unload only when distance is 0 and no lift', () => {
@@ -87,14 +87,14 @@ describe('cycleSeconds', () => {
 
   it('ignores liftHeightFt when the transfer method does not have lifts: true', () => {
     // Fork (idx 0) in this fixture has no lifts flag. liftHeightFt provided but adds 0.
-    //   medium routeLayout: 14.52 + 12.42 + 5 + 5 = 36.94 s
-    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 50, 0)).toBeCloseTo(36.94, 1)
+    //   medium routeLayout: 20.33 + 17.39 + 5 + 5 = 47.72 s
+    expect(cycleSeconds(100, cb18 as Vehicle, 'medium', 50, 0)).toBeCloseTo(47.72, 1)
   })
 
   it('adds 0 lift time when liftSpeedFps is missing on the vehicle', () => {
     // Transfer has lifts:true but vehicle has no liftSpeedFps → graceful 0.
-    //   medium: 14.52 + 12.42 + 8 + 8 = 42.94 s
-    expect(cycleSeconds(100, noLiftSpeed as Vehicle, 'medium', 10, 0)).toBeCloseTo(42.94, 1)
+    //   medium: 20.33 + 17.39 + 8 + 8 = 53.72 s
+    expect(cycleSeconds(100, noLiftSpeed as Vehicle, 'medium', 10, 0)).toBeCloseTo(53.72, 1)
   })
 
   it('returns null when distance is negative', () => {
@@ -178,10 +178,10 @@ describe('flowDerived (orchestrator)', () => {
       vehicleId: 'cb18', transferMethodIdx: 0,
     }
     const d = flowDerived(flow, cb18Veh)
-    // medium ×0.7: 14.52 + 12.42 + 5 + 5 = 36.94 s
-    expect(d.cycleSeconds).toBeCloseTo(36.94, 1)
-    // raw = 30 × 36.94 / 3600 ≈ 0.308
-    expect(d.rawVehicles).toBeCloseTo(0.308, 3)
+    // medium ×0.5: 20.33 + 17.39 + 5 + 5 = 47.72 s
+    expect(d.cycleSeconds).toBeCloseTo(47.72, 1)
+    // raw = 30 × 47.72 / 3600 ≈ 0.398
+    expect(d.rawVehicles).toBeCloseTo(0.398, 3)
   })
 
   it('threads liftHeightFt through to cycleSeconds (Lift Platform)', () => {
@@ -321,16 +321,16 @@ describe('cycleBreakdown', () => {
     const b = cycleBreakdown(100, cb18 as Vehicle, 'medium', 0, 0)
     expect(b).not.toBeNull()
     if (!b) return
-    // medium factor 0.7
-    expect(b.travelLoadedSec).toBeCloseTo(100 / (9.84 * 0.7), 3)
-    expect(b.travelEmptySec).toBeCloseTo(100 / (11.5 * 0.7), 3)
+    // medium factor 0.5
+    expect(b.travelLoadedSec).toBeCloseTo(100 / (9.84 * 0.5), 3)
+    expect(b.travelEmptySec).toBeCloseTo(100 / (11.5 * 0.5), 3)
     expect(b.loadSec).toBe(5)
     expect(b.unloadSec).toBe(5)
     expect(b.liftTimeSec).toBe(0)
     expect(b.methodName).toBe('Fork')
     expect(b.liftHeightFt).toBe(0)
     expect(b.routeLayout).toBe('medium')
-    expect(b.routeLayoutFactor).toBe(0.7)
+    expect(b.routeLayoutFactor).toBe(0.5)
     const sum = b.travelLoadedSec + b.travelEmptySec
               + b.loadSec + b.unloadSec
               + b.liftTimeSec
@@ -355,7 +355,7 @@ describe('cycleBreakdown', () => {
     expect(b.methodName).toBe('Lift Platform')
     expect(b.liftHeightFt).toBe(4)
     expect(b.routeLayout).toBe('high')
-    expect(b.routeLayoutFactor).toBe(0.9)
+    expect(b.routeLayoutFactor).toBe(0.7)
   })
 
   it('adds lift time when transfer method has lifts: true and liftSpeedFps > 0', () => {

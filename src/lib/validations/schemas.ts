@@ -78,6 +78,10 @@ export const projectSchema = z.object({
   // Section 10
   interlocks: z.array(z.string()).default([]),
   flows: z.array(flowSchema).default([]),
+  /** Ordered list of Step 3 group (zone) names, e.g. "ASRS", "Dock". Visual
+   *  organization only — fleet sizing pools per vehicleId, not per group.
+   *  Flows reference a group via flowSchema.sectionName. */
+  flowGroups: z.array(z.string()).default([]),
   otherAGVs: z.boolean().default(false),
   otherAGVVendor: z.string().optional(),
 

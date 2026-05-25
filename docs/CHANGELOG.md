@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-25 — Step 3 round 6: route-average speed (70% ceiling) + named Groups + table re-band
+
+**Motivation:** Engineer mockup review of R5. Three substantive changes plus a layout pass.
+
+**1. Route-average speed model correction (calc change).** The route-layout factor was being read as an instantaneous speed cap with `high = 0.9`. It is actually a **route average** — a vehicle accelerates, decelerates, and rounds corners, so it never sustains rated cruise end-to-end. **70% is the realistic best-case average ceiling.** Re-valued `ROUTE_LAYOUT_FACTORS` from `{ low: 0.5, medium: 0.7, high: 0.9 }` to **`{ low: 0.3, medium: 0.5, high: 0.7 }`**. The `routeLayout` enum and all of `flowMetrics.ts` are unchanged — only the constants move.
+- **This shifts the numbers on existing saved projects** (a `medium` flow drops 70% → 50%, `high` drops 90% → 70%; cycle times rise, fleet counts can rise). Intended correction.
+- Verification fixture (all `medium`) moves: CB18 `baseFleet` 7 → **10**, ML2 2 → **3**, total 9 → **13**. Spec verification table + acceptance criteria + Vitest factor cases recomputed to match.
+- The `SpeedsUsedSelect` dropdown is re-skinned to **Route Average Speed**: a tiered, highest-first list — `70% · Open, low traffic` / `50% · Mixed traffic` / `30% · Congested, many turns` — still showing the resulting effective fps.
+
+**2. Named Groups (organizational zones).** Adds project-level `flowGroups: string[]` (ordered, Zod `.default([])`). Groups are visual zones (e.g. ASRS, Dock) and do **not** change sizing — fleet still pools per `vehicleId` project-wide. Each flow references a group via the existing `flow.sectionName` (no flow-schema change). New `+Group` button creates an inline-renamable group; rows render contiguously under a colored vertical tab; a per-row dropdown reassigns a flow's group. Deleting a group un-assigns its flows. Legacy projects carrying only `sectionName` still display (effective list = `flowGroups ∪ distinct sectionName`).
+
+**3. Table re-band + formatting.** Three column bands — **Vehicle** / **Route Input** / **Output** (Output visually distinct). Vehicle cell shows the `heroImage` thumbnail (dot fallback). Cycle Time renders as `234s`; Vehicle Count as `2.34 vehicles` (2 dp). Action cluster moved top-right: `+Group` · `+Flow` · `Copy Flow` (Copy duplicates selected rows, or the last flow, with fresh ids). FleetRibbon restructured into a top-left summary box: `CB18: 9.31 → 10 / ML2: 2.68 → 3 / TOTAL: 13` + flows + moves/hour.
+
+**Back-compat:** No flow-schema change. `flowGroups` defaults to `[]` for old exports. `sectionName` semantics preserved.
+
 ## 2026-05-24 — Step 3 round 5: canonical column lineup + bulk sections + lift inline time + header polish
 
 **Motivation:** R4 (`93ea057`) landed visual cohesion + named sections (via per-row pill) + FleetRibbon. First-use feedback pushed back on a few things: the table accreted columns engineers don't actually use, the THRU/HR label reads abrasive, the per-row section picker is clumsy, lift height has no visible time consequence, and Imperial/Metric doesn't fit the TAL header aesthetic. R5 rebuilds toward the canonical shape engineers would draw on paper: Vehicle Type · Transfer Method · Origin · Destination · Distance · Throughput per Hour · Speeds Used · Cycle · Demand.

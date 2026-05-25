@@ -7,9 +7,18 @@ import type { UnitSystem } from '@/src/lib/utils/units'
 import VehicleSelect, { VehicleDot } from './VehicleSelect'
 import MethodSelect from './MethodSelect'
 import SpeedsUsedSelect from './SpeedsUsedSelect'
+import GroupSelect from './GroupSelect'
 import CyclePopover from './CyclePopover'
 import CycleAnatomyBar from './CycleAnatomyBar'
-import { sectionColor } from './sectionColor'
+
+export interface GroupTabInfo {
+  name: string
+  color: string
+  rowSpan: number
+  /** Present for real groups; omitted for the "Ungrouped" pseudo-group. */
+  onRename?: () => void
+  onDelete?: () => void
+}
 
 interface Props {
   index: number
@@ -17,19 +26,20 @@ interface Props {
   vehicles: Vehicle[]
   derived: FlowDerived
   unitSystem: UnitSystem
-  selected: boolean
-  onToggleSelect: () => void
+  groups: string[]
+  /** Set only on the first row of a group; renders the rowspanning left tab. */
+  groupTab: GroupTabInfo | null
   onChange: (next: Flow) => void
   onDelete: () => void
+  onAssignGroup: (group: string | undefined) => void
+  onCreateGroup: (name: string) => void
 }
 
 const FT_PER_M = 3.28084
 
 function fmtCycle(sec: number | null): string {
   if (sec == null) return '—'
-  const m = Math.floor(sec / 60)
-  const s = Math.round(sec % 60)
-  return `${m}m ${s.toString().padStart(2, '0')}s`
+  return `${Math.round(sec)}s`
 }
 
 function clampNum(input: string, min = 0): number {
@@ -44,10 +54,12 @@ export default function FlowRow({
   vehicles,
   derived,
   unitSystem,
-  selected,
-  onToggleSelect,
+  groups,
+  groupTab,
   onChange,
   onDelete,
+  onAssignGroup,
+  onCreateGroup,
 }: Props) {
   const metric = unitSystem === 'metric'
 
@@ -71,7 +83,7 @@ export default function FlowRow({
   const cycleDisabled = derived.cycleSeconds == null || derived.breakdown == null
 
   const rawDisplay =
-    derived.rawVehicles == null ? '—' : derived.rawVehicles.toFixed(3)
+    derived.rawVehicles == null ? '—' : derived.rawVehicles.toFixed(2)
   const rawTone =
     derived.rawVehicles == null
       ? ''
@@ -82,25 +94,51 @@ export default function FlowRow({
   const methodIdx = flow.transferMethodIdx ?? 0
 
   return (
-    <tr className={`flow-row ${selected ? 'selected' : ''}`}>
-      <td className="flow-cell-select">
-        {flow.sectionName && (
-          <span
-            className="flow-section-bar"
-            style={{ background: sectionColor(flow.sectionName) }}
-            aria-hidden="true"
-            title={`Section: ${flow.sectionName}`}
-          />
-        )}
-        <input
-          type="checkbox"
-          checked={selected}
-          onChange={onToggleSelect}
-          aria-label={`Select flow ${index + 1}`}
+    <tr className="flow-row">
+      {groupTab && (
+        <td
+          className="flow-group-tab"
+          rowSpan={groupTab.rowSpan}
+          style={{ ['--group-color' as string]: groupTab.color }}
+        >
+          {groupTab.onDelete && (
+            <span className="flow-group-tab-controls">
+              <button
+                type="button"
+                className="flow-group-del"
+                onClick={groupTab.onDelete}
+                aria-label={`Delete group ${groupTab.name}`}
+                title="Delete group"
+              >
+                ×
+              </button>
+            </span>
+          )}
+          {groupTab.onRename ? (
+            <button
+              type="button"
+              className="flow-group-tab-label"
+              onClick={groupTab.onRename}
+              title="Rename group"
+            >
+              {groupTab.name}
+            </button>
+          ) : (
+            <span className="flow-group-tab-label flow-group-tab-label-static">
+              {groupTab.name}
+            </span>
+          )}
+        </td>
+      )}
+
+      <td className="flow-meta-cell">
+        <span className="flow-row-index mono">{String(index + 1).padStart(2, '0')}</span>
+        <GroupSelect
+          value={flow.sectionName}
+          groups={groups}
+          onAssign={onAssignGroup}
+          onCreateGroup={onCreateGroup}
         />
-      </td>
-      <td className="flow-row-num mono">
-        <span className="flow-row-index">{String(index + 1).padStart(2, '0')}</span>
       </td>
 
       <td className="flow-veh-cell">
@@ -129,6 +167,14 @@ export default function FlowRow({
           unitSystem={unitSystem}
           onMethodChange={idx => onChange({ ...flow, transferMethodIdx: idx })}
           onLiftChange={ft => onChange({ ...flow, liftHeightFt: ft })}
+        />
+      </td>
+
+      <td className="flow-route-cell">
+        <SpeedsUsedSelect
+          value={flow.routeLayout}
+          vehicle={selectedVehicle}
+          onChange={layout => onChange({ ...flow, routeLayout: layout })}
         />
       </td>
 
@@ -171,13 +217,6 @@ export default function FlowRow({
           }
         />
       </td>
-      <td className="flow-route-cell">
-        <SpeedsUsedSelect
-          value={flow.routeLayout}
-          vehicle={selectedVehicle}
-          onChange={layout => onChange({ ...flow, routeLayout: layout })}
-        />
-      </td>
 
       <td className="flow-calc-cell flow-td-output">
         <div className="flow-calc-wrap">
@@ -203,7 +242,10 @@ export default function FlowRow({
           )}
         </div>
       </td>
-      <td className={`flow-calc flow-td-output mono ${rawTone}`}>{rawDisplay}</td>
+      <td className={`flow-calc flow-td-output mono ${rawTone}`}>
+        <span className="flow-count-val">{rawDisplay}</span>
+        {derived.rawVehicles != null && <span className="flow-count-unit">vehicles</span>}
+      </td>
 
       <td className="flow-row-act">
         <button

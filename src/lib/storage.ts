@@ -63,6 +63,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   certifications: [],
   interlocks: [],
   flows: [],
+  flowGroups: [],
   otherAGVs: false,
   otherAGVVendor: undefined,
   tempMinF: undefined,

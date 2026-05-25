@@ -98,14 +98,18 @@ export interface ProjectFlowSummary {
   totalBaseFleet: number
 }
 
-/** Route-layout speed factor map. Engineers pick low/medium/high per flow;
- *  the calc scales rated cruise speed by this fraction to get effective
- *  travel speed. Low captures dense aisles and many turns; High captures
- *  open straightaways and few turns. */
+/** Route-average speed factor map. Engineers pick low/medium/high per flow;
+ *  the calc scales rated cruise speed by this fraction to get the effective
+ *  route-average travel speed. These are *averages over the whole route*, not
+ *  instantaneous caps — a vehicle accelerates, decelerates, and rounds corners,
+ *  so it never sustains rated cruise end-to-end. The scale therefore tops out
+ *  at 0.7 (High/Open, low-traffic): even the best case averages ~70% of rated.
+ *  Medium/Mixed (0.5) is typical warehouse traffic; Low/Congested (0.3) is
+ *  heavy traffic with many turns and tight corners. */
 export const ROUTE_LAYOUT_FACTORS: Record<RouteLayout, number> = {
-  low: 0.5,
-  medium: 0.7,
-  high: 0.9,
+  low: 0.3,
+  medium: 0.5,
+  high: 0.7,
 }
 
 /** Default project-level buffer fraction used by Step 5. Declared here for

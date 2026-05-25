@@ -66,6 +66,7 @@ export default function Step3Page() {
   )
 
   const flows: Flow[] = useMemo(() => project?.flows ?? [], [project])
+  const flowGroups: string[] = useMemo(() => project?.flowGroups ?? [], [project])
 
   const derivedByFlowId = useMemo(() => {
     const m = new Map<string, FlowDerived>()
@@ -89,9 +90,9 @@ export default function Step3Page() {
     [flows, derivedByFlowId],
   )
 
-  const persistFlows = (next: Flow[]) => {
+  const persistPatch = (patch: { flows?: Flow[]; flowGroups?: string[] }) => {
     if (!project) return
-    const updated = updateProject(project.id, { flows: next })
+    const updated = updateProject(project.id, patch)
     if (updated) setProject(updated)
   }
 
@@ -156,10 +157,11 @@ export default function Step3Page() {
 
         <FlowsTable
           flows={flows}
+          flowGroups={flowGroups}
           vehicles={vehicles}
           derivedByFlowId={derivedByFlowId}
           unitSystem={unitSystem}
-          onFlowsChange={persistFlows}
+          onPatch={persistPatch}
         />
 
         <div className="step-nav">
