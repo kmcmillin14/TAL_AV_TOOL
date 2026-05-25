@@ -175,7 +175,7 @@ export default function FlowRow({
         />
       </td>
 
-      <td className="flow-calc-cell">
+      <td className="flow-calc-cell flow-td-output">
         <div className="flow-calc-wrap">
           <button
             ref={cycleTriggerRef}
@@ -199,7 +199,7 @@ export default function FlowRow({
           )}
         </div>
       </td>
-      <td className={`flow-calc mono ${rawTone}`}>{rawDisplay}</td>
+      <td className={`flow-calc flow-td-output mono ${rawTone}`}>{rawDisplay}</td>
 
       <td className="flow-row-act">
         <button

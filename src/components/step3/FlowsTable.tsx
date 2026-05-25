@@ -172,9 +172,9 @@ export default function FlowsTable({
                   >
                     Speeds Used
                   </th>
-                  <th className="flow-th-num">Cycle</th>
+                  <th className="flow-th-num flow-th-output">Cycle</th>
                   <th
-                    className="flow-th-num flow-th-zone-end"
+                    className="flow-th-num flow-th-output flow-th-zone-end"
                     title="Fractional vehicle demand: throughput × cycle / 3600. Per-vehicle base fleet = ⌈Σ demand⌉."
                   >
                     Demand

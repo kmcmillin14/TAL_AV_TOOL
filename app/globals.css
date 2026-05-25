@@ -1858,6 +1858,17 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-size: 11px;
   color: var(--text-tertiary);
 }
+/* ---- Step 3 — Output column shading (Fleet Need band) ---- */
+.flows-table thead th.flow-th-output,
+.flows-table tbody td.flow-td-output {
+  background: var(--bg-surface-2);
+}
+/* Selected row override: when a row is selected we want the accent-soft
+   wash to win over the output-column shading. */
+.flow-row.selected td.flow-td-output {
+  background: var(--accent-soft);
+}
+
 /* ---- Step 3 — Row select checkbox cell + selected row state ---- */
 .flow-th-select, .flow-cell-select {
   width: 32px;
