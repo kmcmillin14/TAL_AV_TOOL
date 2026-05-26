@@ -67,6 +67,55 @@ export default function FlowsTable({
   const metric = unitSystem === 'metric'
   const [focusGroup, setFocusGroup] = useState<string | null>(null)
 
+  // ---- Drag-to-reorder state ----
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [overFlowId, setOverFlowId] = useState<string | null>(null)
+  const [overAfter, setOverAfter] = useState(false)
+  const [overGroup, setOverGroup] = useState<string | null>(null)
+
+  const endDrag = () => {
+    setDragId(null)
+    setOverFlowId(null)
+    setOverGroup(null)
+  }
+  const overFlow = (id: string, after: boolean) => {
+    if (!dragId || id === dragId) return
+    setOverFlowId(id)
+    setOverAfter(after)
+    setOverGroup(null)
+  }
+  const overGroupHeader = (group: string) => {
+    if (!dragId) return
+    setOverGroup(group)
+    setOverFlowId(null)
+  }
+  // Drop onto a flow: move the dragged flow next to the target (before/after),
+  // inheriting the target's group — so a drag across zones also re-groups.
+  const dropOnFlow = (targetId: string, targetSection: string | undefined, after: boolean) => {
+    if (!dragId || dragId === targetId) return endDrag()
+    const dragged = flows.find(f => f.id === dragId)
+    if (!dragged) return endDrag()
+    const without = flows.filter(f => f.id !== dragId)
+    let idx = without.findIndex(f => f.id === targetId)
+    if (idx === -1) return endDrag()
+    if (after) idx += 1
+    const moved = { ...dragged, sectionName: targetSection }
+    onPatch({ flows: [...without.slice(0, idx), moved, ...without.slice(idx)] })
+    endDrag()
+  }
+  // Drop onto a group header: move the dragged flow into that group (first slot).
+  const dropOnGroup = (group: string) => {
+    if (!dragId) return endDrag()
+    const dragged = flows.find(f => f.id === dragId)
+    if (!dragged) return endDrag()
+    const without = flows.filter(f => f.id !== dragId)
+    const firstIdx = without.findIndex(f => f.sectionName === group)
+    const insertAt = firstIdx === -1 ? without.length : firstIdx
+    const moved = { ...dragged, sectionName: group }
+    onPatch({ flows: [...without.slice(0, insertAt), moved, ...without.slice(insertAt)] })
+    endDrag()
+  }
+
   // ---- Flow CRUD ----
   const update = (id: string, next: Flow) =>
     onPatch({ flows: flows.map(f => (f.id === id ? next : f)) })
@@ -132,9 +181,16 @@ export default function FlowsTable({
         }
       }
       unitSystem={unitSystem}
+      isDragging={dragId === f.id}
+      isDragOver={overFlowId === f.id}
+      dragOverAfter={overAfter}
       onChange={next => update(f.id, next)}
       onDelete={() => remove(f.id)}
       onDuplicate={() => duplicate(f.id)}
+      onDragStartFlow={() => setDragId(f.id)}
+      onDragOverFlow={after => overFlow(f.id, after)}
+      onDropFlow={after => dropOnFlow(f.id, f.sectionName, after)}
+      onDragEndFlow={endDrag}
     />
   )
 
@@ -169,7 +225,7 @@ export default function FlowsTable({
         <div className="flows-scroll">
           <table className="flows-table flows-table-banded">
             <colgroup>
-              <col style={{ width: '48px' }} />
+              <col style={{ width: '58px' }} />
               <col style={{ width: '188px' }} />
               <col style={{ width: '205px' }} />
               <col style={{ width: '175px' }} />
@@ -190,7 +246,7 @@ export default function FlowsTable({
                 <th className="flow-band-blank"></th>
               </tr>
               <tr>
-                <th className="flow-th-num">#</th>
+                <th className="flow-th-num flow-th-meta">#</th>
                 <th>Vehicle</th>
                 <th>Transfer Type</th>
                 <th title="Route-average speed as a fraction of rated cruise. 70% is the realistic ceiling — no route sustains full cruise once accel/decel/turns are averaged in.">
@@ -236,9 +292,12 @@ export default function FlowsTable({
                       count={groupFlows.length}
                       colSpan={COLS}
                       autoFocus={focusGroup === g}
+                      isDragOver={overGroup === g}
                       onRename={next => renameGroup(g, next)}
                       onAddFlow={() => add(g)}
                       onDelete={() => deleteGroup(g)}
+                      onDragOverGroup={dragId ? () => overGroupHeader(g) : undefined}
+                      onDropGroup={dragId ? () => dropOnGroup(g) : undefined}
                     />
                     {groupFlows.map(renderFlowRow)}
                   </Fragment>

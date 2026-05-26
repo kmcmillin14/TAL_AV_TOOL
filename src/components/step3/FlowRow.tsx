@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useRef, useState, type DragEvent } from 'react'
 import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
@@ -17,9 +17,16 @@ interface Props {
   vehicles: Vehicle[]
   derived: FlowDerived
   unitSystem: UnitSystem
+  isDragging: boolean
+  isDragOver: boolean
+  dragOverAfter: boolean
   onChange: (next: Flow) => void
   onDelete: () => void
   onDuplicate: () => void
+  onDragStartFlow: () => void
+  onDragOverFlow: (after: boolean) => void
+  onDropFlow: (after: boolean) => void
+  onDragEndFlow: () => void
 }
 
 const FT_PER_M = 3.28084
@@ -41,11 +48,29 @@ export default function FlowRow({
   vehicles,
   derived,
   unitSystem,
+  isDragging,
+  isDragOver,
+  dragOverAfter,
   onChange,
   onDelete,
   onDuplicate,
+  onDragStartFlow,
+  onDragOverFlow,
+  onDropFlow,
+  onDragEndFlow,
 }: Props) {
   const metric = unitSystem === 'metric'
+
+  const rowClass = [
+    'flow-row',
+    isDragging ? 'dragging' : '',
+    isDragOver ? (dragOverAfter ? 'drag-over-after' : 'drag-over-before') : '',
+  ].filter(Boolean).join(' ')
+
+  const overFromEvent = (e: DragEvent) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    return e.clientY > rect.top + rect.height / 2
+  }
 
   const roundTripFt = flow.distanceFt * 2
   const distDisplay = metric
@@ -78,8 +103,26 @@ export default function FlowRow({
   const methodIdx = flow.transferMethodIdx ?? 0
 
   return (
-    <tr className="flow-row">
+    <tr
+      className={rowClass}
+      onDragOver={e => { e.preventDefault(); onDragOverFlow(overFromEvent(e)) }}
+      onDrop={e => { e.preventDefault(); onDropFlow(overFromEvent(e)) }}
+    >
       <td className="flow-meta-cell">
+        <span
+          className="flow-drag-handle"
+          draggable
+          onDragStart={e => {
+            e.dataTransfer.effectAllowed = 'move'
+            e.dataTransfer.setData('text/plain', flow.id)
+            onDragStartFlow()
+          }}
+          onDragEnd={onDragEndFlow}
+          aria-label="Drag to reorder flow"
+          title="Drag to reorder"
+        >
+          <Icon name="grip" size={14} />
+        </span>
         <span className="flow-row-index mono">{String(index + 1).padStart(2, '0')}</span>
       </td>
 
@@ -191,24 +234,26 @@ export default function FlowRow({
       </td>
 
       <td className="flow-row-act">
-        <button
-          type="button"
-          className="flow-act-btn flow-duplicate"
-          onClick={onDuplicate}
-          aria-label="Duplicate flow"
-          title="Duplicate this flow"
-        >
-          <Icon name="copy" size={13} />
-        </button>
-        <button
-          type="button"
-          className="flow-act-btn flow-delete"
-          onClick={onDelete}
-          aria-label="Delete flow"
-          title="Delete flow"
-        >
-          <Icon name="x" size={14} />
-        </button>
+        <div className="flow-act-inner">
+          <button
+            type="button"
+            className="flow-act-btn flow-duplicate"
+            onClick={onDuplicate}
+            aria-label="Duplicate flow"
+            title="Duplicate this flow"
+          >
+            <Icon name="copy" size={14} />
+          </button>
+          <button
+            type="button"
+            className="flow-act-btn flow-delete"
+            onClick={onDelete}
+            aria-label="Delete flow"
+            title="Delete flow"
+          >
+            <Icon name="x" size={14} />
+          </button>
+        </div>
       </td>
     </tr>
   )

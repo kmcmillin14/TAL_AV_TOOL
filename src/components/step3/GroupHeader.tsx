@@ -9,9 +9,14 @@ interface Props {
   count: number
   colSpan: number
   autoFocus?: boolean
+  isDragOver?: boolean
   onRename: (next: string) => void
   onAddFlow: () => void
   onDelete: () => void
+  /** Present only while a flow is being dragged — makes the header a drop
+   *  target that moves the dropped flow into this group. */
+  onDragOverGroup?: () => void
+  onDropGroup?: () => void
 }
 
 /**
@@ -26,9 +31,12 @@ export default function GroupHeader({
   count,
   colSpan,
   autoFocus,
+  isDragOver,
   onRename,
   onAddFlow,
   onDelete,
+  onDragOverGroup,
+  onDropGroup,
 }: Props) {
   const [draft, setDraft] = useState(name)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -48,7 +56,12 @@ export default function GroupHeader({
   }
 
   return (
-    <tr className="flow-group-header" style={{ ['--group-color' as string]: color }}>
+    <tr
+      className={`flow-group-header${isDragOver ? ' drag-over' : ''}`}
+      style={{ ['--group-color' as string]: color }}
+      onDragOver={onDragOverGroup ? e => { e.preventDefault(); onDragOverGroup() } : undefined}
+      onDrop={onDropGroup ? e => { e.preventDefault(); onDropGroup() } : undefined}
+    >
       <td colSpan={colSpan}>
         <div className="fg-head">
           <span className="fg-swatch" aria-hidden="true" />

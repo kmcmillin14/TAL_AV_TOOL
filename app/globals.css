@@ -1540,12 +1540,36 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .fg-del:hover { background: var(--bad-soft); color: var(--bad); }
 
-/* ===== Step 3 R6 — row meta cell (# only) ===== */
+/* ===== Step 3 R6 — row meta cell (drag handle + #) ===== */
 .flow-meta-cell {
   text-align: center !important;
   padding: 4px 4px !important;
+  white-space: nowrap;
 }
 .flow-meta-cell .flow-row-index { color: var(--text-tertiary); }
+.flow-drag-handle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
+  margin-right: 3px;
+  padding: 2px;
+  color: var(--text-disabled);
+  cursor: grab;
+  border-radius: 4px;
+}
+.flow-drag-handle:hover { color: var(--text-secondary); }
+.flow-drag-handle:active { cursor: grabbing; }
+
+/* ===== Step 3 — drag-to-reorder feedback ===== */
+.flow-row.dragging { opacity: 0.4; }
+.flow-row.dragging .flow-drag-handle { cursor: grabbing; }
+.flow-row.drag-over-before td { box-shadow: inset 0 2px 0 0 var(--accent); }
+.flow-row.drag-over-after td { box-shadow: inset 0 -2px 0 0 var(--accent); }
+.flow-group-header.drag-over td {
+  box-shadow: inset 0 0 0 2px var(--accent);
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg-surface-2));
+}
 
 /* ===== Step 3 R6 — route average speed cell ===== */
 .route-speed-cell { display: flex; flex-direction: column; gap: 1px; }
@@ -1773,12 +1797,19 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .flow-calc.flow-cell-warn { color: var(--warn); }
 
+/* The action cell stays a real table cell (vertical-align keeps the icons on
+   the row's centerline); the flex layout lives on an inner wrapper. Never flex
+   a <td> — it drops table-cell behavior and the icons drift off their row. */
 .flow-row-act {
-  display: flex;
+  text-align: center;
+  vertical-align: middle;
+  padding: 4px 8px;
+}
+.flow-act-inner {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 2px;
-  padding: 4px 2px;
+  gap: 8px;
 }
 .flow-act-btn {
   display: inline-flex;
@@ -1794,6 +1825,18 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .flow-duplicate:hover { color: var(--accent); }
 .flow-delete:hover { color: var(--bad); }
+
+/* The leading # and trailing actions columns sit OUTSIDE the bordered data
+   grid — no cell borders, no shading. The grid (Vehicle … Vehicle Count) keeps
+   its dividers; these two flanks read as clean gutters. */
+.flows-table thead th.flow-band-blank,
+.flows-table thead th.flow-th-meta,
+.flows-table thead th.flow-th-act,
+.flows-table tbody td.flow-meta-cell,
+.flows-table tbody td.flow-row-act {
+  border: none;
+  background: transparent;
+}
 
 .flows-add-bottom {
   display: inline-flex; align-items: center; gap: 6px;

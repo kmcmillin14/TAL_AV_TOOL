@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-05-26 — Step 3 round 8: drag-to-reorder + borderless gutters
+
+- **Drag to reorder flows.** A grip handle in the `#` gutter (native HTML5 DnD, no new dependency) drags a flow to a new position; an insertion line shows the landing spot (before/after by cursor half). Dropping onto another group's rows or onto a group header moves the flow into that group — so drag also serves as the regroup gesture (filling the gap left when the per-row group dropdown was removed). New `grip` icon.
+- **`#` and action columns are borderless gutters** outside the bordered data grid — no cell borders, no shading. The grid (Vehicle … Vehicle Count) keeps its dividers.
+- **Row action buttons fixed.** Delete is now the same SVG `x` icon as duplicate (was a text `×` with a different baseline), both 24×24, borderless, color-only hover. The action `<td>` is a real table cell again with an inner flex wrapper — flexing the `<td>` directly had knocked the icons off their row's centerline.
+
 ## 2026-05-25 — Step 3 round 7: grouping rework + transfer-type single-line + unit-aware speed + centered table
 
 Engineer feedback on R6. Same-day follow-up.
