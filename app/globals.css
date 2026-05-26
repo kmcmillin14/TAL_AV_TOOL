@@ -1786,24 +1786,14 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   justify-content: center;
   background: transparent;
   color: var(--text-tertiary);
-  border: 1px solid transparent;
-  border-radius: 4px;
-  width: 26px; height: 26px;
-  font-size: 16px;
-  line-height: 1;
+  border: none;
+  width: 24px; height: 24px;
+  line-height: 0;
   cursor: pointer;
-  transition: all 0.1s ease;
+  transition: color 0.1s ease;
 }
-.flow-duplicate:hover {
-  background: var(--accent-soft);
-  color: var(--accent);
-  border-color: var(--accent-soft);
-}
-.flow-delete:hover {
-  background: var(--bad-soft);
-  color: var(--bad);
-  border-color: var(--bad-soft);
-}
+.flow-duplicate:hover { color: var(--accent); }
+.flow-delete:hover { color: var(--bad); }
 
 .flows-add-bottom {
   display: inline-flex; align-items: center; gap: 6px;

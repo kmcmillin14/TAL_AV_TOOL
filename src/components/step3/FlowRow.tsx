@@ -207,7 +207,7 @@ export default function FlowRow({
           aria-label="Delete flow"
           title="Delete flow"
         >
-          ×
+          <Icon name="x" size={14} />
         </button>
       </td>
     </tr>
