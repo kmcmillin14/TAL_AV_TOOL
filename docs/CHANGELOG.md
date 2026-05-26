@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-05-25 — Step 3 round 7: grouping rework + transfer-type single-line + unit-aware speed + centered table
+
+Engineer feedback on R6. Same-day follow-up.
+
+- **Grouping reworked from vertical tabs → group header rows.** No grouping UI shows until a group exists (zero groups = plain flat table). `+Group` creates a group with a placeholder name and focuses its header for **inline rename** (text input committed on blur/Enter — the `prompt()` dialogs are gone). Each group is a full-width header row (swatch · inline name · count · its own **`+ Add flow`** button). The rotated vertical tabs and the per-row group dropdown are removed; the `#` cell shows the row number only. Deleting a group ungroups its flows. Pooling is unchanged (per `vehicleId`). `GroupSelect` deleted; new `GroupHeader` component.
+- **Transfer Type is now a single constant-height cell.** Trailing `+Ns` badge = load + unload + height-derived lift time. Lifting methods reveal a **compact inline height field** on the same line, so per-height transfers take no more vertical room than fixed ones (replaces the stacked preset dropdown).
+- **Copy Flow → per-row duplicate.** The top-right "Copy Flow" is gone; each row has a duplicate control (inserts a copy with a fresh id right after it), so the engineer copies the specific flow they want.
+- **Route Average Speed shows ft/s or m/s** per the active unit system (was always `fps`).
+- **Table centered** on the page (`margin-inline: auto`).
+- Removed orphaned CSS for the old vertical tabs, per-row group select, and bulk/selection/zone styles.
+
 ## 2026-05-25 — Step 3 round 6: route-average speed (70% ceiling) + named Groups + table re-band
 
 **Motivation:** Engineer mockup review of R5. Three substantive changes plus a layout pass.

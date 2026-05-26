@@ -120,10 +120,11 @@ Step 3 imposes **no** per-flow hard gates. Step 2 already qualifies the vehicle 
 ### UI behavior
 
 - Table is fully inline-editable. Every keystroke writes to storage (using the same `watch()` save pattern from Step 1).
-- Columns are organized into three visual bands: **Vehicle** (`# · Vehicle · Transfer Type`), **Route Input** (`Route Average Speed · Origin · Destination · Distance (Round Trip) · Throughput (Moves per Hour)`), and **Output** (`Cycle Time · Vehicle Count`). The Output band is visually distinct.
-- Top-right action cluster: **`+Group`** (creates a new named group), **`+Flow`** (appends an empty row), **`Copy Flow`** (duplicates the selected rows — or the last flow if none selected — with fresh ids).
-- Deleting a flow uses the trailing × control.
-- **Route Average Speed** is a tiered dropdown, highest first: `70% · Open, low traffic` / `50% · Mixed traffic` / `30% · Congested, many turns`, showing the resulting effective loaded/empty fps for the selected vehicle.
+- The table is centered on the page (`margin-inline: auto`).
+- Columns are organized into three visual bands: **Vehicle** (`# · Vehicle · Transfer Type`), **Route Input** (`Route Average Speed · Origin · Destination · Distance (Round Trip) · Throughput (Moves per Hour)`), and **Output** (`Cycle Time · Vehicle Count`). The Output band is visually distinct. The `#` cell shows the sequential row number only — no group control.
+- Top-right action cluster: **`+Group`** (creates a new group) and **`+Flow`** (appends an ungrouped row). Each flow row has a trailing **duplicate** and **delete** control, so the engineer copies the specific flow they want.
+- **Route Average Speed** is a tiered dropdown, highest first: `70% · Open, low traffic` / `50% · Mixed traffic` / `30% · Congested, many turns`, showing the resulting effective loaded/empty speed in the active unit — **ft/s** (imperial) or **m/s** (metric).
+- **Transfer Type** is a single, constant-height cell: the method (dropdown when the vehicle has several) and a trailing `+Ns` badge = the time the transfer adds (load + unload, plus the height-derived lift time for lifting methods). Lifting methods reveal a **compact inline height field** on the same line — a per-height transfer takes no more vertical room than a fixed one.
 - **Cycle Time** renders as whole seconds (e.g. `234s`) with the inline anatomy bar and click-through breakdown popover. **Vehicle Count** renders fractional `rawVehicles` to 2 dp (e.g. `2.34 vehicles`); the integer `⌈baseFleet⌉` appears only in the summary box.
 - Distance shown in m when the unit toggle is metric, ft in imperial. **Storage always imperial** per ARCHITECTURE.md §3.
 - The Vehicle cell renders the vehicle's `heroImage` thumbnail, falling back to a deterministic per-vehicle color dot (hash → palette) on image error.
@@ -132,11 +133,13 @@ Step 3 imposes **no** per-flow hard gates. Step 2 already qualifies the vehicle 
 
 Groups are named, organizational zones (e.g. "ASRS", "Dock") — they structure the table visually but do **not** change fleet sizing: demand still pools **per `vehicleId`** across the whole project (`⌈Σ raw CB18⌉`, `⌈Σ raw ML2⌉`). A CB18 used in two different groups shares one pool.
 
-- Group names live at the project level in `flowGroups: string[]` (ordered; Zod `.default([])`). The effective group list rendered in the UI is `flowGroups ∪ distinct flow.sectionName` so legacy projects that only carry `sectionName` still display.
-- Each flow references its group via the existing `flow.sectionName` (no flow-schema change). Flows with no `sectionName` render in an **Ungrouped** band.
-- `+Group` appends a new, inline-renamable group. Rows belonging to a group are rendered contiguously with a colored vertical tab (rotated label) on the far left; color is the deterministic `sectionColor` hash of the group name.
-- A **per-row group dropdown** reassigns a row's group (existing groups · Ungrouped · New group…).
-- Deleting a group un-assigns its member flows (sets `sectionName` to `undefined`); it does not delete the flows.
+- **No grouping UI appears until a group is created.** With zero groups the table is a plain flat list of flows.
+- Group names live at the project level in `flowGroups: string[]` (ordered; Zod `.default([])`). The effective group list is `flowGroups ∪ distinct flow.sectionName` so legacy projects that only carry `sectionName` still display.
+- Each flow references its group via the existing `flow.sectionName` (no flow-schema change).
+- **`+Group`** appends a new group with a placeholder name and focuses its header for **inline renaming** (a real text input committed on blur/Enter — no browser prompt).
+- A group renders as a full-width **header row** (color swatch · inline-editable name · flow count · its own **`+ Add flow`** button) above its flows. `+ Add flow` drops a new flow straight into that group.
+- Flows with no `sectionName` render as plain rows (no header) after the group sections.
+- Deleting a group (× on its header) un-assigns its member flows (`sectionName → undefined`); it does not delete the flows.
 
 ### Headroom color thresholds (display only)
 

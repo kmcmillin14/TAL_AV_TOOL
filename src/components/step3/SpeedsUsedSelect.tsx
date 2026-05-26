@@ -7,8 +7,11 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 interface Props {
   value: RouteLayout
   vehicle?: Vehicle
+  unitSystem: 'imperial' | 'metric'
   onChange: (next: RouteLayout) => void
 }
+
+const M_PER_FT = 0.3048
 
 interface OptionDef {
   value: RouteLayout
@@ -26,9 +29,10 @@ function pct(layout: RouteLayout): number {
   return Math.round(ROUTE_LAYOUT_FACTORS[layout] * 100)
 }
 
-function fmtFps(v: number | undefined): string {
-  if (v == null || !Number.isFinite(v)) return '—'
-  return v.toFixed(1)
+/** Format a feet-per-second value in the active unit system (ft/s or m/s). */
+function fmtSpeed(fps: number | undefined, metric: boolean): string {
+  if (fps == null || !Number.isFinite(fps)) return '—'
+  return (metric ? fps * M_PER_FT : fps).toFixed(1)
 }
 
 /**
@@ -40,7 +44,9 @@ function fmtFps(v: number | undefined): string {
  *
  * Backed by the same `routeLayout` enum as before; this is purely presentation.
  */
-export default function SpeedsUsedSelect({ value, vehicle, onChange }: Props) {
+export default function SpeedsUsedSelect({ value, vehicle, unitSystem, onChange }: Props) {
+  const metric = unitSystem === 'metric'
+  const unit = metric ? 'm/s' : 'ft/s'
   const sLoaded = vehicle?.calc.speedLoadedFps
   const sEmpty = vehicle?.calc.speedUnloadedFps
 
@@ -49,7 +55,7 @@ export default function SpeedsUsedSelect({ value, vehicle, onChange }: Props) {
     const f = ROUTE_LAYOUT_FACTORS[opt.value]
     const eLoaded = sLoaded != null ? sLoaded * f : undefined
     const eEmpty = sEmpty != null ? sEmpty * f : undefined
-    return `${opt.label} — ${pct(opt.value)}% of rated cruise (route average). Effective ${fmtFps(eLoaded)} / ${fmtFps(eEmpty)} fps.`
+    return `${opt.label} — ${pct(opt.value)}% of rated cruise (route average). Effective ${fmtSpeed(eLoaded, metric)} / ${fmtSpeed(eEmpty, metric)} ${unit}.`
   }
 
   const f = ROUTE_LAYOUT_FACTORS[value]
@@ -73,7 +79,7 @@ export default function SpeedsUsedSelect({ value, vehicle, onChange }: Props) {
         ))}
       </select>
       <span className="route-speed-fps mono">
-        {vehicle ? `→ ${fmtFps(effLoaded)} / ${fmtFps(effEmpty)} fps` : 'pick a vehicle'}
+        {vehicle ? `→ ${fmtSpeed(effLoaded, metric)} / ${fmtSpeed(effEmpty, metric)} ${unit}` : 'pick a vehicle'}
       </span>
     </div>
   )

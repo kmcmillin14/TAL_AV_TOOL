@@ -4,21 +4,12 @@ import { useRef, useState } from 'react'
 import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
+import Icon from '@/src/design-system/components/Icon'
 import VehicleSelect, { VehicleDot } from './VehicleSelect'
 import MethodSelect from './MethodSelect'
 import SpeedsUsedSelect from './SpeedsUsedSelect'
-import GroupSelect from './GroupSelect'
 import CyclePopover from './CyclePopover'
 import CycleAnatomyBar from './CycleAnatomyBar'
-
-export interface GroupTabInfo {
-  name: string
-  color: string
-  rowSpan: number
-  /** Present for real groups; omitted for the "Ungrouped" pseudo-group. */
-  onRename?: () => void
-  onDelete?: () => void
-}
 
 interface Props {
   index: number
@@ -26,13 +17,9 @@ interface Props {
   vehicles: Vehicle[]
   derived: FlowDerived
   unitSystem: UnitSystem
-  groups: string[]
-  /** Set only on the first row of a group; renders the rowspanning left tab. */
-  groupTab: GroupTabInfo | null
   onChange: (next: Flow) => void
   onDelete: () => void
-  onAssignGroup: (group: string | undefined) => void
-  onCreateGroup: (name: string) => void
+  onDuplicate: () => void
 }
 
 const FT_PER_M = 3.28084
@@ -54,12 +41,9 @@ export default function FlowRow({
   vehicles,
   derived,
   unitSystem,
-  groups,
-  groupTab,
   onChange,
   onDelete,
-  onAssignGroup,
-  onCreateGroup,
+  onDuplicate,
 }: Props) {
   const metric = unitSystem === 'metric'
 
@@ -95,50 +79,8 @@ export default function FlowRow({
 
   return (
     <tr className="flow-row">
-      {groupTab && (
-        <td
-          className="flow-group-tab"
-          rowSpan={groupTab.rowSpan}
-          style={{ ['--group-color' as string]: groupTab.color }}
-        >
-          {groupTab.onDelete && (
-            <span className="flow-group-tab-controls">
-              <button
-                type="button"
-                className="flow-group-del"
-                onClick={groupTab.onDelete}
-                aria-label={`Delete group ${groupTab.name}`}
-                title="Delete group"
-              >
-                ×
-              </button>
-            </span>
-          )}
-          {groupTab.onRename ? (
-            <button
-              type="button"
-              className="flow-group-tab-label"
-              onClick={groupTab.onRename}
-              title="Rename group"
-            >
-              {groupTab.name}
-            </button>
-          ) : (
-            <span className="flow-group-tab-label flow-group-tab-label-static">
-              {groupTab.name}
-            </span>
-          )}
-        </td>
-      )}
-
       <td className="flow-meta-cell">
         <span className="flow-row-index mono">{String(index + 1).padStart(2, '0')}</span>
-        <GroupSelect
-          value={flow.sectionName}
-          groups={groups}
-          onAssign={onAssignGroup}
-          onCreateGroup={onCreateGroup}
-        />
       </td>
 
       <td className="flow-veh-cell">
@@ -174,6 +116,7 @@ export default function FlowRow({
         <SpeedsUsedSelect
           value={flow.routeLayout}
           vehicle={selectedVehicle}
+          unitSystem={unitSystem}
           onChange={layout => onChange({ ...flow, routeLayout: layout })}
         />
       </td>
@@ -250,7 +193,16 @@ export default function FlowRow({
       <td className="flow-row-act">
         <button
           type="button"
-          className="flow-delete"
+          className="flow-act-btn flow-duplicate"
+          onClick={onDuplicate}
+          aria-label="Duplicate flow"
+          title="Duplicate this flow"
+        >
+          <Icon name="copy" size={13} />
+        </button>
+        <button
+          type="button"
+          className="flow-act-btn flow-delete"
           onClick={onDelete}
           aria-label="Delete flow"
           title="Delete flow"

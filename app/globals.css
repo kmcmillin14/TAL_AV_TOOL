@@ -1462,76 +1462,90 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .flow-band-row .flow-band-output { color: var(--text-secondary); }
 
-/* ===== Step 3 R6 — group vertical tab ===== */
-.flow-group-tab {
-  position: relative;
-  width: 30px;
+/* ===== Step 3 R6 — group header row (full-width, inline name) ===== */
+.flow-group-header td {
   padding: 0 !important;
-  text-align: center;
-  background: color-mix(in srgb, var(--group-color) 14%, var(--bg-surface));
-  border-right: 3px solid var(--group-color) !important;
-  vertical-align: middle;
+  background: color-mix(in srgb, var(--group-color) 12%, var(--bg-surface-2));
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid var(--group-color);
+  text-align: left !important;
 }
-.flow-group-tab-label {
-  writing-mode: vertical-rl;
-  transform: rotate(180deg);
-  white-space: nowrap;
-  font-family: var(--tal-font-numeric);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--group-color);
-  background: transparent;
-  border: none;
-  padding: 8px 0;
-  cursor: pointer;
-  max-height: 180px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.flow-group-tab-label-static { cursor: default; }
-.flow-group-tab-label:not(.flow-group-tab-label-static):hover { text-decoration: underline; }
-.flow-group-tab-controls {
-  position: absolute;
-  top: 2px;
-  left: 0;
-  right: 0;
+.fg-head {
   display: flex;
-  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 12px;
 }
-.flow-group-del {
+.fg-swatch {
+  width: 10px; height: 10px;
+  border-radius: 3px;
+  background: var(--group-color);
+  flex: 0 0 auto;
+}
+.fg-head .fg-name {
   background: transparent;
-  border: none;
-  color: var(--text-tertiary);
-  font-size: 13px;
-  line-height: 1;
-  cursor: pointer;
-  padding: 0 2px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 3px 6px;
+  font-family: var(--tal-font-numeric);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  width: 180px;
+  min-width: 80px;
+  max-width: 260px;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
 }
-.flow-group-del:hover { color: var(--bad); }
+.fg-head .fg-name:hover { border-color: var(--border); }
+.fg-head .fg-name:focus {
+  outline: none;
+  border-color: var(--border-strong);
+  box-shadow: 0 0 0 2px var(--accent-soft);
+  background: var(--bg-surface);
+}
+.fg-count {
+  font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--text-tertiary);
+}
+.fg-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent-soft);
+  border-radius: 4px;
+  padding: 3px 10px;
+  font-family: var(--tal-font-family);
+  font-size: 11.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+.fg-add:hover { background: var(--accent-soft); border-color: var(--accent); }
+.fg-del {
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--text-tertiary);
+  width: 24px; height: 24px;
+  font-size: 15px; line-height: 1;
+  cursor: pointer;
+  transition: all 0.1s ease;
+}
+.fg-del:hover { background: var(--bad-soft); color: var(--bad); }
 
-/* ===== Step 3 R6 — row meta cell (# + group select) ===== */
+/* ===== Step 3 R6 — row meta cell (# only) ===== */
 .flow-meta-cell {
   text-align: center !important;
   padding: 4px 4px !important;
 }
-.flow-meta-cell .flow-row-index { display: block; margin-bottom: 3px; }
-.flow-group-select {
-  width: 100%;
-  background: transparent;
-  color: var(--text-tertiary);
-  border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 2px 2px;
-  font-family: var(--tal-font-family);
-  font-size: 10.5px;
-  cursor: pointer;
-  transition: border-color 0.1s ease;
-}
-.flow-group-select:hover { border-color: var(--border); }
-.flow-group-select:focus { outline: none; border-color: var(--border-strong); box-shadow: 0 0 0 2px var(--accent-soft); }
-.flow-group-select option { background: var(--bg-surface-2); color: var(--text-primary); }
+.flow-meta-cell .flow-row-index { color: var(--text-tertiary); }
 
 /* ===== Step 3 R6 — route average speed cell ===== */
 .route-speed-cell { display: flex; flex-direction: column; gap: 1px; }
@@ -1543,7 +1557,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-tertiary);
 }
 
-/* ===== Step 3 R6 — vehicle count unit + empty group row ===== */
+/* ===== Step 3 R6 — vehicle count unit ===== */
 .flow-count-val { font-weight: 700; }
 .flow-count-unit {
   display: block;
@@ -1553,14 +1567,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--text-tertiary);
-}
-.flow-row-empty-group td { background: var(--bg-surface); }
-.flow-empty-group-cell {
-  text-align: left !important;
-  font-size: 12px;
-  font-style: italic;
-  color: var(--text-tertiary);
-  padding: 10px 14px !important;
 }
 .veh-dot {
   display: inline-block;
@@ -1630,6 +1636,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .flows-table {
   width: auto;
+  margin-inline: auto;
   border-collapse: collapse;
   font-family: var(--tal-font-family);
   font-size: 13px;
@@ -1766,8 +1773,17 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .flow-calc.flow-cell-warn { color: var(--warn); }
 
-.flow-row-act { text-align: center; padding: 4px 4px; }
-.flow-delete {
+.flow-row-act {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 4px 2px;
+}
+.flow-act-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   background: transparent;
   color: var(--text-tertiary);
   border: 1px solid transparent;
@@ -1777,6 +1793,11 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   line-height: 1;
   cursor: pointer;
   transition: all 0.1s ease;
+}
+.flow-duplicate:hover {
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-color: var(--accent-soft);
 }
 .flow-delete:hover {
   background: var(--bad-soft);
@@ -1861,92 +1882,70 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-disabled);
   font-family: var(--tal-font-numeric);
 }
-/* Vertical stack: method dropdown on top, optional Lift cascade beneath.
-   With the narrower Transfer Method cell (170 px) and the cascade dropdown,
-   horizontal layout crushes the method picker down to its chevron. Stacking
-   gives both dropdowns full width inside the cell. */
-.flow-method-row {
+/* Single-line method cell — constant height for every method. The lifting
+   case reveals a compact inline height field (no second row) so per-height
+   transfers take no more room than fixed ones. */
+.flow-method-line {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 6px;
+  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
 }
-.flow-method-picker {
+.flow-method-name {
   flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: var(--tal-font-family);
+  font-size: 12px;
+  color: var(--text-primary);
+  text-align: left;
 }
-.flow-method-impact {
-  font-family: var(--tal-font-numeric);
-  font-size: 10px;
-  color: var(--text-tertiary);
-  margin-left: 2px;
-}
-.flow-method-lift {
-  display: flex;
+.flow-method-line .flow-method-select { flex: 1 1 auto; min-width: 0; }
+.flow-method-h {
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
-  flex: 0 0 70px;
+  gap: 2px;
+  flex: 0 0 auto;
 }
-.flow-method-lift.required .flow-method-lift-label::after {
-  content: '*';
-  color: var(--accent);
-  margin-left: 1px;
-}
-.flow-method-lift-label {
-  font-family: var(--tal-font-numeric);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  color: var(--text-tertiary);
-  text-transform: uppercase;
-}
-.flow-method-lift-select {
+.flow-method-line .flow-method-h-input {
+  width: 42px;
   background: transparent;
   border: 1px solid var(--border);
   border-radius: 4px;
-  padding: 2px 6px;
+  padding: 2px 4px;
   font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
   font-size: 12px;
   color: var(--text-primary);
-  cursor: pointer;
+  text-align: right;
   transition: border-color 0.1s ease, box-shadow 0.1s ease;
 }
-.flow-method-lift-select:hover {
-  border-color: var(--border-strong);
-}
-.flow-method-lift-select:focus {
+.flow-method-line .flow-method-h-input:focus {
   outline: none;
   border-color: var(--border-strong);
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
-.flow-method-lift-select option {
-  background: var(--bg-surface-2);
-  color: var(--text-primary);
-}
-.flow-method-lift.required .flow-method-lift-select {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent-soft);
-}
-.flow-method-lift-unit {
+.flow-method-h-input::-webkit-outer-spin-button,
+.flow-method-h-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.flow-method-h-input[type='number'] { -moz-appearance: textfield; }
+.flow-method-h-unit {
   font-family: var(--tal-font-numeric);
   font-size: 10px;
   color: var(--text-tertiary);
 }
-.flow-method-lift-time {
+.flow-method-time {
+  flex: 0 0 auto;
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--text-secondary);
-  margin-left: 4px;
   letter-spacing: 0.01em;
 }
-.flow-method-lift.required .flow-method-lift-time {
-  color: var(--text-tertiary);
-}
-/* The "required" pill is no longer rendered (R4) — the input border + label
-   asterisk carry the signal. Keep the rule as a no-op safety net in case any
-   legacy markup still references it. */
-.flow-method-lift-required { display: none; }
 
 /* ---- Step 3 — Per-row section indicator pill + popover ---- */
 .flow-row-num {
