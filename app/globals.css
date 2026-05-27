@@ -373,7 +373,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   padding: 32px 40px 28px; border-bottom: 1px solid var(--border);
   background: var(--bg-surface); gap: 12px;
 }
-.page-title { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.page-title { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; text-align: center; }
+.page-title h1, .page-title .desc, .page-title .step-num { text-align: center; }
 /* Step 1's save-status + unit pill: keep top-right so the title stays centered. */
 .page-header > .row { position: absolute; top: 24px; right: 32px; }
 .step-num { font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
