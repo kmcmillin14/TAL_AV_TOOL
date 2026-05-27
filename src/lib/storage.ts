@@ -133,9 +133,11 @@ function writeAll(projects: StoredProject[]): void {
   if (!flushTimer) flushTimer = setTimeout(flush, 300)
 }
 
-/** Force any pending disk write immediately. */
-export function flushProjects(): void {
-  flush()
+/** Drop the in-memory cache so the next read re-parses localStorage. Used by
+ *  tests (the module-level cache otherwise leaks across cases) and available for
+ *  any forced re-sync. */
+export function resetProjectsCache(): void {
+  cache = null
 }
 
 if (typeof window !== 'undefined') {

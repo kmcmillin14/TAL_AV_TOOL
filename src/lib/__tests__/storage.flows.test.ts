@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterAll } from 'vitest'
-import { createProject, getProject, updateProject } from '../storage'
+import { createProject, getProject, updateProject, resetProjectsCache } from '../storage'
 
 // storage.ts gates its persistence behind `typeof window === 'undefined'`.
 // Vitest runs under the `node` environment, so we attach a minimal
@@ -18,6 +18,9 @@ beforeEach(() => {
       clear: () => { store.clear() },
     },
   }
+  // storage.ts caches the parsed array in module memory; drop it so each test
+  // starts from its own fresh localStorage shim.
+  resetProjectsCache()
 })
 
 afterAll(() => {
