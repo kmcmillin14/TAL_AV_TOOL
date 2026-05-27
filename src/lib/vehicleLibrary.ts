@@ -26,6 +26,9 @@ export interface VehicleDisplay {
   typicalLoad: string
   category: string
   navigationType?: NavigationType
+  /** Explicit display order for the Step 2 card grid (ascending). Vehicles
+   *  without it sort after, by name. */
+  order?: number
 }
 
 export interface VehicleCalc {
@@ -82,7 +85,11 @@ export async function loadVehicleLibrary(): Promise<Vehicle[]> {
       const raw = fs.readFileSync(path.join(VEHICLES_DIR, f), 'utf-8')
       return JSON.parse(raw) as Vehicle
     })
-    .sort((a, b) => a.name.localeCompare(b.name))
+    .sort((a, b) => {
+      const ao = a.display.order ?? Number.MAX_SAFE_INTEGER
+      const bo = b.display.order ?? Number.MAX_SAFE_INTEGER
+      return ao - bo || a.name.localeCompare(b.name)
+    })
 }
 
 export async function getVehicleById(id: string): Promise<Vehicle | null> {

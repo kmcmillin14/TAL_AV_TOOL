@@ -1,45 +1,48 @@
 {
   "id": "ebase7",
-  "name": "Oppent Ebase7 Tugger",
+  "name": "E7 Unit Load",
   "display": {
     "manufacturer": "Oppent",
-    "partnership": "3rd Party",
+    "partnership": "TAL 3rd Party",
     "tHive": false,
     "fleetSoftware": "Oppent Fleet Manager",
     "heroImage": "/images/vehicles/ebase7.png",
-    "typicalLoad": "Cart Train",
-    "category": "Tugger",
-    "navigationType": "magnetic"
+    "typicalLoad": "Unit Load",
+    "category": "Unit Load",
+    "navigationType": "natural",
+    "order": 3
   },
   "transferMethods": [
-    { "method": "Tow / Tugger", "loadTimeSec": 10, "unloadTimeSec": 10 }
+    { "method": "Lift", "loadTimeSec": 8, "unloadTimeSec": 8, "lifts": true },
+    { "method": "Pin", "loadTimeSec": 5, "unloadTimeSec": 5 }
   ],
-  "payloadTypes": ["Cart"],
+  "payloadTypes": ["Standard Pallet", "Rack"],
   "calc": {
-    "maxWeightLbs": 15000,
-    "widthFt": 2.8,
-    "lengthFt": 5.5,
-    "heightFt": 4.0,
-    "turningRadiusFt": 6.5,
+    "maxWeightLbs": 2645,
+    "widthFt": 2.68,
+    "lengthFt": 4.59,
+    "heightFt": 1.14,
+    "turningRadiusFt": 0,
     "maxLiftHeightFt": null,
-    "maxLoadLengthIn": null,
-    "maxLoadWidthIn": null,
-    "maxLoadHeightIn": null,
-    "speedLoadedFps": 5.25,
-    "speedUnloadedFps": 6.5,
-    "batteryKwh": 18.5,
+    "maxLoadLengthIn": 47,
+    "maxLoadWidthIn": 47,
+    "maxLoadHeightIn": 59,
+    "speedLoadedFps": 4.59,
+    "speedUnloadedFps": 4.59,
+    "liftSpeedFps": 0.5,
+    "batteryKwh": 2.4,
     "energyKwhPerFt": 0.012,
     "chargeKw": 2.0,
-    "chargeTimeMin": 60,
+    "chargeTimeMin": 150,
     "chargerType": "opportunity",
     "priceRange": { "minUsd": 70000, "maxUsd": 95000 }
   },
   "specs": {
-    "tempMinF": 14,
-    "tempMaxF": 122,
-    "outdoorCapable": true,
+    "tempMinF": 41,
+    "tempMaxF": 95,
+    "outdoorCapable": false,
     "freezerCapable": false,
-    "maxRampGrade": 12,
-    "certifications": ["ISO 3691-4", "ANSI B56.5"]
+    "maxRampGrade": 3,
+    "certifications": ["ISO 3691-4"]
   }
 }

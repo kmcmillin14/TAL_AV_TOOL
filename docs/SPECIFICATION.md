@@ -38,7 +38,7 @@ Vehicles with a lift-capable transfer method gain two fields:
 - `calc.liftSpeedFps` — vertical lift speed in feet per second (e.g., 0.5 fps for a standard mast).
 - `transferMethods[i].lifts: true` — flag identifying which transfer methods derive their cycle time from height. Vehicles without any lifting transfer method omit both.
 
-In the current library: CB18 and 8tb50a (counterbalance forklifts) get `liftSpeedFps` and the `lifts: true` flag on **both** their Fork and Lift Platform transfer methods — forks physically rise to clear the load, so the lift action consumes time even when the engineer thinks of it as "just forking." Other vehicles are unchanged.
+In the current library, the lifting transfer methods are the `Lift` appliances on **CB18, ML2, E7, and 8HBC40A**, each flagged `lifts: true`. CB18 (0.65), E7 (0.5), and 8HBC40A (0.6) declare a `liftSpeedFps`; ML2's lift appliance uses an estimated `liftSpeedFps` (0.5) pending a real value. Non-lifting methods — Pin, Conveyor, Custom, Powered Conveyor Cart — omit the flag and add 0 lift time.
 
 ### Constants
 
@@ -68,7 +68,7 @@ rawVehicles      = thruPerHr × cycleSeconds / 3600
 
 `distanceFt` is **one-way**; the cycle includes the empty return trip (both travel components run at the route-layout-derated speed).
 
-`liftTimeSec` is 0 for non-lifting transfers (Tow/Tugger, Conveyor Interface). For lifting transfers (now including Fork on counterbalance forklifts), the engineer enters the per-cycle total `liftHeightFt`; the vehicle's `liftSpeedFps` does the conversion.
+`liftTimeSec` is 0 for non-lifting transfers (Pin, Conveyor, Custom, Powered Conveyor Cart). For lifting transfers (`Lift`), the engineer enters the per-cycle total `liftHeightFt`; the vehicle's `liftSpeedFps` does the conversion.
 
 `rawVehicles` is fractional. `0.94` means this flow alone consumes 94 % of one vehicle's hour; `1.72` means a single vehicle cannot serve it — vehicles must pool.
 
@@ -153,8 +153,8 @@ Groups are named, organizational zones (e.g. "ASRS", "Dock") — they structure 
 ### Acceptance criteria
 
 1. Adding the 8 rows from the verification table (with `routeLayout = 'medium'` (factor 0.5), `liftHeightFt = 0`, default transfer method) produces:
-   - CB18: `groupRaw ≈ 9.31`, `baseFleet = 10`.
-   - ML2:  `groupRaw ≈ 2.68`, `baseFleet = 3`.
+   - CB18: `groupRaw ≈ 9.99`, `baseFleet = 10`.
+   - ML2:  `groupRaw ≈ 2.81`, `baseFleet = 3`.
 2. Editing any flow field instantly re-derives all downstream numbers — no save button, no page reload.
 3. Every vehicle is selectable in every row's dropdown. Step 2's traffic-light matrix already qualifies vehicles against project-wide weight.
 4. Reloading the page restores all flows and computed values.
@@ -165,24 +165,24 @@ Groups are named, organizational zones (e.g. "ASRS", "Dock") — they structure 
 
 ### Verification table (test data)
 
-Vehicles: **CB18** (Fork, sL = 9.84 fps, sU = 11.5 fps, load+unload = 10s) · **ML2** (Conveyor Interface, sL = 5.9 fps, sU = 6.5 fps, load+unload = 6s). All rows: `routeLayout = 'medium'` (factor 0.5), `liftHeightFt = 0`.
+Vehicles: **CB18** (Lift, sL = 9.84 fps, sU = 9.84 fps, load+unload = 10s) · **ML2** (Conveyor, sL = 5.9 fps, sU = 5.9 fps, load+unload = 6s). All rows: `routeLayout = 'medium'` (factor 0.5), `liftHeightFt = 0`. *(Empty speed now equals loaded — AGVs run a programmed speed; per the cutsheet correction. Handling times here are representative fixture values; the JSON per-accessory times are estimates — see `VEHICLE-DATA-PROVENANCE.md`.)*
 
 | Row | Vehicle | Distance (ft) | Thru/hr | cycle (s) | rawVehicles |
 |-----|---------|-----:|-----:|--------:|-----------:|
-| 1   | CB18    |  590 |   45 | 232.53  | 2.907 |
-| 2   | CB18    |  394 |   30 | 158.60  | 1.322 |
-| 3   | ML2     |  295 |   15 | 196.77  | 0.820 |
-| 4   | CB18    |  722 |   38 | 282.31  | 2.980 |
-| 5   | CB18    |  476 |   25 | 189.53  | 1.316 |
-| 6   | CB18    |  312 |   22 | 127.68  | 0.780 |
-| 7   | ML2     |  197 |   28 | 133.40  | 1.038 |
-| 8   | ML2     |  246 |   18 | 165.08  | 0.825 |
+| 1   | CB18    |  590 |   45 | 249.84  | 3.123 |
+| 2   | CB18    |  394 |   30 | 170.16  | 1.418 |
+| 3   | ML2     |  295 |   15 | 206.00  | 0.858 |
+| 4   | CB18    |  722 |   38 | 303.50  | 3.204 |
+| 5   | CB18    |  476 |   25 | 203.50  | 1.413 |
+| 6   | CB18    |  312 |   22 | 136.83  | 0.836 |
+| 7   | ML2     |  197 |   28 | 139.56  | 1.085 |
+| 8   | ML2     |  246 |   18 | 172.78  | 0.864 |
 
 | Group | groupRaw | baseFleet | headroom |
 |-------|---------:|----------:|---------:|
-| CB18 (1, 2, 4, 5, 6) | 9.305 | **10** | (10 − 9.305) / 10 ≈ 7.0% |
-| ML2  (3, 7, 8)       | 2.683 | **3** | (3 − 2.683) / 3 ≈ 10.6% |
+| CB18 (1, 2, 4, 5, 6) | 9.994 | **10** | (10 − 9.994) / 10 ≈ 0.1% |
+| ML2  (3, 7, 8)       | 2.808 | **3** | (3 − 2.808) / 3 ≈ 6.4% |
 
-Project totals: `totalFlows = 8`, `totalThru = 221`, `totalRawFleet ≈ 11.99`, `totalBaseFleet = 13`.
+Project totals: `totalFlows = 8`, `totalThru = 221`, `totalRawFleet ≈ 12.80`, `totalBaseFleet = 13`.
 
-Both groups land in the **yellow** headroom band (5–15%) — tight but workable. Compared to the prior model where `medium = 0.7`, dropping the medium route-average factor to `0.5` (R6: 70% is the realistic best-case *average*, not 90%) raises CB18 from 7 → 10 and ML2 from 2 → 3 (total 9 → 13). The calc team's position is that a sustained-cruise assumption materially undercounts on real routes.
+CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th), ML2 sits in the **yellow** band (6.4%). Two model corrections drive the longer cycles vs. early rounds: the medium route-average factor is `0.5` (70% is the best-case *average*, not 90%), and **empty travel now uses the same speed as loaded** (the cutsheets give one automated speed; no faster empty-return assumption). Both push fleet counts up relative to a sustained-cruise model.

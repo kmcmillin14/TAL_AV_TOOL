@@ -1,32 +1,33 @@
 {
   "id": "m10",
-  "name": "Toyota M10 Pallet Truck",
+  "name": "M10 Tunnel Type",
   "display": {
-    "manufacturer": "Toyota Material Handling",
-    "partnership": "OEM",
-    "tHive": false,
-    "fleetSoftware": "Toyota Fleet Manager",
+    "manufacturer": "Bastian Solutions",
+    "partnership": "TAL Integrated",
+    "tHive": true,
+    "fleetSoftware": "BlueBotics ANT",
     "heroImage": "/images/vehicles/m10.png",
-    "typicalLoad": "Standard Pallet",
-    "category": "Pallet Truck",
-    "navigationType": "natural"
+    "typicalLoad": "Cart",
+    "category": "Tunnel Type",
+    "navigationType": "lidar_slam",
+    "order": 4
   },
   "transferMethods": [
-    { "method": "Fork", "loadTimeSec": 4, "unloadTimeSec": 4 }
+    { "method": "Pin", "loadTimeSec": 5, "unloadTimeSec": 5 }
   ],
-  "payloadTypes": ["Standard Pallet"],
+  "payloadTypes": ["Cart"],
   "calc": {
     "maxWeightLbs": 2200,
-    "widthFt": 3.4,
-    "lengthFt": 7.0,
-    "heightFt": 5.0,
-    "turningRadiusFt": 6.0,
+    "widthFt": 1.22,
+    "lengthFt": 6.56,
+    "heightFt": 0.58,
+    "turningRadiusFt": 0.33,
     "maxLiftHeightFt": null,
-    "maxLoadLengthIn": 48,
-    "maxLoadWidthIn": 40,
-    "maxLoadHeightIn": 60,
-    "speedLoadedFps": 6.56,
-    "speedUnloadedFps": 7.5,
+    "maxLoadLengthIn": null,
+    "maxLoadWidthIn": null,
+    "maxLoadHeightIn": null,
+    "speedLoadedFps": 2.72,
+    "speedUnloadedFps": 2.72,
     "batteryKwh": 14.0,
     "energyKwhPerFt": 0.011,
     "chargeKw": 3.0,
@@ -35,7 +36,7 @@
     "priceRange": { "minUsd": 85000, "maxUsd": 115000 }
   },
   "specs": {
-    "tempMinF": 32,
+    "tempMinF": 50,
     "tempMaxF": 104,
     "outdoorCapable": false,
     "freezerCapable": false,

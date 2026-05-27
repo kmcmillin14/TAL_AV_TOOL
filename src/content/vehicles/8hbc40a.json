@@ -1,34 +1,35 @@
 {
   "id": "8hbc40a",
-  "name": "Toyota 8HBC40A Narrow-Aisle",
+  "name": "8HBC40A Automated Pallet Truck",
   "display": {
     "manufacturer": "Toyota Material Handling",
-    "partnership": "OEM",
+    "partnership": "TAL 3rd Party",
     "tHive": false,
     "fleetSoftware": "Toyota Fleet Manager",
-    "heroImage": "/images/vehicles/8hbc40a.jpg",
+    "heroImage": "/images/vehicles/8hbc40a.png",
     "typicalLoad": "Standard Pallet",
-    "category": "Narrow-Aisle Reach Truck",
-    "navigationType": "natural"
+    "category": "Automated Pallet Truck",
+    "navigationType": "natural",
+    "order": 6
   },
   "transferMethods": [
-    { "method": "Fork", "loadTimeSec": 6, "unloadTimeSec": 6, "lifts": true }
+    { "method": "Lift", "loadTimeSec": 6, "unloadTimeSec": 6, "lifts": true }
   ],
   "payloadTypes": ["Standard Pallet", "Rack"],
   "calc": {
-    "maxWeightLbs": 4000,
-    "widthFt": 3.2,
-    "lengthFt": 9.0,
-    "heightFt": 9.0,
-    "turningRadiusFt": 4.5,
-    "maxLiftHeightFt": 25.0,
+    "maxWeightLbs": 8000,
+    "widthFt": 2.71,
+    "lengthFt": 11.56,
+    "heightFt": 2.69,
+    "turningRadiusFt": 8.88,
+    "maxLiftHeightFt": 0.5,
     "maxLoadLengthIn": 48,
     "maxLoadWidthIn": 48,
     "maxLoadHeightIn": 72,
-    "speedLoadedFps": 7.5,
-    "speedUnloadedFps": 8.5,
+    "speedLoadedFps": 7.33,
+    "speedUnloadedFps": 7.33,
     "liftSpeedFps": 0.6,
-    "batteryKwh": 24.0,
+    "batteryKwh": 18.0,
     "energyKwhPerFt": 0.018,
     "chargeKw": 4.0,
     "chargeTimeMin": 90,
@@ -40,7 +41,7 @@
     "tempMaxF": 113,
     "outdoorCapable": false,
     "freezerCapable": false,
-    "maxRampGrade": 8,
+    "maxRampGrade": 3,
     "certifications": ["ISO 3691-4", "ANSI B56.5"]
   }
 }

@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-05-27 — Vehicle library corrected from manufacturer cutsheets
+
+All six `src/content/vehicles/*.json` corrected against the cutsheets in `Vehicle Cutsheets/`
+(read via pypdf; metric → imperial). Four were mis-categorized: **M10** is a Bastian "Tunnel Type"
+tugger (was a Toyota fork truck — manufacturer→Bastian, partnership→TAL Integrated, BlueBotics ANT,
+T-Hive on); **E7/Ebase7** is an Oppent "Unit Load" lift-platform AGV (was a tugger — capacity 15,000→2,645 lb,
+nav magnetic→natural, ramp 12→3%, temp/dims fixed); **8TB50A** is a Toyota "Automated Tugger" tow tractor
+(was a reach truck — no lift, towing capacity 10,000 lb); **8HBC40A** is a Toyota "Automated Pallet Truck"
+with a 6-inch lift (was a 25-ft reach truck). Speeds use automated full-load max for both loaded and empty
+(M10 was ~2.5× too fast). Names/categories: CB18 AGF, ML2 Mini Load, M10 Tunnel Type, E7 Unit Load,
+8TB50A Automated Tugger, 8HBC40A Automated Pallet Truck.
+
+**Accessories (transfer methods)** set per engineer: CB18 = Lift · ML2 = Conveyor/Lift/Pin/Custom ·
+M10 = Pin · E7 = Lift/Pin · 8TB50A = Custom/Powered Conveyor Cart · 8HBC40A = Lift. `Lift` flagged
+`lifts: true`; handling times are estimates.
+
+Off-sheet fields (price, charge, energy/ft, lift speeds, handling times, some battery kWh) kept as
+estimates — flagged in new `docs/VEHICLE-DATA-PROVENANCE.md`. Step 3 verification table refreshed for the
+corrected CB18/ML2 speeds (empty now equals loaded); total base fleet stays 13 (CB18 now ~0.1% headroom).
+
+**Step 2 cards:** Oppent (E7), 8TB50A, and 8HBC40A are now `TAL 3rd Party` (was 3rd Party / OEM) so the
+**TAL logo** shows alongside their OEM brand; `isTAL()` now treats `TAL 3rd Party` as TAL-badged. Added a
+`display.order` field and sort the library by it so cards appear **CB18 · ML2 · E7 · M10 · 8TB50A · 8HBC40A**
+(`vehicleLibrary.ts`). The 8TB50A and 8HBC40A hero images were swapped (files renamed: the `.jpg` is the
+8TB50A, the `.png` is the 8HBC40A) — they had been showing each other's photo.
+
 ## 2026-05-26 — Step 3 round 9: speed tier picker + lift-height popover + summary alignment
 
 - **Route Average Speed → tier picker.** Trigger shows **High / Medium / Low**; a click-through panel explains each tier (`High — Open lanes, few turns · 70%`, etc.). Beneath the trigger the cell now shows both the **Avg** speed and the vehicle's **Max** (rated) speed, loaded/empty, in ft/s or m/s — the real numbers behind the tier. `routeLayout` enum + `ROUTE_LAYOUT_FACTORS` unchanged (presentation only).

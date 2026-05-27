@@ -1,35 +1,35 @@
 {
   "id": "8tb50a",
-  "name": "Toyota 8TB50A Reach Truck",
+  "name": "8TB50A Automated Tugger",
   "display": {
     "manufacturer": "Toyota Material Handling",
-    "partnership": "OEM",
+    "partnership": "TAL 3rd Party",
     "tHive": false,
     "fleetSoftware": "Toyota Fleet Manager",
-    "heroImage": "/images/vehicles/8tb50a.png",
-    "typicalLoad": "Standard Pallet",
-    "category": "Reach Truck",
-    "navigationType": "natural"
+    "heroImage": "/images/vehicles/8tb50a.jpg",
+    "typicalLoad": "Cart Train",
+    "category": "Automated Tugger",
+    "navigationType": "natural",
+    "order": 5
   },
   "transferMethods": [
-    { "method": "Fork", "loadTimeSec": 6, "unloadTimeSec": 6, "lifts": true },
-    { "method": "Lift Platform", "loadTimeSec": 10, "unloadTimeSec": 10, "lifts": true }
+    { "method": "Custom", "loadTimeSec": 10, "unloadTimeSec": 10 },
+    { "method": "Powered Conveyor Cart", "loadTimeSec": 5, "unloadTimeSec": 5 }
   ],
-  "payloadTypes": ["Standard Pallet", "Rack"],
+  "payloadTypes": ["Cart"],
   "calc": {
-    "maxWeightLbs": 5000,
-    "widthFt": 4.0,
-    "lengthFt": 8.0,
-    "heightFt": 8.5,
-    "turningRadiusFt": 6.5,
-    "maxLiftHeightFt": 30.0,
-    "maxLoadLengthIn": 48,
-    "maxLoadWidthIn": 48,
-    "maxLoadHeightIn": 72,
-    "speedLoadedFps": 8.2,
-    "speedUnloadedFps": 9.5,
-    "liftSpeedFps": 0.50,
-    "batteryKwh": 36.0,
+    "maxWeightLbs": 10000,
+    "widthFt": 3.33,
+    "lengthFt": 4.83,
+    "heightFt": 2.69,
+    "turningRadiusFt": 4.65,
+    "maxLiftHeightFt": null,
+    "maxLoadLengthIn": null,
+    "maxLoadWidthIn": null,
+    "maxLoadHeightIn": null,
+    "speedLoadedFps": 5.87,
+    "speedUnloadedFps": 5.87,
+    "batteryKwh": 18.0,
     "energyKwhPerFt": 0.024,
     "chargeKw": 6.0,
     "chargeTimeMin": 90,
@@ -41,7 +41,7 @@
     "tempMaxF": 113,
     "outdoorCapable": false,
     "freezerCapable": false,
-    "maxRampGrade": 8,
+    "maxRampGrade": 3,
     "certifications": ["ISO 3691-4", "ANSI B56.5"]
   }
 }

@@ -19,7 +19,7 @@ type Face = 'front' | 'back'
 type BackTab = 'qual' | 'specs'
 
 function isTAL(partnership: string) {
-  return partnership === 'TAL Integrated'
+  return partnership === 'TAL Integrated' || partnership === 'TAL 3rd Party'
 }
 
 function integrationDisplay(partnership: string): string {

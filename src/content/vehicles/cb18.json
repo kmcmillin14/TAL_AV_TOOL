@@ -8,26 +8,26 @@
     "fleetSoftware": "BlueBotics ANT",
     "heroImage": "/images/vehicles/cb18.png",
     "typicalLoad": "Standard Pallet",
-    "category": "Counterbalance Forklift",
-    "navigationType": "lidar_slam"
+    "category": "AGF",
+    "navigationType": "lidar_slam",
+    "order": 1
   },
   "transferMethods": [
-    { "method": "Fork", "loadTimeSec": 5, "unloadTimeSec": 5, "lifts": true },
-    { "method": "Lift Platform", "loadTimeSec": 8, "unloadTimeSec": 8, "lifts": true }
+    { "method": "Lift", "loadTimeSec": 5, "unloadTimeSec": 5, "lifts": true }
   ],
   "payloadTypes": ["Standard Pallet", "Rack", "IBC"],
   "calc": {
-    "maxWeightLbs": 3968,
-    "widthFt": 4.2,
-    "lengthFt": 7.5,
-    "heightFt": 7.0,
-    "turningRadiusFt": 7.5,
-    "maxLiftHeightFt": 14.7,
+    "maxWeightLbs": 4000,
+    "widthFt": 4.19,
+    "lengthFt": 6.13,
+    "heightFt": 6.91,
+    "turningRadiusFt": 4.82,
+    "maxLiftHeightFt": 14.67,
     "maxLoadLengthIn": 48,
     "maxLoadWidthIn": 48,
     "maxLoadHeightIn": 72,
     "speedLoadedFps": 9.84,
-    "speedUnloadedFps": 11.5,
+    "speedUnloadedFps": 9.84,
     "liftSpeedFps": 0.65,
     "batteryKwh": 25.6,
     "energyKwhPerFt": 0.019,
