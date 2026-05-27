@@ -45,17 +45,23 @@ export default function FleetRibbon({ groups, totals, vehicleById }: Props) {
             const tone = headroomTone(g.headroom)
             return (
               <li className="fs-line" key={g.vehicleId}>
-                <VehicleDot vehicle={vehicle} size="sm" />
-                <span className="fs-name">{name}</span>
-                <span className="fs-raw mono">{g.groupRaw.toFixed(2)}</span>
-                <span className="fs-arrow">→</span>
-                <span className={`fs-fleet mono ${tone}`}>{g.baseFleet}</span>
+                <span className="fs-label">
+                  <VehicleDot vehicle={vehicle} size="sm" />
+                  <span className="fs-name">{name}</span>
+                </span>
+                <span className="fs-figures">
+                  <span className="fs-raw mono">{g.groupRaw.toFixed(2)}</span>
+                  <span className="fs-arrow">→</span>
+                  <span className={`fs-fleet mono ${tone}`}>{g.baseFleet}</span>
+                </span>
               </li>
             )
           })}
           <li className="fs-line fs-total">
-            <span className="fs-name">TOTAL</span>
-            <span className="fs-fleet mono">{totals.totalBaseFleet}</span>
+            <span className="fs-label"><span className="fs-name">TOTAL</span></span>
+            <span className="fs-figures">
+              <span className="fs-fleet mono">{totals.totalBaseFleet}</span>
+            </span>
           </li>
         </ul>
       )}

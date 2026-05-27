@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-05-26 — Step 3 round 9: speed tier picker + lift-height popover + summary alignment
+
+- **Route Average Speed → tier picker.** Trigger shows **High / Medium / Low**; a click-through panel explains each tier (`High — Open lanes, few turns · 70%`, etc.). Beneath the trigger the cell now shows both the **Avg** speed and the vehicle's **Max** (rated) speed, loaded/empty, in ft/s or m/s — the real numbers behind the tier. `routeLayout` enum + `ROUTE_LAYOUT_FACTORS` unchanged (presentation only).
+- **Lift height → click-to-open popover.** The Transfer Type cell now reads uniformly as `Method +Ns` for every method (like a fixed accessory). For lifting methods the `+Ns` badge opens a small popover to set the height (accent dot hints when height is 0); the always-visible inline height input is gone.
+- **Summary TOTAL alignment.** Restructured the fleet-summary rows into a left label + a right-aligned figures group, so the `TOTAL` integer lines up in the same column as the per-vehicle integers above it.
+- New shared `FloatingPanel` (anchored, `position: fixed` so it escapes the table cell's `overflow: hidden`; closes on outside-click / Escape / scroll / resize) powers both popovers. Removed orphaned `.flow-method-h*` and `.speeds-used-select` CSS.
+
 ## 2026-05-26 — Step 3 round 8: drag-to-reorder + borderless gutters
 
 - **Drag to reorder flows.** A grip handle in the `#` gutter (native HTML5 DnD, no new dependency) drags a flow to a new position; an insertion line shows the landing spot (before/after by cursor half). Dropping onto another group's rows or onto a group header moves the flow into that group — so drag also serves as the regroup gesture (filling the gap left when the per-row group dropdown was removed). New `grip` icon.

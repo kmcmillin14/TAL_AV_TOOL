@@ -1,6 +1,9 @@
 'use client'
 
+import { useRef, useState } from 'react'
 import type { Vehicle, TransferMethod } from '@/src/lib/vehicleLibrary'
+import Icon from '@/src/design-system/components/Icon'
+import FloatingPanel from './FloatingPanel'
 
 interface Props {
   vehicle?: Vehicle
@@ -20,17 +23,16 @@ function addedSec(m: TransferMethod, liftTimeSec: number): number {
   return (m.loadTimeSec ?? 0) + (m.unloadTimeSec ?? 0) + (m.lifts ? liftTimeSec : 0)
 }
 
-function tooltip(m: TransferMethod, liftTimeSec: number): string {
+function methodTooltip(m: TransferMethod, liftTimeSec: number): string {
   const base = `${m.method} — load ${m.loadTimeSec}s + unload ${m.unloadTimeSec}s`
-  return m.lifts ? `${base} + lift ${liftTimeSec.toFixed(1)}s (height × lift speed)` : base
+  return m.lifts ? `${base} + lift ${liftTimeSec.toFixed(1)}s` : base
 }
 
 /**
- * Single-line transfer-method cell. Every row is the same height regardless
- * of whether the method lifts. The trailing `+Ns` badge shows the time this
- * transfer adds to the cycle — standard (load+unload) for fixed methods, or
- * the height-derived total for lifting methods. Lifting methods reveal a
- * compact inline height field that does NOT add a second line.
+ * Transfer-method cell. Every method reads uniformly as `Method +Ns` (the time
+ * it adds). For lifting methods the `+Ns` badge is a button: clicking it opens a
+ * popover with the lift-height input, so the height is never an always-visible
+ * field cluttering the row. Non-lifting methods show a static badge.
  */
 export default function MethodSelect({
   vehicle,
@@ -41,6 +43,9 @@ export default function MethodSelect({
   onMethodChange,
   onLiftChange,
 }: Props) {
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+
   if (!vehicle) return <span className="flow-method-empty">—</span>
   const methods = vehicle.transferMethods ?? []
   if (methods.length === 0) return <span className="flow-method-empty">—</span>
@@ -60,15 +65,18 @@ export default function MethodSelect({
   }
 
   return (
-    <div className="flow-method-line" title={tooltip(active, liftTimeSec)}>
+    <div className="flow-method-line">
       {methods.length === 1 ? (
-        <span className="flow-method-name">{active.method}</span>
+        <span className="flow-method-name" title={methodTooltip(active, liftTimeSec)}>
+          {active.method}
+        </span>
       ) : (
         <select
           className="flow-method-select"
           value={methodIdx}
           onChange={e => onMethodChange(Number(e.target.value))}
           aria-label="Transfer method"
+          title={methodTooltip(active, liftTimeSec)}
         >
           {methods.map((m, i) => (
             <option key={`${m.method}-${i}`} value={i}>{m.method}</option>
@@ -76,23 +84,47 @@ export default function MethodSelect({
         </select>
       )}
 
-      {isLifting && (
-        <span className="flow-method-h">
-          <input
-            className="flow-method-h-input mono"
-            type="number"
-            min="0"
-            inputMode="decimal"
-            value={heightValue}
-            onChange={e => onHeight(e.target.value)}
-            aria-label="Lift height"
-            title="Lift height — drives the per-height transfer time"
-          />
-          <span className="flow-method-h-unit">{metric ? 'm' : 'ft'}</span>
-        </span>
+      {isLifting ? (
+        <>
+          <button
+            ref={triggerRef}
+            type="button"
+            className={`flow-method-time flow-method-time-btn mono${liftHeightFt === 0 ? ' needs-height' : ''}`}
+            onClick={() => setOpen(o => !o)}
+            aria-haspopup="dialog"
+            aria-expanded={open}
+            title="Set lift height"
+          >
+            +{total}s
+            <Icon name="chevronD" size={10} />
+          </button>
+          <FloatingPanel
+            anchorRef={triggerRef}
+            open={open}
+            onClose={() => setOpen(false)}
+            align="right"
+            className="lift-panel"
+          >
+            <div className="lift-panel-head">Lift height</div>
+            <div className="lift-panel-field">
+              <input
+                className="lift-panel-input mono"
+                type="number"
+                min="0"
+                inputMode="decimal"
+                value={heightValue}
+                onChange={e => onHeight(e.target.value)}
+                aria-label="Lift height"
+                autoFocus
+              />
+              <span className="lift-panel-unit">{metric ? 'm' : 'ft'}</span>
+            </div>
+            <div className="lift-panel-note mono">Adds {liftTimeSec.toFixed(1)}s to the cycle</div>
+          </FloatingPanel>
+        </>
+      ) : (
+        <span className="flow-method-time mono">+{total}s</span>
       )}
-
-      <span className="flow-method-time mono">+{total}s</span>
     </div>
   )
 }

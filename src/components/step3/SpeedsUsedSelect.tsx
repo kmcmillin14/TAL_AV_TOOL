@@ -1,8 +1,11 @@
 'use client'
 
+import { useRef, useState } from 'react'
 import type { RouteLayout } from '@/src/calc/types'
 import { ROUTE_LAYOUT_FACTORS } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
+import Icon from '@/src/design-system/components/Icon'
+import FloatingPanel from './FloatingPanel'
 
 interface Props {
   value: RouteLayout
@@ -13,21 +16,23 @@ interface Props {
 
 const M_PER_FT = 0.3048
 
-interface OptionDef {
+interface TierDef {
   value: RouteLayout
-  label: string       // condition, short
+  title: string
+  desc: string
 }
 
-// Highest-first: 70% is the realistic best-case route AVERAGE ceiling.
-const OPTIONS: ReadonlyArray<OptionDef> = [
-  { value: 'high',   label: 'Open, low traffic' },
-  { value: 'medium', label: 'Mixed traffic' },
-  { value: 'low',    label: 'Congested, many turns' },
+// Highest-first. The tier is a route AVERAGE fraction of rated cruise; 70%
+// (High) is the realistic ceiling — no route sustains full cruise once
+// accel/decel/turns are averaged in.
+const TIERS: ReadonlyArray<TierDef> = [
+  { value: 'high',   title: 'High',   desc: 'Open lanes, few turns' },
+  { value: 'medium', title: 'Medium', desc: 'Mixed warehouse traffic' },
+  { value: 'low',    title: 'Low',    desc: 'Congested, many turns' },
 ]
 
-function pct(layout: RouteLayout): number {
-  return Math.round(ROUTE_LAYOUT_FACTORS[layout] * 100)
-}
+const titleOf = (v: RouteLayout) => TIERS.find(t => t.value === v)?.title ?? 'Medium'
+const pct = (v: RouteLayout) => Math.round(ROUTE_LAYOUT_FACTORS[v] * 100)
 
 /** Format a feet-per-second value in the active unit system (ft/s or m/s). */
 function fmtSpeed(fps: number | undefined, metric: boolean): string {
@@ -36,51 +41,73 @@ function fmtSpeed(fps: number | undefined, metric: boolean): string {
 }
 
 /**
- * "Route Average Speed" picker. Engineers choose route conditions; each tier
- * is a fraction of the vehicle's rated cruise applied as a *route average*
- * (not an instantaneous cap). 70% is the ceiling — no route sustains full
- * cruise once accel/decel/turns are averaged in. The dropdown shows the % and
- * the resulting effective loaded/empty fps for the selected vehicle.
- *
- * Backed by the same `routeLayout` enum as before; this is purely presentation.
+ * Route Average Speed picker. The trigger shows the tier (High / Medium / Low);
+ * underneath, the cell shows the resulting Avg and the vehicle's Max speeds
+ * (loaded / empty) in the active unit. Clicking opens a panel that explains
+ * each tier. Backed by the unchanged `routeLayout` enum.
  */
 export default function SpeedsUsedSelect({ value, vehicle, unitSystem, onChange }: Props) {
   const metric = unitSystem === 'metric'
   const unit = metric ? 'm/s' : 'ft/s'
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const [open, setOpen] = useState(false)
+
   const sLoaded = vehicle?.calc.speedLoadedFps
   const sEmpty = vehicle?.calc.speedUnloadedFps
-
-  const optionLabel = (opt: OptionDef) => `${pct(opt.value)}% · ${opt.label}`
-  const tooltip = (opt: OptionDef) => {
-    const f = ROUTE_LAYOUT_FACTORS[opt.value]
-    const eLoaded = sLoaded != null ? sLoaded * f : undefined
-    const eEmpty = sEmpty != null ? sEmpty * f : undefined
-    return `${opt.label} — ${pct(opt.value)}% of rated cruise (route average). Effective ${fmtSpeed(eLoaded, metric)} / ${fmtSpeed(eEmpty, metric)} ${unit}.`
-  }
-
   const f = ROUTE_LAYOUT_FACTORS[value]
-  const effLoaded = sLoaded != null ? sLoaded * f : undefined
-  const effEmpty = sEmpty != null ? sEmpty * f : undefined
-  const activeOpt = OPTIONS.find(o => o.value === value) ?? OPTIONS[1]
+  const avgL = sLoaded != null ? sLoaded * f : undefined
+  const avgE = sEmpty != null ? sEmpty * f : undefined
+
+  const pick = (v: RouteLayout) => {
+    onChange(v)
+    setOpen(false)
+  }
 
   return (
     <div className="route-speed-cell">
-      <select
-        className="speeds-used-select"
-        value={value}
-        onChange={e => onChange(e.target.value as RouteLayout)}
-        aria-label="Route average speed (route conditions)"
-        title={tooltip(activeOpt)}
+      <button
+        ref={triggerRef}
+        type="button"
+        className="route-speed-trigger"
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        title="Route-average speed as a fraction of rated cruise — 70% is the realistic ceiling"
       >
-        {OPTIONS.map(opt => (
-          <option key={opt.value} value={opt.value} title={tooltip(opt)}>
-            {optionLabel(opt)}
-          </option>
+        <span>{titleOf(value)}</span>
+        <Icon name="chevronD" size={12} />
+      </button>
+
+      {vehicle ? (
+        <div className="route-speed-figures mono">
+          <span className="route-speed-avg">Avg {fmtSpeed(avgL, metric)} / {fmtSpeed(avgE, metric)} {unit}</span>
+          <span className="route-speed-max">Max {fmtSpeed(sLoaded, metric)} / {fmtSpeed(sEmpty, metric)} {unit}</span>
+        </div>
+      ) : (
+        <span className="route-speed-empty">pick a vehicle</span>
+      )}
+
+      <FloatingPanel
+        anchorRef={triggerRef}
+        open={open}
+        onClose={() => setOpen(false)}
+        className="route-speed-panel"
+      >
+        {TIERS.map(t => (
+          <button
+            key={t.value}
+            type="button"
+            className={`rs-opt${t.value === value ? ' active' : ''}`}
+            onClick={() => pick(t.value)}
+          >
+            <span className="rs-opt-row">
+              <span className="rs-opt-title">{t.title}</span>
+              <span className="rs-opt-pct mono">{pct(t.value)}%</span>
+            </span>
+            <span className="rs-opt-desc">{t.desc}</span>
+          </button>
         ))}
-      </select>
-      <span className="route-speed-fps mono">
-        {vehicle ? `→ ${fmtSpeed(effLoaded, metric)} / ${fmtSpeed(effEmpty, metric)} ${unit}` : 'pick a vehicle'}
-      </span>
+      </FloatingPanel>
     </div>
   )
 }

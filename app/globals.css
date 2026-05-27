@@ -1381,15 +1381,26 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .fs-line {
   display: flex;
   align-items: baseline;
-  gap: 8px;
+  gap: 12px;
   padding: 2px 0;
+}
+.fs-label {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.fs-figures {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
 }
 .fs-name {
   font-family: var(--tal-font-family);
   font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
-  min-width: 56px;
 }
 .fs-raw {
   font-family: var(--tal-font-numeric);
@@ -1397,7 +1408,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-feature-settings: var(--tal-numeric-features);
   font-size: 12px;
   color: var(--text-tertiary);
-  margin-left: auto;
 }
 .fs-arrow { color: var(--text-tertiary); font-size: 13px; }
 .fs-fleet {
@@ -1571,14 +1581,111 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   background: color-mix(in srgb, var(--accent) 14%, var(--bg-surface-2));
 }
 
-/* ===== Step 3 R6 — route average speed cell ===== */
-.route-speed-cell { display: flex; flex-direction: column; gap: 1px; }
-.route-speed-fps {
-  font-family: var(--tal-font-numeric);
+/* ===== Step 3 — route average speed cell (tier trigger + avg/max + panel) ===== */
+.route-speed-cell { display: flex; flex-direction: column; gap: 2px; align-items: stretch; }
+.route-speed-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-family: var(--tal-font-family);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.1s ease, box-shadow 0.1s ease;
+}
+.route-speed-trigger:hover { border-color: var(--border); }
+.route-speed-trigger:focus-visible { outline: none; border-color: var(--border-strong); box-shadow: 0 0 0 2px var(--accent-soft); }
+.route-speed-figures {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  padding: 0 6px;
   font-variant-numeric: tabular-nums;
   font-size: 10px;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.01em;
+  line-height: 1.35;
+}
+.route-speed-avg { color: var(--text-secondary); }
+.route-speed-max { color: var(--text-tertiary); }
+.route-speed-empty { padding: 0 6px; font-size: 10px; color: var(--text-disabled); font-style: italic; }
+
+/* ===== Step 3 — shared floating panel (anchored popover) ===== */
+.float-panel {
+  min-width: 200px;
+  padding: 6px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  font-family: var(--tal-font-family);
+}
+.route-speed-panel { min-width: 220px; }
+.rs-opt {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 7px 9px;
+  cursor: pointer;
+  transition: background 0.1s ease;
+}
+.rs-opt:hover { background: var(--bg-hover); }
+.rs-opt.active { background: var(--accent-soft); border-color: var(--accent); }
+.rs-opt-row { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.rs-opt-title { font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.rs-opt-pct {
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.rs-opt-desc { font-size: 11px; color: var(--text-tertiary); }
+
+/* ===== Step 3 — lift-height popover ===== */
+.lift-panel { min-width: 168px; }
+.lift-panel-head {
+  font-family: var(--tal-font-numeric);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
   color: var(--text-tertiary);
+  padding: 2px 4px 6px;
+}
+.lift-panel-field { display: flex; align-items: center; gap: 6px; padding: 0 4px; }
+.lift-panel-input {
+  flex: 1;
+  width: 100%;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: right;
+}
+.lift-panel-input:focus { outline: none; border-color: var(--border-strong); box-shadow: 0 0 0 2px var(--accent-soft); }
+.lift-panel-input::-webkit-outer-spin-button,
+.lift-panel-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.lift-panel-input[type='number'] { -moz-appearance: textfield; }
+.lift-panel-unit { font-family: var(--tal-font-numeric); font-size: 11px; color: var(--text-tertiary); }
+.lift-panel-note {
+  padding: 8px 4px 2px;
+  font-variant-numeric: tabular-nums;
+  font-size: 10.5px;
+  color: var(--text-secondary);
 }
 
 /* ===== Step 3 R6 — vehicle count unit ===== */
@@ -1915,9 +2022,9 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-disabled);
   font-family: var(--tal-font-numeric);
 }
-/* Single-line method cell — constant height for every method. The lifting
-   case reveals a compact inline height field (no second row) so per-height
-   transfers take no more room than fixed ones. */
+/* Single-line method cell — constant height for every method. Every transfer
+   reads as `Method +Ns`; lifting methods make the +Ns badge a button that
+   opens the lift-height popover (no always-visible input). */
 .flow-method-line {
   display: flex;
   flex-direction: row;
@@ -1938,38 +2045,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   text-align: left;
 }
 .flow-method-line .flow-method-select { flex: 1 1 auto; min-width: 0; }
-.flow-method-h {
-  display: inline-flex;
-  align-items: center;
-  gap: 2px;
-  flex: 0 0 auto;
-}
-.flow-method-line .flow-method-h-input {
-  width: 42px;
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 4px;
-  font-family: var(--tal-font-numeric);
-  font-variant-numeric: tabular-nums;
-  font-size: 12px;
-  color: var(--text-primary);
-  text-align: right;
-  transition: border-color 0.1s ease, box-shadow 0.1s ease;
-}
-.flow-method-line .flow-method-h-input:focus {
-  outline: none;
-  border-color: var(--border-strong);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-.flow-method-h-input::-webkit-outer-spin-button,
-.flow-method-h-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-.flow-method-h-input[type='number'] { -moz-appearance: textfield; }
-.flow-method-h-unit {
-  font-family: var(--tal-font-numeric);
-  font-size: 10px;
-  color: var(--text-tertiary);
-}
 .flow-method-time {
   flex: 0 0 auto;
   font-family: var(--tal-font-numeric);
@@ -1978,6 +2053,29 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-weight: 700;
   color: var(--text-secondary);
   letter-spacing: 0.01em;
+}
+/* Lifting methods: the +Ns badge is a button that opens the lift-height popover. */
+.flow-method-time-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  padding: 1px 3px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.1s ease, color 0.1s ease;
+}
+.flow-method-time-btn:hover { border-color: var(--border); color: var(--text-primary); }
+.flow-method-time-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.flow-method-time-btn.needs-height { color: var(--accent); }
+.flow-method-time-btn.needs-height::after {
+  content: '';
+  width: 4px; height: 4px;
+  margin-left: 2px;
+  border-radius: 50%;
+  background: var(--accent);
 }
 
 /* ---- Step 3 — Per-row section indicator pill + popover ---- */
@@ -1999,31 +2097,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .flows-table thead th.flow-th-output,
 .flows-table tbody td.flow-td-output {
   background: var(--bg-surface-2);
-}
-/* ---- Step 3 — Route Average Speed dropdown ---- */
-.speeds-used-select {
-  width: 100%;
-  background: transparent;
-  color: var(--text-primary);
-  border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 4px 6px;
-  font-family: var(--tal-font-family);
-  font-size: 12px;
-  cursor: pointer;
-  transition: border-color 0.1s ease, box-shadow 0.1s ease;
-}
-.speeds-used-select:hover {
-  border-color: var(--border);
-}
-.speeds-used-select:focus {
-  outline: none;
-  border-color: var(--border-strong);
-  box-shadow: 0 0 0 2px var(--accent-soft);
-}
-.speeds-used-select option {
-  background: var(--bg-surface-2);
-  color: var(--text-primary);
 }
 .flow-cell-readonly {
   display: inline-block;
