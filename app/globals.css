@@ -1429,8 +1429,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   padding-top: 6px;
   border-top: 1px solid var(--border);
 }
-.fs-total .fs-name { color: var(--text-secondary); letter-spacing: 0.06em; font-size: 12px; }
-.fs-total .fs-fleet { color: var(--accent); font-size: 18px; }
+.fs-total .fs-name { color: var(--text-secondary); letter-spacing: 0.06em; }
+.fs-total .fs-fleet { color: var(--accent); }
 .fs-empty {
   font-size: 12.5px;
   color: var(--text-tertiary);
@@ -1586,7 +1586,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .route-speed-trigger {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: 4px;
   width: 100%;
   background: transparent;
@@ -1605,8 +1605,9 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .route-speed-figures {
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 0;
-  padding: 0 6px;
+  padding: 0;
   font-variant-numeric: tabular-nums;
   font-size: 10px;
   letter-spacing: 0.01em;
@@ -1614,7 +1615,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .route-speed-avg { color: var(--text-secondary); }
 .route-speed-max { color: var(--text-tertiary); }
-.route-speed-empty { padding: 0 6px; font-size: 10px; color: var(--text-disabled); font-style: italic; }
+.route-speed-empty { padding: 0; font-size: 10px; color: var(--text-disabled); font-style: italic; text-align: center; }
 
 /* ===== Step 3 — shared floating panel (anchored popover) ===== */
 .float-panel {
@@ -2045,8 +2046,15 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   text-align: left;
 }
 .flow-method-line .flow-method-select { flex: 1 1 auto; min-width: 0; }
+/* All +Ns badges share one right-aligned column (static span and lift button
+   have identical geometry) so the seconds line up across every row. */
 .flow-method-time {
   flex: 0 0 auto;
+  min-width: 44px;
+  text-align: right;
+  padding: 2px 4px;
+  border: 1px solid transparent;
+  border-radius: 4px;
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-size: 11px;
@@ -2056,27 +2064,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 /* Lifting methods: the +Ns badge is a button that opens the lift-height popover. */
 .flow-method-time-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  background: transparent;
-  border: 1px solid transparent;
-  border-radius: 4px;
-  padding: 1px 3px;
-  color: var(--text-secondary);
   cursor: pointer;
   transition: border-color 0.1s ease, color 0.1s ease;
 }
 .flow-method-time-btn:hover { border-color: var(--border); color: var(--text-primary); }
-.flow-method-time-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--accent-soft); }
+.flow-method-time-btn:focus-visible { outline: none; border-color: var(--border-strong); box-shadow: 0 0 0 2px var(--accent-soft); }
 .flow-method-time-btn.needs-height { color: var(--accent); }
-.flow-method-time-btn.needs-height::after {
-  content: '';
-  width: 4px; height: 4px;
-  margin-left: 2px;
-  border-radius: 50%;
-  background: var(--accent);
-}
 
 /* ---- Step 3 — Per-row section indicator pill + popover ---- */
 .flow-row-num {

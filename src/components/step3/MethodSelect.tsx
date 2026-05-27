@@ -2,7 +2,6 @@
 
 import { useRef, useState } from 'react'
 import type { Vehicle, TransferMethod } from '@/src/lib/vehicleLibrary'
-import Icon from '@/src/design-system/components/Icon'
 import FloatingPanel from './FloatingPanel'
 
 interface Props {
@@ -96,7 +95,6 @@ export default function MethodSelect({
             title="Set lift height"
           >
             +{total}s
-            <Icon name="chevronD" size={10} />
           </button>
           <FloatingPanel
             anchorRef={triggerRef}
