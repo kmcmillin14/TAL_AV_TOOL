@@ -306,6 +306,7 @@ export default function PersistentHeader({
         </div>
 
         <div className="hero-meta-line">
+          <div className="hero-meta-half hero-meta-left">
           {renderInlineItem('versionNumber', 'REV', editValues.versionNumber, 'v1.0')}
           <span className="hero-meta-sep" aria-hidden />
 
@@ -349,11 +350,15 @@ export default function PersistentHeader({
               </span>
             )}
           </div>
+          </div>
 
-          <span className="hero-meta-sep" aria-hidden />
+          <span className="hero-meta-sep hero-meta-center" aria-hidden />
+
+          <div className="hero-meta-half hero-meta-right">
           {renderInlineItem('customerName', 'CUSTOMER', editValues.customerName)}
           <span className="hero-meta-sep" aria-hidden />
           {renderInlineItem('projectName',  'PROJECT',  editValues.projectName)}
+          </div>
         </div>
 
         <div className="hero-actions">

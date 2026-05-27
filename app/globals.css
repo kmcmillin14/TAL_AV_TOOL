@@ -162,6 +162,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 
 .hero-top {
+  position: relative;
   display: flex;
   align-items: stretch;
   justify-content: space-between;
@@ -184,18 +185,39 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .app-name .product-sub { font-family: var(--tal-font-numeric); font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.14em; text-transform: uppercase; }
 .app-name .product-rev { font-family: var(--tal-font-numeric); font-size: 10px; letter-spacing: 0.14em; color: var(--text-tertiary); font-weight: 500; margin-top: 2px; }
 
-/* Inline hero meta — reads like a sentence, grows with content, wraps when wide */
+/* Pin the OPP|CUSTOMER divider to the exact page center. An absolutely-positioned
+   `1fr · auto · 1fr` grid spanning the full hero width puts the center column (that
+   divider) at 50%. The two halves shrink to content and hug the center, so they
+   never overlap the brand/actions, which stay in the flex flow. */
 .hero-meta-line {
-  display: flex;
-  flex: 1;
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  align-self: center;
-  padding: 8px 16px;
-  row-gap: 4px;
-  column-gap: 0;
+  pointer-events: none;
+}
+.hero-meta-half {
+  display: flex;
+  align-items: center;
+  pointer-events: auto;
   min-width: 0;
+}
+.hero-meta-left  { justify-self: end;   justify-content: flex-end;   padding-right: 14px; }
+.hero-meta-right { justify-self: start; justify-content: flex-start; padding-left: 14px; }
+.hero-meta-center { pointer-events: none; }
+
+@media (max-width: 1100px) {
+  /* Narrow widths: fall back to a centered, wrapping in-flow row so the meta
+     can't collide with the brand/actions. */
+  .hero-meta-line {
+    position: static; inset: auto;
+    display: flex; flex: 1; flex-wrap: wrap;
+    align-items: center; justify-content: center; align-self: center;
+    padding: 8px 16px; row-gap: 4px; column-gap: 0; min-width: 0;
+  }
+  .hero-meta-half { display: contents; }
+  .hero-meta-left, .hero-meta-right { padding: 0; }
 }
 .hero-meta-item {
   display: inline-flex;
