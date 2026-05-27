@@ -80,12 +80,14 @@ export default function FlowsTable({
   }
   const overFlow = (id: string, after: boolean) => {
     if (!dragId || id === dragId) return
+    // dragover fires continuously; skip state churn unless the target changed.
+    if (id === overFlowId && after === overAfter && overGroup === null) return
     setOverFlowId(id)
     setOverAfter(after)
     setOverGroup(null)
   }
   const overGroupHeader = (group: string) => {
-    if (!dragId) return
+    if (!dragId || group === overGroup) return
     setOverGroup(group)
     setOverFlowId(null)
   }

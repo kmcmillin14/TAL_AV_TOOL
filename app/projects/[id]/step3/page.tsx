@@ -13,7 +13,6 @@ import type { Flow, FlowDerived } from '@/src/calc/types'
 import {
   flowDerived,
   groupSummary,
-  projectFlowSummary,
 } from '@/src/calc/flowMetrics'
 import FlowsTable from '@/src/components/step3/FlowsTable'
 import FleetRibbon from '@/src/components/step3/FleetRibbon'
@@ -85,9 +84,16 @@ export default function Step3Page() {
     return ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
   }, [flows, derivedByFlowId])
 
+  // Reuse the already-computed per-vehicle `groups` rather than re-running
+  // groupSummary for every vehicle a second time inside projectFlowSummary.
   const totals = useMemo(
-    () => projectFlowSummary(flows, derivedByFlowId),
-    [flows, derivedByFlowId],
+    () => ({
+      totalFlows: flows.length,
+      totalThru: flows.reduce((s, f) => s + f.thruPerHr, 0),
+      totalRawFleet: groups.reduce((s, g) => s + g.groupRaw, 0),
+      totalBaseFleet: groups.reduce((s, g) => s + g.baseFleet, 0),
+    }),
+    [flows, groups],
   )
 
   const persistPatch = (patch: { flows?: Flow[]; flowGroups?: string[] }) => {

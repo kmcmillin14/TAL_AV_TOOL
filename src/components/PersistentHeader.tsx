@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
-import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject } from '@/src/lib/storage'
+import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects } from '@/src/lib/storage'
 import { downloadProjectPdf } from '@/src/lib/pdfExport'
 import { prefetchVehicles } from '@/src/lib/vehicleCache'
 
@@ -175,9 +175,11 @@ export default function PersistentHeader({
 
   const [undoAvailable, setUndoAvailable] = useState(false)
   useEffect(() => {
-    setUndoAvailable(canUndo(project.id))
-    const interval = setInterval(() => setUndoAvailable(canUndo(project.id)), 1000)
-    return () => clearInterval(interval)
+    const refresh = () => setUndoAvailable(canUndo(project.id))
+    refresh()
+    // Event-driven instead of a 1 Hz poll: fire on any project mutation
+    // (this header's saves/undo/clear, sibling-step saves, cross-tab changes).
+    return subscribeProjects(refresh)
   }, [project.id])
 
   // Warm every step route + the vehicle library so step-dot navigation is

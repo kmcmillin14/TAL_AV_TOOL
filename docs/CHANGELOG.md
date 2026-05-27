@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-05-27 — Performance: kill app-wide lag (storage cache + drop 1 Hz header poll)
+
+Code-review pass on a "page feels laggy/slow" report. Two shared hot paths dominated:
+
+- **`PersistentHeader` polled `canUndo()` every second** on every step — each tick parsed
+  all of localStorage and re-rendered the header. Replaced with an event-driven
+  subscription (`subscribeProjects`); undo state now refreshes only on real mutations.
+- **`storage.ts` re-parsed the whole projects blob on every read and re-serialized it on
+  every keystroke** (Step 1 `watch` save + Step 3 `onPatch`). Added an in-memory cache
+  (parse once; session source of truth — survives client-side step navigation, so the old
+  Step 1 "save-before-nav race" is gone) and **coalesced disk writes** on a 300 ms timer
+  with `beforeunload`/`pagehide` flush and cross-tab `storage`-event invalidation. New
+  exports: `subscribeProjects`, `flushProjects`.
+- Step 3: `projectFlowSummary` was recomputing `groupSummary` per vehicle that the page's
+  `groups` memo already produced — totals now reuse `groups`. Drag `dragover` handlers skip
+  state updates when the target/position is unchanged.
+
+**Deferred (follow-ups):** `React.memo(FlowRow)` (needs per-flow memoization of
+`flowDerived` to be effective, since the derived map rebuilds each keystroke) and shipping
+small vehicle-image thumbnails (Step 2 cards + Step 3 dots still decode multi-MB heroes).
+No calc/schema change; 91 tests pass.
+
 ## 2026-05-27 — Vehicle library corrected from manufacturer cutsheets
 
 All six `src/content/vehicles/*.json` corrected against the cutsheets in `Vehicle Cutsheets/`

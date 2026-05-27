@@ -80,25 +80,79 @@ function generateId(): string {
   return 'p_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-4)
 }
 
+// In-memory cache of the parsed projects array. Parsing the whole localStorage
+// blob on every read — and the per-second `canUndo` poll in PersistentHeader —
+// was a primary source of UI lag. We parse once, keep the array in module
+// memory as the session's source of truth, and coalesce disk writes.
+let cache: StoredProject[] | null = null
+let flushTimer: ReturnType<typeof setTimeout> | null = null
+let dirty = false
+
+type ProjectsListener = () => void
+const listeners = new Set<ProjectsListener>()
+
+/** Subscribe to project mutations (fires after every create/update/delete/undo/
+ *  clear/import, and on cross-tab storage changes). Returns an unsubscribe fn.
+ *  Lets the UI refresh derived state (e.g. undo availability) without polling. */
+export function subscribeProjects(cb: ProjectsListener): () => void {
+  listeners.add(cb)
+  return () => { listeners.delete(cb) }
+}
+function notify(): void {
+  for (const cb of listeners) cb()
+}
+
 function readAll(): StoredProject[] {
+  if (cache) return cache
   if (typeof window === 'undefined') return []
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (!raw) return []
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed : []
+    const parsed = raw ? JSON.parse(raw) : []
+    cache = Array.isArray(parsed) ? parsed : []
   } catch {
-    return []
+    cache = []
   }
+  return cache
 }
 
+function flush(): void {
+  if (flushTimer) { clearTimeout(flushTimer); flushTimer = null }
+  if (!dirty || cache == null || typeof window === 'undefined') return
+  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cache)) } catch { /* quota */ }
+  dirty = false
+}
+
+// Updates the in-memory cache immediately (so the current session reads live
+// data with no re-parse — including step-to-step client navigation, which keeps
+// this module loaded) and coalesces the localStorage write on a short timer.
 function writeAll(projects: StoredProject[]): void {
+  cache = projects
+  dirty = true
+  notify()
   if (typeof window === 'undefined') return
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(projects))
+  if (!flushTimer) flushTimer = setTimeout(flush, 300)
+}
+
+/** Force any pending disk write immediately. */
+export function flushProjects(): void {
+  flush()
+}
+
+if (typeof window !== 'undefined') {
+  // The coalesced write may still be pending when the tab closes/reloads.
+  window.addEventListener('beforeunload', flush)
+  window.addEventListener('pagehide', flush)
+  // Another tab wrote storage → drop our cache so the next read re-syncs.
+  window.addEventListener('storage', e => {
+    if (e.key === STORAGE_KEY || e.key === null) {
+      cache = null
+      notify()
+    }
+  })
 }
 
 export function listProjects(): StoredProject[] {
-  return readAll().sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+  return [...readAll()].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
 }
 
 export function getProject(id: string): StoredProject | null {
