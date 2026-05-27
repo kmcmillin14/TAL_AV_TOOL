@@ -193,7 +193,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   position: absolute;
   inset: 0;
   display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  /* minmax(0,1fr) — a plain 1fr won't shrink below its content's min-width, so the
+     heavier half (CUSTOMER·PROJECT) would widen its track and push the divider
+     off-center. minmax(0,1fr) forces both tracks truly equal → divider at 50%. */
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
   pointer-events: none;
 }
