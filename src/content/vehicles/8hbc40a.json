@@ -10,6 +10,7 @@
     "typicalLoad": "Standard Pallet",
     "category": "Automated Pallet Truck",
     "navigationType": "natural",
+    "cutsheet": "/cutsheets/8hbc40a.pdf",
     "order": 6
   },
   "transferMethods": [

@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-05-28 — In-app help drawer + per-vehicle spec-sheet download
+
+- **`?` Help drawer.** New `HelpDrawer` (right-side panel + backdrop) opened by a
+  `?` button in the persistent header (`hero-actions`). Context-aware (defaults to
+  the current step's guide) with a left rail covering App Overview + every step
+  (0–6). Content lives as data in `src/content/help.ts` (`HelpSection[]`); Steps 4–6
+  are stubbed with planned purpose (`status: 'coming'`). New `help` icon. Closes on
+  outside-click / Esc / ×.
+- **Spec-sheet download (Step 2).** Each vehicle JSON gains a `display.cutsheet`
+  path; manufacturer PDFs added under `public/cutsheets/{id}.pdf` (8TB50A/8HBC40A
+  brochure duplicated for both ids). The back-face title of a flipped card shows a
+  `Spec sheet ⤓` link in the top-right that downloads the correct PDF; the click
+  calls `stopPropagation()` so it does not re-flip the card.
+- New optional `cutsheet?: string` on `VehicleDisplay`; no calc/schema changes.
+
 ## 2026-05-27 — Performance: kill app-wide lag (storage cache + drop 1 Hz header poll)
 
 Code-review pass on a "page feels laggy/slow" report. Two shared hot paths dominated:

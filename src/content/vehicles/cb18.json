@@ -10,6 +10,7 @@
     "typicalLoad": "Standard Pallet",
     "category": "AGF",
     "navigationType": "lidar_slam",
+    "cutsheet": "/cutsheets/cb18.pdf",
     "order": 1
   },
   "transferMethods": [

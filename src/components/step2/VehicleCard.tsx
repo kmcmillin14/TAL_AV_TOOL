@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import TrafficLight from '@/src/design-system/components/TrafficLight'
+import Icon from '@/src/design-system/components/Icon'
 import WhyBreakdown from './WhyBreakdown'
 import VehicleSpecSheet from './VehicleSpecSheet'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
@@ -125,6 +126,19 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
         <div className="veh-card-face veh-card-back" aria-hidden={!isBack}>
           <div className="veh-back-title">
             <span className="bt-name">{vehicle.name}</span>
+            {vehicle.display.cutsheet && (
+              <a
+                className="veh-back-download"
+                href={vehicle.display.cutsheet}
+                download
+                target="_blank"
+                rel="noopener noreferrer"
+                title="Download spec sheet (PDF)"
+                onClick={e => e.stopPropagation()}
+              >
+                <Icon name="download" size={12} /> Spec sheet
+              </a>
+            )}
           </div>
 
           <div className="veh-back-tabs" role="tablist" aria-label="Vehicle details">

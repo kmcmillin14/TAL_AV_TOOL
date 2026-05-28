@@ -10,6 +10,7 @@
     "typicalLoad": "Unit Load",
     "category": "Unit Load",
     "navigationType": "natural",
+    "cutsheet": "/cutsheets/ebase7.pdf",
     "order": 3
   },
   "transferMethods": [

@@ -10,6 +10,7 @@
     "typicalLoad": "Tote",
     "category": "Mini Load",
     "navigationType": "lidar_slam",
+    "cutsheet": "/cutsheets/ml2.pdf",
     "order": 2
   },
   "transferMethods": [

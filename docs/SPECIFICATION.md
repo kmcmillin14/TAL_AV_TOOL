@@ -186,3 +186,27 @@ Vehicles: **CB18** (Lift, sL = 9.84 fps, sU = 9.84 fps, load+unload = 10s) · **
 Project totals: `totalFlows = 8`, `totalThru = 221`, `totalRawFleet ≈ 12.80`, `totalBaseFleet = 13`.
 
 CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th), ML2 sits in the **yellow** band (6.4%). Two model corrections drive the longer cycles vs. early rounds: the medium route-average factor is `0.5` (70% is the best-case *average*, not 90%), and **empty travel now uses the same speed as loaded** (the cutsheets give one automated speed; no faster empty-return assumption). Both push fleet counts up relative to a sustained-cruise model.
+
+---
+
+## App-wide help
+
+A single **`?` button** in the persistent header opens a right-side **`HelpDrawer`**
+(`src/components/HelpDrawer.tsx`) that explains how to use the tool. It is
+context-aware: on every step it defaults to that step's guide, and a left rail
+lets the engineer browse an **App Overview** plus every step (0–6). Content lives
+as data — `HelpSection[]` in `src/content/help.ts` with `id`, `title`, `summary`,
+ordered `howTo`, optional `tips`, and an optional `status: 'coming'` for the
+unbuilt Steps 4–6. Closes on outside-click, `Escape`, or the × in the drawer
+header.
+
+## Step 2 — Vehicle cutsheet download
+
+Each vehicle JSON declares a `display.cutsheet` path (e.g.
+`/cutsheets/cb18.pdf`). The manufacturer PDFs live in
+`public/cutsheets/{id}.pdf`; the 8TB50A/8HBC40A brochure is duplicated under
+each vehicle id so each card downloads with a sensible filename. When a
+`VehicleCard` is flipped to its back face, a small **`Spec sheet ⤓`** link sits
+in the **top-right of the back-face title**. Clicking it downloads (or opens in
+a new tab) the vehicle's cutsheet; the click calls `stopPropagation()` so it
+does not bubble up and flip the card back.

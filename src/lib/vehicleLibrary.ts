@@ -26,6 +26,9 @@ export interface VehicleDisplay {
   typicalLoad: string
   category: string
   navigationType?: NavigationType
+  /** Path under /public to the manufacturer cutsheet PDF (downloadable from the
+   *  Step 2 card back face). */
+  cutsheet?: string
   /** Explicit display order for the Step 2 card grid (ascending). Vehicles
    *  without it sort after, by name. */
   order?: number

@@ -803,8 +803,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .veh-card-back { transform: rotateY(180deg); overflow-y: auto; }
 
-/* Back title strip — just the vehicle name */
+/* Back title strip — vehicle name (left) + Spec-sheet download (top-right) */
 .veh-back-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   padding: 12px 16px;
   border-bottom: 1px solid var(--border);
   background: var(--bg-surface-2);
@@ -815,6 +819,39 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: -0.01em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.veh-back-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-secondary);
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.1s ease, border-color 0.1s ease, background 0.1s ease;
+}
+.veh-back-download:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.veh-back-download:focus-visible {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent-soft);
 }
 
 /* Back tab bar */

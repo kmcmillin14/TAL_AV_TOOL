@@ -10,6 +10,7 @@
     "typicalLoad": "Cart Train",
     "category": "Automated Tugger",
     "navigationType": "natural",
+    "cutsheet": "/cutsheets/8tb50a.pdf",
     "order": 5
   },
   "transferMethods": [
