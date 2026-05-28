@@ -124,21 +124,21 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
 
         {/* ───────── BACK ───────── */}
         <div className="veh-card-face veh-card-back" aria-hidden={!isBack}>
+          {vehicle.display.cutsheet && (
+            <a
+              className="veh-back-download"
+              href={vehicle.display.cutsheet}
+              download
+              target="_blank"
+              rel="noopener noreferrer"
+              title="Download spec sheet (PDF)"
+              onClick={e => e.stopPropagation()}
+            >
+              <Icon name="download" size={12} /> Spec sheet
+            </a>
+          )}
           <div className="veh-back-title">
             <span className="bt-name">{vehicle.name}</span>
-            {vehicle.display.cutsheet && (
-              <a
-                className="veh-back-download"
-                href={vehicle.display.cutsheet}
-                download
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Download spec sheet (PDF)"
-                onClick={e => e.stopPropagation()}
-              >
-                <Icon name="download" size={12} /> Spec sheet
-              </a>
-            )}
           </div>
 
           <div className="veh-back-tabs" role="tablist" aria-label="Vehicle details">
