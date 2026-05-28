@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects } from '@/src/lib/storage'
+import HelpDrawer from './HelpDrawer'
 import { downloadProjectPdf } from '@/src/lib/pdfExport'
 import { prefetchVehicles } from '@/src/lib/vehicleCache'
 
@@ -96,6 +97,7 @@ export default function PersistentHeader({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [theme, setTheme] = useState<'dark' | 'light'>('dark')
   const [menuOpen, setMenuOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -290,6 +292,7 @@ export default function PersistentHeader({
     ''
 
   return (
+    <>
     <header className="hero-bar">
       <div className="hero-top">
         <div className="hero-brand">
@@ -401,6 +404,15 @@ export default function PersistentHeader({
           <button className="tbtn-icon" onClick={toggleTheme} aria-label="Toggle theme">
             <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
           </button>
+          <button
+            type="button"
+            className="tbtn-icon"
+            onClick={() => setHelpOpen(true)}
+            aria-label="Help"
+            title="Help — how to use this tool"
+          >
+            <Icon name="help" />
+          </button>
 
           <div className="header-menu-wrap" ref={menuRef}>
             <button
@@ -503,5 +515,7 @@ export default function PersistentHeader({
         </div>
       </nav>
     </header>
+    <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} currentStep={currentStep} />
+    </>
   )
 }

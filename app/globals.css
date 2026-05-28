@@ -2275,3 +2275,70 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .cycle-popover-row.total dt { color: var(--text-primary); }
 .cycle-popover-row.total dd { color: var(--accent); }
+
+/* ===== Help drawer (header "?") ===== */
+.help-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex; justify-content: flex-end;
+}
+.help-drawer {
+  width: min(560px, 92vw);
+  height: 100%;
+  background: var(--bg-surface);
+  border-left: 1px solid var(--border-strong);
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.4);
+  display: flex; flex-direction: column;
+  animation: help-slide-in 0.18s ease;
+}
+@keyframes help-slide-in { from { transform: translateX(100%); } to { transform: translateX(0); } }
+.help-drawer-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px; border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.help-drawer-title {
+  font-family: var(--tal-font-numeric); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary);
+}
+.help-close {
+  background: transparent; border: none; color: var(--text-tertiary);
+  cursor: pointer; display: inline-flex; padding: 4px; border-radius: 4px;
+}
+.help-close:hover { color: var(--text-primary); background: var(--bg-hover); }
+.help-drawer-body { display: flex; flex: 1; min-height: 0; }
+.help-rail {
+  flex: 0 0 172px; border-right: 1px solid var(--border);
+  padding: 10px; display: flex; flex-direction: column; gap: 2px; overflow-y: auto;
+}
+.help-rail-item {
+  display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  text-align: left; background: transparent; border: 1px solid transparent;
+  border-radius: 6px; padding: 8px 10px; cursor: pointer;
+  font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-secondary);
+}
+.help-rail-item:hover { background: var(--bg-hover); color: var(--text-primary); }
+.help-rail-item.active { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); font-weight: 600; }
+.help-soon {
+  font-family: var(--tal-font-numeric); font-size: 9px; text-transform: uppercase;
+  letter-spacing: 0.06em; color: var(--text-tertiary); flex-shrink: 0;
+}
+.help-content { flex: 1; min-width: 0; overflow-y: auto; padding: 22px 26px; }
+.help-content h2 { font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px; }
+.help-summary { font-size: 14px; color: var(--text-secondary); line-height: 1.55; margin: 0 0 18px; }
+.help-coming { font-size: 12.5px; font-style: italic; color: var(--warn); margin: -8px 0 16px; }
+.help-content h3 {
+  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); margin: 18px 0 8px;
+}
+.help-howto { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; }
+.help-tips { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 6px; }
+.help-howto li, .help-tips li { font-size: 13.5px; color: var(--text-secondary); line-height: 1.5; }
+@media (max-width: 640px) {
+  .help-drawer { width: 100vw; }
+  .help-drawer-body { flex-direction: column; }
+  .help-rail {
+    flex: 0 0 auto; flex-direction: row; overflow-x: auto;
+    border-right: none; border-bottom: 1px solid var(--border);
+  }
+}
