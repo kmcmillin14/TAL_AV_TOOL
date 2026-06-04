@@ -9,6 +9,8 @@ interface Props {
   name: string
   color: string
   count: number
+  /** Total vehicle demand for this group = Σ per-flow rawVehicles (fractional). */
+  vehicleDemand: number
   colSpan: number
   autoFocus?: boolean
   isDragOver?: boolean
@@ -32,6 +34,7 @@ export default function GroupHeader({
   name,
   color,
   count,
+  vehicleDemand,
   colSpan,
   autoFocus,
   isDragOver,
@@ -116,6 +119,9 @@ export default function GroupHeader({
             aria-label="Group name"
           />
           <span className="fg-count">{count} {count === 1 ? 'flow' : 'flows'}</span>
+          <span className="fg-demand mono" title="Total vehicle demand for this group (Σ per-flow vehicle count)">
+            {vehicleDemand.toFixed(2)} {Math.abs(vehicleDemand - 1) < 0.005 ? 'vehicle' : 'vehicles'}
+          </span>
           <button type="button" className="fg-add" onClick={onAddFlow}>
             <Icon name="plus" size={12} /> Add flow
           </button>

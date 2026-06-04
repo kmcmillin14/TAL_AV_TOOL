@@ -139,17 +139,10 @@ Groups are named, organizational zones (e.g. "ASRS", "Dock") — they structure 
 - Group names live at the project level in `flowGroups: string[]` (ordered; Zod `.default([])`). The effective group list is `flowGroups ∪ distinct flow.sectionName` so legacy projects that only carry `sectionName` still display.
 - Each flow references its group via the existing `flow.sectionName` (no flow-schema change).
 - **`+Group`** appends a new group with a placeholder name and focuses its header for **inline renaming** (a real text input committed on blur/Enter — no browser prompt).
-- A group renders as a full-width **header row** (color swatch · inline-editable name · flow count · its own **`+ Add flow`** button) above its flows. `+ Add flow` drops a new flow straight into that group.
+- A group renders as a full-width **header row** (color swatch · inline-editable name · flow count · **total vehicle demand** · its own **`+ Add flow`** button) above its flows. `+ Add flow` drops a new flow straight into that group. The total vehicle demand is `Σ rawVehicles` over the group's flows (the per-flow Vehicle-Count math, summed) — fractional, informational; the binding integer fleet still pools per `vehicleId` across the project (see `FleetRibbon`).
 - **Group color is user-selectable.** The header swatch is a button that opens a small palette popover (the same 6 curated, color-blind-safe brand colors as the hash default; TAL red is reserved). The chosen color drives the header swatch, left bar, and row tint (`--group-color`). Overrides live at the project level in `flowGroupColors: Record<groupName, hex>` (Zod `.default({})`); a group with no override falls back to the deterministic `sectionColor(name)` hash. The override follows the group across an inline rename and is dropped when the group is deleted.
 - Flows with no `sectionName` render as plain rows (no header) after the group sections.
 - Deleting a group (× on its header) un-assigns its member flows (`sectionName → undefined`); it does not delete the flows.
-
-### Fleet summary views (By Vehicle / By Zone)
-
-The Step 3 summary box (`FleetRibbon`) offers two views; the toggle appears only once at least one group/zone exists.
-
-- **By Vehicle** (default): one line per vehicle type — `raw → ⌈baseFleet⌉` (headroom-tinted) — and `TOTAL = Σ baseFleet`. This is the binding fleet.
-- **By Zone**: per visual group, the **fractional vehicle-demand** each vehicle contributes within that zone (`Σ rawVehicles` per `vehicleId`), a per-zone subtotal (`zoneRaw`), and the ungrouped bucket last. These are **demand contributions, not standalone counts** — there is **no per-zone ceil**, because the fleet pools per `vehicleId` across the whole project. The single binding integer `totalBaseFleet` is shown once. **Invariant:** `Σ zoneRaw == totalRawFleet` (every flow lands in exactly one zone); the integer is intentionally *not* the sum of per-zone ceils. vehicleId-less flows are counted in the zone's flow count (surfaced as "N no vehicle") but excluded from the per-vehicle demand. Backed by pure `zoneSummary`/`zonesSummary` in `src/calc/flowMetrics.ts`; zone order comes from the shared `effectiveGroups()` helper.
 
 ### Headroom color thresholds (display only)
 

@@ -303,12 +303,18 @@ export default function FlowsTable({
             <tbody>
               {effGroups.map(g => {
                 const groupFlows = flows.filter(f => f.sectionName === g)
+                // Total vehicle demand for the group = Σ per-flow rawVehicles.
+                const groupDemand = groupFlows.reduce(
+                  (s, f) => s + (derivedByFlowId.get(f.id)?.rawVehicles ?? 0),
+                  0,
+                )
                 return (
                   <Fragment key={`g-${g}`}>
                     <GroupHeader
                       name={g}
                       color={flowGroupColors[g] ?? sectionColor(g)}
                       count={groupFlows.length}
+                      vehicleDemand={groupDemand}
                       colSpan={COLS}
                       autoFocus={focusGroup === g}
                       isDragOver={overGroup === g}

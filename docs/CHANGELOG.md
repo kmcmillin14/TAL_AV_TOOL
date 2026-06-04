@@ -1,14 +1,13 @@
 # Changelog
 
-## 2026-06-03 — Step 3 fleet summary: By Zone breakdown
+## 2026-06-03 — Step 3 group ribbon shows total vehicle demand
 
-- **By Vehicle / By Zone toggle** in `FleetRibbon`. By Zone shows each group's per-vehicle
-  fractional demand + a zone subtotal (`zoneRaw`), ungrouped bucket last, with the single binding
-  `totalBaseFleet` integer shown once and a caption clarifying that the fleet pools per vehicle
-  (per-zone numbers are demand, not standalone counts). Toggle appears only when ≥1 zone exists.
-- New **pure** calc: `zoneSummary`/`zonesSummary` + `ZoneSummary`/`ZoneVehicleDemand` types, and a
-  shared `effectiveGroups()` helper now used by both the calc and `FlowsTable` (kills drift).
-  Invariant (unit-tested): `Σ zoneRaw == totalRawFleet`. No fleet-sizing or schema change.
+- Each group header row now shows its **total vehicle demand** beside the flow count —
+  `Σ rawVehicles` over the group's flows (the per-flow Vehicle-Count math, summed; fractional,
+  informational). The binding integer fleet still pools per `vehicleId` project-wide (`FleetRibbon`).
+- Added a shared **pure** `effectiveGroups(flowGroups, flows)` helper (declared groups first, then
+  legacy `sectionName`, deduped) used by both `FlowsTable` and unit-tested. No fleet-sizing or
+  schema change.
 
 ## 2026-06-03 — Fix partial-update data loss + user-selectable group colors
 
