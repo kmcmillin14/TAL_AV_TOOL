@@ -98,6 +98,27 @@ export interface ProjectFlowSummary {
   totalBaseFleet: number
 }
 
+/** Per-vehicle fractional demand contribution within one visual zone. */
+export interface ZoneVehicleDemand {
+  vehicleId: string
+  raw: number          // Σ rawVehicles for this vehicleId within the zone
+  flowsCount: number
+}
+
+/**
+ * Per-zone (visual group) demand breakdown. Zone numbers are *demand
+ * contributions only* — they intentionally carry NO baseFleet. The binding
+ * integer fleet is computed once at the project pool level
+ * (`ProjectFlowSummary.totalBaseFleet`), never by summing per-zone ceils.
+ * Invariant: Σ zoneRaw across all zones === ProjectFlowSummary.totalRawFleet.
+ */
+export interface ZoneSummary {
+  sectionName: string | null   // null = the ungrouped bucket
+  vehicles: ZoneVehicleDemand[]
+  zoneRaw: number              // Σ raw across vehicles in this zone
+  flowsCount: number           // includes vehicleId-less flows
+}
+
 /** Route-average speed factor map. Engineers pick low/medium/high per flow;
  *  the calc scales rated cruise speed by this fraction to get the effective
  *  route-average travel speed. These are *averages over the whole route*, not

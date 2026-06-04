@@ -7,6 +7,8 @@ import type {
   GroupSummary,
   ProjectFlowSummary,
   RouteLayout,
+  ZoneSummary,
+  ZoneVehicleDemand,
 } from './types'
 
 export function routeLayoutFactor(layout: RouteLayout): number {
@@ -175,6 +177,80 @@ export function groupSummary(
     baseFleet,
     headroom,
   }
+}
+
+/**
+ * Ordered, de-duplicated effective group list: declared `flowGroups` first,
+ * then any name used by a flow's `sectionName` but not declared (legacy
+ * projects). Shared by the Step 3 table and the zone summary so they never
+ * drift. Pure — no I/O.
+ */
+export function effectiveGroups(flowGroups: string[], flows: Flow[]): string[] {
+  const seen = new Set<string>()
+  const out: string[] = []
+  const push = (n: string | undefined) => {
+    if (n && !seen.has(n)) { seen.add(n); out.push(n) }
+  }
+  for (const g of flowGroups) push(g)
+  for (const f of flows) push(f.sectionName)
+  return out
+}
+
+/**
+ * Per-zone demand breakdown for one visual group (`sectionName`). `null`
+ * matches flows with no/empty section. Groups the zone's flows by vehicleId
+ * and sums fractional `rawVehicles` per vehicle. vehicleId-less flows are
+ * counted in `flowsCount` but excluded from the per-vehicle breakdown.
+ */
+export function zoneSummary(
+  sectionName: string | null,
+  flows: Flow[],
+  derivedByFlowId: Map<string, FlowDerived>,
+): ZoneSummary {
+  const inZone = flows.filter(f =>
+    sectionName === null ? !f.sectionName : f.sectionName === sectionName,
+  )
+  const order: string[] = []
+  const byVehicle = new Map<string, ZoneVehicleDemand>()
+  let zoneRaw = 0
+  for (const f of inZone) {
+    if (!f.vehicleId) continue
+    const d = derivedByFlowId.get(f.id)
+    const raw = d?.rawVehicles ?? 0
+    let entry = byVehicle.get(f.vehicleId)
+    if (!entry) {
+      entry = { vehicleId: f.vehicleId, raw: 0, flowsCount: 0 }
+      byVehicle.set(f.vehicleId, entry)
+      order.push(f.vehicleId)
+    }
+    entry.raw += raw
+    entry.flowsCount += 1
+    zoneRaw += raw
+  }
+  return {
+    sectionName,
+    vehicles: order.map(id => byVehicle.get(id)!),
+    zoneRaw,
+    flowsCount: inZone.length,
+  }
+}
+
+/**
+ * All zones in effective order (declared groups, then legacy section names),
+ * with the ungrouped bucket appended LAST (only when it holds flows).
+ * Invariant: Σ zoneRaw === projectFlowSummary(...).totalRawFleet.
+ */
+export function zonesSummary(
+  flowGroups: string[],
+  flows: Flow[],
+  derivedByFlowId: Map<string, FlowDerived>,
+): ZoneSummary[] {
+  const zones = effectiveGroups(flowGroups, flows).map(g =>
+    zoneSummary(g, flows, derivedByFlowId),
+  )
+  const ungrouped = zoneSummary(null, flows, derivedByFlowId)
+  if (ungrouped.flowsCount > 0) zones.push(ungrouped)
+  return zones
 }
 
 /**

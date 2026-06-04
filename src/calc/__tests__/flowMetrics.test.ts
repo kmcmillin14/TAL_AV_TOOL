@@ -388,3 +388,61 @@ describe('cycleBreakdown', () => {
     expect(cycleBreakdown(100, noTransfers as Vehicle, 'medium', 0, 0)).toBeNull()
   })
 })
+
+// ---- zones (per visual group) ----
+
+import { effectiveGroups, zoneSummary, zonesSummary, projectFlowSummary as projSum } from '../flowMetrics'
+
+describe('zone summaries', () => {
+  // Two zones (Dock, ASRS) + one ungrouped flow. CB18 spans both Dock and ASRS,
+  // so its demand must NOT pool inside a single zone.
+  const flows: Flow[] = [
+    { id: '1', origin: '', destination: '', distanceFt: 1, thruPerHr: 10, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'cb18', sectionName: 'Dock' },
+    { id: '2', origin: '', destination: '', distanceFt: 1, thruPerHr: 10, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'ml2',  sectionName: 'Dock' },
+    { id: '3', origin: '', destination: '', distanceFt: 1, thruPerHr: 10, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'cb18', sectionName: 'ASRS' },
+    { id: '4', origin: '', destination: '', distanceFt: 1, thruPerHr: 10, routeLayout: 'medium', liftHeightFt: 0, vehicleId: undefined, sectionName: 'Dock' }, // no vehicle
+    { id: '5', origin: '', destination: '', distanceFt: 1, thruPerHr: 10, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'ml2' }, // ungrouped
+  ]
+  const derived = new Map([
+    ['1', { cycleSeconds: 100, rawVehicles: 0.5, breakdown: null }],
+    ['2', { cycleSeconds: 100, rawVehicles: 0.3, breakdown: null }],
+    ['3', { cycleSeconds: 100, rawVehicles: 0.7, breakdown: null }],
+    ['4', { cycleSeconds: null, rawVehicles: null, breakdown: null }],
+    ['5', { cycleSeconds: 100, rawVehicles: 0.2, breakdown: null }],
+  ])
+
+  it('effectiveGroups: declared first, then legacy sectionName, deduped', () => {
+    expect(effectiveGroups(['ASRS', 'Dock'], flows)).toEqual(['ASRS', 'Dock'])
+    // legacy section "ASRS" used by a flow but not declared → appended after declared
+    expect(effectiveGroups(['Dock'], flows)).toEqual(['Dock', 'ASRS'])
+  })
+
+  it('zoneSummary: per-vehicle demand; vehicleId-less flow counted but not summed', () => {
+    const dock = zoneSummary('Dock', flows, derived)
+    expect(dock.flowsCount).toBe(3)               // f1, f2, f4
+    expect(dock.vehicles).toHaveLength(2)         // cb18, ml2 (f4 excluded)
+    expect(dock.zoneRaw).toBeCloseTo(0.8, 5)      // 0.5 + 0.3
+    expect(dock.vehicles.find(v => v.vehicleId === 'cb18')?.raw).toBeCloseTo(0.5, 5)
+  })
+
+  it('zoneSummary(null): the ungrouped bucket', () => {
+    const u = zoneSummary(null, flows, derived)
+    expect(u.flowsCount).toBe(1)
+    expect(u.vehicles[0]?.vehicleId).toBe('ml2')
+    expect(u.zoneRaw).toBeCloseTo(0.2, 5)
+  })
+
+  it('zonesSummary: ordered, ungrouped last, and reconciles to totalRawFleet', () => {
+    const zones = zonesSummary(['Dock', 'ASRS'], flows, derived)
+    expect(zones.map(z => z.sectionName)).toEqual(['Dock', 'ASRS', null])
+
+    const sumZoneRaw = zones.reduce((s, z) => s + z.zoneRaw, 0)
+    expect(sumZoneRaw).toBeCloseTo(projSum(flows, derived).totalRawFleet, 6)
+  })
+
+  it('zonesSummary: omits the ungrouped bucket when every flow is grouped', () => {
+    const grouped = flows.filter(f => f.sectionName) // drops the ungrouped f5
+    const zones = zonesSummary(['Dock', 'ASRS'], grouped, derived)
+    expect(zones.map(z => z.sectionName)).toEqual(['Dock', 'ASRS'])
+  })
+})

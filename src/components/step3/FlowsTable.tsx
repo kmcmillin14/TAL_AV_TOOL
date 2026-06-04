@@ -8,6 +8,7 @@ import Icon from '@/src/design-system/components/Icon'
 import FlowRow from './FlowRow'
 import GroupHeader from './GroupHeader'
 import { sectionColor } from './sectionColor'
+import { effectiveGroups as computeEffectiveGroups } from '@/src/calc/flowMetrics'
 
 /** Patch the parent can apply atomically — flows and/or group list together. */
 export interface FlowsPatch {
@@ -175,11 +176,11 @@ export default function FlowsTable({
 
   // Effective, ordered group list: declared groups first, then any name used
   // by a flow but not declared (legacy projects carrying only sectionName).
-  const usedSections = dedupe(flows.map(f => f.sectionName ?? '').filter(Boolean))
-  const effectiveGroups = dedupe([...flowGroups, ...usedSections])
-  const hasGroups = effectiveGroups.length > 0
+  // Shared with the zone summary (src/calc/flowMetrics) so they never drift.
+  const effGroups = computeEffectiveGroups(flowGroups, flows)
+  const hasGroups = effGroups.length > 0
 
-  const ungrouped = flows.filter(f => !f.sectionName || !effectiveGroups.includes(f.sectionName))
+  const ungrouped = flows.filter(f => !f.sectionName || !effGroups.includes(f.sectionName))
 
   const distLabel = metric ? 'Distance (Round Trip, m)' : 'Distance (Round Trip)'
 
@@ -220,7 +221,7 @@ export default function FlowsTable({
           {hasGroups && (
             <>
               <span className="flows-count-sep">·</span>
-              {effectiveGroups.length} {effectiveGroups.length === 1 ? 'group' : 'groups'}
+              {effGroups.length} {effGroups.length === 1 ? 'group' : 'groups'}
             </>
           )}
         </span>
@@ -300,7 +301,7 @@ export default function FlowsTable({
               </tr>
             </thead>
             <tbody>
-              {effectiveGroups.map(g => {
+              {effGroups.map(g => {
                 const groupFlows = flows.filter(f => f.sectionName === g)
                 return (
                   <Fragment key={`g-${g}`}>
