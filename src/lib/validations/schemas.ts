@@ -82,6 +82,9 @@ export const projectSchema = z.object({
    *  organization only — fleet sizing pools per vehicleId, not per group.
    *  Flows reference a group via flowSchema.sectionName. */
   flowGroups: z.array(z.string()).default([]),
+  /** Optional per-group color override, keyed by group name. Absent name → the
+   *  deterministic sectionColor(name) hash is used. Visual only. */
+  flowGroupColors: z.record(z.string(), z.string()).default({}),
   otherAGVs: z.boolean().default(false),
   otherAGVVendor: z.string().optional(),
 

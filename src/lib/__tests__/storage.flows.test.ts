@@ -88,3 +88,70 @@ describe('flows round-trip', () => {
     expect(read?.flows?.[1]?.sectionName).toBeUndefined()
   })
 })
+
+// Regression: a partial updateProject patch must touch ONLY the fields the caller
+// passed. Zod v4 `.partial()` does NOT strip `.default()`, so parsing a partial
+// patch re-injects defaults for absent fields (flows: [], flowGroups: [], certs: []…).
+// The merge must not let those injected defaults clobber existing stored values.
+describe('partial update preserves unspecified fields', () => {
+  const flow = (id: string, sectionName?: string) => ({
+    id,
+    origin: 'A',
+    destination: 'B',
+    distanceFt: 100,
+    thruPerHr: 10,
+    routeLayout: 'medium' as const,
+    liftHeightFt: 0,
+    sectionName,
+  })
+
+  it('keeps flows when patching only flowGroups (the reported bug)', () => {
+    const p = createProject({ projectName: 'Groups' })
+    updateProject(p.id, { flows: [flow('f1')] })
+
+    // Add a group — a flowGroups-only patch. Flows must NOT disappear.
+    updateProject(p.id, { flowGroups: ['Dock'] })
+
+    const read = getProject(p.id)
+    expect(read?.flows).toHaveLength(1)
+    expect(read?.flows?.[0]?.id).toBe('f1')
+    expect(read?.flowGroups).toEqual(['Dock'])
+  })
+
+  it('accumulates multiple groups across patches', () => {
+    const p = createProject({ projectName: 'MultiGroup' })
+    updateProject(p.id, { flowGroups: ['Group 1'] })
+    updateProject(p.id, { flowGroups: ['Group 1', 'Group 2'] })
+
+    expect(getProject(p.id)?.flowGroups).toEqual(['Group 1', 'Group 2'])
+  })
+
+  it('keeps flowGroups when patching only flows', () => {
+    const p = createProject({ projectName: 'Reverse' })
+    updateProject(p.id, { flowGroups: ['Zone A'] })
+
+    // Edit/add a flow — a flows-only patch. Groups must survive.
+    updateProject(p.id, { flows: [flow('f1', 'Zone A')] })
+
+    const read = getProject(p.id)
+    expect(read?.flowGroups).toEqual(['Zone A'])
+    expect(read?.flows).toHaveLength(1)
+  })
+
+  it('keeps unrelated defaulted fields (certifications) across an unrelated patch', () => {
+    const p = createProject({ projectName: 'Certs', certifications: ['ISO 3691-4'] })
+    updateProject(p.id, { flowGroups: ['A'] })
+
+    expect(getProject(p.id)?.certifications).toEqual(['ISO 3691-4'])
+  })
+
+  it('persists per-group color overrides and keeps them across a flowGroups patch', () => {
+    const p = createProject({ projectName: 'Colors' })
+    updateProject(p.id, { flowGroups: ['Dock'], flowGroupColors: { Dock: '#5eea90' } })
+    expect(getProject(p.id)?.flowGroupColors).toEqual({ Dock: '#5eea90' })
+
+    // Adding another group must not drop the existing color override.
+    updateProject(p.id, { flowGroups: ['Dock', 'ASRS'] })
+    expect(getProject(p.id)?.flowGroupColors).toEqual({ Dock: '#5eea90' })
+  })
+})

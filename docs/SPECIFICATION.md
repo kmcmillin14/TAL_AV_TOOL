@@ -140,6 +140,7 @@ Groups are named, organizational zones (e.g. "ASRS", "Dock") — they structure 
 - Each flow references its group via the existing `flow.sectionName` (no flow-schema change).
 - **`+Group`** appends a new group with a placeholder name and focuses its header for **inline renaming** (a real text input committed on blur/Enter — no browser prompt).
 - A group renders as a full-width **header row** (color swatch · inline-editable name · flow count · its own **`+ Add flow`** button) above its flows. `+ Add flow` drops a new flow straight into that group.
+- **Group color is user-selectable.** The header swatch is a button that opens a small palette popover (the same 6 curated, color-blind-safe brand colors as the hash default; TAL red is reserved). The chosen color drives the header swatch, left bar, and row tint (`--group-color`). Overrides live at the project level in `flowGroupColors: Record<groupName, hex>` (Zod `.default({})`); a group with no override falls back to the deterministic `sectionColor(name)` hash. The override follows the group across an inline rename and is dropped when the group is deleted.
 - Flows with no `sectionName` render as plain rows (no header) after the group sections.
 - Deleting a group (× on its header) un-assigns its member flows (`sectionName → undefined`); it does not delete the flows.
 

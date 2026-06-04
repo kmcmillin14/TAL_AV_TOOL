@@ -1554,10 +1554,47 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   padding: 7px 12px;
 }
 .fg-swatch {
-  width: 10px; height: 10px;
-  border-radius: 3px;
+  width: 14px; height: 14px;
+  border-radius: 4px;
   background: var(--group-color);
   flex: 0 0 auto;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, #000 25%, var(--group-color));
+  cursor: pointer;
+  transition: box-shadow 0.1s ease, transform 0.1s ease;
+}
+.fg-swatch:hover { box-shadow: 0 0 0 3px color-mix(in srgb, var(--group-color) 30%, transparent); }
+.fg-swatch:active { transform: scale(0.92); }
+.fg-swatch:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--group-color);
+}
+/* ---- group color picker (preset palette) ---- */
+.fg-color-panel {
+  /* Size to the palette, not the 200px base panel — otherwise 6 small swatches
+     float in a big empty box. */
+  min-width: auto;
+  padding: 8px;
+}
+.fg-color-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 26px);
+  gap: 8px;
+}
+.fg-color-swatch {
+  width: 26px;
+  height: 26px;
+  min-width: 26px;
+  min-height: 26px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, #000 30%, transparent);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+.fg-color-swatch:hover { transform: scale(1.08); }
+.fg-color-swatch.selected {
+  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px var(--text-primary);
 }
 .fg-head .fg-name {
   background: transparent;

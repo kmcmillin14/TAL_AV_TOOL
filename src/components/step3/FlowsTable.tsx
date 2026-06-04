@@ -13,11 +13,13 @@ import { sectionColor } from './sectionColor'
 export interface FlowsPatch {
   flows?: Flow[]
   flowGroups?: string[]
+  flowGroupColors?: Record<string, string>
 }
 
 interface Props {
   flows: Flow[]
   flowGroups: string[]
+  flowGroupColors: Record<string, string>
   vehicles: Vehicle[]
   derivedByFlowId: Map<string, FlowDerived>
   unitSystem: UnitSystem
@@ -59,6 +61,7 @@ function dedupe(names: string[]): string[] {
 export default function FlowsTable({
   flows,
   flowGroups,
+  flowGroupColors,
   vehicles,
   derivedByFlowId,
   unitSystem,
@@ -145,16 +148,29 @@ export default function FlowsTable({
   const renameGroup = (old: string, next: string) => {
     if (!next || next === old) return
     setFocusGroup(null)
+    // Carry any color override across the rename (color is keyed by group name).
+    const colors = { ...flowGroupColors }
+    if (colors[old] !== undefined && next !== old) {
+      colors[next] = colors[old]
+      delete colors[old]
+    }
     onPatch({
       flowGroups: dedupe(flowGroups.map(g => (g === old ? next : g))),
       flows: flows.map(f => (f.sectionName === old ? { ...f, sectionName: next } : f)),
+      flowGroupColors: colors,
     })
   }
   const deleteGroup = (name: string) => {
+    const colors = { ...flowGroupColors }
+    delete colors[name]
     onPatch({
       flowGroups: flowGroups.filter(g => g !== name),
       flows: flows.map(f => (f.sectionName === name ? { ...f, sectionName: undefined } : f)),
+      flowGroupColors: colors,
     })
+  }
+  const setGroupColor = (name: string, color: string) => {
+    onPatch({ flowGroupColors: { ...flowGroupColors, [name]: color } })
   }
 
   // Effective, ordered group list: declared groups first, then any name used
@@ -290,12 +306,13 @@ export default function FlowsTable({
                   <Fragment key={`g-${g}`}>
                     <GroupHeader
                       name={g}
-                      color={sectionColor(g)}
+                      color={flowGroupColors[g] ?? sectionColor(g)}
                       count={groupFlows.length}
                       colSpan={COLS}
                       autoFocus={focusGroup === g}
                       isDragOver={overGroup === g}
                       onRename={next => renameGroup(g, next)}
+                      onColorChange={c => setGroupColor(g, c)}
                       onAddFlow={() => add(g)}
                       onDelete={() => deleteGroup(g)}
                       onDragOverGroup={dragId ? () => overGroupHeader(g) : undefined}

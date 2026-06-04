@@ -11,6 +11,10 @@ const ASSIGNABLE = [
   '#f0875e',  // coral
 ] as const
 
+/** The curated, color-blind-safe palette a user can pick a group color from.
+ *  Same set the hash assigns by default; TAL red stays reserved for accent. */
+export const GROUP_PALETTE: readonly string[] = ASSIGNABLE
+
 export function sectionColor(name: string): string {
   let hash = 0
   for (let i = 0; i < name.length; i++) {

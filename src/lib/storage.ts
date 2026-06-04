@@ -64,6 +64,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   interlocks: [],
   flows: [],
   flowGroups: [],
+  flowGroupColors: {},
   otherAGVs: false,
   otherAGVVendor: undefined,
   tempMinF: undefined,
@@ -208,15 +209,21 @@ export function updateProject(
   // Capture the pre-change state for single-level undo.
   const { _undoSnapshot: _ignore, ...snapshot } = existing
   void _ignore
-  const updated: StoredProject = {
-    ...existing,
-    ...data,
-    _undoSnapshot: snapshot,
-    id: existing.id,
-    createdAt: meta?.createdAt ?? existing.createdAt,
-    updatedAt: new Date().toISOString(),
-    versionNumber: meta?.versionNumber ?? existing.versionNumber,
+  // Apply ONLY the fields the caller actually passed. Zod v4 `.partial()` does
+  // not strip `.default()`, so `data` re-injects defaults (flows: [], flowGroups: [],
+  // certifications: []…) for absent keys; spreading `...data` would clobber the
+  // existing stored values. Use the raw `input` keys to pick the validated values.
+  const updated: StoredProject = { ...existing }
+  const validated = data as Record<string, unknown>
+  const target = updated as unknown as Record<string, unknown>
+  for (const key of Object.keys(input)) {
+    if (key in validated) target[key] = validated[key]
   }
+  updated._undoSnapshot = snapshot
+  updated.id = existing.id
+  updated.createdAt = meta?.createdAt ?? existing.createdAt
+  updated.updatedAt = new Date().toISOString()
+  updated.versionNumber = meta?.versionNumber ?? existing.versionNumber
   all[idx] = updated
   writeAll(all)
   return updated

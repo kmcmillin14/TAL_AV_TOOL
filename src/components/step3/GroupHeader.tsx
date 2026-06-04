@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Icon from '@/src/design-system/components/Icon'
+import FloatingPanel from './FloatingPanel'
+import { GROUP_PALETTE } from './sectionColor'
 
 interface Props {
   name: string
@@ -11,6 +13,7 @@ interface Props {
   autoFocus?: boolean
   isDragOver?: boolean
   onRename: (next: string) => void
+  onColorChange: (color: string) => void
   onAddFlow: () => void
   onDelete: () => void
   /** Present only while a flow is being dragged — makes the header a drop
@@ -33,6 +36,7 @@ export default function GroupHeader({
   autoFocus,
   isDragOver,
   onRename,
+  onColorChange,
   onAddFlow,
   onDelete,
   onDragOverGroup,
@@ -40,6 +44,8 @@ export default function GroupHeader({
 }: Props) {
   const [draft, setDraft] = useState(name)
   const inputRef = useRef<HTMLInputElement>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const swatchRef = useRef<HTMLButtonElement>(null)
 
   useEffect(() => setDraft(name), [name])
   useEffect(() => {
@@ -64,7 +70,36 @@ export default function GroupHeader({
     >
       <td colSpan={colSpan}>
         <div className="fg-head">
-          <span className="fg-swatch" aria-hidden="true" />
+          <button
+            ref={swatchRef}
+            type="button"
+            className="fg-swatch"
+            onClick={() => setPickerOpen(o => !o)}
+            aria-label={`Change color for group ${name}`}
+            aria-haspopup="dialog"
+            aria-expanded={pickerOpen}
+            title="Change group color"
+          />
+          <FloatingPanel
+            anchorRef={swatchRef}
+            open={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            className="fg-color-panel"
+          >
+            <div className="fg-color-grid">
+              {GROUP_PALETTE.map(c => (
+                <button
+                  key={c}
+                  type="button"
+                  className={`fg-color-swatch${c === color ? ' selected' : ''}`}
+                  style={{ background: c }}
+                  onClick={() => { onColorChange(c); setPickerOpen(false) }}
+                  aria-label={`Set color ${c}`}
+                  aria-pressed={c === color}
+                />
+              ))}
+            </div>
+          </FloatingPanel>
           <input
             ref={inputRef}
             className="fg-name"

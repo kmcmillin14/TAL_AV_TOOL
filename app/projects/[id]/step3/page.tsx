@@ -66,6 +66,10 @@ export default function Step3Page() {
 
   const flows: Flow[] = useMemo(() => project?.flows ?? [], [project])
   const flowGroups: string[] = useMemo(() => project?.flowGroups ?? [], [project])
+  const flowGroupColors: Record<string, string> = useMemo(
+    () => project?.flowGroupColors ?? {},
+    [project],
+  )
 
   const derivedByFlowId = useMemo(() => {
     const m = new Map<string, FlowDerived>()
@@ -96,7 +100,7 @@ export default function Step3Page() {
     [flows, groups],
   )
 
-  const persistPatch = (patch: { flows?: Flow[]; flowGroups?: string[] }) => {
+  const persistPatch = (patch: { flows?: Flow[]; flowGroups?: string[]; flowGroupColors?: Record<string, string> }) => {
     if (!project) return
     const updated = updateProject(project.id, patch)
     if (updated) setProject(updated)
@@ -164,6 +168,7 @@ export default function Step3Page() {
         <FlowsTable
           flows={flows}
           flowGroups={flowGroups}
+          flowGroupColors={flowGroupColors}
           vehicles={vehicles}
           derivedByFlowId={derivedByFlowId}
           unitSystem={unitSystem}

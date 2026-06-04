@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-06-03 — Fix partial-update data loss + user-selectable group colors
+
+- **Bug fix (data loss, app-wide).** `updateProject` merged a Zod-validated partial patch with
+  `{ ...existing, ...data }`, but Zod v4 `.partial()` does **not** strip `.default()` — so parsing a
+  patch like `{ flowGroups: [...] }` re-injected `flows: []` (and `certifications: []`, `interlocks: []`,
+  ramp/break/AGV defaults), clobbering existing stored values. Symptoms: adding a Step 3 group wiped all
+  flows; adding/editing a flow wiped the groups, so multiple groups could never accumulate. Fix: apply
+  only the keys actually present in the caller's `input` (validated values), never Zod-injected defaults.
+  Regression tests added in `src/lib/__tests__/storage.flows.test.ts`.
+- **User-selectable group colors.** Each Step 3 group header swatch is now a button opening a preset
+  palette popover (the existing 6 color-blind-safe brand colors via new `GROUP_PALETTE`; TAL red stays
+  reserved). New project field `flowGroupColors: Record<groupName, hex>` (Zod `.default({})`); absent →
+  `sectionColor(name)` hash fallback. The override follows a group across inline rename and is removed on
+  delete. No fleet-sizing/flow-schema change. Reuses `FloatingPanel`.
+
 ## 2026-05-28 — In-app help drawer + per-vehicle spec-sheet download
 
 - **`?` Help drawer.** New `HelpDrawer` (right-side panel + backdrop) opened by a
