@@ -1432,87 +1432,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* ============================================ STEP 3 — MATERIAL FLOWS ============================================ */
 
-/* ---- Step 3 — FleetRibbon (single-row summary) ---- */
-/* ===== Step 3 R6 — fleet summary box (top-left) ===== */
-.fleet-summary {
-  display: inline-block;
-  min-width: 240px;
-  padding: 12px 16px;
-  margin: 16px 0 12px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  font-family: var(--tal-font-family);
-}
-.fs-lines { list-style: none; margin: 0; padding: 0; }
-.fs-line {
-  display: flex;
-  align-items: baseline;
-  gap: 12px;
-  padding: 2px 0;
-}
-.fs-label {
-  flex: 1;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-.fs-figures {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-}
-.fs-name {
-  font-family: var(--tal-font-family);
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary);
-}
-.fs-raw {
-  font-family: var(--tal-font-numeric);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: var(--tal-numeric-features);
-  font-size: 12px;
-  color: var(--text-tertiary);
-}
-.fs-arrow { color: var(--text-tertiary); font-size: 13px; }
-.fs-fleet {
-  font-family: var(--tal-font-numeric);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: var(--tal-numeric-features);
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--text-primary);
-  letter-spacing: -0.01em;
-  min-width: 22px;
-  text-align: right;
-}
-.fs-fleet.good { color: var(--good); }
-.fs-fleet.warn { color: var(--warn); }
-.fs-fleet.bad  { color: var(--bad); }
-.fs-total {
-  margin-top: 4px;
-  padding-top: 6px;
-  border-top: 1px solid var(--border);
-}
-.fs-total .fs-name { color: var(--text-secondary); letter-spacing: 0.06em; }
-.fs-total .fs-fleet { color: var(--accent); }
+/* Empty-state line, shared by the Charging/Fleet engine tabs. */
 .fs-empty {
   font-size: 12.5px;
   color: var(--text-tertiary);
   font-style: italic;
 }
-.fs-meta {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
-  font-family: var(--tal-font-numeric);
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  color: var(--text-tertiary);
-}
-.fs-dot { margin: 0 6px; color: var(--text-disabled); }
 
 /* ===== Step 3 R6 — table head actions ===== */
 .flows-count-sep { margin: 0 6px; color: var(--text-disabled); }
@@ -2544,9 +2469,16 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 
 /* ===== Fleet Engine — sub-tabs + charging/fleet panels ===== */
-/* Apple-style segmented sub-tabs + a quiet, centered fleet summary. Light:
-   no boxes, no big numbered cards — air and restraint. */
-.engine-seg-wrap { display: flex; justify-content: center; margin-bottom: 16px; }
+/* Compact toolbar row: Apple-style segmented tabs (left) + a tight fleet
+   readout (right) showing the AGV mix → total. No boxes, minimal vertical air. */
+.engine-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin: 2px 0 16px;
+}
 .engine-seg {
   display: inline-flex;
   gap: 2px;
@@ -2576,19 +2508,26 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   position: absolute; top: 5px; right: 9px;
   width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
 }
-.engine-summary { text-align: center; margin-bottom: 26px; }
-.es-sum-line { display: flex; align-items: baseline; justify-content: center; gap: 7px; }
-.es-sum-num {
+.engine-readout { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.er-row { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.er-mix { display: inline-flex; align-items: baseline; gap: 14px; }
+.er-chip {
   font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums;
-  font-size: 24px; font-weight: 800; line-height: 1; color: var(--text-primary);
+  font-size: 12px; color: var(--text-secondary); white-space: nowrap;
 }
-.es-sum-unit {
-  font-family: var(--tal-font-numeric); font-size: 11px; letter-spacing: 0.1em;
+.er-chip strong { color: var(--text-primary); font-weight: 700; }
+.er-arrow { font-family: var(--tal-font-numeric); font-size: 14px; color: var(--text-disabled); }
+.er-total { display: inline-flex; align-items: baseline; gap: 5px; }
+.er-total-num {
+  font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums;
+  font-size: 22px; font-weight: 800; line-height: 1; color: var(--accent);
+}
+.er-total-unit {
+  font-family: var(--tal-font-numeric); font-size: 10px; letter-spacing: 0.1em;
   text-transform: uppercase; color: var(--text-tertiary);
 }
-.es-sum-build {
-  margin-top: 5px;
-  font-family: var(--tal-font-numeric); font-size: 11px; color: var(--text-tertiary);
+.er-build {
+  font-family: var(--tal-font-numeric); font-size: 10px; letter-spacing: 0.02em; color: var(--text-tertiary);
 }
 
 .engine-panel {

@@ -76,16 +76,6 @@ export default function FleetEnginePage() {
     return ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
   }, [flows, derivedByFlowId])
 
-  const totals = useMemo(
-    () => ({
-      totalFlows: flows.length,
-      totalThru: flows.reduce((s, f) => s + f.thruPerHr, 0),
-      totalRawFleet: groups.reduce((s, g) => s + g.groupRaw, 0),
-      totalBaseFleet: groups.reduce((s, g) => s + g.baseFleet, 0),
-    }),
-    [flows, groups],
-  )
-
   const settings: FleetSettings = useMemo(() => ({
     regime: project?.chargeRegime ?? 'overnight',
     bufferPct: project?.bufferPct ?? 0.10,
@@ -160,7 +150,7 @@ export default function FleetEnginePage() {
           </div>
         </div>
 
-        <div className="engine-seg-wrap">
+        <div className="engine-bar">
           <div className="engine-seg" role="tablist" aria-label="Fleet engine">
             {steps.map(s => (
               <button
@@ -176,18 +166,25 @@ export default function FleetEnginePage() {
               </button>
             ))}
           </div>
+          {fleet.groups.length > 0 && (
+            <div className="engine-readout">
+              <div className="er-row">
+                <span className="er-mix mono">
+                  {fleet.groups.map(g => (
+                    <span key={g.vehicleId} className="er-chip">
+                      {vehicleById.get(g.vehicleId)?.name ?? g.vehicleId} <strong>{g.fleetSold}</strong>
+                    </span>
+                  ))}
+                </span>
+                <span className="er-arrow" aria-hidden="true">→</span>
+                <span className="er-total"><span className="er-total-num mono">{fleet.totalFleetSold}</span> <span className="er-total-unit">vehicles</span></span>
+              </div>
+              <div className="er-build mono">
+                {fleet.totalBaseFleet} base · {chgLabel} · ×{(1 + settings.bufferPct).toFixed(2)} buffer
+              </div>
+            </div>
+          )}
         </div>
-        {fleet.groups.length > 0 && (
-          <div className="engine-summary">
-            <div className="es-sum-line">
-              <span className="es-sum-num mono">{fleet.totalFleetSold}</span>
-              <span className="es-sum-unit">vehicles</span>
-            </div>
-            <div className="es-sum-build mono">
-              {fleet.totalBaseFleet} base · {chgLabel} · ×{(1 + settings.bufferPct).toFixed(2)} buffer
-            </div>
-          </div>
-        )}
 
         {tab === 'flows' && (
           <FlowsTab
@@ -197,9 +194,6 @@ export default function FleetEnginePage() {
             vehicles={vehicles}
             derivedByFlowId={derivedByFlowId}
             unitSystem={unitSystem}
-            groups={groups}
-            totals={totals}
-            vehicleById={vehicleById}
             onPatch={persistPatch}
           />
         )}

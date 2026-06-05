@@ -1,10 +1,9 @@
 'use client'
 
-import type { Flow, FlowDerived, GroupSummary, ProjectFlowSummary } from '@/src/calc/types'
+import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import FlowsTable from '@/src/components/step3/FlowsTable'
-import FleetRibbon from '@/src/components/step3/FleetRibbon'
 import type { EnginePatch } from './types'
 
 interface Props {
@@ -14,27 +13,22 @@ interface Props {
   vehicles: Vehicle[]
   derivedByFlowId: Map<string, FlowDerived>
   unitSystem: UnitSystem
-  groups: GroupSummary[]
-  totals: ProjectFlowSummary
-  vehicleById: Map<string, Vehicle>
   onPatch: (patch: EnginePatch) => void
 }
 
-/** Flows sub-tab — the material-flow table + per-vehicle base-fleet summary
- *  (the original Step 3 surface, unchanged), feeding the engine's base fleet. */
+/** Flows sub-tab — the material-flow table that produces the base fleet. The
+ *  per-vehicle roll-up now lives in the engine toolbar readout (AGV mix → total)
+ *  and the Fleet tab's waterfall, so no separate summary box here. */
 export default function FlowsTab(p: Props) {
   return (
-    <>
-      <FleetRibbon groups={p.groups} totals={p.totals} vehicleById={p.vehicleById} />
-      <FlowsTable
-        flows={p.flows}
-        flowGroups={p.flowGroups}
-        flowGroupColors={p.flowGroupColors}
-        vehicles={p.vehicles}
-        derivedByFlowId={p.derivedByFlowId}
-        unitSystem={p.unitSystem}
-        onPatch={p.onPatch}
-      />
-    </>
+    <FlowsTable
+      flows={p.flows}
+      flowGroups={p.flowGroups}
+      flowGroupColors={p.flowGroupColors}
+      vehicles={p.vehicles}
+      derivedByFlowId={p.derivedByFlowId}
+      unitSystem={p.unitSystem}
+      onPatch={p.onPatch}
+    />
   )
 }
