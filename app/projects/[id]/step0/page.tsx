@@ -85,7 +85,7 @@ export default function Step0Page() {
       <div className="workspace">
         <div className="page-header">
           <div className="page-title">
-            <span className="step-num">Step 00 / 06</span>
+            <span className="step-num">Step 00 / 04</span>
             <h1>Project Setup</h1>
             <div className="desc">
               Choose how to provide application details. Project header info is editable in the bar above.

@@ -9,15 +9,17 @@ import { getProject, updateProject, type StoredProject } from '@/src/lib/storage
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { Flow, FlowDerived } from '@/src/calc/types'
-import {
-  flowDerived,
-  groupSummary,
-} from '@/src/calc/flowMetrics'
-import FlowsTable from '@/src/components/step3/FlowsTable'
-import FleetRibbon from '@/src/components/step3/FleetRibbon'
+import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
+import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
+import { fleetSummary } from '@/src/calc/fleet'
+import type { EnginePatch } from '@/src/components/engine/types'
+import FlowsTab from '@/src/components/engine/FlowsTab'
+import ChargingTab from '@/src/components/engine/ChargingTab'
+import FleetTab from '@/src/components/engine/FleetTab'
 
-export default function Step3Page() {
+type EngineTab = 'flows' | 'charging' | 'fleet'
+
+export default function FleetEnginePage() {
   const params = useParams()
   const id = params.id as string
 
@@ -26,6 +28,7 @@ export default function Step3Page() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
+  const [tab, setTab] = useState<EngineTab>('flows')
 
   useEffect(() => {
     const proj = getProject(id)
@@ -36,21 +39,12 @@ export default function Step3Page() {
     }
     setProject(proj)
     fetchVehiclesCached()
-      .then(vehs => {
-        setVehicles(vehs)
-        setLoading(false)
-      })
-      .catch(() => {
-        setError('Failed to load vehicle library.')
-        setLoading(false)
-      })
+      .then(vehs => { setVehicles(vehs); setLoading(false) })
+      .catch(() => { setError('Failed to load vehicle library.'); setLoading(false) })
   }, [id])
 
   useEffect(() => {
-    const refresh = () => {
-      const proj = getProject(id)
-      if (proj) setProject(proj)
-    }
+    const refresh = () => { const proj = getProject(id); if (proj) setProject(proj) }
     window.addEventListener('storage', refresh)
     window.addEventListener('focus', refresh)
     return () => {
@@ -59,17 +53,11 @@ export default function Step3Page() {
     }
   }, [id])
 
-  const vehicleById = useMemo(
-    () => new Map(vehicles.map(v => [v.id, v])),
-    [vehicles],
-  )
+  const vehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
 
   const flows: Flow[] = useMemo(() => project?.flows ?? [], [project])
   const flowGroups: string[] = useMemo(() => project?.flowGroups ?? [], [project])
-  const flowGroupColors: Record<string, string> = useMemo(
-    () => project?.flowGroupColors ?? {},
-    [project],
-  )
+  const flowGroupColors: Record<string, string> = useMemo(() => project?.flowGroupColors ?? {}, [project])
 
   const derivedByFlowId = useMemo(() => {
     const m = new Map<string, FlowDerived>()
@@ -82,14 +70,10 @@ export default function Step3Page() {
 
   const groups = useMemo(() => {
     const ids: string[] = []
-    for (const f of flows) {
-      if (f.vehicleId && !ids.includes(f.vehicleId)) ids.push(f.vehicleId)
-    }
+    for (const f of flows) if (f.vehicleId && !ids.includes(f.vehicleId)) ids.push(f.vehicleId)
     return ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
   }, [flows, derivedByFlowId])
 
-  // Reuse the already-computed per-vehicle `groups` rather than re-running
-  // groupSummary for every vehicle a second time inside projectFlowSummary.
   const totals = useMemo(
     () => ({
       totalFlows: flows.length,
@@ -100,20 +84,27 @@ export default function Step3Page() {
     [flows, groups],
   )
 
-  const persistPatch = (patch: { flows?: Flow[]; flowGroups?: string[]; flowGroupColors?: Record<string, string> }) => {
+  const settings: FleetSettings = useMemo(() => ({
+    regime: project?.chargeRegime ?? 'overnight',
+    bufferPct: project?.bufferPct ?? 0.10,
+    dailyOpHr: Math.min(24, (project?.shiftsPerDay ?? 1) * (project?.hoursPerShift ?? 8)),
+    chargeMethods: project?.chargeMethods ?? {},
+  }), [project])
+
+  const fleet = useMemo(
+    () => fleetSummary(groups, vehicleById, settings),
+    [groups, vehicleById, settings],
+  )
+
+  const persistPatch = (patch: EnginePatch) => {
     if (!project) return
     const updated = updateProject(project.id, patch)
     if (updated) setProject(updated)
   }
 
   if (loading) {
-    return (
-      <div className="app-shell">
-        <div className="step2-loading">Loading flows…</div>
-      </div>
-    )
+    return <div className="app-shell"><div className="step2-loading">Loading fleet engine…</div></div>
   }
-
   if (error || !project) {
     return (
       <div className="app-shell">
@@ -138,42 +129,79 @@ export default function Step3Page() {
     step2Complete: project.step2Complete,
   }
 
+  const tabs: { id: EngineTab; label: string; hint: string }[] = [
+    { id: 'flows', label: 'Flows', hint: 'movement → base fleet' },
+    { id: 'charging', label: 'Charging', hint: '+ vehicles for charging' },
+    { id: 'fleet', label: 'Fleet', hint: '× buffer → total' },
+  ]
+
   return (
     <div className="app-shell">
       <PersistentHeader
         project={headerData}
         currentStep={3}
         unitSystem={unitSystem}
-        onUnitToggle={() =>
-          setUnitSystem(u => (u === 'imperial' ? 'metric' : 'imperial'))
-        }
+        onUnitToggle={() => setUnitSystem(u => (u === 'imperial' ? 'metric' : 'imperial'))}
       />
 
       <div className="workspace">
         <div className="page-header">
           <div className="page-title">
-            <span className="step-num">Step 03 / 06</span>
-            <h1>Material Flows</h1>
+            <span className="step-num">Step 03 / 04</span>
+            <h1>Fleet Engine</h1>
             <div className="desc">
-              Define origin → destination pairs. Cycle time and raw vehicle
-              demand recompute live; group cards aggregate into the
-              engineering base fleet. No safety multipliers here — Step 4 adds
-              charging, Step 5 adds buffer.
+              The whole sizing calculation in one place: define material flows, then layer
+              charging and a buffer to reach the total fleet. Base fleet is pure engineering —
+              charging is battery physics, buffer is policy.
             </div>
           </div>
         </div>
 
-        <FleetRibbon groups={groups} totals={totals} vehicleById={vehicleById} />
+        <div className="engine-tabs" role="tablist" aria-label="Fleet engine">
+          {tabs.map(t => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === t.id}
+              className={`engine-tab${tab === t.id ? ' active' : ''}`}
+              onClick={() => setTab(t.id)}
+            >
+              <span className="engine-tab-label">{t.label}</span>
+              <span className="engine-tab-hint">{t.hint}</span>
+            </button>
+          ))}
+        </div>
 
-        <FlowsTable
-          flows={flows}
-          flowGroups={flowGroups}
-          flowGroupColors={flowGroupColors}
-          vehicles={vehicles}
-          derivedByFlowId={derivedByFlowId}
-          unitSystem={unitSystem}
-          onPatch={persistPatch}
-        />
+        {tab === 'flows' && (
+          <FlowsTab
+            flows={flows}
+            flowGroups={flowGroups}
+            flowGroupColors={flowGroupColors}
+            vehicles={vehicles}
+            derivedByFlowId={derivedByFlowId}
+            unitSystem={unitSystem}
+            groups={groups}
+            totals={totals}
+            vehicleById={vehicleById}
+            onPatch={persistPatch}
+          />
+        )}
+        {tab === 'charging' && (
+          <ChargingTab
+            fleet={fleet}
+            vehicleById={vehicleById}
+            regime={settings.regime}
+            dailyOpHr={settings.dailyOpHr}
+            shiftsPerDay={project.shiftsPerDay ?? 1}
+            hoursPerShift={project.hoursPerShift ?? 8}
+            chargeMethods={settings.chargeMethods}
+            onPatch={persistPatch}
+          />
+        )}
+        {tab === 'fleet' && (
+          <FleetTab fleet={fleet} vehicleById={vehicleById} bufferPct={settings.bufferPct} onPatch={persistPatch} />
+        )}
 
         <div className="step-nav">
           <Link href={`/projects/${id}/step2`} className="btn ghost">
@@ -181,18 +209,13 @@ export default function Step3Page() {
           </Link>
           <div className="row">
             <span className="hint">
-              {groups.length === 0
-                ? 'Assign a vehicle to a flow to populate the base fleet'
-                : `${totals.totalBaseFleet} ${totals.totalBaseFleet === 1 ? 'vehicle' : 'vehicles'} across ${groups.length} ${groups.length === 1 ? 'group' : 'groups'}`}
+              {fleet.groups.length === 0
+                ? 'Assign a vehicle to a flow to size the fleet'
+                : `${fleet.totalFleetSold} ${fleet.totalFleetSold === 1 ? 'vehicle' : 'vehicles'} total`}
             </span>
-            <button
-              type="button"
-              className="btn primary"
-              disabled
-              title="Charging & energy — coming in Step 4"
-            >
-              Continue to Charging <Icon name="arrowR" size={13} />
-            </button>
+            <Link href={`/projects/${id}/step4`} className="btn primary">
+              Continue to ROM <Icon name="arrowR" size={13} />
+            </Link>
           </div>
         </div>
       </div>

@@ -164,7 +164,7 @@ export default function Step2Page() {
         {/* Page header */}
         <div className="page-header">
           <div className="page-title">
-            <span className="step-num">Step 02 / 06</span>
+            <span className="step-num">Step 02 / 04</span>
             <h1>Vehicle Compatibility</h1>
             <div className="desc">
               Informational only — vehicles evaluated against your requirements. No selection required.
@@ -248,9 +248,9 @@ export default function Step2Page() {
           </Link>
           <div className="row">
             <span className="hint">Informational — no selection required</span>
-            <button className="btn primary" disabled title="Material Flows — coming in Step 3">
-              Continue to Flows <Icon name="arrowR" size={13} />
-            </button>
+            <Link href={`/projects/${id}/step3`} className="btn primary">
+              Continue to Fleet Engine <Icon name="arrowR" size={13} />
+            </Link>
           </div>
         </div>
       </div>

@@ -2,13 +2,13 @@
 
 import StepPlaceholder from '@/src/components/StepPlaceholder'
 
-export default function Step4Page() {
+export default function RomDashboardPage() {
   return (
     <StepPlaceholder
       stepId={4}
-      title="Charging"
-      desc="Battery sizing, charger count, and opportunity vs. shift-swap charging strategy."
-      comingSoon="Battery capacity, charger placement, and energy budget calculations will live here."
+      title="ROM Dashboard"
+      desc="Total fleet, KPIs, and rough-order pricing — the customer-facing proposal."
+      comingSoon="Fleet KPIs (utilization, CAPEX/OPEX, payback), ROM pricing, and proposal export will live here, fed by the Fleet Engine total."
     />
   )
 }

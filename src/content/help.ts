@@ -1,9 +1,9 @@
 // In-app help content. Authored for applications engineers learning HOW to use
-// the tool. One section per id: 'app' (whole-app overview) + 'step0'..'step6'.
+// the tool. One section per id: 'app' (whole-app overview) + 'step0'..'step4'.
 // Kept as data (like the vehicle library) so it's easy to edit without touching UI.
 
 export interface HelpSection {
-  id: 'app' | 'step0' | 'step1' | 'step2' | 'step3' | 'step4' | 'step5' | 'step6'
+  id: 'app' | 'step0' | 'step1' | 'step2' | 'step3' | 'step4'
   title: string
   summary: string
   howTo: string[]
@@ -75,42 +75,24 @@ export const HELP: HelpSection[] = [
   },
   {
     id: 'step3',
-    title: 'Step 3 · Flows',
+    title: 'Step 3 · Fleet Engine',
     summary:
-      'Model each material movement (origin → destination). The tool derives cycle time and fractional vehicle demand live, then sums it into a base fleet per vehicle type.',
+      'The whole sizing calculation in one tab, with three sub-tabs: Flows (movement → base fleet), Charging (battery physics → extra vehicles), and Fleet (× buffer → total).',
     howTo: [
-      'Add a flow (+ Flow), then fill the row: pick the Vehicle, its Transfer type (the +Ns badge is the handling time; lift methods open a small height popover), the Route Average Speed, round-trip Distance, and Throughput (moves/hour).',
-      'Route Average Speed is High / Medium / Low — 70% is the realistic best-case average (a vehicle never sustains full cruise over a route). Pick lower for congested, turn-heavy routes.',
-      'Read the Output columns: Cycle Time per trip and Vehicle Count (fractional). The summary box sums them per vehicle as raw → ⌈fleet⌉.',
-      'Organize with Groups (+ Group) — visual zones like “ASRS” or “Dock.” Drag a row’s handle to reorder it, or drop it onto another group to move it there.',
-      'Duplicate a row with its copy icon; remove it with the ×.',
+      'Flows: add a flow (+ Flow), pick the Vehicle, its Transfer type (the +Ns badge is handling time; lift methods open a height popover), the Route Average Speed, round-trip Distance, and Throughput (moves/hour). The Σ icon opens the live fleet-math derivation. Organize with Groups — drag a row to reorder or drop it onto another group.',
+      'Charging: choose the recharge window (Overnight vs Continuous 24/7) and each vehicle’s charge method (Opportunity vs Plugged). The table shows runtime, recharge time, availability, and any extra vehicles charging requires.',
+      'Fleet: set the buffer % — the only safety multiplier — and read the waterfall: base → + charging → × buffer → total fleet.',
     ],
     tips: [
-      'Groups are visual only — the fleet still pools per vehicle type across the whole project.',
-      'Distance is round-trip; the cycle already includes the loaded-out and empty-back legs.',
+      'Groups are visual only — the fleet pools per vehicle type across the whole project.',
+      'Runtime = usable Ah ÷ discharge A. Under Overnight, a vehicle whose runtime covers the day adds no charging vehicles.',
     ],
   },
   {
     id: 'step4',
-    title: 'Step 4 · Charging',
+    title: 'Step 4 · ROM Dashboard',
     summary:
-      'Will add the charging fleet delta on top of the Step 3 base fleet — derived from battery capacity, energy per foot, charge rate, and daily operating hours.',
-    howTo: [],
-    status: 'coming',
-  },
-  {
-    id: 'step5',
-    title: 'Step 5 · KPIs',
-    summary:
-      'Will apply the project buffer (the single safety multiplier) and surface fleet KPIs such as utilization and headroom.',
-    howTo: [],
-    status: 'coming',
-  },
-  {
-    id: 'step6',
-    title: 'Step 6 · ROM',
-    summary:
-      'Will assemble the rough-order-of-magnitude proposal — final fleet, price range, and assumptions — ready to export.',
+      'Will assemble the customer-facing proposal from the Fleet Engine total — fleet KPIs (utilization, CAPEX/OPEX, payback), rough-order pricing, and export.',
     howTo: [],
     status: 'coming',
   },

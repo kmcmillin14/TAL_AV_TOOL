@@ -35,7 +35,7 @@ export interface HeaderTotals {
   bottleneck?: string
 }
 
-type StepId = 0 | 1 | 2 | 3 | 4 | 5 | 6
+type StepId = 0 | 1 | 2 | 3 | 4
 
 interface PersistentHeaderProps {
   project: HeaderData
@@ -50,13 +50,11 @@ type EditField = 'projectName' | 'customerName' | 'facilityLocation' | 'bastianR
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 const STEPS: ReadonlyArray<{ id: StepId; label: string; desc: string }> = [
-  { id: 0, label: 'Start',       desc: 'Import or create' },
-  { id: 1, label: 'Application', desc: 'Load, transfer, environment' },
-  { id: 2, label: 'Vehicles',    desc: 'Compatibility & qualification' },
-  { id: 3, label: 'Flows',       desc: 'Material flow modeling' },
-  { id: 4, label: 'Charging',    desc: 'Battery & charging sizing' },
-  { id: 5, label: 'KPIs',        desc: 'Throughput, utilization, ROI' },
-  { id: 6, label: 'ROM',         desc: 'Rough order of magnitude' },
+  { id: 0, label: 'Start',        desc: 'Import or create' },
+  { id: 1, label: 'Application',  desc: 'Load, transfer, environment' },
+  { id: 2, label: 'Vehicles',     desc: 'Compatibility & qualification' },
+  { id: 3, label: 'Fleet Engine', desc: 'Flows, charging & buffer' },
+  { id: 4, label: 'ROM Dashboard', desc: 'Fleet, KPIs & pricing' },
 ]
 
 const META_FIELDS = new Set<EditField>(['versionNumber', 'createdAt'])

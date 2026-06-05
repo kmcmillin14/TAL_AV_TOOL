@@ -2542,3 +2542,140 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
     border-right: none; border-bottom: 1px solid var(--border);
   }
 }
+
+/* ===== Fleet Engine — sub-tabs + charging/fleet panels ===== */
+.engine-tabs {
+  display: inline-flex;
+  gap: 4px;
+  margin-bottom: 18px;
+  padding: 4px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.engine-tab {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1px;
+  padding: 8px 16px;
+  border-radius: 7px;
+  cursor: pointer;
+  transition: background 0.12s ease, color 0.12s ease;
+}
+.engine-tab-label {
+  font-family: var(--tal-font-family);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+.engine-tab-hint {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  color: var(--text-tertiary);
+}
+.engine-tab.active { background: var(--bg-surface); }
+.engine-tab.active .engine-tab-label { color: var(--accent); }
+
+.engine-panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+}
+.engine-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+.engine-context { font-family: var(--tal-font-numeric); font-size: 12px; color: var(--text-secondary); }
+.engine-context strong { color: var(--text-primary); }
+.engine-note {
+  margin-top: 16px;
+  font-family: var(--tal-font-family);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: var(--text-tertiary);
+}
+
+/* regime toggle */
+.cr-toggle { display: inline-flex; align-items: center; gap: 4px; }
+.cr-label {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-tertiary); margin-right: 6px;
+}
+.cr-opt {
+  font-family: var(--tal-font-family);
+  font-size: 12.5px; font-weight: 600;
+  color: var(--text-secondary);
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+}
+.cr-opt.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+/* charging table */
+.charge-table, .waterfall-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--tal-font-family);
+}
+.charge-table th, .waterfall-table th {
+  text-align: left;
+  font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-tertiary);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.charge-table td, .waterfall-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  font-size: 13px;
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+.charge-table .num, .waterfall-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+.ct-veh { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
+.ct-method { display: inline-flex; gap: 2px; padding: 2px; background: var(--bg-surface-2); border-radius: 7px; }
+.ct-method-opt {
+  font-family: var(--tal-font-family);
+  font-size: 11.5px; font-weight: 600;
+  color: var(--text-tertiary);
+  padding: 4px 10px; border-radius: 5px; cursor: pointer;
+  transition: all 0.12s ease;
+}
+.ct-method-opt.active { background: var(--bg-surface); color: var(--text-primary); }
+.ct-delta {
+  font-family: var(--tal-font-numeric);
+  font-variant-numeric: tabular-nums;
+  font-size: 12.5px; font-weight: 700;
+  padding: 2px 8px; border-radius: 5px;
+}
+.ct-delta-warn { color: var(--accent); background: var(--accent-soft); }
+.ct-delta-good { color: var(--good); }
+
+/* buffer + waterfall */
+.buffer-control { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.bc-label {
+  font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.buffer-control input[type='range'] { width: 220px; accent-color: var(--accent); cursor: pointer; }
+.bc-value { font-size: 16px; font-weight: 800; color: var(--accent); min-width: 44px; }
+.bc-hint { font-family: var(--tal-font-family); font-size: 11px; color: var(--text-tertiary); }
+.waterfall-table .wf-mid { color: var(--text-tertiary); }
+.waterfall-table .wf-sold { font-weight: 800; color: var(--text-primary); }
+.waterfall-table .wf-total td {
+  border-bottom: none;
+  border-top: 2px solid var(--border);
+  font-weight: 700;
+}
+.waterfall-table .wf-total .wf-sold { color: var(--accent); font-size: 16px; }

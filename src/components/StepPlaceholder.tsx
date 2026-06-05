@@ -6,7 +6,7 @@ import PersistentHeader from '@/src/components/PersistentHeader'
 import { getProject, type StoredProject } from '@/src/lib/storage'
 import type { UnitSystem } from '@/src/lib/utils/units'
 
-type StepId = 3 | 4 | 5 | 6
+type StepId = 4
 
 interface Props {
   stepId: StepId
@@ -65,7 +65,7 @@ export default function StepPlaceholder({ stepId, title, desc, comingSoon }: Pro
       <div className="workspace">
         <div className="page-header">
           <div className="page-title">
-            <span className="step-num">Step {String(stepId).padStart(2, '0')} / 06</span>
+            <span className="step-num">Step {String(stepId).padStart(2, '0')} / 04</span>
             <h1>{title}</h1>
             <div className="desc">{desc}</div>
           </div>
