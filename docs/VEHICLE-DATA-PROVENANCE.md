@@ -5,9 +5,19 @@ cutsheet in `Vehicle Cutsheets/`; `[derived]` = computed from sheet values (batt
 kWh = V×Ah, unit conversions); `[estimate]` = NOT on the sheet, placeholder to be
 replaced. Corrected 2026-05-27 from the cutsheets.
 
+## 2026-06-04 — Battery model migrated kWh → Ah/A (Fleet Engine)
+`calc` now stores `ratedAh`, `voltageV`, `dischargeA`, `chargeA` (dropped `batteryKwh`,
+`energyKwhPerFt`, `chargeKw`). Voltage/Ah seeded from the notes below; the rest are **`[estimate]`**:
+- `ratedAh` / `voltageV`: CB18 533 Ah @ 48 V · ML2 63 Ah @ 48 V · M10 28 Ah @ 48 V · E7 100 Ah @ 24 V ·
+  8TB50A 750 Ah @ 24 V · 8HBC40A 750 Ah @ 24 V. (kWh ≈ V×Ah/1000; these correct the earlier suspect
+  M10/ML2 kWh figures.)
+- `chargeA = ratedAh × 0.80 / (chargeTimeMin/60)` (consistent with the listed recharge time).
+- `dischargeA = ratedAh × 0.80 / targetRunHr`, with an assumed runtime per charge of ~6–12 operating
+  hours per class (CB18 8, ML2 10, M10 12, E7 6, 8TB50A 8, 8HBC40A 6). **To be cutsheet-verified.**
+
 ## ESTIMATES for every vehicle (not on any cutsheet)
 - `calc.priceRange` (minUsd / maxUsd)
-- `calc.chargeKw`, `calc.energyKwhPerFt`, `calc.chargerType`
+- `calc.dischargeA`, `calc.chargeA`, `calc.chargerType` (see Ah migration note above)
 - `transferMethods[].loadTimeSec` / `unloadTimeSec` — accessory **handling times**
   (Conveyor 3/3, Lift 8/8 [CB18 5/5, 8HBC40A 6/6], Pin 5/5, Custom 8–10, Powered
   Conveyor Cart 5/5). All placeholders.

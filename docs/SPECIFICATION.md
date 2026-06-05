@@ -4,6 +4,50 @@ The functional spec ("what the app does"). For architectural rules ("how it's bu
 
 ---
 
+## Fleet Engine (Step 3)
+
+The sizing calculation lives in **one tab** (`app/projects/[id]/step3`) with three internal sub-tabs,
+sharing a single live recompute. Navigation: `0 Start · 1 Application · 2 Vehicles · 3 Fleet Engine ·
+4 ROM Dashboard` (the ROM Dashboard consumes the engine's total; KPIs belong to it). This intentionally
+combines the former Flows/Charging/Buffer steps — see the `ARCHITECTURE.md` exception.
+
+**Waterfall (per vehicle group `g`, one per `vehicleId`):**
+`baseFleet → + chargingDelta → × (1 + bufferPct) → ⌈⌉ = fleetSold`; project **TOTAL** = `Σ fleetSold`.
+
+### Sub-tab 1 — Flows
+The material-flow table that produces the **base fleet** (`groupRaw`, `baseFleet = ⌈groupRaw⌉`).
+Fully specified in **Step 3 — Material Flows** below.
+
+### Sub-tab 2 — Charging (Ah/A battery model)
+Pure calc in `src/calc/fleet.ts`. Battery specs are amp-hours / amps (`ratedAh`, `voltageV`,
+`dischargeA`, `chargeA`, optional `chargeTimeMin`). `DEFAULT_DOD = 0.80`.
+
+```
+usableAh  = ratedAh × DOD
+runHr     = usableAh / dischargeA            (op-hours per charge)
+chargeHr  = chargeTimeMin/60  |  usableAh / chargeA
+dailyOpHr = min(24, shiftsPerDay × hoursPerShift)         (Step 1)
+
+A = plugged:     runHr / (runHr + chargeHr)
+    opportunity: chargeA / (chargeA + dischargeA)
+
+chargingDelta = (regime='overnight' AND runHr ≥ dailyOpHr) ? 0
+              : max(0, ⌈groupRaw / A⌉ − baseFleet)
+```
+- **Regime** (`chargeRegime`, project-level): `overnight` (a daily off-shift window exists — a charge
+  that lasts the operating day adds nothing) vs `continuous` (24/7 — always uses the availability model).
+- **Method** (`chargeMethods[vehicleId]`, default from the vehicle's `chargerType`: `opportunity` →
+  opportunity, else `plugged`): *opportunity* tops up during idle; *plugged* takes the vehicle offline
+  to charge. Two methods only.
+- Inputs missing/zero → a non-sustainable result shown as `—` (never NaN).
+
+### Sub-tab 3 — Fleet (buffer + total)
+A single project **buffer %** (`bufferPct`, default `0.10`) — the only multiplier in the pipeline —
+applied after charging: `fleetSold = ⌈(baseFleet + chargingDelta) × (1 + bufferPct)⌉`. The tab shows
+the per-vehicle waterfall and the binding TOTAL.
+
+---
+
 ## Step 3 — Material Flows
 
 ### Purpose

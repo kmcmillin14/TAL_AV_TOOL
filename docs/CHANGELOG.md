@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-06-04 — Fleet Calc Engine: Flows + Charging + Buffer combined; Ah battery model
+
+Unified the sizing pipeline into one **Fleet Engine** tab (Step 3) with sub-tabs **Flows · Charging ·
+Fleet**, sharing a single recompute `flows → base → +charging → ×buffer → TOTAL`. Navigation collapsed
+to `0 Start · 1 Application · 2 Vehicles · 3 Fleet Engine · 4 ROM Dashboard`; old step4 (Charging) /
+step5 (KPIs) / step6 (ROM) routes removed (ROM → step4, KPIs now belong to the ROM dashboard). This
+**supersedes `ARCHITECTURE.md`'s per-step-page rule** for steps 3–4.
+
+- **Battery model → amp-hours / amps.** `VehicleCalc` now `ratedAh` + `voltageV` + `dischargeA` +
+  `chargeA` (dropped `batteryKwh` / `energyKwhPerFt` / `chargeKw`). All 6 vehicle JSONs migrated
+  (estimates — see provenance). Energy kWh derives as `voltageV × ratedAh / 1000` for display.
+- **New pure `src/calc/fleet.ts`**: `chargingForGroup` (runHr = usableAh ÷ dischargeA; plugged
+  availability = runHr/(runHr+chargeHr), opportunity = chargeA/(chargeA+dischargeA); Overnight gate
+  zeroes the delta when a charge lasts the operating day), `fleetSummary` (waterfall), plus
+  `defaultChargeMethod`. New types + `DEFAULT_DOD = 0.80`. Tested in `__tests__/fleet.test.ts`.
+- **Settings:** `chargeRegime` (overnight/continuous), `bufferPct` (default 0.10), per-vehicle
+  `chargeMethods` (opportunity/plugged). Charging derives no longer depend on Step-3 distances.
+
 ## 2026-06-04 — Step 3 per-flow fleet-math derivation panel
 
 - New **Σ "fleet math"** icon in each flow's action cluster (beside duplicate/delete) opens a
