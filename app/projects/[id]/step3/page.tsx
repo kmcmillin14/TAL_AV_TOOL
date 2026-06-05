@@ -13,6 +13,7 @@ import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
 import { fleetSummary } from '@/src/calc/fleet'
 import type { EnginePatch } from '@/src/components/engine/types'
+import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import FlowsTab from '@/src/components/engine/FlowsTab'
 import ChargingTab from '@/src/components/engine/ChargingTab'
 import FleetTab from '@/src/components/engine/FleetTab'
@@ -161,12 +162,19 @@ export default function FleetEnginePage() {
                 </div>
               </div>
               <div className="er-mix">
-                <span className="er-eyebrow">Fleet Mix</span>
+                <span className="er-eyebrow">Base fleet by vehicle</span>
                 <ul className="er-mix-list">
                   {fleet.groups.map(g => (
                     <li key={g.vehicleId} className="er-mix-row">
-                      <span className="er-mix-name">{vehicleById.get(g.vehicleId)?.name ?? g.vehicleId}</span>
-                      <span className="er-mix-count mono">{g.fleetSold}</span>
+                      <span className="er-mix-veh">
+                        <VehicleDot vehicle={vehicleById.get(g.vehicleId)} size="sm" />
+                        <span className="er-mix-name">{vehicleById.get(g.vehicleId)?.name ?? g.vehicleId}</span>
+                      </span>
+                      <span className="er-mix-fig">
+                        <span className="er-mix-raw mono">{g.groupRaw.toFixed(2)}</span>
+                        <span className="er-mix-arrow" aria-hidden="true">→</span>
+                        <span className="er-mix-count mono">{g.baseFleet}</span>
+                      </span>
                     </li>
                   ))}
                 </ul>
