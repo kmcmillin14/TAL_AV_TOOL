@@ -254,7 +254,7 @@ export default function FlowsTable({
               <col style={{ width: '128px' }} />
               <col style={{ width: '118px' }} />
               <col style={{ width: '128px' }} />
-              <col style={{ width: '66px' }} />
+              <col style={{ width: '100px' }} />
             </colgroup>
             <thead>
               <tr className="flow-band-row">

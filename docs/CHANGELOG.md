@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-04 — Step 3 per-flow fleet-math derivation panel
+
+- New **Σ "fleet math"** icon in each flow's action cluster (beside duplicate/delete) opens a
+  `DerivationPanel` (on the shared `FloatingPanel`) showing the live, value-substituted formulas
+  that derive the flow's fleet demand: travel `distance ÷ (speed × pace)` out/back, load/unload from
+  the transfer method, lift `height ÷ lift speed`, then **Cycle time** = sum and **Vehicle count** =
+  `throughput × cycle ÷ 3600` (emphasized). Each row reads *label · symbolic · substituted → result*.
+  Values come straight from the engine's `CycleBreakdown` + flow inputs (live as you edit); imperial
+  (one-way leg · seconds). Trigger disabled when the cycle is undefined. New `formula` (Σ) icon; the
+  action column widened to fit the third button. Presentational only — no calc/schema change.
+
 ## 2026-06-03 — Step 3 group ribbon shows total vehicle demand
 
 - Each group header row now shows its **total vehicle demand** beside the flow count —

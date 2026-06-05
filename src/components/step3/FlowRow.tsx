@@ -10,6 +10,7 @@ import MethodSelect from './MethodSelect'
 import SpeedsUsedSelect from './SpeedsUsedSelect'
 import CyclePopover from './CyclePopover'
 import CycleAnatomyBar from './CycleAnatomyBar'
+import DerivationPanel from './DerivationPanel'
 
 interface Props {
   index: number
@@ -90,6 +91,9 @@ export default function FlowRow({
   const [cycleOpen, setCycleOpen] = useState(false)
   const cycleTriggerRef = useRef<HTMLButtonElement>(null)
   const cycleDisabled = derived.cycleSeconds == null || derived.breakdown == null
+
+  const [derivOpen, setDerivOpen] = useState(false)
+  const derivTriggerRef = useRef<HTMLButtonElement>(null)
 
   const rawDisplay =
     derived.rawVehicles == null ? '—' : derived.rawVehicles.toFixed(2)
@@ -236,6 +240,19 @@ export default function FlowRow({
       <td className="flow-row-act">
         <div className="flow-act-inner">
           <button
+            ref={derivTriggerRef}
+            type="button"
+            className="flow-act-btn flow-formula"
+            onClick={() => setDerivOpen(o => !o)}
+            disabled={cycleDisabled}
+            aria-haspopup="dialog"
+            aria-expanded={derivOpen}
+            aria-label="Show fleet math"
+            title={cycleDisabled ? undefined : 'Show the fleet math for this flow'}
+          >
+            <Icon name="formula" size={14} />
+          </button>
+          <button
             type="button"
             className="flow-act-btn flow-duplicate"
             onClick={onDuplicate}
@@ -254,6 +271,22 @@ export default function FlowRow({
             <Icon name="x" size={14} />
           </button>
         </div>
+        {derivOpen && derived.breakdown && selectedVehicle && (
+          <DerivationPanel
+            anchorRef={derivTriggerRef}
+            open={derivOpen}
+            onClose={() => setDerivOpen(false)}
+            origin={flow.origin}
+            destination={flow.destination}
+            breakdown={derived.breakdown}
+            distanceFt={flow.distanceFt}
+            thruPerHr={flow.thruPerHr}
+            speedLoadedFps={selectedVehicle.calc.speedLoadedFps}
+            speedUnloadedFps={selectedVehicle.calc.speedUnloadedFps ?? selectedVehicle.calc.speedLoadedFps}
+            liftSpeedFps={selectedVehicle.calc.liftSpeedFps ?? null}
+            rawVehicles={derived.rawVehicles}
+          />
+        )}
       </td>
     </tr>
   )
