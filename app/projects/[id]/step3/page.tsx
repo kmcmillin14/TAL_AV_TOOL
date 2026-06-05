@@ -138,52 +138,59 @@ export default function FleetEnginePage() {
       />
 
       <div className="workspace">
-        <div className="page-header">
-          <div className="page-title">
-            <span className="step-num">Step 03 / 04</span>
-            <h1>Fleet Engine</h1>
-            <div className="desc">
-              The whole sizing calculation in one place: define material flows, then layer
-              charging and a buffer to reach the total fleet. Base fleet is pure engineering —
-              charging is battery physics, buffer is policy.
-            </div>
-          </div>
+        <div className="engine-head">
+          <span className="eh-eyebrow mono">Step 03 / 04</span>
+          <h1 className="eh-title">Fleet Engine</h1>
+          <p className="eh-sub">
+            Define material flows, then layer charging and a buffer to reach the total fleet —
+            base is engineering, charging is physics, buffer is policy.
+          </p>
         </div>
 
-        <div className="engine-bar">
-          <div className="engine-seg" role="tablist" aria-label="Fleet engine">
-            {steps.map(s => (
-              <button
-                key={s.id}
-                type="button"
-                role="tab"
-                aria-selected={tab === s.id}
-                className={`es-tab${tab === s.id ? ' active' : ''}`}
-                onClick={() => selectTab(s.id)}
-              >
-                {s.label}
-                {!visited.has(s.id) && <span className="es-dot" aria-label="not yet reviewed" />}
-              </button>
-            ))}
-          </div>
-          {fleet.groups.length > 0 && (
-            <div className="engine-readout">
-              <div className="er-row">
-                <span className="er-mix mono">
+        <section className="engine-result" aria-label="Total fleet">
+          {fleet.groups.length > 0 ? (
+            <>
+              <div className="er-headline">
+                <span className="er-eyebrow">Total Fleet</span>
+                <div className="er-num-row">
+                  <span className="er-num mono">{fleet.totalFleetSold}</span>
+                  <span className="er-num-unit">vehicles</span>
+                </div>
+                <div className="er-build mono">
+                  {fleet.totalBaseFleet} base · {chgLabel} · ×{(1 + settings.bufferPct).toFixed(2)} buffer
+                </div>
+              </div>
+              <div className="er-mix">
+                <span className="er-eyebrow">Fleet Mix</span>
+                <ul className="er-mix-list">
                   {fleet.groups.map(g => (
-                    <span key={g.vehicleId} className="er-chip">
-                      {vehicleById.get(g.vehicleId)?.name ?? g.vehicleId} <strong>{g.fleetSold}</strong>
-                    </span>
+                    <li key={g.vehicleId} className="er-mix-row">
+                      <span className="er-mix-name">{vehicleById.get(g.vehicleId)?.name ?? g.vehicleId}</span>
+                      <span className="er-mix-count mono">{g.fleetSold}</span>
+                    </li>
                   ))}
-                </span>
-                <span className="er-arrow" aria-hidden="true">→</span>
-                <span className="er-total"><span className="er-total-num mono">{fleet.totalFleetSold}</span> <span className="er-total-unit">vehicles</span></span>
+                </ul>
               </div>
-              <div className="er-build mono">
-                {fleet.totalBaseFleet} base · {chgLabel} · ×{(1 + settings.bufferPct).toFixed(2)} buffer
-              </div>
-            </div>
+            </>
+          ) : (
+            <div className="er-empty">Assign a vehicle to a flow to size the fleet.</div>
           )}
+        </section>
+
+        <div className="engine-seg" role="tablist" aria-label="Fleet engine">
+          {steps.map(s => (
+            <button
+              key={s.id}
+              type="button"
+              role="tab"
+              aria-selected={tab === s.id}
+              className={`es-tab${tab === s.id ? ' active' : ''}`}
+              onClick={() => selectTab(s.id)}
+            >
+              {s.label}
+              {!visited.has(s.id) && <span className="es-dot" aria-label="not yet reviewed" />}
+            </button>
+          ))}
         </div>
 
         {tab === 'flows' && (
