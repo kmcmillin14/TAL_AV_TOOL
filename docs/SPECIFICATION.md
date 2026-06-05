@@ -52,7 +52,7 @@ the per-vehicle waterfall and the binding TOTAL.
 
 ### Purpose
 
-Step 3 decomposes the facility's material movement into discrete **flows** (origin → destination pairs) and derives, live as the user types, the cycle time and raw fractional vehicle demand per flow, plus per-vehicle aggregate `baseFleet`. Step 3's output is a pure-engineering number with **no safety multipliers**; Step 4 (charging) and Step 5 (buffer) layer on top, each with named scope so the proposal team can defend every multiplier individually.
+Step 3 decomposes the facility's material movement into discrete **flows** (origin → destination pairs) and derives, live as the user types, the cycle time and raw fractional vehicle demand per flow, plus per-vehicle aggregate `baseFleet`. Step 3's output is a pure-engineering number with **no safety multipliers**; the Charging and Fleet (buffer) sub-tabs layer on top, each with named scope so the proposal team can defend every multiplier individually.
 
 ### Pipeline overview
 
@@ -137,25 +137,10 @@ totalRawFleet  = Σ groupRaw across groups
 totalBaseFleet = Σ baseFleet across groups
 ```
 
-### Step 4 preview (not built in this plan)
+### Charging & buffer
 
-Adds `chargingDelta` per group, derived from:
-- `vehicle.calc.batteryKwh`
-- `vehicle.calc.energyKwhPerFt`
-- `vehicle.calc.chargeKw` or `chargeTimeMin`
-- `vehicle.calc.chargerType` ("opportunity" vs "swap")
-- Daily operating hours (from Step 1)
-
-`chargingDelta` is a non-negative integer added to `baseFleet`.
-
-### Step 5 preview (not built in this plan)
-
-```
-fleetPerGroup = ceil( (baseFleet + chargingDelta) × (1 + project.bufferPct) )
-fleetTotal    = Σ fleetPerGroup
-```
-
-`project.bufferPct` defaults to 0.10. Step 5 surfaces it as a project-level slider. It is the **only** multiplier in the entire pipeline; it covers maintenance, training, demand spikes, and anything not modeled by Step 3 (engineering) or Step 4 (physics).
+Built as the Charging and Fleet sub-tabs of the Fleet Engine — see the **Fleet Engine (Step 3)**
+section above for the Ah/A charging model (`chargingDelta`) and the buffer waterfall.
 
 ### Hard gates per flow
 
