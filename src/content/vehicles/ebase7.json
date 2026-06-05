@@ -31,9 +31,10 @@
     "speedLoadedFps": 4.59,
     "speedUnloadedFps": 4.59,
     "liftSpeedFps": 0.5,
-    "batteryKwh": 2.4,
-    "energyKwhPerFt": 0.012,
-    "chargeKw": 2.0,
+    "ratedAh": 100,
+    "voltageV": 24,
+    "dischargeA": 13.3,
+    "chargeA": 32,
     "chargeTimeMin": 150,
     "chargerType": "opportunity",
     "priceRange": { "minUsd": 70000, "maxUsd": 95000 }

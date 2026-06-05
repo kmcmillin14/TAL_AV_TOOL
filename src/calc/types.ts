@@ -98,6 +98,50 @@ export interface ProjectFlowSummary {
   totalBaseFleet: number
 }
 
+// ---- Fleet Engine: charging + buffer ----
+
+export type ChargeMethod = 'opportunity' | 'plugged'
+export type ChargeRegime = 'overnight' | 'continuous'
+
+/** Per-vehicle-group charging outcome. `chargingDelta` is the extra vehicles
+ *  needed so charging downtime doesn't starve the operation (≥ 0). Nulls mean
+ *  inputs were insufficient — display "—", never NaN. */
+export interface ChargingResult {
+  method: ChargeMethod
+  runHr: number | null        // operating hours one charge sustains
+  chargeHr: number | null     // hours to a full recharge
+  availability: number | null // A ∈ (0,1]
+  chargingDelta: number       // extra vehicles for charging (≥ 0)
+  sustainable: boolean        // false when inputs invalid/zero
+  reason: string              // human explanation (e.g. "fits overnight", "+1 for charging")
+}
+
+export interface FleetGroup {
+  vehicleId: string
+  groupRaw: number
+  baseFleet: number
+  charging: ChargingResult
+  fleetWithCharging: number   // baseFleet + chargingDelta
+  fleetSold: number           // ⌈ fleetWithCharging × (1 + bufferPct) ⌉
+}
+
+export interface FleetSummary {
+  groups: FleetGroup[]
+  totalBaseFleet: number
+  totalChargingDelta: number
+  totalFleetSold: number
+  bufferPct: number
+}
+
+/** Project-level fleet settings consumed by the engine. `dailyOpHr` is derived
+ *  from Step 1 (shiftsPerDay × hoursPerShift, capped at 24). */
+export interface FleetSettings {
+  regime: ChargeRegime
+  bufferPct: number
+  dailyOpHr: number
+  chargeMethods: Record<string, ChargeMethod>
+}
+
 /** Route-average speed factor map. Engineers pick low/medium/high per flow;
  *  the calc scales rated cruise speed by this fraction to get the effective
  *  route-average travel speed. These are *averages over the whole route*, not
@@ -112,6 +156,9 @@ export const ROUTE_LAYOUT_FACTORS: Record<RouteLayout, number> = {
   high: 0.7,
 }
 
-/** Default project-level buffer fraction used by Step 5. Declared here for
- *  cross-step visibility — Step 3 does not use it. */
+/** Default project-level buffer fraction applied by the Fleet Engine after
+ *  base + charging. */
 export const DEFAULT_BUFFER_PCT = 0.10
+
+/** Usable depth-of-discharge fraction for battery runtime/charge math. */
+export const DEFAULT_DOD = 0.80

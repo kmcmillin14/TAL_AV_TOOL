@@ -30,9 +30,10 @@
     "maxLoadHeightIn": null,
     "speedLoadedFps": 5.87,
     "speedUnloadedFps": 5.87,
-    "batteryKwh": 18.0,
-    "energyKwhPerFt": 0.024,
-    "chargeKw": 6.0,
+    "ratedAh": 750,
+    "voltageV": 24,
+    "dischargeA": 75,
+    "chargeA": 400,
     "chargeTimeMin": 90,
     "chargerType": "shift_swap",
     "priceRange": { "minUsd": 200000, "maxUsd": 275000 }

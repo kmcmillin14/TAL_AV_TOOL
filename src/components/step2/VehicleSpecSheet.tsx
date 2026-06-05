@@ -84,9 +84,9 @@ export default function VehicleSpecSheet({ vehicle, unitSystem }: Props) {
       </Section>
 
       <Section title="Power &amp; Charging">
-        <Row k="Battery" v={`${calc.batteryKwh} kWh`} />
-        <Row k="Energy use" v={`${calc.energyKwhPerFt} kWh/ft`} />
-        <Row k="Charger" v={calc.chargeKw == null ? null : `${calc.chargeKw} kW`} />
+        <Row k="Battery" v={`${calc.ratedAh} Ah @ ${calc.voltageV} V (${((calc.voltageV * calc.ratedAh) / 1000).toFixed(1)} kWh)`} />
+        <Row k="Discharge (operating)" v={`${calc.dischargeA} A`} />
+        <Row k="Charge current" v={`${calc.chargeA} A`} />
         <Row k="Charge time" v={calc.chargeTimeMin == null ? null : `${calc.chargeTimeMin} min`} />
         <Row k="Charging strategy" v={calc.chargerType ?? null} />
       </Section>

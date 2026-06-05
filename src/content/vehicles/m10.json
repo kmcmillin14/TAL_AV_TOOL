@@ -29,9 +29,10 @@
     "maxLoadHeightIn": null,
     "speedLoadedFps": 2.72,
     "speedUnloadedFps": 2.72,
-    "batteryKwh": 14.0,
-    "energyKwhPerFt": 0.011,
-    "chargeKw": 3.0,
+    "ratedAh": 28,
+    "voltageV": 48,
+    "dischargeA": 1.9,
+    "chargeA": 17.9,
     "chargeTimeMin": 75,
     "chargerType": "opportunity",
     "priceRange": { "minUsd": 85000, "maxUsd": 115000 }

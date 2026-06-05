@@ -85,6 +85,16 @@ export const projectSchema = z.object({
   /** Optional per-group color override, keyed by group name. Absent name → the
    *  deterministic sectionColor(name) hash is used. Visual only. */
   flowGroupColors: z.record(z.string(), z.string()).default({}),
+
+  // ---- Fleet Engine: charging + buffer settings ----
+  /** Daily recharge window assumption. 'overnight' = an off-shift window exists;
+   *  'continuous' = 24/7, charging must happen during operations. */
+  chargeRegime: z.enum(['overnight', 'continuous']).default('overnight'),
+  /** Final safety buffer fraction applied after base + charging. */
+  bufferPct: z.number().min(0).max(1).default(0.10),
+  /** Per-vehicleId charge-method override ('opportunity' | 'plugged'). Absent →
+   *  derived from the vehicle's chargerType. */
+  chargeMethods: z.record(z.string(), z.enum(['opportunity', 'plugged'])).default({}),
   otherAGVs: z.boolean().default(false),
   otherAGVVendor: z.string().optional(),
 
