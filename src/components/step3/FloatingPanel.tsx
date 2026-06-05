@@ -50,10 +50,30 @@ export default function FloatingPanel({ anchorRef, open, onClose, align = 'left'
   const rect = anchorRef.current?.getBoundingClientRect()
   if (!rect) return null
 
-  const style: CSSProperties =
+  const MARGIN = 8
+  const GAP = 6
+  // Vertical placement: open downward, but flip up when there isn't room below
+  // and there's more room above. Always clamp to the viewport and scroll if the
+  // content is taller than the available space (so a tall panel never runs off).
+  const spaceBelow = window.innerHeight - rect.bottom - MARGIN
+  const spaceAbove = rect.top - MARGIN
+  const openUp = spaceBelow < 240 && spaceAbove > spaceBelow
+  const vertical: CSSProperties = openUp
+    ? { bottom: window.innerHeight - rect.top + GAP, maxHeight: spaceAbove - GAP }
+    : { top: rect.bottom + GAP, maxHeight: spaceBelow - GAP }
+
+  const horizontal: CSSProperties =
     align === 'right'
-      ? { position: 'fixed', top: rect.bottom + 6, right: Math.max(8, window.innerWidth - rect.right), zIndex: 200 }
-      : { position: 'fixed', top: rect.bottom + 6, left: Math.max(8, Math.min(rect.left, window.innerWidth - EST_WIDTH)), zIndex: 200 }
+      ? { right: Math.max(MARGIN, window.innerWidth - rect.right) }
+      : { left: Math.max(MARGIN, Math.min(rect.left, window.innerWidth - EST_WIDTH)) }
+
+  const style: CSSProperties = {
+    position: 'fixed',
+    zIndex: 200,
+    overflowY: 'auto',
+    ...vertical,
+    ...horizontal,
+  }
 
   return (
     <div

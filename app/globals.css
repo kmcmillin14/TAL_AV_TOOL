@@ -2051,7 +2051,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .flow-act-btn:disabled { opacity: 0.3; cursor: default; }
 
 /* ===== Step 3 — fleet derivation panel (formula → substituted → result) ===== */
-.deriv-panel { min-width: 318px; max-width: 360px; padding: 12px 14px; }
+.deriv-panel { min-width: 318px; max-width: 360px; padding: 12px 14px; text-align: left; }
 .deriv-head {
   display: flex;
   align-items: baseline;
