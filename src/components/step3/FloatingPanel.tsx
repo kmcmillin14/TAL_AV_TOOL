@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react'
+import { useEffect, useReducer, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react'
 
 interface Props {
   anchorRef: RefObject<HTMLElement | null>
@@ -21,6 +21,8 @@ const EST_WIDTH = 272
  */
 export default function FloatingPanel({ anchorRef, open, onClose, align = 'left', className, children }: Props) {
   const panelRef = useRef<HTMLDivElement>(null)
+  // Re-measure (not close) on scroll/resize so the panel tracks its anchor.
+  const [, reposition] = useReducer((n: number) => n + 1, 0)
 
   useEffect(() => {
     if (!open) return
@@ -33,7 +35,9 @@ export default function FloatingPanel({ anchorRef, open, onClose, align = 'left'
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
     }
-    const onMove = () => onClose()
+    // Scroll inside the panel (capture phase) used to close it — now we just
+    // re-measure so the panel follows the trigger and inner scrolling is fine.
+    const onMove = () => reposition()
     document.addEventListener('mousedown', onDown)
     document.addEventListener('keydown', onKey)
     window.addEventListener('scroll', onMove, true)

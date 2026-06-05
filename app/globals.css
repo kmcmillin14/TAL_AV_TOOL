@@ -2050,11 +2050,11 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .flow-delete:hover { color: var(--bad); }
 .flow-act-btn:disabled { opacity: 0.3; cursor: default; }
 
-/* ===== Step 3 — fleet derivation panel (formula → substituted → result) ===== */
-.deriv-panel { min-width: 318px; max-width: 360px; padding: 12px 14px; text-align: left; }
+/* ===== Step 3 — fleet derivation panel (worksheet: formula → result) ===== */
+.deriv-panel { width: 340px; max-width: 92vw; padding: 14px 16px; text-align: left; }
 .deriv-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
 }
@@ -2062,43 +2062,64 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-family: var(--tal-font-family);
   font-size: 13px;
   font-weight: 700;
+  letter-spacing: 0.01em;
   color: var(--text-primary);
 }
 .deriv-tag {
   font-family: var(--tal-font-numeric);
-  font-size: 10px;
-  letter-spacing: 0.04em;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   color: var(--accent);
+  padding: 3px 8px;
+  border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+  border-radius: 999px;
+  white-space: nowrap;
 }
 .deriv-route {
-  margin-top: 2px;
+  margin-top: 4px;
   font-family: var(--tal-font-numeric);
   font-size: 11px;
+  letter-spacing: 0.02em;
   color: var(--text-secondary);
 }
 .deriv-unitnote {
-  margin: 6px 0 4px;
+  margin-top: 2px;
   font-family: var(--tal-font-family);
   font-size: 10px;
   color: var(--text-tertiary);
 }
-.deriv-row {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 5px 0;
+.deriv-section {
+  margin: 14px 0 2px;
+  font-family: var(--tal-font-numeric);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
 }
-.deriv-formula { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.deriv-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: baseline;
+  column-gap: 14px;
+  padding: 7px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+}
+.deriv-row.emphasis { border-bottom: none; }
+.deriv-formula { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .deriv-label {
   font-family: var(--tal-font-family);
-  font-size: 11.5px;
+  font-size: 12px;
   font-weight: 600;
+  line-height: 1.2;
   color: var(--text-primary);
 }
 .deriv-symbol {
   font-family: var(--tal-font-numeric);
-  font-size: 10px;
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
   color: var(--text-tertiary);
 }
 .deriv-sub {
@@ -2108,28 +2129,42 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-secondary);
 }
 .deriv-result {
+  font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;
   font-size: 12.5px;
   font-weight: 700;
   color: var(--text-primary);
   white-space: nowrap;
+  text-align: right;
+}
+.deriv-unit {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin-left: 4px;
 }
 .deriv-row.muted .deriv-label,
 .deriv-row.muted .deriv-symbol,
 .deriv-row.muted .deriv-result { color: var(--text-disabled); }
 .deriv-row.emphasis {
-  margin-top: 4px;
-  padding-top: 8px;
-  border-top: 1px solid var(--border);
+  margin-top: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-left: 2px solid var(--accent);
+  border-radius: 8px;
+  background: var(--bg-surface-2);
 }
-.deriv-row.emphasis .deriv-result { color: var(--accent); font-size: 14px; }
+.deriv-row.emphasis .deriv-label { font-size: 12.5px; font-weight: 700; }
+.deriv-row.emphasis .deriv-result { color: var(--accent); font-size: 16px; font-weight: 800; }
 .deriv-note {
-  margin-top: 10px;
-  padding-top: 9px;
+  margin-top: 12px;
+  padding-top: 10px;
   border-top: 1px solid var(--border);
   font-family: var(--tal-font-family);
   font-size: 10.5px;
-  line-height: 1.4;
+  line-height: 1.45;
   color: var(--text-tertiary);
 }
 
