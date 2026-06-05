@@ -157,20 +157,33 @@ export default function FleetEnginePage() {
           </div>
         </div>
 
-        <div className="engine-tabs" role="tablist" aria-label="Fleet engine">
-          {tabs.map(t => (
-            <button
-              key={t.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === t.id}
-              className={`engine-tab${tab === t.id ? ' active' : ''}`}
-              onClick={() => setTab(t.id)}
-            >
-              <span className="engine-tab-label">{t.label}</span>
-              <span className="engine-tab-hint">{t.hint}</span>
-            </button>
-          ))}
+        <div className="engine-bar">
+          <div className="engine-tabs" role="tablist" aria-label="Fleet engine">
+            {tabs.map(t => (
+              <button
+                key={t.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === t.id}
+                className={`engine-tab${tab === t.id ? ' active' : ''}`}
+                onClick={() => setTab(t.id)}
+              >
+                <span className="engine-tab-label">{t.label}</span>
+                <span className="engine-tab-hint">{t.hint}</span>
+              </button>
+            ))}
+          </div>
+          {fleet.groups.length > 0 && (
+            <div className="engine-total" aria-label="Total fleet">
+              <span className="et-label">Total Fleet</span>
+              <span className="et-value mono">{fleet.totalFleetSold}</span>
+              <span className="et-sub mono">
+                {fleet.totalBaseFleet} base
+                {fleet.totalChargingDelta > 0 ? ` +${fleet.totalChargingDelta} chg` : ''}
+                {' · ×'}{(1 + settings.bufferPct).toFixed(2)}
+              </span>
+            </div>
+          )}
         </div>
 
         {tab === 'flows' && (
