@@ -2544,74 +2544,78 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 
 /* ===== Fleet Engine — sub-tabs + charging/fleet panels ===== */
-.engine-bar {
+/* The fleet build-up: a symmetrical stepper that doubles as sub-tab nav and
+   shows every stage contributing to the total (so it's clear all 3 matter). */
+.engine-stepper {
   display: flex;
   align-items: stretch;
-  justify-content: space-between;
-  gap: 24px;
-  flex-wrap: wrap;
-  margin-bottom: 20px;
-}
-.engine-total {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  justify-content: center;
-  gap: 1px;
-  padding: 8px 18px;
+  gap: 2px;
+  margin-bottom: 14px;
+  padding: 6px;
   background: var(--bg-surface-2);
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 10px;
+  border-radius: 12px;
 }
-.et-label {
-  font-family: var(--tal-font-numeric);
-  font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
-  color: var(--text-tertiary);
-}
-.et-value {
-  font-family: var(--tal-font-numeric);
-  font-variant-numeric: tabular-nums;
-  font-size: 30px; font-weight: 800; line-height: 1;
-  color: var(--accent);
-}
-.et-sub {
-  font-family: var(--tal-font-numeric);
-  font-variant-numeric: tabular-nums;
-  font-size: 10px; color: var(--text-tertiary);
-}
-.engine-tabs {
-  display: inline-flex;
-  gap: 4px;
-  padding: 4px;
-  background: var(--bg-surface-2);
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-.engine-tab {
+.es-step {
+  flex: 1 1 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 1px;
-  padding: 8px 16px;
-  border-radius: 7px;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid transparent;
   cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
+  text-align: left;
+  transition: background 0.12s ease, border-color 0.12s ease;
 }
-.engine-tab-label {
-  font-family: var(--tal-font-family);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--text-secondary);
+.es-step:hover { background: color-mix(in srgb, var(--bg-surface) 55%, transparent); }
+.es-step.active { background: var(--bg-surface); border-color: var(--border-strong); }
+.es-head { display: flex; align-items: center; gap: 8px; }
+.es-num {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; border-radius: 50%;
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  color: var(--text-tertiary);
+  background: var(--bg-surface-2); border: 1px solid var(--border);
 }
-.engine-tab-hint {
-  font-family: var(--tal-font-numeric);
-  font-size: 10px;
-  letter-spacing: 0.02em;
+.es-step.active .es-num { color: #fff; background: var(--accent); border-color: var(--accent); }
+.es-label { font-family: var(--tal-font-family); font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+.es-step.active .es-label { color: var(--text-primary); }
+.es-dot {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+.es-value {
+  font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums;
+  font-size: 22px; font-weight: 800; line-height: 1; color: var(--text-primary);
+}
+.es-sub {
+  font-family: var(--tal-font-numeric); font-size: 9.5px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-tertiary);
+}
+.es-arrow {
+  display: flex; align-items: center;
+  font-family: var(--tal-font-numeric); font-size: 22px; color: var(--text-disabled);
+}
+.es-total {
+  flex: 1 1 0;
+  display: flex; flex-direction: column; align-items: flex-start; gap: 4px;
+  padding: 12px 18px; border-radius: 8px;
+  background: var(--accent-soft); border: 1px solid var(--accent);
+}
+.es-total-label {
+  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent);
+}
+.es-total .es-value { color: var(--accent); font-size: 30px; }
+.es-total .es-sub { color: color-mix(in srgb, var(--accent) 70%, var(--text-tertiary)); }
+.engine-help {
+  margin-bottom: 18px;
+  font-family: var(--tal-font-family); font-size: 12px; line-height: 1.5;
   color: var(--text-tertiary);
 }
-.engine-tab.active { background: var(--bg-surface); }
-.engine-tab.active .engine-tab-label { color: var(--accent); }
+.engine-help strong { color: var(--text-secondary); }
 
 .engine-panel {
   background: var(--bg-surface);

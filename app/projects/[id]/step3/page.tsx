@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import PersistentHeader from '@/src/components/PersistentHeader'
@@ -29,6 +29,8 @@ export default function FleetEnginePage() {
   const [error, setError] = useState<string | null>(null)
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
   const [tab, setTab] = useState<EngineTab>('flows')
+  const [visited, setVisited] = useState<Set<EngineTab>>(() => new Set<EngineTab>(['flows']))
+  const selectTab = (id: EngineTab) => { setTab(id); setVisited(v => (v.has(id) ? v : new Set(v).add(id))) }
 
   useEffect(() => {
     const proj = getProject(id)
@@ -129,11 +131,12 @@ export default function FleetEnginePage() {
     step2Complete: project.step2Complete,
   }
 
-  const tabs: { id: EngineTab; label: string; hint: string }[] = [
-    { id: 'flows', label: 'Flows', hint: 'movement → base fleet' },
-    { id: 'charging', label: 'Charging', hint: '+ vehicles for charging' },
-    { id: 'fleet', label: 'Fleet', hint: '× buffer → total' },
+  const steps: { id: EngineTab; n: number; label: string; value: string; sub: string }[] = [
+    { id: 'flows', n: 1, label: 'Flows', value: `${fleet.totalBaseFleet}`, sub: 'base fleet' },
+    { id: 'charging', n: 2, label: 'Charging', value: fleet.totalChargingDelta > 0 ? `+${fleet.totalChargingDelta}` : '+0', sub: 'for charging' },
+    { id: 'fleet', n: 3, label: 'Fleet', value: `×${(1 + settings.bufferPct).toFixed(2)}`, sub: 'buffer' },
   ]
+  const allVisited = visited.size >= 3
 
   return (
     <div className="app-shell">
@@ -157,34 +160,40 @@ export default function FleetEnginePage() {
           </div>
         </div>
 
-        <div className="engine-bar">
-          <div className="engine-tabs" role="tablist" aria-label="Fleet engine">
-            {tabs.map(t => (
+        <div className="engine-stepper" role="tablist" aria-label="Fleet build-up">
+          {steps.map(s => (
+            <Fragment key={s.id}>
               <button
-                key={t.id}
                 type="button"
                 role="tab"
-                aria-selected={tab === t.id}
-                className={`engine-tab${tab === t.id ? ' active' : ''}`}
-                onClick={() => setTab(t.id)}
+                aria-selected={tab === s.id}
+                className={`es-step${tab === s.id ? ' active' : ''}`}
+                onClick={() => selectTab(s.id)}
               >
-                <span className="engine-tab-label">{t.label}</span>
-                <span className="engine-tab-hint">{t.hint}</span>
+                <span className="es-head">
+                  <span className="es-num">{s.n}</span>
+                  <span className="es-label">{s.label}</span>
+                  {!visited.has(s.id) && <span className="es-dot" aria-label="not yet reviewed" />}
+                </span>
+                <span className="es-value mono">{s.value}</span>
+                <span className="es-sub">{s.sub}</span>
               </button>
-            ))}
+              <span className="es-arrow" aria-hidden="true">›</span>
+            </Fragment>
+          ))}
+          <div className="es-total" aria-label="Total fleet">
+            <span className="es-head"><span className="es-total-label">Total Fleet</span></span>
+            <span className="es-value mono">{fleet.totalFleetSold}</span>
+            <span className="es-sub">vehicles</span>
           </div>
-          {fleet.groups.length > 0 && (
-            <div className="engine-total" aria-label="Total fleet">
-              <span className="et-label">Total Fleet</span>
-              <span className="et-value mono">{fleet.totalFleetSold}</span>
-              <span className="et-sub mono">
-                {fleet.totalBaseFleet} base
-                {fleet.totalChargingDelta > 0 ? ` +${fleet.totalChargingDelta} chg` : ''}
-                {' · ×'}{(1 + settings.bufferPct).toFixed(2)}
-              </span>
-            </div>
-          )}
         </div>
+        {!allVisited && fleet.groups.length > 0 && (
+          <div className="engine-help">
+            All three steps shape the total — base fleet is engineering, <strong>charging</strong> is
+            physics, <strong>buffer</strong> is policy. Open each before quoting; the total above already
+            includes them.
+          </div>
+        )}
 
         {tab === 'flows' && (
           <FlowsTab
