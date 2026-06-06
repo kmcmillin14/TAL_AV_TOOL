@@ -125,9 +125,16 @@ export default function FleetEnginePage() {
   const steps: { id: EngineTab; label: string }[] = [
     { id: 'flows', label: 'Flows' },
     { id: 'charging', label: 'Charging' },
-    { id: 'fleet', label: 'Fleet' },
+    { id: 'fleet', label: 'Buffer' },
   ]
-  const chgLabel = fleet.totalChargingDelta > 0 ? `+${fleet.totalChargingDelta} charging` : 'no charging'
+  const curIndex = Math.max(0, steps.findIndex(s => s.id === tab))
+  const goStage = (delta: number) => { const next = steps[curIndex + delta]; if (next) selectTab(next.id) }
+  // Hero shows the cumulative fleet at the stage reached — it grows as you advance.
+  const stageValue =
+    tab === 'flows' ? fleet.totalBaseFleet
+    : tab === 'charging' ? fleet.totalBaseFleet + fleet.totalChargingDelta
+    : fleet.totalFleetSold
+  const stageLabel = tab === 'flows' ? 'Base fleet' : tab === 'charging' ? 'With charging' : 'Total fleet'
 
   return (
     <div className="app-shell">
@@ -152,13 +159,15 @@ export default function FleetEnginePage() {
           {fleet.groups.length > 0 ? (
             <>
               <div className="er-headline">
-                <span className="er-eyebrow">Total Fleet</span>
+                <span className="er-eyebrow">{stageLabel}</span>
                 <div className="er-num-row">
-                  <span className="er-num mono">{fleet.totalFleetSold}</span>
+                  <span className="er-num mono">{stageValue}</span>
                   <span className="er-num-unit">vehicles</span>
                 </div>
                 <div className="er-build mono">
-                  {fleet.totalBaseFleet} base · {chgLabel} · ×{(1 + settings.bufferPct).toFixed(2)} buffer
+                  <span className="er-seg on">{fleet.totalBaseFleet} base</span>
+                  <span className={`er-seg${curIndex >= 1 ? ' on' : ''}`}>+{fleet.totalChargingDelta} charging</span>
+                  <span className={`er-seg${curIndex >= 2 ? ' on' : ''}`}>×{(1 + settings.bufferPct).toFixed(2)} buffer</span>
                 </div>
               </div>
               <div className="er-mix">
@@ -185,20 +194,31 @@ export default function FleetEnginePage() {
           )}
         </section>
 
-        <div className="engine-seg" role="tablist" aria-label="Fleet engine">
-          {steps.map(s => (
-            <button
-              key={s.id}
-              type="button"
-              role="tab"
-              aria-selected={tab === s.id}
-              className={`es-tab${tab === s.id ? ' active' : ''}`}
-              onClick={() => selectTab(s.id)}
-            >
-              {s.label}
-              {!visited.has(s.id) && <span className="es-dot" aria-label="not yet reviewed" />}
+        <div className="engine-stagebar">
+          <div className="engine-seg" role="tablist" aria-label="Fleet build stages">
+            {steps.map((s, i) => (
+              <button
+                key={s.id}
+                type="button"
+                role="tab"
+                aria-selected={tab === s.id}
+                className={`es-tab${tab === s.id ? ' active' : ''}`}
+                onClick={() => selectTab(s.id)}
+              >
+                <span className="es-tab-n mono">{i + 1}</span>{s.label}
+                {!visited.has(s.id) && <span className="es-dot" aria-label="not yet reviewed" />}
+              </button>
+            ))}
+          </div>
+          <div className="stage-nav">
+            <span className="stage-count mono">Step {curIndex + 1} of {steps.length}</span>
+            <button type="button" className="stage-btn" onClick={() => goStage(-1)} disabled={curIndex === 0}>
+              <Icon name="arrowL" size={13} /> Back
             </button>
-          ))}
+            <button type="button" className="stage-btn primary" onClick={() => goStage(1)} disabled={curIndex === steps.length - 1}>
+              Next <Icon name="arrowR" size={13} />
+            </button>
+          </div>
         </div>
 
         {tab === 'flows' && (

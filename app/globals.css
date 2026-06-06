@@ -2521,9 +2521,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .er-build {
   margin-top: 14px;
+  display: flex; flex-wrap: wrap; gap: 14px;
   font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums;
-  font-size: 11.5px; color: var(--text-tertiary);
+  font-size: 11.5px;
 }
+.er-seg { color: var(--text-disabled); transition: color 0.2s ease; }
+.er-seg.on { color: var(--text-tertiary); }
 .er-mix {
   flex: 1 1 240px;
   border-left: 1px solid var(--border);
@@ -2550,15 +2553,41 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .er-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
-/* iOS segmented control — primary step nav, left-aligned under the card. */
+/* Stage rail: segmented stages (left) + step indicator & Back/Next (right). */
+.engine-stagebar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
+}
 .engine-seg {
   display: inline-flex;
   gap: 2px;
   padding: 3px;
-  margin-bottom: 20px;
   background: var(--bg-surface-2);
   border-radius: 10px;
 }
+.es-tab-n {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 18px; height: 18px; margin-right: 8px; border-radius: 50%;
+  font-size: 10px; font-weight: 700;
+  background: var(--bg-surface); color: var(--text-tertiary);
+}
+.es-tab.active .es-tab-n { background: var(--accent); color: #fff; }
+.stage-nav { display: inline-flex; align-items: center; gap: 10px; }
+.stage-count {
+  font-family: var(--tal-font-numeric); font-size: 11px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-tertiary);
+}
+.stage-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--tal-font-family); font-size: 13px; font-weight: 600;
+  padding: 10px 16px; min-height: 44px; border-radius: 9px;
+  border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-secondary);
+  cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+.stage-btn:hover:not(:disabled) { color: var(--text-primary); border-color: var(--border-strong); }
+.stage-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.stage-btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
+.stage-btn:disabled { opacity: 0.4; cursor: default; }
 .es-tab {
   position: relative;
   padding: 7px 22px;

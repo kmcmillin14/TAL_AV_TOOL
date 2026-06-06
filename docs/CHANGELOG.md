@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-06 — Fleet Engine → staged pipeline (1/n): stage rail + progressive hero
+
+First increment of the progressive "Pipeline" redesign. The Flows/Charging/Fleet sub-tabs become a
+3-**stage** progression — **Flows · Charging · Buffer** — driven by a stage rail (numbered chips +
+"Step N of 3" + Back/Next, 44px targets, keyboard-focusable, unvisited dot). The hero summary is now
+**progressive**: the headline grows with the stage (base → with-charging → total) and the
+`base · +charging · ×buffer` segments brighten as you advance. Content per stage still uses the
+existing components; the per-flow **column morph** (View Transitions, transform/opacity per
+ui-ux-pro-max) lands in the next increments. No calc/schema change; 107 tests pass.
+
 ## 2026-06-04 — Fleet Calc Engine: Flows + Charging + Buffer combined; Ah battery model
 
 Unified the sizing pipeline into one **Fleet Engine** tab (Step 3) with sub-tabs **Flows · Charging ·
