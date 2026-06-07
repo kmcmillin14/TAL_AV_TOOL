@@ -175,10 +175,26 @@ export default function FleetEnginePage() {
                   <span className="er-num mono">{stageValue}</span>
                   <span className="er-num-unit">vehicles</span>
                 </div>
-                <div className="er-build mono">
-                  <span className="er-seg on">{fleet.totalBaseFleet} base</span>
-                  {curIndex >= 1 && <span className="er-seg on er-seg-add">+{fleet.totalChargingDelta} charging</span>}
-                  {curIndex >= 2 && <span className="er-seg on er-seg-add">×{(1 + settings.bufferPct).toFixed(2)} buffer</span>}
+                <div className="er-pipeline" aria-label="Fleet build-up">
+                  <div className="ep-seg on">
+                    <span className="ep-label">Base</span>
+                    <span className="ep-val mono">{fleet.totalBaseFleet}</span>
+                  </div>
+                  <span className="ep-op" aria-hidden="true">+</span>
+                  <div className={`ep-seg${curIndex >= 1 ? ' on' : ''}`}>
+                    <span className="ep-label">Charging</span>
+                    <span className="ep-val mono">{fleet.totalChargingDelta > 0 ? `+${fleet.totalChargingDelta}` : '0'}</span>
+                  </div>
+                  <span className="ep-op" aria-hidden="true">×</span>
+                  <div className={`ep-seg${curIndex >= 2 ? ' on' : ''}`}>
+                    <span className="ep-label">Buffer</span>
+                    <span className="ep-val mono">{(1 + settings.bufferPct).toFixed(2)}</span>
+                  </div>
+                  <span className="ep-op" aria-hidden="true">=</span>
+                  <div className={`ep-seg ep-total${curIndex >= 2 ? ' on' : ''}`}>
+                    <span className="ep-label">Total</span>
+                    <span className="ep-val mono">{fleet.totalFleetSold}</span>
+                  </div>
                 </div>
               </div>
               <div className="er-mix">

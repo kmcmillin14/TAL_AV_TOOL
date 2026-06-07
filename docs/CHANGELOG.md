@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-07 — Fleet Engine pipeline (4/n): directional column slide + build-up bar
+
+iOS motion polish (per frontend-design + ui-ux-pro-max — transform/opacity only, reduced-motion gated):
+- **Directional column FLIP.** The Cycle-Time and Vehicle-Count cells carry matching
+  `view-transition-name`s across Flows↔Charging, so on Next they **slide left** to their settled
+  position (spring ease-out `cubic-bezier(0.32,0.72,0,1)`, 360 ms) while inputs cross-fade out and the
+  battery columns cross-fade in. `::view-transition-group(*)` drives the slide.
+- **Hero build-up bar.** The build-up line becomes a 4-section bar — `BASE + CHARGING × BUFFER = TOTAL`
+  — whose segments scale/fade in as each stage is reached (Total in TAL red). No calc/schema change.
+
 ## 2026-06-07 — Fleet Engine pipeline (3/n): buffer stage + per-flow waterfall
 
 The Buffer stage is now a **per-flow pipeline view** (`BufferPipeline`): the project buffer slider up

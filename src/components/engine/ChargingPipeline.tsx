@@ -91,8 +91,8 @@ export default function ChargingPipeline({
                       ))}
                     </div>
                   </td>
-                  <td className="num mono">{fmtCycle(d?.cycleSeconds)}</td>
-                  <td className="num mono">{d?.rawVehicles == null ? '—' : d.rawVehicles.toFixed(2)}</td>
+                  <td className="num mono" style={{ viewTransitionName: `vt-cyc-${f.id}` }}>{fmtCycle(d?.cycleSeconds)}</td>
+                  <td className="num mono" style={{ viewTransitionName: `vt-cnt-${f.id}` }}>{d?.rawVehicles == null ? '—' : d.rawVehicles.toFixed(2)}</td>
                   <td className="num mono">{fmtH(c?.runHr)}</td>
                   <td className="num mono">{fmtH(c?.chargeHr)}</td>
                   <td className="num mono">{fmtPct(c?.availability)}</td>

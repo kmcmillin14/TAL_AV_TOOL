@@ -2519,17 +2519,30 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-family: var(--tal-font-numeric); font-size: 12px; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--text-tertiary);
 }
-.er-build {
-  margin-top: 14px;
-  display: flex; flex-wrap: wrap; gap: 14px;
-  font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums;
-  font-size: 11.5px;
+/* Build-up bar: BASE + CHARGING × BUFFER = TOTAL. Each segment scales/fades in
+   as its stage is reached (iOS spring-ease-out); Total is the accent. */
+.er-pipeline { margin-top: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.ep-seg {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 12px; border-radius: 9px;
+  background: color-mix(in srgb, var(--bg-surface-2) 55%, transparent);
+  border: 1px solid var(--border);
+  opacity: 0.38; transform: scale(0.96);
+  transition: opacity 0.32s cubic-bezier(0.32, 0.72, 0, 1),
+              transform 0.32s cubic-bezier(0.32, 0.72, 0, 1),
+              border-color 0.32s ease, background 0.32s ease;
 }
-.er-seg { color: var(--text-disabled); transition: color 0.2s ease; }
-.er-seg.on { color: var(--text-tertiary); }
-.er-seg-add { animation: er-seg-in 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
-@keyframes er-seg-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-@media (prefers-reduced-motion: reduce) { .er-seg-add { animation: none; } }
+.ep-seg.on { opacity: 1; transform: scale(1); }
+.ep-label {
+  font-family: var(--tal-font-numeric); font-size: 8.5px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.ep-val { font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.ep-op { font-family: var(--tal-font-numeric); font-size: 13px; color: var(--text-disabled); }
+.ep-total.on { border-color: var(--accent); background: var(--accent-soft); }
+.ep-total .ep-label { color: var(--accent); }
+.ep-total.on .ep-val { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .ep-seg { transition: none; } }
 .er-mix {
   flex: 1 1 240px;
   border-left: 1px solid var(--border);
@@ -2559,8 +2572,14 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* Stage morph via View Transitions API — cross-fade the content region on
    stage change (GPU transform/opacity, not width). Reduced-motion → instant. */
 ::view-transition-old(root), ::view-transition-new(root) {
-  animation-duration: 220ms;
+  animation-duration: 230ms;
   animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+/* Named persistent cells (Cycle, Vehicle-Count) FLIP-slide to their new column
+   position with a snappier iOS spring-ease-out. */
+::view-transition-group(*) {
+  animation-duration: 360ms;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
 }
 @media (prefers-reduced-motion: reduce) {
   ::view-transition-group(*), ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
