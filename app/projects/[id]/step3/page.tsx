@@ -177,8 +177,8 @@ export default function FleetEnginePage() {
                 </div>
                 <div className="er-build mono">
                   <span className="er-seg on">{fleet.totalBaseFleet} base</span>
-                  <span className={`er-seg${curIndex >= 1 ? ' on' : ''}`}>+{fleet.totalChargingDelta} charging</span>
-                  <span className={`er-seg${curIndex >= 2 ? ' on' : ''}`}>×{(1 + settings.bufferPct).toFixed(2)} buffer</span>
+                  {curIndex >= 1 && <span className="er-seg on er-seg-add">+{fleet.totalChargingDelta} charging</span>}
+                  {curIndex >= 2 && <span className="er-seg on er-seg-add">×{(1 + settings.bufferPct).toFixed(2)} buffer</span>}
                 </div>
               </div>
               <div className="er-mix">
