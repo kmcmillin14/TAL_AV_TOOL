@@ -146,6 +146,9 @@ export default function FleetEnginePage() {
     : tab === 'charging' ? fleet.totalBaseFleet + fleet.totalChargingDelta
     : fleet.totalFleetSold
   const stageLabel = tab === 'flows' ? 'Base fleet' : tab === 'charging' ? 'With charging' : 'Total fleet'
+  // Hero KPIs — the inputs that drive the fleet: how many flows, total demand.
+  const flowCount = flows.length
+  const totalThruPerHr = Math.round(flows.reduce((sum, f) => sum + (f.thruPerHr || 0), 0))
 
   return (
     <div className="app-shell">
@@ -197,8 +200,18 @@ export default function FleetEnginePage() {
                   </div>
                 </div>
               </div>
+              <div className="er-kpis">
+                <div className="er-kpi">
+                  <span className="er-kpi-num mono">{flowCount}</span>
+                  <span className="er-kpi-lbl">{flowCount === 1 ? 'Flow' : 'Flows'}</span>
+                </div>
+                <div className="er-kpi">
+                  <span className="er-kpi-num mono">{totalThruPerHr}</span>
+                  <span className="er-kpi-lbl">moves / hour</span>
+                </div>
+              </div>
               <div className="er-mix">
-                <span className="er-eyebrow">Base fleet by vehicle</span>
+                <span className="er-eyebrow">Fleet breakdown</span>
                 <ul className="er-mix-list">
                   {fleet.groups.map(g => (
                     <li key={g.vehicleId} className="er-mix-row">

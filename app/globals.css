@@ -2519,6 +2519,20 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-family: var(--tal-font-numeric); font-size: 12px; letter-spacing: 0.08em;
   text-transform: uppercase; color: var(--text-tertiary);
 }
+/* Hero KPIs — the demand inputs driving the fleet (flow count, total throughput). */
+.er-kpis {
+  flex: 0 0 auto; display: flex; gap: 28px; align-items: flex-start;
+  border-left: 1px solid var(--border); padding-left: 24px;
+}
+.er-kpi { display: flex; flex-direction: column; gap: 3px; }
+.er-kpi-num {
+  font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums;
+  font-size: 26px; font-weight: 800; line-height: 1; color: var(--text-primary);
+}
+.er-kpi-lbl {
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
+}
 /* Build-up bar: BASE + CHARGING × BUFFER = TOTAL. Each segment scales/fades in
    as its stage is reached (iOS spring-ease-out); Total is the accent. */
 .er-pipeline { margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
