@@ -17,7 +17,7 @@ import { flushSync } from 'react-dom'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import FlowsTab from '@/src/components/engine/FlowsTab'
 import ChargingPipeline from '@/src/components/engine/ChargingPipeline'
-import FleetTab from '@/src/components/engine/FleetTab'
+import BufferPipeline from '@/src/components/engine/BufferPipeline'
 
 type EngineTab = 'flows' | 'charging' | 'fleet'
 
@@ -258,7 +258,13 @@ export default function FleetEnginePage() {
           />
         )}
         {tab === 'fleet' && (
-          <FleetTab fleet={fleet} vehicleById={vehicleById} bufferPct={settings.bufferPct} onPatch={persistPatch} />
+          <BufferPipeline
+            flows={flows}
+            vehicleById={vehicleById}
+            groupByVehicle={groupByVehicle}
+            bufferPct={settings.bufferPct}
+            onPatch={persistPatch}
+          />
         )}
 
         <div className="step-nav">

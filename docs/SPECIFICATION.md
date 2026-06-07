@@ -6,19 +6,31 @@ The functional spec ("what the app does"). For architectural rules ("how it's bu
 
 ## Fleet Engine (Step 3)
 
-The sizing calculation lives in **one tab** (`app/projects/[id]/step3`) with three internal sub-tabs,
-sharing a single live recompute. Navigation: `0 Start · 1 Application · 2 Vehicles · 3 Fleet Engine ·
-4 ROM Dashboard` (the ROM Dashboard consumes the engine's total; KPIs belong to it). This intentionally
-combines the former Flows/Charging/Buffer steps — see the `ARCHITECTURE.md` exception.
+The sizing calculation lives in **one tab** (`app/projects/[id]/step3`) as a **progressive 3-stage
+pipeline** — **Flows → Charging → Buffer** — sharing a single live recompute. Navigation:
+`0 Start · 1 Application · 2 Vehicles · 3 Fleet Engine · 4 ROM Dashboard` (ROM consumes the engine's
+total; KPIs belong to it). Combines the former Flows/Charging/Buffer steps — see the `ARCHITECTURE.md`
+exception.
+
+**Stage rail & progression.** A rail shows the three stages (numbered chips, "Step N of 3") with
+**Back / Next**. Stage changes morph via the **View Transitions API**
+(`document.startViewTransition` + a `flushSync` React commit) — a GPU cross-fade using transform/opacity
+(never animating width, per the UX rules), with an **instant fallback** when the API is unavailable or
+`prefers-reduced-motion`. **Per-flow rows persist across all three stages**; only the active columns
+change (charging/buffer columns show the flow's vehicle-group values, pooled per vehicle type).
+
+**Progressive hero** (`.engine-result`): the headline number is the cumulative fleet at the reached
+stage (base → with-charging → total) and the `base · +charging · ×buffer` build-up **accumulates** one
+adder per stage. Right side: per-vehicle **raw → rounded base** mix with thumbnails.
 
 **Waterfall (per vehicle group `g`, one per `vehicleId`):**
 `baseFleet → + chargingDelta → × (1 + bufferPct) → ⌈⌉ = fleetSold`; project **TOTAL** = `Σ fleetSold`.
 
-### Sub-tab 1 — Flows
+### Stage 1 — Flows
 The material-flow table that produces the **base fleet** (`groupRaw`, `baseFleet = ⌈groupRaw⌉`).
 Fully specified in **Step 3 — Material Flows** below.
 
-### Sub-tab 2 — Charging (Ah/A battery model)
+### Stage 2 — Charging (Ah/A battery model)
 Pure calc in `src/calc/fleet.ts`. Battery specs are amp-hours / amps (`ratedAh`, `voltageV`,
 `dischargeA`, `chargeA`, optional `chargeTimeMin`). `DEFAULT_DOD = 0.80`.
 
@@ -41,10 +53,11 @@ chargingDelta = (regime='overnight' AND runHr ≥ dailyOpHr) ? 0
   to charge. Two methods only.
 - Inputs missing/zero → a non-sustainable result shown as `—` (never NaN).
 
-### Sub-tab 3 — Fleet (buffer + total)
+### Stage 3 — Buffer (buffer + total)
 A single project **buffer %** (`bufferPct`, default `0.10`) — the only multiplier in the pipeline —
-applied after charging: `fleetSold = ⌈(baseFleet + chargingDelta) × (1 + bufferPct)⌉`. The tab shows
-the per-vehicle waterfall and the binding TOTAL.
+applied after charging: `fleetSold = ⌈(baseFleet + chargingDelta) × (1 + bufferPct)⌉`. The stage shows
+a buffer slider and a per-flow waterfall (`base → +charging → ×buffer → fleet`); the binding TOTAL is
+the hero number.
 
 ---
 

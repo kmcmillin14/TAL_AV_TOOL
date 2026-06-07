@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-07 — Fleet Engine pipeline (3/n): buffer stage + per-flow waterfall
+
+The Buffer stage is now a **per-flow pipeline view** (`BufferPipeline`): the project buffer slider up
+top, then each flow's vehicle waterfall `base → +charging → ×buffer → fleet (sold)`. Retires the
+per-vehicle `FleetTab`. The hero build-up now **accumulates** an adder per stage (base only on Flows;
++charging at Charging; ×buffer at Buffer) with a transform/opacity entrance (reduced-motion gated).
+SPECIFICATION updated to the staged pipeline. No calc/schema change; 107 tests pass.
+
 ## 2026-06-06 — Fleet Engine pipeline (2/n): stage morph + per-flow charging view
 
 The charging stage is now a **per-flow pipeline view** (`ChargingPipeline`) — the same per-flow rows,
