@@ -2493,27 +2493,27 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* Hero summary card — the single source of "the answer". */
 .engine-result {
   display: flex;
-  gap: 32px;
-  align-items: stretch;
+  gap: 28px;
+  align-items: center;
   flex-wrap: wrap;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 24px 28px;
-  margin-bottom: 20px;
+  border-radius: 14px;
+  padding: 16px 22px;
+  margin-bottom: 16px;
 }
 .er-eyebrow {
   display: block;
   font-family: var(--tal-font-numeric);
   font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
   color: var(--text-tertiary);
-  margin-bottom: 12px;
+  margin-bottom: 7px;
 }
-.er-headline { flex: 0 0 auto; min-width: 200px; }
-.er-num-row { display: flex; align-items: baseline; gap: 9px; }
+.er-headline { flex: 0 0 auto; min-width: 180px; }
+.er-num-row { display: flex; align-items: baseline; gap: 8px; }
 .er-num {
   font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums;
-  font-size: 40px; font-weight: 800; line-height: 1; color: var(--accent);
+  font-size: 32px; font-weight: 800; line-height: 1; color: var(--accent);
 }
 .er-num-unit {
   font-family: var(--tal-font-numeric); font-size: 12px; letter-spacing: 0.08em;
@@ -2521,10 +2521,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 /* Build-up bar: BASE + CHARGING × BUFFER = TOTAL. Each segment scales/fades in
    as its stage is reached (iOS spring-ease-out); Total is the accent. */
-.er-pipeline { margin-top: 16px; display: flex; align-items: center; flex-wrap: wrap; gap: 7px; }
+.er-pipeline { margin-top: 10px; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
 .ep-seg {
-  display: flex; flex-direction: column; gap: 2px;
-  padding: 6px 12px; border-radius: 9px;
+  display: flex; flex-direction: column; gap: 1px;
+  padding: 5px 10px; border-radius: 8px;
   background: color-mix(in srgb, var(--bg-surface-2) 55%, transparent);
   border: 1px solid var(--border);
   opacity: 0.38; transform: scale(0.96);
@@ -2537,7 +2537,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-family: var(--tal-font-numeric); font-size: 8.5px; font-weight: 700;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
 }
-.ep-val { font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.ep-val { font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 13px; font-weight: 700; color: var(--text-primary); }
 .ep-op { font-family: var(--tal-font-numeric); font-size: 13px; color: var(--text-disabled); }
 .ep-total.on { border-color: var(--accent); background: var(--accent-soft); }
 .ep-total .ep-label { color: var(--accent); }
@@ -2546,12 +2546,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .er-mix {
   flex: 1 1 240px;
   border-left: 1px solid var(--border);
-  padding-left: 32px;
+  padding-left: 24px;
 }
 .er-mix-list { list-style: none; margin: 0; padding: 0; max-width: 380px; }
 .er-mix-row {
   display: flex; align-items: baseline; justify-content: space-between;
-  padding: 7px 0;
+  padding: 5px 0;
   border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
 }
 .er-mix-row:last-child { border-bottom: none; }
