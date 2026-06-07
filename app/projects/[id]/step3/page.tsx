@@ -13,9 +13,10 @@ import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
 import { fleetSummary } from '@/src/calc/fleet'
 import type { EnginePatch } from '@/src/components/engine/types'
+import { flushSync } from 'react-dom'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import FlowsTab from '@/src/components/engine/FlowsTab'
-import ChargingTab from '@/src/components/engine/ChargingTab'
+import ChargingPipeline from '@/src/components/engine/ChargingPipeline'
 import FleetTab from '@/src/components/engine/FleetTab'
 
 type EngineTab = 'flows' | 'charging' | 'fleet'
@@ -32,6 +33,15 @@ export default function FleetEnginePage() {
   const [tab, setTab] = useState<EngineTab>('flows')
   const [visited, setVisited] = useState<Set<EngineTab>>(() => new Set<EngineTab>(['flows']))
   const selectTab = (id: EngineTab) => { setTab(id); setVisited(v => (v.has(id) ? v : new Set(v).add(id))) }
+  // Morph between stages via the View Transitions API (transform/opacity FLIP,
+  // per ui-ux-pro-max — never animate width). Falls back to instant when the
+  // API is unavailable or the user prefers reduced motion.
+  const changeStage = (id: EngineTab) => {
+    const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    const start = (document as Document & { startViewTransition?: (cb: () => void) => void }).startViewTransition
+    if (!start || reduce) { selectTab(id); return }
+    start.call(document, () => flushSync(() => selectTab(id)))
+  }
 
   useEffect(() => {
     const proj = getProject(id)
@@ -128,7 +138,8 @@ export default function FleetEnginePage() {
     { id: 'fleet', label: 'Buffer' },
   ]
   const curIndex = Math.max(0, steps.findIndex(s => s.id === tab))
-  const goStage = (delta: number) => { const next = steps[curIndex + delta]; if (next) selectTab(next.id) }
+  const goStage = (delta: number) => { const next = steps[curIndex + delta]; if (next) changeStage(next.id) }
+  const groupByVehicle = new Map(fleet.groups.map(g => [g.vehicleId, g]))
   // Hero shows the cumulative fleet at the stage reached — it grows as you advance.
   const stageValue =
     tab === 'flows' ? fleet.totalBaseFleet
@@ -203,7 +214,7 @@ export default function FleetEnginePage() {
                 role="tab"
                 aria-selected={tab === s.id}
                 className={`es-tab${tab === s.id ? ' active' : ''}`}
-                onClick={() => selectTab(s.id)}
+                onClick={() => changeStage(s.id)}
               >
                 <span className="es-tab-n mono">{i + 1}</span>{s.label}
                 {!visited.has(s.id) && <span className="es-dot" aria-label="not yet reviewed" />}
@@ -233,9 +244,11 @@ export default function FleetEnginePage() {
           />
         )}
         {tab === 'charging' && (
-          <ChargingTab
-            fleet={fleet}
+          <ChargingPipeline
+            flows={flows}
             vehicleById={vehicleById}
+            groupByVehicle={groupByVehicle}
+            derivedByFlowId={derivedByFlowId}
             regime={settings.regime}
             dailyOpHr={settings.dailyOpHr}
             shiftsPerDay={project.shiftsPerDay ?? 1}

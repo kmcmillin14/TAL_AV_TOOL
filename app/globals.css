@@ -2553,6 +2553,17 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .er-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
+/* Stage morph via View Transitions API — cross-fade the content region on
+   stage change (GPU transform/opacity, not width). Reduced-motion → instant. */
+::view-transition-old(root), ::view-transition-new(root) {
+  animation-duration: 220ms;
+  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*), ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
+}
+.pl-route { margin-left: 8px; font-size: 11px; color: var(--text-tertiary); }
+
 /* Stage rail: segmented stages (left) + step indicator & Back/Next (right). */
 .engine-stagebar {
   display: flex; align-items: center; justify-content: space-between;

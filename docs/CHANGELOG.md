@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-06 — Fleet Engine pipeline (2/n): stage morph + per-flow charging view
+
+The charging stage is now a **per-flow pipeline view** (`ChargingPipeline`) — the same per-flow rows,
+inputs collapsed, each showing its vehicle's battery profile (cycle · vehicles · runtime · recharge ·
+availability · +charging) with the recharge-window regime (project) and per-vehicle method editable
+inline. Stage changes morph via the **View Transitions API** (`document.startViewTransition` + a
+`flushSync` React commit) — a GPU cross-fade, **never animating width** (per ui-ux-pro-max), with an
+instant fallback when the API is unavailable or `prefers-reduced-motion`. Replaces/retires the
+per-vehicle `ChargingTab`. No calc/schema change; 107 tests pass.
+
 ## 2026-06-06 — Fleet Engine → staged pipeline (1/n): stage rail + progressive hero
 
 First increment of the progressive "Pipeline" redesign. The Flows/Charging/Fleet sub-tabs become a
