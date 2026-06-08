@@ -51,3 +51,31 @@ export function romPricing(fleet: FleetSummary, vehiclesById: Map<string, Vehicl
   const totalMax = lines.reduce((s, l) => s + l.lineMax, 0)
   return { lines, totalMin, totalMax, totalMid: (totalMin + totalMax) / 2 }
 }
+
+export interface RomOpex {
+  annualEnergyKwh: number
+  annualEnergyCost: number
+  annualMaintenance: number
+  annualOpex: number
+}
+
+/** Annual OPEX = operating-draw energy (Σ groups) + maintenance (% of CAPEX mid).
+ *  Operating power per vehicle = dischargeA × voltageV / 1000 (kW). */
+export function romOpex(
+  fleet: FleetSummary,
+  vehiclesById: Map<string, Vehicle>,
+  costs: RomCostInputs,
+  schedule: RomSchedule,
+  capexMid: number,
+): RomOpex {
+  let annualEnergyKwh = 0
+  for (const g of fleet.groups) {
+    const veh = vehiclesById.get(g.vehicleId)
+    if (!veh) continue
+    const kw = (veh.calc.dischargeA * veh.calc.voltageV) / 1000
+    annualEnergyKwh += kw * schedule.dailyOpHr * costs.operatingDaysPerYear * g.fleetSold
+  }
+  const annualEnergyCost = annualEnergyKwh * costs.energyCostUsdPerKwh
+  const annualMaintenance = capexMid * costs.annualMaintenancePctOfCapex
+  return { annualEnergyKwh, annualEnergyCost, annualMaintenance, annualOpex: annualEnergyCost + annualMaintenance }
+}
