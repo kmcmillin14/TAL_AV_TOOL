@@ -5,16 +5,16 @@ import type { FlowDiagramSeries } from '@/src/calc/romCharts'
 interface Props { series: FlowDiagramSeries }
 
 // Layout constants (SVG units; the svg scales to container width).
-const VIEW_W = 560
-const ROW_H = 64
-const GROUP_GAP = 20
-const PAD_Y = 10
-const ORIGIN_X = 8
-const ORIGIN_W = 78
-const ORIGIN_H = 42
-const DEST_X = 250
-const DEST_W = 300
-const DEST_H = 50
+const VIEW_W = 540
+const ROW_H = 52
+const GROUP_GAP = 16
+const PAD_Y = 8
+const ORIGIN_X = 6
+const ORIGIN_W = 72
+const ORIGIN_H = 36
+const DEST_X = 238
+const DEST_W = 296
+const DEST_H = 42
 
 /**
  * Node-link operation map rendered as one SVG: each origin node sits centered
@@ -79,9 +79,9 @@ export default function FlowDiagram({ series }: Props) {
 
       {dests.map((d, i) => (
         <g key={`d${i}`}>
-          <rect x={d.node.x} y={d.node.y} width={d.node.w} height={d.node.h} rx={10} className="rv-fd-dest" />
-          <text x={d.node.x + 14} y={d.node.y + 20} className="rv-fd-dtitle">{d.title}</text>
-          <text x={d.node.x + 14} y={d.node.y + 38} className="rv-fd-dsub">{d.sub}</text>
+          <rect x={d.node.x} y={d.node.y} width={d.node.w} height={d.node.h} rx={9} className="rv-fd-dest" />
+          <text x={d.node.x + 12} y={d.node.y + 17} className="rv-fd-dtitle">{d.title}</text>
+          <text x={d.node.x + 12} y={d.node.y + 32} className="rv-fd-dsub">{d.sub}</text>
         </g>
       ))}
     </svg>

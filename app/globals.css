@@ -2853,8 +2853,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .rom-visuals { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
 .rv-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
-/* §1 flow map (SVG node-link) */
-.rv-fd { width: 100%; height: auto; display: block; }
+/* §1 flow map (SVG node-link) — capped to natural size so it renders ~1:1, not upscaled */
+.rv-fd { width: 100%; max-width: 540px; height: auto; display: block; }
 .rv-fd-link { stroke: color-mix(in srgb, var(--text-tertiary) 70%, transparent); stroke-width: 1.5; }
 .rv-fd-arrowhead { fill: color-mix(in srgb, var(--text-tertiary) 70%, transparent); }
 .rv-fd-thru { fill: var(--text-secondary); font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 600; }
