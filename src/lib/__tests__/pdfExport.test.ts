@@ -41,7 +41,6 @@ const fixture: StoredProject = {
   step2Complete: false,
   step3Complete: false,
   step4Complete: false,
-  step5Complete: false,
   projectName: 'Acme Distribution Center - West',
   customerName: 'Acme Logistics',
   facilityLocation: 'Phoenix, AZ',
@@ -155,7 +154,6 @@ describe('exportProjectPdf — fully populated project', () => {
     step2Complete: true,
     step3Complete: false,
     step4Complete: false,
-    step5Complete: false,
 
     // Header / project meta
     projectName: 'Acme Distribution Center — Phoenix Phase II',

@@ -42,7 +42,6 @@ const fixture: StoredProject = {
   step2Complete: false,
   step3Complete: false,
   step4Complete: false,
-  step5Complete: false,
   projectName: 'Round-Trip Test Project',
   customerName: 'Acme Logistics',
   facilityLocation: 'Phoenix, AZ',

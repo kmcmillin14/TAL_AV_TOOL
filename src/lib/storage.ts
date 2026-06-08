@@ -14,7 +14,6 @@ export interface StoredProject extends PartialProjectFormData {
   step2Complete: boolean
   step3Complete: boolean
   step4Complete: boolean
-  step5Complete: boolean
   /** Snapshot of the project as it was BEFORE the most recent updateProject call. Single-level undo. */
   _undoSnapshot?: Omit<StoredProject, '_undoSnapshot'>
 }
@@ -31,7 +30,6 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   step2Complete: false,
   step3Complete: false,
   step4Complete: false,
-  step5Complete: false,
   maxLoadWeightLbs: 0,
   typicalUnitType: '',
   palletBottomBoard: undefined,
@@ -364,7 +362,6 @@ export function importProjectFromJson(json: string): StoredProject {
     step2Complete: Boolean(rawProject.step2Complete),
     step3Complete: Boolean(rawProject.step3Complete),
     step4Complete: Boolean(rawProject.step4Complete),
-    step5Complete: Boolean(rawProject.step5Complete),
     versionNumber: typeof rawProject.versionNumber === 'string'
       ? rawProject.versionNumber
       : '',

@@ -16,7 +16,11 @@ export function routeLayoutFactor(layout: RouteLayout): number {
 /**
  * Per-component breakdown of a flow's round-trip cycle time. Pure.
  *
- *   travelLoaded + travelEmpty + load + unload + lift + turns = total
+ *   travelLoaded + travelEmpty + load + unload + lift = total
+ *
+ * Travel speed is rated cruise scaled by the per-flow route-layout factor
+ * (ROUTE_LAYOUT_FACTORS), which already absorbs accel/decel and cornering as a
+ * route-average haircut — there is no discrete "turns" term.
  *
  * `liftTimeSec` is 0 unless the chosen transfer method has `lifts: true`
  * AND the vehicle declares a positive `liftSpeedFps`. Returns `null` for
@@ -76,7 +80,6 @@ export function cycleBreakdown(
  *   cycle = (distance / speedLoaded) + (distance / speedUnloaded)
  *         + load + unload
  *         + (lifts ? liftHeightFt / liftSpeedFps : 0)
- *         + turns × TURN_TIME_SEC
  *
  * Returns `null` when inputs make the calculation undefined. Callers display
  * "—" rather than render a number.

@@ -54,7 +54,7 @@ export interface Flow {
   destination: string
   distanceFt: number           // ≥ 0; one-way (cycle multiplies by 2 for round-trip)
   thruPerHr: number            // cycles/hr, ≥ 0
-  routeLayout: RouteLayout     // path geometry: low (50%) / medium (70%) / high (90%) of rated cruise
+  routeLayout: RouteLayout     // route-average speed: low 30% / medium 50% / high 70% of rated cruise
   liftHeightFt: number         // ft, ≥ 0; total vertical travel per cycle
   vehicleId?: string
   transferMethodIdx?: number   // defaults to 0
