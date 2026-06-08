@@ -14,6 +14,8 @@ interface Props {
   derivedByFlowId: Map<string, FlowDerived>
   unitSystem: UnitSystem
   onPatch: (patch: EnginePatch) => void
+  /** Optional: prefill a first flow from Step 1's distance + throughput (no vehicle). */
+  onSeedFromStep1?: () => void
 }
 
 /** Flows sub-tab — the material-flow table that produces the base fleet. The
@@ -29,6 +31,7 @@ export default function FlowsTab(p: Props) {
       derivedByFlowId={p.derivedByFlowId}
       unitSystem={p.unitSystem}
       onPatch={p.onPatch}
+      onSeedFromStep1={p.onSeedFromStep1}
     />
   )
 }

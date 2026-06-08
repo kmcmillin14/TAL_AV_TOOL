@@ -25,6 +25,8 @@ interface Props {
   derivedByFlowId: Map<string, FlowDerived>
   unitSystem: UnitSystem
   onPatch: (patch: FlowsPatch) => void
+  /** Optional: prefill a first flow from Step 1's distance + throughput (no vehicle). */
+  onSeedFromStep1?: () => void
 }
 
 /** Total body/header column count (kept in sync with the colgroup + headers). */
@@ -67,6 +69,7 @@ export default function FlowsTable({
   derivedByFlowId,
   unitSystem,
   onPatch,
+  onSeedFromStep1,
 }: Props) {
   const metric = unitSystem === 'metric'
   const [focusGroup, setFocusGroup] = useState<string | null>(null)
@@ -239,6 +242,11 @@ export default function FlowsTable({
         <div className="flows-empty">
           <h3>No flows yet</h3>
           <p>Click <strong>+ Flow</strong> to model an origin → destination route, or <strong>+ Group</strong> to set up a zone first. Cycle time and demand recompute as you type.</p>
+          {onSeedFromStep1 && (
+            <button type="button" className="btn primary" onClick={onSeedFromStep1} style={{ marginTop: 14 }}>
+              <Icon name="plus" size={13} /> Start from Step 1 (distance &amp; throughput)
+            </button>
+          )}
         </div>
       ) : (
         <div className="flows-scroll">

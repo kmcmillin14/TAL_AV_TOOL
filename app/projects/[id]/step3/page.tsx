@@ -132,6 +132,27 @@ export default function FleetEnginePage() {
     step2Complete: project.step2Complete,
   }
 
+  // Auto-seed a starter flow from Step 1's distance + throughput so the fleet
+  // takes shape without re-entering numbers. NEVER seeds a vehicle — the Fleet
+  // Engineer never picks a vehicle; the engineer assigns it on the new row.
+  const canSeedFromStep1 =
+    flows.length === 0 &&
+    ((project.requiredThroughputPerHour ?? 0) > 0 || (project.avgDistanceFt ?? 0) > 0)
+  const seedFlowFromStep1 = () => {
+    const dist = project.avgDistanceFt ?? 0
+    const oneWay = project.distanceType === 'round_trip' ? dist / 2 : dist
+    const seeded: Flow = {
+      id: 'f_' + Math.random().toString(36).slice(2, 10),
+      origin: '',
+      destination: '',
+      distanceFt: oneWay,
+      thruPerHr: project.requiredThroughputPerHour ?? 0,
+      routeLayout: 'medium',
+      liftHeightFt: 0,
+    }
+    persistPatch({ flows: [seeded] })
+  }
+
   const steps: { id: EngineTab; label: string }[] = [
     { id: 'flows', label: 'Flows' },
     { id: 'charging', label: 'Charging' },
@@ -270,6 +291,7 @@ export default function FleetEnginePage() {
             derivedByFlowId={derivedByFlowId}
             unitSystem={unitSystem}
             onPatch={persistPatch}
+            onSeedFromStep1={canSeedFromStep1 ? seedFlowFromStep1 : undefined}
           />
         )}
         {tab === 'charging' && (
