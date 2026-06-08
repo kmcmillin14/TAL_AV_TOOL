@@ -215,7 +215,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           <span className="step-num">Step 01 / 04</span>
           <h1>Application Requirements</h1>
           <div className="desc">
-            Capture load specs, transfer method, operating schedule, and environment.
+            Start with the essentials — load, transfer, schedule, and throughput. Expand the
+            other sections for site, ramps, certifications, environment, and integration details.
           </div>
         </div>
         <div className="row" style={{ gap: 10 }}>
@@ -432,6 +433,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           title="Where does it operate?"
           id={FORM_SECTIONS[2].id}
           status={sectionStatus(FORM_SECTIONS[2], formValues)}
+          defaultOpen={false}
         >
           <div className="fld-grid-3">
             <div className="fld">
@@ -658,6 +660,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           title="Labor &amp; ROI"
           id={FORM_SECTIONS[5].id}
           status={sectionStatus(FORM_SECTIONS[5], formValues)}
+          defaultOpen={false}
         >
           <div className="fld-grid-4">
             <div className="fld">
@@ -680,6 +683,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           title="Ramps &amp; Inclines"
           id={FORM_SECTIONS[6].id}
           status={sectionStatus(FORM_SECTIONS[6], formValues)}
+          defaultOpen={false}
         >
           <div className="fld-grid-4">
             <div className="fld">
@@ -726,6 +730,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           title="Dealer &amp; Contact"
           id={FORM_SECTIONS[7].id}
           status={sectionStatus(FORM_SECTIONS[7], formValues)}
+          defaultOpen={false}
         >
           <div className="fld-grid-4">
             <div className="fld">
@@ -812,6 +817,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           title="Certifications &amp; Compliance"
           id={FORM_SECTIONS[8].id}
           status={sectionStatus(FORM_SECTIONS[8], formValues)}
+          defaultOpen={false}
         >
           <div className="fld-grid-4">
             <div className="fld span-4">
@@ -847,6 +853,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           title="Equipment Integration"
           id={FORM_SECTIONS[9].id}
           status={sectionStatus(FORM_SECTIONS[9], formValues)}
+          defaultOpen={false}
         >
           <div className="fld-grid-4">
             <div className="fld span-4">
@@ -1037,6 +1044,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           title="Project Notes"
           id={FORM_SECTIONS[12].id}
           status={sectionStatus(FORM_SECTIONS[12], formValues)}
+          defaultOpen={false}
         >
           <div className="fld-grid-4">
             <div className="fld span-4">
