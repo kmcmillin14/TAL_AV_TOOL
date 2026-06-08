@@ -55,6 +55,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   operatorsPerShift: 0,
   rampDistanceFt: 0,
   maxRampGrade: 0,
+  desiredInstallDate: undefined,
   oemDealer: undefined,
   dealershipName: undefined,
   dealerRep: undefined,

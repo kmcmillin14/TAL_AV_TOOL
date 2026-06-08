@@ -68,6 +68,7 @@ export const projectSchema = z.object({
   maxRampGrade: z.number().min(0).default(0),
 
   // Section 8
+  desiredInstallDate: z.string().optional(),
   oemDealer: z.string().optional(),
   dealershipName: z.string().optional(),
   dealerRep: z.string().optional(),

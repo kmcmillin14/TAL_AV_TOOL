@@ -764,6 +764,16 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               />
               <div className="help">Used on customer-facing proposal output</div>
             </div>
+            <div className="fld">
+              <label>Desired Install Date</label>
+              <input
+                type="date"
+                className="mono"
+                defaultValue={initialData?.desiredInstallDate || ''}
+                {...register('desiredInstallDate', { onBlur: onBlurSave })}
+              />
+              <div className="help">Customer&apos;s target go-live date</div>
+            </div>
           </div>
 
           <div className="fld-grid-4" style={{ marginTop: 14 }}>
