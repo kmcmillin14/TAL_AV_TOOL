@@ -108,7 +108,7 @@ export default function ChargingPipeline({
         </table>
       )}
       <div className="engine-note">
-        Method &amp; recharge window are inputs; runtime/availability are computed per the flow's vehicle.
+        Method &amp; recharge window are inputs; runtime/availability are computed per the flow&apos;s vehicle.
         The <strong>+N</strong> extra vehicles for charging pool per vehicle type at the project level.
       </div>
     </div>

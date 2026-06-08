@@ -6,6 +6,16 @@ import type { Vehicle } from '../lib/vehicleLibrary'
 
 const SKIP_REASON = 'No requirement provided'
 
+/** Whether a delivery pattern implies a vertical lift — and therefore a
+ *  lift-height hard gate. Shared by the qualification engine and the Step 1 form
+ *  so the rule has one definition. */
+export function deliveryPatternRequiresLift(deliveryPattern?: string | null): boolean {
+  return !!deliveryPattern && (
+    deliveryPattern.includes('Height') ||
+    deliveryPattern === 'Conveyor-Conveyor'
+  )
+}
+
 function skippedGate(
   gateId: string,
   name: string,
@@ -149,10 +159,7 @@ export function qualifyVehicle(vehicle: Vehicle, app: ApplicationRequirements): 
   }
 
   // HARD: Lift Height (only when delivery pattern involves height)
-  const requiresLift = !!app.deliveryPattern && (
-    app.deliveryPattern.includes('Height') ||
-    app.deliveryPattern === 'Conveyor-Conveyor'
-  )
+  const requiresLift = deliveryPatternRequiresLift(app.deliveryPattern)
   const liftReq = app.maxLiftHeightFt
   if (requiresLift && liftReq != null && liftReq > 0) {
     const vehLift = vehicle.calc.maxLiftHeightFt ?? 0

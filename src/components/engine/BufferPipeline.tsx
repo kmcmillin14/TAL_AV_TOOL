@@ -74,7 +74,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
       )}
       <div className="engine-note">
         Buffer is the only multiplier in the pipeline — it covers maintenance, training, and demand
-        spikes. Per-flow figures are the vehicle group's; the fleet pools per vehicle type.
+        spikes. Per-flow figures are the vehicle group&apos;s; the fleet pools per vehicle type.
       </div>
     </div>
   )

@@ -10,7 +10,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { qualifyVehicle } from '@/src/calc/trafficLight'
 import type { ApplicationRequirements } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { UnitSystem } from '@/src/lib/utils/units'
+import { useUnitSystem } from '@/src/lib/uiPrefs'
 import { getProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 
@@ -24,7 +24,7 @@ export default function Step2Page() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
+  const [unitSystem, toggleUnitSystem] = useUnitSystem()
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL')
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
@@ -157,7 +157,7 @@ export default function Step2Page() {
         project={headerData}
         currentStep={2}
         unitSystem={unitSystem}
-        onUnitToggle={() => setUnitSystem(u => u === 'imperial' ? 'metric' : 'imperial')}
+        onUnitToggle={toggleUnitSystem}
       />
 
       <div className="workspace">

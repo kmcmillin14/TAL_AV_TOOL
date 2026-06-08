@@ -9,6 +9,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject } from '@/src/lib/storage'
+import { deliveryPatternRequiresLift } from '@/src/calc/trafficLight'
 import { TRANSFER_METHODS, TYPICAL_UNIT_TYPES } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, sectionStatus } from '@/src/lib/constants/sections'
 import SectionNav from './SectionNav'
@@ -24,7 +25,6 @@ const PALLET_AUTOFILL: Record<string, { l: number; w: number; h: number }> = {
 }
 
 const PALLET_SUBTYPES = ['GMA (48×40)', 'Euro (47.2×31.5)', 'CHEP (45.9×45.9)', 'Custom']
-const BOTTOM_BOARDS = ['Stringer (3-way entry)', 'Block (4-way entry)', 'Euro-style block']
 const DELIVERY_PATTERNS = ['Floor-Floor', 'Floor-Height', 'Height-Floor', 'Height-Height', 'Conveyor-Conveyor']
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
 const CERTIFICATIONS = ['ISO 3691-4', 'ANSI B56.5', 'RIA R15.08', 'Cleanroom', 'Food Grade', 'ATEX', 'IECEx', 'VDA 5050']
@@ -98,10 +98,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   const shiftsPerDay = watch('shiftsPerDay')
   const hoursPerShift = watch('hoursPerShift')
 
-  const requiresLift = deliveryPattern && (
-    deliveryPattern.includes('Height') ||
-    deliveryPattern === 'Conveyor-Conveyor'
-  ) && deliveryPattern !== 'Floor-Floor'
+  const requiresLift = deliveryPatternRequiresLift(deliveryPattern)
 
   const isPallet = typicalUnitType === 'Standard Pallet'
 

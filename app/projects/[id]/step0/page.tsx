@@ -5,7 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import Icon from '@/src/design-system/components/Icon'
 import { getProject, importProjectFromJson, type StoredProject } from '@/src/lib/storage'
-import type { UnitSystem } from '@/src/lib/utils/units'
+import { useUnitSystem } from '@/src/lib/uiPrefs'
 
 export default function Step0Page() {
   const params = useParams()
@@ -15,7 +15,7 @@ export default function Step0Page() {
 
   const [project, setProject] = useState<StoredProject | null>(null)
   const [loaded, setLoaded] = useState(false)
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
+  const [unitSystem, toggleUnitSystem] = useUnitSystem()
   const [importError, setImportError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -79,7 +79,7 @@ export default function Step0Page() {
         }}
         currentStep={0}
         unitSystem={unitSystem}
-        onUnitToggle={() => setUnitSystem(u => u === 'imperial' ? 'metric' : 'imperial')}
+        onUnitToggle={toggleUnitSystem}
       />
 
       <div className="workspace">
@@ -145,7 +145,7 @@ export default function Step0Page() {
           <Icon name="info" size={16} />
           <div>
             <strong>Tip:</strong> Step 2 (Vehicle Evaluation) is <strong>optional</strong> if you already know
-            which vehicles to use — you can skip to Step 3 (Flows) from the ribbon above.
+            which vehicles to use — you can skip to Step 3 (Fleet Engine) from the ribbon above.
           </div>
         </div>
 

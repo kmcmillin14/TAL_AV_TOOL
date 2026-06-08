@@ -92,6 +92,14 @@ let cache: StoredProject[] | null = null
 let flushTimer: ReturnType<typeof setTimeout> | null = null
 let dirty = false
 
+// Undo is single-level, but the Step 1 form autosaves on every keystroke. Without
+// coalescing, each keystroke would overwrite the undo snapshot, so "Undo" would
+// only revert one character. We keep the snapshot taken before a burst of edits:
+// updates within this window of the last snapshot carry the existing snapshot
+// forward instead of capturing a new one.
+const SNAPSHOT_COALESCE_MS = 1500
+const lastSnapshotAt = new Map<string, number>()
+
 type ProjectsListener = () => void
 const listeners = new Set<ProjectsListener>()
 
@@ -209,9 +217,14 @@ export function updateProject(
   const idx = all.findIndex(p => p.id === id)
   if (idx === -1) return null
   const existing = all[idx]
-  // Capture the pre-change state for single-level undo.
-  const { _undoSnapshot: _ignore, ...snapshot } = existing
-  void _ignore
+  // Capture the pre-change state for single-level undo, coalescing bursts of
+  // rapid edits (e.g. typing in a field) into one snapshot so Undo reverts the
+  // whole burst rather than a single keystroke.
+  const { _undoSnapshot: prevSnapshot, ...freshSnapshot } = existing
+  const now = Date.now()
+  const withinBurst = prevSnapshot !== undefined && now - (lastSnapshotAt.get(id) ?? 0) < SNAPSHOT_COALESCE_MS
+  const snapshot = withinBurst ? prevSnapshot : freshSnapshot
+  if (!withinBurst) lastSnapshotAt.set(id, now)
   // Apply ONLY the fields the caller actually passed. Zod v4 `.partial()` does
   // not strip `.default()`, so `data` re-injects defaults (flows: [], flowGroups: [],
   // certifications: []…) for absent keys; spreading `...data` would clobber the
@@ -236,6 +249,7 @@ export function deleteProject(id: string): boolean {
   const all = readAll()
   const next = all.filter(p => p.id !== id)
   if (next.length === all.length) return false
+  lastSnapshotAt.delete(id)
   writeAll(next)
   return true
 }
@@ -263,6 +277,7 @@ export function undoLastChange(id: string): StoredProject | null {
     _undoSnapshot: undefined,
   }
   all[idx] = restored
+  lastSnapshotAt.delete(id)
   writeAll(all)
   return restored
 }
@@ -279,6 +294,9 @@ export function clearProject(id: string): StoredProject | null {
   const existing = all[idx]
   const { _undoSnapshot: _ignore, ...snapshot } = existing
   void _ignore
+  // Clear is one deliberate action: keep its snapshot from being clobbered by
+  // an immediate follow-up edit by resetting the coalesce window.
+  lastSnapshotAt.set(id, Date.now())
   const cleared: StoredProject = {
     ...defaultFields(),
     id: existing.id,

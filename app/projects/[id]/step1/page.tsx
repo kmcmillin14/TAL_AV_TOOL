@@ -5,14 +5,14 @@ import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import ApplicationForm from '@/src/components/step1/ApplicationForm'
 import { getProject, type StoredProject } from '@/src/lib/storage'
-import type { UnitSystem } from '@/src/lib/utils/units'
+import { useUnitSystem } from '@/src/lib/uiPrefs'
 
 export default function Step1Page() {
   const params = useParams()
   const id = params.id as string
   const [project, setProject] = useState<StoredProject | null>(null)
   const [loading, setLoading] = useState(true)
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
+  const [unitSystem, toggleUnitSystem] = useUnitSystem()
 
   useEffect(() => {
     setProject(getProject(id))
@@ -47,7 +47,7 @@ export default function Step1Page() {
         }}
         currentStep={1}
         unitSystem={unitSystem}
-        onUnitToggle={() => setUnitSystem(u => u === 'imperial' ? 'metric' : 'imperial')}
+        onUnitToggle={toggleUnitSystem}
       />
       <div className="workspace">
         <ApplicationForm

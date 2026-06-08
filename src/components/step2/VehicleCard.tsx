@@ -58,6 +58,7 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
         <div className="veh-card-face veh-card-front" aria-hidden={isBack}>
           <div className="veh-img-area">
             {vehicle.display.heroImage && !imgError ? (
+              // eslint-disable-next-line @next/next/no-img-element -- 16:9 card photo sized via CSS object-fit
               <img
                 src={vehicle.display.heroImage}
                 alt={vehicle.name}
@@ -68,6 +69,7 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
               <div className="veh-no-img">{vehicle.display.category}</div>
             )}
             {isTAL(vehicle.display.partnership)
+              // eslint-disable-next-line @next/next/no-img-element -- static TAL badge sized by CSS
               ? <img src="/assets/TAL-Logo-White.png" alt="TAL" className="veh-tal-logo" />
               : <div className="veh-integration int-3p">3rd Party</div>
             }

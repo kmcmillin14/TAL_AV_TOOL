@@ -7,7 +7,7 @@ import PersistentHeader from '@/src/components/PersistentHeader'
 import Icon from '@/src/design-system/components/Icon'
 import { getProject, updateProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
-import type { UnitSystem } from '@/src/lib/utils/units'
+import { useUnitSystem } from '@/src/lib/uiPrefs'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
@@ -29,7 +29,7 @@ export default function FleetEnginePage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
+  const [unitSystem, toggleUnitSystem] = useUnitSystem()
   const [tab, setTab] = useState<EngineTab>('flows')
   const [visited, setVisited] = useState<Set<EngineTab>>(() => new Set<EngineTab>(['flows']))
   const selectTab = (id: EngineTab) => { setTab(id); setVisited(v => (v.has(id) ? v : new Set(v).add(id))) }
@@ -156,7 +156,7 @@ export default function FleetEnginePage() {
         project={headerData}
         currentStep={3}
         unitSystem={unitSystem}
-        onUnitToggle={() => setUnitSystem(u => (u === 'imperial' ? 'metric' : 'imperial'))}
+        onUnitToggle={toggleUnitSystem}
       />
 
       <div className="workspace">

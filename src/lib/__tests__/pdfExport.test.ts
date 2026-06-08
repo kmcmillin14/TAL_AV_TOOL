@@ -95,7 +95,9 @@ describe('exportProjectPdf', () => {
     // Re-open the PDF with pdfjs-dist (the same library Phase 6b import will use)
     // and pull the project.json attachment out of the embedded files table.
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
-    const doc = await pdfjsLib.getDocument({ data: buf, disableWorker: true }).promise
+    // disableWorker is a runtime option not yet in the public type defs (see pdfImport.ts).
+    const params = { data: buf, disableWorker: true } as Parameters<typeof pdfjsLib.getDocument>[0]
+    const doc = await pdfjsLib.getDocument(params).promise
     const attachments = await doc.getAttachments() as Record<string, { content: Uint8Array; filename: string }>
 
     expect(attachments).toBeTruthy()
@@ -253,7 +255,9 @@ describe('exportProjectPdf — fully populated project', () => {
     const blob = await exportProjectPdf(full)
     const buf = new Uint8Array(await blob.arrayBuffer())
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
-    const doc = await pdfjsLib.getDocument({ data: buf, disableWorker: true }).promise
+    // disableWorker is a runtime option not yet in the public type defs (see pdfImport.ts).
+    const params = { data: buf, disableWorker: true } as Parameters<typeof pdfjsLib.getDocument>[0]
+    const doc = await pdfjsLib.getDocument(params).promise
     const attachments = await doc.getAttachments() as Record<string, { content: Uint8Array }>
     const payload = JSON.parse(new TextDecoder().decode(attachments['project.json'].content))
     const p = payload.project
@@ -291,7 +295,9 @@ describe('exportProjectPdf — fully populated project', () => {
     const blob = await exportProjectPdf(full)
     const buf = new Uint8Array(await blob.arrayBuffer())
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
-    const doc = await pdfjsLib.getDocument({ data: buf, disableWorker: true }).promise
+    // disableWorker is a runtime option not yet in the public type defs (see pdfImport.ts).
+    const params = { data: buf, disableWorker: true } as Parameters<typeof pdfjsLib.getDocument>[0]
+    const doc = await pdfjsLib.getDocument(params).promise
 
     // Concatenate text from every page so we can search across pagination.
     let allText = ''
@@ -339,7 +345,9 @@ describe('exportProjectPdf — fully populated project', () => {
     const blob = await exportProjectPdf(full)
     const buf = new Uint8Array(await blob.arrayBuffer())
     const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
-    const doc = await pdfjsLib.getDocument({ data: buf, disableWorker: true }).promise
+    // disableWorker is a runtime option not yet in the public type defs (see pdfImport.ts).
+    const params = { data: buf, disableWorker: true } as Parameters<typeof pdfjsLib.getDocument>[0]
+    const doc = await pdfjsLib.getDocument(params).promise
     // Cover + 2 summary pages + matrix page (when vehicles fetched) = 3 or 4
     // In this test fetch returns no vehicles, so expect at least 3 pages.
     expect(doc.numPages).toBeGreaterThanOrEqual(3)

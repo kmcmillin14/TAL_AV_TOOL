@@ -55,6 +55,7 @@ export function VehicleDot({ vehicle, size = 'sm' }: ThumbProps) {
   }
 
   return (
+    // eslint-disable-next-line @next/next/no-img-element -- design-system-sized thumbnail; CSS controls dimensions
     <img
       src={vehicle.display.heroImage}
       alt={vehicle.name}

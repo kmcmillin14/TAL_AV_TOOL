@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects } from '@/src/lib/storage'
+import { useTheme } from '@/src/lib/uiPrefs'
 import HelpDrawer from './HelpDrawer'
 import { downloadProjectPdf } from '@/src/lib/pdfExport'
 import { prefetchVehicles } from '@/src/lib/vehicleCache'
@@ -93,7 +94,7 @@ export default function PersistentHeader({
     createdAt: project.createdAt || new Date().toISOString(),
   })
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
-  const [theme, setTheme] = useState<'dark' | 'light'>('dark')
+  const [theme, toggleTheme] = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -187,8 +188,8 @@ export default function PersistentHeader({
   // compile + RSC-fetch that page in the background; vehicle prefetch
   // means Step 2 lands with the grid populated instead of a "Loading" flash.
   useEffect(() => {
-    for (let i = 0; i <= 6; i++) {
-      if (i !== currentStep) router.prefetch(`/projects/${project.id}/step${i}`)
+    for (const s of STEPS) {
+      if (s.id !== currentStep) router.prefetch(`/projects/${project.id}/step${s.id}`)
     }
     prefetchVehicles()
   }, [project.id, currentStep, router])
@@ -226,12 +227,6 @@ export default function PersistentHeader({
     saveMeta({ [field]: editValues[field] } as Partial<typeof editValues>)
   }
 
-  const toggleTheme = () => {
-    const next = theme === 'dark' ? 'light' : 'dark'
-    setTheme(next)
-    document.documentElement.setAttribute('data-theme', next)
-  }
-
   const stepClass = (id: number) =>
     id === currentStep ? 'current' : id < currentStep ? 'complete' : 'upcoming'
 
@@ -251,14 +246,12 @@ export default function PersistentHeader({
     placeholder?: string,
   ) => {
     const isEditing = editing === field
-    return (
-      <button
-        type="button"
-        className="hero-meta-item"
-        onClick={() => !isEditing && setEditing(field)}
-      >
-        {label && <span className="label">{label}</span>}
-        {isEditing ? (
+    // Editing and display are rendered as separate elements rather than an
+    // <input> nested inside a <button> — interactive controls must not nest.
+    if (isEditing) {
+      return (
+        <div className="hero-meta-item">
+          {label && <span className="label">{label}</span>}
           <input
             ref={inputRef}
             type="text"
@@ -271,14 +264,21 @@ export default function PersistentHeader({
               if (e.key === 'Enter') commitEdit(field)
               if (e.key === 'Escape') setEditing(null)
             }}
-            onClick={e => e.stopPropagation()}
             size={Math.max(8, (editValues[field] || '').length + 2)}
           />
-        ) : (
-          <span className="value">
-            {displayValue || <span className="placeholder">{placeholder || '—'}</span>}
-          </span>
-        )}
+        </div>
+      )
+    }
+    return (
+      <button
+        type="button"
+        className="hero-meta-item"
+        onClick={() => setEditing(field)}
+      >
+        {label && <span className="label">{label}</span>}
+        <span className="value">
+          {displayValue || <span className="placeholder">{placeholder || '—'}</span>}
+        </span>
       </button>
     )
   }
@@ -294,6 +294,7 @@ export default function PersistentHeader({
     <header className="hero-bar">
       <div className="hero-top">
         <div className="hero-brand">
+          {/* eslint-disable-next-line @next/next/no-img-element -- fixed-height brand logo, static asset */}
           <img
             className="logo"
             src={theme === 'dark' ? '/assets/TAL-Logo-White.png' : '/assets/TAL-Logo-Black.png'}
@@ -344,6 +345,12 @@ export default function PersistentHeader({
               <span
                 className="value"
                 onClick={() => setEditing('opportunityNumber')}
+                onKeyDown={e => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setEditing('opportunityNumber')
+                  }
+                }}
                 role="button"
                 tabIndex={0}
               >

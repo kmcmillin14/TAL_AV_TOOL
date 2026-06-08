@@ -28,8 +28,10 @@ const fixtureVehicle = (overrides: Partial<Vehicle> = {}): Vehicle => ({
     maxLoadWidthIn: 48,
     maxLoadHeightIn: 60,
     speedLoadedFps: 8,
-    batteryKwh: 24,
-    energyKwhPerFt: 0.02,
+    ratedAh: 200,
+    voltageV: 48,
+    dischargeA: 30,
+    chargeA: 60,
     priceRange: { minUsd: 100000, maxUsd: 150000 },
   },
   specs: {

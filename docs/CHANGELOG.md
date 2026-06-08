@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-06-08 — Codebase review cleanup: UX persistence, a11y, dedup
+
+Review-driven fixes (no behavioral spec change; 129 tests pass, tsc clean, lint 21→16 — remainder pre-existing):
+
+- **Unit system & theme now persist across pages/sessions.** New shared `src/lib/uiPrefs.ts`
+  (`useUnitSystem`, `useTheme`) backs all five step pages and the header via `localStorage`,
+  replacing five per-page `useState('imperial')` copies. Fixes: Imperial/Metric resetting on every
+  navigation, and the theme toggle desyncing (icon/logo wrong) because the header remounted to `dark`
+  while the document kept the chosen `data-theme`.
+- **Undo is meaningful again.** `storage.ts` coalesces rapid Step-1 autosaves (per-keystroke) into a
+  single undo snapshot via a 1.5 s window, so Undo reverts a whole edit burst rather than one character.
+- **Accessibility (PersistentHeader).** Inline meta editors no longer nest an `<input>` inside a
+  `<button>`; the opportunity-number field is now keyboard-activatable (Enter/Space).
+- **Dedup.** `deliveryPatternRequiresLift()` exported from `src/calc/trafficLight.ts` and reused by the
+  Step-1 form (was duplicated, with a redundant `!== 'Floor-Floor'` clause).
+- **Hygiene.** Removed dead `BOTTOM_BOARDS` constant; header prefetch now iterates real steps (was
+  prefetching non-existent `/step5`,`/step6`); escaped JSX apostrophes; aligned step0 copy
+  ("Flows" → "Fleet Engine"); test fixtures matched to current types; documented `next/image` opt-outs.
+
 ## 2026-06-07 — Step 4 ROM Dashboard (1/n): pricing, OPEX/payback, export
 
 ### Added

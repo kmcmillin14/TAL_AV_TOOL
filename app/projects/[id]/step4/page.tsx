@@ -1,11 +1,11 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import { useFleetData } from '@/src/lib/useFleetData'
 import { updateProject } from '@/src/lib/storage'
-import type { UnitSystem } from '@/src/lib/utils/units'
+import { useUnitSystem } from '@/src/lib/uiPrefs'
 import { romSummary, type RomCostInputs, type RomSchedule } from '@/src/calc/rom'
 import { effDailyOpHr, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
 import RomKpis from '@/src/components/rom/RomKpis'
@@ -18,7 +18,7 @@ export default function RomDashboardPage() {
   const params = useParams()
   const id = params.id as string
   const { project, setProject, vehicleById, loading, error, flows, derivedByFlowId, fleet, settings } = useFleetData(id)
-  const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
+  const [unitSystem, toggleUnitSystem] = useUnitSystem()
 
   const costs: RomCostInputs = useMemo(() => ({
     numberOfOperators: project?.numberOfOperators ?? ((project?.operatorsPerShift ?? 0) * (project?.shiftsPerDay ?? 1)),
@@ -84,7 +84,7 @@ export default function RomDashboardPage() {
         currentStep={4}
         showKpis
         unitSystem={unitSystem}
-        onUnitToggle={() => setUnitSystem(u => (u === 'imperial' ? 'metric' : 'imperial'))}
+        onUnitToggle={toggleUnitSystem}
       />
 
       <div className="workspace">
