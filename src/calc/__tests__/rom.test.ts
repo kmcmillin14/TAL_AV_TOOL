@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { romPricing, romOpex } from '../rom'
+import { romPricing, romOpex, romPayback, romSummary } from '../rom'
 import type { FleetSummary } from '../types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
@@ -60,5 +60,37 @@ describe('romOpex', () => {
   it('skips groups whose vehicle is unknown', () => {
     const o = romOpex(fleet([{ vehicleId: 'ghost', fleetSold: 3 }]), new Map(), costs, schedule, 0)
     expect(o.annualEnergyKwh).toBe(0)
+  })
+})
+
+describe('romPayback', () => {
+  const costs = { laborRateUsdPerHr: 30, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
+  const schedule = { dailyOpHr: 16, operatorsPerShift: 2, shiftsPerDay: 2, hoursPerShift: 8 }
+
+  it('computes labor offset, net benefit, and payback years', () => {
+    // laborOffset = 2 ops × 2 shifts × 8 h × 250 d × $30 = 240000
+    // net = 240000 − 40000 = 200000 ; payback = 600000 / 200000 = 3
+    const p = romPayback(costs, schedule, 600000, 40000)
+    expect(p.annualLaborOffset).toBeCloseTo(240000, 5)
+    expect(p.netAnnualBenefit).toBeCloseTo(200000, 5)
+    expect(p.paybackYears).toBeCloseTo(3, 5)
+  })
+
+  it('returns null payback when net benefit is not positive', () => {
+    const p = romPayback(costs, schedule, 600000, 999999999)
+    expect(p.paybackYears).toBeNull()
+  })
+})
+
+describe('romSummary', () => {
+  it('wires pricing → opex → payback together', () => {
+    const vById = new Map([['a', veh('a', 100000, 100000, 100, 48)]])
+    const f = fleet([{ vehicleId: 'a', fleetSold: 1 }])
+    const costs = { laborRateUsdPerHr: 30, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
+    const schedule = { dailyOpHr: 16, operatorsPerShift: 1, shiftsPerDay: 1, hoursPerShift: 8 }
+    const s = romSummary(f, vById, costs, schedule)
+    expect(s.pricing.totalMid).toBe(100000)
+    expect(s.opex.annualMaintenance).toBeCloseTo(8000, 5)
+    expect(s.payback.annualLaborOffset).toBeCloseTo(1 * 1 * 8 * 250 * 30, 5) // 60000
   })
 })

@@ -79,3 +79,44 @@ export function romOpex(
   const annualMaintenance = capexMid * costs.annualMaintenancePctOfCapex
   return { annualEnergyKwh, annualEnergyCost, annualMaintenance, annualOpex: annualEnergyCost + annualMaintenance }
 }
+
+export interface RomPayback {
+  annualLaborOffset: number
+  netAnnualBenefit: number
+  paybackYears: number | null   // null when net benefit ≤ 0
+}
+
+/** Labor offset = operators across all shifts × annual hours × rate.
+ *  Payback years = CAPEX mid / net annual benefit (null when benefit ≤ 0). */
+export function romPayback(
+  costs: RomCostInputs,
+  schedule: RomSchedule,
+  capexMid: number,
+  annualOpex: number,
+): RomPayback {
+  const annualLaborOffset =
+    schedule.operatorsPerShift * schedule.shiftsPerDay * schedule.hoursPerShift *
+    costs.operatingDaysPerYear * costs.laborRateUsdPerHr
+  const netAnnualBenefit = annualLaborOffset - annualOpex
+  const paybackYears = netAnnualBenefit > 0 ? capexMid / netAnnualBenefit : null
+  return { annualLaborOffset, netAnnualBenefit, paybackYears }
+}
+
+export interface RomSummary {
+  pricing: RomPricing
+  opex: RomOpex
+  payback: RomPayback
+}
+
+/** One call for the dashboard: pricing → opex (uses CAPEX mid) → payback. */
+export function romSummary(
+  fleet: FleetSummary,
+  vehiclesById: Map<string, Vehicle>,
+  costs: RomCostInputs,
+  schedule: RomSchedule,
+): RomSummary {
+  const pricing = romPricing(fleet, vehiclesById)
+  const opex = romOpex(fleet, vehiclesById, costs, schedule, pricing.totalMid)
+  const payback = romPayback(costs, schedule, pricing.totalMid, opex.annualOpex)
+  return { pricing, opex, payback }
+}
