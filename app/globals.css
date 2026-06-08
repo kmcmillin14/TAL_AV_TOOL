@@ -2853,18 +2853,16 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .rom-visuals { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
 .rv-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
-/* §1 flow map */
-.rv-flowmap { display: flex; flex-direction: column; gap: 16px; }
-.rv-flow-origin { display: flex; align-items: center; gap: 16px; }
-.rv-flow-node { font-family: var(--tal-font-numeric); font-size: 13px; font-weight: 700; color: var(--text-primary);
-  padding: 8px 12px; border-radius: 9px; background: var(--bg-surface-2); border: 1px solid var(--border); white-space: nowrap; }
-.rv-flow-src { border-color: var(--accent); }
-.rv-flow-edges { display: flex; flex-direction: column; gap: 8px; }
-.rv-flow-edge { display: flex; align-items: center; gap: 10px; }
-.rv-flow-thru { font-size: 12px; color: var(--text-secondary); }
-.rv-flow-arrow { color: var(--text-tertiary); }
-.rv-flow-dst { display: inline-flex; flex-direction: column; gap: 2px; }
-.rv-flow-qty { font-size: 10.5px; font-weight: 600; color: var(--text-tertiary); }
+/* §1 flow map (SVG node-link) */
+.rv-fd { width: 100%; height: auto; display: block; }
+.rv-fd-link { stroke: color-mix(in srgb, var(--text-tertiary) 70%, transparent); stroke-width: 1.5; }
+.rv-fd-arrowhead { fill: color-mix(in srgb, var(--text-tertiary) 70%, transparent); }
+.rv-fd-thru { fill: var(--text-secondary); font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 600; }
+.rv-fd-origin { fill: var(--bg-surface-2); stroke: var(--accent); stroke-width: 1.5; }
+.rv-fd-otext { fill: var(--text-primary); font-family: var(--tal-font-numeric); font-size: 14px; font-weight: 800; }
+.rv-fd-dest { fill: var(--bg-surface-2); stroke: var(--border); stroke-width: 1; }
+.rv-fd-dtitle { fill: var(--text-primary); font-family: var(--tal-font-numeric); font-size: 13px; font-weight: 800; }
+.rv-fd-dsub { fill: var(--text-tertiary); font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 600; }
 
 /* §2 duty cycle + legend */
 .rv-duty { display: flex; flex-direction: column; gap: 12px; }
