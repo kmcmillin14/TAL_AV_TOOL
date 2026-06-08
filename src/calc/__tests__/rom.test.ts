@@ -43,8 +43,8 @@ describe('romPricing', () => {
 })
 
 describe('romOpex', () => {
-  const costs = { laborRateUsdPerHr: 28, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 100 }
-  const schedule = { dailyOpHr: 10, operatorsPerShift: 2, shiftsPerDay: 2, hoursPerShift: 8 }
+  const costs = { numberOfOperators: 4, fullyBurdenedRateUsdPerYear: 65000, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 100 }
+  const schedule = { dailyOpHr: 10 }
 
   it('sums operating-draw energy across groups and adds maintenance', () => {
     const vById = new Map([['a', veh('a', 0, 0, 100, 48)]]) // 100A × 48V = 4.8 kW
@@ -65,20 +65,19 @@ describe('romOpex', () => {
 })
 
 describe('romPayback', () => {
-  const costs = { laborRateUsdPerHr: 30, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
-  const schedule = { dailyOpHr: 16, operatorsPerShift: 2, shiftsPerDay: 2, hoursPerShift: 8 }
+  const costs = { numberOfOperators: 6, fullyBurdenedRateUsdPerYear: 40000, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
 
   it('computes labor offset, net benefit, and payback years', () => {
-    // laborOffset = 2 ops × 2 shifts × 8 h × 250 d × $30 = 240000
+    // laborOffset = 6 operators × $40000 = 240000
     // net = 240000 − 40000 = 200000 ; payback = 600000 / 200000 = 3
-    const p = romPayback(costs, schedule, 600000, 40000)
+    const p = romPayback(costs, 600000, 40000)
     expect(p.annualLaborOffset).toBeCloseTo(240000, 5)
     expect(p.netAnnualBenefit).toBeCloseTo(200000, 5)
     expect(p.paybackYears).toBeCloseTo(3, 5)
   })
 
   it('returns null payback when net benefit is not positive', () => {
-    const p = romPayback(costs, schedule, 600000, 999999999)
+    const p = romPayback(costs, 600000, 999999999)
     expect(p.paybackYears).toBeNull()
   })
 })
@@ -87,19 +86,20 @@ describe('romSummary', () => {
   it('wires pricing → opex → payback together', () => {
     const vById = new Map([['a', veh('a', 100000, 100000, 100, 48)]])
     const f = fleet([{ vehicleId: 'a', fleetSold: 1 }])
-    const costs = { laborRateUsdPerHr: 30, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
-    const schedule = { dailyOpHr: 16, operatorsPerShift: 1, shiftsPerDay: 1, hoursPerShift: 8 }
+    const costs = { numberOfOperators: 2, fullyBurdenedRateUsdPerYear: 30000, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
+    const schedule = { dailyOpHr: 16 }
     const s = romSummary(f, vById, costs, schedule)
     expect(s.pricing.totalMid).toBe(100000)
     expect(s.opex.annualMaintenance).toBeCloseTo(8000, 5)
-    expect(s.payback.annualLaborOffset).toBeCloseTo(1 * 1 * 8 * 250 * 30, 5) // 60000
+    expect(s.payback.annualLaborOffset).toBeCloseTo(2 * 30000, 5) // 60000
   })
 })
 
 describe('ROM economic-assumption defaults', () => {
-  it('defaults labor/energy/maintenance/days when absent', () => {
+  it('defaults operators/burdened-rate/energy/maintenance/days when absent', () => {
     const parsed = projectSchema.parse({})
-    expect(parsed.laborRateUsdPerHr).toBe(28)
+    expect(parsed.numberOfOperators).toBe(0)
+    expect(parsed.fullyBurdenedRateUsdPerYear).toBe(65000)
     expect(parsed.energyCostUsdPerKwh).toBeCloseTo(0.12, 5)
     expect(parsed.annualMaintenancePctOfCapex).toBeCloseTo(0.08, 5)
     expect(parsed.operatingDaysPerYear).toBe(312)

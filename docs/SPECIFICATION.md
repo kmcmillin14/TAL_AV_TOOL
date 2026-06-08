@@ -246,15 +246,16 @@ total base→sold build-up.
 (min+max)/2` used for downstream math only (never shown as "the price").
 
 **Economic assumptions (persisted, editable, defaulted):**
-- `laborRateUsdPerHr` (28), `energyCostUsdPerKwh` (0.12),
+- `numberOfOperators` (0; UI defaults to `operatorsPerShift × shiftsPerDay`),
+  `fullyBurdenedRateUsdPerYear` (65000), `energyCostUsdPerKwh` (0.12),
   `annualMaintenancePctOfCapex` (0.08), `operatingDaysPerYear` (312).
 
 **Annual OPEX:** energy = Σ over groups of `(dischargeA × voltageV / 1000) kW ×
 dailyOpHr × operatingDaysPerYear × fleetSold × energyCostUsdPerKwh`; maintenance =
 `totalMid × annualMaintenancePctOfCapex`.
 
-**Payback:** annual labor offset = `operatorsPerShift × shiftsPerDay × hoursPerShift ×
-operatingDaysPerYear × laborRateUsdPerHr`; net benefit = labor offset − OPEX; payback
+**Payback:** annual labor offset = `numberOfOperators × fullyBurdenedRateUsdPerYear`
+(simple headcount × loaded annual cost); net benefit = labor offset − OPEX; payback
 years = `totalMid / netBenefit` (— when net benefit ≤ 0).
 
 **Export:** proposal PDF (existing embedded-JSON pattern, now with a fleet/ROM page) +

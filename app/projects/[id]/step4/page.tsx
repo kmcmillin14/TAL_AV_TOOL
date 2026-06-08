@@ -21,7 +21,8 @@ export default function RomDashboardPage() {
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
 
   const costs: RomCostInputs = useMemo(() => ({
-    laborRateUsdPerHr: project?.laborRateUsdPerHr ?? 28,
+    numberOfOperators: project?.numberOfOperators ?? ((project?.operatorsPerShift ?? 0) * (project?.shiftsPerDay ?? 1)),
+    fullyBurdenedRateUsdPerYear: project?.fullyBurdenedRateUsdPerYear ?? 65000,
     energyCostUsdPerKwh: project?.energyCostUsdPerKwh ?? 0.12,
     annualMaintenancePctOfCapex: project?.annualMaintenancePctOfCapex ?? 0.08,
     operatingDaysPerYear: project?.operatingDaysPerYear ?? 312,
@@ -29,10 +30,7 @@ export default function RomDashboardPage() {
 
   const schedule: RomSchedule = useMemo(() => ({
     dailyOpHr: settings.dailyOpHr,
-    operatorsPerShift: project?.operatorsPerShift ?? 0,
-    shiftsPerDay: project?.shiftsPerDay ?? 1,
-    hoursPerShift: project?.hoursPerShift ?? 8,
-  }), [settings.dailyOpHr, project])
+  }), [settings.dailyOpHr])
 
   const rom = useMemo(() => romSummary(fleet, vehicleById, costs, schedule), [fleet, vehicleById, costs, schedule])
 

@@ -97,7 +97,10 @@ export const projectSchema = z.object({
   chargeMethods: z.record(z.string(), z.enum(['opportunity', 'plugged'])).default({}),
 
   // ---- ROM Dashboard: economic assumptions (editable on Step 4) ----
-  laborRateUsdPerHr: z.number().min(0).default(28),
+  /** Operators the fleet displaces, and the fully-burdened annual cost per operator.
+   *  Annual labor offset = numberOfOperators × fullyBurdenedRateUsdPerYear. */
+  numberOfOperators: z.number().int().min(0).default(0),
+  fullyBurdenedRateUsdPerYear: z.number().min(0).default(65000),
   energyCostUsdPerKwh: z.number().min(0).default(0.12),
   annualMaintenancePctOfCapex: z.number().min(0).max(1).default(0.08),
   operatingDaysPerYear: z.number().int().min(1).max(366).default(312),

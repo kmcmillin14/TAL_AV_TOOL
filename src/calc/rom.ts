@@ -4,7 +4,8 @@ import type { FleetSummary } from './types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
 export interface RomCostInputs {
-  laborRateUsdPerHr: number
+  numberOfOperators: number              // operators the fleet displaces
+  fullyBurdenedRateUsdPerYear: number    // loaded annual cost per operator
   energyCostUsdPerKwh: number
   annualMaintenancePctOfCapex: number   // 0..1
   operatingDaysPerYear: number
@@ -12,9 +13,6 @@ export interface RomCostInputs {
 
 export interface RomSchedule {
   dailyOpHr: number
-  operatorsPerShift: number
-  shiftsPerDay: number
-  hoursPerShift: number
 }
 
 export interface RomPricingLine {
@@ -86,17 +84,14 @@ export interface RomPayback {
   paybackYears: number | null   // null when net benefit ≤ 0
 }
 
-/** Labor offset = operators across all shifts × annual hours × rate.
+/** Labor offset = number of operators displaced × fully-burdened annual cost each.
  *  Payback years = CAPEX mid / net annual benefit (null when benefit ≤ 0). */
 export function romPayback(
   costs: RomCostInputs,
-  schedule: RomSchedule,
   capexMid: number,
   annualOpex: number,
 ): RomPayback {
-  const annualLaborOffset =
-    schedule.operatorsPerShift * schedule.shiftsPerDay * schedule.hoursPerShift *
-    costs.operatingDaysPerYear * costs.laborRateUsdPerHr
+  const annualLaborOffset = costs.numberOfOperators * costs.fullyBurdenedRateUsdPerYear
   const netAnnualBenefit = annualLaborOffset - annualOpex
   const paybackYears = netAnnualBenefit > 0 ? capexMid / netAnnualBenefit : null
   return { annualLaborOffset, netAnnualBenefit, paybackYears }
@@ -117,6 +112,6 @@ export function romSummary(
 ): RomSummary {
   const pricing = romPricing(fleet, vehiclesById)
   const opex = romOpex(fleet, vehiclesById, costs, schedule, pricing.totalMid)
-  const payback = romPayback(costs, schedule, pricing.totalMid, opex.annualOpex)
+  const payback = romPayback(costs, pricing.totalMid, opex.annualOpex)
   return { pricing, opex, payback }
 }

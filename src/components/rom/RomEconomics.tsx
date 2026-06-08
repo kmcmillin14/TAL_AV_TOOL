@@ -4,7 +4,8 @@ import type { RomSummary, RomCostInputs } from '@/src/calc/rom'
 import { usd } from './RomKpis'
 
 export interface RomPatch {
-  laborRateUsdPerHr?: number
+  numberOfOperators?: number
+  fullyBurdenedRateUsdPerYear?: number
   energyCostUsdPerKwh?: number
   annualMaintenancePctOfCapex?: number
   operatingDaysPerYear?: number
@@ -24,7 +25,8 @@ const num = (s: string, min = 0) => {
 /** Editable economic assumptions + the OPEX/payback they drive. */
 export default function RomEconomics({ costs, rom, onPatch }: Props) {
   const fields: Array<{ key: keyof RomCostInputs; label: string; value: number; step: string; suffix: string; toStore?: (n: number) => number }> = [
-    { key: 'laborRateUsdPerHr', label: 'Labor rate', value: costs.laborRateUsdPerHr, step: '1', suffix: '$/hr' },
+    { key: 'numberOfOperators', label: 'Operators displaced', value: costs.numberOfOperators, step: '1', suffix: 'people' },
+    { key: 'fullyBurdenedRateUsdPerYear', label: 'Fully-burdened rate', value: costs.fullyBurdenedRateUsdPerYear, step: '1000', suffix: '$/yr ea.' },
     { key: 'energyCostUsdPerKwh', label: 'Energy cost', value: costs.energyCostUsdPerKwh, step: '0.01', suffix: '$/kWh' },
     // maintenance stored as fraction 0..1; shown as percent.
     { key: 'annualMaintenancePctOfCapex', label: 'Maintenance', value: Math.round(costs.annualMaintenancePctOfCapex * 100), step: '1', suffix: '%/yr', toStore: n => n / 100 },
