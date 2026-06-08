@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { romPricing, romOpex, romPayback, romSummary } from '../rom'
+import { projectSchema } from '@/src/lib/validations/schemas'
 import type { FleetSummary } from '../types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
@@ -92,5 +93,15 @@ describe('romSummary', () => {
     expect(s.pricing.totalMid).toBe(100000)
     expect(s.opex.annualMaintenance).toBeCloseTo(8000, 5)
     expect(s.payback.annualLaborOffset).toBeCloseTo(1 * 1 * 8 * 250 * 30, 5) // 60000
+  })
+})
+
+describe('ROM economic-assumption defaults', () => {
+  it('defaults labor/energy/maintenance/days when absent', () => {
+    const parsed = projectSchema.parse({})
+    expect(parsed.laborRateUsdPerHr).toBe(28)
+    expect(parsed.energyCostUsdPerKwh).toBeCloseTo(0.12, 5)
+    expect(parsed.annualMaintenancePctOfCapex).toBeCloseTo(0.08, 5)
+    expect(parsed.operatingDaysPerYear).toBe(312)
   })
 })

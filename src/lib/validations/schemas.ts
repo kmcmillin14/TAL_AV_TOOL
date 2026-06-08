@@ -95,6 +95,13 @@ export const projectSchema = z.object({
   /** Per-vehicleId charge-method override ('opportunity' | 'plugged'). Absent →
    *  derived from the vehicle's chargerType. */
   chargeMethods: z.record(z.string(), z.enum(['opportunity', 'plugged'])).default({}),
+
+  // ---- ROM Dashboard: economic assumptions (editable on Step 4) ----
+  laborRateUsdPerHr: z.number().min(0).default(28),
+  energyCostUsdPerKwh: z.number().min(0).default(0.12),
+  annualMaintenancePctOfCapex: z.number().min(0).max(1).default(0.08),
+  operatingDaysPerYear: z.number().int().min(1).max(366).default(312),
+
   otherAGVs: z.boolean().default(false),
   otherAGVVendor: z.string().optional(),
 
