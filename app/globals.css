@@ -2848,3 +2848,99 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .rom-export-btn:disabled { opacity: 0.5; cursor: default; }
 .rom-export-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
 .rom-export-primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
+
+/* ─── ROM Dashboard visuals ─── */
+.rom-visuals { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.rv-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
+
+/* §1 flow map */
+.rv-flowmap { display: flex; flex-direction: column; gap: 16px; }
+.rv-flow-origin { display: flex; align-items: center; gap: 16px; }
+.rv-flow-node { font-family: var(--tal-font-numeric); font-size: 13px; font-weight: 700; color: var(--text-primary);
+  padding: 8px 12px; border-radius: 9px; background: var(--bg-surface-2); border: 1px solid var(--border); white-space: nowrap; }
+.rv-flow-src { border-color: var(--accent); }
+.rv-flow-edges { display: flex; flex-direction: column; gap: 8px; }
+.rv-flow-edge { display: flex; align-items: center; gap: 10px; }
+.rv-flow-thru { font-size: 12px; color: var(--text-secondary); }
+.rv-flow-arrow { color: var(--text-tertiary); }
+.rv-flow-dst { display: inline-flex; flex-direction: column; gap: 2px; }
+.rv-flow-qty { font-size: 10.5px; font-weight: 600; color: var(--text-tertiary); }
+
+/* §2 duty cycle + legend */
+.rv-duty { display: flex; flex-direction: column; gap: 12px; }
+.rv-duty-bar { display: flex; height: 26px; border-radius: 7px; overflow: hidden; border: 1px solid var(--border); }
+.rv-duty-seg { display: block; height: 100%; }
+.rv-legend { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 12px; }
+.rv-legend li { display: inline-flex; align-items: center; gap: 6px; font-family: var(--tal-font-family); font-size: 12px; color: var(--text-secondary); }
+.rv-swatch { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+
+/* §2 utilization */
+.rv-util { display: flex; flex-direction: column; gap: 9px; }
+.rv-util-row { display: grid; grid-template-columns: 90px 1fr auto; align-items: center; gap: 10px; }
+.rv-util-name { font-family: var(--tal-font-family); font-size: 12px; color: var(--text-primary); }
+.rv-util-track { position: relative; height: 16px; background: var(--bg-surface-2); border-radius: 5px; overflow: hidden; }
+.rv-util-sold { position: absolute; left: 0; top: 0; height: 100%; background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.rv-util-demand { position: absolute; left: 0; top: 0; height: 100%; background: var(--accent); border-radius: 5px; }
+.rv-util-val { font-size: 11px; color: var(--text-tertiary); }
+
+/* §2 charging table */
+.rv-charge { width: 100%; border-collapse: collapse; }
+.rv-charge th, .rv-charge td { text-align: left; padding: 7px 8px; font-family: var(--tal-font-family); font-size: 12.5px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent); }
+.rv-charge th { font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700; letter-spacing: 0.07em;
+  text-transform: uppercase; color: var(--text-tertiary); }
+.rv-charge .num { text-align: right; }
+
+/* §2 battery SoC */
+.rv-soc { display: flex; flex-direction: column; gap: 10px; }
+.rv-soc-svg { width: 100%; height: auto; }
+.rv-soc-floor { stroke: var(--text-tertiary); stroke-width: 1; }
+.rv-soc-axis { fill: var(--text-tertiary); font-family: var(--tal-font-numeric); font-size: 9px; }
+
+/* §3 capex bars */
+.rv-capex { display: flex; flex-direction: column; gap: 9px; }
+.rv-capex-row { display: grid; grid-template-columns: 130px 1fr auto; align-items: center; gap: 10px; }
+.rv-capex-name { font-family: var(--tal-font-family); font-size: 12px; color: var(--text-primary); }
+.rv-capex-track { position: relative; height: 14px; background: var(--bg-surface-2); border-radius: 5px; }
+.rv-capex-fill { position: absolute; top: 0; height: 100%; background: var(--accent); border-radius: 5px; opacity: 0.85; }
+.rv-capex-val { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
+.rv-capex-total .rv-capex-name, .rv-capex-total .rv-capex-val { font-weight: 800; color: var(--accent); }
+
+/* §3 payback + tco */
+.rv-pay { width: 100%; height: auto; }
+.rv-pay-zero { stroke: var(--text-tertiary); stroke-width: 1; }
+.rv-pay-be { stroke: var(--accent); stroke-width: 1; }
+.rv-pay-belbl { fill: var(--accent); font-family: var(--tal-font-numeric); font-size: 10px; }
+.rv-tco { display: flex; align-items: flex-end; gap: 8px; height: 150px; }
+.rv-tco-col { display: flex; flex-direction: column; align-items: center; gap: 4px; flex: 1; height: 100%; justify-content: flex-end; }
+.rv-tco-bars { display: flex; align-items: flex-end; gap: 3px; height: 100%; width: 100%; justify-content: center; }
+.rv-tco-cost { width: 38%; background: color-mix(in srgb, var(--text-primary) 30%, transparent); border-radius: 3px 3px 0 0; }
+.rv-tco-offset { width: 38%; background: var(--accent); border-radius: 3px 3px 0 0; }
+.rv-tco-yr { font-size: 10px; color: var(--text-tertiary); }
+
+/* §4 requirements */
+.rv-req { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
+@media (max-width: 720px) { .rv-req { grid-template-columns: 1fr; } }
+.rv-req-row { display: flex; align-items: center; gap: 9px; padding: 6px 0; font-family: var(--tal-font-family); font-size: 13px; }
+.rv-req-mark { width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; font-size: 11px; font-weight: 800; }
+.rv-req-ok .rv-req-mark { background: color-mix(in srgb, #2faa5a 25%, transparent); color: #54d98a; }
+.rv-req-no .rv-req-mark { background: color-mix(in srgb, var(--accent) 25%, transparent); color: var(--accent); }
+.rv-req-name { flex: 1; color: var(--text-primary); }
+.rv-req-sev { font-family: var(--tal-font-numeric); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
+
+/* §4 sensitivity */
+.rv-sens { display: flex; flex-direction: column; gap: 10px; }
+.rv-sens-card { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); }
+.rv-sens-ok { border-color: #2faa5a; background: color-mix(in srgb, #2faa5a 12%, transparent); }
+.rv-sens-warn { border-color: var(--accent); background: var(--accent-soft); }
+.rv-sens-val { font-family: var(--tal-font-numeric); font-size: 22px; font-weight: 800; color: var(--text-primary); }
+.rv-sens-lbl { font-family: var(--tal-font-numeric); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
+.rv-sens-note { margin: 0; font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-secondary); }
+
+/* §4 assumptions */
+.rv-assume { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
+@media (max-width: 720px) { .rv-assume { grid-template-columns: 1fr; } }
+.rv-assume > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 6px 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent); }
+.rv-assume dt { font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-secondary); margin: 0; }
+.rv-assume dd { margin: 0; font-family: var(--tal-font-numeric); font-size: 12.5px; color: var(--text-primary); text-align: right; }
