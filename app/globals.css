@@ -2758,3 +2758,93 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   font-weight: 700;
 }
 .waterfall-table .wf-total .wf-sold { color: var(--accent); font-size: 16px; }
+
+/* ─── ROM Dashboard (Step 4) ─── */
+.rom-kpis {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 20px;
+}
+@media (max-width: 1000px) { .rom-kpis { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px)  { .rom-kpis { grid-template-columns: repeat(2, 1fr); } }
+.rom-kpi {
+  display: flex; flex-direction: column; gap: 4px;
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 12px; padding: 14px 16px;
+}
+.rom-kpi-accent { border-color: var(--accent); background: var(--accent-soft); }
+.rom-kpi-val {
+  font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums;
+  font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text-primary);
+}
+.rom-kpi-accent .rom-kpi-val { color: var(--accent); }
+.rom-kpi-lbl {
+  font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
+}
+
+.rom-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 16px; }
+@media (max-width: 900px) { .rom-grid { grid-template-columns: 1fr; } }
+.rom-card {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 14px; padding: 20px 22px;
+}
+.rom-card-eyebrow {
+  display: block; font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 14px;
+}
+.rom-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
+
+.rom-price-table { width: 100%; border-collapse: collapse; }
+.rom-price-table th, .rom-price-table td {
+  text-align: left; padding: 9px 8px; font-family: var(--tal-font-family); font-size: 13px;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
+}
+.rom-price-table th {
+  font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.rom-price-table .num { text-align: right; }
+.rom-veh { display: inline-flex; align-items: center; gap: 8px; }
+.rom-price-total-lbl, .rom-price-mid-lbl {
+  text-align: right; font-weight: 700; color: var(--text-secondary);
+}
+.rom-price-total { font-weight: 800; color: var(--accent); }
+.rom-price-mid { color: var(--text-tertiary); }
+
+.rom-econ-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
+.rom-econ-field { display: flex; flex-direction: column; gap: 5px; }
+.rom-econ-lbl {
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.rom-econ-input-wrap { display: flex; align-items: center; gap: 8px; }
+.rom-econ-input {
+  width: 100%; background: var(--bg-surface-2); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; color: var(--text-primary);
+  font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 14px;
+}
+.rom-econ-input:focus { outline: none; border-color: var(--accent); }
+.rom-econ-suffix { font-family: var(--tal-font-numeric); font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
+.rom-econ-out { margin: 0; display: flex; flex-direction: column; gap: 8px; }
+.rom-econ-out > div {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding: 6px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+.rom-econ-out dt { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-secondary); margin: 0; }
+.rom-econ-out dd { margin: 0; font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 14px; color: var(--text-primary); }
+.rom-econ-strong dt, .rom-econ-strong dd { font-weight: 800; }
+.rom-econ-accent dd { color: var(--accent); }
+
+.rom-card-export { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.rom-export { display: flex; gap: 10px; }
+.rom-export-btn {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
+  padding: 0 16px; border-radius: 10px; border: 1px solid var(--border);
+  background: var(--bg-surface-2); color: var(--text-primary);
+  font-family: var(--tal-font-family); font-size: 13px; font-weight: 600; cursor: pointer;
+  transition: transform 0.12s ease, background 0.18s ease;
+}
+.rom-export-btn:hover { background: color-mix(in srgb, var(--bg-surface-2) 70%, var(--text-primary) 6%); }
+.rom-export-btn:active { transform: scale(0.97); }
+.rom-export-btn:disabled { opacity: 0.5; cursor: default; }
+.rom-export-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.rom-export-primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
