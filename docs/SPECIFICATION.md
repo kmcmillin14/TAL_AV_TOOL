@@ -233,6 +233,35 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 
 ---
 
+## Step 4 — ROM Dashboard
+
+Customer-facing summary fed by the Fleet Engine `FleetSummary`. Read-only except the
+economic assumptions.
+
+**Fleet KPIs:** total fleet sold, vehicle-type count, total throughput (moves/hr),
+total base→sold build-up.
+
+**ROM pricing (range, never a point):** for each vehicle group,
+`fleetSold × priceRange` → line range; summed to `totalMin`/`totalMax`; `totalMid =
+(min+max)/2` used for downstream math only (never shown as "the price").
+
+**Economic assumptions (persisted, editable, defaulted):**
+- `laborRateUsdPerHr` (28), `energyCostUsdPerKwh` (0.12),
+  `annualMaintenancePctOfCapex` (0.08), `operatingDaysPerYear` (312).
+
+**Annual OPEX:** energy = Σ over groups of `(dischargeA × voltageV / 1000) kW ×
+dailyOpHr × operatingDaysPerYear × fleetSold × energyCostUsdPerKwh`; maintenance =
+`totalMid × annualMaintenancePctOfCapex`.
+
+**Payback:** annual labor offset = `operatorsPerShift × shiftsPerDay × hoursPerShift ×
+operatingDaysPerYear × laborRateUsdPerHr`; net benefit = labor offset − OPEX; payback
+years = `totalMid / netBenefit` (— when net benefit ≤ 0).
+
+**Export:** proposal PDF (existing embedded-JSON pattern, now with a fleet/ROM page) +
+project JSON.
+
+---
+
 ## App-wide help
 
 A single **`?` button** in the persistent header opens a right-side **`HelpDrawer`**

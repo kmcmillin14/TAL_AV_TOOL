@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-07 — Step 4 ROM Dashboard (1/n): pricing, OPEX/payback, export
+
+### Added
+- Step 4 ROM Dashboard: fleet KPIs, ROM CAPEX pricing range, annual OPEX + simple
+  payback, and proposal PDF/JSON export — fed by the Fleet Engine total. Economics
+  driven by four persisted assumptions (labor rate, energy cost, maintenance %,
+  operating days/yr). New pure calc module `src/calc/rom.ts`.
+
 ## 2026-06-07 — Fleet Engine pipeline (4/n): directional column slide + build-up bar
 
 iOS motion polish (per frontend-design + ui-ux-pro-max — transform/opacity only, reduced-motion gated):
