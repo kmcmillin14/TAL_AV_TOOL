@@ -9,8 +9,7 @@ import { useUnitSystem } from '@/src/lib/uiPrefs'
 import { romSummary, type RomCostInputs, type RomSchedule } from '@/src/calc/rom'
 import { effDailyOpHr, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
 import RomKpis from '@/src/components/rom/RomKpis'
-import RomPricingTable from '@/src/components/rom/RomPricingTable'
-import RomEconomics, { type RomPatch } from '@/src/components/rom/RomEconomics'
+import { type RomPatch } from '@/src/components/rom/RomEconomics'
 import RomExportBar from '@/src/components/rom/RomExportBar'
 import RomVisuals from '@/src/components/rom/RomVisuals'
 
@@ -99,17 +98,6 @@ export default function RomDashboardPage() {
 
         <RomKpis fleet={fleet} rom={rom} flowCount={flowCount} totalThruPerHr={totalThruPerHr} />
 
-        <div className="rom-grid">
-          <section className="rom-card">
-            <span className="rom-card-eyebrow">ROM pricing</span>
-            <RomPricingTable pricing={rom.pricing} vehicleById={vehicleById} />
-          </section>
-          <section className="rom-card">
-            <span className="rom-card-eyebrow">Operating cost &amp; payback</span>
-            <RomEconomics costs={costs} rom={rom} onPatch={patchCosts} />
-          </section>
-        </div>
-
         <RomVisuals
           project={project}
           flows={flows}
@@ -117,6 +105,8 @@ export default function RomDashboardPage() {
           fleet={fleet}
           rom={rom}
           vehicleById={vehicleById}
+          costs={costs}
+          onPatch={patchCosts}
           effDailyOpHr={effDailyOpHr(analyticsSchedule)}
           serviceLifeYears={project.serviceLifeYears ?? 7}
         />

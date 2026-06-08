@@ -2851,6 +2851,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* ─── ROM Dashboard visuals ─── */
 .rom-visuals { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.rom-tabbar { align-self: flex-start; max-width: 100%; overflow-x: auto; }
 .rv-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
 /* §1 flow map (SVG node-link) — capped to natural size so it renders ~1:1, not upscaled */
