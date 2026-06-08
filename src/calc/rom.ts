@@ -37,8 +37,8 @@ export interface RomPricing {
 export function romPricing(fleet: FleetSummary, vehiclesById: Map<string, Vehicle>): RomPricing {
   const lines: RomPricingLine[] = fleet.groups.map(g => {
     const veh = vehiclesById.get(g.vehicleId)
-    const unitMin = veh?.priceRange?.minUsd ?? 0
-    const unitMax = veh?.priceRange?.maxUsd ?? 0
+    const unitMin = veh?.calc.priceRange?.minUsd ?? 0
+    const unitMax = veh?.calc.priceRange?.maxUsd ?? 0
     return {
       vehicleId: g.vehicleId,
       fleetSold: g.fleetSold,

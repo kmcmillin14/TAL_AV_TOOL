@@ -6,8 +6,8 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 // Minimal Vehicle stub — only the fields rom.ts reads.
 function veh(id: string, minUsd: number, maxUsd: number, dischargeA = 100, voltageV = 48): Vehicle {
   return {
-    id, priceRange: { minUsd, maxUsd },
-    calc: { dischargeA, voltageV, ratedAh: 500, chargeA: 100 },
+    id,
+    calc: { dischargeA, voltageV, ratedAh: 500, chargeA: 100, priceRange: { minUsd, maxUsd } },
   } as unknown as Vehicle
 }
 
