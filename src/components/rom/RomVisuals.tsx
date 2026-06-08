@@ -21,6 +21,7 @@ import TcoStacked from './charts/TcoStacked'
 import RequirementsMatrix from './RequirementsMatrix'
 import SensitivityPanel from './SensitivityPanel'
 import AssumptionsPanel from './AssumptionsPanel'
+import FleetMath from './FleetMath'
 
 interface Props {
   project: StoredProject
@@ -64,6 +65,8 @@ export default function RomVisuals(p: Props) {
         <Card title="Payback"><PaybackCurve series={payback} /></Card>
         <Card title="Total cost of ownership"><TcoStacked series={tco} /></Card>
       </div>
+      <FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} />
+
       <Card title="Requirements met"><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Card>
       <div className="rom-grid">
         <Card title="Resilience"><SensitivityPanel fleet={p.fleet} /></Card>
