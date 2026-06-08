@@ -7,15 +7,17 @@ import { useFleetData } from '@/src/lib/useFleetData'
 import { updateProject } from '@/src/lib/storage'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import { romSummary, type RomCostInputs, type RomSchedule } from '@/src/calc/rom'
+import { effDailyOpHr, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
 import RomKpis from '@/src/components/rom/RomKpis'
 import RomPricingTable from '@/src/components/rom/RomPricingTable'
 import RomEconomics, { type RomPatch } from '@/src/components/rom/RomEconomics'
 import RomExportBar from '@/src/components/rom/RomExportBar'
+import RomVisuals from '@/src/components/rom/RomVisuals'
 
 export default function RomDashboardPage() {
   const params = useParams()
   const id = params.id as string
-  const { project, setProject, vehicleById, loading, error, flows, fleet, settings } = useFleetData(id)
+  const { project, setProject, vehicleById, loading, error, flows, derivedByFlowId, fleet, settings } = useFleetData(id)
   const [unitSystem, setUnitSystem] = useState<UnitSystem>('imperial')
 
   const costs: RomCostInputs = useMemo(() => ({
@@ -33,6 +35,15 @@ export default function RomDashboardPage() {
   }), [settings.dailyOpHr, project])
 
   const rom = useMemo(() => romSummary(fleet, vehicleById, costs, schedule), [fleet, vehicleById, costs, schedule])
+
+  const analyticsSchedule: AnalyticsSchedule = useMemo(() => ({
+    shiftsPerDay: project?.shiftsPerDay ?? 1,
+    hoursPerShift: project?.hoursPerShift ?? 8,
+    breaksPerShift: project?.breaksPerShift ?? 0,
+    breakDurationMin: project?.breakDurationMin ?? 0,
+    operatorsPerShift: project?.operatorsPerShift ?? 0,
+    operatingDaysPerYear: project?.operatingDaysPerYear ?? 312,
+  }), [project])
 
   const flowCount = flows.length
   const totalThruPerHr = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
@@ -100,6 +111,17 @@ export default function RomDashboardPage() {
             <RomEconomics costs={costs} rom={rom} onPatch={patchCosts} />
           </section>
         </div>
+
+        <RomVisuals
+          project={project}
+          flows={flows}
+          derivedByFlowId={derivedByFlowId}
+          fleet={fleet}
+          rom={rom}
+          vehicleById={vehicleById}
+          effDailyOpHr={effDailyOpHr(analyticsSchedule)}
+          serviceLifeYears={project.serviceLifeYears ?? 7}
+        />
 
         <section className="rom-card rom-card-export">
           <span className="rom-card-eyebrow">Proposal</span>
