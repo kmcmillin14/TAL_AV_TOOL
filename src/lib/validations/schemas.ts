@@ -101,6 +101,8 @@ export const projectSchema = z.object({
   energyCostUsdPerKwh: z.number().min(0).default(0.12),
   annualMaintenancePctOfCapex: z.number().min(0).max(1).default(0.08),
   operatingDaysPerYear: z.number().int().min(1).max(366).default(312),
+  /** Equipment service life (yr) used for TCO and payback projections. */
+  serviceLifeYears: z.number().int().min(1).max(20).default(7),
 
   otherAGVs: z.boolean().default(false),
   otherAGVVendor: z.string().optional(),

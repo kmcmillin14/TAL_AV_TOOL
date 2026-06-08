@@ -1,7 +1,8 @@
 import { SCHEMA_VERSION, type StoredProject } from './storage'
 import { qualifyVehicle } from '../calc/trafficLight'
+import { appRequirementsFromProject } from './appRequirements'
 import type { Vehicle } from './vehicleLibrary'
-import type { ApplicationRequirements, QualificationResult } from '../calc/types'
+import type { QualificationResult } from '../calc/types'
 
 export interface ProjectExportPayload {
   schemaVersion: number
@@ -14,26 +15,6 @@ function buildPayload(project: StoredProject): ProjectExportPayload {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
     project,
-  }
-}
-
-function appRequirementsFromProject(p: StoredProject): ApplicationRequirements {
-  return {
-    maxLoadWeightLbs: p.maxLoadWeightLbs ?? 0,
-    typicalUnitType: p.typicalUnitType ?? '',
-    transferMethod: p.transferMethod ?? '',
-    deliveryPattern: p.deliveryPattern ?? '',
-    maxLiftHeightFt: p.maxLiftHeightFt,
-    minAisleWidthFt: p.minAisleWidthFt ?? 0,
-    certifications: Array.isArray(p.certifications) ? p.certifications : [],
-    tempMinF: p.tempMinF,
-    tempMaxF: p.tempMaxF,
-    maxRampGrade: p.maxRampGrade ?? 0,
-    outdoorRequired: p.outdoorRequired ?? false,
-    freezerCapable: p.freezerCapable ?? false,
-    loadLengthIn: p.loadLengthIn,
-    loadWidthIn: p.loadWidthIn,
-    loadHeightIn: p.loadHeightIn,
   }
 }
 
