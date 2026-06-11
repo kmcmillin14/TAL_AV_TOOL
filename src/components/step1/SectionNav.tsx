@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { FORM_SECTIONS, sectionStatus, totalRequired, filledRequired, type SectionStatus } from '@/src/lib/constants/sections'
+import { FORM_SECTIONS, TIER_LABELS, sectionStatus, qualificationInputsTotal, qualificationInputsFilled, type SectionStatus } from '@/src/lib/constants/sections'
 import type { ProjectFormData } from '@/src/lib/validations/schemas'
 
 interface Props {
@@ -46,26 +46,27 @@ export default function SectionNav({ values }: Props) {
     setActiveId(id)
   }
 
-  const total = totalRequired()
-  const filled = filledRequired(values)
+  const total = qualificationInputsTotal(values)
+  const filled = qualificationInputsFilled(values)
   const pct = total === 0 ? 100 : Math.round((filled / total) * 100)
 
   return (
     <nav className="section-nav" aria-label="Section navigation">
       <div className="section-nav-progress">
         <div className="section-nav-progress-pct">{pct}%</div>
-        <div className="section-nav-progress-stat">{filled} of {total} required</div>
+        <div className="section-nav-progress-stat">{filled} of {total} qualification inputs</div>
         <div className="section-nav-progress-bar">
           <div className="section-nav-progress-fill" style={{ width: `${pct}%` }} />
         </div>
       </div>
-      <div className="section-nav-title">Sections</div>
       <ul className="section-nav-list">
-        {FORM_SECTIONS.map(s => {
+        {FORM_SECTIONS.map((s, i) => {
           const status = sectionStatus(s, values)
           const isActive = activeId === s.id
+          const tierStart = i === 0 || FORM_SECTIONS[i - 1].tier !== s.tier
           return (
             <li key={s.id}>
+              {tierStart && <div className="section-nav-tier">{TIER_LABELS[s.tier]}</div>}
               <button
                 type="button"
                 className={`section-nav-item${isActive ? ' active' : ''}`}
