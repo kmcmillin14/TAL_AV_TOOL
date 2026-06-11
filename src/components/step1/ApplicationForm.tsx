@@ -10,7 +10,7 @@ import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schem
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject } from '@/src/lib/storage'
 import { deliveryPatternRequiresLift } from '@/src/calc/trafficLight'
-import { TRANSFER_METHODS, TYPICAL_UNIT_TYPES } from '@/src/lib/constants/enums'
+import { TRANSFER_METHODS, TYPICAL_UNIT_TYPES, CERTIFICATIONS } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, sectionStatus } from '@/src/lib/constants/sections'
 import SectionNav from './SectionNav'
 import ProgressStrip from './ProgressStrip'
@@ -27,7 +27,6 @@ const PALLET_AUTOFILL: Record<string, { l: number; w: number; h: number }> = {
 const PALLET_SUBTYPES = ['GMA (48×40)', 'Euro (47.2×31.5)', 'CHEP (45.9×45.9)', 'Custom']
 const DELIVERY_PATTERNS = ['Floor-Floor', 'Floor-Height', 'Height-Floor', 'Height-Height', 'Conveyor-Conveyor']
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
-const CERTIFICATIONS = ['ISO 3691-4', 'ANSI B56.5', 'RIA R15.08', 'Cleanroom', 'Food Grade', 'ATEX', 'IECEx', 'VDA 5050']
 const INTERLOCKS = ['High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems', 'Other']
 const DUST_MOISTURE_OPTS = ['None', 'Dusty environment', 'Wash-down required', 'High humidity', 'Outdoor exposure']
 

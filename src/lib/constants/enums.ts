@@ -2,10 +2,11 @@
 // Single source of truth — never re-declare these arrays inline.
 
 export const TRANSFER_METHODS = [
-  'Fork',
-  'Tow / Tugger',
-  'Conveyor Interface',
-  'Lift Platform',
+  'Lift',
+  'Pin',
+  'Conveyor',
+  'Custom',
+  'Powered Conveyor Cart',
 ] as const
 
 export const TYPICAL_UNIT_TYPES = [
@@ -17,6 +18,17 @@ export const TYPICAL_UNIT_TYPES = [
   'Coil',
   'Rack',
   'Other',
+] as const
+
+export const CERTIFICATIONS = [
+  'ISO 3691-4',
+  'ANSI B56.5',
+  'RIA R15.08',
+  'Cleanroom',
+  'Food Grade',
+  'ATEX',
+  'IECEx',
+  'VDA 5050',
 ] as const
 
 export type TransferMethod = typeof TRANSFER_METHODS[number]
