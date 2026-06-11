@@ -103,7 +103,7 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
               </div>
               <div className="veh-spec-row">
                 <span className="spec-k">Payload Type</span>
-                <span className="spec-v">{vehicle.display.typicalLoad}</span>
+                <span className="spec-v">{vehicle.payloadTypes.join(', ')}</span>
               </div>
               <div className="veh-spec-row">
                 <span className="spec-k">Transfer</span>
