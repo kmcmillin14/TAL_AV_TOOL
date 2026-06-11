@@ -1,90 +1,59 @@
 import type { ProjectFormData } from '@/src/lib/validations/schemas'
+import { deliveryPatternRequiresLift } from '@/src/calc/trafficLight'
 
-// All 13 sections of the Step 1 questionnaire. The order here is the order they
+// All 12 sections of the Step 1 questionnaire, grouped into three tiers
+// (qualification → sizing → proposal). The order here is the order they
 // render on the page and in the SectionNav. `requiredFields` mirrors the visible
 // red asterisks — when every required field has a non-empty value, the section
 // reads as 'complete' in the nav. Sections with no required fields are 'optional'.
+
+export type SectionTier = 'qualification' | 'sizing' | 'proposal'
+
+export const TIER_LABELS: Record<SectionTier, string> = {
+  qualification: 'Vehicle Qualification',
+  sizing: 'Fleet Sizing & Economics',
+  proposal: 'Proposal Details',
+}
 
 export interface SectionMeta {
   id: string                                // anchor id (e.g. 'section-01')
   num: string                               // display number ('01')
   label: string                             // full label
   short: string                             // short label for nav
+  tier: SectionTier
   requiredFields: Array<keyof ProjectFormData>
   /** Section is collapsible in the form (defaults to false). */
   collapsible?: boolean
 }
 
 export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
-  {
-    id: 'section-01', num: '01',
-    label: 'What are you moving?',           short: 'Load',
-    requiredFields: ['maxLoadWeightLbs', 'typicalUnitType'],
-  },
-  {
-    id: 'section-02', num: '02',
-    label: 'How is it transferred?',         short: 'Transfer',
-    // maxLiftHeightFt is conditionally required (only when deliveryPattern involves height).
-    // Tracking that conditionally is added complexity; treat it as optional for the nav badge.
-    requiredFields: ['transferMethod', 'deliveryPattern'],
-  },
-  {
-    id: 'section-03', num: '03',
-    label: 'Where does it operate?',         short: 'Site',
-    requiredFields: ['minAisleWidthFt', 'floorCondition'],
-  },
-  {
-    id: 'section-04', num: '04',
-    label: 'Operating Schedule',             short: 'Schedule',
-    requiredFields: ['shiftsPerDay', 'hoursPerShift', 'operatingDaysPattern'],
-  },
-  {
-    id: 'section-05', num: '05',
-    label: 'Throughput & Distance',          short: 'Throughput',
-    requiredFields: ['requiredThroughputPerHour', 'avgDistanceFt', 'distanceType'],
-  },
-  {
-    id: 'section-06', num: '06',
-    label: 'Labor & ROI',                    short: 'Labor',
-    requiredFields: [],
-  },
-  {
-    id: 'section-07', num: '07',
-    label: 'Ramps & Inclines',               short: 'Ramps',
-    requiredFields: [],
-  },
-  {
-    id: 'section-08', num: '08',
-    label: 'Dealer & Contact',               short: 'Contact',
-    requiredFields: [],
-  },
-  {
-    id: 'section-09', num: '09',
-    label: 'Certifications & Compliance',    short: 'Certs',
-    requiredFields: [],
-  },
-  {
-    id: 'section-10', num: '10',
-    label: 'Equipment Integration',          short: 'Integration',
-    requiredFields: [],
-  },
-  {
-    id: 'section-11', num: '11',
-    label: 'Environment',                    short: 'Environment',
-    requiredFields: [],
-    collapsible: true,
-  },
-  {
-    id: 'section-12', num: '12',
-    label: 'Software Integration',           short: 'Software',
-    requiredFields: [],
-    collapsible: true,
-  },
-  {
-    id: 'section-13', num: '13',
-    label: 'Project Notes',                  short: 'Notes',
-    requiredFields: [],
-  },
+  // ── Tier 1 — VEHICLE QUALIFICATION ──────────────────────────────────────
+  { id: 'section-01', num: '01', label: 'What are you moving?', short: 'Load',
+    tier: 'qualification', requiredFields: ['maxLoadWeightLbs', 'typicalUnitType'] },
+  { id: 'section-02', num: '02', label: 'How is it transferred?', short: 'Transfer',
+    tier: 'qualification', requiredFields: ['transferMethod', 'deliveryPattern'] },
+  { id: 'section-03', num: '03', label: 'Environment & site', short: 'Environment',
+    tier: 'qualification', requiredFields: ['minAisleWidthFt'] },
+  { id: 'section-04', num: '04', label: 'Certifications', short: 'Certs',
+    tier: 'qualification', requiredFields: [] },
+  // ── Tier 2 — FLEET SIZING & ECONOMICS ───────────────────────────────────
+  { id: 'section-05', num: '05', label: 'Operating schedule', short: 'Schedule',
+    tier: 'sizing', requiredFields: ['shiftsPerDay', 'hoursPerShift', 'operatingDaysPattern'] },
+  { id: 'section-06', num: '06', label: 'Throughput & distance', short: 'Throughput',
+    tier: 'sizing', requiredFields: ['requiredThroughputPerHour', 'avgDistanceFt', 'distanceType'] },
+  { id: 'section-07', num: '07', label: 'Labor', short: 'Labor',
+    tier: 'sizing', requiredFields: [] },
+  // ── Tier 3 — PROPOSAL DETAILS (collapsed; consumers arrive in future revisions) ──
+  { id: 'section-08', num: '08', label: 'Site details', short: 'Site',
+    tier: 'proposal', requiredFields: [], collapsible: true },
+  { id: 'section-09', num: '09', label: 'Integration', short: 'Integration',
+    tier: 'proposal', requiredFields: [], collapsible: true },
+  { id: 'section-10', num: '10', label: 'Dealer & contact', short: 'Dealer',
+    tier: 'proposal', requiredFields: [], collapsible: true },
+  { id: 'section-11', num: '11', label: 'Timeline', short: 'Timeline',
+    tier: 'proposal', requiredFields: [], collapsible: true },
+  { id: 'section-12', num: '12', label: 'Project notes', short: 'Notes',
+    tier: 'proposal', requiredFields: [], collapsible: true },
 ] as const
 
 export type SectionStatus = 'complete' | 'in-progress' | 'untouched' | 'optional'
@@ -122,4 +91,40 @@ export function filledRequired(values: Partial<ProjectFormData>): number {
     for (const f of s.requiredFields) if (isFilled(values[f])) count++
   }
   return count
+}
+
+// ── Qualification readiness meter ────────────────────────────────────────────
+// Counts the gate-engine inputs (src/calc/gates.ts) that have an answer.
+// Excluded by design: outdoorRequired/freezerCapable (unchecked is an answer,
+// not a gap) and certifications (optional soft gate). maxLiftHeightFt counts
+// only while the delivery pattern implies a lift.
+
+const QUALIFICATION_INPUTS: ReadonlyArray<keyof ProjectFormData> = [
+  'maxLoadWeightLbs', 'typicalUnitType',
+  'loadLengthIn', 'loadWidthIn', 'loadHeightIn',
+  'transferMethod', 'deliveryPattern',
+  'tempMinF', 'tempMaxF', 'maxRampGrade', 'minAisleWidthFt',
+]
+
+// Unlike isFilled (badge semantics, number > 0), 0 is a real answer here —
+// 0 °F is a legitimate freezer temperature.
+function isAnswered(value: unknown): boolean {
+  if (value == null) return false
+  if (typeof value === 'string') return value.trim().length > 0
+  if (typeof value === 'number') return Number.isFinite(value)
+  return false
+}
+
+function qualificationInputs(values: Partial<ProjectFormData>): ReadonlyArray<keyof ProjectFormData> {
+  return deliveryPatternRequiresLift(values.deliveryPattern)
+    ? [...QUALIFICATION_INPUTS, 'maxLiftHeightFt']
+    : QUALIFICATION_INPUTS
+}
+
+export function qualificationInputsTotal(values: Partial<ProjectFormData>): number {
+  return qualificationInputs(values).length
+}
+
+export function qualificationInputsFilled(values: Partial<ProjectFormData>): number {
+  return qualificationInputs(values).filter(f => isAnswered(values[f])).length
 }
