@@ -22,8 +22,8 @@ export interface SectionMeta {
   short: string                             // short label for nav
   tier: SectionTier
   requiredFields: Array<keyof ProjectFormData>
-  /** Section is collapsible in the form (defaults to false). */
-  collapsible?: boolean
+  /** Section starts collapsed in the form. */
+  startCollapsed?: boolean
 }
 
 export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
@@ -45,15 +45,15 @@ export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
     tier: 'sizing', requiredFields: [] },
   // ── Tier 3 — PROPOSAL DETAILS (collapsed; consumers arrive in future revisions) ──
   { id: 'section-08', num: '08', label: 'Site details', short: 'Site',
-    tier: 'proposal', requiredFields: [], collapsible: true },
+    tier: 'proposal', requiredFields: [], startCollapsed: true },
   { id: 'section-09', num: '09', label: 'Integration', short: 'Integration',
-    tier: 'proposal', requiredFields: [], collapsible: true },
+    tier: 'proposal', requiredFields: [], startCollapsed: true },
   { id: 'section-10', num: '10', label: 'Dealer & contact', short: 'Dealer',
-    tier: 'proposal', requiredFields: [], collapsible: true },
+    tier: 'proposal', requiredFields: [], startCollapsed: true },
   { id: 'section-11', num: '11', label: 'Timeline', short: 'Timeline',
-    tier: 'proposal', requiredFields: [], collapsible: true },
+    tier: 'proposal', requiredFields: [], startCollapsed: true },
   { id: 'section-12', num: '12', label: 'Project notes', short: 'Notes',
-    tier: 'proposal', requiredFields: [], collapsible: true },
+    tier: 'proposal', requiredFields: [], startCollapsed: true },
 ] as const
 
 export type SectionStatus = 'complete' | 'in-progress' | 'untouched' | 'optional'

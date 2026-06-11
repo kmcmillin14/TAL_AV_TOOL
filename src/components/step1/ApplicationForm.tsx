@@ -11,7 +11,7 @@ import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@
 import { createProject, updateProject, getProject } from '@/src/lib/storage'
 import { deliveryPatternRequiresLift } from '@/src/calc/trafficLight'
 import { TRANSFER_METHODS, TYPICAL_UNIT_TYPES, CERTIFICATIONS } from '@/src/lib/constants/enums'
-import { FORM_SECTIONS, sectionStatus } from '@/src/lib/constants/sections'
+import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
 import SectionNav from './SectionNav'
 import ProgressStrip from './ProgressStrip'
 
@@ -110,7 +110,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
   const secProps = (id: string) => {
     const m = FORM_SECTIONS.find(s => s.id === id)!
-    return { sectionNum: m.num, title: m.label, id: m.id, status: sectionStatus(m, formValues) }
+    return { sectionNum: m.num, title: m.label, id: m.id, status: sectionStatus(m, formValues), defaultOpen: !m.startCollapsed }
   }
 
   const isPallet = typicalUnitType === 'Standard Pallet'
@@ -250,7 +250,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
       <div className="form-stack">
 
-        <TierBand label="Vehicle Qualification" />
+        <TierBand label={TIER_LABELS.qualification} />
 
         {/* ===== Section 01: What are you moving? ===== */}
         <FormSection {...secProps('section-01')}>
@@ -592,7 +592,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        <TierBand label="Fleet Sizing & Economics" />
+        <TierBand label={TIER_LABELS.sizing} />
 
         {/* ===== Section 05: Operating schedule ===== */}
         <FormSection {...secProps('section-05')}>
@@ -780,10 +780,10 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        <TierBand label="Proposal Details" hint="Feeds the proposal PDF — future revisions add pricing consumers" />
+        <TierBand label={TIER_LABELS.proposal} hint="Feeds the proposal PDF — pricing fields arrive in a future revision" />
 
         {/* ===== Section 08: Site details ===== */}
-        <FormSection {...secProps('section-08')} defaultOpen={false}>
+        <FormSection {...secProps('section-08')}>
           <div className="fld-grid-3">
             <div className="fld">
               <label>Floor Condition</label>
@@ -809,7 +809,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 09: Integration ===== */}
-        <FormSection {...secProps('section-09')} defaultOpen={false}>
+        <FormSection {...secProps('section-09')}>
           <div className="fld-grid-4">
             <div className="fld span-4">
               <label>Required Interlocks</label>
@@ -897,7 +897,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 10: Dealer & contact ===== */}
-        <FormSection {...secProps('section-10')} defaultOpen={false}>
+        <FormSection {...secProps('section-10')}>
           <div className="fld-grid-4">
             <div className="fld">
               <label>Facility Location</label>
@@ -978,7 +978,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 11: Timeline ===== */}
-        <FormSection {...secProps('section-11')} defaultOpen={false}>
+        <FormSection {...secProps('section-11')}>
           <div className="fld-grid-4">
             <div className="fld">
               <label>Desired Install Date</label>
@@ -994,7 +994,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         </FormSection>
 
         {/* ===== Section 12: Project notes ===== */}
-        <FormSection {...secProps('section-12')} defaultOpen={false}>
+        <FormSection {...secProps('section-12')}>
           <div className="fld-grid-4">
             <div className="fld span-4">
               <label>Notes</label>
