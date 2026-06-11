@@ -58,6 +58,15 @@ function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFormData>
   ) as Partial<ProjectFormData>
 }
 
+function TierBand({ label, hint }: { label: string; hint?: string }) {
+  return (
+    <div className="form-tier-band">
+      <span className="form-tier-label">{label}</span>
+      {hint && <span className="form-tier-hint">{hint}</span>}
+    </div>
+  )
+}
+
 export default function ApplicationForm({ initialData, projectId, unitSystem }: Props) {
   const router = useRouter()
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saved'>('idle')
@@ -98,6 +107,11 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   const hoursPerShift = watch('hoursPerShift')
 
   const requiresLift = deliveryPatternRequiresLift(deliveryPattern)
+
+  const secProps = (id: string) => {
+    const m = FORM_SECTIONS.find(s => s.id === id)!
+    return { sectionNum: m.num, title: m.label, id: m.id, status: sectionStatus(m, formValues) }
+  }
 
   const isPallet = typicalUnitType === 'Standard Pallet'
 
@@ -214,8 +228,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           <span className="step-num">Step 01 / 04</span>
           <h1>Application Requirements</h1>
           <div className="desc">
-            Start with the essentials — load, transfer, schedule, and throughput. Expand the
-            other sections for site, ramps, certifications, environment, and integration details.
+            The first tier is what qualifies vehicles — load, transfer, and environment.
+            Sizing &amp; economics feed Steps 3–4; proposal details are optional.
           </div>
         </div>
         <div className="row" style={{ gap: 10 }}>
@@ -236,13 +250,10 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
       <div className="form-stack">
 
-        {/* ===== Section 1: What are you moving? ===== */}
-        <FormSection
-          sectionNum="01"
-          title="What are you moving?"
-          id={FORM_SECTIONS[0].id}
-          status={sectionStatus(FORM_SECTIONS[0], formValues)}
-        >
+        <TierBand label="Vehicle Qualification" />
+
+        {/* ===== Section 01: What are you moving? ===== */}
+        <FormSection {...secProps('section-01')}>
           <div className="fld-grid-4">
             <div className="fld">
               <label>Max Load Weight <span className="req">*</span></label>
@@ -366,13 +377,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        {/* ===== Section 2: How is it transferred? ===== */}
-        <FormSection
-          sectionNum="02"
-          title="How is it transferred?"
-          id={FORM_SECTIONS[1].id}
-          status={sectionStatus(FORM_SECTIONS[1], formValues)}
-        >
+        {/* ===== Section 02: How is it transferred? ===== */}
+        <FormSection {...secProps('section-02')}>
           <div className="fld-grid-3">
             <div className="fld">
               <label>Transfer Method <span className="req">*</span></label>
@@ -426,15 +432,9 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        {/* ===== Section 3: Where does it operate? ===== */}
-        <FormSection
-          sectionNum="03"
-          title="Where does it operate?"
-          id={FORM_SECTIONS[2].id}
-          status={sectionStatus(FORM_SECTIONS[2], formValues)}
-          defaultOpen={false}
-        >
-          <div className="fld-grid-3">
+        {/* ===== Section 03: Environment & site ===== */}
+        <FormSection {...secProps('section-03')}>
+          <div className="fld-row-3">
             <div className="fld">
               <label>Min Aisle Width ({dLabel}) <span className="req">*</span></label>
               <div className="input-with-unit">
@@ -462,25 +462,140 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>Floor Condition <span className="req">*</span></label>
-              <select
-                {...register('floorCondition', { onBlur: onBlurSave })}
-                defaultValue={initialData?.floorCondition || ''}
-              >
-                <option value="" disabled>Select condition…</option>
-                {FLOOR_CONDITIONS.map(c => <option key={c}>{c}</option>)}
-              </select>
+              <label>Min Temperature ({tLabel})</label>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  step="1"
+                  className="mono"
+                  placeholder={unitSystem === 'metric' ? '-20' : '-4'}
+                  defaultValue={dispF(initialData?.tempMinF)}
+                  {...register('tempMinF', {
+                    setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'F', unitSystem),
+                    onBlur: onBlurSave,
+                  })}
+                />
+                <div className="unit">{tLabel}</div>
+              </div>
+            </div>
+            <div className="fld">
+              <label>Max Temperature ({tLabel})</label>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  step="1"
+                  className="mono"
+                  placeholder={unitSystem === 'metric' ? '40' : '104'}
+                  defaultValue={dispF(initialData?.tempMaxF)}
+                  {...register('tempMaxF', {
+                    setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'F', unitSystem),
+                    onBlur: onBlurSave,
+                  })}
+                />
+                <div className="unit">{tLabel}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="fld-grid-4" style={{ marginTop: 14 }}>
+            <div className="fld">
+              <label>Outdoor Required?</label>
+              <Controller
+                name="outdoorRequired"
+                control={control}
+                render={({ field }) => (
+                  <div className="seg-toggle">
+                    <button type="button" className={`seg-btn${field.value ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
+                    <button type="button" className={`seg-btn${!field.value ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                  </div>
+                )}
+              />
+            </div>
+            <div className="fld">
+              <label>Freezer Capable?</label>
+              <Controller
+                name="freezerCapable"
+                control={control}
+                render={({ field }) => (
+                  <div className="seg-toggle">
+                    <button type="button" className={`seg-btn${field.value ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
+                    <button type="button" className={`seg-btn${!field.value ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                  </div>
+                )}
+              />
+            </div>
+            <div className="fld">
+              <label>Max Ramp Grade</label>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  max="30"
+                  className="mono"
+                  placeholder="0"
+                  {...register('maxRampGrade', { valueAsNumber: true, onBlur: onBlurSave })}
+                />
+                <div className="unit">%</div>
+              </div>
+              <div className="help">0 if no ramps in the application</div>
+            </div>
+            <div className="fld">
+              <label>Ramp Distance ({dLabel})</label>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  step="1"
+                  min="0"
+                  className="mono"
+                  placeholder="0"
+                  defaultValue={dispFt(initialData?.rampDistanceFt)}
+                  {...register('rampDistanceFt', {
+                    valueAsNumber: true,
+                    setValueAs: v => parseImperialInput(String(v), 'ft', unitSystem),
+                    onBlur: onBlurSave,
+                  })}
+                />
+                <div className="unit">{dLabel}</div>
+              </div>
             </div>
           </div>
         </FormSection>
 
-        {/* ===== Section 4: Operating Schedule ===== */}
-        <FormSection
-          sectionNum="04"
-          title="Operating Schedule"
-          id={FORM_SECTIONS[3].id}
-          status={sectionStatus(FORM_SECTIONS[3], formValues)}
-        >
+        {/* ===== Section 04: Certifications ===== */}
+        <FormSection {...secProps('section-04')}>
+          <div className="fld-grid-4">
+            <div className="fld span-4">
+              <label>Required Certifications</label>
+              <div className="cert-grid">
+                {CERTIFICATIONS.map(cert => {
+                  const on = certifications.includes(cert)
+                  return (
+                    <label
+                      key={cert}
+                      className={`chk${on ? ' on' : ''}`}
+                      onClick={() => toggleArrayItem('certifications', cert)}
+                    >
+                      <input type="checkbox" readOnly checked={on} />
+                      <span className="box">
+                        {on && <Icon name="check" size={10} />}
+                      </span>
+                      <span>{cert}</span>
+                    </label>
+                  )
+                })}
+              </div>
+              <div className="help">
+                Selected certifications become hard gates — vehicles missing them will be RED
+              </div>
+            </div>
+          </div>
+        </FormSection>
+
+        <TierBand label="Fleet Sizing & Economics" />
+
+        {/* ===== Section 05: Operating schedule ===== */}
+        <FormSection {...secProps('section-05')}>
           <div className="fld-row-3">
             <div className="fld">
               <label>Shifts per Day <span className="req">*</span></label>
@@ -576,13 +691,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        {/* ===== Section 5: Throughput & Distance ===== */}
-        <FormSection
-          sectionNum="05"
-          title="Throughput &amp; Distance"
-          id={FORM_SECTIONS[4].id}
-          status={sectionStatus(FORM_SECTIONS[4], formValues)}
-        >
+        {/* ===== Section 06: Throughput & distance ===== */}
+        <FormSection {...secProps('section-06')}>
           <div className="fld-row-3">
             <div className="fld">
               <label>Required Throughput (peak) <span className="req">*</span></label>
@@ -653,14 +763,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        {/* ===== Section 6: Labor & ROI ===== */}
-        <FormSection
-          sectionNum="06"
-          title="Labor &amp; ROI"
-          id={FORM_SECTIONS[5].id}
-          status={sectionStatus(FORM_SECTIONS[5], formValues)}
-          defaultOpen={false}
-        >
+        {/* ===== Section 07: Labor ===== */}
+        <FormSection {...secProps('section-07')}>
           <div className="fld-grid-4">
             <div className="fld">
               <label>Operators per Shift</label>
@@ -676,194 +780,36 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        {/* ===== Section 7: Ramps & Inclines ===== */}
-        <FormSection
-          sectionNum="07"
-          title="Ramps &amp; Inclines"
-          id={FORM_SECTIONS[6].id}
-          status={sectionStatus(FORM_SECTIONS[6], formValues)}
-          defaultOpen={false}
-        >
-          <div className="fld-grid-4">
+        <TierBand label="Proposal Details" hint="Feeds the proposal PDF — future revisions add pricing consumers" />
+
+        {/* ===== Section 08: Site details ===== */}
+        <FormSection {...secProps('section-08')} defaultOpen={false}>
+          <div className="fld-grid-3">
             <div className="fld">
-              <label>Ramp Distance ({dLabel})</label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  className="mono"
-                  placeholder="0"
-                  defaultValue={dispFt(initialData?.rampDistanceFt)}
-                  {...register('rampDistanceFt', {
-                    valueAsNumber: true,
-                    setValueAs: v => parseImperialInput(String(v), 'ft', unitSystem),
-                    onBlur: onBlurSave,
-                  })}
-                />
-                <div className="unit">{dLabel}</div>
-              </div>
+              <label>Floor Condition</label>
+              <select
+                {...register('floorCondition', { onBlur: onBlurSave })}
+                defaultValue={initialData?.floorCondition || ''}
+              >
+                <option value="" disabled>Select condition…</option>
+                {FLOOR_CONDITIONS.map(c => <option key={c}>{c}</option>)}
+              </select>
             </div>
             <div className="fld">
-              <label>Max Ramp Grade</label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  max="30"
-                  className="mono"
-                  placeholder="0"
-                  {...register('maxRampGrade', { valueAsNumber: true, onBlur: onBlurSave })}
-                />
-                <div className="unit">%</div>
-              </div>
-              <div className="help">0 if no ramps in the application</div>
+              <label>Dust / Moisture</label>
+              <select
+                {...register('dustMoisture', { onBlur: onBlurSave })}
+                defaultValue={initialData?.dustMoisture || ''}
+              >
+                <option value="">None</option>
+                {DUST_MOISTURE_OPTS.map(o => <option key={o}>{o}</option>)}
+              </select>
             </div>
           </div>
         </FormSection>
 
-        {/* ===== Section 8: Dealer & Contact ===== */}
-        <FormSection
-          sectionNum="08"
-          title="Dealer &amp; Contact"
-          id={FORM_SECTIONS[7].id}
-          status={sectionStatus(FORM_SECTIONS[7], formValues)}
-          defaultOpen={false}
-        >
-          <div className="fld-grid-4">
-            <div className="fld">
-              <label>Facility Location</label>
-              <input
-                type="text"
-                placeholder="e.g. Phoenix, AZ"
-                {...register('facilityLocation', { onBlur: onBlurSave })}
-              />
-            </div>
-            <div className="fld">
-              <label>TAL Engineer</label>
-              <input
-                type="text"
-                placeholder="e.g. M. Rodriguez"
-                {...register('bastianRep', { onBlur: onBlurSave })}
-              />
-            </div>
-            <div className="fld">
-              <label>Proposal Date</label>
-              <input
-                type="date"
-                className="mono"
-                value={toDateInput(proposalDate)}
-                onChange={e => {
-                  const v = e.target.value
-                  const iso = v ? new Date(v + 'T00:00:00').toISOString() : new Date().toISOString()
-                  setProposalDate(iso)
-                  if (projectId) updateProject(projectId, {}, { createdAt: iso })
-                }}
-              />
-              <div className="help">Used on customer-facing proposal output</div>
-            </div>
-            <div className="fld">
-              <label>Desired Install Date</label>
-              <input
-                type="date"
-                className="mono"
-                defaultValue={initialData?.desiredInstallDate || ''}
-                {...register('desiredInstallDate', { onBlur: onBlurSave })}
-              />
-              <div className="help">Customer&apos;s target go-live date</div>
-            </div>
-          </div>
-
-          <div className="fld-grid-4" style={{ marginTop: 14 }}>
-            <div className="fld">
-              <label>OEM Dealer</label>
-              <Controller
-                name="oemDealer"
-                control={control}
-                render={({ field }) => (
-                  <div className="seg-toggle">
-                    {['Raymond', 'Toyota', 'Direct'].map(opt => (
-                      <button
-                        key={opt}
-                        type="button"
-                        className={`seg-btn${field.value === opt ? ' on' : ''}`}
-                        onClick={() => { field.onChange(field.value === opt ? '' : opt); onBlurSave() }}
-                      >
-                        {opt}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              />
-            </div>
-            {oemDealer && oemDealer !== 'Direct' && (
-              <>
-                <div className="fld">
-                  <label>Dealership Name</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Empire Forklift"
-                    {...register('dealershipName', { onBlur: onBlurSave })}
-                  />
-                </div>
-                <div className="fld">
-                  <label>Dealer Representative</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. J. Smith"
-                    {...register('dealerRep', { onBlur: onBlurSave })}
-                  />
-                </div>
-              </>
-            )}
-          </div>
-        </FormSection>
-
-        {/* ===== Section 9: Certifications ===== */}
-        <FormSection
-          sectionNum="09"
-          title="Certifications &amp; Compliance"
-          id={FORM_SECTIONS[8].id}
-          status={sectionStatus(FORM_SECTIONS[8], formValues)}
-          defaultOpen={false}
-        >
-          <div className="fld-grid-4">
-            <div className="fld span-4">
-              <label>Required Certifications</label>
-              <div className="cert-grid">
-                {CERTIFICATIONS.map(cert => {
-                  const on = certifications.includes(cert)
-                  return (
-                    <label
-                      key={cert}
-                      className={`chk${on ? ' on' : ''}`}
-                      onClick={() => toggleArrayItem('certifications', cert)}
-                    >
-                      <input type="checkbox" readOnly checked={on} />
-                      <span className="box">
-                        {on && <Icon name="check" size={10} />}
-                      </span>
-                      <span>{cert}</span>
-                    </label>
-                  )
-                })}
-              </div>
-              <div className="help">
-                Selected certifications become hard gates — vehicles missing them will be RED
-              </div>
-            </div>
-          </div>
-        </FormSection>
-
-        {/* ===== Section 10: Equipment Integration ===== */}
-        <FormSection
-          sectionNum="10"
-          title="Equipment Integration"
-          id={FORM_SECTIONS[9].id}
-          status={sectionStatus(FORM_SECTIONS[9], formValues)}
-          defaultOpen={false}
-        >
+        {/* ===== Section 09: Integration ===== */}
+        <FormSection {...secProps('section-09')} defaultOpen={false}>
           <div className="fld-grid-4">
             <div className="fld span-4">
               <label>Required Interlocks</label>
@@ -923,104 +869,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 />
               </div>
             )}
-          </div>
-        </FormSection>
 
-        {/* ===== Section 11: Environment (collapsed) ===== */}
-        <FormSection
-          sectionNum="11"
-          title="Environment"
-          id={FORM_SECTIONS[10].id}
-          status={sectionStatus(FORM_SECTIONS[10], formValues)}
-          collapsible
-          defaultOpen={false}
-        >
-          <div className="fld-row-3">
-            <div className="fld">
-              <label>Min Temperature ({tLabel})</label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="1"
-                  className="mono"
-                  placeholder={unitSystem === 'metric' ? '-20' : '-4'}
-                  defaultValue={dispF(initialData?.tempMinF)}
-                  {...register('tempMinF', {
-                    setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'F', unitSystem),
-                    onBlur: onBlurSave,
-                  })}
-                />
-                <div className="unit">{tLabel}</div>
-              </div>
-            </div>
-            <div className="fld">
-              <label>Max Temperature ({tLabel})</label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="1"
-                  className="mono"
-                  placeholder={unitSystem === 'metric' ? '40' : '104'}
-                  defaultValue={dispF(initialData?.tempMaxF)}
-                  {...register('tempMaxF', {
-                    setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'F', unitSystem),
-                    onBlur: onBlurSave,
-                  })}
-                />
-                <div className="unit">{tLabel}</div>
-              </div>
-            </div>
-            <div className="fld">
-              <label>Dust / Moisture</label>
-              <select
-                {...register('dustMoisture', { onBlur: onBlurSave })}
-                defaultValue={initialData?.dustMoisture || ''}
-              >
-                <option value="">None</option>
-                {DUST_MOISTURE_OPTS.map(o => <option key={o}>{o}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="fld-grid-4" style={{ marginTop: 14 }}>
-            <div className="fld">
-              <label>Outdoor Required?</label>
-              <Controller
-                name="outdoorRequired"
-                control={control}
-                render={({ field }) => (
-                  <div className="seg-toggle">
-                    <button type="button" className={`seg-btn${field.value ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
-                    <button type="button" className={`seg-btn${!field.value ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
-                  </div>
-                )}
-              />
-            </div>
-            <div className="fld">
-              <label>Freezer Capable?</label>
-              <Controller
-                name="freezerCapable"
-                control={control}
-                render={({ field }) => (
-                  <div className="seg-toggle">
-                    <button type="button" className={`seg-btn${field.value ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
-                    <button type="button" className={`seg-btn${!field.value ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
-                  </div>
-                )}
-              />
-            </div>
-          </div>
-        </FormSection>
-
-        {/* ===== Section 12: Software (collapsed) ===== */}
-        <FormSection
-          sectionNum="12"
-          title="Software Integration"
-          id={FORM_SECTIONS[11].id}
-          status={sectionStatus(FORM_SECTIONS[11], formValues)}
-          collapsible
-          defaultOpen={false}
-        >
-          <div className="fld-grid-4">
             <div className="fld">
               <label>WMS Required?</label>
               <Controller
@@ -1047,14 +896,105 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        {/* ===== Section 13: Project Notes (always visible) ===== */}
-        <FormSection
-          sectionNum="13"
-          title="Project Notes"
-          id={FORM_SECTIONS[12].id}
-          status={sectionStatus(FORM_SECTIONS[12], formValues)}
-          defaultOpen={false}
-        >
+        {/* ===== Section 10: Dealer & contact ===== */}
+        <FormSection {...secProps('section-10')} defaultOpen={false}>
+          <div className="fld-grid-4">
+            <div className="fld">
+              <label>Facility Location</label>
+              <input
+                type="text"
+                placeholder="e.g. Phoenix, AZ"
+                {...register('facilityLocation', { onBlur: onBlurSave })}
+              />
+            </div>
+            <div className="fld">
+              <label>TAL Engineer</label>
+              <input
+                type="text"
+                placeholder="e.g. M. Rodriguez"
+                {...register('bastianRep', { onBlur: onBlurSave })}
+              />
+            </div>
+            <div className="fld">
+              <label>Proposal Date</label>
+              <input
+                type="date"
+                className="mono"
+                value={toDateInput(proposalDate)}
+                onChange={e => {
+                  const v = e.target.value
+                  const iso = v ? new Date(v + 'T00:00:00').toISOString() : new Date().toISOString()
+                  setProposalDate(iso)
+                  if (projectId) updateProject(projectId, {}, { createdAt: iso })
+                }}
+              />
+              <div className="help">Used on customer-facing proposal output</div>
+            </div>
+          </div>
+
+          <div className="fld-grid-4" style={{ marginTop: 14 }}>
+            <div className="fld">
+              <label>OEM Dealer</label>
+              <Controller
+                name="oemDealer"
+                control={control}
+                render={({ field }) => (
+                  <div className="seg-toggle">
+                    {['Raymond', 'Toyota', 'Direct'].map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        className={`seg-btn${field.value === opt ? ' on' : ''}`}
+                        onClick={() => { field.onChange(field.value === opt ? '' : opt); onBlurSave() }}
+                      >
+                        {opt}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              />
+            </div>
+            {oemDealer && oemDealer !== 'Direct' && (
+              <>
+                <div className="fld">
+                  <label>Dealership Name</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Empire Forklift"
+                    {...register('dealershipName', { onBlur: onBlurSave })}
+                  />
+                </div>
+                <div className="fld">
+                  <label>Dealer Representative</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. J. Smith"
+                    {...register('dealerRep', { onBlur: onBlurSave })}
+                  />
+                </div>
+              </>
+            )}
+          </div>
+        </FormSection>
+
+        {/* ===== Section 11: Timeline ===== */}
+        <FormSection {...secProps('section-11')} defaultOpen={false}>
+          <div className="fld-grid-4">
+            <div className="fld">
+              <label>Desired Install Date</label>
+              <input
+                type="date"
+                className="mono"
+                defaultValue={initialData?.desiredInstallDate || ''}
+                {...register('desiredInstallDate', { onBlur: onBlurSave })}
+              />
+              <div className="help">Customer&apos;s target go-live date</div>
+            </div>
+          </div>
+        </FormSection>
+
+        {/* ===== Section 12: Project notes ===== */}
+        <FormSection {...secProps('section-12')} defaultOpen={false}>
           <div className="fld-grid-4">
             <div className="fld span-4">
               <label>Notes</label>
