@@ -47,6 +47,6 @@
     "outdoorCapable": false,
     "freezerCapable": false,
     "maxRampGrade": 5,
-    "certifications": ["ISO 3691-4", "ANSI/RIA R15.08-1"]
+    "certifications": ["ISO 3691-4", "RIA R15.08"]
   }
 }
