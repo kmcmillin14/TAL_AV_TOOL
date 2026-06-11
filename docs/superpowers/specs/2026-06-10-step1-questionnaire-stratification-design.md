@@ -119,3 +119,13 @@ meter and badges remain purely informational.
 6. `npm run build` passes; no new imports into `src/calc/` from UI code (the nav imports
    `deliveryPatternRequiresLift` from `src/calc/trafficLight.ts`, which is already the
    sanctioned export point for Step 1).
+
+## Addendum (2026-06-10, planning)
+
+- Section 8 also held `facilityLocation`, `bastianRep`, and the proposal-date control;
+  they live in **P3 Dealer & contact** (section-10).
+- "Software Integration" merges into **P2 Integration** (section-09): interlocks + WMS
+  + other AGVs. Total stays 12 sections.
+- User-added scope: vocabulary alignment fixes (TRANSFER_METHODS, ML2 cert token, card
+  payload row) — see CHANGELOG 2026-06-10. The "no vehicle-JSON changes" rule is
+  amended to permit the single ML2 certification-token normalization.

@@ -4,6 +4,41 @@ The functional spec ("what the app does"). For architectural rules ("how it's bu
 
 ---
 
+## Step 1 — Application Questionnaire
+
+Thirteen flat sections became **three labeled tiers** (2026-06-10) so an applications
+engineer can see which answers move the Step 2 traffic lights:
+
+1. **VEHICLE QUALIFICATION** — every field the gate engine reads:
+   01 *What are you moving?* (weight, unit type, load L×W×H, pallet subtype/custom),
+   02 *How is it transferred?* (transfer method, delivery pattern, conditional lift height),
+   03 *Environment & site* (temp min/max, outdoor, freezer, ramp grade + ramp distance,
+   aisle width — informational only), 04 *Certifications* (soft gate).
+2. **FLEET SIZING & ECONOMICS** — 05 schedule, 06 throughput & distance, 07 labor.
+3. **PROPOSAL DETAILS** (collapsed by default; consumers arrive in future revisions) —
+   08 site details (floor condition, dust/moisture), 09 integration (interlocks, WMS,
+   other AGVs), 10 dealer & contact (facility, TAL engineer, proposal date, OEM dealer,
+   dealership, rep), 11 timeline (install date), 12 notes.
+
+**Qualification readiness meter** (SectionNav): counts answered gate inputs —
+`maxLoadWeightLbs, typicalUnitType, loadLengthIn, loadWidthIn, loadHeightIn,
+transferMethod, deliveryPattern, tempMinF, tempMaxF, maxRampGrade, minAisleWidthFt`
+(11), plus `maxLiftHeightFt` only while `deliveryPatternRequiresLift(deliveryPattern)`
+(12). "Answered" = non-empty string / finite number (0 °F counts; cleared fields don't).
+Checkboxes (outdoor/freezer) and certifications are excluded — unchecked is an answer.
+The meter is informational; no field is required to advance (architecture rule).
+
+**Canonical vocabularies** (`src/lib/constants/enums.ts` — single source of truth,
+asserted against the vehicle JSONs by `src/lib/__tests__/enumAlignment.test.ts`):
+- `TRANSFER_METHODS = ['Lift', 'Pin', 'Conveyor', 'Custom', 'Powered Conveyor Cart']`
+  — identical to the union of vehicle `transferMethods[].method`.
+- Every vehicle `payloadTypes` entry appears in `TYPICAL_UNIT_TYPES` (the form may
+  offer extra types — Roll, Coil, Other — for which "no vehicle applies" is the
+  correct matrix answer).
+- Every vehicle certification token appears in `CERTIFICATIONS`.
+
+---
+
 ## Fleet Engine (Step 3)
 
 The sizing calculation lives in **one tab** (`app/projects/[id]/step3`) as a **progressive 3-stage

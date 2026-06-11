@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-06-10 — Step 1 stratified into 3 tiers + qualification-matrix vocabulary fixes
+
+**Step 1 questionnaire** restructured from 13 flat sections into three labeled tiers —
+VEHICLE QUALIFICATION (4 sections: load, transfer, environment & site, certifications),
+FLEET SIZING & ECONOMICS (3: schedule, throughput, labor), PROPOSAL DETAILS (5,
+collapsed: site details, integration incl. WMS, dealer & contact, timeline, notes).
+No field deleted; every schema key, storage path, and PDF slot unchanged. SectionNav
+gains tier headers and the progress meter is redefined as **qualification readiness**
+("N of 11–12 qualification inputs"; lift height counts only when the delivery pattern
+requires it; 0 °F counts as answered). Design doc:
+`docs/superpowers/specs/2026-06-10-step1-questionnaire-stratification-design.md`.
+
+**Matrix alignment fixes** (audit: Step 1 ↔ vehicle JSON ↔ Step 2 cards):
+- `TRANSFER_METHODS` re-valued from `Fork / Tow-Tugger / Conveyor Interface / Lift
+  Platform` (matched **zero** vehicles — any selection turned the whole matrix RED) to
+  the actual vehicle vocabulary `Lift / Pin / Conveyor / Custom / Powered Conveyor
+  Cart`. **Legacy projects holding an old value must re-select Transfer Method.**
+- `ml2.json` cert `ANSI/RIA R15.08-1` → canonical `RIA R15.08` (form token); ML2 no
+  longer falsely YELLOW when RIA R15.08 is required.
+- `CERTIFICATIONS` list moved from `ApplicationForm.tsx` into `constants/enums.ts`.
+- New `enumAlignment.test.ts` asserts the three vocabularies stay aligned with the JSONs.
+- Step 2 card "Payload Type" row now shows the gate basis `payloadTypes.join(', ')`
+  instead of the single `display.typicalLoad`.
+
 ## 2026-06-08 — Codebase review cleanup: UX persistence, a11y, dedup
 
 Review-driven fixes (no behavioral spec change; 129 tests pass, tsc clean, lint 21→16 — remainder pre-existing):
