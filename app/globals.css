@@ -591,6 +591,15 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .form-tier-hint { font-size: 12px; color: var(--text-tertiary); }
 
+/* Fleet Engine sections (scrolling layout — Step 3) */
+.engine-section .form-section-header { cursor: default; }
+.engine-section-sub {
+  margin-left: 12px;
+  font-family: var(--tal-font-family); font-size: 12px; font-weight: 400;
+  color: var(--text-tertiary);
+}
+.engine-section .form-section-body { padding: 16px; }
+
 /* Step 1 flow rows (section 06 — the same flows Step 3 sizes) */
 .step1-flows { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
 .step1-flow-row {
@@ -2628,28 +2637,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .er-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
-/* Stage morph via View Transitions API — cross-fade the content region on
-   stage change (GPU transform/opacity, not width). Reduced-motion → instant. */
-::view-transition-old(root), ::view-transition-new(root) {
-  animation-duration: 230ms;
-  animation-timing-function: cubic-bezier(0.2, 0.7, 0.2, 1);
-}
-/* Named persistent cells (Cycle, Vehicle-Count) FLIP-slide to their new column
-   position with a snappier iOS spring-ease-out. */
-::view-transition-group(*) {
-  animation-duration: 360ms;
-  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
-}
-@media (prefers-reduced-motion: reduce) {
-  ::view-transition-group(*), ::view-transition-old(root), ::view-transition-new(root) { animation: none !important; }
-}
 .pl-route { margin-left: 8px; font-size: 11px; color: var(--text-tertiary); }
 
-/* Stage rail: segmented stages (left) + step indicator & Back/Next (right). */
-.engine-stagebar {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 16px; flex-wrap: wrap; margin-bottom: 20px;
-}
+
+/* Segmented tab pill — used by the ROM dashboard view tabs (RomVisuals). */
 .engine-seg {
   display: inline-flex;
   gap: 2px;
@@ -2657,29 +2648,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   background: var(--bg-surface-2);
   border-radius: 10px;
 }
-.es-tab-n {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 18px; height: 18px; margin-right: 8px; border-radius: 50%;
-  font-size: 10px; font-weight: 700;
-  background: var(--bg-surface); color: var(--text-tertiary);
-}
-.es-tab.active .es-tab-n { background: var(--accent); color: #fff; }
-.stage-nav { display: inline-flex; align-items: center; gap: 10px; }
-.stage-count {
-  font-family: var(--tal-font-numeric); font-size: 11px; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--text-tertiary);
-}
-.stage-btn {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-family: var(--tal-font-family); font-size: 13px; font-weight: 600;
-  padding: 10px 16px; min-height: 44px; border-radius: 9px;
-  border: 1px solid var(--border); background: var(--bg-surface); color: var(--text-secondary);
-  cursor: pointer; transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
-}
-.stage-btn:hover:not(:disabled) { color: var(--text-primary); border-color: var(--border-strong); }
-.stage-btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.stage-btn.primary:hover:not(:disabled) { filter: brightness(1.08); }
-.stage-btn:disabled { opacity: 0.4; cursor: default; }
 .es-tab {
   position: relative;
   padding: 7px 22px;
@@ -2696,10 +2664,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   color: var(--text-primary);
   font-weight: 600;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-}
-.es-dot {
-  position: absolute; top: 5px; right: 9px;
-  width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
 }
 
 .engine-panel {
@@ -2787,12 +2751,20 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .ct-delta-good { color: var(--good); }
 
 /* buffer + waterfall */
-.buffer-control { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.buffer-control { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+.buffer-select {
+  font-family: var(--tal-font-family); font-size: 13px; font-weight: 600;
+  padding: 8px 12px; border-radius: 6px; min-height: 38px;
+  background: var(--bg-input); color: var(--text-primary);
+  border: 1px solid var(--border-strong); cursor: pointer;
+}
+.buffer-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.buffer-custom { width: 110px; }
+.buffer-custom input { width: 100%; }
 .bc-label {
   font-family: var(--tal-font-numeric);
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
 }
-.buffer-control input[type='range'] { width: 220px; accent-color: var(--accent); cursor: pointer; }
 .bc-value { font-size: 16px; font-weight: 800; color: var(--accent); min-width: 44px; }
 .bc-hint { font-family: var(--tal-font-family); font-size: 11px; color: var(--text-tertiary); }
 .waterfall-table .wf-mid { color: var(--text-tertiary); }

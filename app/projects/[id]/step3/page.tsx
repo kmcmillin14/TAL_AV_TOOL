@@ -13,13 +13,12 @@ import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
 import { fleetSummary, defaultChargeRegime } from '@/src/calc/fleet'
 import type { EnginePatch } from '@/src/components/engine/types'
-import { flushSync } from 'react-dom'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
+import EngineNav from '@/src/components/engine/EngineNav'
+import EngineSection from '@/src/components/engine/EngineSection'
 import FlowsTab from '@/src/components/engine/FlowsTab'
 import ChargingPipeline from '@/src/components/engine/ChargingPipeline'
 import BufferPipeline from '@/src/components/engine/BufferPipeline'
-
-type EngineTab = 'flows' | 'charging' | 'fleet'
 
 export default function FleetEnginePage() {
   const params = useParams()
@@ -30,18 +29,6 @@ export default function FleetEnginePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [unitSystem, toggleUnitSystem] = useUnitSystem()
-  const [tab, setTab] = useState<EngineTab>('flows')
-  const [visited, setVisited] = useState<Set<EngineTab>>(() => new Set<EngineTab>(['flows']))
-  const selectTab = (id: EngineTab) => { setTab(id); setVisited(v => (v.has(id) ? v : new Set(v).add(id))) }
-  // Morph between stages via the View Transitions API (transform/opacity FLIP,
-  // per ui-ux-pro-max — never animate width). Falls back to instant when the
-  // API is unavailable or the user prefers reduced motion.
-  const changeStage = (id: EngineTab) => {
-    const reduce = typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    const start = (document as Document & { startViewTransition?: (cb: () => void) => void }).startViewTransition
-    if (!start || reduce) { selectTab(id); return }
-    start.call(document, () => flushSync(() => selectTab(id)))
-  }
 
   useEffect(() => {
     const proj = getProject(id)
@@ -137,20 +124,7 @@ export default function FleetEnginePage() {
     step2Complete: project.step2Complete,
   }
 
-  const steps: { id: EngineTab; label: string }[] = [
-    { id: 'flows', label: 'Flows' },
-    { id: 'charging', label: 'Charging' },
-    { id: 'fleet', label: 'Buffer' },
-  ]
-  const curIndex = Math.max(0, steps.findIndex(s => s.id === tab))
-  const goStage = (delta: number) => { const next = steps[curIndex + delta]; if (next) changeStage(next.id) }
   const groupByVehicle = new Map(fleet.groups.map(g => [g.vehicleId, g]))
-  // Hero shows the cumulative fleet at the stage reached — it grows as you advance.
-  const stageValue =
-    tab === 'flows' ? fleet.totalBaseFleet
-    : tab === 'charging' ? fleet.totalBaseFleet + fleet.totalChargingDelta
-    : fleet.totalFleetSold
-  const stageLabel = tab === 'flows' ? 'Base fleet' : tab === 'charging' ? 'With charging' : 'Total fleet'
   // Hero KPIs — the inputs that drive the fleet: how many flows, total demand.
   const flowCount = flows.length
   const totalThruPerHr = Math.round(flows.reduce((sum, f) => sum + (f.thruPerHr || 0), 0))
@@ -178,28 +152,28 @@ export default function FleetEnginePage() {
           {fleet.groups.length > 0 ? (
             <>
               <div className="er-headline">
-                <span className="er-eyebrow">{stageLabel}</span>
+                <span className="er-eyebrow">Total fleet</span>
                 <div className="er-num-row">
-                  <span className="er-num mono">{stageValue}</span>
+                  <span className="er-num mono">{fleet.totalFleetSold}</span>
                   <span className="er-num-unit">vehicles</span>
                 </div>
                 <div className="er-pipeline" aria-label="Fleet build-up">
                   <div className="ep-seg on">
-                    <span className="ep-label">Base</span>
+                    <span className="ep-label">Raw</span>
                     <span className="ep-val mono">{fleet.totalBaseFleet}</span>
                   </div>
                   <span className="ep-op" aria-hidden="true">+</span>
-                  <div className={`ep-seg${curIndex >= 1 ? ' on' : ''}`}>
+                  <div className="ep-seg on">
                     <span className="ep-label">Charging</span>
                     <span className="ep-val mono">{fleet.totalChargingDelta > 0 ? `+${fleet.totalChargingDelta}` : '0'}</span>
                   </div>
                   <span className="ep-op" aria-hidden="true">×</span>
-                  <div className={`ep-seg${curIndex >= 2 ? ' on' : ''}`}>
+                  <div className="ep-seg on">
                     <span className="ep-label">Buffer</span>
                     <span className="ep-val mono">{(1 + settings.bufferPct).toFixed(2)}</span>
                   </div>
                   <span className="ep-op" aria-hidden="true">=</span>
-                  <div className={`ep-seg ep-total${curIndex >= 2 ? ' on' : ''}`}>
+                  <div className="ep-seg ep-total on">
                     <span className="ep-label">Total</span>
                     <span className="ep-val mono">{fleet.totalFleetSold}</span>
                   </div>
@@ -239,67 +213,63 @@ export default function FleetEnginePage() {
           )}
         </section>
 
-        <div className="engine-stagebar">
-          <div className="engine-seg" role="tablist" aria-label="Fleet build stages">
-            {steps.map((s, i) => (
-              <button
-                key={s.id}
-                type="button"
-                role="tab"
-                aria-selected={tab === s.id}
-                className={`es-tab${tab === s.id ? ' active' : ''}`}
-                onClick={() => changeStage(s.id)}
-              >
-                <span className="es-tab-n mono">{i + 1}</span>{s.label}
-                {!visited.has(s.id) && <span className="es-dot" aria-label="not yet reviewed" />}
-              </button>
-            ))}
-          </div>
-          <div className="stage-nav">
-            <span className="stage-count mono">Step {curIndex + 1} of {steps.length}</span>
-            <button type="button" className="stage-btn" onClick={() => goStage(-1)} disabled={curIndex === 0}>
-              <Icon name="arrowL" size={13} /> Back
-            </button>
-            <button type="button" className="stage-btn primary" onClick={() => goStage(1)} disabled={curIndex === steps.length - 1}>
-              Next <Icon name="arrowR" size={13} />
-            </button>
+        <div className="form-with-nav">
+          <EngineNav totalFleetSold={fleet.totalFleetSold} hasFleet={fleet.groups.length > 0} />
+
+          <div className="form-stack">
+            <EngineSection
+              id="engine-raw"
+              num="01"
+              title="Raw Fleet"
+              sub="Engineering — flows → cycle time → raw demand, no multipliers"
+            >
+              <FlowsTab
+                flows={flows}
+                flowGroups={flowGroups}
+                flowGroupColors={flowGroupColors}
+                vehicles={vehicles}
+                derivedByFlowId={derivedByFlowId}
+                unitSystem={unitSystem}
+                onPatch={persistPatch}
+              />
+            </EngineSection>
+
+            <EngineSection
+              id="engine-charging"
+              num="02"
+              title="Charging"
+              sub="Physics — battery runtime adds vehicles when charging steals operating time"
+            >
+              <ChargingPipeline
+                flows={flows}
+                vehicleById={vehicleById}
+                groupByVehicle={groupByVehicle}
+                derivedByFlowId={derivedByFlowId}
+                regime={settings.regime}
+                dailyOpHr={settings.dailyOpHr}
+                shiftsPerDay={project.shiftsPerDay ?? 1}
+                hoursPerShift={project.hoursPerShift ?? 8}
+                chargeMethods={settings.chargeMethods}
+                onPatch={persistPatch}
+              />
+            </EngineSection>
+
+            <EngineSection
+              id="engine-buffer"
+              num="03"
+              title="Buffer"
+              sub="Policy — margin for maintenance, training, and demand spikes"
+            >
+              <BufferPipeline
+                flows={flows}
+                vehicleById={vehicleById}
+                groupByVehicle={groupByVehicle}
+                bufferPct={settings.bufferPct}
+                onPatch={persistPatch}
+              />
+            </EngineSection>
           </div>
         </div>
-
-        {tab === 'flows' && (
-          <FlowsTab
-            flows={flows}
-            flowGroups={flowGroups}
-            flowGroupColors={flowGroupColors}
-            vehicles={vehicles}
-            derivedByFlowId={derivedByFlowId}
-            unitSystem={unitSystem}
-            onPatch={persistPatch}
-          />
-        )}
-        {tab === 'charging' && (
-          <ChargingPipeline
-            flows={flows}
-            vehicleById={vehicleById}
-            groupByVehicle={groupByVehicle}
-            derivedByFlowId={derivedByFlowId}
-            regime={settings.regime}
-            dailyOpHr={settings.dailyOpHr}
-            shiftsPerDay={project.shiftsPerDay ?? 1}
-            hoursPerShift={project.hoursPerShift ?? 8}
-            chargeMethods={settings.chargeMethods}
-            onPatch={persistPatch}
-          />
-        )}
-        {tab === 'fleet' && (
-          <BufferPipeline
-            flows={flows}
-            vehicleById={vehicleById}
-            groupByVehicle={groupByVehicle}
-            bufferPct={settings.bufferPct}
-            onPatch={persistPatch}
-          />
-        )}
 
         <div className="step-nav">
           <Link href={`/projects/${id}/step2`} className="btn ghost">

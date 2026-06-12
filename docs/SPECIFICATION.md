@@ -81,31 +81,32 @@ Step 1 sizing data seeds downstream values only while the user hasn't overridden
 
 ## Fleet Engine (Step 3)
 
-The sizing calculation lives in **one tab** (`app/projects/[id]/step3`) as a **progressive 3-stage
-pipeline** — **Flows → Charging → Buffer** — sharing a single live recompute. Navigation:
-`0 Start · 1 Application · 2 Vehicles · 3 Fleet Engine · 4 ROM Dashboard` (ROM consumes the engine's
-total; KPIs belong to it). Combines the former Flows/Charging/Buffer steps — see the `ARCHITECTURE.md`
-exception.
+The sizing calculation lives in **one scrolling page** (`app/projects/[id]/step3`) with **all three
+sub-stages always visible** — **01 Raw Fleet · 02 Charging · 03 Buffer** — sharing a single live
+recompute. The engineer sees the entire waterfall at once; nothing is hidden behind a wizard.
+Navigation: `0 Start · 1 Application · 2 Vehicles · 3 Fleet Engine · 4 ROM Dashboard` (ROM consumes
+the engine's total; KPIs belong to it). Combines the former Flows/Charging/Buffer steps — see the
+`ARCHITECTURE.md` exception. *(2026-06-12: replaced the staged wizard — stage rail, Back/Next, View
+Transitions morphing — with this questionnaire-style layout.)*
 
-**Stage rail & progression.** A rail shows the three stages (numbered chips, "Step N of 3") with
-**Back / Next**. Stage changes morph via the **View Transitions API**
-(`document.startViewTransition` + a `flushSync` React commit) — a GPU cross-fade using transform/opacity
-(never animating width, per the UX rules), with an **instant fallback** when the API is unavailable or
-`prefers-reduced-motion`. **Per-flow rows persist across all three stages**; only the active columns
-change (charging/buffer columns show the flow's vehicle-group values, pooled per vehicle type).
+**Scroll-spy side nav** (questionnaire pattern, reusing the `.section-nav` styles): a sticky left
+rail lists the three sections (`01 Raw Fleet · 02 Charging · 03 Buffer`), highlights the section in
+view via IntersectionObserver, scrolls on click, and shows the live **TOTAL fleet** figure at the
+top (`src/components/engine/EngineNav.tsx`). Sections render as full-width blocks with numbered
+headers (`src/components/engine/EngineSection.tsx`, visually matching the Step 1 form sections).
 
-**Progressive hero** (`.engine-result`): the headline number is the cumulative fleet at the reached
-stage (base → with-charging → total) and the `base · +charging · ×buffer` build-up **accumulates** one
-adder per stage. Right side: per-vehicle **raw → rounded base** mix with thumbnails.
+**Hero** (`.engine-result`): the headline is always the **total fleet sold**; the
+`base · +charging · ×buffer = total` build-up bar shows every segment lit (all stages are visible).
+Right side: per-vehicle **raw → rounded base** mix with thumbnails.
 
 **Waterfall (per vehicle group `g`, one per `vehicleId`):**
 `baseFleet → + chargingDelta → × (1 + bufferPct) → ⌈⌉ = fleetSold`; project **TOTAL** = `Σ fleetSold`.
 
-### Stage 1 — Flows
-The material-flow table that produces the **base fleet** (`groupRaw`, `baseFleet = ⌈groupRaw⌉`).
-Fully specified in **Step 3 — Material Flows** below.
+### Section 01 — Raw Fleet
+The material-flow table that produces the **base fleet** (`groupRaw`, `baseFleet = ⌈groupRaw⌉`) —
+pure engineering, no multipliers. Fully specified in **Step 3 — Material Flows** below.
 
-### Stage 2 — Charging (Ah/A battery model)
+### Section 02 — Charging (Ah/A battery model)
 Pure calc in `src/calc/fleet.ts`. Battery specs are amp-hours / amps (`ratedAh`, `voltageV`,
 `dischargeA`, `chargeA`, optional `chargeTimeMin`). `DEFAULT_DOD = 0.80`.
 
@@ -128,11 +129,13 @@ chargingDelta = (regime='overnight' AND runHr ≥ dailyOpHr) ? 0
   to charge. Two methods only.
 - Inputs missing/zero → a non-sustainable result shown as `—` (never NaN).
 
-### Stage 3 — Buffer (buffer + total)
+### Section 03 — Buffer (buffer + total)
 A single project **buffer %** (`bufferPct`, default `0.10`) — the only multiplier in the pipeline —
-applied after charging: `fleetSold = ⌈(baseFleet + chargingDelta) × (1 + bufferPct)⌉`. The stage shows
-a buffer slider and a per-flow waterfall (`base → +charging → ×buffer → fleet`); the binding TOTAL is
-the hero number.
+applied after charging: `fleetSold = ⌈(baseFleet + chargingDelta) × (1 + bufferPct)⌉`. The section
+shows a **buffer preset dropdown** — `Standard (10%) · Medium (20%) · Conservative (25%) · Custom…`
+(Custom reveals a % input; a stored value that matches no preset displays as Custom automatically;
+`bufferPct` stays a plain number in the schema) — and the per-flow waterfall
+(`base → +charging → ×buffer → fleet`); the binding TOTAL is the hero number.
 
 ---
 

@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-12 — Fleet Engine: staged wizard → scrolling page; buffer presets
+
+- **All three sub-stages are now always visible** — `01 Raw Fleet · 02 Charging ·
+  03 Buffer` render as stacked sections on one scrolling page with a sticky
+  questionnaire-style scroll-spy nav (new `EngineNav`/`EngineSection` in
+  `src/components/engine/`, reusing the `.section-nav`/`.form-section` styles). The
+  stage rail, Back/Next, "Step N of 3", unvisited dots, and the View Transitions
+  stage morphing are removed (orphaned CSS + `viewTransitionName` props deleted —
+  duplicate names on simultaneously-visible rows would be invalid anyway). Hero now
+  always shows the bound TOTAL with every build-up segment lit.
+- **Buffer % is a preset dropdown** — `Standard (10%) · Medium (20%) ·
+  Conservative (25%) · Custom…` (Custom reveals a % input; legacy non-preset values
+  display as Custom). Replaces the free slider; `bufferPct` schema unchanged.
+
 ## 2026-06-12 — Multiple loads (matrix-only) + Step 1 multi-flow capture + porting defaults
 
 - **Step 1 captures multiple flows.** Section 06 (Throughput & distance) is now a

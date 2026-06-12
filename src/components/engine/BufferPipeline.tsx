@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { FleetGroup, Flow } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
@@ -13,25 +14,73 @@ interface Props {
   onPatch: (patch: EnginePatch) => void
 }
 
+/** Named buffer policies. A stored bufferPct matching none of these (legacy
+ *  slider values like 0.15) displays as Custom automatically. */
+const BUFFER_PRESETS = [
+  { key: 'standard',     label: 'Standard',     pct: 0.10 },
+  { key: 'medium',       label: 'Medium',       pct: 0.20 },
+  { key: 'conservative', label: 'Conservative', pct: 0.25 },
+] as const
+
+const presetFor = (pct: number) =>
+  BUFFER_PRESETS.find(p => Math.abs(p.pct - pct) < 0.0001)
+
 /**
- * Buffer stage — the same per-flow rows, now showing each flow's vehicle
+ * Buffer section — the same per-flow rows, showing each flow's vehicle
  * waterfall: base → +charging → ×buffer → fleet (sold). The project buffer is
- * the single slider up top; per-flow figures are the vehicle group's (pooled
- * per vehicle type at the project level).
+ * a named-policy dropdown (with a Custom escape hatch); per-flow figures are
+ * the vehicle group's (pooled per vehicle type at the project level).
  */
 export default function BufferPipeline({ flows, vehicleById, groupByVehicle, bufferPct, onPatch }: Props) {
   const rows = flows.filter(f => f.vehicleId)
   const pct = Math.round(bufferPct * 100)
+  const preset = presetFor(bufferPct)
+  // Once the user picks "Custom…" the input stays visible even if they type a
+  // value that happens to equal a preset.
+  const [customOpen, setCustomOpen] = useState(false)
+  const showCustom = customOpen || !preset
   return (
     <div className="engine-panel pipeline-wrap">
       <div className="buffer-control">
         <span className="bc-label">Buffer</span>
-        <input
-          type="range" min={0} max={0.5} step={0.05} value={bufferPct}
-          onChange={e => onPatch({ bufferPct: Number(e.target.value) })}
-          aria-label="Fleet buffer percentage"
-        />
-        <span className="bc-value mono">{pct}%</span>
+        <select
+          className="buffer-select"
+          value={showCustom ? 'custom' : preset!.key}
+          onChange={e => {
+            const choice = BUFFER_PRESETS.find(p => p.key === e.target.value)
+            if (choice) {
+              setCustomOpen(false)
+              onPatch({ bufferPct: choice.pct })
+            } else {
+              setCustomOpen(true)
+            }
+          }}
+          aria-label="Fleet buffer policy"
+        >
+          {BUFFER_PRESETS.map(p => (
+            <option key={p.key} value={p.key}>{p.label} ({Math.round(p.pct * 100)}%)</option>
+          ))}
+          <option value="custom">Custom…</option>
+        </select>
+        {showCustom && (
+          <span className="buffer-custom input-with-unit">
+            <input
+              type="number"
+              min={0}
+              max={100}
+              step={1}
+              className="mono"
+              value={pct}
+              onChange={e => {
+                const v = Number(e.target.value)
+                if (Number.isFinite(v)) onPatch({ bufferPct: Math.min(100, Math.max(0, v)) / 100 })
+              }}
+              aria-label="Custom buffer percentage"
+            />
+            <span className="unit">%</span>
+          </span>
+        )}
+        <span className="bc-value mono">×{(1 + bufferPct).toFixed(2)}</span>
         <span className="bc-hint">maintenance · training · demand spikes</span>
       </div>
 
