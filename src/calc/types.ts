@@ -20,10 +20,34 @@ export interface GateResult {
   reason: string                  // ALWAYS populated (pass, fail, or skip)
 }
 
+/** One load the application moves — evaluated independently against the 5
+ *  load-coupled gates (payload type, L/W/H, weight). Matrix-evaluation only:
+ *  flows never reference a load. */
+export interface LoadSpec {
+  loadId: string
+  unitType: string
+  lengthIn?: number | null
+  widthIn?: number | null
+  heightIn?: number | null
+  /** Per-load weight; absent → the project-wide maxLoadWeightLbs applies. */
+  weightLbs?: number | null
+}
+
+/** Per-load verdict for the multi-load rollup (display detail for Step 2). */
+export interface LoadVerdict {
+  loadId: string
+  unitType: string
+  passed: boolean
+  /** gateIds of the load-coupled hard gates this load failed. */
+  failedGates: string[]
+}
+
 export interface QualificationResult {
   status: TrafficLightStatus
   hardGates: GateResult[]
   softPreferences: GateResult[]
+  /** Present when evaluated against ≥1 declared load; one entry per load. */
+  perLoad?: LoadVerdict[]
 }
 
 export interface ApplicationRequirements {
@@ -42,6 +66,9 @@ export interface ApplicationRequirements {
   loadLengthIn?: number | null
   loadWidthIn?: number | null
   loadHeightIn?: number | null
+  /** Declared loads. Empty/absent → one load is synthesized from the legacy
+   *  singular fields above, preserving single-load behavior bit-for-bit. */
+  loads?: LoadSpec[]
 }
 
 // ---- Step 3: Material Flows ----

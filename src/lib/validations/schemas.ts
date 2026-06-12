@@ -20,6 +20,23 @@ export const flowSchema = z.object({
   sectionName: z.string().optional(),
 })
 
+/** One load the application moves — its own unit type, dims, and optional
+ *  weight. Loads exist ONLY to evaluate the Step 2 matrix (and print in the
+ *  PDF): flows never reference a load and Step 3 is untouched. `loads[0]`
+ *  mirrors into the legacy singular fields on save for back-compat. */
+export const loadSchema = z.object({
+  id: z.string(),
+  unitType: z.string().default(''),
+  lengthIn: z.number().positive().optional().nullable(),
+  widthIn: z.number().positive().optional().nullable(),
+  heightIn: z.number().positive().optional().nullable(),
+  /** Per-load weight; the weight gate falls back to project maxLoadWeightLbs. */
+  weightLbs: z.number().min(0).optional().nullable(),
+  palletSubtype: z.string().optional(),
+  customDescription: z.string().optional(),
+  otherDescription: z.string().optional(),
+})
+
 export const projectSchema = z.object({
   projectName: z.string().optional(),
   customerName: z.string().optional(),
@@ -29,6 +46,10 @@ export const projectSchema = z.object({
   opportunityType: z.enum(['opp', 'lead']).optional(),
 
   // Section 1
+  loads: z.array(loadSchema).default([]),
+  // Legacy singular load fields — kept for back-compat (old exports/parsers);
+  // mirrored from loads[0] on save, synthesized into a load on read when
+  // `loads` is empty (see effectiveLoads in src/lib/appRequirements.ts).
   maxLoadWeightLbs: z.number().min(0).optional(),
   typicalUnitType: z.string().optional(),
   palletBottomBoard: z.string().optional(),

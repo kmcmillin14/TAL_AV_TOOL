@@ -430,3 +430,60 @@ describe('qualifyVehicle — determinism', () => {
     expect(JSON.stringify(a)).toBe(JSON.stringify(b))
   })
 })
+
+describe('qualifyVehicle — multi-load rollup (matrix-only)', () => {
+  // Fixture vehicle: payloadTypes ['Standard Pallet'], 4000 lbs, deck 48×48×60.
+  const palletLoad = { loadId: 'l1', unitType: 'Standard Pallet', lengthIn: 48, widthIn: 40, heightIn: 60, weightLbs: 2000 }
+  const toteLoad   = { loadId: 'l2', unitType: 'Tote', lengthIn: 24, widthIn: 16, heightIn: 14, weightLbs: 50 }
+
+  it('GREEN when every load passes all load-coupled gates', () => {
+    const result = qualifyVehicle(fixtureVehicle(), { ...emptyApp, loads: [palletLoad] })
+    expect(result.status).toBe('GREEN')
+    expect(result.perLoad).toHaveLength(1)
+    expect(result.perLoad![0]).toMatchObject({ loadId: 'l1', passed: true, failedGates: [] })
+  })
+
+  it('YELLOW when some loads pass and some fail — failing gates named per load', () => {
+    const result = qualifyVehicle(fixtureVehicle(), { ...emptyApp, loads: [palletLoad, toteLoad] })
+    expect(result.status).toBe('YELLOW')
+    const tote = result.perLoad!.find(l => l.loadId === 'l2')!
+    expect(tote.passed).toBe(false)
+    expect(tote.failedGates).toContain('payload_type')
+    const pallet = result.perLoad!.find(l => l.loadId === 'l1')!
+    expect(pallet.passed).toBe(true)
+  })
+
+  it('RED when no load passes', () => {
+    const v = fixtureVehicle({ payloadTypes: ['Cart'] })
+    const result = qualifyVehicle(v, { ...emptyApp, loads: [palletLoad, toteLoad] })
+    expect(result.status).toBe('RED')
+  })
+
+  it('RED on a load-independent hard fail even when all loads pass', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle(), // outdoorCapable: false
+      { ...emptyApp, loads: [palletLoad], outdoorRequired: true },
+    )
+    expect(result.status).toBe('RED')
+  })
+
+  it('per-load weight falls back to project maxLoadWeightLbs', () => {
+    const noWeight = { loadId: 'l3', unitType: 'Standard Pallet' }
+    const result = qualifyVehicle(
+      fixtureVehicle(), // rated 4000 lbs
+      { ...emptyApp, maxLoadWeightLbs: 9000, loads: [noWeight] },
+    )
+    expect(result.status).toBe('RED')
+    expect(result.perLoad![0].failedGates).toContain('weight')
+  })
+
+  it('no declared loads → legacy single-load behavior, no perLoad detail', () => {
+    const result = qualifyVehicle(fixtureVehicle(), emptyApp)
+    expect(result.perLoad).toBeUndefined()
+  })
+
+  it('multi-load gate rows are name-suffixed with the unit type for display', () => {
+    const result = qualifyVehicle(fixtureVehicle(), { ...emptyApp, loads: [palletLoad, toteLoad] })
+    expect(result.hardGates.map(g => g.name)).toContain('Payload Type — Tote')
+  })
+})

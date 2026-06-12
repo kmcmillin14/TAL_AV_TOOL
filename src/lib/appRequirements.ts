@@ -1,9 +1,26 @@
 import type { StoredProject } from './storage'
-import type { ApplicationRequirements } from '../calc/types'
+import type { ApplicationRequirements, LoadSpec } from '../calc/types'
+
+/** Declared loads mapped to the calc engine's LoadSpec shape. Empty when the
+ *  project predates the loads model — the legacy singular fields then flow
+ *  through ApplicationRequirements and qualifyVehicle synthesizes one load,
+ *  keeping single-load behavior identical (no write migration needed). */
+export function effectiveLoads(p: StoredProject): LoadSpec[] {
+  if (!p.loads?.length) return []
+  return p.loads.map(l => ({
+    loadId: l.id,
+    unitType: l.unitType ?? '',
+    lengthIn: l.lengthIn,
+    widthIn: l.widthIn,
+    heightIn: l.heightIn,
+    weightLbs: l.weightLbs,
+  }))
+}
 
 /** Map a stored project into the calc engine's ApplicationRequirements shape. */
 export function appRequirementsFromProject(p: StoredProject): ApplicationRequirements {
   return {
+    loads: effectiveLoads(p),
     maxLoadWeightLbs: p.maxLoadWeightLbs ?? 0,
     typicalUnitType: p.typicalUnitType ?? '',
     transferMethod: p.transferMethod ?? '',

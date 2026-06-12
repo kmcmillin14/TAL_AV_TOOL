@@ -30,6 +30,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   step2Complete: false,
   step3Complete: false,
   step4Complete: false,
+  loads: [],
   maxLoadWeightLbs: 0,
   typicalUnitType: '',
   palletBottomBoard: undefined,
