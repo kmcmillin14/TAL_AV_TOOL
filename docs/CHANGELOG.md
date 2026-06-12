@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-06-12 — Step 1 bug fixes: poisoned saves, dead checkboxes, missing Custom days
+
+User-reported during first-use testing of the tiered form:
+
+- **One invalid field no longer kills every save (app-wide data-loss class).**
+  `updateProject`/`createProject` validated patches with `partialProjectSchema.parse`,
+  which **throws** on any out-of-range value (e.g. `shiftsPerDay: 4`, capped at 3;
+  `hoursPerShift` below 4) — and the Step 1 watch-save sends the whole form every
+  keystroke with a silent catch, so one bad field anywhere meant *nothing* saved from
+  then on ("type in weight and it doesn't stick" to the Step 2 matrix). New
+  `salvageParse` falls back to per-key validation and applies the valid fields.
+  Regression tests in `src/lib/__tests__/storage.partialSave.test.ts`.
+- **Certifications/interlocks checkboxes toggle once per click.** The toggle handler
+  lived on the chip `<label>`'s onClick; a label forwards a second click to its inner
+  checkbox, so a single user click could fire the toggle twice (on→off — checkbox
+  appears dead). The toggle now lives on the input's `onChange` (fires once per
+  activation).
+- **Custom operating days finally has an input.** Selecting the `Custom` pattern now
+  reveals a Mon–Sun day-chip multi-select bound to `operatingDaysCustom` (the schema
+  and PDF export supported the field since the beginning, but the form never rendered
+  an input for it). Days store in canonical Mon→Sun order.
+
 ## 2026-06-10 — Step 1 stratified into 3 tiers + qualification-matrix vocabulary fixes
 
 **Step 1 questionnaire** restructured from 13 flat sections into three labeled tiers —
