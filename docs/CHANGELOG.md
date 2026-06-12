@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-06-12 — Multiple loads (matrix-only) + Step 1 multi-flow capture + porting defaults
+
+- **Step 1 captures multiple flows.** Section 06 (Throughput & distance) is now a
+  flow-row list (Origin · Destination · Distance one-way · Moves/hr) editing the SAME
+  `flows[]` array Step 3 uses — Step 1 ↔ Step 3 porting is live in both directions.
+  No vehicle column (hard rule: vehicles assigned only by the engineer in Step 3).
+  The old single `requiredThroughputPerHour`/`avgDistanceFt`/`distanceType` inputs and
+  Step 3's "seed from Step 1" button are retired (legacy fields stay schema-only;
+  legacy projects synthesize one prefilled row).
+- **Multiple load types, for the vehicle matrix only.** New `loads: LoadSpec[]` (≤4):
+  per-load unit type, dims, optional weight. The 5 load-coupled hard gates run per
+  load; rollup GREEN = all loads pass, YELLOW = some (named), RED = none. Flows/Step 3
+  carry no load info. `loads[0]` mirrors to legacy singular fields; `effectiveLoads`
+  synthesizes from legacy on read. Single-load results identical to before.
+- **Porting defaults (never locks):** ROM `operatingDaysPerYear` now defaults from the
+  operating-days pattern (Mon–Fri 260 · Mon–Sat 312 · Mon–Sun 364 · Custom n×52) via
+  `defaultOperatingDaysPerYear`; `chargeRegime` becomes optional in the schema and
+  defaults to `continuous` when the schedule covers 24 h/day (else `overnight`) —
+  explicit choices always win.
+
 ## 2026-06-12 — Step 1 bug fixes: poisoned saves, dead checkboxes, missing Custom days
 
 User-reported during first-use testing of the tiered form:

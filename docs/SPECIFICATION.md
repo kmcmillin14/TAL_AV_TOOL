@@ -39,6 +39,44 @@ asserted against the vehicle JSONs by `src/lib/__tests__/enumAlignment.test.ts`)
   correct matrix answer).
 - Every vehicle certification token appears in `CERTIFICATIONS`.
 
+### Multiple loads (matrix-only)
+
+A project may declare up to 4 **loads** (`loads: LoadSpec[]`), each with its own
+`unitType`, optional L×W×H, and optional `weightLbs` (falls back to the project
+`maxLoadWeightLbs`). Loads exist **only to evaluate the Step 2 matrix** (and print in
+the PDF) — flows never reference a load and Step 3 is untouched: vehicle assignment
+remains entirely the applications engineer's choice. The 5 load-coupled hard gates
+(payload type, 3 load dims, weight) run once per load; rollup: passes **all** loads →
+GREEN (soft gates may yellow), passes **some** → YELLOW with the compatible loads named,
+passes **none** → RED. With a single load, results are identical to the pre-loads model.
+Legacy singular fields (`typicalUnitType`, `loadLengthIn/Width/Height`, pallet fields)
+stay in the schema; `loads[0]` mirrors into them on save, and projects without `loads`
+synthesize one load from them on read (`effectiveLoads`).
+
+### Step 1 flows (shared with Step 3)
+
+Section 06 (*Throughput & distance*) is a **flow-row list that edits the same
+`flows[]` array Step 3 uses** — Origin · Destination · Distance (one-way) ·
+Moves/hr per row, plus add/duplicate/remove. **No vehicle column**: vehicles are
+assigned only in Step 3 (hard rule — never auto-selected). New rows carry flow
+defaults (`routeLayout 'medium'`, `liftHeightFt 0`). Porting Step 1 ↔ Step 3 is
+therefore live in both directions; the old Step 3 "seed from Step 1" button is
+removed. Legacy projects with only `requiredThroughputPerHour`/`avgDistanceFt` and
+zero flows get one prefilled row (round-trip distance ÷ 2), persisted on first edit.
+
+### Tier-2 → downstream porting (derived defaults, never locks)
+
+Step 1 sizing data seeds downstream values only while the user hasn't overridden them:
+- `shiftsPerDay × hoursPerShift` → `dailyOpHr` (Fleet Engine charging + ROM energy).
+- `operatorsPerShift × shiftsPerDay` → ROM "Operators displaced" default.
+- `breaksPerShift`/`breakDurationMin` → ROM effective op-hours.
+- `operatingDaysPattern` → ROM `operatingDaysPerYear` default via
+  `defaultOperatingDaysPerYear`: Mon–Fri 260 · Mon–Sat 312 · Mon–Sun 364 ·
+  Custom = selected days × 52 · unset 312. Editable override always wins.
+- Shift coverage → `chargeRegime` default: schema field is optional (unset
+  representable); effective regime = stored value, else `continuous` when
+  `dailyOpHr ≥ 24`, else `overnight`. The engine toggle writes the explicit choice.
+
 ---
 
 ## Fleet Engine (Step 3)
