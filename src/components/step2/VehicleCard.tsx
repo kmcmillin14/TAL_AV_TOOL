@@ -84,6 +84,17 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
               <TrafficLight status={status} />
             </div>
 
+            {result.perLoad && result.perLoad.length > 1 && (
+              <div className="veh-load-chips" aria-label="Per-load compatibility">
+                {result.perLoad.map(l => (
+                  <span key={l.loadId} className={`veh-load-chip ${l.passed ? 'pass' : 'fail'}`}>
+                    <span className="dot" aria-hidden />
+                    {l.unitType || 'Load'}
+                  </span>
+                ))}
+              </div>
+            )}
+
             <div className="veh-spec-list">
               <div className="veh-spec-row">
                 <span className="spec-k">OEM</span>

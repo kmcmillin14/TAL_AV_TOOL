@@ -45,6 +45,48 @@ function toDateInput(iso?: string): string {
 }
 
 const newFlowId = () => 'f_' + Math.random().toString(36).slice(2, 10)
+const newLoadId = () => 'l_' + Math.random().toString(36).slice(2, 10)
+
+type LoadRow = NonNullable<ProjectFormData['loads']>[number]
+
+const emptyLoadRow = (): LoadRow => ({ id: newLoadId(), unitType: '' })
+
+/** Loads list for the form: declared loads, else one row synthesized from the
+ *  legacy singular fields (projects predating the loads model), else one blank
+ *  row — section 01 always shows at least one load block. */
+function initialLoadRows(initialData?: Partial<ProjectFormData>): LoadRow[] {
+  if (initialData?.loads?.length) return initialData.loads
+  return [{
+    id: newLoadId(),
+    unitType: initialData?.typicalUnitType ?? '',
+    lengthIn: initialData?.loadLengthIn,
+    widthIn: initialData?.loadWidthIn,
+    heightIn: initialData?.loadHeightIn,
+    weightLbs: initialData?.maxLoadWeightLbs || undefined,
+    palletSubtype: initialData?.palletBottomBoard,
+    customDescription: initialData?.customPalletDescription,
+    otherDescription: initialData?.otherUnitTypeDescription,
+  }]
+}
+
+/** Mirror loads[0] into the legacy singular fields so every existing consumer
+ *  (readiness meter, PDF rows, old-app parsers of new exports) keeps working.
+ *  The gate engine itself reads the loads array. */
+function mirrorFirstLoad(data: Partial<ProjectFormData>): Partial<ProjectFormData> {
+  const l0 = data.loads?.[0]
+  if (!l0) return data
+  return {
+    ...data,
+    typicalUnitType: l0.unitType || undefined,
+    loadLengthIn: l0.lengthIn,
+    loadWidthIn: l0.widthIn,
+    loadHeightIn: l0.heightIn,
+    maxLoadWeightLbs: l0.weightLbs ?? undefined,
+    palletBottomBoard: l0.palletSubtype,
+    customPalletDescription: l0.customDescription,
+    otherUnitTypeDescription: l0.otherDescription,
+  }
+}
 
 /** Legacy projects captured one avgDistance + throughput pair instead of flows.
  *  Synthesize a single starter flow row from them (round-trip ÷ 2, same as the
@@ -81,12 +123,12 @@ export function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFo
   }
   return Object.fromEntries(
     Object.entries(data).map(([k, v]) => {
-      if (k === 'flows' && Array.isArray(v)) {
-        return [k, v.map(flow =>
+      if ((k === 'flows' || k === 'loads') && Array.isArray(v)) {
+        return [k, v.map(row =>
           Object.fromEntries(
-            Object.entries(flow as Record<string, unknown>).map(([fk, fv]) =>
-              // Keep origin/destination empty strings (schema default '') —
-              // only numeric clears need the undefined treatment.
+            Object.entries(row as Record<string, unknown>).map(([fk, fv]) =>
+              // Keep empty strings inside rows (flow origin/destination default
+              // '') — only numeric clears need the undefined treatment.
               [fk, typeof fv === 'number' && Number.isNaN(fv) ? undefined : fv],
             ),
           ),
@@ -132,6 +174,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
       wmsRequired: initialData?.wmsRequired ?? false,
       distanceType: initialData?.distanceType ?? 'one_way',
       flows: initialFlowRows(initialData),
+      loads: initialLoadRows(initialData),
     },
   })
 
@@ -155,8 +198,16 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     onBlurSave()
   }
 
+  const { fields: loadFields, append: appendLoad, remove: removeLoad } =
+    useFieldArray({ control, name: 'loads' })
+  const loadsValues = watch('loads')
+
+  const addLoadRow = () => {
+    appendLoad(emptyLoadRow())
+    onBlurSave()
+  }
+
   const formValues = watch()
-  const typicalUnitType = watch('typicalUnitType')
   const deliveryPattern = watch('deliveryPattern')
   const oemDealer = watch('oemDealer')
   const otherAGVs = watch('otherAGVs')
@@ -175,16 +226,14 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     return { sectionNum: m.num, title: m.label, id: m.id, status: sectionStatus(m, formValues), defaultOpen: !m.startCollapsed }
   }
 
-  const isPallet = typicalUnitType === 'Standard Pallet'
-
-  // Pallet subtype auto-fill
-  const handlePalletSubtype = (subtype: string) => {
+  // Pallet subtype auto-fill — writes into the load row it was picked on.
+  const handlePalletSubtype = (i: number, subtype: string) => {
     const key = subtype.split(' ')[0] as keyof typeof PALLET_AUTOFILL
     if (PALLET_AUTOFILL[key]) {
       const d = PALLET_AUTOFILL[key]
-      setValue('loadLengthIn', d.l, { shouldDirty: true })
-      setValue('loadWidthIn', d.w, { shouldDirty: true })
-      setValue('loadHeightIn', d.h, { shouldDirty: true })
+      setValue(`loads.${i}.lengthIn`, d.l, { shouldDirty: true })
+      setValue(`loads.${i}.widthIn`, d.w, { shouldDirty: true })
+      setValue(`loads.${i}.heightIn`, d.h, { shouldDirty: true })
     }
   }
 
@@ -193,7 +242,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   // immediately, so Step 2 mounted and read storage before the timer fired.
   const autoSave = useCallback((data: Partial<ProjectFormData>) => {
     if (!projectId) return
-    const cleaned = cleanFormData(data)
+    const cleaned = mirrorFirstLoad(cleanFormData(data))
     try {
       const updated = updateProject(projectId, cleaned)
       if (updated) {
@@ -232,7 +281,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   }
 
   const onSubmit: SubmitHandler<ProjectFormData> = (data) => {
-    const cleaned = cleanFormData(data)
+    const cleaned = mirrorFirstLoad(cleanFormData(data))
     if (isNew) {
       const created = createProject(cleaned)
       router.push(`/projects/${created.id}/step2`)
@@ -244,7 +293,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
   const handleContinue = () => {
     const values = getValues()
-    const cleaned = cleanFormData(values)
+    const cleaned = mirrorFirstLoad(cleanFormData(values))
     if (isNew) {
       try {
         const created = createProject(cleaned)
@@ -324,129 +373,158 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
         <TierBand label={TIER_LABELS.qualification} />
 
-        {/* ===== Section 01: What are you moving? ===== */}
+        {/* ===== Section 01: What are you moving? — one block per load ===== */}
         <FormSection {...secProps('section-01')}>
-          <div className="fld-grid-4">
-            <div className="fld">
-              <label>Max Load Weight <span className="req">*</span></label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0.1"
-                  placeholder="2000"
-                  className="mono"
-                  defaultValue={dispW(initialData?.maxLoadWeightLbs)}
-                  {...register('maxLoadWeightLbs', {
-                    valueAsNumber: true,
-                    setValueAs: v => parseImperialInput(String(v), 'lbs', unitSystem),
-                    onBlur: onBlurSave,
-                  })}
-                />
-                <div className="unit">{wLabel}</div>
+          {loadFields.map((lf, i) => {
+            const unitType = loadsValues?.[i]?.unitType ?? ''
+            const isPalletRow = unitType === 'Standard Pallet'
+            return (
+              <div className={`step1-load${i > 0 ? ' step1-load-extra' : ''}`} key={lf.id}>
+                {loadFields.length > 1 && (
+                  <div className="step1-load-head">
+                    <span className="step1-load-num mono">Load {i + 1}</span>
+                    <button
+                      type="button"
+                      className="tbtn-icon"
+                      aria-label={`Delete load ${i + 1}`}
+                      title="Delete load"
+                      onClick={() => { removeLoad(i); onBlurSave() }}
+                    >
+                      <Icon name="x" size={13} />
+                    </button>
+                  </div>
+                )}
+                <div className="fld-grid-4">
+                  <div className="fld">
+                    <label>Max Load Weight {i === 0 && <span className="req">*</span>}</label>
+                    <div className="input-with-unit">
+                      <input
+                        type="number"
+                        step="0.1"
+                        min="0.1"
+                        placeholder="2000"
+                        className="mono"
+                        defaultValue={dispW(lf.weightLbs)}
+                        {...register(`loads.${i}.weightLbs`, {
+                          setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'lbs', unitSystem),
+                          onBlur: onBlurSave,
+                        })}
+                      />
+                      <div className="unit">{wLabel}</div>
+                    </div>
+                  </div>
+
+                  <div className="fld">
+                    <label>Unit / Load Type {i === 0 && <span className="req">*</span>}</label>
+                    <select
+                      {...register(`loads.${i}.unitType`, { onBlur: onBlurSave })}
+                      defaultValue={lf.unitType || ''}
+                    >
+                      <option value="" disabled>Select type…</option>
+                      {TYPICAL_UNIT_TYPES.map(t => <option key={t}>{t}</option>)}
+                    </select>
+                  </div>
+
+                  {isPalletRow && (
+                    <div className="fld">
+                      <label>Pallet Subtype</label>
+                      <select
+                        defaultValue={lf.palletSubtype || ''}
+                        onChange={e => {
+                          setValue(`loads.${i}.palletSubtype`, e.target.value, { shouldDirty: true })
+                          handlePalletSubtype(i, e.target.value)
+                          onBlurSave()
+                        }}
+                      >
+                        <option value="" disabled>Select subtype…</option>
+                        {PALLET_SUBTYPES.map(t => <option key={t}>{t}</option>)}
+                      </select>
+                      <div className="help">Selects standard dimensions</div>
+                    </div>
+                  )}
+
+                  {isPalletRow && loadsValues?.[i]?.palletSubtype === 'Custom' && (
+                    <div className="fld">
+                      <label>Custom Pallet Description</label>
+                      <input
+                        type="text"
+                        placeholder="48×40 double-faced block"
+                        {...register(`loads.${i}.customDescription`, { onBlur: onBlurSave })}
+                      />
+                    </div>
+                  )}
+
+                  {unitType === 'Other' && (
+                    <div className="fld">
+                      <label>Describe Load Type</label>
+                      <input
+                        type="text"
+                        placeholder="Describe your load…"
+                        {...register(`loads.${i}.otherDescription`, { onBlur: onBlurSave })}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                <div className="fld-row-3" style={{ marginTop: 14 }}>
+                  <div className="fld">
+                    <label>Load Length ({iLabel})</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="48"
+                      className="mono"
+                      defaultValue={dispIn(lf.lengthIn)}
+                      {...register(`loads.${i}.lengthIn`, {
+                        setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'in', unitSystem),
+                        onBlur: onBlurSave,
+                      })}
+                    />
+                    <div className="help">Optional — auto-fills from pallet type</div>
+                  </div>
+                  <div className="fld">
+                    <label>Load Width ({iLabel})</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="40"
+                      className="mono"
+                      defaultValue={dispIn(lf.widthIn)}
+                      {...register(`loads.${i}.widthIn`, {
+                        setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'in', unitSystem),
+                        onBlur: onBlurSave,
+                      })}
+                    />
+                  </div>
+                  <div className="fld">
+                    <label>Load Height ({iLabel})</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      placeholder="60"
+                      className="mono"
+                      defaultValue={dispIn(lf.heightIn)}
+                      {...register(`loads.${i}.heightIn`, {
+                        setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'in', unitSystem),
+                        onBlur: onBlurSave,
+                      })}
+                    />
+                  </div>
+                </div>
               </div>
-              {errors.maxLoadWeightLbs && (
-                <div className="help" style={{ color: 'var(--bad)' }}>{errors.maxLoadWeightLbs.message}</div>
-              )}
+            )
+          })}
+          {loadFields.length < 4 && (
+            <button type="button" className="btn ghost step1-load-add" onClick={addLoadRow}>
+              + Add another load type
+            </button>
+          )}
+          {loadFields.length > 1 && (
+            <div className="help" style={{ marginTop: 8 }}>
+              Each load is qualified separately in Step 2 — a vehicle compatible with some
+              (not all) loads shows YELLOW with the compatible loads named.
             </div>
-
-            <div className="fld">
-              <label>Unit / Load Type <span className="req">*</span></label>
-              <select
-                {...register('typicalUnitType', { onBlur: onBlurSave })}
-                defaultValue={initialData?.typicalUnitType || ''}
-              >
-                <option value="" disabled>Select type…</option>
-                {TYPICAL_UNIT_TYPES.map(t => <option key={t}>{t}</option>)}
-              </select>
-            </div>
-
-            {isPallet && (
-              <div className="fld">
-                <label>Pallet Subtype</label>
-                <select
-                  defaultValue={initialData?.palletBottomBoard || ''}
-                  onChange={e => {
-                    setValue('palletBottomBoard', e.target.value)
-                    handlePalletSubtype(e.target.value)
-                    onBlurSave()
-                  }}
-                >
-                  <option value="" disabled>Select subtype…</option>
-                  {PALLET_SUBTYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
-                <div className="help">Selects standard dimensions</div>
-              </div>
-            )}
-
-            {isPallet && watch('palletBottomBoard') === 'Custom' && (
-              <div className="fld">
-                <label>Custom Pallet Description</label>
-                <input
-                  type="text"
-                  placeholder="48×40 double-faced block"
-                  {...register('customPalletDescription', { onBlur: onBlurSave })}
-                />
-              </div>
-            )}
-
-            {typicalUnitType === 'Other' && (
-              <div className="fld">
-                <label>Describe Load Type</label>
-                <input
-                  type="text"
-                  placeholder="Describe your load…"
-                  {...register('otherUnitTypeDescription', { onBlur: onBlurSave })}
-                />
-              </div>
-            )}
-          </div>
-
-          <div className="fld-row-3" style={{ marginTop: 14 }}>
-            <div className="fld">
-              <label>Load Length ({iLabel})</label>
-              <input
-                type="number"
-                step="0.1"
-                placeholder="48"
-                className="mono"
-                defaultValue={dispIn(initialData?.loadLengthIn)}
-                {...register('loadLengthIn', {
-                  setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'in', unitSystem),
-                  onBlur: onBlurSave,
-                })}
-              />
-              <div className="help">Optional — auto-fills from pallet type</div>
-            </div>
-            <div className="fld">
-              <label>Load Width ({iLabel})</label>
-              <input
-                type="number"
-                step="0.1"
-                placeholder="40"
-                className="mono"
-                defaultValue={dispIn(initialData?.loadWidthIn)}
-                {...register('loadWidthIn', {
-                  setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'in', unitSystem),
-                  onBlur: onBlurSave,
-                })}
-              />
-            </div>
-            <div className="fld">
-              <label>Load Height ({iLabel})</label>
-              <input
-                type="number"
-                step="0.1"
-                placeholder="60"
-                className="mono"
-                defaultValue={dispIn(initialData?.loadHeightIn)}
-                {...register('loadHeightIn', {
-                  setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'in', unitSystem),
-                  onBlur: onBlurSave,
-                })}
-              />
-            </div>
-          </div>
+          )}
         </FormSection>
 
         {/* ===== Section 02: How is it transferred? ===== */}

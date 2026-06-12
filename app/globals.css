@@ -605,6 +605,28 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .step1-flow-actions { display: flex; gap: 4px; align-self: center; }
 .step1-flow-add { margin-top: 12px; }
+
+/* Step 1 load blocks (section 01 — one block per load, matrix-eval only) */
+.step1-load-extra { margin-top: 18px; padding-top: 14px; border-top: 1px dashed var(--border); }
+.step1-load-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.step1-load-num {
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.step1-load-add { margin-top: 14px; }
+
+/* Step 2 per-load compatibility chips (multi-load projects) */
+.veh-load-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.veh-load-chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 600;
+  padding: 2px 8px; border-radius: 999px; border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+.veh-load-chip .dot { width: 6px; height: 6px; border-radius: 50%; }
+.veh-load-chip.pass .dot { background: var(--good); }
+.veh-load-chip.fail .dot { background: var(--bad); }
+.veh-load-chip.fail { color: var(--text-tertiary); }
 @media (max-width: 900px) {
   .step1-flow-row { grid-template-columns: 1fr 1fr; }
   .step1-flow-actions { grid-column: span 2; justify-content: flex-end; }

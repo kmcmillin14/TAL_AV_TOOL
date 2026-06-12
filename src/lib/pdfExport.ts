@@ -222,16 +222,32 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
     drawHeader()
 
     sec('Section 1 — What are you moving?')
-    row('Max load weight', project.maxLoadWeightLbs ? `${project.maxLoadWeightLbs.toLocaleString()} lbs` : null)
-    row('Unit / load type', project.typicalUnitType)
-    row('Pallet subtype', project.palletBottomBoard)
-    row('Custom pallet', project.customPalletDescription)
-    row('Other unit description', project.otherUnitTypeDescription)
-    row('Load (L × W × H)', joinList([
-      project.loadLengthIn ? `${project.loadLengthIn} in` : null,
-      project.loadWidthIn  ? `${project.loadWidthIn} in`  : null,
-      project.loadHeightIn ? `${project.loadHeightIn} in` : null,
-    ]))
+    if ((project.loads?.length ?? 0) > 1) {
+      // Multi-load: one block per load. (Single-load projects keep the legacy
+      // rows below — loads[0] is mirrored into them on save.)
+      project.loads!.forEach((l, i) => {
+        row(`Load ${i + 1} — type`, l.unitType)
+        row(`Load ${i + 1} — weight`, l.weightLbs ? `${l.weightLbs.toLocaleString()} lbs` : null)
+        row(`Load ${i + 1} — L × W × H`, joinList([
+          l.lengthIn ? `${l.lengthIn} in` : null,
+          l.widthIn  ? `${l.widthIn} in`  : null,
+          l.heightIn ? `${l.heightIn} in` : null,
+        ]))
+        row(`Load ${i + 1} — pallet subtype`, l.palletSubtype)
+        row(`Load ${i + 1} — description`, l.customDescription || l.otherDescription)
+      })
+    } else {
+      row('Max load weight', project.maxLoadWeightLbs ? `${project.maxLoadWeightLbs.toLocaleString()} lbs` : null)
+      row('Unit / load type', project.typicalUnitType)
+      row('Pallet subtype', project.palletBottomBoard)
+      row('Custom pallet', project.customPalletDescription)
+      row('Other unit description', project.otherUnitTypeDescription)
+      row('Load (L × W × H)', joinList([
+        project.loadLengthIn ? `${project.loadLengthIn} in` : null,
+        project.loadWidthIn  ? `${project.loadWidthIn} in`  : null,
+        project.loadHeightIn ? `${project.loadHeightIn} in` : null,
+      ]))
+    }
 
     sec('Section 2 — How is it transferred?')
     row('Transfer method', project.transferMethod)
