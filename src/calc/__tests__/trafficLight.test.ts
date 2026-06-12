@@ -212,7 +212,7 @@ describe('qualifyVehicle — temperature gates', () => {
   it('fails min temp when vehicle cannot go cold enough', () => {
     const result = qualifyVehicle(
       fixtureVehicle({ specs: { ...fixtureVehicle().specs, tempMinF: 32 } }),
-      { ...emptyApp, tempMinF: 0 },
+      { ...emptyApp, tempMinF: 10 },
     )
     expect(result.status).toBe('RED')
     const tmin = result.hardGates.find(g => g.gateId === 'temp_min')!
@@ -226,6 +226,32 @@ describe('qualifyVehicle — temperature gates', () => {
     )
     const tmax = result.hardGates.find(g => g.gateId === 'temp_max')!
     expect(tmax.passed).toBe(true)
+  })
+
+  // 0 is the app-wide "no requirement given" sentinel (weight, ramp, aisle all
+  // treat 0/empty as unset). Temps follow the same convention — a stray 0 in a
+  // partial project must not turn the whole matrix RED. Real freezer specs use
+  // negative °F (and the freezerCapable flag).
+  it('skips both temp gates when the requirement is 0 (unset sentinel)', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle(),
+      { ...emptyApp, tempMinF: 0, tempMaxF: 0 },
+    )
+    const tmin = result.hardGates.find(g => g.gateId === 'temp_min')!
+    const tmax = result.hardGates.find(g => g.gateId === 'temp_max')!
+    expect(tmin.skipped).toBe(true)
+    expect(tmax.skipped).toBe(true)
+    expect(result.status).toBe('GREEN')
+  })
+
+  it('evaluates negative freezer temps as real requirements', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle(), // rated to 14°F — cannot reach -10°F
+      { ...emptyApp, tempMinF: -10 },
+    )
+    expect(result.status).toBe('RED')
+    const tmin = result.hardGates.find(g => g.gateId === 'temp_min')!
+    expect(tmin.passed).toBe(false)
   })
 })
 

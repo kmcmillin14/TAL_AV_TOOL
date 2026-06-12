@@ -38,7 +38,10 @@ export function parseImperialInput(
   displaySystem: UnitSystem
 ): number {
   const n = parseFloat(value)
-  if (isNaN(n)) return 0
+  // NaN propagates (the form's cleanFormData maps NaN to undefined = field
+  // cleared). Returning 0 here injected phantom zeros into storage that read
+  // as real requirements downstream (e.g. temp gates RED-ing the matrix).
+  if (isNaN(n)) return NaN
 
   if (displaySystem === 'imperial') return n
 

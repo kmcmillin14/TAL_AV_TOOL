@@ -21,6 +21,14 @@ User-reported during first-use testing of the tiered form:
   reveals a Mon–Sun day-chip multi-select bound to `operatingDaysCustom` (the schema
   and PDF export supported the field since the beginning, but the form never rendered
   an input for it). Days store in canonical Mon→Sun order.
+- **Temp 0 no longer REDs the matrix.** The temp gates evaluated at a requirement of
+  0 °F (`present: () => true`), unlike every other numeric gate where 0/empty means
+  "no requirement given" — so a stray stored 0 (residue of the poisoned-save bug
+  and `parseImperialInput`'s NaN→0 fallback, both also fixed) failed every vehicle on
+  Min Temperature. Temps now follow the sentinel convention (`present: r => r !== 0`);
+  real freezer requirements are negative °F (plus the freezer flag). The readiness
+  meter matches (0 not counted as answered), and `parseImperialInput` now propagates
+  NaN (cleared) instead of fabricating 0.
 
 ## 2026-06-10 — Step 1 stratified into 3 tiers + qualification-matrix vocabulary fixes
 

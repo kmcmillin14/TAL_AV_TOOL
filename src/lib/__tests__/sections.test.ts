@@ -34,10 +34,11 @@ describe('qualification readiness meter', () => {
     expect(qualificationInputsTotal({ deliveryPattern: 'Conveyor-Conveyor' })).toBe(12)
   })
 
-  it('counts answered strings and numbers, including 0 °F', () => {
+  it('counts answered strings and nonzero numbers (0 = unset sentinel)', () => {
     expect(qualificationInputsFilled({})).toBe(0)
     expect(qualificationInputsFilled({ maxLoadWeightLbs: 2000 })).toBe(1)
-    expect(qualificationInputsFilled({ tempMinF: 0 })).toBe(1)        // 0 °F is a real answer
+    expect(qualificationInputsFilled({ tempMinF: -10 })).toBe(1)      // negative freezer temp is real
+    expect(qualificationInputsFilled({ tempMinF: 0 })).toBe(0)        // 0 = unset, matches the gates
     expect(qualificationInputsFilled({ typicalUnitType: '  ' })).toBe(0) // blank string is not
     expect(qualificationInputsFilled({ maxLoadWeightLbs: NaN })).toBe(0) // cleared field is not
   })

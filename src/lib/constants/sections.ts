@@ -106,12 +106,14 @@ const QUALIFICATION_INPUTS: ReadonlyArray<keyof ProjectFormData> = [
   'tempMinF', 'tempMaxF', 'maxRampGrade', 'minAisleWidthFt',
 ]
 
-// Unlike isFilled (badge semantics, number > 0), 0 is a real answer here —
-// 0 °F is a legitimate freezer temperature.
+// Unlike isFilled (badge semantics, number > 0), negative numbers are real
+// answers here — e.g. -10 °F for a freezer. 0 stays the app-wide "unset"
+// sentinel, matching the gate engine (gates.ts skips temp gates at 0; real
+// freezer specs are negative °F).
 function isAnswered(value: unknown): boolean {
   if (value == null) return false
   if (typeof value === 'string') return value.trim().length > 0
-  if (typeof value === 'number') return Number.isFinite(value)
+  if (typeof value === 'number') return Number.isFinite(value) && value !== 0
   return false
 }
 

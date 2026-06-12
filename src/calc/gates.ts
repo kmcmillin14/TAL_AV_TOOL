@@ -254,9 +254,12 @@ export const GATES: readonly GateSpec[] = [
     yes: 'Vehicle rated for freezer operation', no: 'Vehicle is not freezer-rated',
   }),
 
+  // Temps follow the app-wide "0/empty = no requirement" sentinel convention
+  // (same as weight and ramp). Real freezer requirements are negative °F —
+  // those evaluate; a stray 0 from a partial project skips.
   numericGate({
     gateId: 'temp_min', name: 'Min Temperature', unit: '°F',
-    req: a => a.tempMinF, present: () => true,
+    req: a => a.tempMinF, present: r => r !== 0,
     veh: v => v.specs.tempMinF,
     pass: (veh, req) => veh <= req,
     delta: (veh, req) => req - veh,
@@ -267,7 +270,7 @@ export const GATES: readonly GateSpec[] = [
   }),
   numericGate({
     gateId: 'temp_max', name: 'Max Temperature', unit: '°F',
-    req: a => a.tempMaxF, present: () => true,
+    req: a => a.tempMaxF, present: r => r !== 0,
     veh: v => v.specs.tempMaxF,
     pass: (veh, req) => veh >= req,
     delta: (veh, req) => veh - req,

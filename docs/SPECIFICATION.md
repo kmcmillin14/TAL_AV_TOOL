@@ -24,7 +24,9 @@ engineer can see which answers move the Step 2 traffic lights:
 `maxLoadWeightLbs, typicalUnitType, loadLengthIn, loadWidthIn, loadHeightIn,
 transferMethod, deliveryPattern, tempMinF, tempMaxF, maxRampGrade, minAisleWidthFt`
 (11), plus `maxLiftHeightFt` only while `deliveryPatternRequiresLift(deliveryPattern)`
-(12). "Answered" = non-empty string / finite number (0 °F counts; cleared fields don't).
+(12). "Answered" = non-empty string / finite **nonzero** number — 0 is the app-wide
+"no requirement" sentinel, for temps too (real freezer specs are negative °F; the
+temp gates likewise skip at 0 — see gates.ts). Cleared fields don't count.
 Checkboxes (outdoor/freezer) and certifications are excluded — unchecked is an answer.
 The meter is informational; no field is required to advance (architecture rule).
 
