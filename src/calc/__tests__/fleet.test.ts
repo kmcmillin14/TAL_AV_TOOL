@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { chargingForGroup, defaultChargeMethod, fleetSummary } from '../fleet'
+import { chargingForGroup, defaultChargeMethod, defaultChargeRegime, fleetSummary } from '../fleet'
 import type { GroupSummary, FleetSettings } from '../types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
@@ -91,5 +91,13 @@ describe('fleetSummary', () => {
     const s = fleetSummary([grp('a', 0, 0)], new Map(), settings())
     expect(s.groups).toHaveLength(0)
     expect(s.totalFleetSold).toBe(0)
+  })
+})
+
+describe('defaultChargeRegime', () => {
+  it('derives continuous for full-day coverage, overnight otherwise', () => {
+    expect(defaultChargeRegime(24)).toBe('continuous')   // 3 × 8 h
+    expect(defaultChargeRegime(16)).toBe('overnight')    // 2 × 8 h
+    expect(defaultChargeRegime(8)).toBe('overnight')
   })
 })

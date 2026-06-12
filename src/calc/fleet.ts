@@ -20,6 +20,13 @@ export function defaultChargeMethod(chargerType?: ChargerType): ChargeMethod {
   return chargerType === 'opportunity' ? 'opportunity' : 'plugged'
 }
 
+/** Default charge regime when the project never chose one: a schedule covering
+ *  the full day has no overnight charge window, so 24 h/day → 'continuous'.
+ *  A derived DEFAULT, never a lock — an explicit project chargeRegime wins. */
+export function defaultChargeRegime(dailyOpHr: number): ChargeRegime {
+  return dailyOpHr >= 24 ? 'continuous' : 'overnight'
+}
+
 export interface ChargingInput {
   groupRaw: number
   baseFleet: number

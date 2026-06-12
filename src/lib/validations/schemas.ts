@@ -89,8 +89,11 @@ export const projectSchema = z.object({
 
   // ---- Fleet Engine: charging + buffer settings ----
   /** Daily recharge window assumption. 'overnight' = an off-shift window exists;
-   *  'continuous' = 24/7, charging must happen during operations. */
-  chargeRegime: z.enum(['overnight', 'continuous']).default('overnight'),
+   *  'continuous' = 24/7, charging must happen during operations.
+   *  Optional (no .default) so "never chosen" is representable — the effective
+   *  regime then derives from shift coverage (useFleetData: 24 h/day schedules
+   *  default to 'continuous'). An explicit choice always wins. */
+  chargeRegime: z.enum(['overnight', 'continuous']).optional(),
   /** Final safety buffer fraction applied after base + charging. */
   bufferPct: z.number().min(0).max(1).default(0.10),
   /** Per-vehicleId charge-method override ('opportunity' | 'plugged'). Absent →

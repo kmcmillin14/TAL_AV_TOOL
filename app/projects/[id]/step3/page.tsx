@@ -11,7 +11,7 @@ import { useUnitSystem } from '@/src/lib/uiPrefs'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
-import { fleetSummary } from '@/src/calc/fleet'
+import { fleetSummary, defaultChargeRegime } from '@/src/calc/fleet'
 import type { EnginePatch } from '@/src/components/engine/types'
 import { flushSync } from 'react-dom'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
@@ -87,12 +87,17 @@ export default function FleetEnginePage() {
     return ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
   }, [flows, derivedByFlowId])
 
-  const settings: FleetSettings = useMemo(() => ({
-    regime: project?.chargeRegime ?? 'overnight',
-    bufferPct: project?.bufferPct ?? 0.10,
-    dailyOpHr: Math.min(24, (project?.shiftsPerDay ?? 1) * (project?.hoursPerShift ?? 8)),
-    chargeMethods: project?.chargeMethods ?? {},
-  }), [project])
+  const settings: FleetSettings = useMemo(() => {
+    const dailyOpHr = Math.min(24, (project?.shiftsPerDay ?? 1) * (project?.hoursPerShift ?? 8))
+    return {
+      // Unset regime derives from shift coverage (24 h/day → continuous);
+      // the toggle below writes the explicit choice, which always wins.
+      regime: project?.chargeRegime ?? defaultChargeRegime(dailyOpHr),
+      bufferPct: project?.bufferPct ?? 0.10,
+      dailyOpHr,
+      chargeMethods: project?.chargeMethods ?? {},
+    }
+  }, [project])
 
   const fleet = useMemo(
     () => fleetSummary(groups, vehicleById, settings),

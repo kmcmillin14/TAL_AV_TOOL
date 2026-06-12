@@ -64,7 +64,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   flows: [],
   flowGroups: [],
   flowGroupColors: {},
-  chargeRegime: 'overnight',
+  chargeRegime: undefined,  // unset → derived from shift coverage (useFleetData)
   bufferPct: 0.10,
   chargeMethods: {},
   otherAGVs: false,
