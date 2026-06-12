@@ -78,12 +78,8 @@ export default function RomDashboardPage() {
           createdAt: project.createdAt,
           step1Complete: project.step1Complete,
           step2Complete: project.step2Complete,
-          shiftsPerDay: project.shiftsPerDay,
-          hoursPerShift: project.hoursPerShift,
-          operatingDaysPattern: project.operatingDaysPattern,
         }}
         currentStep={4}
-        showKpis
         unitSystem={unitSystem}
         onUnitToggle={toggleUnitSystem}
       />

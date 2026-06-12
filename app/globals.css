@@ -321,31 +321,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .tbtn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-strong); }
 .tbtn svg { width: 14px; height: 14px; }
 
-.hero-bottom {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0;
-  border-bottom: 1px solid var(--border);
-}
-
-.hero-kpi { padding: 22px 40px; position: relative; }
-.hero-kpi + .hero-kpi::before {
-  content: ""; position: absolute; left: 0; top: 22px; bottom: 22px;
-  width: 1px; background: var(--border);
-}
-.hero-kpi .label {
-  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 600;
-  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary);
-  display: flex; align-items: center; gap: 6px; margin-bottom: 6px;
-}
-.hero-kpi .value {
-  font-family: var(--tal-font-numeric); font-size: 28px; font-weight: 700;
-  letter-spacing: -0.025em; color: var(--text-primary); line-height: 1.05;
-  display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap;
-}
-.hero-kpi .sub { font-family: var(--tal-font-numeric); font-size: 11px; color: var(--text-tertiary); margin-top: 4px; }
-.hero-kpi .value .kpi-unit { font-size: 12px; color: var(--text-tertiary); margin-left: 6px; font-weight: 500; }
-.hero-kpi .value .kpi-pill { margin-left: 8px; font-size: 9px; padding: 2px 6px; }
 
 .hero-nav {
   background: var(--bg-base);
@@ -2545,6 +2520,16 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 
 /* Hero summary card — the single source of "the answer". */
+/* Sticky on Step 3 — the bound TOTAL stays visible while the three sections
+   scroll. --engine-hero-h is measured by the page (ResizeObserver) so the
+   side nav can stick just below the hero. */
+.engine-result-sticky {
+  position: sticky;
+  top: 126px; /* below the sticky hero-bar (no KPI band) */
+  z-index: 30;
+}
+.engine-layout .section-nav { top: calc(126px + var(--engine-hero-h, 220px) + 16px); max-height: calc(100vh - 146px - var(--engine-hero-h, 220px)); }
+
 .engine-result {
   display: flex;
   gap: 28px;

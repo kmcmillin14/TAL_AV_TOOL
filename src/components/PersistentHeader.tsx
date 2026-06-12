@@ -22,18 +22,6 @@ interface HeaderData {
   createdAt?: string
   step1Complete: boolean
   step2Complete: boolean
-  shiftsPerDay?: number
-  hoursPerShift?: number
-  operatingDaysPattern?: string
-}
-
-export interface HeaderTotals {
-  fleet?: number | null
-  fleetBreakdown?: string
-  capex?: number | null
-  opex?: number | null
-  utilization?: number | null
-  bottleneck?: string
 }
 
 type StepId = 0 | 1 | 2 | 3 | 4
@@ -43,8 +31,6 @@ interface PersistentHeaderProps {
   currentStep: StepId
   unitSystem: UnitSystem
   onUnitToggle: () => void
-  showKpis?: boolean
-  totals?: HeaderTotals
 }
 
 type EditField = 'projectName' | 'customerName' | 'facilityLocation' | 'bastianRep' | 'opportunityNumber' | 'versionNumber' | 'createdAt'
@@ -60,26 +46,11 @@ const STEPS: ReadonlyArray<{ id: StepId; label: string; desc: string }> = [
 
 const META_FIELDS = new Set<EditField>(['versionNumber', 'createdAt'])
 
-function formatMoney(n: number): string {
-  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`
-  if (n >= 1_000) return `$${Math.round(n / 1_000)}K`
-  return `$${n.toLocaleString()}`
-}
-
-function utilizationPill(u: number | null | undefined): { cls: string; txt: string } {
-  if (u == null) return { cls: 'neutral', txt: '—' }
-  if (u >= 0.7) return { cls: 'good', txt: 'Good' }
-  if (u >= 0.5) return { cls: 'warn', txt: 'Acceptable' }
-  return { cls: 'bad', txt: 'Low' }
-}
-
 export default function PersistentHeader({
   project,
   currentStep,
   unitSystem,
   onUnitToggle,
-  showKpis = false,
-  totals,
 }: PersistentHeaderProps) {
   const router = useRouter()
   const [editing, setEditing] = useState<EditField | null>(null)
@@ -233,11 +204,6 @@ export default function PersistentHeader({
   const navigateTo = (stepId: number) => {
     router.push(`/projects/${project.id}/step${stepId}`)
   }
-
-  const shifts = project.shiftsPerDay ?? 0
-  const hours = project.hoursPerShift ?? 0
-  const hoursPerDay = shifts * hours
-  const utilPill = utilizationPill(totals?.utilization)
 
   const renderInlineItem = (
     field: EditField,
@@ -459,47 +425,6 @@ export default function PersistentHeader({
           </div>
         </div>
       </div>
-
-      {showKpis && (
-        <div className="hero-bottom">
-          <div className="hero-kpi">
-            <div className="label">Total Fleet</div>
-            <div className="value">
-              {totals?.fleet ?? '—'}
-              <span className="kpi-unit">vehicles</span>
-            </div>
-            <div className="sub">{totals?.fleetBreakdown || 'Configure flows to size fleet'}</div>
-          </div>
-          <div className="hero-kpi">
-            <div className="label">CAPEX</div>
-            <div className="value">{totals?.capex != null ? formatMoney(totals.capex) : '—'}</div>
-            <div className="sub">
-              {totals?.opex != null ? `${formatMoney(totals.opex)}/yr OPEX` : 'Includes 15% contingency'}
-            </div>
-          </div>
-          <div className="hero-kpi">
-            <div className="label">Utilization</div>
-            <div className="value">
-              {totals?.utilization != null ? `${Math.round(totals.utilization * 100)}%` : '—'}
-              <span className={`pill kpi-pill ${utilPill.cls}`}>
-                <span className="dot" />{utilPill.txt}
-              </span>
-            </div>
-            <div className="sub">{totals?.bottleneck ? `Bottleneck: ${totals.bottleneck}` : 'All flows balanced'}</div>
-          </div>
-          <div className="hero-kpi">
-            <div className="label">Schedule</div>
-            <div className="value">
-              {hoursPerDay > 0 ? hoursPerDay : '—'}
-              <span className="kpi-unit">hr/day</span>
-            </div>
-            <div className="sub">
-              {shifts > 0 ? `${shifts} shift${shifts === 1 ? '' : 's'}` : '— shifts'}
-              {project.operatingDaysPattern ? ` · ${project.operatingDaysPattern}` : ''}
-            </div>
-          </div>
-        </div>
-      )}
 
       <nav className="hero-nav">
         <div className="step-dots">

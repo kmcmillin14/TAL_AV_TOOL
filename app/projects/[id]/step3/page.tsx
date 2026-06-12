@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import PersistentHeader from '@/src/components/PersistentHeader'
@@ -125,6 +125,20 @@ export default function FleetEnginePage() {
   }
 
   const groupByVehicle = new Map(fleet.groups.map(g => [g.vehicleId, g]))
+  // Hero is sticky; the side nav must stick BELOW it. Publish the hero's
+  // measured height as a CSS var the stylesheet consumes.
+  const heroRef = useRef<HTMLElement | null>(null)
+  const layoutRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const hero = heroRef.current
+    const layout = layoutRef.current
+    if (!hero || !layout) return
+    const apply = () => layout.style.setProperty('--engine-hero-h', `${hero.offsetHeight}px`)
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(hero)
+    return () => ro.disconnect()
+  }, [loading])
   // Hero KPIs — the inputs that drive the fleet: how many flows, total demand.
   const flowCount = flows.length
   const totalThruPerHr = Math.round(flows.reduce((sum, f) => sum + (f.thruPerHr || 0), 0))
@@ -148,7 +162,7 @@ export default function FleetEnginePage() {
           </p>
         </div>
 
-        <section className="engine-result" aria-label="Total fleet">
+        <section className="engine-result engine-result-sticky" aria-label="Total fleet" ref={heroRef}>
           {fleet.groups.length > 0 ? (
             <>
               <div className="er-headline">
@@ -213,7 +227,7 @@ export default function FleetEnginePage() {
           )}
         </section>
 
-        <div className="form-with-nav">
+        <div className="form-with-nav engine-layout" ref={layoutRef}>
           <EngineNav totalFleetSold={fleet.totalFleetSold} hasFleet={fleet.groups.length > 0} />
 
           <div className="form-stack">
