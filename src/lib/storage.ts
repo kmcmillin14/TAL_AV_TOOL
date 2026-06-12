@@ -184,8 +184,28 @@ export function findOrCreateEntryProject(): StoredProject {
   return createProject({})
 }
 
+/** Validate a patch without letting one bad field poison the rest. The Step 1
+ *  form saves the WHOLE form state on every keystroke, so a single field
+ *  sitting outside its Zod range (e.g. shiftsPerDay 4, capped at 3) must not
+ *  abort the save of every other field. Full parse first (fast path); on
+ *  failure, each provided key is validated independently and invalid keys are
+ *  dropped from the patch. */
+function salvageParse(input: PartialProjectFormData): Record<string, unknown> {
+  const full = partialProjectSchema.safeParse(input)
+  if (full.success) return full.data as Record<string, unknown>
+  const valid: Record<string, unknown> = {}
+  const raw = input as Record<string, unknown>
+  for (const key of Object.keys(input)) {
+    const single = partialProjectSchema.safeParse({ [key]: raw[key] })
+    if (single.success && key in (single.data as Record<string, unknown>)) {
+      valid[key] = (single.data as Record<string, unknown>)[key]
+    }
+  }
+  return valid
+}
+
 export function createProject(input: PartialProjectFormData): StoredProject {
-  const data = partialProjectSchema.parse(input)
+  const data = salvageParse(input) as PartialProjectFormData
   const now = new Date().toISOString()
   const project: StoredProject = {
     ...defaultFields(),
@@ -211,7 +231,7 @@ export function updateProject(
   input: PartialProjectFormData,
   meta?: MetaOverrides,
 ): StoredProject | null {
-  const data = partialProjectSchema.parse(input)
+  const validated = salvageParse(input)
   const all = readAll()
   const idx = all.findIndex(p => p.id === id)
   if (idx === -1) return null
@@ -229,7 +249,6 @@ export function updateProject(
   // certifications: []…) for absent keys; spreading `...data` would clobber the
   // existing stored values. Use the raw `input` keys to pick the validated values.
   const updated: StoredProject = { ...existing }
-  const validated = data as Record<string, unknown>
   const target = updated as unknown as Record<string, unknown>
   for (const key of Object.keys(input)) {
     if (key in validated) target[key] = validated[key]
