@@ -92,8 +92,9 @@ Transitions morphing — with this questionnaire-style layout.)*
 **Scroll-spy side nav** (questionnaire pattern, reusing the `.section-nav` styles): a sticky left
 rail lists the three sections (`01 Raw Fleet · 02 Charging · 03 Buffer`), highlights the section in
 view via IntersectionObserver, scrolls on click, and shows the live **TOTAL fleet** figure at the
-top (`src/components/engine/EngineNav.tsx`). Sections render as full-width blocks with numbered
-headers (`src/components/engine/EngineSection.tsx`, visually matching the Step 1 form sections).
+top. Sections render as full-width blocks with numbered headers, visually matching the Step 1
+form sections. Both pieces are the shared `src/components/ScrollSpyNav.tsx` /
+`src/components/ScrollSection.tsx`, also used by the Step 4 ROM dashboard's scrolling layout.
 
 **Hero** (`.engine-result`): the headline is always the **total fleet sold**; the
 `base · +charging · ×buffer = total` build-up bar shows every segment lit (all stages are visible).
