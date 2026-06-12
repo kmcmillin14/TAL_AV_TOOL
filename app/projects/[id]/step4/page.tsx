@@ -11,7 +11,8 @@ import { effDailyOpHr, defaultOperatingDaysPerYear, type AnalyticsSchedule } fro
 import RomKpis from '@/src/components/rom/RomKpis'
 import { type RomPatch } from '@/src/components/rom/RomEconomics'
 import RomExportBar from '@/src/components/rom/RomExportBar'
-import RomVisuals from '@/src/components/rom/RomVisuals'
+import RomVisuals, { ROM_SECTIONS } from '@/src/components/rom/RomVisuals'
+import ScrollSpyNav from '@/src/components/ScrollSpyNav'
 
 export default function RomDashboardPage() {
   const params = useParams()
@@ -96,18 +97,35 @@ export default function RomDashboardPage() {
 
         <RomKpis fleet={fleet} rom={rom} flowCount={flowCount} totalThruPerHr={totalThruPerHr} />
 
-        <RomVisuals
-          project={project}
-          flows={flows}
-          derivedByFlowId={derivedByFlowId}
-          fleet={fleet}
-          rom={rom}
-          vehicleById={vehicleById}
-          costs={costs}
-          onPatch={patchCosts}
-          effDailyOpHr={effDailyOpHr(analyticsSchedule)}
-          serviceLifeYears={project.serviceLifeYears ?? 7}
-        />
+        <div className="form-with-nav">
+          <ScrollSpyNav
+            ariaLabel="ROM dashboard sections"
+            listLabel="ROM Proposal"
+            sections={ROM_SECTIONS}
+            topSlot={
+              <div className="section-nav-progress">
+                <div className="section-nav-progress-pct">
+                  {rom.payback.paybackYears == null ? '—' : rom.payback.paybackYears.toFixed(1)}
+                </div>
+                <div className="section-nav-progress-stat">
+                  {rom.payback.paybackYears == null ? 'payback — add operators' : 'year payback'}
+                </div>
+              </div>
+            }
+          />
+          <RomVisuals
+            project={project}
+            flows={flows}
+            derivedByFlowId={derivedByFlowId}
+            fleet={fleet}
+            rom={rom}
+            vehicleById={vehicleById}
+            costs={costs}
+            onPatch={patchCosts}
+            effDailyOpHr={effDailyOpHr(analyticsSchedule)}
+            serviceLifeYears={project.serviceLifeYears ?? 7}
+          />
+        </div>
 
         <section className="rom-card rom-card-export">
           <span className="rom-card-eyebrow">Proposal</span>

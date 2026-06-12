@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-12 — ROM dashboard scrolling layout · simple ROI · header KPI band removed
+
+- **Step 4 matches the questionnaire/Fleet-Engine pattern**: the four view tabs
+  (Overview/Cost/Operations/Methodology) become always-visible numbered sections on
+  one scrolling page with a sticky scroll-spy rail (payback figure in the rail's top
+  slot). Shared `ScrollSpyNav`/`ScrollSection` components extracted (Step 3's
+  engine-local versions deleted); the segmented `es-tab` pill CSS is now fully
+  orphaned and removed.
+- **Simple ROI**: payback = total system cost ÷ (operators displaced × fully-burdened
+  cost). OPEX is informational only (no netting); payback chart rises by the offset.
+- **Header KPI band deleted** (Total Fleet/CAPEX/Utilization/Schedule placeholders) —
+  the header is logo/meta/nav only. On Step 3 the engine hero (total vehicles) is
+  now sticky below the header, with the side rail sticking beneath it.
+- **Charging section**: shift coverage (shifts × hours) is inline-editable, writing
+  the same Step 1 fields.
+
+
 ## 2026-06-12 — Fleet Engine: staged wizard → scrolling page; buffer presets
 
 - **All three sub-stages are now always visible** — `01 Raw Fleet · 02 Charging ·

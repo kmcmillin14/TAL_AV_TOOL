@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import type { ReactNode } from 'react'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
@@ -24,6 +24,7 @@ import AssumptionsPanel from './AssumptionsPanel'
 import FleetMath from './FleetMath'
 import RomPricingTable from './RomPricingTable'
 import RomEconomics, { type RomPatch } from './RomEconomics'
+import ScrollSection from '@/src/components/ScrollSection'
 
 interface Props {
   project: StoredProject
@@ -42,21 +43,18 @@ function Card({ title, children }: { title: string; children: ReactNode }) {
   return <section className="rom-card"><span className="rom-card-eyebrow">{title}</span>{children}</section>
 }
 
-type RomTab = 'overview' | 'cost' | 'operations' | 'methodology'
+// Sections, summary-first: Overview is the customer-facing story (what you get,
+// what it costs, when it pays back); the rest hold the engineering detail. All
+// always visible on one scrolling page (questionnaire/Fleet-Engine pattern).
+export const ROM_SECTIONS = [
+  { id: 'rom-overview',    num: '01', label: 'Overview' },
+  { id: 'rom-cost',        num: '02', label: 'Cost Detail' },
+  { id: 'rom-operations',  num: '03', label: 'Operations' },
+  { id: 'rom-methodology', num: '04', label: 'Methodology' },
+] as const
 
-// Tabs group the dashboard summary-first: Overview is the customer-facing story
-// (what you get, what it costs, when it pays back); the rest hold the engineering
-// detail so the page isn't one long scroll.
-const TABS: ReadonlyArray<{ id: RomTab; label: string }> = [
-  { id: 'overview',    label: 'Overview' },
-  { id: 'cost',        label: 'Cost detail' },
-  { id: 'operations',  label: 'Operations' },
-  { id: 'methodology', label: 'Methodology' },
-]
-
-/** The stacked visual & sales layer, organized into tabs (summary-first). */
+/** The stacked visual & sales layer as always-visible scrolling sections. */
 export default function RomVisuals(p: Props) {
-  const [tab, setTab] = useState<RomTab>('overview')
 
   const flowSeries = useMemo(() => flowDiagramSeries(p.flows, p.vehicleById, p.fleet), [p.flows, p.vehicleById, p.fleet])
   const duty = useMemo(() => dutyCycleSeries(p.flows, p.derivedByFlowId, p.fleet), [p.flows, p.derivedByFlowId, p.fleet])
@@ -68,63 +66,40 @@ export default function RomVisuals(p: Props) {
   const tco = useMemo(() => tcoSeries(p.rom, p.serviceLifeYears), [p.rom, p.serviceLifeYears])
 
   return (
-    <div className="rom-visuals">
-      <div className="engine-seg rom-tabbar" role="tablist" aria-label="ROM dashboard views">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            type="button"
-            role="tab"
-            aria-selected={tab === t.id}
-            className={`es-tab${tab === t.id ? ' active' : ''}`}
-            onClick={() => setTab(t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+    <div className="rom-visuals form-stack">
+      <ScrollSection id="rom-overview" num="01" title="Overview" sub="What you get, what it costs, when it pays back">
+        <Card title="Operation map"><FlowDiagram series={flowSeries} /></Card>
+        <div className="rom-grid">
+          <Card title="ROM pricing"><RomPricingTable pricing={p.rom.pricing} vehicleById={p.vehicleById} /></Card>
+          <Card title="Payback"><PaybackCurve series={payback} /></Card>
+        </div>
+      </ScrollSection>
 
-      {tab === 'overview' && (
-        <>
-          <Card title="Operation map"><FlowDiagram series={flowSeries} /></Card>
-          <div className="rom-grid">
-            <Card title="ROM pricing"><RomPricingTable pricing={p.rom.pricing} vehicleById={p.vehicleById} /></Card>
-            <Card title="Payback"><PaybackCurve series={payback} /></Card>
-          </div>
-        </>
-      )}
+      <ScrollSection id="rom-cost" num="02" title="Cost Detail" sub="Economics, CAPEX range, total cost of ownership">
+        <Card title="Operating cost &amp; payback"><RomEconomics costs={p.costs} rom={p.rom} onPatch={p.onPatch} /></Card>
+        <Card title="ROM CAPEX"><CapexRangeBars series={capex} /></Card>
+        <Card title="Total cost of ownership"><TcoStacked series={tco} /></Card>
+      </ScrollSection>
 
-      {tab === 'cost' && (
-        <>
-          <Card title="Operating cost &amp; payback"><RomEconomics costs={p.costs} rom={p.rom} onPatch={p.onPatch} /></Card>
-          <Card title="ROM CAPEX"><CapexRangeBars series={capex} /></Card>
-          <Card title="Total cost of ownership"><TcoStacked series={tco} /></Card>
-        </>
-      )}
+      <ScrollSection id="rom-operations" num="03" title="Operations" sub="Duty cycle, utilization, charging, battery state">
+        <div className="rom-grid">
+          <Card title="What the fleet does"><DutyCycleChart series={duty} /></Card>
+          <Card title="Utilization"><UtilizationChart series={util} /></Card>
+        </div>
+        <div className="rom-grid">
+          <Card title="Charging"><ChargingSummary series={charge} /></Card>
+          <Card title="Battery state of charge"><BatterySocChart series={soc} /></Card>
+        </div>
+      </ScrollSection>
 
-      {tab === 'operations' && (
-        <>
-          <div className="rom-grid">
-            <Card title="What the fleet does"><DutyCycleChart series={duty} /></Card>
-            <Card title="Utilization"><UtilizationChart series={util} /></Card>
-          </div>
-          <div className="rom-grid">
-            <Card title="Charging"><ChargingSummary series={charge} /></Card>
-            <Card title="Battery state of charge"><BatterySocChart series={soc} /></Card>
-          </div>
-        </>
-      )}
-
-      {tab === 'methodology' && (
-        <>
-          <FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} />
-          <Card title="Requirements met"><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Card>
-          <div className="rom-grid">
-            <Card title="Resilience"><SensitivityPanel fleet={p.fleet} /></Card>
-            <Card title="Assumptions &amp; methodology"><AssumptionsPanel project={p.project} /></Card>
-          </div>
-        </>
-      )}
+      <ScrollSection id="rom-methodology" num="04" title="Methodology" sub="Fleet math, requirements, resilience, assumptions">
+        <FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} />
+        <Card title="Requirements met"><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Card>
+        <div className="rom-grid">
+          <Card title="Resilience"><SensitivityPanel fleet={p.fleet} /></Card>
+          <Card title="Assumptions &amp; methodology"><AssumptionsPanel project={p.project} /></Card>
+        </div>
+      </ScrollSection>
     </div>
   )
 }

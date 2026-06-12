@@ -14,8 +14,8 @@ import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
 import { fleetSummary, defaultChargeRegime } from '@/src/calc/fleet'
 import type { EnginePatch } from '@/src/components/engine/types'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
-import EngineNav from '@/src/components/engine/EngineNav'
-import EngineSection from '@/src/components/engine/EngineSection'
+import ScrollSpyNav from '@/src/components/ScrollSpyNav'
+import ScrollSection from '@/src/components/ScrollSection'
 import FlowsTab from '@/src/components/engine/FlowsTab'
 import ChargingPipeline from '@/src/components/engine/ChargingPipeline'
 import BufferPipeline from '@/src/components/engine/BufferPipeline'
@@ -228,10 +228,26 @@ export default function FleetEnginePage() {
         </section>
 
         <div className="form-with-nav engine-layout" ref={layoutRef}>
-          <EngineNav totalFleetSold={fleet.totalFleetSold} hasFleet={fleet.groups.length > 0} />
+          <ScrollSpyNav
+            ariaLabel="Fleet Engine sections"
+            listLabel="Fleet Build-Up"
+            sections={[
+              { id: 'engine-raw', num: '01', label: 'Raw Fleet' },
+              { id: 'engine-charging', num: '02', label: 'Charging' },
+              { id: 'engine-buffer', num: '03', label: 'Buffer' },
+            ]}
+            topSlot={
+              <div className="section-nav-progress">
+                <div className="section-nav-progress-pct">{fleet.groups.length > 0 ? fleet.totalFleetSold : '—'}</div>
+                <div className="section-nav-progress-stat">
+                  {fleet.groups.length > 0 ? `vehicle${fleet.totalFleetSold === 1 ? '' : 's'} total` : 'assign vehicles to size'}
+                </div>
+              </div>
+            }
+          />
 
           <div className="form-stack">
-            <EngineSection
+            <ScrollSection
               id="engine-raw"
               num="01"
               title="Raw Fleet"
@@ -246,9 +262,9 @@ export default function FleetEnginePage() {
                 unitSystem={unitSystem}
                 onPatch={persistPatch}
               />
-            </EngineSection>
+            </ScrollSection>
 
-            <EngineSection
+            <ScrollSection
               id="engine-charging"
               num="02"
               title="Charging"
@@ -266,9 +282,9 @@ export default function FleetEnginePage() {
                 chargeMethods={settings.chargeMethods}
                 onPatch={persistPatch}
               />
-            </EngineSection>
+            </ScrollSection>
 
-            <EngineSection
+            <ScrollSection
               id="engine-buffer"
               num="03"
               title="Buffer"
@@ -281,7 +297,7 @@ export default function FleetEnginePage() {
                 bufferPct={settings.bufferPct}
                 onPatch={persistPatch}
               />
-            </EngineSection>
+            </ScrollSection>
           </div>
         </div>
 

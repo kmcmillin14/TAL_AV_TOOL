@@ -2625,32 +2625,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .pl-route { margin-left: 8px; font-size: 11px; color: var(--text-tertiary); }
 
 
-/* Segmented tab pill — used by the ROM dashboard view tabs (RomVisuals). */
-.engine-seg {
-  display: inline-flex;
-  gap: 2px;
-  padding: 3px;
-  background: var(--bg-surface-2);
-  border-radius: 10px;
-}
-.es-tab {
-  position: relative;
-  padding: 7px 22px;
-  border-radius: 8px;
-  font-family: var(--tal-font-family);
-  font-size: 13px; font-weight: 500;
-  color: var(--text-secondary);
-  cursor: pointer;
-  transition: background 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
-}
-.es-tab:hover { color: var(--text-primary); }
-.es-tab.active {
-  background: var(--bg-surface);
-  color: var(--text-primary);
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
-}
-
 .engine-panel {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -2859,7 +2833,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* ─── ROM Dashboard visuals ─── */
 .rom-visuals { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
-.rom-tabbar { align-self: flex-start; max-width: 100%; overflow-x: auto; }
 .rv-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
 /* §1 flow map (SVG node-link) — capped to natural size so it renders ~1:1, not upscaled */
