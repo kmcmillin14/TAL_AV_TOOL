@@ -96,7 +96,7 @@ const romFix: RomSummary = {
   pricing: { lines: [{ vehicleId: 'cb18', fleetSold: 10, unitMin: 165000, unitMax: 210000, lineMin: 1650000, lineMax: 2100000 }],
              totalMin: 1650000, totalMax: 2100000, totalMid: 1875000 },
   opex: { annualEnergyKwh: 1, annualEnergyCost: 1000, annualMaintenance: 150000, annualOpex: 151000 },
-  payback: { annualLaborOffset: 600000, netAnnualBenefit: 449000, paybackYears: 1875000 / 449000 },
+  payback: { annualLaborOffset: 600000, paybackYears: 1875000 / 600000 },
 }
 
 describe('capexBarsSeries', () => {
@@ -108,12 +108,12 @@ describe('capexBarsSeries', () => {
 })
 
 describe('paybackSeries', () => {
-  it('cumulative cash flow starts at −CAPEX and rises by net benefit; marks break-even', () => {
+  it('cumulative cash flow starts at −CAPEX and rises by the labor offset; marks break-even', () => {
     const s = paybackSeries(romFix, 7)
     expect(s.points[0]).toMatchObject({ year: 0 })
     expect(s.points[0].cumulative).toBeCloseTo(-1875000, 5)
-    expect(s.points[1].cumulative).toBeCloseTo(-1875000 + 449000, 5)
-    expect(s.breakEvenYear).toBeCloseTo(1875000 / 449000, 5)
+    expect(s.points[1].cumulative).toBeCloseTo(-1875000 + 600000, 5)
+    expect(s.breakEvenYear).toBeCloseTo(1875000 / 600000, 5)
   })
 })
 

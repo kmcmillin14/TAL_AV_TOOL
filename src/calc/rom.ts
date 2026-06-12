@@ -80,21 +80,19 @@ export function romOpex(
 
 export interface RomPayback {
   annualLaborOffset: number
-  netAnnualBenefit: number
-  paybackYears: number | null   // null when net benefit ≤ 0
+  paybackYears: number | null   // null when there is no labor offset
 }
 
-/** Labor offset = number of operators displaced × fully-burdened annual cost each.
- *  Payback years = CAPEX mid / net annual benefit (null when benefit ≤ 0). */
+/** Simple ROI (user-confirmed model): payback = total system cost ÷ annual
+ *  labor offset (operators displaced × fully-burdened cost each). OPEX stays
+ *  informational — it is NOT netted against the offset. */
 export function romPayback(
   costs: RomCostInputs,
   capexMid: number,
-  annualOpex: number,
 ): RomPayback {
   const annualLaborOffset = costs.numberOfOperators * costs.fullyBurdenedRateUsdPerYear
-  const netAnnualBenefit = annualLaborOffset - annualOpex
-  const paybackYears = netAnnualBenefit > 0 ? capexMid / netAnnualBenefit : null
-  return { annualLaborOffset, netAnnualBenefit, paybackYears }
+  const paybackYears = annualLaborOffset > 0 ? capexMid / annualLaborOffset : null
+  return { annualLaborOffset, paybackYears }
 }
 
 export interface RomSummary {
@@ -112,6 +110,6 @@ export function romSummary(
 ): RomSummary {
   const pricing = romPricing(fleet, vehiclesById)
   const opex = romOpex(fleet, vehiclesById, costs, schedule, pricing.totalMid)
-  const payback = romPayback(costs, pricing.totalMid, opex.annualOpex)
+  const payback = romPayback(costs, pricing.totalMid)
   return { pricing, opex, payback }
 }

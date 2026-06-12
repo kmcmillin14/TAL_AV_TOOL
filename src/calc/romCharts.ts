@@ -182,10 +182,11 @@ export function capexBarsSeries(rom: RomSummary, vehiclesById: Map<string, Vehic
 export interface PaybackPoint { year: number; cumulative: number }
 export interface PaybackSeries { points: PaybackPoint[]; breakEvenYear: number | null }
 
-/** Cumulative cash flow: −CAPEX at year 0, + net annual benefit each year through life. */
+/** Cumulative cash flow: −CAPEX at year 0, + annual labor offset each year
+ *  through life (simple ROI model — OPEX not netted). */
 export function paybackSeries(rom: RomSummary, serviceLifeYears: number): PaybackSeries {
   const capex = rom.pricing.totalMid
-  const net = rom.payback.netAnnualBenefit
+  const net = rom.payback.annualLaborOffset
   const points: PaybackPoint[] = []
   for (let y = 0; y <= serviceLifeYears; y++) points.push({ year: y, cumulative: -capex + net * y })
   return { points, breakEvenYear: net > 0 ? capex / net : null }

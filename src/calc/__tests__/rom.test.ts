@@ -67,17 +67,17 @@ describe('romOpex', () => {
 describe('romPayback', () => {
   const costs = { numberOfOperators: 6, fullyBurdenedRateUsdPerYear: 40000, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
 
-  it('computes labor offset, net benefit, and payback years', () => {
-    // laborOffset = 6 operators × $40000 = 240000
-    // net = 240000 − 40000 = 200000 ; payback = 600000 / 200000 = 3
-    const p = romPayback(costs, 600000, 40000)
+  // Simple model (user-confirmed): payback = system cost ÷ (operators × burdened
+  // cost). OPEX stays informational — it does not net against the offset.
+  it('payback = CAPEX mid / labor offset, ignoring OPEX', () => {
+    // laborOffset = 6 operators × $40,000 = $240,000/yr; 600,000 / 240,000 = 2.5 yr
+    const p = romPayback(costs, 600000)
     expect(p.annualLaborOffset).toBeCloseTo(240000, 5)
-    expect(p.netAnnualBenefit).toBeCloseTo(200000, 5)
-    expect(p.paybackYears).toBeCloseTo(3, 5)
+    expect(p.paybackYears).toBeCloseTo(2.5, 5)
   })
 
-  it('returns null payback when net benefit is not positive', () => {
-    const p = romPayback(costs, 600000, 999999999)
+  it('returns null payback when there is no labor offset', () => {
+    const p = romPayback({ ...costs, numberOfOperators: 0 }, 600000)
     expect(p.paybackYears).toBeNull()
   })
 })

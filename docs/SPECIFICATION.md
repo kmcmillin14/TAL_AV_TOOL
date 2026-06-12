@@ -332,9 +332,10 @@ total base→sold build-up.
 dailyOpHr × operatingDaysPerYear × fleetSold × energyCostUsdPerKwh`; maintenance =
 `totalMid × annualMaintenancePctOfCapex`.
 
-**Payback:** annual labor offset = `numberOfOperators × fullyBurdenedRateUsdPerYear`
-(simple headcount × loaded annual cost); net benefit = labor offset − OPEX; payback
-years = `totalMid / netBenefit` (— when net benefit ≤ 0).
+**Payback (simple ROI, 2026-06-12):** annual labor offset = `numberOfOperators ×
+fullyBurdenedRateUsdPerYear`; payback years = `totalMid / laborOffset` (— when there
+is no offset). OPEX is informational only — it is **not** netted against the offset;
+the payback chart's cumulative cash flow likewise rises by the labor offset.
 
 **Export:** proposal PDF (existing embedded-JSON pattern, now with a fleet/ROM page) +
 project JSON.
