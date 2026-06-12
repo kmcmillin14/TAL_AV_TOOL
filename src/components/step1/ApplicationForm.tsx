@@ -29,6 +29,7 @@ const DELIVERY_PATTERNS = ['Floor-Floor', 'Floor-Height', 'Height-Floor', 'Heigh
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
 const INTERLOCKS = ['High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems', 'Other']
 const DUST_MOISTURE_OPTS = ['None', 'Dusty environment', 'Wash-down required', 'High humidity', 'Outdoor exposure']
+const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
 interface Props {
   initialData?: Partial<ProjectFormData> & { createdAt?: string }
@@ -105,6 +106,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   const interlocks = watch('interlocks') || []
   const shiftsPerDay = watch('shiftsPerDay')
   const hoursPerShift = watch('hoursPerShift')
+  const operatingDaysPattern = watch('operatingDaysPattern')
+  const operatingDaysCustom = watch('operatingDaysCustom') || []
 
   const requiresLift = deliveryPatternRequiresLift(deliveryPattern)
 
@@ -218,6 +221,16 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
       ? current.filter(x => x !== value)
       : [...current, value]
     setValue(fieldName, next, { shouldDirty: true })
+    onBlurSave()
+  }
+
+  const toggleCustomDay = (day: string) => {
+    const next = operatingDaysCustom.includes(day)
+      ? operatingDaysCustom.filter(d => d !== day)
+      : [...operatingDaysCustom, day]
+    // Canonical Mon→Sun order regardless of click order (PDF joins with ', ').
+    next.sort((a, b) => WEEKDAYS.indexOf(a) - WEEKDAYS.indexOf(b))
+    setValue('operatingDaysCustom', next, { shouldDirty: true })
     onBlurSave()
   }
 
@@ -574,9 +587,15 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                     <label
                       key={cert}
                       className={`chk${on ? ' on' : ''}`}
-                      onClick={() => toggleArrayItem('certifications', cert)}
                     >
-                      <input type="checkbox" readOnly checked={on} />
+                      {/* Toggle on the input's change event only — an onClick on the
+                          label fires twice per user click (the label forwards a second
+                          click to its inner checkbox), which can re-toggle the value. */}
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => toggleArrayItem('certifications', cert)}
+                      />
                       <span className="box">
                         {on && <Icon name="check" size={10} />}
                       </span>
@@ -660,6 +679,26 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                   </div>
                 )}
               />
+              {operatingDaysPattern === 'Custom' && (
+                <div className="cert-grid" style={{ marginTop: 8 }}>
+                  {WEEKDAYS.map(day => {
+                    const on = operatingDaysCustom.includes(day)
+                    return (
+                      <label key={day} className={`chk${on ? ' on' : ''}`}>
+                        <input
+                          type="checkbox"
+                          checked={on}
+                          onChange={() => toggleCustomDay(day)}
+                        />
+                        <span className="box">
+                          {on && <Icon name="check" size={10} />}
+                        </span>
+                        <span>{day}</span>
+                      </label>
+                    )
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="fld">
@@ -820,9 +859,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                     <label
                       key={item}
                       className={`chk${on ? ' on' : ''}`}
-                      onClick={() => toggleArrayItem('interlocks', item)}
                     >
-                      <input type="checkbox" readOnly checked={on} />
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => toggleArrayItem('interlocks', item)}
+                      />
                       <span className="box">
                         {on && <Icon name="check" size={10} />}
                       </span>
