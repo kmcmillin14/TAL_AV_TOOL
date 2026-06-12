@@ -591,6 +591,25 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .form-tier-hint { font-size: 12px; color: var(--text-tertiary); }
 
+/* Step 1 flow rows (section 06 — the same flows Step 3 sizes) */
+.step1-flows { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+.step1-flow-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr auto;
+  gap: 14px;
+  align-items: start;
+  padding: 12px 14px;
+  background: var(--bg-surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.step1-flow-actions { display: flex; gap: 4px; align-self: center; }
+.step1-flow-add { margin-top: 12px; }
+@media (max-width: 900px) {
+  .step1-flow-row { grid-template-columns: 1fr 1fr; }
+  .step1-flow-actions { grid-column: span 2; justify-content: flex-end; }
+}
+
 .fld-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 18px; width: 100%; }
 .fld-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 18px; width: 100%; }
 .fld-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 18px; margin-top: 18px; width: 100%; }

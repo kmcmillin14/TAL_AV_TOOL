@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useState } from 'react'
-import { useForm, Controller, type SubmitHandler } from 'react-hook-form'
+import { useForm, useFieldArray, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
 import FormSection from './FormSection'
@@ -44,17 +44,55 @@ function toDateInput(iso?: string): string {
   return d.toISOString().slice(0, 10)
 }
 
+const newFlowId = () => 'f_' + Math.random().toString(36).slice(2, 10)
+
+/** Legacy projects captured one avgDistance + throughput pair instead of flows.
+ *  Synthesize a single starter flow row from them (round-trip ÷ 2, same as the
+ *  retired Step 3 seed button) — persisted only once the user edits the form. */
+function initialFlowRows(initialData?: Partial<ProjectFormData>): ProjectFormData['flows'] {
+  if (initialData?.flows?.length) return initialData.flows
+  const thru = initialData?.requiredThroughputPerHour ?? 0
+  const dist = initialData?.avgDistanceFt ?? 0
+  if (thru <= 0 && dist <= 0) return []
+  return [{
+    id: newFlowId(),
+    origin: '',
+    destination: '',
+    distanceFt: initialData?.distanceType === 'round_trip' ? dist / 2 : dist,
+    thruPerHr: thru,
+    routeLayout: 'medium',
+    liftHeightFt: 0,
+  }]
+}
+
 // Empty strings and NaN mean "the user cleared this field". Keep the key with
 // `undefined` so the spread merge in updateProject removes the prior value
 // (JSON.stringify drops undefined keys). Dropping the entry instead, as the
 // previous code did, left ghost values in storage that Step 2 kept qualifying
-// against.
-function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFormData> {
+// against. Flow rows get the same treatment one level down: a mid-edit NaN
+// becomes undefined so the flowSchema `.default(0)` fills it — otherwise one
+// half-typed distance would make the whole flows array fail validation and be
+// dropped from that keystroke's save.
+export function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFormData> {
+  const cleanValue = (v: unknown): unknown => {
+    if (typeof v === 'number' && Number.isNaN(v)) return undefined
+    if (v === '') return undefined
+    return v
+  }
   return Object.fromEntries(
     Object.entries(data).map(([k, v]) => {
-      if (typeof v === 'number' && Number.isNaN(v)) return [k, undefined]
-      if (v === '') return [k, undefined]
-      return [k, v]
+      if (k === 'flows' && Array.isArray(v)) {
+        return [k, v.map(flow =>
+          Object.fromEntries(
+            Object.entries(flow as Record<string, unknown>).map(([fk, fv]) =>
+              // Keep origin/destination empty strings (schema default '') —
+              // only numeric clears need the undefined treatment.
+              [fk, typeof fv === 'number' && Number.isNaN(fv) ? undefined : fv],
+            ),
+          ),
+        )]
+      }
+      return [k, cleanValue(v)]
     })
   ) as Partial<ProjectFormData>
 }
@@ -93,8 +131,29 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
       freezerCapable: initialData?.freezerCapable ?? false,
       wmsRequired: initialData?.wmsRequired ?? false,
       distanceType: initialData?.distanceType ?? 'one_way',
+      flows: initialFlowRows(initialData),
     },
   })
+
+  // Note: RHF's field snapshots overwrite `id` with its internal key (fine as a
+  // React key); the flow's REAL id lives in form values — handlers must read it
+  // via getValues, never from the snapshot.
+  const { fields: flowFields, append: appendFlow, insert: insertFlow, remove: removeFlow } =
+    useFieldArray({ control, name: 'flows' })
+
+  const addFlowRow = () => {
+    appendFlow({
+      id: newFlowId(), origin: '', destination: '',
+      distanceFt: 0, thruPerHr: 0, routeLayout: 'medium', liftHeightFt: 0,
+    })
+    onBlurSave()
+  }
+
+  const duplicateFlowRow = (i: number) => {
+    const src = getValues(`flows.${i}`)
+    insertFlow(i + 1, { ...src, id: newFlowId() })
+    onBlurSave()
+  }
 
   const formValues = watch()
   const typicalUnitType = watch('typicalUnitType')
@@ -730,75 +789,91 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        {/* ===== Section 06: Throughput & distance ===== */}
+        {/* ===== Section 06: Throughput & distance — the same flows Step 3 sizes ===== */}
         <FormSection {...secProps('section-06')}>
-          <div className="fld-row-3">
-            <div className="fld">
-              <label>Required Throughput (peak) <span className="req">*</span></label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  min="1"
-                  className="mono"
-                  placeholder="60"
-                  {...register('requiredThroughputPerHour', { valueAsNumber: true, onBlur: onBlurSave })}
-                />
-                <div className="unit">moves/hr</div>
-              </div>
-              <div className="help" style={{ color: 'var(--warn)' }}>
-                Peak capacity — NOT average. Size for worst case.
-              </div>
-              {errors.requiredThroughputPerHour && (
-                <div className="help" style={{ color: 'var(--bad)' }}>{errors.requiredThroughputPerHour.message}</div>
-              )}
-            </div>
-
-            <div className="fld">
-              <label>Average Travel Distance ({dLabel}) <span className="req">*</span></label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="1"
-                  min="1"
-                  className="mono"
-                  placeholder="200"
-                  defaultValue={dispFt(initialData?.avgDistanceFt)}
-                  {...register('avgDistanceFt', {
-                    valueAsNumber: true,
-                    setValueAs: v => parseImperialInput(String(v), 'ft', unitSystem),
-                    onBlur: onBlurSave,
-                  })}
-                />
-                <div className="unit">{dLabel}</div>
-              </div>
-            </div>
-
-            <div className="fld">
-              <label>Distance Type <span className="req">*</span></label>
-              <Controller
-                name="distanceType"
-                control={control}
-                render={({ field }) => (
-                  <div className="seg-toggle">
+          {flowFields.length > 0 && (
+            <div className="step1-flows">
+              {flowFields.map((f, i) => (
+                <div className="step1-flow-row" key={f.id}>
+                  <div className="fld">
+                    <label>Origin</label>
+                    <input
+                      type="text"
+                      placeholder="Dock A"
+                      {...register(`flows.${i}.origin`, { onBlur: onBlurSave })}
+                    />
+                  </div>
+                  <div className="fld">
+                    <label>Destination</label>
+                    <input
+                      type="text"
+                      placeholder="Storage 1"
+                      {...register(`flows.${i}.destination`, { onBlur: onBlurSave })}
+                    />
+                  </div>
+                  <div className="fld">
+                    <label>Distance ({dLabel})</label>
+                    <div className="input-with-unit">
+                      <input
+                        type="number"
+                        step="1"
+                        min="0"
+                        className="mono"
+                        placeholder="200"
+                        defaultValue={dispFt(f.distanceFt)}
+                        {...register(`flows.${i}.distanceFt`, {
+                          setValueAs: v => v === '' ? 0 : parseImperialInput(String(v), 'ft', unitSystem),
+                          onBlur: onBlurSave,
+                        })}
+                      />
+                      <div className="unit">{dLabel}</div>
+                    </div>
+                    <div className="help">One-way — the cycle adds the return leg</div>
+                  </div>
+                  <div className="fld">
+                    <label>Throughput (peak)</label>
+                    <div className="input-with-unit">
+                      <input
+                        type="number"
+                        min="0"
+                        className="mono"
+                        placeholder="60"
+                        {...register(`flows.${i}.thruPerHr`, { valueAsNumber: true, onBlur: onBlurSave })}
+                      />
+                      <div className="unit">moves/hr</div>
+                    </div>
+                  </div>
+                  <div className="step1-flow-actions">
                     <button
                       type="button"
-                      className={`seg-btn${field.value === 'one_way' ? ' on' : ''}`}
-                      onClick={() => { field.onChange('one_way'); onBlurSave() }}
+                      className="tbtn-icon"
+                      aria-label="Duplicate flow"
+                      title="Duplicate flow"
+                      onClick={() => duplicateFlowRow(i)}
                     >
-                      One-Way
+                      <Icon name="copy" size={13} />
                     </button>
                     <button
                       type="button"
-                      className={`seg-btn${field.value === 'round_trip' ? ' on' : ''}`}
-                      onClick={() => { field.onChange('round_trip'); onBlurSave() }}
+                      className="tbtn-icon"
+                      aria-label="Delete flow"
+                      title="Delete flow"
+                      onClick={() => { removeFlow(i); onBlurSave() }}
                     >
-                      Round-Trip
+                      <Icon name="x" size={13} />
                     </button>
                   </div>
-                )}
-              />
-              <div className="help">Is the distance one direction or both legs?</div>
+                </div>
+              ))}
             </div>
+          )}
+          <button type="button" className="btn ghost step1-flow-add" onClick={addFlowRow}>
+            + Add flow
+          </button>
+          <div className="help" style={{ marginTop: 8 }}>
+            Material flows — one row per origin → destination movement. These are the same
+            flows the Fleet Engine sizes in Step 3; vehicles are assigned there, never here.
+            Throughput is peak capacity, not average.
           </div>
         </FormSection>
 

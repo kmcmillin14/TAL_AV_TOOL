@@ -39,8 +39,10 @@ export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
   // ── Tier 2 — FLEET SIZING & ECONOMICS ───────────────────────────────────
   { id: 'section-05', num: '05', label: 'Operating schedule', short: 'Schedule',
     tier: 'sizing', requiredFields: ['shiftsPerDay', 'hoursPerShift', 'operatingDaysPattern'] },
+  // section-06 is the flow-row list (shared with Step 3); its badge derives from
+  // the flows array via the special case in sectionStatus, not requiredFields.
   { id: 'section-06', num: '06', label: 'Throughput & distance', short: 'Throughput',
-    tier: 'sizing', requiredFields: ['requiredThroughputPerHour', 'avgDistanceFt', 'distanceType'] },
+    tier: 'sizing', requiredFields: [] },
   { id: 'section-07', num: '07', label: 'Labor', short: 'Labor',
     tier: 'sizing', requiredFields: [] },
   // ── Tier 3 — PROPOSAL DETAILS (collapsed; consumers arrive in future revisions) ──
@@ -72,6 +74,14 @@ function isFilled(value: unknown): boolean {
  * Sections with no required fields are always 'optional'.
  */
 export function sectionStatus(meta: SectionMeta, values: Partial<ProjectFormData>): SectionStatus {
+  // section-06 is the flow-row list — complete once any flow has both a
+  // distance and a throughput (keyof-based requiredFields can't express this).
+  if (meta.id === 'section-06') {
+    const flows = values.flows ?? []
+    if (flows.some(f => (f.distanceFt ?? 0) > 0 && (f.thruPerHr ?? 0) > 0)) return 'complete'
+    if (flows.length > 0) return 'in-progress'
+    return 'untouched'
+  }
   if (meta.requiredFields.length === 0) return 'optional'
   const filled = meta.requiredFields.filter(f => isFilled(values[f])).length
   if (filled === 0) return 'untouched'
