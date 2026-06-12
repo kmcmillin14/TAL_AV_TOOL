@@ -7,7 +7,7 @@ import { useFleetData } from '@/src/lib/useFleetData'
 import { updateProject } from '@/src/lib/storage'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 import { romSummary, type RomCostInputs, type RomSchedule } from '@/src/calc/rom'
-import { effDailyOpHr, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
+import { effDailyOpHr, defaultOperatingDaysPerYear, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
 import RomKpis from '@/src/components/rom/RomKpis'
 import { type RomPatch } from '@/src/components/rom/RomEconomics'
 import RomExportBar from '@/src/components/rom/RomExportBar'
@@ -24,7 +24,8 @@ export default function RomDashboardPage() {
     fullyBurdenedRateUsdPerYear: project?.fullyBurdenedRateUsdPerYear ?? 65000,
     energyCostUsdPerKwh: project?.energyCostUsdPerKwh ?? 0.12,
     annualMaintenancePctOfCapex: project?.annualMaintenancePctOfCapex ?? 0.08,
-    operatingDaysPerYear: project?.operatingDaysPerYear ?? 312,
+    operatingDaysPerYear: project?.operatingDaysPerYear
+      ?? defaultOperatingDaysPerYear(project?.operatingDaysPattern, project?.operatingDaysCustom),
   }), [project])
 
   const schedule: RomSchedule = useMemo(() => ({
@@ -39,7 +40,8 @@ export default function RomDashboardPage() {
     breaksPerShift: project?.breaksPerShift ?? 0,
     breakDurationMin: project?.breakDurationMin ?? 0,
     operatorsPerShift: project?.operatorsPerShift ?? 0,
-    operatingDaysPerYear: project?.operatingDaysPerYear ?? 312,
+    operatingDaysPerYear: project?.operatingDaysPerYear
+      ?? defaultOperatingDaysPerYear(project?.operatingDaysPattern, project?.operatingDaysCustom),
   }), [project])
 
   const flowCount = flows.length

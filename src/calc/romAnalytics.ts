@@ -16,3 +16,19 @@ export function effDailyOpHr(s: AnalyticsSchedule): number {
   const effHoursPerShift = Math.max(0, s.hoursPerShift - (s.breaksPerShift * s.breakDurationMin) / 60)
   return Math.min(24, s.shiftsPerDay * effHoursPerShift)
 }
+
+/** Default ROM operating days/year derived from Step 1's operating-days pattern.
+ *  A derived DEFAULT, never a lock — the ROM assumptions panel's explicit value
+ *  always wins (`project.operatingDaysPerYear ?? defaultOperatingDaysPerYear(…)`). */
+export function defaultOperatingDaysPerYear(
+  pattern?: string | null,
+  customDays?: string[] | null,
+): number {
+  switch (pattern) {
+    case 'Mon–Fri': return 260
+    case 'Mon–Sat': return 312
+    case 'Mon–Sun': return 364
+    case 'Custom':  return customDays?.length ? customDays.length * 52 : 312
+    default:        return 312
+  }
+}

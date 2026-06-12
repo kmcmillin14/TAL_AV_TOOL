@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { effDailyOpHr, type AnalyticsSchedule } from '../romAnalytics'
+import { effDailyOpHr, defaultOperatingDaysPerYear, type AnalyticsSchedule } from '../romAnalytics'
 import { projectSchema } from '@/src/lib/validations/schemas'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
 import type { StoredProject } from '@/src/lib/storage'
@@ -32,5 +32,24 @@ describe('appRequirementsFromProject', () => {
     expect(r.certifications).toEqual(['UL'])
     expect(r.typicalUnitType).toBe('')
     expect(r.outdoorRequired).toBe(false)
+  })
+})
+
+describe('defaultOperatingDaysPerYear', () => {
+  it('derives from the operating-days pattern', () => {
+    expect(defaultOperatingDaysPerYear('Mon–Fri')).toBe(260)
+    expect(defaultOperatingDaysPerYear('Mon–Sat')).toBe(312)
+    expect(defaultOperatingDaysPerYear('Mon–Sun')).toBe(364)
+  })
+
+  it('Custom pattern uses selected days × 52', () => {
+    expect(defaultOperatingDaysPerYear('Custom', ['Mon', 'Tue', 'Wed', 'Thu'])).toBe(208)
+    expect(defaultOperatingDaysPerYear('Custom', [])).toBe(312)  // no days picked yet
+    expect(defaultOperatingDaysPerYear('Custom', null)).toBe(312)
+  })
+
+  it('falls back to 312 when the pattern is unset or unknown', () => {
+    expect(defaultOperatingDaysPerYear(undefined)).toBe(312)
+    expect(defaultOperatingDaysPerYear('')).toBe(312)
   })
 })
