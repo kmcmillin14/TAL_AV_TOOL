@@ -15,6 +15,12 @@
   now sticky below the header, with the side rail sticking beneath it.
 - **Charging section**: shift coverage (shifts × hours) is inline-editable, writing
   the same Step 1 fields.
+- **Export to PowerPoint + Excel.** Header menu gains `Export deck (.pptx)` (4-slide
+  dark TAL proposal: title, requirements, fleet build-up, ROM/payback) and
+  `Export workbook (.xlsx)` (Summary/Requirements/Flows/Fleet/ROM sheets). Both
+  client-side (pptxgenjs / SheetJS, dynamically imported) over the new shared
+  `computeFleetModel` (`src/lib/fleetModel.ts`), which mirrors `useFleetData`'s
+  derivation chain (covered by `fleetModel.test.ts`).
 
 
 ## 2026-06-12 — Fleet Engine: staged wizard → scrolling page; buffer presets

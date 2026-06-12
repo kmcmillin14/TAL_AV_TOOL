@@ -337,8 +337,14 @@ fullyBurdenedRateUsdPerYear`; payback years = `totalMid / laborOffset` (— when
 is no offset). OPEX is informational only — it is **not** netted against the offset;
 the payback chart's cumulative cash flow likewise rises by the labor offset.
 
-**Export:** proposal PDF (existing embedded-JSON pattern, now with a fleet/ROM page) +
-project JSON.
+**Export:** proposal PDF (embedded-JSON pattern, with a fleet/ROM page) · project
+JSON · **PowerPoint deck** (`.pptx`, client-side via pptxgenjs — title, requirements,
+fleet build-up, ROM/payback slides on the dark TAL theme; Toyota Type requested as
+the font face with graceful fallback) · **Excel workbook** (`.xlsx`, client-side via
+SheetJS — Summary, Requirements, Flows, Fleet waterfall, ROM sheets). Both build on
+`src/lib/fleetModel.ts` (`computeFleetModel` — the same derivation chain
+`useFleetData` runs) and are dynamically imported so neither weighs on the initial
+bundle. All header export-menu entries: .pdf · .pptx · .xlsx · .json.
 
 ---
 

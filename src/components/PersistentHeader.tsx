@@ -8,7 +8,7 @@ import { updateProject, downloadProject, getProject, canUndo, undoLastChange, cl
 import { useTheme } from '@/src/lib/uiPrefs'
 import HelpDrawer from './HelpDrawer'
 import { downloadProjectPdf } from '@/src/lib/pdfExport'
-import { prefetchVehicles } from '@/src/lib/vehicleCache'
+import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
 
 interface HeaderData {
   id: string
@@ -142,6 +142,36 @@ export default function PersistentHeader({
       await downloadProjectPdf(current)
     } catch (err) {
       alert(`Could not generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
+  }
+
+  const handleExportPptx = async () => {
+    setMenuOpen(false)
+    const current = getProject(project.id)
+    if (!current) return
+    try {
+      const [{ downloadProjectPptx }, vehicles] = await Promise.all([
+        import('@/src/lib/pptxExport'),
+        fetchVehiclesCached(),
+      ])
+      await downloadProjectPptx(current, vehicles)
+    } catch (err) {
+      alert(`Could not generate PowerPoint: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
+  }
+
+  const handleExportXlsx = async () => {
+    setMenuOpen(false)
+    const current = getProject(project.id)
+    if (!current) return
+    try {
+      const [{ downloadProjectXlsx }, vehicles] = await Promise.all([
+        import('@/src/lib/xlsxExport'),
+        fetchVehiclesCached(),
+      ])
+      await downloadProjectXlsx(current, vehicles)
+    } catch (err) {
+      alert(`Could not generate workbook: ${err instanceof Error ? err.message : 'Unknown error'}`)
     }
   }
 
@@ -405,6 +435,14 @@ export default function PersistentHeader({
                 <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPdf}>
                   <span>Export proposal</span>
                   <span className="hint">.pdf</span>
+                </button>
+                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPptx}>
+                  <span>Export deck</span>
+                  <span className="hint">.pptx</span>
+                </button>
+                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportXlsx}>
+                  <span>Export workbook</span>
+                  <span className="hint">.xlsx</span>
                 </button>
                 <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
                   <span>Export data only</span>
