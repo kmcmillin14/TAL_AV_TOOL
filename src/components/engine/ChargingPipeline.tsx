@@ -40,8 +40,34 @@ export default function ChargingPipeline({
     <div className="engine-panel pipeline-wrap">
       <div className="engine-row">
         <div className="engine-context mono">
-          Schedule: {shiftsPerDay} {shiftsPerDay === 1 ? 'shift' : 'shifts'} × {hoursPerShift} h
-          = <strong>{dailyOpHr} h</strong> operating / day
+          Schedule:{' '}
+          <input
+            type="number"
+            className="engine-inline-num mono"
+            min={1}
+            max={3}
+            value={shiftsPerDay}
+            onChange={e => {
+              const v = Number(e.target.value)
+              if (Number.isInteger(v) && v >= 1 && v <= 3) onPatch({ shiftsPerDay: v })
+            }}
+            aria-label="Shifts per day"
+          />
+          {' '}{shiftsPerDay === 1 ? 'shift' : 'shifts'} ×{' '}
+          <input
+            type="number"
+            className="engine-inline-num mono"
+            min={4}
+            max={12}
+            step={0.5}
+            value={hoursPerShift}
+            onChange={e => {
+              const v = Number(e.target.value)
+              if (Number.isFinite(v) && v >= 4 && v <= 12) onPatch({ hoursPerShift: v })
+            }}
+            aria-label="Hours per shift"
+          />
+          {' '}h = <strong>{dailyOpHr} h</strong> operating / day
         </div>
         <div className="cr-toggle">
           <span className="cr-label">Recharge window</span>

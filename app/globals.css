@@ -2682,6 +2682,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .engine-context { font-family: var(--tal-font-numeric); font-size: 12px; color: var(--text-secondary); }
 .engine-context strong { color: var(--text-primary); }
+.engine-inline-num {
+  width: 52px; padding: 4px 6px; text-align: center;
+  font-size: 12px; font-weight: 700; color: var(--text-primary);
+  background: var(--bg-input); border: 1px solid var(--border-strong); border-radius: 5px;
+}
+.engine-inline-num:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .engine-note {
   margin-top: 16px;
   font-family: var(--tal-font-family);

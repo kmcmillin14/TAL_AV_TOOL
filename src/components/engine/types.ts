@@ -10,4 +10,8 @@ export interface EnginePatch {
   chargeRegime?: ChargeRegime
   bufferPct?: number
   chargeMethods?: Record<string, ChargeMethod>
+  /** Shift coverage — the same Step 1 fields, inline-editable on the Charging
+   *  section (ports both directions, like flows). */
+  shiftsPerDay?: number
+  hoursPerShift?: number
 }
