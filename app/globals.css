@@ -845,32 +845,15 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   position: relative;
   background: var(--bg-surface);
   border: 1.5px solid var(--border);
-  border-top-width: 4px;
   border-radius: 10px;
-  transition: border-color 0.15s, box-shadow 0.2s;
+  transition: box-shadow 0.2s;
   display: flex; flex-direction: column;
   perspective: 1400px;
   overflow: hidden;
 }
-/* Status color always visible on the card border — not just on hover */
-.veh-card.green {
-  border-color: rgba(94, 234, 144, 0.55);
-  box-shadow: 0 0 0 0px rgba(94,234,144,0.06), 0 2px 12px rgba(0,0,0,0.14);
-}
-.veh-card.yellow {
-  border-color: rgba(251, 191, 36, 0.55);
-  box-shadow: 0 0 0 0px rgba(251,191,36,0.06), 0 2px 12px rgba(0,0,0,0.14);
-}
-.veh-card.red {
-  border-color: rgba(235, 10, 30, 0.55);
-  box-shadow: 0 0 0 0px rgba(235,10,30,0.06), 0 2px 12px rgba(0,0,0,0.14);
-}
 .veh-card:hover {
   box-shadow: 0 6px 28px rgba(0,0,0,0.22);
 }
-.veh-card.green:hover  { border-color: var(--good); box-shadow: 0 0 0 3px rgba(94,234,144,0.12), 0 6px 28px rgba(0,0,0,0.2); }
-.veh-card.yellow:hover { border-color: var(--warn); box-shadow: 0 0 0 3px rgba(251,191,36,0.12), 0 6px 28px rgba(0,0,0,0.2); }
-.veh-card.red:hover    { border-color: var(--bad);  box-shadow: 0 0 0 3px rgba(235,10,30,0.12), 0 6px 28px rgba(0,0,0,0.2); }
 
 .veh-card-inner {
   position: relative;
