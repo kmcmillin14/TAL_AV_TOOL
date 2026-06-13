@@ -885,10 +885,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
      image/back faces are rounded individually below. */
   overflow: visible;
 }
-/* Hover lift — border brighten + transform read in BOTH themes (a dark drop
-   shadow alone is invisible on the dark background). */
+/* Hover lift — background shade + border + lift, all of which read in BOTH
+   themes (a dark drop shadow alone is invisible on the dark background, and the
+   border delta is too subtle in dark mode). */
 .veh-card:hover {
-  border-color: var(--border-strong);
+  background: var(--bg-surface-2);
+  border-color: var(--accent);
   box-shadow: 0 8px 30px rgba(0,0,0,0.32);
   transform: translateY(-2px);
   z-index: 10; /* lift above sibling cards so the tooltip isn't covered */
