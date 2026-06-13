@@ -100,8 +100,12 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
               <div
                 className="veh-gatebar"
                 tabIndex={isBack ? -1 : 0}
-                aria-label={`${passedCount} of ${evaluated.length} evaluated gates pass — hover for detail`}
+                aria-label={`${passedCount} of ${evaluated.length} requirement checks pass — hover for detail`}
               >
+                <div className="veh-gatebar-top">
+                  <span className="veh-gatebar-cap">Requirement checks</span>
+                  <span className="veh-gatebar-count mono">{passedCount}/{evaluated.length}</span>
+                </div>
                 <div className="veh-gatebar-segs">
                   {allGates.map(g => (
                     <span
@@ -110,7 +114,6 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
                     />
                   ))}
                 </div>
-                <span className="veh-gatebar-count mono">{passedCount}/{evaluated.length}</span>
 
                 {/* Hover/focus tooltip — full pass/fail breakdown at a glance */}
                 <div className="veh-gatebar-tip" role="tooltip">
