@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-13 — New 8tb tugger render
+
+- Replaced the 8tb50a image with a new tugger render. The supplied export was partially
+  de-backgrounded (leftover low-alpha haze in some corners), cleaned with a Pillow alpha
+  threshold (`alpha < 130` → transparent) and auto-cropped to the alpha bbox for even
+  scaling, consistent with the other vehicles.
+
 ## 2026-06-13 — Vehicle images: transparent backgrounds + even scaling
 
 - **Removed baked-in white backgrounds** from `m10.png` and `8tb50a` (was a JPEG → now
