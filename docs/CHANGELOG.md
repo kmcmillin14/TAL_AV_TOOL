@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-13 — Vehicle images: transparent backgrounds + even scaling
+
+- **Removed baked-in white backgrounds** from `m10.png` and `8tb50a` (was a JPEG → now
+  `8tb50a.png`, JSON updated, old `.jpg` deleted). Background flood-filled to transparent
+  so both sit on the dark image tile like the other four vehicles.
+- **Auto-cropped all six vehicle PNGs to their content** (alpha bounding box + small uniform
+  margin) so each vehicle fills its frame. With the existing `object-fit: contain` + flex
+  centering, every vehicle now scales to a consistent size and is centered (no more "some
+  look bigger" from uneven built-in whitespace).
+
 ## 2026-06-13 — /simplify cleanup pass (behavior-neutral refactor)
 
 DRY / dead-code cleanup, no behavior change (160/160 tests green, tsc clean):
