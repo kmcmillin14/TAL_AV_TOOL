@@ -1,6 +1,7 @@
 'use client'
 
 import type { TrafficLightStatus } from '@/src/calc/types'
+import Icon from './Icon'
 
 interface TrafficLightProps {
   status: TrafficLightStatus
@@ -8,17 +9,17 @@ interface TrafficLightProps {
 }
 
 const config = {
-  GREEN:  { cls: 'green',  label: 'Compatible' },
-  YELLOW: { cls: 'yellow', label: 'Review Required' },
-  RED:    { cls: 'red',    label: 'Not Compatible' },
+  GREEN:  { cls: 'green',  label: 'Compatible',     icon: 'check' as const },
+  YELLOW: { cls: 'yellow', label: 'Review Required', icon: 'warn'  as const },
+  RED:    { cls: 'red',    label: 'Not Compatible',  icon: 'x'     as const },
 }
 
 export default function TrafficLight({ status, showLabel = true }: TrafficLightProps) {
-  const { cls, label } = config[status]
+  const { cls, label, icon } = config[status]
   return (
-    <div className="traffic-light">
-      <span className={`tl-dot ${cls}`} />
-      {showLabel && <span className={`tl-label ${cls}`}>{label}</span>}
+    <div className={`traffic-light ${cls}`}>
+      <Icon name={icon} size={15} className="tl-icon" />
+      {showLabel && <span className="tl-label">{label}</span>}
     </div>
   )
 }

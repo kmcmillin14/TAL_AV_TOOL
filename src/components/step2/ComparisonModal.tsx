@@ -2,8 +2,9 @@
 
 import { useEffect } from 'react'
 import Icon from '@/src/design-system/components/Icon'
+import TrafficLight from '@/src/design-system/components/TrafficLight'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { QualificationResult, TrafficLightStatus } from '@/src/calc/types'
+import type { QualificationResult } from '@/src/calc/types'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import { vehicleSpecSections } from '@/src/lib/vehicleDisplay'
 
@@ -17,12 +18,6 @@ interface Props {
   unitSystem: UnitSystem
   onClose: () => void
   onRemove: (id: string) => void
-}
-
-const STATUS_LABEL: Record<TrafficLightStatus, string> = {
-  GREEN: 'Compatible',
-  YELLOW: 'Review Required',
-  RED: 'Not Compatible',
 }
 
 export default function ComparisonModal({ entries, unitSystem, onClose, onRemove }: Props) {
@@ -79,17 +74,11 @@ export default function ComparisonModal({ entries, unitSystem, onClose, onRemove
               {/* Status row */}
               <tr>
                 <td className="cmp-rowhead">Status</td>
-                {entries.map(({ vehicle, result }) => {
-                  const cls = result.status.toLowerCase()
-                  return (
-                    <td key={vehicle.id} className="cmp-cell">
-                      <span className={`cmp-status ${cls}`}>
-                        <span className={`tl-dot ${cls}`} />
-                        {STATUS_LABEL[result.status]}
-                      </span>
-                    </td>
-                  )
-                })}
+                {entries.map(({ vehicle, result }) => (
+                  <td key={vehicle.id} className="cmp-cell">
+                    <TrafficLight status={result.status} />
+                  </td>
+                ))}
               </tr>
 
               {/* Full spec sheet, grouped by section */}

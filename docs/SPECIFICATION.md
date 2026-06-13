@@ -384,7 +384,10 @@ Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
 ### Card front face
 
 1. **Hero image** (16:9, `flex-shrink: 0`) with TAL-Integrated logo badge or "3rd Party" pill.
-2. **Name / manufacturer** + **traffic-light indicator** (GREEN/YELLOW/RED dot, 14 px).
+2. **Name / manufacturer** + **status indicator** (`TrafficLight`): a flat semantic icon
+   (check / alert-triangle / x) + colored label — GREEN Compatible / YELLOW Review Required
+   / RED Not Compatible. No glow or dot. The same component renders the comparison modal's
+   Status row.
 3. **Segmented gate bar**: one segment per gate (hard + soft). Color: `pass` (green) ·
    `fail` (red, hard gate) · `soft` (amber, soft gate miss) · `skip` (dimmed, gate not
    evaluated). Segment count shows `N/M`. Only rendered when ≥ 1 gate was evaluated.

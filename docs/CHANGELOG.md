@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-13 — Status indicator restyle · spec-sheet/close overlap · theme-aware card logo
+
+- **Status indicator** is now a flat semantic icon + colored label (check / alert-triangle
+  / x) instead of a glowing dot — applied on cards and reused in the comparison modal's
+  Status row. Removed the `.tl-dot` glow and `.cmp-status` styles.
+- **Fixed spec-sheet/close overlap** on the card back: the "Spec sheet ⤓" download was
+  absolutely positioned and sat on top of the ← close button; both now live in an in-flow
+  title-bar actions cluster.
+- **Theme-aware card TAL badge**: light mode uses `TAL-Logo-Black.png`, dark mode
+  `TAL-Logo-White.png` (matches the header). White-on-light was invisible before.
+
 ## 2026-06-13 — Back face = full specs only · comparison modal = full specs
 
 - **Back of card is now the full spec sheet only.** Removed the Qualification tab and tab

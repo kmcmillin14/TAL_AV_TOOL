@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import TrafficLight from '@/src/design-system/components/TrafficLight'
 import Icon from '@/src/design-system/components/Icon'
 import VehicleSpecSheet from './VehicleSpecSheet'
+import { useTheme } from '@/src/lib/uiPrefs'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { QualificationResult } from '@/src/calc/types'
 import type { UnitSystem } from '@/src/lib/utils/units'
@@ -29,6 +30,7 @@ function isTAL(partnership: string) {
 export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: VehicleCardProps) {
   const [face, setFace] = useState<Face>('front')
   const [imgError, setImgError] = useState(false)
+  const [theme] = useTheme()
   const { status } = result
   const statusCls = status.toLowerCase() as 'green' | 'yellow' | 'red'
 
@@ -79,7 +81,7 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
             )}
             {isTAL(vehicle.display.partnership)
               // eslint-disable-next-line @next/next/no-img-element -- static TAL badge sized by CSS
-              ? <img src="/assets/TAL-Logo-White.png" alt="TAL" className="veh-tal-logo" />
+              ? <img src={theme === 'dark' ? '/assets/TAL-Logo-White.png' : '/assets/TAL-Logo-Black.png'} alt="TAL" className="veh-tal-logo" />
               : <div className="veh-integration int-3p">3rd Party</div>
             }
           </div>
@@ -190,30 +192,32 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
 
         {/* ───────── BACK ───────── */}
         <div className="veh-card-face veh-card-back" aria-hidden={!isBack}>
-          {vehicle.display.cutsheet && (
-            <a
-              className="veh-back-download"
-              href={vehicle.display.cutsheet}
-              download
-              target="_blank"
-              rel="noopener noreferrer"
-              title="Download spec sheet (PDF)"
-              onClick={e => e.stopPropagation()}
-            >
-              <Icon name="download" size={12} /> Spec sheet
-            </a>
-          )}
           <div className="veh-back-title">
             <span className="bt-name">{vehicle.name}</span>
-            <button
-              type="button"
-              className="veh-back-close"
-              aria-label="Back to summary"
-              onClick={() => setFace('front')}
-              tabIndex={isBack ? 0 : -1}
-            >
-              ←
-            </button>
+            <div className="veh-back-title-actions">
+              {vehicle.display.cutsheet && (
+                <a
+                  className="veh-back-download"
+                  href={vehicle.display.cutsheet}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Download spec sheet (PDF)"
+                  onClick={e => e.stopPropagation()}
+                >
+                  <Icon name="download" size={12} /> Spec sheet
+                </a>
+              )}
+              <button
+                type="button"
+                className="veh-back-close"
+                aria-label="Back to summary"
+                onClick={() => setFace('front')}
+                tabIndex={isBack ? 0 : -1}
+              >
+                ←
+              </button>
+            </div>
           </div>
 
           <div className="veh-back-content">
