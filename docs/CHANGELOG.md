@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-13 — Remove load dimension gates · fix card content clipping
+
+- **Load dimension gates removed.** `load_length`, `load_width`, and `load_height` hard
+  gates have been removed from the gate engine. Physical deck dimensions are no longer
+  evaluated — the engineer handles physical fit assessment. Related `GatePill` labels on
+  Load Length / Load Width / Load Height in Step 1 removed.
+- **Vehicle card min-height increased to 800px** so all 7 spec rows and the "View
+  details →" footer are always visible without clipping.
+
 ## 2026-06-13 — Vehicle card visual overhaul: colored borders, larger traffic lights, image fix
 
 - **Always-visible status border.** Removed the thin `veh-status-bar` strip. Cards now

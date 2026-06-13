@@ -482,7 +482,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
                 <div className="fld-row-3" style={{ marginTop: 14 }}>
                   <div className="fld">
-                    <label>Load Length <GatePill /> ({iLabel})</label>
+                    <label>Load Length ({iLabel})</label>
                     <input
                       type="number"
                       step="0.1"
@@ -497,7 +497,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                     <div className="help">Optional — auto-fills from pallet type</div>
                   </div>
                   <div className="fld">
-                    <label>Load Width <GatePill /> ({iLabel})</label>
+                    <label>Load Width ({iLabel})</label>
                     <input
                       type="number"
                       step="0.1"
@@ -511,7 +511,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                     />
                   </div>
                   <div className="fld">
-                    <label>Load Height <GatePill /> ({iLabel})</label>
+                    <label>Load Height ({iLabel})</label>
                     <input
                       type="number"
                       step="0.1"

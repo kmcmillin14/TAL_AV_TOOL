@@ -413,7 +413,7 @@ affect GREEN/RED verdicts; the certifications soft gate (amber, text `"soft"`) a
 YELLOW. Aisle width carries no pill — it is explicitly informational-only (ARCHITECTURE.md).
 
 Gate field → pill mapping:
-- §01 Load: Max Load Weight, Unit/Load Type, Load Length, Load Width, Load Height → **gate**
+- §01 Load: Max Load Weight → **gate**; Unit/Load Type → **gate**; Load Length / Load Width / Load Height → *no pill* (informational only — dimension gates removed)
 - §02 Transfer: Transfer Method, Delivery Pattern, Max Lift Height (conditional) → **gate**
 - §03 Environment: Min Temperature, Max Temperature, Outdoor Required?, Freezer Capable?,
   Max Ramp Grade → **gate**; Min Aisle Width → *no pill* (informational)

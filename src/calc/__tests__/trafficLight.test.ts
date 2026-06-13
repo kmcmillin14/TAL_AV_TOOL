@@ -349,48 +349,6 @@ describe('qualifyVehicle — freezer gate', () => {
   })
 })
 
-describe('qualifyVehicle — load dimension gates', () => {
-  it('skips load gates when no dimensions provided', () => {
-    const result = qualifyVehicle(fixtureVehicle(), emptyApp)
-    expect(result.hardGates.find(g => g.gateId === 'load_length')!.skipped).toBe(true)
-    expect(result.hardGates.find(g => g.gateId === 'load_width')!.skipped).toBe(true)
-    expect(result.hardGates.find(g => g.gateId === 'load_height')!.skipped).toBe(true)
-  })
-
-  it('passes when load fits within deck dimensions', () => {
-    const result = qualifyVehicle(
-      fixtureVehicle(),
-      { ...emptyApp, loadLengthIn: 40, loadWidthIn: 40, loadHeightIn: 48 },
-    )
-    expect(result.status).toBe('GREEN')
-  })
-
-  it('fails when load exceeds any deck dimension', () => {
-    const result = qualifyVehicle(
-      fixtureVehicle(),
-      { ...emptyApp, loadLengthIn: 60 },
-    )
-    expect(result.status).toBe('RED')
-    const gate = result.hardGates.find(g => g.gateId === 'load_length')!
-    expect(gate.passed).toBe(false)
-    expect(gate.reason).toContain('12.0 in short')
-  })
-
-  it('skips load gates when vehicle has no load deck (tugger)', () => {
-    const tugger = fixtureVehicle({
-      calc: {
-        ...fixtureVehicle().calc,
-        maxLoadLengthIn: null,
-        maxLoadWidthIn: null,
-        maxLoadHeightIn: null,
-      },
-    })
-    const result = qualifyVehicle(tugger, { ...emptyApp, loadLengthIn: 40 })
-    const gate = result.hardGates.find(g => g.gateId === 'load_length')!
-    expect(gate.skipped).toBe(true)
-    expect(gate.skipReason).toBe('Vehicle has no load deck')
-  })
-})
 
 describe('qualifyVehicle — payload type gate', () => {
   it('skips when no typical unit type is set', () => {

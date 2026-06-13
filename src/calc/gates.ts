@@ -124,52 +124,6 @@ function booleanGate(o: {
   }
 }
 
-/** Load-dimension gate (length/width/height) — distinct "no requirement" vs
- *  "vehicle has no load deck" skip paths. */
-function loadDimensionGate(
-  gateId: string,
-  name: string,
-  vehicleMax: number | null | undefined,
-  required: number | null | undefined,
-  unit = 'in',
-): GateResult {
-  if (required == null || required <= 0) {
-    return skippedGate(gateId, name, 'hard', vehicleMax != null ? `${vehicleMax} ${unit}` : 'n/a', unit)
-  }
-  if (vehicleMax == null) {
-    return {
-      gateId,
-      name,
-      severity: 'hard',
-      passed: true,
-      skipped: true,
-      skipReason: 'Vehicle has no load deck',
-      vehicleValue: 'n/a',
-      requiredValue: `${required} ${unit}`,
-      requiredNumeric: required,
-      unit,
-      reason: 'Not evaluated — vehicle has no load deck (tugger/tow class)',
-    }
-  }
-  const passed = vehicleMax >= required
-  const delta = vehicleMax - required
-  return {
-    gateId,
-    name,
-    severity: 'hard',
-    passed,
-    skipped: false,
-    vehicleValue: `${vehicleMax} ${unit}`,
-    requiredValue: `${required} ${unit}`,
-    vehicleNumeric: vehicleMax,
-    requiredNumeric: required,
-    unit,
-    delta,
-    reason: passed
-      ? `Deck accepts ${vehicleMax} ${unit} vs. ${required} ${unit} required`
-      : `Deck only ${vehicleMax} ${unit}, need ${required} ${unit} (${Math.abs(delta).toFixed(1)} ${unit} short)`,
-  }
-}
 
 // ── The registry (evaluation order preserved from the original code) ─────────
 
@@ -186,14 +140,7 @@ export const GATES: readonly GateSpec[] = [
       : `Vehicle rated ${veh.toLocaleString()} lbs, need ${req.toLocaleString()} lbs (${Math.abs(delta).toLocaleString()} lbs short)`,
   }),
 
-  { id: 'load_length', name: 'Load Length', severity: 'hard',
-    run: (v, a) => loadDimensionGate('load_length', 'Load Length', v.calc.maxLoadLengthIn, a.loadLengthIn) },
-  { id: 'load_width', name: 'Load Width', severity: 'hard',
-    run: (v, a) => loadDimensionGate('load_width', 'Load Width', v.calc.maxLoadWidthIn, a.loadWidthIn) },
-  { id: 'load_height', name: 'Load Height', severity: 'hard',
-    run: (v, a) => loadDimensionGate('load_height', 'Load Height', v.calc.maxLoadHeightIn, a.loadHeightIn) },
-
-  { id: 'payload_type', name: 'Payload Type', severity: 'hard',
+{ id: 'payload_type', name: 'Payload Type', severity: 'hard',
     run(vehicle, app) {
       const unitType = app.typicalUnitType?.trim()
       if (!unitType) return skippedGate('payload_type', 'Payload Type', 'hard', vehicle.payloadTypes.join(', ') || 'None')
