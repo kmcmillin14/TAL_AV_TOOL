@@ -74,3 +74,27 @@ describe('updateProject explicit clears (key present with undefined)', () => {
     expect(read.operatorsPerShift).toBe(3)
   })
 })
+
+describe('ROI card path — legacy project with pinned numberOfOperators: 0', () => {
+  it('typing per-shift operators in the card yields a nonzero displaced total', () => {
+    // Project created while the schema still pinned numberOfOperators: 0
+    const p = createProject({ projectName: 'ML2 legacy', numberOfOperators: 0 })
+    expect(getProject(p.id)!.numberOfOperators).toBe(0)
+
+    // Exact patch the ROI card sends on typing "3"
+    updateProject(p.id, { operatorsPerShift: 3, numberOfOperators: undefined } as Parameters<typeof updateProject>[1])
+    const proj = getProject(p.id)!
+    expect(proj.operatorsPerShift).toBe(3)
+
+    // Exact derivation step4's costs memo runs (|| so pinned 0 falls through)
+    const displaced = proj.numberOfOperators || ((proj.operatorsPerShift ?? 0) * (proj.shiftsPerDay ?? 1))
+    expect(displaced).toBe(3)
+  })
+
+  it('even WITHOUT typing, a pinned 0 no longer masks Step 1 operators', () => {
+    const p = createProject({ projectName: 'Pinned', numberOfOperators: 0, operatorsPerShift: 2, shiftsPerDay: 2 })
+    const proj = getProject(p.id)!
+    const displaced = proj.numberOfOperators || ((proj.operatorsPerShift ?? 0) * (proj.shiftsPerDay ?? 1))
+    expect(displaced).toBe(4)
+  })
+})

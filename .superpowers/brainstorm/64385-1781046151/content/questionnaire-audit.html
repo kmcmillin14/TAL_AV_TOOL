@@ -1,0 +1,258 @@
+<style>
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin: 16px 0; }
+.panel { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 16px; }
+.panel h3 { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin: 0 0 12px; color: rgba(255,255,255,0.4); }
+
+.q-row {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+  font-size: 12px; line-height: 1.4;
+}
+.q-row:last-child { border-bottom: none; }
+.q-num { font-size: 10px; color: rgba(255,255,255,0.2); font-weight: 600; min-width: 22px; padding-top: 1px; }
+.q-label { color: rgba(255,255,255,0.7); flex: 1; }
+.q-label .fields { font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 2px; }
+
+.badge {
+  font-size: 9px; font-weight: 700; border-radius: 4px;
+  padding: 2px 6px; white-space: nowrap; flex-shrink: 0;
+}
+.badge.gate { background: rgba(229,0,0,0.2); color: #ff8080; border: 1px solid rgba(229,0,0,0.3); }
+.badge.sizing { background: rgba(80,160,255,0.15); color: #80b8ff; border: 1px solid rgba(80,160,255,0.25); }
+.badge.context { background: rgba(255,200,0,0.12); color: #ffd060; border: 1px solid rgba(255,200,0,0.25); }
+.badge.drop { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.1); text-decoration: line-through; }
+.badge.opt { background: rgba(120,220,120,0.1); color: #90e090; border: 1px solid rgba(120,220,120,0.2); }
+
+.legend { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.legend-item { display: flex; align-items: center; gap: 5px; font-size: 11px; color: rgba(255,255,255,0.5); }
+
+.section-divider {
+  font-size: 10px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.08em; color: rgba(255,255,255,0.2);
+  padding: 10px 0 4px; border-top: 1px solid rgba(255,255,255,0.06);
+  margin-top: 6px;
+}
+.section-divider:first-child { border-top: none; padding-top: 0; }
+
+.new-section {
+  margin-bottom: 10px;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.new-section-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px;
+  background: rgba(255,255,255,0.04);
+  font-size: 12px; font-weight: 700; color: #e0e0e0;
+}
+.new-section-body { padding: 6px 12px 8px; }
+.new-section.required .new-section-header { border-left: 3px solid #e50000; }
+.new-section.important .new-section-header { border-left: 3px solid rgba(80,160,255,0.6); }
+.new-section.optional .new-section-header { border-left: 3px solid rgba(255,255,255,0.15); }
+
+.field-chip {
+  display: inline-block;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 4px;
+  padding: 2px 7px;
+  font-size: 10px;
+  color: rgba(255,255,255,0.55);
+  margin: 2px;
+}
+.field-chip.gate { background: rgba(229,0,0,0.1); border-color: rgba(229,0,0,0.2); color: #ff9090; }
+.field-chip.sizing { background: rgba(80,160,255,0.08); border-color: rgba(80,160,255,0.2); color: #90c0ff; }
+.field-chip.removed { opacity: 0.3; text-decoration: line-through; }
+
+.note { font-size: 11px; color: rgba(255,255,255,0.35); font-style: italic; margin-top: 4px; padding-left: 2px; }
+</style>
+
+<h2>Questionnaire Audit</h2>
+<p class="subtitle">Current 13 sections evaluated by purpose. Left = what exists today. Right = proposed restructure.</p>
+
+<div class="legend">
+  <div class="legend-item"><span class="badge gate">hard gate</span> blocks vehicle selection</div>
+  <div class="legend-item"><span class="badge sizing">fleet sizing</span> feeds charging / ROM</div>
+  <div class="legend-item"><span class="badge context">context</span> informational only</div>
+  <div class="legend-item"><span class="badge opt">optional</span> move to bottom</div>
+  <div class="legend-item"><span class="badge drop">remove</span> engineer fills, not customer</div>
+</div>
+
+<div class="two-col">
+
+  <!-- LEFT: CURRENT -->
+  <div class="panel">
+    <h3>Current — 13 sections</h3>
+
+    <div class="section-divider">Vehicle Qualification</div>
+
+    <div class="q-row">
+      <div class="q-num">01</div>
+      <div class="q-label">What are you moving?
+        <div class="fields">Weight, unit type, load dims</div>
+      </div>
+      <span class="badge gate">hard gate</span>
+    </div>
+    <div class="q-row">
+      <div class="q-num">02</div>
+      <div class="q-label">How is it transferred?
+        <div class="fields">Transfer method, delivery pattern, lift height</div>
+      </div>
+      <span class="badge gate">hard gate</span>
+    </div>
+    <div class="q-row">
+      <div class="q-num">03</div>
+      <div class="q-label">Where does it operate?
+        <div class="fields">Aisle width, floor condition</div>
+      </div>
+      <span class="badge context">context</span>
+    </div>
+
+    <div class="section-divider">Fleet Sizing</div>
+
+    <div class="q-row">
+      <div class="q-num">04</div>
+      <div class="q-label">Operating Schedule
+        <div class="fields">Shifts, hours, days, breaks</div>
+      </div>
+      <span class="badge sizing">fleet sizing</span>
+    </div>
+    <div class="q-row">
+      <div class="q-num">05</div>
+      <div class="q-label">Throughput & Distance
+        <div class="fields">Moves/hr, avg distance</div>
+      </div>
+      <span class="badge drop">remove from customer form</span>
+    </div>
+    <div class="q-row">
+      <div class="q-num">06</div>
+      <div class="q-label">Labor & ROI
+        <div class="fields">Operators per shift</div>
+      </div>
+      <span class="badge sizing">fleet sizing</span>
+    </div>
+
+    <div class="section-divider">Optional / Context</div>
+
+    <div class="q-row">
+      <div class="q-num">07</div>
+      <div class="q-label">Ramps & Inclines</div>
+      <span class="badge gate">hard gate</span>
+    </div>
+    <div class="q-row">
+      <div class="q-num">08</div>
+      <div class="q-label">Dealer & Contact</div>
+      <span class="badge drop">remove from customer form</span>
+    </div>
+    <div class="q-row">
+      <div class="q-num">09</div>
+      <div class="q-label">Certifications & Compliance</div>
+      <span class="badge gate">hard gate</span>
+    </div>
+    <div class="q-row">
+      <div class="q-num">10</div>
+      <div class="q-label">Equipment Integration
+        <div class="fields">Elevators, conveyors, PLCs</div>
+      </div>
+      <span class="badge context">context</span>
+    </div>
+    <div class="q-row">
+      <div class="q-num">11</div>
+      <div class="q-label">Environment
+        <div class="fields">Freezer, outdoor, dust, humidity</div>
+      </div>
+      <span class="badge gate">hard gate</span>
+    </div>
+    <div class="q-row">
+      <div class="q-num">12</div>
+      <div class="q-label">Software Integration
+        <div class="fields">WMS, OEM fleet software</div>
+      </div>
+      <span class="badge context">context</span>
+    </div>
+    <div class="q-row">
+      <div class="q-num">13</div>
+      <div class="q-label">Project Notes</div>
+      <span class="badge context">context</span>
+    </div>
+  </div>
+
+  <!-- RIGHT: PROPOSED -->
+  <div class="panel">
+    <h3>Proposed — 4 sections + optional</h3>
+
+    <div class="new-section required">
+      <div class="new-section-header">
+        <span>1 — The Load</span>
+        <span class="badge gate">hard gate</span>
+      </div>
+      <div class="new-section-body">
+        <span class="field-chip gate">Max load weight</span>
+        <span class="field-chip gate">Unit / load type</span>
+        <span class="field-chip gate">Delivery pattern</span>
+        <span class="field-chip gate">Transfer method</span>
+        <span class="field-chip gate">Max lift height</span>
+        <div class="note">The 5 fields that gate every vehicle. Must come first.</div>
+      </div>
+    </div>
+
+    <div class="new-section required">
+      <div class="new-section-header">
+        <span>2 — The Environment</span>
+        <span class="badge gate">hard gate</span>
+      </div>
+      <div class="new-section-body">
+        <span class="field-chip gate">Freezer / cold storage</span>
+        <span class="field-chip gate">Outdoor exposure</span>
+        <span class="field-chip gate">Certifications needed</span>
+        <span class="field-chip">Floor condition</span>
+        <span class="field-chip">Aisle width</span>
+        <span class="field-chip">Ramp grade</span>
+        <div class="note">Hard environment gates grouped together. Aisle/floor informational.</div>
+      </div>
+    </div>
+
+    <div class="new-section important">
+      <div class="new-section-header">
+        <span>3 — The Schedule</span>
+        <span class="badge sizing">fleet sizing</span>
+      </div>
+      <div class="new-section-body">
+        <span class="field-chip sizing">Shifts per day</span>
+        <span class="field-chip sizing">Hours per shift</span>
+        <span class="field-chip sizing">Operating days</span>
+        <span class="field-chip sizing">Operators replaced</span>
+        <div class="note">Feeds charging model + ROM payback. Customer almost always knows this.</div>
+      </div>
+    </div>
+
+    <div class="new-section optional">
+      <div class="new-section-header">
+        <span>4 — Optional Details</span>
+        <span class="badge opt">optional</span>
+      </div>
+      <div class="new-section-body">
+        <span class="field-chip">Load dimensions</span>
+        <span class="field-chip">Equipment integrations</span>
+        <span class="field-chip">Software / WMS</span>
+        <span class="field-chip">Throughput estimate</span>
+        <span class="field-chip">Distance estimate</span>
+        <span class="field-chip">Notes</span>
+        <div class="note">Collapsed by default. Throughput/distance optional — engineer usually overrides anyway.</div>
+      </div>
+    </div>
+
+    <div style="margin-top: 10px; padding: 10px 12px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px dashed rgba(255,255,255,0.1);">
+      <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: rgba(255,255,255,0.25); margin-bottom: 6px;">Removed from customer form</div>
+      <span class="field-chip removed">Dealer & contact</span>
+      <span class="field-chip removed">Bastian rep</span>
+      <span class="field-chip removed">Install date</span>
+      <span class="field-chip removed">Opportunity number</span>
+      <div class="note">Engineer fills these in the project header, not customer.</div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle">Does this grouping feel right? Any fields in the wrong bucket, or missing entirely?</p>

@@ -325,18 +325,24 @@ total base→sold build-up.
 (min+max)/2` used for downstream math only (never shown as "the price").
 
 **Economic assumptions (persisted, editable, defaulted):**
-- `numberOfOperators` (0; UI defaults to `operatorsPerShift × shiftsPerDay`),
-  `fullyBurdenedRateUsdPerYear` (65000), `energyCostUsdPerKwh` (0.12),
-  `annualMaintenancePctOfCapex` (0.08), `operatingDaysPerYear` (312).
+- `operatorsPerShift` (from Step 1; default 0) × `shiftsPerDay` = total operators
+  displaced. `fullyBurdenedRateUsdPerYear` (default 65 000), `energyCostUsdPerKwh`
+  (0.12), `annualMaintenancePctOfCapex` (0.08), `operatingDaysPerYear` (312 or derived
+  from `operatingDaysPattern`). The `numberOfOperators` legacy override field is
+  schema-optional and cleared by the ROI card on edit (the derived product is always
+  authoritative).
 
 **Annual OPEX:** energy = Σ over groups of `(dischargeA × voltageV / 1000) kW ×
 dailyOpHr × operatingDaysPerYear × fleetSold × energyCostUsdPerKwh`; maintenance =
 `totalMid × annualMaintenancePctOfCapex`.
 
-**Payback (simple ROI, 2026-06-12):** annual labor offset = `numberOfOperators ×
-fullyBurdenedRateUsdPerYear`; payback years = `totalMid / laborOffset` (— when there
-is no offset). OPEX is informational only — it is **not** netted against the offset;
-the payback chart's cumulative cash flow likewise rises by the labor offset.
+**Simple ROI card (`RomEconomics`):** two editable inputs — *Operators replaced per
+shift* and *Fully-burdened cost* (displayed as currency `$65,000` at rest, raw number
+on focus). Local React state owns the live values; `onPatch` persists to storage
+asynchronously. Computation is inline (no dependency on the parent `costs` memo):
+`totalOps = localOps × shiftsPerDay`, `annualOffset = totalOps × localRate`,
+`payback = capexMid / annualOffset` (— when offset = 0). OPEX is informational only
+— not netted against the offset.
 
 **Export:** proposal PDF (embedded-JSON pattern, with a fleet/ROM page) · project
 JSON · **PowerPoint deck** (`.pptx`, client-side via pptxgenjs — title, requirements,
@@ -359,6 +365,58 @@ as data — `HelpSection[]` in `src/content/help.ts` with `id`, `title`, `summar
 ordered `howTo`, optional `tips`, and an optional `status: 'coming'` for the
 unbuilt Steps 4–6. Closes on outside-click, `Escape`, or the × in the drawer
 header.
+
+## Step 2 — Vehicle qualification matrix
+
+Three-column card grid (2 at 1000 px, 1 at 600 px). Each card is one vehicle from
+`src/content/vehicles/*.json`. The grid updates live as Step 1 fields change.
+
+### Card front face
+
+1. **Hero image** (16:9) with TAL-Integrated logo badge or "3rd Party" pill.
+2. **Name / manufacturer** + **traffic-light indicator** (GREEN/YELLOW/RED dot).
+3. **Verdict line** (one sentence under the traffic light): the first failing hard gate's
+   reason, or the first failing soft preference, or "Meets all N evaluated requirements",
+   or "No requirements entered yet".
+4. **Segmented gate bar**: one segment per gate (hard + soft). Color: `pass` (green) ·
+   `fail` (red, hard gate) · `soft` (amber, soft gate miss) · `skip` (dimmed, gate not
+   evaluated). Segment count shows `N of M`. Only rendered when ≥ 1 gate was evaluated.
+5. **Per-load chips** (YELLOW multi-load only): a chip per load showing compatible/not.
+6. **Spec rows** (4 rows):
+   - *Capacity* — `maxWeightLbs` in the active unit + headroom ratio vs. the entered weight
+     gate (`1.2× your load` / `80% of your load`).
+   - *Max Lift* — `maxLiftHeightFt` in the active unit. **If the vehicle cannot lift
+     (`maxLiftHeightFt = null`, e.g. the 8TB50A Automated Tugger), the row label becomes
+     "Max Speed" and shows `speedLoadedFps` converted to mph (imperial) or km/h (metric).**
+   - *Payloads* — `payloadTypes.join(', ')`.
+   - *Transfer* — all `transferMethods[].method` joined.
+7. **"View details →"** flips the card.
+
+### Card back face
+
+Two tabs — **Qualification** (`WhyBreakdown`: every gate, its result, and reason) and
+**Specs** (`VehicleSpecSheet`: full technical sheet). Top-right: **Spec sheet ⤓** link
+downloads the vehicle's cutsheet PDF.
+
+### Traffic-light logic
+
+- **GREEN** — all hard gates pass AND all soft preferences pass (or are skipped).
+- **YELLOW** — all hard gates pass AND ≥ 1 soft preference fails (or gate skipped, any
+  hard gate passes).
+- **RED** — ≥ 1 hard gate fails.
+- Gates are skipped (not RED) when the corresponding requirement is empty / 0 (the
+  app-wide "no requirement" sentinel). Exception: `outdoor` and `freezer` are boolean —
+  unchecked = no requirement, always skipped.
+
+### No-lift vehicle gate behavior
+
+When a lift is required (`deliveryPatternRequiresLift` = true and `maxLiftHeightFt > 0`)
+and the vehicle has `maxLiftHeightFt = null` (floor-level transport, no mast), the
+`lift_height` gate returns **passed = false, reason = "No lift capability — floor-level
+transport only"**. The gate bar segment shows red. In the skipped-gate path (lift not
+required), `vehicleValue` renders as "No lift" instead of "0 ft".
+
+---
 
 ## Step 2 — Vehicle cutsheet download
 

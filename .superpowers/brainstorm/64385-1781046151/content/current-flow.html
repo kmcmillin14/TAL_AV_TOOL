@@ -1,0 +1,170 @@
+<style>
+.flow-diagram {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin: 12px 0;
+}
+.flow-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.flow-box {
+  border: 1.5px solid rgba(255,255,255,0.15);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+  min-width: 110px;
+  background: rgba(255,255,255,0.05);
+  color: #e0e0e0;
+}
+.flow-box.active { border-color: #e50000; background: rgba(229,0,0,0.12); color: #ff6b6b; }
+.flow-box.muted { opacity: 0.45; }
+.flow-label {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.flow-arrow {
+  font-size: 18px;
+  color: rgba(255,255,255,0.25);
+  margin-top: -4px;
+}
+.sub-steps {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  margin-top: 4px;
+}
+.sub-box {
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 5px;
+  padding: 4px 9px;
+  font-size: 11px;
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.03);
+}
+.phase-header {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: rgba(255,255,255,0.3);
+  margin: 20px 0 8px;
+}
+.problem-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255,170,0,0.12);
+  border: 1px solid rgba(255,170,0,0.3);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 11px;
+  color: #ffaa00;
+  margin: 3px;
+}
+.section-card {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 16px 20px;
+  margin-bottom: 14px;
+}
+.section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.q1-highlight {
+  background: rgba(229,0,0,0.08);
+  border: 1px solid rgba(229,0,0,0.2);
+  border-radius: 10px;
+  padding: 18px 22px;
+  margin-top: 18px;
+}
+</style>
+
+<h2>Current App Structure</h2>
+<p class="subtitle">Before we redesign, let's map what exists today and where the friction is.</p>
+
+<div class="section-card">
+  <div class="phase-header">Current 5-step flow</div>
+  <div class="flow-diagram">
+    <div class="flow-step">
+      <div class="flow-box muted">Start</div>
+      <div class="flow-label">Step 0</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-box active">Application<br><span style="font-size:11px;font-weight:400;opacity:0.7">13 sections</span></div>
+      <div class="flow-label">Step 1</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-box">Vehicle<br>Matrix</div>
+      <div class="flow-label">Step 2</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-box">Fleet Engine</div>
+      <div class="sub-steps">
+        <div class="sub-box">Flows</div>
+        <span style="color:rgba(255,255,255,0.2);font-size:11px">→</span>
+        <div class="sub-box">Charging</div>
+        <span style="color:rgba(255,255,255,0.2);font-size:11px">→</span>
+        <div class="sub-box">Buffer</div>
+      </div>
+      <div class="flow-label">Step 3</div>
+    </div>
+    <div class="flow-arrow">→</div>
+    <div class="flow-step">
+      <div class="flow-box">ROM<br>Dashboard</div>
+      <div class="flow-label">Step 4</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-card">
+  <div class="phase-header">Step 1 questionnaire — what's in it today (13 sections)</div>
+  <div class="section-grid">
+    <div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:6px;font-weight:600;">DRIVES VEHICLE QUALIFICATION (hard gates)</div>
+      <div class="sub-box" style="margin:3px 0;display:block;">01 — Load weight &amp; unit type</div>
+      <div class="sub-box" style="margin:3px 0;display:block;">02 — Transfer method &amp; delivery pattern</div>
+      <div class="sub-box" style="margin:3px 0;display:block;">03 — Aisle width &amp; floor condition</div>
+      <div class="sub-box" style="margin:3px 0;display:block;">09 — Certifications</div>
+      <div class="sub-box" style="margin:3px 0;display:block;">11 — Environment (freezer, outdoor)</div>
+    </div>
+    <div>
+      <div style="font-size:11px;color:rgba(255,255,255,0.4);margin-bottom:6px;font-weight:600;">DRIVES FLEET SIZING (flow seeds)</div>
+      <div class="sub-box" style="margin:3px 0;display:block;">04 — Schedule (shifts, hours)</div>
+      <div class="sub-box" style="margin:3px 0;display:block;">05 — Throughput &amp; distance</div>
+      <div class="sub-box" style="margin:3px 0;display:block;opacity:0.45">06 — Labor &amp; ROI</div>
+      <div class="sub-box" style="margin:3px 0;display:block;opacity:0.45">07 — Ramps</div>
+      <div class="sub-box" style="margin:3px 0;display:block;opacity:0.45">08, 10, 12, 13 — Contact, integrations, software, notes</div>
+    </div>
+  </div>
+</div>
+
+<div class="section-card">
+  <div class="phase-header">Pain points you raised</div>
+  <span class="problem-tag">⚡ 13 sections intimidates novices before they see a vehicle</span>
+  <span class="problem-tag">⚡ Experts skip straight to flows — questionnaire is overhead</span>
+  <span class="problem-tag">⚡ Throughput + distance in Step 1 doesn't carry into Step 3 flows</span>
+  <span class="problem-tag">⚡ Three natural phases (chassis eval → fleet size → results) aren't reflected in UX</span>
+</div>
+
+<div class="q1-highlight">
+  <div style="font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:#e50000;margin-bottom:8px;">First question — answering in terminal</div>
+  <div style="font-size:14px;color:#e0e0e0;line-height:1.5;">
+    When a TAL sales engineer opens this tool for a new opportunity, <strong>which describes their typical starting point?</strong><br>
+    <span style="color:rgba(255,255,255,0.5);font-size:12px;">Answer in the terminal — this will shape whether we need one flow or two.</span>
+  </div>
+</div>

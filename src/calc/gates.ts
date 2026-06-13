@@ -227,7 +227,16 @@ export const GATES: readonly GateSpec[] = [
       const requiresLift = deliveryPatternRequiresLift(app.deliveryPattern)
       const liftReq = app.maxLiftHeightFt
       if (requiresLift && liftReq != null && liftReq > 0) {
-        const vehLift = vehicle.calc.maxLiftHeightFt ?? 0
+        // Vehicle with no lift capability at all (tugger/tow class, null in JSON)
+        if (vehicle.calc.maxLiftHeightFt == null) {
+          return {
+            gateId: 'lift_height', name: 'Lift Height', severity: 'hard', passed: false, skipped: false,
+            vehicleValue: 'No lift', requiredValue: `${liftReq} ft`,
+            vehicleNumeric: 0, requiredNumeric: liftReq, unit: 'ft', delta: -liftReq,
+            reason: 'No lift capability — floor-level transport only',
+          }
+        }
+        const vehLift = vehicle.calc.maxLiftHeightFt
         const passed = vehLift >= liftReq
         const delta = vehLift - liftReq
         return {
@@ -240,7 +249,8 @@ export const GATES: readonly GateSpec[] = [
         }
       }
       const reason = !requiresLift ? 'Delivery pattern does not involve height' : SKIP_REASON
-      return skippedGate('lift_height', 'Lift Height', 'hard', `${vehicle.calc.maxLiftHeightFt ?? 0} ft`, 'ft', reason)
+      const vehLiftDisplay = vehicle.calc.maxLiftHeightFt != null ? `${vehicle.calc.maxLiftHeightFt} ft` : 'No lift'
+      return skippedGate('lift_height', 'Lift Height', 'hard', vehLiftDisplay, 'ft', reason)
     } },
 
   booleanGate({

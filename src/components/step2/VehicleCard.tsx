@@ -60,10 +60,16 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
   const headroom = weightGate?.vehicleNumeric && weightGate?.requiredNumeric
     ? weightGate.vehicleNumeric / weightGate.requiredNumeric
     : null
-  const liftFt = vehicle.calc.maxLiftHeightFt ?? 0
-  const liftDisplay = liftFt > 0
-    ? (unitSystem === 'metric' ? `${(liftFt * 0.3048).toFixed(1)} m` : `${liftFt} ft`)
+  const liftFt = vehicle.calc.maxLiftHeightFt
+  const canLift = liftFt != null && liftFt > 0
+  const liftDisplay = canLift
+    ? (unitSystem === 'metric' ? `${(liftFt! * 0.3048).toFixed(1)} m` : `${liftFt} ft`)
     : '—'
+  // Vehicles without lift (tuggers/tow class) show max loaded speed instead.
+  const speedMph = vehicle.calc.speedLoadedFps * 0.6818
+  const speedDisplay = unitSystem === 'metric'
+    ? `${(vehicle.calc.speedLoadedFps * 1.0973).toFixed(1)} km/h`
+    : `${speedMph.toFixed(1)} mph`
 
   return (
     <div className={`veh-card ${statusCls}`}>
@@ -140,8 +146,8 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
                 </span>
               </div>
               <div className="veh-spec-row">
-                <span className="spec-k">Max Lift</span>
-                <span className="spec-v">{liftDisplay}</span>
+                <span className="spec-k">{canLift ? 'Max Lift' : 'Max Speed'}</span>
+                <span className="spec-v">{canLift ? liftDisplay : speedDisplay}</span>
               </div>
               <div className="veh-spec-row">
                 <span className="spec-k">Payloads</span>

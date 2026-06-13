@@ -1,0 +1,6 @@
+{"type":"server-started","port":55222,"host":"127.0.0.1","url_host":"localhost","url":"http://localhost:55222","screen_dir":"/Users/kylemcmillin/Desktop/TAL AV Eng Tool/tal-fleet-calculator/.superpowers/brainstorm/64385-1781046151/content","state_dir":"/Users/kylemcmillin/Desktop/TAL AV Eng Tool/tal-fleet-calculator/.superpowers/brainstorm/64385-1781046151/state"}
+{"type":"screen-added","file":"/Users/kylemcmillin/Desktop/TAL AV Eng Tool/tal-fleet-calculator/.superpowers/brainstorm/64385-1781046151/content/current-flow.html"}
+{"type":"screen-added","file":"/Users/kylemcmillin/Desktop/TAL AV Eng Tool/tal-fleet-calculator/.superpowers/brainstorm/64385-1781046151/content/waiting-1.html"}
+{"type":"screen-added","file":"/Users/kylemcmillin/Desktop/TAL AV Eng Tool/tal-fleet-calculator/.superpowers/brainstorm/64385-1781046151/content/approaches.html"}
+{"type":"screen-added","file":"/Users/kylemcmillin/Desktop/TAL AV Eng Tool/tal-fleet-calculator/.superpowers/brainstorm/64385-1781046151/content/questionnaire-audit.html"}
+{"type":"server-stopped","reason":"idle timeout"}

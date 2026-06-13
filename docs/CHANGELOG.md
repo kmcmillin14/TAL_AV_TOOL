@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-06-13 — Step 2 card redesign · ROI card rewrite · no-lift vehicle gate + card fix
+
+- **Step 2 vehicle cards redesigned.** Each card front now leads with a **verdict
+  line** (one sentence: first failing gate reason, or "Meets all N requirements") and a
+  **segmented gate bar** (one colored segment per gate: green pass / red hard-fail /
+  amber soft-miss / dimmed skip + N/M count). Spec rows trimmed to four: Capacity
+  (with headroom ratio), Max Lift (or Max Speed for non-lift vehicles), Payloads,
+  Transfer. OEM / Integration / Fleet Software rows removed.
+- **ROI card (`RomEconomics`) rewritten with local state.** The previous controlled
+  component depended on the parent `costs` memo and a legacy `numberOfOperators`
+  override field that was being pinned to 0 by a Zod `.default(0)` — causing the labor
+  offset to always show $0. The new card owns `operatorsPerShift` and
+  `fullyBurdenedRateUsdPerYear` as local `useState`; computation runs inline from local
+  values, so the display updates on every keystroke regardless of the storage/render
+  cycle. `useEffect` re-syncs when external project changes arrive. The schema field
+  `numberOfOperators` is now `.optional()` (no default) and the ROI card clears it on
+  edit so the derived product is always authoritative.
+- **Burdened-cost input displays as currency.** The `type="text"` input shows `$65,000`
+  at rest (via `Intl.NumberFormat`) and reverts to the raw number on focus for editing.
+- **No-lift vehicles in the lift gate.** When `vehicle.calc.maxLiftHeightFt === null`
+  (e.g. 8TB50A Automated Tugger) and a lift height is required, the `lift_height` gate
+  now returns `passed: false, reason: "No lift capability — floor-level transport only"`
+  instead of the misleading "Lifts to 0 ft". In the skipped path (lift not required),
+  `vehicleValue` renders as "No lift" not "0 ft". The card spec row swaps "Max Lift"
+  for "Max Speed" (`speedLoadedFps` → mph / km/h) for no-lift vehicles.
+
 ## 2026-06-12 — ROM dashboard scrolling layout · simple ROI · header KPI band removed
 
 - **Step 4 matches the questionnaire/Fleet-Engine pattern**: the four view tabs
