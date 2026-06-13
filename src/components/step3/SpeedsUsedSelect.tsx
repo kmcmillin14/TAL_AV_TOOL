@@ -4,6 +4,7 @@ import { useRef, useState } from 'react'
 import type { RouteLayout } from '@/src/calc/types'
 import { ROUTE_LAYOUT_FACTORS } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
+import { units } from '@/src/lib/utils/units'
 import Icon from '@/src/design-system/components/Icon'
 import FloatingPanel from './FloatingPanel'
 
@@ -13,8 +14,6 @@ interface Props {
   unitSystem: 'imperial' | 'metric'
   onChange: (next: RouteLayout) => void
 }
-
-const M_PER_FT = 0.3048
 
 interface TierDef {
   value: RouteLayout
@@ -37,7 +36,7 @@ const pct = (v: RouteLayout) => Math.round(ROUTE_LAYOUT_FACTORS[v] * 100)
 /** Format a feet-per-second value in the active unit system (ft/s or m/s). */
 function fmtSpeed(fps: number | undefined, metric: boolean): string {
   if (fps == null || !Number.isFinite(fps)) return '—'
-  return (metric ? fps * M_PER_FT : fps).toFixed(1)
+  return (metric ? units.distance.toMetric(fps) : fps).toFixed(1)
 }
 
 /**

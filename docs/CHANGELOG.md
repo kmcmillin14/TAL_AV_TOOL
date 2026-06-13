@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-06-13 — /simplify cleanup pass (behavior-neutral refactor)
+
+DRY / dead-code cleanup, no behavior change (160/160 tests green, tsc clean):
+- **Unit conversions consolidated onto `src/lib/utils/units.ts`.** Removed duplicated
+  conversion constants/factors: `vehicleDisplay.ts` now routes all lbs→kg / ft→m / in→mm /
+  °F→°C / fps→m/s through `units.*.toMetric`; deleted the private `FT_PER_M`/`M_PER_FT`
+  constants in `step3/FlowRow.tsx`, `step3/MethodSelect.tsx`, `step3/SpeedsUsedSelect.tsx`
+  in favor of `units.distance.toMetric/toImperial`.
+- **Battery DoD constant deduped.** `vehicleDisplay.batteryLifeDisplay` now imports
+  `DEFAULT_DOD` from `src/calc/types` instead of a local `USABLE_DOD = 0.8` shadow copy.
+- **Unexported internal-only helpers** in `vehicleDisplay.ts` (`canLift`, `liftDisplay`,
+  `rampDisplay`) — they had no external importers.
+
+Reviewed-and-skipped (would change behavior or wrong altitude): RomEconomics `fmtCurrency`
+(full `$65,000` is intended for the rate input; shared `usd` abbreviates to `$65K`);
+moving `isTAL` into `vehicleLibrary` (that module imports `fs` — would pull server code into
+the client bundle); converting `PersistentHeader` theme to CSS (it owns the toggle, so its
+own state stays in sync — no desync); React `useMemo`/`useCallback` micro-opts on Step 2
+(child isn't memoized, n=6 vehicles — no real benefit).
+
 ## 2026-06-13 — Fix card logo theme desync (CSS) · visible dark-mode hover
 
 - **Card TAL badge now swaps via CSS** keyed off `html[data-theme]` instead of a per-card

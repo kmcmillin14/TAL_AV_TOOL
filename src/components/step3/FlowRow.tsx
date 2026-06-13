@@ -3,7 +3,7 @@
 import { useRef, useState, type DragEvent } from 'react'
 import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { UnitSystem } from '@/src/lib/utils/units'
+import { units, type UnitSystem } from '@/src/lib/utils/units'
 import Icon from '@/src/design-system/components/Icon'
 import VehicleSelect, { VehicleDot } from './VehicleSelect'
 import MethodSelect from './MethodSelect'
@@ -29,8 +29,6 @@ interface Props {
   onDropFlow: (after: boolean) => void
   onDragEndFlow: () => void
 }
-
-const FT_PER_M = 3.28084
 
 function fmtCycle(sec: number | null): string {
   if (sec == null) return '—'
@@ -75,12 +73,12 @@ export default function FlowRow({
 
   const roundTripFt = flow.distanceFt * 2
   const distDisplay = metric
-    ? (roundTripFt / FT_PER_M).toFixed(0)
+    ? units.distance.toMetric(roundTripFt).toFixed(0)
     : roundTripFt.toString()
 
   const setDistance = (input: string) => {
     const n = clampNum(input)
-    const oneWay = (metric ? n * FT_PER_M : n) / 2
+    const oneWay = (metric ? units.distance.toImperial(n) : n) / 2
     onChange({ ...flow, distanceFt: oneWay })
   }
 

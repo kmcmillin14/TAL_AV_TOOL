@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react'
 import type { Vehicle, TransferMethod } from '@/src/lib/vehicleLibrary'
+import { units } from '@/src/lib/utils/units'
 import FloatingPanel from './FloatingPanel'
 
 interface Props {
@@ -13,8 +14,6 @@ interface Props {
   onMethodChange: (idx: number) => void
   onLiftChange: (ft: number) => void
 }
-
-const FT_PER_M = 3.28084
 
 /** Total seconds this transfer adds to the cycle: load + unload, plus the
  *  height-derived lift time for lifting methods. */
@@ -55,12 +54,12 @@ export default function MethodSelect({
   const total = Math.round(addedSec(active, liftTimeSec))
 
   const heightValue = metric
-    ? Number((liftHeightFt / FT_PER_M).toFixed(1))
+    ? Number(units.distance.toMetric(liftHeightFt).toFixed(1))
     : liftHeightFt
   const onHeight = (input: string) => {
     const n = Number(input)
     const safe = !Number.isFinite(n) || n < 0 ? 0 : n
-    onLiftChange(metric ? safe * FT_PER_M : safe)
+    onLiftChange(metric ? units.distance.toImperial(safe) : safe)
   }
 
   return (

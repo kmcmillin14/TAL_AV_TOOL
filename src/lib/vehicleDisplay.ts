@@ -4,30 +4,31 @@
  * identical strings. No React, no I/O — formatting only.
  */
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { UnitSystem } from '@/src/lib/utils/units'
+import { units, type UnitSystem } from '@/src/lib/utils/units'
+import { DEFAULT_DOD } from '@/src/calc/types'
 
 /** Max weight capacity — `4,000 lbs` imperial / `1,814 kg` metric. */
 export function capacityDisplay(v: Vehicle, unit: UnitSystem): string {
   return unit === 'metric'
-    ? `${(v.calc.maxWeightLbs * 0.453592).toFixed(0)} kg`
+    ? `${units.weight.toMetric(v.calc.maxWeightLbs).toFixed(0)} kg`
     : `${v.calc.maxWeightLbs.toLocaleString()} lbs`
 }
 
 /** True when the vehicle has a real lift height (not a floor-only tugger). */
-export function canLift(v: Vehicle): boolean {
+function canLift(v: Vehicle): boolean {
   const ft = v.calc.maxLiftHeightFt
   return ft != null && ft > 0
 }
 
 /** Max lift height — `14.67 ft` / `4.5 m`; `—` for floor-only vehicles. */
-export function liftDisplay(v: Vehicle, unit: UnitSystem): string {
+function liftDisplay(v: Vehicle, unit: UnitSystem): string {
   if (!canLift(v)) return '—'
   const ft = v.calc.maxLiftHeightFt as number
-  return unit === 'metric' ? `${(ft * 0.3048).toFixed(1)} m` : `${ft} ft`
+  return unit === 'metric' ? `${units.distance.toMetric(ft).toFixed(1)} m` : `${ft} ft`
 }
 
 /** Max ramp grade — `5%`. */
-export function rampDisplay(v: Vehicle): string {
+function rampDisplay(v: Vehicle): string {
   return `${v.specs.maxRampGrade}%`
 }
 
@@ -35,7 +36,7 @@ export function rampDisplay(v: Vehicle): string {
 export function speedDisplay(v: Vehicle, unit: UnitSystem): string {
   const fps = v.calc.speedLoadedFps
   return unit === 'metric'
-    ? `${(fps * 0.3048).toFixed(2)} m/s (${(fps * 1.09728).toFixed(1)} km/h)`
+    ? `${units.distance.toMetric(fps).toFixed(2)} m/s (${(fps * 1.09728).toFixed(1)} km/h)`
     : `${fps.toFixed(2)} ft/s (${(fps * 0.68182).toFixed(1)} mph)`
 }
 
@@ -44,19 +45,16 @@ export function batteryDisplay(v: Vehicle): string {
   return `${v.calc.ratedAh} Ah`
 }
 
-/** Conservative usable depth-of-discharge for AGV/AMR batteries. The low end of
- *  the runtime range protects battery life; the high end is full discharge. */
-const USABLE_DOD = 0.8
-
 /**
  * Estimated battery life (runtime) per charge as a range, in hours.
  * `runtime_h = ratedAh × DoD / dischargeA` (per VehicleCalc docs). Low end uses
- * the conservative usable DoD, high end uses full charge — e.g. `8.5–10.7 hrs`.
+ * the conservative usable DoD (`DEFAULT_DOD`, shared with the calc layer), high
+ * end uses full charge — e.g. `8.5–10.7 hrs`.
  */
 export function batteryLifeDisplay(v: Vehicle): string {
   const { ratedAh, dischargeA } = v.calc
   if (!dischargeA || dischargeA <= 0) return '—'
-  const low = (ratedAh * USABLE_DOD) / dischargeA
+  const low = (ratedAh * DEFAULT_DOD) / dischargeA
   const high = ratedAh / dischargeA
   const fmt = (h: number) => (h >= 10 ? h.toFixed(0) : h.toFixed(1))
   return `${fmt(low)}–${fmt(high)} hrs`
@@ -87,11 +85,11 @@ export function liftOrRampDisplay(v: Vehicle, unit: UnitSystem): string {
 export interface SpecRow { label: string; value: string }
 export interface SpecSection { title: string; rows: SpecRow[] }
 
-const lbsToKg = (lbs: number) => Math.round(lbs * 0.453592)
-const ftToM = (ft: number) => +(ft * 0.3048).toFixed(1)
-const inToMm = (i: number) => Math.round(i * 25.4)
-const fToC = (f: number) => Math.round(((f - 32) * 5) / 9)
-const fpsToMps = (fps: number) => +(fps * 0.3048).toFixed(1)
+const lbsToKg = (lbs: number) => Math.round(units.weight.toMetric(lbs))
+const ftToM = (ft: number) => +units.distance.toMetric(ft).toFixed(1)
+const inToMm = (i: number) => Math.round(units.dimension.toMetric(i))
+const fToC = (f: number) => Math.round(units.temperature.toMetric(f))
+const fpsToMps = (fps: number) => +units.distance.toMetric(fps).toFixed(1)
 const money = (n: number) =>
   n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
   : n >= 1_000 ? `$${Math.round(n / 1_000)}K`
