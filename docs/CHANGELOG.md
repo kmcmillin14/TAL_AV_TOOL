@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-13 — Fix card logo theme desync (CSS) · visible dark-mode hover
+
+- **Card TAL badge now swaps via CSS** keyed off `html[data-theme]` instead of a per-card
+  `useTheme()` state. The hook holds independent state per component, so toggling theme in
+  the header left the card's logo stale (black logo shown in dark mode). Rendering both
+  logos and toggling with `[data-theme]` selectors keeps it always in sync.
+- **Card hover is now visible in dark mode**: a dark drop-shadow alone was invisible on the
+  dark background. Hover now brightens the border and lifts the card (`translateY(-2px)`),
+  which reads in both themes.
+
 ## 2026-06-13 — Status indicator restyle · spec-sheet/close overlap · theme-aware card logo
 
 - **Status indicator** is now a flat semantic icon + colored label (check / alert-triangle

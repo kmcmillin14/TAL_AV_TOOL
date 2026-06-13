@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react'
 import TrafficLight from '@/src/design-system/components/TrafficLight'
 import Icon from '@/src/design-system/components/Icon'
 import VehicleSpecSheet from './VehicleSpecSheet'
-import { useTheme } from '@/src/lib/uiPrefs'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { QualificationResult } from '@/src/calc/types'
 import type { UnitSystem } from '@/src/lib/utils/units'
@@ -30,7 +29,6 @@ function isTAL(partnership: string) {
 export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: VehicleCardProps) {
   const [face, setFace] = useState<Face>('front')
   const [imgError, setImgError] = useState(false)
-  const [theme] = useTheme()
   const { status } = result
   const statusCls = status.toLowerCase() as 'green' | 'yellow' | 'red'
 
@@ -80,8 +78,13 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
               <div className="veh-no-img">{vehicle.display.category}</div>
             )}
             {isTAL(vehicle.display.partnership)
-              // eslint-disable-next-line @next/next/no-img-element -- static TAL badge sized by CSS
-              ? <img src={theme === 'dark' ? '/assets/TAL-Logo-White.png' : '/assets/TAL-Logo-Black.png'} alt="TAL" className="veh-tal-logo" />
+              ? <>
+                  {/* Theme-aware via CSS (data-theme), so it never desyncs from the live theme */}
+                  {/* eslint-disable-next-line @next/next/no-img-element -- static TAL badge sized by CSS */}
+                  <img src="/assets/TAL-Logo-White.png" alt="TAL" className="veh-tal-logo is-dark" />
+                  {/* eslint-disable-next-line @next/next/no-img-element -- static TAL badge sized by CSS */}
+                  <img src="/assets/TAL-Logo-Black.png" alt="" aria-hidden className="veh-tal-logo is-light" />
+                </>
               : <div className="veh-integration int-3p">3rd Party</div>
             }
           </div>
