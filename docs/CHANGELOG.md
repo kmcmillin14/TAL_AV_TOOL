@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-13 — Back face = full specs only · comparison modal = full specs
+
+- **Back of card is now the full spec sheet only.** Removed the Qualification tab and tab
+  switcher (the front gate-bar hover tooltip already covers qualification). Deleted the
+  orphaned `WhyBreakdown` component and its CSS, plus orphaned `.veh-back-tab*` CSS.
+- **Front footer button renamed** "View details →" → "Full Spec Sheet →".
+- **Comparison modal now shows the full spec sheet**, not just the card specs — grouped
+  into the same sections as the back-of-card sheet, vehicles as columns, differing cells
+  highlighted.
+- **Shared `vehicleSpecSections()`** in `vehicleDisplay.ts` is the single source for the
+  full sheet; both `VehicleSpecSheet` and `ComparisonModal` render from it (no drift).
+
 ## 2026-06-13 — Leaner card: Ah-only battery · drop verdict line · gate-bar hover tooltip
 
 - **Battery row shows amp-hours only** (`533 Ah`) — dropped the kWh figure (cards + modal).

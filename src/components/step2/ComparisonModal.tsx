@@ -5,10 +5,7 @@ import Icon from '@/src/design-system/components/Icon'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { QualificationResult, TrafficLightStatus } from '@/src/calc/types'
 import type { UnitSystem } from '@/src/lib/utils/units'
-import {
-  capacityDisplay, liftDisplay, rampDisplay, speedDisplay,
-  batteryDisplay, batteryLifeDisplay, transferDisplay, payloadsDisplay,
-} from '@/src/lib/vehicleDisplay'
+import { vehicleSpecSections } from '@/src/lib/vehicleDisplay'
 
 export interface CompareEntry {
   vehicle: Vehicle
@@ -28,24 +25,6 @@ const STATUS_LABEL: Record<TrafficLightStatus, string> = {
   RED: 'Not Compatible',
 }
 
-/** One spec row: a label and a value-getter per vehicle. `diff` marks rows
- *  where the values differ across vehicles so they can be highlighted. */
-interface SpecRow {
-  label: string
-  get: (v: Vehicle, unit: UnitSystem) => string
-}
-
-const SPEC_ROWS: SpecRow[] = [
-  { label: 'Capacity', get: capacityDisplay },
-  { label: 'Max Lift', get: liftDisplay },
-  { label: 'Max Ramp Grade', get: v => rampDisplay(v) },
-  { label: 'Max Speed', get: speedDisplay },
-  { label: 'Battery', get: v => batteryDisplay(v) },
-  { label: 'Battery Life', get: v => batteryLifeDisplay(v) },
-  { label: 'Payloads', get: v => payloadsDisplay(v) },
-  { label: 'Transfer', get: v => transferDisplay(v) },
-]
-
 export default function ComparisonModal({ entries, unitSystem, onClose, onRemove }: Props) {
   // Close on Escape.
   useEffect(() => {
@@ -53,6 +32,11 @@ export default function ComparisonModal({ entries, unitSystem, onClose, onRemove
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [onClose])
+
+  // Every vehicle yields identical section/row labels, so the first entry
+  // defines the canonical layout; values are pulled per column by index.
+  const sections = entries.map(e => vehicleSpecSections(e.vehicle, unitSystem))
+  const layout = sections[0] ?? []
 
   return (
     <div className="cmp-overlay" onClick={onClose} role="dialog" aria-modal="true" aria-label="Compare vehicles">
@@ -108,23 +92,16 @@ export default function ComparisonModal({ entries, unitSystem, onClose, onRemove
                 })}
               </tr>
 
-              {SPEC_ROWS.map(row => {
-                const values = entries.map(({ vehicle }) => row.get(vehicle, unitSystem))
-                const allSame = values.every(v => v === values[0])
-                return (
-                  <tr key={row.label}>
-                    <td className="cmp-rowhead">{row.label}</td>
-                    {values.map((val, i) => (
-                      <td
-                        key={entries[i].vehicle.id}
-                        className={`cmp-cell${allSame ? '' : ' diff'}`}
-                      >
-                        {val}
-                      </td>
-                    ))}
-                  </tr>
-                )
-              })}
+              {/* Full spec sheet, grouped by section */}
+              {layout.map((section, si) => (
+                <SectionRows
+                  key={section.title}
+                  section={section}
+                  sectionIndex={si}
+                  sections={sections}
+                  entries={entries}
+                />
+              ))}
             </tbody>
           </table>
         </div>
@@ -136,5 +113,36 @@ export default function ComparisonModal({ entries, unitSystem, onClose, onRemove
         </div>
       </div>
     </div>
+  )
+}
+
+function SectionRows({
+  section, sectionIndex, sections, entries,
+}: {
+  section: ReturnType<typeof vehicleSpecSections>[number]
+  sectionIndex: number
+  sections: ReturnType<typeof vehicleSpecSections>[]
+  entries: CompareEntry[]
+}) {
+  return (
+    <>
+      <tr className="cmp-section-row">
+        <td className="cmp-section" colSpan={entries.length + 1}>{section.title}</td>
+      </tr>
+      {section.rows.map((row, ri) => {
+        const values = sections.map(s => s[sectionIndex]?.rows[ri]?.value ?? '—')
+        const allSame = values.every(v => v === values[0])
+        return (
+          <tr key={row.label}>
+            <td className="cmp-rowhead">{row.label}</td>
+            {values.map((val, ci) => (
+              <td key={entries[ci].vehicle.id} className={`cmp-cell${allSame ? '' : ' diff'}`}>
+                {val}
+              </td>
+            ))}
+          </tr>
+        )
+      })}
+    </>
   )
 }

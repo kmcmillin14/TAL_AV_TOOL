@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react'
 import TrafficLight from '@/src/design-system/components/TrafficLight'
 import Icon from '@/src/design-system/components/Icon'
-import WhyBreakdown from './WhyBreakdown'
 import VehicleSpecSheet from './VehicleSpecSheet'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { QualificationResult } from '@/src/calc/types'
@@ -22,7 +21,6 @@ interface VehicleCardProps {
 }
 
 type Face = 'front' | 'back'
-type BackTab = 'qual' | 'specs'
 
 function isTAL(partnership: string) {
   return partnership === 'TAL Integrated' || partnership === 'TAL 3rd Party'
@@ -30,7 +28,6 @@ function isTAL(partnership: string) {
 
 export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: VehicleCardProps) {
   const [face, setFace] = useState<Face>('front')
-  const [backTab, setBackTab] = useState<BackTab>('qual')
   const [imgError, setImgError] = useState(false)
   const { status } = result
   const statusCls = status.toLowerCase() as 'green' | 'yellow' | 'red'
@@ -185,7 +182,7 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
                 onClick={() => setFace('back')}
                 tabIndex={isBack ? -1 : 0}
               >
-                View details →
+                Full Spec Sheet →
               </button>
             </div>
           </div>
@@ -208,29 +205,6 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
           )}
           <div className="veh-back-title">
             <span className="bt-name">{vehicle.name}</span>
-          </div>
-
-          <div className="veh-back-tabs" role="tablist" aria-label="Vehicle details">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={backTab === 'qual'}
-              className={`veh-back-tab ${backTab === 'qual' ? 'on' : ''}`}
-              onClick={() => setBackTab('qual')}
-              tabIndex={isBack ? 0 : -1}
-            >
-              Qualification
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={backTab === 'specs'}
-              className={`veh-back-tab ${backTab === 'specs' ? 'on' : ''}`}
-              onClick={() => setBackTab('specs')}
-              tabIndex={isBack ? 0 : -1}
-            >
-              Specs
-            </button>
             <button
               type="button"
               className="veh-back-close"
@@ -242,11 +216,8 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
             </button>
           </div>
 
-          <div className="veh-back-content" role="tabpanel">
-            {backTab === 'qual'
-              ? <WhyBreakdown result={result} />
-              : <VehicleSpecSheet vehicle={vehicle} unitSystem={unitSystem} />
-            }
+          <div className="veh-back-content">
+            <VehicleSpecSheet vehicle={vehicle} unitSystem={unitSystem} />
           </div>
         </div>
       </div>

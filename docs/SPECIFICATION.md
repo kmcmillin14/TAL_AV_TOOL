@@ -424,24 +424,29 @@ Gate field → pill mapping:
 
 ### Card back face
 
-Two tabs — **Qualification** (`WhyBreakdown`: every gate, its result, and reason) and
-**Specs** (`VehicleSpecSheet`: full technical sheet). Top-right: **Spec sheet ⤓** link
-downloads the vehicle's cutsheet PDF.
+The front footer button reads **Full Spec Sheet →** and flips the card to the full
+technical spec sheet (`VehicleSpecSheet`) — there is no qualification tab (the front
+gate-bar hover tooltip covers qualification at a glance). Header shows the vehicle name
+and a ← close button; top-right **Spec sheet ⤓** link downloads the cutsheet PDF. The
+sheet renders from the shared `vehicleSpecSections()` (see below).
 
 ### Vehicle comparison tool
 
 Comparison is driven entirely from the **filter toolbar** (cards have no compare control).
 A right-aligned **Compare vehicles ▾** button opens a dropdown checklist of all vehicles;
 the user picks 2–4, then **Compare specs** opens a **side-by-side modal**
-(`ComparisonModal`) with vehicles as columns and specs as rows: Status (traffic light +
-label), Capacity, Max Lift, Max Ramp Grade, Max Speed, Battery, Battery Life, Payloads,
-Transfer. Rows whose values differ across the selected vehicles are highlighted. The
-modal closes on Escape, the ✕ button, backdrop click, or when the selection drops below 2.
+(`ComparisonModal`) with vehicles as columns. It shows a **Status** row (traffic light +
+label) followed by the **full spec sheet** grouped into the same sections as the back-of-
+card sheet (Physical, Load Capacity, Performance, Power & Charging, Environment, Software
+& Navigation, Transfer, Compliance, Commercial). Rows whose values differ across the
+selected vehicles are highlighted. The modal closes on Escape, the ✕ button, backdrop
+click, or when the selection drops below 2.
 
-Card and modal render identical spec strings via shared pure formatters in
-`src/lib/vehicleDisplay.ts` (capacity / lift / ramp / speed / battery / charge / transfer /
-payloads), respecting the active unit system. Comparison is informational only — it never
-selects a vehicle (Step 2 makes no selection; ARCHITECTURE.md).
+The back-of-card spec sheet and the comparison modal both render from one shared pure
+source, **`vehicleSpecSections(vehicle, unitSystem)`** in `src/lib/vehicleDisplay.ts`,
+which returns fixed, aligned sections/rows (single-unit formatting) so the two views can
+never drift. Card front-face spec strings use the smaller per-field formatters in the same
+module. Comparison is informational only — it never selects a vehicle (ARCHITECTURE.md).
 
 ### Traffic-light logic
 
