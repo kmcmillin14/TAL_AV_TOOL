@@ -761,23 +761,22 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .gate-pill {
   display: inline-flex;
   align-items: center;
-  margin-left: 5px;
-  padding: 1px 4px;
-  height: 13px;
+  margin-left: 6px;
+  padding: 2px 5px;
+  height: 15px;
   font-family: var(--tal-font-family);
-  font-size: 8px;
+  font-size: 9px;
   font-weight: 700;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--bad);
   background: var(--bad-soft);
-  border: 1px solid currentColor;
+  border: 1.5px solid currentColor;
   border-radius: 2px;
   vertical-align: middle;
   line-height: 1;
   user-select: none;
   pointer-events: none;
-  opacity: 0.9;
 }
 .gate-pill.soft {
   color: var(--warn);
@@ -845,21 +844,34 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .veh-card {
   position: relative;
   background: var(--bg-surface);
-  border: 1px solid var(--border);
+  border: 1.5px solid var(--border);
+  border-top-width: 4px;
   border-radius: 10px;
   transition: border-color 0.15s, box-shadow 0.2s;
   display: flex; flex-direction: column;
-  min-height: 600px;
+  min-height: 720px;
   perspective: 1400px;
   overflow: hidden;
 }
-.veh-card:hover {
-  border-color: var(--border-strong);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+/* Status color always visible on the card border — not just on hover */
+.veh-card.green {
+  border-color: rgba(94, 234, 144, 0.55);
+  box-shadow: 0 0 0 0px rgba(94,234,144,0.06), 0 2px 12px rgba(0,0,0,0.14);
 }
-.veh-card.green:hover { border-color: var(--good); }
-.veh-card.yellow:hover { border-color: var(--warn); }
-.veh-card.red:hover { border-color: var(--bad); }
+.veh-card.yellow {
+  border-color: rgba(251, 191, 36, 0.55);
+  box-shadow: 0 0 0 0px rgba(251,191,36,0.06), 0 2px 12px rgba(0,0,0,0.14);
+}
+.veh-card.red {
+  border-color: rgba(235, 10, 30, 0.55);
+  box-shadow: 0 0 0 0px rgba(235,10,30,0.06), 0 2px 12px rgba(0,0,0,0.14);
+}
+.veh-card:hover {
+  box-shadow: 0 6px 28px rgba(0,0,0,0.22);
+}
+.veh-card.green:hover  { border-color: var(--good); box-shadow: 0 0 0 3px rgba(94,234,144,0.12), 0 6px 28px rgba(0,0,0,0.2); }
+.veh-card.yellow:hover { border-color: var(--warn); box-shadow: 0 0 0 3px rgba(251,191,36,0.12), 0 6px 28px rgba(0,0,0,0.2); }
+.veh-card.red:hover    { border-color: var(--bad);  box-shadow: 0 0 0 3px rgba(235,10,30,0.12), 0 6px 28px rgba(0,0,0,0.2); }
 
 .veh-card-inner {
   position: relative;
@@ -1025,17 +1037,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   word-break: break-word;
 }
 
-.veh-status-bar { height: 3px; width: 100%; }
-.veh-status-bar.green { background: var(--good); }
-.veh-status-bar.yellow { background: var(--warn); }
-.veh-status-bar.red { background: var(--bad); }
-
 /* Vehicle image area */
 .veh-img-area {
   position: relative; aspect-ratio: 16 / 9;
   background: var(--bg-surface-2); border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
+  flex-shrink: 0;
 }
 .veh-photo {
   width: 100%; height: 100%; object-fit: contain; padding: 16px;
@@ -1075,15 +1083,15 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .veh-name-block .mfr { font-size: 12px; color: var(--text-tertiary); margin-top: 3px; }
 
-.traffic-light { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
-.tl-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
-.tl-dot.green { background: var(--good); box-shadow: 0 0 6px var(--good); }
-.tl-dot.yellow { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
-.tl-dot.red { background: var(--bad); box-shadow: 0 0 6px var(--bad); }
-.tl-label { font-size: 11px; font-weight: 600; }
-.tl-label.green { color: var(--good); }
+.traffic-light { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+.tl-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; }
+.tl-dot.green  { background: var(--good); box-shadow: 0 0 8px 2px rgba(94,234,144,0.55); }
+.tl-dot.yellow { background: var(--warn); box-shadow: 0 0 8px 2px rgba(251,191,36,0.55); }
+.tl-dot.red    { background: var(--bad);  box-shadow: 0 0 8px 2px rgba(235,10,30,0.55); }
+.tl-label { font-size: 12px; font-weight: 700; letter-spacing: 0.02em; }
+.tl-label.green  { color: var(--good); }
 .tl-label.yellow { color: var(--warn); }
-.tl-label.red { color: var(--bad); }
+.tl-label.red    { color: var(--bad); }
 
 /* Spec rows — single column, stacked */
 .veh-spec-list {

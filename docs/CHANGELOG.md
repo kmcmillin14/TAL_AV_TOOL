@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-13 — Vehicle card visual overhaul: colored borders, larger traffic lights, image fix
+
+- **Always-visible status border.** Removed the thin `veh-status-bar` strip. Cards now
+  have a colored 1.5 px border (4 px top accent) in green / yellow / red at all times —
+  not just on hover. Hover adds a subtle glow ring.
+- **Image no longer compressed.** Added `flex-shrink: 0` to `.veh-img-area` so the hero
+  photo stays at its natural 16:9 height even when the spec list grows.
+- **Traffic light dots enlarged.** `.tl-dot` 10 px → 14 px; glow radius increased from
+  4 px to 8 px; label weight 600 → 700.
+- **Headroom ratio removed from Capacity row.** The `× 1.8× your load` annotation has
+  been removed — was clutter when no weight had been entered yet.
+- **Card `min-height` increased** from 600 px to 720 px to accommodate seven spec rows
+  without the image compressing.
+
 ## 2026-06-13 — Gate indicator pills · vehicle card battery/charge/ramp rows · speed units
 
 - **Gate indicator pills on Step 1 field labels.** Every field that feeds the gate engine

@@ -84,7 +84,6 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
 
   return (
     <div className={`veh-card ${statusCls}`}>
-      <div className={`veh-status-bar ${statusCls}`} />
       <div className={`veh-card-inner ${isBack ? 'flipped' : ''}`}>
 
         {/* ───────── FRONT ───────── */}
@@ -147,14 +146,7 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
             <div className="veh-spec-list">
               <div className="veh-spec-row">
                 <span className="spec-k">Capacity</span>
-                <span className="spec-v">
-                  {capDisplay}
-                  {headroom != null && (
-                    <span className={`spec-headroom ${headroom >= 1 ? 'ok' : 'short'}`}>
-                      {' '}· {headroom >= 1 ? `${headroom.toFixed(1)}× your load` : `${Math.round(headroom * 100)}% of your load`}
-                    </span>
-                  )}
-                </span>
+                <span className="spec-v">{capDisplay}</span>
               </div>
               <div className="veh-spec-row">
                 <span className="spec-k">{canLift ? 'Max Lift' : 'Max Ramp'}</span>

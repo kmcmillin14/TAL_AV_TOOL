@@ -371,10 +371,20 @@ header.
 Three-column card grid (2 at 1000 px, 1 at 600 px). Each card is one vehicle from
 `src/content/vehicles/*.json`. The grid updates live as Step 1 fields change.
 
+### Card visual design
+
+Each card has a **colored border** (1.5 px sides, 4 px top accent) that reflects the
+traffic-light status at all times — not just on hover. GREEN cards get the green accent;
+YELLOW amber; RED red. Hover adds a subtle glow ring. This replaces the former thin
+`veh-status-bar` status strip. `min-height: 720 px`; the image area is `flex-shrink: 0`
+so the hero photo holds its 16:9 proportions as the spec list grows.
+
+Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
+
 ### Card front face
 
-1. **Hero image** (16:9) with TAL-Integrated logo badge or "3rd Party" pill.
-2. **Name / manufacturer** + **traffic-light indicator** (GREEN/YELLOW/RED dot).
+1. **Hero image** (16:9, `flex-shrink: 0`) with TAL-Integrated logo badge or "3rd Party" pill.
+2. **Name / manufacturer** + **traffic-light indicator** (GREEN/YELLOW/RED dot, 14 px).
 3. **Verdict line** (one sentence under the traffic light): the first failing hard gate's
    reason, or the first failing soft preference, or "Meets all N evaluated requirements",
    or "No requirements entered yet".
@@ -382,9 +392,8 @@ Three-column card grid (2 at 1000 px, 1 at 600 px). Each card is one vehicle fro
    `fail` (red, hard gate) · `soft` (amber, soft gate miss) · `skip` (dimmed, gate not
    evaluated). Segment count shows `N of M`. Only rendered when ≥ 1 gate was evaluated.
 5. **Per-load chips** (YELLOW multi-load only): a chip per load showing compatible/not.
-6. **Spec rows** (4 rows):
-   - *Capacity* — `maxWeightLbs` in the active unit + headroom ratio vs. the entered weight
-     gate (`1.2× your load` / `80% of your load`).
+6. **Spec rows** (7 rows):
+   - *Capacity* — `maxWeightLbs` in the active unit (no headroom ratio annotation).
    - *Max Lift / Max Ramp* — `maxLiftHeightFt` for lift-capable vehicles; for
      non-lift vehicles (`maxLiftHeightFt = null`) the label becomes **Max Ramp** and
      shows `vehicle.specs.maxRampGrade %` — a hard gate value that meaningfully
