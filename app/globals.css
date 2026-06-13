@@ -849,7 +849,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   border-radius: 10px;
   transition: border-color 0.15s, box-shadow 0.2s;
   display: flex; flex-direction: column;
-  min-height: 720px;
   perspective: 1400px;
   overflow: hidden;
 }
@@ -1040,6 +1039,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* Vehicle image area */
 .veh-img-area {
   position: relative; aspect-ratio: 16 / 9;
+  max-height: 200px;
   background: var(--bg-surface-2); border-bottom: 1px solid var(--border);
   display: flex; align-items: center; justify-content: center;
   overflow: hidden;
