@@ -139,6 +139,20 @@ export function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFo
   ) as Partial<ProjectFormData>
 }
 
+/** Inline calibration marker — signals that filling this field changes vehicle
+ *  colors in Step 2. Hard gates (red) affect GREEN/RED; soft (amber) affect YELLOW. */
+function GatePill({ soft }: { soft?: boolean }) {
+  return (
+    <span
+      className={`gate-pill${soft ? ' soft' : ''}`}
+      aria-label={soft ? 'soft gate — affects YELLOW' : 'hard gate — affects RED/GREEN'}
+      title={soft ? 'Soft gate: affects YELLOW vehicles' : 'Hard gate: affects RED / GREEN'}
+    >
+      {soft ? 'soft' : 'gate'}
+    </span>
+  )
+}
+
 function TierBand({ label, hint }: { label: string; hint?: string }) {
   return (
     <div className="form-tier-band">
@@ -396,7 +410,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 )}
                 <div className="fld-grid-4">
                   <div className="fld">
-                    <label>Max Load Weight {i === 0 && <span className="req">*</span>}</label>
+                    <label>Max Load Weight <GatePill /> {i === 0 && <span className="req">*</span>}</label>
                     <div className="input-with-unit">
                       <input
                         type="number"
@@ -415,7 +429,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                   </div>
 
                   <div className="fld">
-                    <label>Unit / Load Type {i === 0 && <span className="req">*</span>}</label>
+                    <label>Unit / Load Type <GatePill /> {i === 0 && <span className="req">*</span>}</label>
                     <select
                       {...register(`loads.${i}.unitType`, { onBlur: onBlurSave })}
                       defaultValue={lf.unitType || ''}
@@ -468,7 +482,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
                 <div className="fld-row-3" style={{ marginTop: 14 }}>
                   <div className="fld">
-                    <label>Load Length ({iLabel})</label>
+                    <label>Load Length <GatePill /> ({iLabel})</label>
                     <input
                       type="number"
                       step="0.1"
@@ -483,7 +497,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                     <div className="help">Optional — auto-fills from pallet type</div>
                   </div>
                   <div className="fld">
-                    <label>Load Width ({iLabel})</label>
+                    <label>Load Width <GatePill /> ({iLabel})</label>
                     <input
                       type="number"
                       step="0.1"
@@ -497,7 +511,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                     />
                   </div>
                   <div className="fld">
-                    <label>Load Height ({iLabel})</label>
+                    <label>Load Height <GatePill /> ({iLabel})</label>
                     <input
                       type="number"
                       step="0.1"
@@ -531,7 +545,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-02')}>
           <div className="fld-grid-3">
             <div className="fld">
-              <label>Transfer Method <span className="req">*</span></label>
+              <label>Transfer Method <GatePill /> <span className="req">*</span></label>
               <select
                 {...register('transferMethod', { onBlur: onBlurSave })}
                 defaultValue={initialData?.transferMethod || ''}
@@ -545,7 +559,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>Delivery Pattern <span className="req">*</span></label>
+              <label>Delivery Pattern <GatePill /> <span className="req">*</span></label>
               <select
                 {...register('deliveryPattern', { onBlur: onBlurSave })}
                 defaultValue={initialData?.deliveryPattern || ''}
@@ -558,7 +572,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
             {requiresLift && (
               <div className="fld">
-                <label>Max Lift Height ({dLabel}) <span className="req">*</span></label>
+                <label>Max Lift Height <GatePill /> ({dLabel}) <span className="req">*</span></label>
                 <div className="input-with-unit">
                   <input
                     type="number"
@@ -612,7 +626,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>Min Temperature ({tLabel})</label>
+              <label>Min Temperature <GatePill /> ({tLabel})</label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -629,7 +643,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               </div>
             </div>
             <div className="fld">
-              <label>Max Temperature ({tLabel})</label>
+              <label>Max Temperature <GatePill /> ({tLabel})</label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -649,7 +663,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
           <div className="fld-grid-4" style={{ marginTop: 14 }}>
             <div className="fld">
-              <label>Outdoor Required?</label>
+              <label>Outdoor Required? <GatePill /></label>
               <Controller
                 name="outdoorRequired"
                 control={control}
@@ -662,7 +676,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               />
             </div>
             <div className="fld">
-              <label>Freezer Capable?</label>
+              <label>Freezer Capable? <GatePill /></label>
               <Controller
                 name="freezerCapable"
                 control={control}
@@ -675,7 +689,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               />
             </div>
             <div className="fld">
-              <label>Max Ramp Grade</label>
+              <label>Max Ramp Grade <GatePill /></label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -716,7 +730,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-04')}>
           <div className="fld-grid-4">
             <div className="fld span-4">
-              <label>Required Certifications</label>
+              <label>Required Certifications <GatePill soft /></label>
               <div className="cert-grid">
                 {CERTIFICATIONS.map(cert => {
                   const on = certifications.includes(cert)

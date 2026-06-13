@@ -71,6 +71,17 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
     ? `${(fps * 0.3048).toFixed(2)} m/s (${(fps * 1.09728).toFixed(1)} km/h)`
     : `${fps.toFixed(2)} ft/s (${(fps * 0.68182).toFixed(1)} mph)`
 
+  // Battery: kWh + Ah · V
+  const batteryKwh = (vehicle.calc.ratedAh * vehicle.calc.voltageV / 1000).toFixed(1)
+  const batteryDisplay = `${batteryKwh} kWh · ${vehicle.calc.ratedAh} Ah`
+
+  // Charge time + charger type label
+  const chargeMin = vehicle.calc.chargeTimeMin ?? null
+  const chargerLabel = vehicle.calc.chargerType === 'opportunity' ? 'opp'
+    : vehicle.calc.chargerType === 'shift_swap' ? 'swap'
+    : vehicle.calc.chargerType ?? '—'
+  const chargeDisplay = chargeMin != null ? `${chargeMin} min (${chargerLabel})` : '—'
+
   return (
     <div className={`veh-card ${statusCls}`}>
       <div className={`veh-status-bar ${statusCls}`} />
@@ -145,15 +156,21 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
                   )}
                 </span>
               </div>
-              {canLift && (
-                <div className="veh-spec-row">
-                  <span className="spec-k">Max Lift</span>
-                  <span className="spec-v">{liftDisplay}</span>
-                </div>
-              )}
+              <div className="veh-spec-row">
+                <span className="spec-k">{canLift ? 'Max Lift' : 'Max Ramp'}</span>
+                <span className="spec-v">{canLift ? liftDisplay : `${vehicle.specs.maxRampGrade}%`}</span>
+              </div>
               <div className="veh-spec-row">
                 <span className="spec-k">Max Speed</span>
                 <span className="spec-v">{speedDisplay}</span>
+              </div>
+              <div className="veh-spec-row">
+                <span className="spec-k">Battery</span>
+                <span className="spec-v">{batteryDisplay}</span>
+              </div>
+              <div className="veh-spec-row">
+                <span className="spec-k">Charge</span>
+                <span className="spec-v">{chargeDisplay}</span>
               </div>
               <div className="veh-spec-row">
                 <span className="spec-k">Payloads</span>

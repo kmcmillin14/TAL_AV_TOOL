@@ -385,11 +385,30 @@ Three-column card grid (2 at 1000 px, 1 at 600 px). Each card is one vehicle fro
 6. **Spec rows** (4 rows):
    - *Capacity* — `maxWeightLbs` in the active unit + headroom ratio vs. the entered weight
      gate (`1.2× your load` / `80% of your load`).
-   - *Max Lift* — `maxLiftHeightFt` in the active unit. **If the vehicle cannot lift
-     (`maxLiftHeightFt = null`, e.g. the 8TB50A Automated Tugger), the row label becomes
-     "Max Speed" and shows `speedLoadedFps` converted to mph (imperial) or km/h (metric).**
+   - *Max Lift / Max Ramp* — `maxLiftHeightFt` for lift-capable vehicles; for
+     non-lift vehicles (`maxLiftHeightFt = null`) the label becomes **Max Ramp** and
+     shows `vehicle.specs.maxRampGrade %` — a hard gate value that meaningfully
+     differentiates floor-level vehicles (3–5 % spread across the library).
+   - *Max Speed* — `speedLoadedFps` in dual-unit format: `ft/s (mph)` imperial /
+     `m/s (km/h)` metric. Shown on every vehicle.
+   - *Battery* — `(ratedAh × voltageV / 1000).toFixed(1) kWh · ratedAh Ah`.
+   - *Charge* — `chargeTimeMin min (opp|swap)` where opp = opportunity, swap = shift_swap.
    - *Payloads* — `payloadTypes.join(', ')`.
    - *Transfer* — all `transferMethods[].method` joined.
+
+### Gate indicator pills (Step 1)
+
+Every Step 1 field that feeds the vehicle qualification gate engine carries an inline
+`<GatePill>` badge immediately after its label text. Hard gates (red, text `"gate"`)
+affect GREEN/RED verdicts; the certifications soft gate (amber, text `"soft"`) affects
+YELLOW. Aisle width carries no pill — it is explicitly informational-only (ARCHITECTURE.md).
+
+Gate field → pill mapping:
+- §01 Load: Max Load Weight, Unit/Load Type, Load Length, Load Width, Load Height → **gate**
+- §02 Transfer: Transfer Method, Delivery Pattern, Max Lift Height (conditional) → **gate**
+- §03 Environment: Min Temperature, Max Temperature, Outdoor Required?, Freezer Capable?,
+  Max Ramp Grade → **gate**; Min Aisle Width → *no pill* (informational)
+- §04 Certifications: Required Certifications → **soft**
 7. **"View details →"** flips the card.
 
 ### Card back face

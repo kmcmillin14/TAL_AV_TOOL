@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-06-13 — Gate indicator pills · vehicle card battery/charge/ramp rows · speed units
+
+- **Gate indicator pills on Step 1 field labels.** Every field that feeds the gate engine
+  now carries an inline `gate` pill (hard gates, TAL red) or `soft` pill (certifications,
+  amber). The pill is a sharp 2 px-radius rectangle with `8px / 0.13em` Toyota Type,
+  current-color border, and a background tint — sits at label baseline without disrupting
+  form density. Aisle width (informational only) explicitly has no pill.
+- **Vehicle cards — new spec rows:** Battery (`kWh · Ah` e.g. `25.6 kWh · 533 Ah`),
+  Charge (`chargeTimeMin min (opp|swap)`). Speed units changed to dual-unit:
+  `ft/s (mph)` imperial / `m/s (km/h)` metric.
+- **Non-lift vehicle row.** Row 2 (formerly always "Max Lift") is now contextual:
+  lift-capable vehicles (CB18, 8HBC40A) show Max Lift; non-lift vehicles show **Max Ramp**
+  (`vehicle.specs.maxRampGrade %`) — a hard gate value that meaningfully differentiates
+  the floor-only fleet (3 %–5 % spread across the library).
+
 ## 2026-06-13 — Step 2 card redesign · ROI card rewrite · no-lift vehicle gate + card fix
 
 - **Step 2 vehicle cards redesigned.** Each card front now leads with a **verdict
