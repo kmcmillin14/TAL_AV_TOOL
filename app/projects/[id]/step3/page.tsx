@@ -91,6 +91,21 @@ export default function FleetEnginePage() {
     [groups, vehicleById, settings],
   )
 
+  // Hero is sticky; the side nav must stick BELOW it. Publish the hero's
+  // measured height as a CSS var the stylesheet consumes.
+  const heroRef = useRef<HTMLElement | null>(null)
+  const layoutRef = useRef<HTMLDivElement | null>(null)
+  useEffect(() => {
+    const hero = heroRef.current
+    const layout = layoutRef.current
+    if (!hero || !layout) return
+    const apply = () => layout.style.setProperty('--engine-hero-h', `${hero.offsetHeight}px`)
+    apply()
+    const ro = new ResizeObserver(apply)
+    ro.observe(hero)
+    return () => ro.disconnect()
+  }, [loading])
+
   const persistPatch = (patch: EnginePatch) => {
     if (!project) return
     const updated = updateProject(project.id, patch)
@@ -125,20 +140,6 @@ export default function FleetEnginePage() {
   }
 
   const groupByVehicle = new Map(fleet.groups.map(g => [g.vehicleId, g]))
-  // Hero is sticky; the side nav must stick BELOW it. Publish the hero's
-  // measured height as a CSS var the stylesheet consumes.
-  const heroRef = useRef<HTMLElement | null>(null)
-  const layoutRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    const hero = heroRef.current
-    const layout = layoutRef.current
-    if (!hero || !layout) return
-    const apply = () => layout.style.setProperty('--engine-hero-h', `${hero.offsetHeight}px`)
-    apply()
-    const ro = new ResizeObserver(apply)
-    ro.observe(hero)
-    return () => ro.disconnect()
-  }, [loading])
   // Hero KPIs — the inputs that drive the fleet: how many flows, total demand.
   const flowCount = flows.length
   const totalThruPerHr = Math.round(flows.reduce((sum, f) => sum + (f.thruPerHr || 0), 0))
