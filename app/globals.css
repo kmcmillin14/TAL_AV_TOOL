@@ -848,6 +848,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   border-radius: 10px;
   transition: box-shadow 0.2s;
   display: flex; flex-direction: column;
+  min-height: 560px;
   perspective: 1400px;
   overflow: hidden;
 }
