@@ -430,9 +430,9 @@ downloads the vehicle's cutsheet PDF.
 
 ### Vehicle comparison tool
 
-Each card image carries a **Compare** checkbox (top-left overlay). The **filter toolbar**
-holds the comparison controls (right-aligned): a selection count, a Clear button, and
-**Compare specs** (enabled at ≥ 2). Compare specs opens a **side-by-side modal**
+Comparison is driven entirely from the **filter toolbar** (cards have no compare control).
+A right-aligned **Compare vehicles ▾** button opens a dropdown checklist of all vehicles;
+the user picks 2–4, then **Compare specs** opens a **side-by-side modal**
 (`ComparisonModal`) with vehicles as columns and specs as rows: Status (traffic light +
 label), Capacity, Max Lift, Max Ramp Grade, Max Speed, Battery, Battery Life, Payloads,
 Transfer. Rows whose values differ across the selected vehicles are highlighted. The

@@ -19,8 +19,6 @@ interface VehicleCardProps {
   result: QualificationResult
   unitSystem: UnitSystem
   filterKey: string
-  selected?: boolean
-  onToggleSelect?: (id: string) => void
 }
 
 type Face = 'front' | 'back'
@@ -30,7 +28,7 @@ function isTAL(partnership: string) {
   return partnership === 'TAL Integrated' || partnership === 'TAL 3rd Party'
 }
 
-export default function VehicleCard({ vehicle, result, unitSystem, filterKey, selected, onToggleSelect }: VehicleCardProps) {
+export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: VehicleCardProps) {
   const [face, setFace] = useState<Face>('front')
   const [backTab, setBackTab] = useState<BackTab>('qual')
   const [imgError, setImgError] = useState(false)
@@ -78,22 +76,6 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey, se
         {/* ───────── FRONT ───────── */}
         <div className="veh-card-face veh-card-front" aria-hidden={isBack}>
           <div className="veh-img-area">
-            {onToggleSelect && (
-              <label
-                className={`veh-compare-check ${selected ? 'on' : ''}`}
-                title="Add to comparison"
-                onClick={e => e.stopPropagation()}
-              >
-                <input
-                  type="checkbox"
-                  checked={!!selected}
-                  onChange={() => onToggleSelect(vehicle.id)}
-                  tabIndex={isBack ? -1 : 0}
-                />
-                <span className="vcc-box" aria-hidden>{selected ? '✓' : ''}</span>
-                <span className="vcc-label">Compare</span>
-              </label>
-            )}
             {vehicle.display.heroImage && !imgError ? (
               // eslint-disable-next-line @next/next/no-img-element -- 16:9 card photo sized via CSS object-fit
               <img

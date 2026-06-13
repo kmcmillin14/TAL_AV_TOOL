@@ -1,6 +1,13 @@
 'use client'
 
+import { useEffect, useRef, useState } from 'react'
+
 export type StatusFilter = 'GREEN' | 'GREEN+YELLOW' | 'ALL'
+
+export interface CompareOption {
+  id: string
+  name: string
+}
 
 interface VehicleFiltersProps {
   search: string
@@ -15,8 +22,10 @@ interface VehicleFiltersProps {
   onManufacturerFilterChange: (v: string) => void
   counts: { green: number; yellow: number; red: number }
   /** Comparison controls (rendered right-aligned in the toolbar). */
-  compareCount: number
+  compareOptions: CompareOption[]
+  compareIds: string[]
   maxCompare: number
+  onToggleCompare: (id: string) => void
   onClearCompare: () => void
   onOpenCompare: () => void
 }
@@ -28,8 +37,27 @@ export default function VehicleFilters({
   categories,
   manufacturers, manufacturerFilter, onManufacturerFilterChange,
   counts,
-  compareCount, maxCompare, onClearCompare, onOpenCompare,
+  compareOptions, compareIds, maxCompare, onToggleCompare, onClearCompare, onOpenCompare,
 }: VehicleFiltersProps) {
+  const [pickerOpen, setPickerOpen] = useState(false)
+  const pickerRef = useRef<HTMLDivElement>(null)
+  const compareCount = compareIds.length
+
+  // Close the picker on outside click or Escape.
+  useEffect(() => {
+    if (!pickerOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (pickerRef.current && !pickerRef.current.contains(e.target as Node)) setPickerOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setPickerOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [pickerOpen])
+
   return (
     <div className="veh-filter-toolbar">
       <input
@@ -67,25 +95,61 @@ export default function VehicleFilters({
         {manufacturers.map(m => <option key={m}>{m}</option>)}
       </select>
 
-      <div className="vf-compare">
-        <span className="vf-compare-count">
-          {compareCount > 0
-            ? `${compareCount} to compare${compareCount >= maxCompare ? ` (max ${maxCompare})` : ''}`
-            : `Select up to ${maxCompare} to compare`}
-        </span>
-        {compareCount > 0 && (
-          <button type="button" className="btn ghost sm" onClick={onClearCompare}>
-            Clear
-          </button>
-        )}
+      <div className="vf-compare" ref={pickerRef}>
         <button
           type="button"
-          className="btn primary sm"
-          disabled={compareCount < 2}
-          onClick={onOpenCompare}
+          className={`vf-compare-toggle ${pickerOpen ? 'open' : ''}`}
+          aria-expanded={pickerOpen}
+          aria-haspopup="listbox"
+          onClick={() => setPickerOpen(o => !o)}
         >
-          Compare specs
+          {compareCount > 0 ? `Compare · ${compareCount}` : 'Compare vehicles'}
+          <span className="vf-caret" aria-hidden>▾</span>
         </button>
+
+        {pickerOpen && (
+          <div className="vf-compare-pop" role="listbox" aria-label="Select vehicles to compare">
+            <div className="vf-compare-pop-head">
+              Select 2–{maxCompare} to compare
+            </div>
+            <div className="vf-compare-list">
+              {compareOptions.map(opt => {
+                const checked = compareIds.includes(opt.id)
+                const atMax = compareCount >= maxCompare && !checked
+                return (
+                  <label key={opt.id} className={`vf-compare-item ${atMax ? 'disabled' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      disabled={atMax}
+                      onChange={() => onToggleCompare(opt.id)}
+                    />
+                    <span className="vf-compare-box" aria-hidden>{checked ? '✓' : ''}</span>
+                    <span className="vf-compare-name">{opt.name}</span>
+                  </label>
+                )
+              })}
+            </div>
+            <div className="vf-compare-actions">
+              <button
+                type="button"
+                className="btn ghost sm"
+                disabled={compareCount === 0}
+                onClick={onClearCompare}
+              >
+                Clear
+              </button>
+              <button
+                type="button"
+                className="btn primary sm"
+                disabled={compareCount < 2}
+                onClick={() => { setPickerOpen(false); onOpenCompare() }}
+              >
+                Compare specs
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

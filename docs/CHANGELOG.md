@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-06-13 — Compare selection moved fully into toolbar dropdown
+
+- **Removed the per-card Compare checkbox.** Vehicle selection for comparison now happens
+  entirely in the toolbar: a **Compare vehicles ▾** button opens a dropdown checklist
+  (2–4 vehicles, Clear + Compare specs in the footer). Cards are unchanged by compare state.
+
 ## 2026-06-13 — Compare controls moved to toolbar · Battery Life replaces Charge row
 
 - **Compare controls relocated** from a floating bottom bar into the filter toolbar

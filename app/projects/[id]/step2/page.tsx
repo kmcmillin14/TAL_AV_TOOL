@@ -248,8 +248,10 @@ export default function Step2Page() {
           manufacturerFilter={manufacturerFilter}
           onManufacturerFilterChange={setManufacturerFilter}
           counts={counts}
-          compareCount={compareIds.length}
+          compareOptions={vehicles.map(v => ({ id: v.id, name: v.name }))}
+          compareIds={compareIds}
           maxCompare={MAX_COMPARE}
+          onToggleCompare={toggleCompare}
           onClearCompare={() => setCompareIds([])}
           onOpenCompare={() => setCompareOpen(true)}
         />
@@ -269,8 +271,6 @@ export default function Step2Page() {
                 result={result}
                 unitSystem={unitSystem}
                 filterKey={filterKey}
-                selected={compareIds.includes(vehicle.id)}
-                onToggleSelect={toggleCompare}
               />
             ))}
           </div>
