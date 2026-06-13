@@ -836,6 +836,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* Vehicle grid — always 3 columns */
 .veh-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; padding: 28px 40px;
+  align-items: start;
 }
 @media (max-width: 1000px) { .veh-grid { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 600px) { .veh-grid { grid-template-columns: 1fr; } }
@@ -871,7 +872,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 /* Front sits in normal flow so it drives the card height — no fixed height,
    no clipping. The back face overlays it absolutely and scrolls if taller. */
-.veh-card-front { position: relative; min-height: 100%; }
+.veh-card-front { position: relative; }
 .veh-card-back {
   position: absolute; inset: 0;
   transform: rotateY(180deg);
@@ -1101,7 +1102,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* Card footer */
 .veh-foot {
   display: flex; align-items: center; justify-content: flex-end;
-  padding-top: 10px; border-top: 1px solid var(--border); margin-top: auto;
+  padding-top: 10px; border-top: 1px solid var(--border);
 }
 
 /* Why breakdown */
