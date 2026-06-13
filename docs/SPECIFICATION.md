@@ -385,12 +385,12 @@ Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
 
 1. **Hero image** (16:9, `flex-shrink: 0`) with TAL-Integrated logo badge or "3rd Party" pill.
 2. **Name / manufacturer** + **traffic-light indicator** (GREEN/YELLOW/RED dot, 14 px).
-3. **Verdict line** (one sentence under the traffic light): the first failing hard gate's
-   reason, or the first failing soft preference, or "Meets all N evaluated requirements",
-   or "No requirements entered yet".
-4. **Segmented gate bar**: one segment per gate (hard + soft). Color: `pass` (green) ·
+3. **Segmented gate bar**: one segment per gate (hard + soft). Color: `pass` (green) ·
    `fail` (red, hard gate) · `soft` (amber, soft gate miss) · `skip` (dimmed, gate not
-   evaluated). Segment count shows `N of M`. Only rendered when ≥ 1 gate was evaluated.
+   evaluated). Segment count shows `N/M`. Only rendered when ≥ 1 gate was evaluated.
+   **Hover or focus** the bar to reveal a tooltip listing every gate with a status dot,
+   name, Pass/Fail/Review badge, and the reason for any fail/review — the at-a-glance
+   replacement for the old always-visible verdict line.
 5. **Per-load chips** (YELLOW multi-load only): a chip per load showing compatible/not.
 6. **Spec rows** (7 rows):
    - *Capacity* — `maxWeightLbs` in the active unit (no headroom ratio annotation).
@@ -400,7 +400,7 @@ Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
      differentiates floor-level vehicles (3–5 % spread across the library).
    - *Max Speed* — `speedLoadedFps` in dual-unit format: `ft/s (mph)` imperial /
      `m/s (km/h)` metric. Shown on every vehicle.
-   - *Battery* — `(ratedAh × voltageV / 1000).toFixed(1) kWh · ratedAh Ah`.
+   - *Battery* — `ratedAh Ah` (amp-hours only).
    - *Battery Life* — estimated runtime per charge as a range, `8.5–10.7 hrs`.
      `runtime_h = ratedAh × DoD / dischargeA`; low end uses conservative usable
      depth-of-discharge (80%), high end uses full discharge (100%).

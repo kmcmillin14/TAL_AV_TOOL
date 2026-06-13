@@ -612,24 +612,49 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .veh-load-chip.fail .dot { background: var(--bad); }
 .veh-load-chip.fail { color: var(--text-tertiary); }
 
-/* Card verdict line — answers "what killed it?" without flipping the card. */
-.veh-verdict { font-size: 12px; line-height: 1.4; margin-top: 6px; color: var(--text-secondary); }
-.veh-verdict.red { color: var(--bad); }
-.veh-verdict.yellow { color: var(--warn); }
-.veh-verdict.green { color: var(--text-tertiary); }
-
-/* Segmented gate bar — one segment per gate (discrete facts, not a dial). */
-.veh-gatebar { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+/* Segmented gate bar — one segment per gate (discrete facts, not a dial).
+   Hover/focus reveals the full pass/fail breakdown tooltip. */
+.veh-gatebar {
+  display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  position: relative; cursor: help; outline: none;
+}
 .veh-gatebar-segs { display: flex; gap: 2px; flex: 1; }
-.vg-seg { height: 4px; flex: 1; border-radius: 2px; background: var(--bg-surface-3); }
+.vg-seg { height: 5px; flex: 1; border-radius: 2px; background: var(--bg-surface-3); transition: transform 0.1s ease; }
 .vg-seg.pass { background: var(--good); }
 .vg-seg.fail { background: var(--bad); }
 .vg-seg.soft { background: var(--warn); }
 .vg-seg.skip { opacity: 0.35; }
+.veh-gatebar:hover .vg-seg, .veh-gatebar:focus-visible .vg-seg { transform: scaleY(1.6); }
 .veh-gatebar-count { font-size: 10px; font-weight: 700; color: var(--text-tertiary); }
 
-.spec-headroom.ok { color: var(--good); }
-.spec-headroom.short { color: var(--bad); }
+/* Gate-bar hover/focus tooltip */
+.veh-gatebar-tip {
+  position: absolute; top: calc(100% + 8px); left: 0; right: 0; z-index: 20;
+  display: none; flex-direction: column; gap: 2px;
+  padding: 8px; background: var(--bg-surface-3);
+  border: 1px solid var(--border-strong); border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+}
+.veh-gatebar:hover .veh-gatebar-tip,
+.veh-gatebar:focus-visible .veh-gatebar-tip { display: flex; }
+.vgt-row { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 5px; }
+.vgt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--bg-surface-3); }
+.vgt-dot.pass { background: var(--good); }
+.vgt-dot.fail { background: var(--bad); }
+.vgt-dot.soft { background: var(--warn); }
+.vgt-dot.skip { background: var(--text-disabled); }
+.vgt-text { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.vgt-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+.vgt-reason { font-size: 11px; line-height: 1.3; color: var(--text-tertiary); }
+.vgt-badge {
+  font-family: var(--tal-font-numeric); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; flex-shrink: 0;
+  padding: 2px 6px; border-radius: 3px; color: var(--text-tertiary); background: var(--bg-surface);
+}
+.vgt-badge.pass { color: var(--good); }
+.vgt-badge.fail { color: var(--bad); }
+.vgt-badge.soft { color: var(--warn); }
+
 @media (max-width: 900px) {
   .step1-flow-row { grid-template-columns: 1fr 1fr; }
   .step1-flow-actions { grid-column: span 2; justify-content: flex-end; }

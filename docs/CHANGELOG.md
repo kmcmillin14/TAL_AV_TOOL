@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-13 — Leaner card: Ah-only battery · drop verdict line · gate-bar hover tooltip
+
+- **Battery row shows amp-hours only** (`533 Ah`) — dropped the kWh figure (cards + modal).
+- **Removed the always-visible verdict line** ("Rated only to 95°F…") — it took too much
+  vertical room on every card.
+- **Gate bar now has a hover/focus tooltip** showing the full breakdown at a glance: each
+  gate with a status dot, name, Pass/Fail/Review badge, and the reason for any fail/review.
+  Segments thicken on hover to signal interactivity. Replaces the verdict line's role.
+- Removed orphaned `.veh-verdict` and `.spec-headroom` CSS (folder hygiene).
+
 ## 2026-06-13 — Compare selection moved fully into toolbar dropdown
 
 - **Removed the per-card Compare checkbox.** Vehicle selection for comparison now happens

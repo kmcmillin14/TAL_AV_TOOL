@@ -39,10 +39,9 @@ export function speedDisplay(v: Vehicle, unit: UnitSystem): string {
     : `${fps.toFixed(2)} ft/s (${(fps * 0.68182).toFixed(1)} mph)`
 }
 
-/** Battery — `25.6 kWh · 533 Ah`. */
+/** Battery — `533 Ah`. */
 export function batteryDisplay(v: Vehicle): string {
-  const kwh = (v.calc.ratedAh * v.calc.voltageV / 1000).toFixed(1)
-  return `${kwh} kWh · ${v.calc.ratedAh} Ah`
+  return `${v.calc.ratedAh} Ah`
 }
 
 /** Conservative usable depth-of-discharge for AGV/AMR batteries. The low end of

@@ -47,19 +47,12 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
   const allGates = [...result.hardGates, ...result.softPreferences]
   const evaluated = allGates.filter(g => !g.skipped)
   const passedCount = evaluated.filter(g => g.passed).length
-  const hardFails = result.hardGates.filter(g => !g.skipped && !g.passed)
-  const softFails = result.softPreferences.filter(g => !g.skipped && !g.passed)
-  // The one-liner that answers "what killed it?" without flipping the card.
-  const verdict =
-    hardFails.length > 0 ? hardFails[0].reason
-    : softFails.length > 0 ? softFails[0].reason
-    : evaluated.length > 0 ? `Meets all ${evaluated.length} evaluated requirement${evaluated.length === 1 ? '' : 's'}`
-    : 'No requirements entered yet — fill the qualification tier in Step 1'
-  // Capacity headroom vs the entered load (weight gate carries the numerics).
-  const weightGate = result.hardGates.find(g => g.gateId === 'weight' && !g.skipped)
-  const headroom = weightGate?.vehicleNumeric && weightGate?.requiredNumeric
-    ? weightGate.vehicleNumeric / weightGate.requiredNumeric
-    : null
+  // Per-gate status class for the bar + hover tooltip.
+  const gateStatus = (g: typeof allGates[number]) =>
+    g.skipped ? 'skip' : g.passed ? 'pass' : g.severity === 'hard' ? 'fail' : 'soft'
+  const gateStatusLabel: Record<string, string> = {
+    pass: 'Pass', fail: 'Fail', soft: 'Review', skip: 'n/a',
+  }
   // Spec display strings — shared with the comparison modal (src/lib/vehicleDisplay.ts)
   const capDisplay = capacityDisplay(vehicle, unitSystem)
   const transfers = transferDisplay(vehicle)
@@ -103,19 +96,40 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
               <TrafficLight status={status} />
             </div>
 
-            <div className={`veh-verdict ${statusCls}`}>{verdict}</div>
             {evaluated.length > 0 && (
-              <div className="veh-gatebar" aria-label={`${passedCount} of ${evaluated.length} evaluated gates pass`}>
+              <div
+                className="veh-gatebar"
+                tabIndex={isBack ? -1 : 0}
+                aria-label={`${passedCount} of ${evaluated.length} evaluated gates pass — hover for detail`}
+              >
                 <div className="veh-gatebar-segs">
                   {allGates.map(g => (
                     <span
                       key={g.gateId + g.name}
-                      title={`${g.name}: ${g.reason}`}
-                      className={`vg-seg ${g.skipped ? 'skip' : g.passed ? 'pass' : g.severity === 'hard' ? 'fail' : 'soft'}`}
+                      className={`vg-seg ${gateStatus(g)}`}
                     />
                   ))}
                 </div>
                 <span className="veh-gatebar-count mono">{passedCount}/{evaluated.length}</span>
+
+                {/* Hover/focus tooltip — full pass/fail breakdown at a glance */}
+                <div className="veh-gatebar-tip" role="tooltip">
+                  {allGates.map(g => {
+                    const st = gateStatus(g)
+                    return (
+                      <div key={g.gateId + g.name} className="vgt-row">
+                        <span className={`vgt-dot ${st}`} aria-hidden />
+                        <div className="vgt-text">
+                          <span className="vgt-name">{g.name}</span>
+                          {(st === 'fail' || st === 'soft') && (
+                            <span className="vgt-reason">{g.reason}</span>
+                          )}
+                        </div>
+                        <span className={`vgt-badge ${st}`}>{gateStatusLabel[st]}</span>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             )}
 
