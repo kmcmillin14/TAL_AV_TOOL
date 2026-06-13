@@ -124,13 +124,21 @@ export const projectSchema = z.object({
   // ---- ROM Dashboard: economic assumptions (editable on Step 4) ----
   /** Operators the fleet displaces, and the fully-burdened annual cost per operator.
    *  Annual labor offset = numberOfOperators × fullyBurdenedRateUsdPerYear. */
-  numberOfOperators: z.number().int().min(0).default(0),
-  fullyBurdenedRateUsdPerYear: z.number().min(0).default(65000),
-  energyCostUsdPerKwh: z.number().min(0).default(0.12),
-  annualMaintenancePctOfCapex: z.number().min(0).max(1).default(0.08),
-  operatingDaysPerYear: z.number().int().min(1).max(366).default(312),
+  // Optional (no .default) — this is an OVERRIDE of the derived
+  // operatorsPerShift × shiftsPerDay; a .default(0) was re-injected by Zod on
+  // every parse (imports, explicit clears), permanently masking the derived
+  // value with 0.
+  numberOfOperators: z.number().int().min(0).optional(),
+  // Same trap for every assumption below: a schema .default() gets PINNED into
+  // storage on create/import, so the UI-level fallbacks (?? 65000, ?? 0.12,
+  // ?? defaultOperatingDaysPerYear(...), ?? 7) can never apply. All optional;
+  // the UI owns the defaults.
+  fullyBurdenedRateUsdPerYear: z.number().min(0).optional(),
+  energyCostUsdPerKwh: z.number().min(0).optional(),
+  annualMaintenancePctOfCapex: z.number().min(0).max(1).optional(),
+  operatingDaysPerYear: z.number().int().min(1).max(366).optional(),
   /** Equipment service life (yr) used for TCO and payback projections. */
-  serviceLifeYears: z.number().int().min(1).max(20).default(7),
+  serviceLifeYears: z.number().int().min(1).max(20).optional(),
 
   otherAGVs: z.boolean().default(false),
   otherAGVVendor: z.string().optional(),

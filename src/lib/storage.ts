@@ -251,8 +251,14 @@ export function updateProject(
   // existing stored values. Use the raw `input` keys to pick the validated values.
   const updated: StoredProject = { ...existing }
   const target = updated as unknown as Record<string, unknown>
+  const raw = input as Record<string, unknown>
   for (const key of Object.keys(input)) {
     if (key in validated) target[key] = validated[key]
+    // Zod strips keys whose value is undefined, but a caller passing the key
+    // explicitly as undefined means "clear this field" (the form's NaN/empty
+    // cleanup and the ROI card's override-clear both rely on it). Apply the
+    // clear; JSON.stringify drops the key on flush.
+    else if (key in raw && raw[key] === undefined) target[key] = undefined
   }
   updated._undoSnapshot = snapshot
   updated.id = existing.id

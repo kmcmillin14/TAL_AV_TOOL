@@ -96,12 +96,12 @@ describe('romSummary', () => {
 })
 
 describe('ROM economic-assumption defaults', () => {
-  it('defaults operators/burdened-rate/energy/maintenance/days when absent', () => {
+  it('assumptions stay UNSET when absent — schema defaults would pin into storage and mask the UI/derived fallbacks', () => {
     const parsed = projectSchema.parse({})
-    expect(parsed.numberOfOperators).toBe(0)
-    expect(parsed.fullyBurdenedRateUsdPerYear).toBe(65000)
-    expect(parsed.energyCostUsdPerKwh).toBeCloseTo(0.12, 5)
-    expect(parsed.annualMaintenancePctOfCapex).toBeCloseTo(0.08, 5)
-    expect(parsed.operatingDaysPerYear).toBe(312)
+    expect(parsed.numberOfOperators).toBeUndefined()
+    expect(parsed.fullyBurdenedRateUsdPerYear).toBeUndefined()
+    expect(parsed.energyCostUsdPerKwh).toBeUndefined()
+    expect(parsed.annualMaintenancePctOfCapex).toBeUndefined()
+    expect(parsed.operatingDaysPerYear).toBeUndefined()
   })
 })

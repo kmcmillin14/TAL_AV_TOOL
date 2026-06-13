@@ -59,3 +59,18 @@ describe('updateProject partial-save resilience', () => {
     expect(read.shiftsPerDay).toBe(2)
   })
 })
+
+describe('updateProject explicit clears (key present with undefined)', () => {
+  it('clears a previously stored override', () => {
+    const p = createProject({ projectName: 'Clear test' })
+    updateProject(p.id, { numberOfOperators: 0 })
+    expect(getProject(p.id)!.numberOfOperators).toBe(0)
+
+    // Passing the key explicitly as undefined must REMOVE the stored value
+    // (the ROI card clears the legacy total so per-shift × shifts derives).
+    updateProject(p.id, { numberOfOperators: undefined, operatorsPerShift: 3 } as Parameters<typeof updateProject>[1])
+    const read = getProject(p.id)!
+    expect(read.numberOfOperators).toBeUndefined()
+    expect(read.operatorsPerShift).toBe(3)
+  })
+})

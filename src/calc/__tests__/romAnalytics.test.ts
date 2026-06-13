@@ -19,7 +19,7 @@ describe('effDailyOpHr', () => {
 
 describe('serviceLifeYears default', () => {
   it('defaults to 7 when absent', () => {
-    expect(projectSchema.parse({}).serviceLifeYears).toBe(7)
+    expect(projectSchema.parse({}).serviceLifeYears).toBeUndefined() // UI owns the ?? 7 fallback
   })
 })
 
