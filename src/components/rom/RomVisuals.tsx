@@ -76,7 +76,7 @@ export default function RomVisuals(p: Props) {
       </ScrollSection>
 
       <ScrollSection id="rom-cost" num="02" title="Cost Detail" sub="Economics, CAPEX range, total cost of ownership">
-        <Card title="Simple ROI"><RomEconomics costs={p.costs} rom={p.rom} operatorsPerShift={p.project.operatorsPerShift ?? 0} shiftsPerDay={p.project.shiftsPerDay ?? 1} onPatch={p.onPatch} /></Card>
+        <Card title="Simple ROI"><RomEconomics rom={p.rom} operatorsPerShift={p.project.operatorsPerShift ?? 0} shiftsPerDay={p.project.shiftsPerDay ?? 1} fullyBurdenedRate={p.costs.fullyBurdenedRateUsdPerYear} onPatch={p.onPatch} /></Card>
         <Card title="ROM CAPEX"><CapexRangeBars series={capex} /></Card>
         <Card title="Total cost of ownership"><TcoStacked series={tco} /></Card>
       </ScrollSection>

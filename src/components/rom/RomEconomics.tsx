@@ -1,23 +1,22 @@
 'use client'
 
-import type { RomSummary, RomCostInputs } from '@/src/calc/rom'
+import { useState, useEffect } from 'react'
+import type { RomSummary } from '@/src/calc/rom'
 import { usd } from './RomKpis'
 
 export interface RomPatch {
-  numberOfOperators?: number
   operatorsPerShift?: number
   fullyBurdenedRateUsdPerYear?: number
-  energyCostUsdPerKwh?: number
-  annualMaintenancePctOfCapex?: number
-  operatingDaysPerYear?: number
+  numberOfOperators?: number
 }
 
 interface Props {
-  costs: RomCostInputs
   rom: RomSummary
-  /** Step 1 fields the card edits directly (ports both directions). */
+  /** Seed from project.operatorsPerShift — local state owns the live value. */
   operatorsPerShift: number
   shiftsPerDay: number
+  /** Seed from project.fullyBurdenedRateUsdPerYear ?? 65000 */
+  fullyBurdenedRate: number
   onPatch: (patch: RomPatch) => void
 }
 
@@ -26,11 +25,22 @@ const num = (s: string, min = 0) => {
   return Number.isFinite(n) ? Math.max(min, n) : min
 }
 
-/** Simple ROI card — only the two drivers that matter: operators replaced PER
- *  SHIFT and the fully-burdened cost, against the system CAPEX. Energy /
- *  maintenance / operating days stay derived defaults behind the scenes
- *  (informational elsewhere); they are not edited here. */
-export default function RomEconomics({ costs, rom, operatorsPerShift, shiftsPerDay, onPatch }: Props) {
+/** ROI card — two editable inputs, fully self-contained computation via local
+ *  state so typing is immediately responsive regardless of the storage/render
+ *  cycle. Props seed on mount; useEffect re-syncs when an external change
+ *  (e.g. Step 1 edit in another tab) pushes a new value. */
+export default function RomEconomics({ rom, operatorsPerShift, shiftsPerDay, fullyBurdenedRate, onPatch }: Props) {
+  const [localOps, setLocalOps] = useState(operatorsPerShift)
+  const [localRate, setLocalRate] = useState(fullyBurdenedRate)
+
+  useEffect(() => { setLocalOps(operatorsPerShift) }, [operatorsPerShift])
+  useEffect(() => { setLocalRate(fullyBurdenedRate) }, [fullyBurdenedRate])
+
+  const totalOps = localOps * shiftsPerDay
+  const annualOffset = totalOps * localRate
+  const capexMid = (rom.pricing.totalMin + rom.pricing.totalMax) / 2
+  const paybackYears = annualOffset > 0 ? capexMid / annualOffset : null
+
   return (
     <div className="rom-econ">
       <div className="rom-econ-inputs">
@@ -40,12 +50,12 @@ export default function RomEconomics({ costs, rom, operatorsPerShift, shiftsPerD
             <input
               className="rom-econ-input mono"
               type="number" min="0" step="1" inputMode="numeric"
-              value={operatorsPerShift}
-              onChange={e =>
-                // Writes the Step 1 field and clears any legacy explicit total
-                // so the derived per-shift × shifts path is authoritative.
-                onPatch({ operatorsPerShift: num(e.target.value), numberOfOperators: undefined })
-              }
+              value={localOps}
+              onChange={e => {
+                const v = num(e.target.value)
+                setLocalOps(v)
+                onPatch({ operatorsPerShift: v, numberOfOperators: undefined })
+              }}
             />
             <span className="rom-econ-suffix">people / shift</span>
           </span>
@@ -56,8 +66,12 @@ export default function RomEconomics({ costs, rom, operatorsPerShift, shiftsPerD
             <input
               className="rom-econ-input mono"
               type="number" min="0" step="1000" inputMode="decimal"
-              value={costs.fullyBurdenedRateUsdPerYear}
-              onChange={e => onPatch({ fullyBurdenedRateUsdPerYear: num(e.target.value) })}
+              value={localRate}
+              onChange={e => {
+                const v = num(e.target.value)
+                setLocalRate(v)
+                onPatch({ fullyBurdenedRateUsdPerYear: v })
+              }}
             />
             <span className="rom-econ-suffix">$/yr ea.</span>
           </span>
@@ -67,13 +81,13 @@ export default function RomEconomics({ costs, rom, operatorsPerShift, shiftsPerD
       <dl className="rom-econ-out">
         <div>
           <dt>Operators displaced</dt>
-          <dd className="mono">{costs.numberOfOperators} ({operatorsPerShift} × {shiftsPerDay} shift{shiftsPerDay === 1 ? '' : 's'})</dd>
+          <dd className="mono">{totalOps} ({localOps} × {shiftsPerDay} shift{shiftsPerDay === 1 ? '' : 's'})</dd>
         </div>
-        <div><dt>Annual labor offset</dt><dd className="mono">{usd(rom.payback.annualLaborOffset)}</dd></div>
+        <div><dt>Annual labor offset</dt><dd className="mono">{usd(annualOffset)}</dd></div>
         <div><dt>System CAPEX</dt><dd className="mono">{usd(rom.pricing.totalMin)} – {usd(rom.pricing.totalMax)}</dd></div>
         <div className="rom-econ-strong rom-econ-accent">
           <dt>Simple payback</dt>
-          <dd className="mono">{rom.payback.paybackYears == null ? '—' : `${rom.payback.paybackYears.toFixed(1)} yr`}</dd>
+          <dd className="mono">{paybackYears == null ? '—' : `${paybackYears.toFixed(1)} yr`}</dd>
         </div>
       </dl>
     </div>
