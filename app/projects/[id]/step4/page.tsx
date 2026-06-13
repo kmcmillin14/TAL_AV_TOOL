@@ -21,7 +21,10 @@ export default function RomDashboardPage() {
   const [unitSystem, toggleUnitSystem] = useUnitSystem()
 
   const costs: RomCostInputs = useMemo(() => ({
-    numberOfOperators: project?.numberOfOperators ?? ((project?.operatorsPerShift ?? 0) * (project?.shiftsPerDay ?? 1)),
+    // `||` not `??`: projects created while numberOfOperators had a schema
+    // .default(0) carry a PINNED 0 override; a zero override is meaningless
+    // (payback is null either way), so 0 falls through to the derived value.
+    numberOfOperators: project?.numberOfOperators || ((project?.operatorsPerShift ?? 0) * (project?.shiftsPerDay ?? 1)),
     fullyBurdenedRateUsdPerYear: project?.fullyBurdenedRateUsdPerYear ?? 65000,
     energyCostUsdPerKwh: project?.energyCostUsdPerKwh ?? 0.12,
     annualMaintenancePctOfCapex: project?.annualMaintenancePctOfCapex ?? 0.08,

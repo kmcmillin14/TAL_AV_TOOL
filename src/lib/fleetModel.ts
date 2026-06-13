@@ -42,7 +42,7 @@ export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): 
 
   const costs: RomCostInputs = {
     numberOfOperators: project.numberOfOperators
-      ?? ((project.operatorsPerShift ?? 0) * (project.shiftsPerDay ?? 1)),
+      || ((project.operatorsPerShift ?? 0) * (project.shiftsPerDay ?? 1)),
     fullyBurdenedRateUsdPerYear: project.fullyBurdenedRateUsdPerYear ?? 65000,
     energyCostUsdPerKwh: project.energyCostUsdPerKwh ?? 0.12,
     annualMaintenancePctOfCapex: project.annualMaintenancePctOfCapex ?? 0.08,

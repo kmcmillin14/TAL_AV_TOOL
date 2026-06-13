@@ -23,12 +23,6 @@ function isTAL(partnership: string) {
   return partnership === 'TAL Integrated' || partnership === 'TAL 3rd Party'
 }
 
-function integrationDisplay(partnership: string): string {
-  if (partnership === 'TAL Integrated') return 'TAL Integrated'
-  if (partnership === 'TAL 3rd Party' || partnership === '3rd Party') return '3rd Party'
-  return 'OEM'
-}
-
 export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: VehicleCardProps) {
   const [face, setFace] = useState<Face>('front')
   const [backTab, setBackTab] = useState<BackTab>('qual')
@@ -48,6 +42,28 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
 
   const transfers = vehicle.transferMethods.map(m => m.method).join(' / ')
   const isBack = face === 'back'
+
+  // ── Triage derivations (front face) ──────────────────────────────────────
+  const allGates = [...result.hardGates, ...result.softPreferences]
+  const evaluated = allGates.filter(g => !g.skipped)
+  const passedCount = evaluated.filter(g => g.passed).length
+  const hardFails = result.hardGates.filter(g => !g.skipped && !g.passed)
+  const softFails = result.softPreferences.filter(g => !g.skipped && !g.passed)
+  // The one-liner that answers "what killed it?" without flipping the card.
+  const verdict =
+    hardFails.length > 0 ? hardFails[0].reason
+    : softFails.length > 0 ? softFails[0].reason
+    : evaluated.length > 0 ? `Meets all ${evaluated.length} evaluated requirement${evaluated.length === 1 ? '' : 's'}`
+    : 'No requirements entered yet — fill the qualification tier in Step 1'
+  // Capacity headroom vs the entered load (weight gate carries the numerics).
+  const weightGate = result.hardGates.find(g => g.gateId === 'weight' && !g.skipped)
+  const headroom = weightGate?.vehicleNumeric && weightGate?.requiredNumeric
+    ? weightGate.vehicleNumeric / weightGate.requiredNumeric
+    : null
+  const liftFt = vehicle.calc.maxLiftHeightFt ?? 0
+  const liftDisplay = liftFt > 0
+    ? (unitSystem === 'metric' ? `${(liftFt * 0.3048).toFixed(1)} m` : `${liftFt} ft`)
+    : '—'
 
   return (
     <div className={`veh-card ${statusCls}`}>
@@ -84,6 +100,22 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
               <TrafficLight status={status} />
             </div>
 
+            <div className={`veh-verdict ${statusCls}`}>{verdict}</div>
+            {evaluated.length > 0 && (
+              <div className="veh-gatebar" aria-label={`${passedCount} of ${evaluated.length} evaluated gates pass`}>
+                <div className="veh-gatebar-segs">
+                  {allGates.map(g => (
+                    <span
+                      key={g.gateId + g.name}
+                      title={`${g.name}: ${g.reason}`}
+                      className={`vg-seg ${g.skipped ? 'skip' : g.passed ? 'pass' : g.severity === 'hard' ? 'fail' : 'soft'}`}
+                    />
+                  ))}
+                </div>
+                <span className="veh-gatebar-count mono">{passedCount}/{evaluated.length}</span>
+              </div>
+            )}
+
             {result.perLoad && result.perLoad.length > 1 && (
               <div className="veh-load-chips" aria-label="Per-load compatibility">
                 {result.perLoad.map(l => (
@@ -97,23 +129,22 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
 
             <div className="veh-spec-list">
               <div className="veh-spec-row">
-                <span className="spec-k">OEM</span>
-                <span className="spec-v">{vehicle.display.manufacturer}</span>
+                <span className="spec-k">Capacity</span>
+                <span className="spec-v">
+                  {capDisplay}
+                  {headroom != null && (
+                    <span className={`spec-headroom ${headroom >= 1 ? 'ok' : 'short'}`}>
+                      {' '}· {headroom >= 1 ? `${headroom.toFixed(1)}× your load` : `${Math.round(headroom * 100)}% of your load`}
+                    </span>
+                  )}
+                </span>
               </div>
               <div className="veh-spec-row">
-                <span className="spec-k">Integration</span>
-                <span className="spec-v">{integrationDisplay(vehicle.display.partnership)}</span>
+                <span className="spec-k">Max Lift</span>
+                <span className="spec-v">{liftDisplay}</span>
               </div>
               <div className="veh-spec-row">
-                <span className="spec-k">Fleet Management</span>
-                <span className="spec-v">{vehicle.display.fleetSoftware}</span>
-              </div>
-              <div className="veh-spec-row">
-                <span className="spec-k">Weight Capacity</span>
-                <span className="spec-v">{capDisplay}</span>
-              </div>
-              <div className="veh-spec-row">
-                <span className="spec-k">Payload Type</span>
+                <span className="spec-k">Payloads</span>
                 <span className="spec-v">{vehicle.payloadTypes.join(', ')}</span>
               </div>
               <div className="veh-spec-row">

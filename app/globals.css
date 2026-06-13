@@ -611,6 +611,25 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .veh-load-chip.pass .dot { background: var(--good); }
 .veh-load-chip.fail .dot { background: var(--bad); }
 .veh-load-chip.fail { color: var(--text-tertiary); }
+
+/* Card verdict line — answers "what killed it?" without flipping the card. */
+.veh-verdict { font-size: 12px; line-height: 1.4; margin-top: 6px; color: var(--text-secondary); }
+.veh-verdict.red { color: var(--bad); }
+.veh-verdict.yellow { color: var(--warn); }
+.veh-verdict.green { color: var(--text-tertiary); }
+
+/* Segmented gate bar — one segment per gate (discrete facts, not a dial). */
+.veh-gatebar { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.veh-gatebar-segs { display: flex; gap: 2px; flex: 1; }
+.vg-seg { height: 4px; flex: 1; border-radius: 2px; background: var(--bg-surface-3); }
+.vg-seg.pass { background: var(--good); }
+.vg-seg.fail { background: var(--bad); }
+.vg-seg.soft { background: var(--warn); }
+.vg-seg.skip { opacity: 0.35; }
+.veh-gatebar-count { font-size: 10px; font-weight: 700; color: var(--text-tertiary); }
+
+.spec-headroom.ok { color: var(--good); }
+.spec-headroom.short { color: var(--bad); }
 @media (max-width: 900px) {
   .step1-flow-row { grid-template-columns: 1fr 1fr; }
   .step1-flow-actions { grid-column: span 2; justify-content: flex-end; }

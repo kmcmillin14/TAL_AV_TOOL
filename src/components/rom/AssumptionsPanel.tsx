@@ -21,7 +21,7 @@ export default function AssumptionsPanel({ project: p }: Props) {
     ['Operating days / year', daysDerived && p.operatingDaysPattern
       ? `${days} (from ${p.operatingDaysPattern})`
       : String(days)],
-    ['Operators displaced', String(p.numberOfOperators ?? ((p.operatorsPerShift ?? 0) * (p.shiftsPerDay ?? 1)))],
+    ['Operators displaced', String(p.numberOfOperators || ((p.operatorsPerShift ?? 0) * (p.shiftsPerDay ?? 1)))],
     ['Fully-burdened operator', `$${(p.fullyBurdenedRateUsdPerYear ?? 65000).toLocaleString()}/yr`],
     ['Energy cost', `$${p.energyCostUsdPerKwh ?? 0.12}/kWh`],
     ['Maintenance', `${Math.round((p.annualMaintenancePctOfCapex ?? 0.08) * 100)}%/yr of CAPEX`],
