@@ -167,7 +167,7 @@ function loadDimensionGate(
     delta,
     reason: passed
       ? `Deck accepts ${vehicleMax} ${unit} vs. ${required} ${unit} required`
-      : `Deck only ${vehicleMax} ${unit}, need ${required} ${unit} (${Math.abs(delta)} ${unit} short)`,
+      : `Deck only ${vehicleMax} ${unit}, need ${required} ${unit} (${Math.abs(delta).toFixed(1)} ${unit} short)`,
   }
 }
 

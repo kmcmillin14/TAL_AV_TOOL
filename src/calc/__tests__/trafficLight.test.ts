@@ -373,7 +373,7 @@ describe('qualifyVehicle — load dimension gates', () => {
     expect(result.status).toBe('RED')
     const gate = result.hardGates.find(g => g.gateId === 'load_length')!
     expect(gate.passed).toBe(false)
-    expect(gate.reason).toContain('12 in short')
+    expect(gate.reason).toContain('12.0 in short')
   })
 
   it('skips load gates when vehicle has no load deck (tugger)', () => {
