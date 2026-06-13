@@ -1060,6 +1060,116 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   background: rgba(59,130,246,0.92); color: #fff;
 }
 
+/* ── Compare checkbox (overlaid top-left of card image) ───────────────────── */
+.veh-compare-check {
+  position: absolute; top: 10px; left: 10px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 9px 4px 5px;
+  background: rgba(0,0,0,0.55); backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.18); border-radius: 6px;
+  cursor: pointer; user-select: none;
+  transition: background 0.12s ease, border-color 0.12s ease;
+}
+.veh-compare-check:hover { background: rgba(0,0,0,0.7); border-color: rgba(255,255,255,0.32); }
+.veh-compare-check.on { background: var(--accent); border-color: var(--accent); }
+.veh-compare-check input { position: absolute; opacity: 0; width: 0; height: 0; }
+.veh-compare-check .vcc-box {
+  width: 15px; height: 15px; border-radius: 3px;
+  border: 1.5px solid rgba(255,255,255,0.6); background: transparent;
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 800; line-height: 1; color: #fff;
+}
+.veh-compare-check.on .vcc-box { background: #fff; border-color: #fff; color: var(--accent); }
+.veh-compare-check .vcc-label {
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: #fff;
+}
+.veh-compare-check input:focus-visible + .vcc-box {
+  outline: 2px solid #fff; outline-offset: 1px;
+}
+
+/* ── Floating compare bar ─────────────────────────────────────────────────── */
+.cmp-bar {
+  position: fixed; left: 50%; bottom: 84px; transform: translateX(-50%);
+  z-index: 40; display: flex; align-items: center; gap: 12px;
+  padding: 10px 12px 10px 18px;
+  background: var(--bg-surface-2); border: 1px solid var(--border-strong);
+  border-radius: 10px; box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+}
+.cmp-bar-count {
+  font-family: var(--tal-font-numeric); font-size: 12px; font-weight: 700;
+  letter-spacing: 0.04em; color: var(--text-secondary);
+}
+.btn.sm { padding: 7px 12px; font-size: 12px; }
+
+/* ── Comparison modal ─────────────────────────────────────────────────────── */
+.cmp-overlay {
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,0.6); backdrop-filter: blur(3px);
+  display: flex; align-items: center; justify-content: center; padding: 40px;
+}
+.cmp-modal {
+  background: var(--bg-surface); border: 1px solid var(--border-strong);
+  border-radius: 12px; box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+  display: flex; flex-direction: column;
+  max-width: 1100px; width: 100%; max-height: 100%;
+}
+.cmp-head {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 18px 24px; border-bottom: 1px solid var(--border); flex-shrink: 0;
+}
+.cmp-head h2 { font-size: 18px; font-weight: 700; color: var(--text-primary); letter-spacing: -0.01em; }
+.cmp-close {
+  width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+  background: transparent; border: 1px solid var(--border); border-radius: 6px;
+  color: var(--text-secondary); cursor: pointer; transition: all 0.12s ease;
+}
+.cmp-close:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-strong); }
+
+.cmp-scroll { overflow: auto; flex: 1; }
+.cmp-table { width: 100%; border-collapse: collapse; }
+.cmp-table th, .cmp-table td {
+  padding: 12px 16px; text-align: center; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.cmp-rowhead {
+  position: sticky; left: 0; z-index: 1; text-align: left !important;
+  background: var(--bg-surface-2);
+  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-tertiary);
+  white-space: nowrap;
+}
+thead .cmp-rowhead { background: var(--bg-surface); }
+.cmp-vehhead { background: var(--bg-surface); min-width: 180px; }
+.cmp-veh-img {
+  height: 90px; display: flex; align-items: center; justify-content: center; margin-bottom: 8px;
+}
+.cmp-veh-img img { max-height: 90px; max-width: 100%; object-fit: contain; }
+.cmp-veh-noimg {
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-disabled);
+}
+.cmp-veh-name { font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.cmp-veh-mfr { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+.cmp-veh-remove {
+  margin-top: 8px; padding: 3px 10px; font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  background: transparent; border: 1px solid var(--border); border-radius: 4px;
+  color: var(--text-tertiary); cursor: pointer; transition: all 0.12s ease;
+}
+.cmp-veh-remove:hover { color: var(--bad); border-color: var(--bad); }
+.cmp-cell { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.cmp-cell.diff { background: var(--accent-soft); }
+.cmp-status { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; }
+.cmp-status.green  { color: var(--good); }
+.cmp-status.yellow { color: var(--warn); }
+.cmp-status.red    { color: var(--bad); }
+.cmp-foot {
+  padding: 12px 24px; border-top: 1px solid var(--border); flex-shrink: 0;
+}
+.cmp-foot-note { font-size: 11px; color: var(--text-tertiary); }
+@media (max-width: 700px) { .cmp-overlay { padding: 12px; } }
+
 /* Card body */
 .veh-body {
   padding: 14px 20px 16px; display: flex; flex-direction: column; gap: 14px; flex: 1;

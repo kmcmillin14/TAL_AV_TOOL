@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-06-13 — Step 2 vehicle comparison tool
+
+- **Compare checkbox** on each card image (top-left). Select 2–4 vehicles to reveal a
+  floating **compare bar** (Clear · Compare specs).
+- **`ComparisonModal`** — side-by-side spec table (vehicles as columns; Status, Capacity,
+  Max Lift, Max Ramp Grade, Max Speed, Battery, Charge Time, Payloads, Transfer as rows).
+  Differing cells are highlighted. Closes on Escape / ✕ / backdrop / selection < 2.
+- **`src/lib/vehicleDisplay.ts`** — extracted the card's inline spec formatters into shared
+  pure functions so card and modal render identical strings; `VehicleCard` now imports them.
+- Comparison is informational only — never selects a vehicle (ARCHITECTURE.md).
+
+## 2026-06-13 — Card front-in-flow height fix · remove spec-row gap
+
+- **Flip-card height fix.** Front face now sits in normal flow (drives card height); only
+  the back face is absolutely positioned. Removes the brittle fixed `min-height` that was
+  clipping the Transfer row and "View details" footer.
+- **Removed large gap** below spec rows: dropped `margin-top:auto` on `.veh-foot` and the
+  front `min-height`, added `align-items:start` to the grid so cards hug their content.
+
 ## 2026-06-13 — Remove load dimension gates · fix card content clipping
 
 - **Load dimension gates removed.** `load_length`, `load_width`, and `load_height` hard

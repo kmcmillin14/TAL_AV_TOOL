@@ -426,6 +426,21 @@ Two tabs — **Qualification** (`WhyBreakdown`: every gate, its result, and reas
 **Specs** (`VehicleSpecSheet`: full technical sheet). Top-right: **Spec sheet ⤓** link
 downloads the vehicle's cutsheet PDF.
 
+### Vehicle comparison tool
+
+Each card image carries a **Compare** checkbox (top-left overlay). Selecting 2–4 vehicles
+reveals a floating **compare bar** (bottom-center) with a selection count, a Clear button,
+and **Compare specs** (enabled at ≥ 2). Compare specs opens a **side-by-side modal**
+(`ComparisonModal`) with vehicles as columns and specs as rows: Status (traffic light +
+label), Capacity, Max Lift, Max Ramp Grade, Max Speed, Battery, Charge Time, Payloads,
+Transfer. Rows whose values differ across the selected vehicles are highlighted. The
+modal closes on Escape, the ✕ button, backdrop click, or when the selection drops below 2.
+
+Card and modal render identical spec strings via shared pure formatters in
+`src/lib/vehicleDisplay.ts` (capacity / lift / ramp / speed / battery / charge / transfer /
+payloads), respecting the active unit system. Comparison is informational only — it never
+selects a vehicle (Step 2 makes no selection; ARCHITECTURE.md).
+
 ### Traffic-light logic
 
 - **GREEN** — all hard gates pass AND all soft preferences pass (or are skipped).

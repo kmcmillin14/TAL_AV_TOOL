@@ -6,6 +6,7 @@ import Link from 'next/link'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import VehicleFilters, { type StatusFilter } from '@/src/components/step2/VehicleFilters'
 import VehicleCard from '@/src/components/step2/VehicleCard'
+import ComparisonModal from '@/src/components/step2/ComparisonModal'
 import Icon from '@/src/design-system/components/Icon'
 import { qualifyVehicle } from '@/src/calc/trafficLight'
 import type { ApplicationRequirements } from '@/src/calc/types'
@@ -29,6 +30,20 @@ export default function Step2Page() {
   const [search, setSearch] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('')
   const [manufacturerFilter, setManufacturerFilter] = useState('')
+  const [compareIds, setCompareIds] = useState<string[]>([])
+  const [compareOpen, setCompareOpen] = useState(false)
+
+  const MAX_COMPARE = 4
+  const toggleCompare = (id: string) => setCompareIds(prev =>
+    prev.includes(id)
+      ? prev.filter(x => x !== id)
+      : prev.length >= MAX_COMPARE ? prev : [...prev, id]
+  )
+
+  // Close the modal if the selection drops below the 2-vehicle minimum.
+  useEffect(() => {
+    if (compareIds.length < 2) setCompareOpen(false)
+  }, [compareIds])
 
   useEffect(() => {
     const proj = getProject(id)
@@ -120,6 +135,14 @@ export default function Step2Page() {
   }), [qualifiedVehicles, statusFilter, search, categoryFilter, manufacturerFilter])
 
   const filterKey = `${statusFilter}|${search}|${categoryFilter}|${manufacturerFilter}`
+
+  // Comparison set — preserve selection order; drop ids no longer in the library.
+  const compareEntries = useMemo(
+    () => compareIds
+      .map(id => qualifiedVehicles.find(qv => qv.vehicle.id === id))
+      .filter((qv): qv is { vehicle: Vehicle; result: ReturnType<typeof qualifyVehicle> } => qv != null),
+    [compareIds, qualifiedVehicles]
+  )
 
   if (loading) return (
     <div className="app-shell">
@@ -236,7 +259,15 @@ export default function Step2Page() {
         ) : (
           <div className="veh-grid">
             {filtered.map(({ vehicle, result }) => (
-              <VehicleCard key={vehicle.id} vehicle={vehicle} result={result} unitSystem={unitSystem} filterKey={filterKey} />
+              <VehicleCard
+                key={vehicle.id}
+                vehicle={vehicle}
+                result={result}
+                unitSystem={unitSystem}
+                filterKey={filterKey}
+                selected={compareIds.includes(vehicle.id)}
+                onToggleSelect={toggleCompare}
+              />
             ))}
           </div>
         )}
@@ -254,6 +285,35 @@ export default function Step2Page() {
           </div>
         </div>
       </div>
+
+      {/* Floating compare bar — appears when ≥1 vehicle is selected */}
+      {compareIds.length > 0 && (
+        <div className="cmp-bar">
+          <span className="cmp-bar-count">
+            {compareIds.length} selected{compareIds.length >= MAX_COMPARE ? ` (max ${MAX_COMPARE})` : ''}
+          </span>
+          <button type="button" className="btn ghost sm" onClick={() => setCompareIds([])}>
+            Clear
+          </button>
+          <button
+            type="button"
+            className="btn primary sm"
+            disabled={compareIds.length < 2}
+            onClick={() => setCompareOpen(true)}
+          >
+            Compare specs <Icon name="arrowR" size={13} />
+          </button>
+        </div>
+      )}
+
+      {compareOpen && compareEntries.length >= 2 && (
+        <ComparisonModal
+          entries={compareEntries}
+          unitSystem={unitSystem}
+          onClose={() => setCompareOpen(false)}
+          onRemove={toggleCompare}
+        />
+      )}
     </div>
   )
 }

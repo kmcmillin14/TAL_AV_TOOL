@@ -8,12 +8,19 @@ import VehicleSpecSheet from './VehicleSpecSheet'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { QualificationResult } from '@/src/calc/types'
 import type { UnitSystem } from '@/src/lib/utils/units'
+import {
+  capacityDisplay, liftOrRampLabel, liftOrRampDisplay,
+  speedDisplay as fmtSpeed, batteryDisplay as fmtBattery, chargeDisplay as fmtCharge,
+  transferDisplay, payloadsDisplay,
+} from '@/src/lib/vehicleDisplay'
 
 interface VehicleCardProps {
   vehicle: Vehicle
   result: QualificationResult
   unitSystem: UnitSystem
   filterKey: string
+  selected?: boolean
+  onToggleSelect?: (id: string) => void
 }
 
 type Face = 'front' | 'back'
@@ -23,7 +30,7 @@ function isTAL(partnership: string) {
   return partnership === 'TAL Integrated' || partnership === 'TAL 3rd Party'
 }
 
-export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: VehicleCardProps) {
+export default function VehicleCard({ vehicle, result, unitSystem, filterKey, selected, onToggleSelect }: VehicleCardProps) {
   const [face, setFace] = useState<Face>('front')
   const [backTab, setBackTab] = useState<BackTab>('qual')
   const [imgError, setImgError] = useState(false)
@@ -36,11 +43,6 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
     setFace('front')
   }, [filterKey])
 
-  const capDisplay = unitSystem === 'metric'
-    ? `${(vehicle.calc.maxWeightLbs * 0.453592).toFixed(0)} kg`
-    : `${vehicle.calc.maxWeightLbs.toLocaleString()} lbs`
-
-  const transfers = vehicle.transferMethods.map(m => m.method).join(' / ')
   const isBack = face === 'back'
 
   // ── Triage derivations (front face) ──────────────────────────────────────
@@ -60,27 +62,14 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
   const headroom = weightGate?.vehicleNumeric && weightGate?.requiredNumeric
     ? weightGate.vehicleNumeric / weightGate.requiredNumeric
     : null
-  const liftFt = vehicle.calc.maxLiftHeightFt
-  const canLift = liftFt != null && liftFt > 0
-  const liftDisplay = canLift
-    ? (unitSystem === 'metric' ? `${(liftFt! * 0.3048).toFixed(1)} m` : `${liftFt} ft`)
-    : '—'
-  // Speed shown on every card: ft/s (mph) imperial, m/s (km/h) metric
-  const fps = vehicle.calc.speedLoadedFps
-  const speedDisplay = unitSystem === 'metric'
-    ? `${(fps * 0.3048).toFixed(2)} m/s (${(fps * 1.09728).toFixed(1)} km/h)`
-    : `${fps.toFixed(2)} ft/s (${(fps * 0.68182).toFixed(1)} mph)`
-
-  // Battery: kWh + Ah · V
-  const batteryKwh = (vehicle.calc.ratedAh * vehicle.calc.voltageV / 1000).toFixed(1)
-  const batteryDisplay = `${batteryKwh} kWh · ${vehicle.calc.ratedAh} Ah`
-
-  // Charge time + charger type label
-  const chargeMin = vehicle.calc.chargeTimeMin ?? null
-  const chargerLabel = vehicle.calc.chargerType === 'opportunity' ? 'opp'
-    : vehicle.calc.chargerType === 'shift_swap' ? 'swap'
-    : vehicle.calc.chargerType ?? '—'
-  const chargeDisplay = chargeMin != null ? `${chargeMin} min (${chargerLabel})` : '—'
+  // Spec display strings — shared with the comparison modal (src/lib/vehicleDisplay.ts)
+  const capDisplay = capacityDisplay(vehicle, unitSystem)
+  const transfers = transferDisplay(vehicle)
+  const row2Label = liftOrRampLabel(vehicle)
+  const row2Value = liftOrRampDisplay(vehicle, unitSystem)
+  const speedDisplay = fmtSpeed(vehicle, unitSystem)
+  const batteryDisplay = fmtBattery(vehicle)
+  const chargeDisplay = fmtCharge(vehicle)
 
   return (
     <div className={`veh-card ${statusCls}`}>
@@ -89,6 +78,22 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
         {/* ───────── FRONT ───────── */}
         <div className="veh-card-face veh-card-front" aria-hidden={isBack}>
           <div className="veh-img-area">
+            {onToggleSelect && (
+              <label
+                className={`veh-compare-check ${selected ? 'on' : ''}`}
+                title="Add to comparison"
+                onClick={e => e.stopPropagation()}
+              >
+                <input
+                  type="checkbox"
+                  checked={!!selected}
+                  onChange={() => onToggleSelect(vehicle.id)}
+                  tabIndex={isBack ? -1 : 0}
+                />
+                <span className="vcc-box" aria-hidden>{selected ? '✓' : ''}</span>
+                <span className="vcc-label">Compare</span>
+              </label>
+            )}
             {vehicle.display.heroImage && !imgError ? (
               // eslint-disable-next-line @next/next/no-img-element -- 16:9 card photo sized via CSS object-fit
               <img
@@ -149,8 +154,8 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
                 <span className="spec-v">{capDisplay}</span>
               </div>
               <div className="veh-spec-row">
-                <span className="spec-k">{canLift ? 'Max Lift' : 'Max Ramp'}</span>
-                <span className="spec-v">{canLift ? liftDisplay : `${vehicle.specs.maxRampGrade}%`}</span>
+                <span className="spec-k">{row2Label}</span>
+                <span className="spec-v">{row2Value}</span>
               </div>
               <div className="veh-spec-row">
                 <span className="spec-k">Max Speed</span>
@@ -166,7 +171,7 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
               </div>
               <div className="veh-spec-row">
                 <span className="spec-k">Payloads</span>
-                <span className="spec-v">{vehicle.payloadTypes.join(', ')}</span>
+                <span className="spec-v">{payloadsDisplay(vehicle)}</span>
               </div>
               <div className="veh-spec-row">
                 <span className="spec-k">Transfer</span>
