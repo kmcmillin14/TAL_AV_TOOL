@@ -21,9 +21,12 @@ interface Props {
 }
 
 const num = (s: string, min = 0) => {
-  const n = Number(s)
+  const n = parseFloat(s.replace(/[^0-9.]/g, ''))
   return Number.isFinite(n) ? Math.max(min, n) : min
 }
+
+const fmtCurrency = (n: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n)
 
 /** ROI card — two editable inputs, fully self-contained computation via local
  *  state so typing is immediately responsive regardless of the storage/render
@@ -32,6 +35,7 @@ const num = (s: string, min = 0) => {
 export default function RomEconomics({ rom, operatorsPerShift, shiftsPerDay, fullyBurdenedRate, onPatch }: Props) {
   const [localOps, setLocalOps] = useState(operatorsPerShift)
   const [localRate, setLocalRate] = useState(fullyBurdenedRate)
+  const [rateFocused, setRateFocused] = useState(false)
 
   useEffect(() => { setLocalOps(operatorsPerShift) }, [operatorsPerShift])
   useEffect(() => { setLocalRate(fullyBurdenedRate) }, [fullyBurdenedRate])
@@ -65,15 +69,17 @@ export default function RomEconomics({ rom, operatorsPerShift, shiftsPerDay, ful
           <span className="rom-econ-input-wrap">
             <input
               className="rom-econ-input mono"
-              type="number" min="0" step="1000" inputMode="decimal"
-              value={localRate}
+              type="text" inputMode="numeric"
+              value={rateFocused ? String(localRate) : fmtCurrency(localRate)}
+              onFocus={() => setRateFocused(true)}
+              onBlur={() => setRateFocused(false)}
               onChange={e => {
                 const v = num(e.target.value)
                 setLocalRate(v)
                 onPatch({ fullyBurdenedRateUsdPerYear: v })
               }}
             />
-            <span className="rom-econ-suffix">$/yr ea.</span>
+            <span className="rom-econ-suffix">/yr ea.</span>
           </span>
         </label>
       </div>
