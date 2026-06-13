@@ -248,6 +248,10 @@ export default function Step2Page() {
           manufacturerFilter={manufacturerFilter}
           onManufacturerFilterChange={setManufacturerFilter}
           counts={counts}
+          compareCount={compareIds.length}
+          maxCompare={MAX_COMPARE}
+          onClearCompare={() => setCompareIds([])}
+          onOpenCompare={() => setCompareOpen(true)}
         />
 
         {/* Grid */}
@@ -285,26 +289,6 @@ export default function Step2Page() {
           </div>
         </div>
       </div>
-
-      {/* Floating compare bar — appears when ≥1 vehicle is selected */}
-      {compareIds.length > 0 && (
-        <div className="cmp-bar">
-          <span className="cmp-bar-count">
-            {compareIds.length} selected{compareIds.length >= MAX_COMPARE ? ` (max ${MAX_COMPARE})` : ''}
-          </span>
-          <button type="button" className="btn ghost sm" onClick={() => setCompareIds([])}>
-            Clear
-          </button>
-          <button
-            type="button"
-            className="btn primary sm"
-            disabled={compareIds.length < 2}
-            onClick={() => setCompareOpen(true)}
-          >
-            Compare specs <Icon name="arrowR" size={13} />
-          </button>
-        </div>
-      )}
 
       {compareOpen && compareEntries.length >= 2 && (
         <ComparisonModal

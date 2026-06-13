@@ -7,7 +7,7 @@ import type { QualificationResult, TrafficLightStatus } from '@/src/calc/types'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import {
   capacityDisplay, liftDisplay, rampDisplay, speedDisplay,
-  batteryDisplay, chargeDisplay, transferDisplay, payloadsDisplay,
+  batteryDisplay, batteryLifeDisplay, transferDisplay, payloadsDisplay,
 } from '@/src/lib/vehicleDisplay'
 
 export interface CompareEntry {
@@ -41,7 +41,7 @@ const SPEC_ROWS: SpecRow[] = [
   { label: 'Max Ramp Grade', get: v => rampDisplay(v) },
   { label: 'Max Speed', get: speedDisplay },
   { label: 'Battery', get: v => batteryDisplay(v) },
-  { label: 'Charge Time', get: v => chargeDisplay(v) },
+  { label: 'Battery Life', get: v => batteryLifeDisplay(v) },
   { label: 'Payloads', get: v => payloadsDisplay(v) },
   { label: 'Transfer', get: v => transferDisplay(v) },
 ]

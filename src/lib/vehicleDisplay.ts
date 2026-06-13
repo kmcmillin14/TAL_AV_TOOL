@@ -45,14 +45,22 @@ export function batteryDisplay(v: Vehicle): string {
   return `${kwh} kWh · ${v.calc.ratedAh} Ah`
 }
 
-/** Charge time + charger type — `90 min (opp)`; `—` when unspecified. */
-export function chargeDisplay(v: Vehicle): string {
-  const min = v.calc.chargeTimeMin ?? null
-  if (min == null) return '—'
-  const label = v.calc.chargerType === 'opportunity' ? 'opp'
-    : v.calc.chargerType === 'shift_swap' ? 'swap'
-    : v.calc.chargerType ?? '—'
-  return `${min} min (${label})`
+/** Conservative usable depth-of-discharge for AGV/AMR batteries. The low end of
+ *  the runtime range protects battery life; the high end is full discharge. */
+const USABLE_DOD = 0.8
+
+/**
+ * Estimated battery life (runtime) per charge as a range, in hours.
+ * `runtime_h = ratedAh × DoD / dischargeA` (per VehicleCalc docs). Low end uses
+ * the conservative usable DoD, high end uses full charge — e.g. `8.5–10.7 hrs`.
+ */
+export function batteryLifeDisplay(v: Vehicle): string {
+  const { ratedAh, dischargeA } = v.calc
+  if (!dischargeA || dischargeA <= 0) return '—'
+  const low = (ratedAh * USABLE_DOD) / dischargeA
+  const high = ratedAh / dischargeA
+  const fmt = (h: number) => (h >= 10 ? h.toFixed(0) : h.toFixed(1))
+  return `${fmt(low)}–${fmt(high)} hrs`
 }
 
 /** Transfer methods joined — `Conveyor / Lift / Pin`. */

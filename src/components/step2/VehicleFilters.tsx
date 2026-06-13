@@ -14,6 +14,11 @@ interface VehicleFiltersProps {
   manufacturerFilter: string
   onManufacturerFilterChange: (v: string) => void
   counts: { green: number; yellow: number; red: number }
+  /** Comparison controls (rendered right-aligned in the toolbar). */
+  compareCount: number
+  maxCompare: number
+  onClearCompare: () => void
+  onOpenCompare: () => void
 }
 
 export default function VehicleFilters({
@@ -23,6 +28,7 @@ export default function VehicleFilters({
   categories,
   manufacturers, manufacturerFilter, onManufacturerFilterChange,
   counts,
+  compareCount, maxCompare, onClearCompare, onOpenCompare,
 }: VehicleFiltersProps) {
   return (
     <div className="veh-filter-toolbar">
@@ -60,6 +66,27 @@ export default function VehicleFilters({
         <option value="">All Manufacturers</option>
         {manufacturers.map(m => <option key={m}>{m}</option>)}
       </select>
+
+      <div className="vf-compare">
+        <span className="vf-compare-count">
+          {compareCount > 0
+            ? `${compareCount} to compare${compareCount >= maxCompare ? ` (max ${maxCompare})` : ''}`
+            : `Select up to ${maxCompare} to compare`}
+        </span>
+        {compareCount > 0 && (
+          <button type="button" className="btn ghost sm" onClick={onClearCompare}>
+            Clear
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn primary sm"
+          disabled={compareCount < 2}
+          onClick={onOpenCompare}
+        >
+          Compare specs
+        </button>
+      </div>
     </div>
   )
 }

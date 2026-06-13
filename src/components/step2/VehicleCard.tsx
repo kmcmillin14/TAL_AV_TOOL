@@ -10,7 +10,7 @@ import type { QualificationResult } from '@/src/calc/types'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import {
   capacityDisplay, liftOrRampLabel, liftOrRampDisplay,
-  speedDisplay as fmtSpeed, batteryDisplay as fmtBattery, chargeDisplay as fmtCharge,
+  speedDisplay as fmtSpeed, batteryDisplay as fmtBattery, batteryLifeDisplay as fmtBatteryLife,
   transferDisplay, payloadsDisplay,
 } from '@/src/lib/vehicleDisplay'
 
@@ -69,7 +69,7 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey, se
   const row2Value = liftOrRampDisplay(vehicle, unitSystem)
   const speedDisplay = fmtSpeed(vehicle, unitSystem)
   const batteryDisplay = fmtBattery(vehicle)
-  const chargeDisplay = fmtCharge(vehicle)
+  const batteryLifeDisplay = fmtBatteryLife(vehicle)
 
   return (
     <div className={`veh-card ${statusCls}`}>
@@ -166,8 +166,8 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey, se
                 <span className="spec-v">{batteryDisplay}</span>
               </div>
               <div className="veh-spec-row">
-                <span className="spec-k">Charge</span>
-                <span className="spec-v">{chargeDisplay}</span>
+                <span className="spec-k">Battery Life</span>
+                <span className="spec-v">{batteryLifeDisplay}</span>
               </div>
               <div className="veh-spec-row">
                 <span className="spec-k">Payloads</span>

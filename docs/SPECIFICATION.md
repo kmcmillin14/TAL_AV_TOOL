@@ -401,7 +401,9 @@ Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
    - *Max Speed* — `speedLoadedFps` in dual-unit format: `ft/s (mph)` imperial /
      `m/s (km/h)` metric. Shown on every vehicle.
    - *Battery* — `(ratedAh × voltageV / 1000).toFixed(1) kWh · ratedAh Ah`.
-   - *Charge* — `chargeTimeMin min (opp|swap)` where opp = opportunity, swap = shift_swap.
+   - *Battery Life* — estimated runtime per charge as a range, `8.5–10.7 hrs`.
+     `runtime_h = ratedAh × DoD / dischargeA`; low end uses conservative usable
+     depth-of-discharge (80%), high end uses full discharge (100%).
    - *Payloads* — `payloadTypes.join(', ')`.
    - *Transfer* — all `transferMethods[].method` joined.
 
@@ -428,11 +430,11 @@ downloads the vehicle's cutsheet PDF.
 
 ### Vehicle comparison tool
 
-Each card image carries a **Compare** checkbox (top-left overlay). Selecting 2–4 vehicles
-reveals a floating **compare bar** (bottom-center) with a selection count, a Clear button,
-and **Compare specs** (enabled at ≥ 2). Compare specs opens a **side-by-side modal**
+Each card image carries a **Compare** checkbox (top-left overlay). The **filter toolbar**
+holds the comparison controls (right-aligned): a selection count, a Clear button, and
+**Compare specs** (enabled at ≥ 2). Compare specs opens a **side-by-side modal**
 (`ComparisonModal`) with vehicles as columns and specs as rows: Status (traffic light +
-label), Capacity, Max Lift, Max Ramp Grade, Max Speed, Battery, Charge Time, Payloads,
+label), Capacity, Max Lift, Max Ramp Grade, Max Speed, Battery, Battery Life, Payloads,
 Transfer. Rows whose values differ across the selected vehicles are highlighted. The
 modal closes on Escape, the ✕ button, backdrop click, or when the selection drops below 2.
 

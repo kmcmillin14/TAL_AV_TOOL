@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-13 — Compare controls moved to toolbar · Battery Life replaces Charge row
+
+- **Compare controls relocated** from a floating bottom bar into the filter toolbar
+  (right-aligned): selection count + Clear + Compare specs. Removed `.cmp-bar`.
+- **Battery Life row replaces Charge** on cards and in the comparison modal. Shows an
+  estimated runtime range per charge (`8.5–10.7 hrs`): `ratedAh × DoD / dischargeA`,
+  low end at 80% usable depth-of-discharge, high end at full discharge. Added
+  `batteryLifeDisplay`, removed the now-orphaned `chargeDisplay` helper (folder hygiene).
+
 ## 2026-06-13 — Step 2 vehicle comparison tool
 
 - **Compare checkbox** on each card image (top-left). Select 2–4 vehicles to reveal a
