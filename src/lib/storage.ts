@@ -56,6 +56,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   avgDistanceFt: 0,
   distanceType: 'one_way',
   operatorsPerShift: 0,
+  rampRequired: false,
   rampDistanceFt: 0,
   maxRampGrade: 0,
   desiredInstallDate: undefined,

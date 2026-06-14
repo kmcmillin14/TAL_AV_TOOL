@@ -114,7 +114,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -251,7 +251,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -390,7 +390,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -528,7 +528,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       {
         "delta": -2,
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": false,
         "reason": "Ramp on site (5%) — verify gradeability (rated 3%)",
         "requiredNumeric": 5,
@@ -668,7 +668,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -809,7 +809,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -946,7 +946,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1083,7 +1083,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1222,7 +1222,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1360,7 +1360,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       {
         "delta": -2,
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": false,
         "reason": "Ramp on site (5%) — verify gradeability (rated 3%)",
         "requiredNumeric": 5,
@@ -1500,7 +1500,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1641,7 +1641,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1724,7 +1724,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Yes",
+        "vehicleValue": "No",
       },
       {
         "gateId": "freezer",
@@ -1778,7 +1778,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1861,7 +1861,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Yes",
+        "vehicleValue": "No",
       },
       {
         "gateId": "freezer",
@@ -1915,7 +1915,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1993,12 +1993,12 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       {
         "gateId": "outdoor",
         "name": "Outdoor Capable",
-        "passed": true,
-        "reason": "Vehicle rated for outdoor operation",
+        "passed": false,
+        "reason": "Vehicle is not outdoor-rated",
         "requiredValue": "Required",
         "severity": "hard",
         "skipped": false,
-        "vehicleValue": "Yes",
+        "vehicleValue": "No",
       },
       {
         "gateId": "freezer",
@@ -2054,7 +2054,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2137,7 +2137,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Yes",
+        "vehicleValue": "No",
       },
       {
         "gateId": "freezer",
@@ -2192,7 +2192,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       {
         "delta": 5,
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": false,
         "reason": "Ramp on site (5%) — verify gradeability (rated 10%)",
         "requiredNumeric": 5,
@@ -2278,7 +2278,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Yes",
+        "vehicleValue": "No",
       },
       {
         "gateId": "freezer",
@@ -2332,7 +2332,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2419,7 +2419,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Yes",
+        "vehicleValue": "No",
       },
       {
         "gateId": "freezer",
@@ -2473,7 +2473,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2610,7 +2610,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2747,7 +2747,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2886,7 +2886,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3024,7 +3024,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       {
         "delta": -2,
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": false,
         "reason": "Ramp on site (5%) — verify gradeability (rated 3%)",
         "requiredNumeric": 5,
@@ -3164,7 +3164,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3305,7 +3305,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3442,7 +3442,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3579,7 +3579,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3718,7 +3718,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3856,7 +3856,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       {
         "delta": 2,
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": false,
         "reason": "Ramp on site (5%) — verify gradeability (rated 7%)",
         "requiredNumeric": 5,
@@ -3996,7 +3996,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -4137,7 +4137,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -4274,7 +4274,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -4411,7 +4411,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -4550,7 +4550,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -4688,7 +4688,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       {
         "delta": 0,
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": false,
         "reason": "Ramp on site (5%) — verify gradeability (rated 5%)",
         "requiredNumeric": 5,
@@ -4828,7 +4828,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -4969,7 +4969,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "ramp",
-        "name": "Ramp Grade",
+        "name": "Ramp",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",

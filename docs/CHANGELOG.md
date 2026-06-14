@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-14 — Ramp is a Yes/No review · vehicle outdoor/freezer data
+
+- **Ramp is now a Yes/No question** (`rampRequired`). "Yes" auto-flags a YELLOW review on
+  every vehicle (the gate never auto-passes); grade + distance inputs appear only when Yes.
+  Gate keys off the boolean (falls back to legacy `maxRampGrade > 0`). Gate renamed "Ramp".
+- **Vehicle data:** set CB18 `outdoorCapable` → false. Per spec, no current vehicle is
+  outdoor- or freezer-capable, so Outdoor → all RED, Freezer → all RED, Refrigerated → all
+  YELLOW until a capable vehicle is added.
+
 ## 2026-06-14 — Environment gates: temperature tiers, ramp auto-yellow, outdoor relabel
 
 - **Temperature Environment (Ambient / Refrigerated / Freezer)** replaces the Freezer Yes/No.

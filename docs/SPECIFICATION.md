@@ -423,9 +423,9 @@ Gate field → pill mapping:
   Environment** (Indoor / Outdoor) → **gate** (hard — Outdoor RED-flags vehicles not rated
   for it; Indoor skips); **Temperature Environment** (Ambient / Refrigerated / Freezer) →
   Ambient skips, **Refrigerated** is a **soft** (YELLOW) gate, **Freezer** is a **hard**
-  (RED) gate; **Max Ramp Grade** → **soft** — *any* ramp on site (grade > 0) auto-flags a
-  YELLOW review regardless of the rated grade (gradeability needs a site check); Min Aisle
-  Width → *no pill* (informational)
+  (RED) gate; **Ramps on Site?** (Yes/No) → **soft** — Yes auto-flags a YELLOW review on
+  every vehicle (gradeability needs a site check); grade + distance inputs appear only when
+  Yes (informational, not gates); Min Aisle Width → *no pill* (informational)
 - §04 Certifications: Required Certifications → **soft**
 7. **"View details →"** flips the card.
 

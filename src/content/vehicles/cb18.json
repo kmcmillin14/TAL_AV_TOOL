@@ -54,7 +54,7 @@
   "specs": {
     "tempMinF": 14,
     "tempMaxF": 113,
-    "outdoorCapable": true,
+    "outdoorCapable": false,
     "freezerCapable": false,
     "maxRampGrade": 10,
     "certifications": [

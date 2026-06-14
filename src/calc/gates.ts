@@ -289,17 +289,24 @@ export const GATES: readonly GateSpec[] = [
       : `Rated only to ${veh}°F, need ${req}°F`,
   }),
 
-  numericGate({
-    gateId: 'ramp', name: 'Ramp Grade', unit: '%', severity: 'soft',
-    req: a => a.maxRampGrade, present: r => r > 0,
-    veh: v => v.specs.maxRampGrade,
-    // Any ramp on site is a YELLOW review by policy — ramp gradeability needs a
-    // site check regardless of the rated spec, so this never auto-passes.
-    pass: () => false,
-    delta: (veh, req) => veh - req,
-    fmt: n => `${n}%`,
-    reason: (_passed, veh, req) => `Ramp on site (${req}%) — verify gradeability (rated ${veh}%)`,
-  }),
+  // Ramp: a Yes/No requirement. When the site has a ramp it's always a YELLOW
+  // review (gradeability needs a site check) — never auto-passes. Falls back to
+  // the legacy `maxRampGrade > 0` for projects predating `rampRequired`.
+  { id: 'ramp', name: 'Ramp', severity: 'soft',
+    run(vehicle, app) {
+      const hasRamp = app.rampRequired ?? ((app.maxRampGrade ?? 0) > 0)
+      const veh = vehicle.specs.maxRampGrade
+      if (!hasRamp) return skippedGate('ramp', 'Ramp', 'soft', `${veh}%`, '%')
+      const grade = app.maxRampGrade ?? 0
+      return {
+        gateId: 'ramp', name: 'Ramp', severity: 'soft', passed: false, skipped: false,
+        vehicleValue: `${veh}%`, requiredValue: grade > 0 ? `${grade}%` : 'Ramp on site',
+        vehicleNumeric: veh, requiredNumeric: grade, unit: '%', delta: veh - grade,
+        reason: grade > 0
+          ? `Ramp on site (${grade}%) — verify gradeability (rated ${veh}%)`
+          : `Ramp on site — verify gradeability (rated ${veh}%)`,
+      }
+    } },
 
   { id: 'certifications', name: 'Certifications', severity: 'soft',
     run(vehicle, app) {

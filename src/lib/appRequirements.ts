@@ -32,6 +32,7 @@ export function appRequirementsFromProject(p: StoredProject): ApplicationRequire
     certifications: Array.isArray(p.certifications) ? p.certifications : [],
     tempMinF: p.tempMinF,
     tempMaxF: p.tempMaxF,
+    rampRequired: p.rampRequired,
     maxRampGrade: p.maxRampGrade ?? 0,
     outdoorRequired: p.outdoorRequired ?? false,
     freezerCapable: p.freezerCapable ?? false,

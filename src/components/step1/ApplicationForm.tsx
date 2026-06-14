@@ -230,6 +230,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   const hoursPerShift = watch('hoursPerShift')
   const operatingDaysPattern = watch('operatingDaysPattern')
   const operatingDaysCustom = watch('operatingDaysCustom') || []
+  const rampRequired = watch('rampRequired')
 
   const secProps = (id: string) => {
     const m = FORM_SECTIONS.find(s => s.id === id)!
@@ -714,40 +715,57 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               <div className="help">Refrigerated = review (yellow) · Freezer = required (red)</div>
             </div>
             <div className="fld">
-              <label>Max Ramp Grade <GatePill soft /></label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  max="30"
-                  className="mono"
-                  placeholder="0"
-                  {...register('maxRampGrade', { valueAsNumber: true, onBlur: onBlurSave })}
-                />
-                <div className="unit">%</div>
-              </div>
-              <div className="help">0 if no ramps in the application</div>
+              <label>Ramps on Site? <GatePill soft /></label>
+              <Controller
+                name="rampRequired"
+                control={control}
+                render={({ field }) => (
+                  <div className="seg-toggle">
+                    <button type="button" className={`seg-btn${!field.value ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                    <button type="button" className={`seg-btn${field.value ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
+                  </div>
+                )}
+              />
+              <div className="help">Any ramp on site is a YELLOW review</div>
             </div>
-            <div className="fld">
-              <label>Ramp Distance ({dLabel})</label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="1"
-                  min="0"
-                  className="mono"
-                  placeholder="0"
-                  defaultValue={dispFt(initialData?.rampDistanceFt)}
-                  {...register('rampDistanceFt', {
-                    valueAsNumber: true,
-                    setValueAs: v => parseImperialInput(String(v), 'ft', unitSystem),
-                    onBlur: onBlurSave,
-                  })}
-                />
-                <div className="unit">{dLabel}</div>
-              </div>
-            </div>
+            {rampRequired && (
+              <>
+                <div className="fld">
+                  <label>Max Ramp Grade</label>
+                  <div className="input-with-unit">
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      max="30"
+                      className="mono"
+                      placeholder="0"
+                      {...register('maxRampGrade', { valueAsNumber: true, onBlur: onBlurSave })}
+                    />
+                    <div className="unit">%</div>
+                  </div>
+                </div>
+                <div className="fld">
+                  <label>Ramp Distance ({dLabel})</label>
+                  <div className="input-with-unit">
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      className="mono"
+                      placeholder="0"
+                      defaultValue={dispFt(initialData?.rampDistanceFt)}
+                      {...register('rampDistanceFt', {
+                        valueAsNumber: true,
+                        setValueAs: v => parseImperialInput(String(v), 'ft', unitSystem),
+                        onBlur: onBlurSave,
+                      })}
+                    />
+                    <div className="unit">{dLabel}</div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
         </FormSection>
 

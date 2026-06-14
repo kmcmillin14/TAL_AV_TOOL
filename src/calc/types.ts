@@ -66,6 +66,9 @@ export interface ApplicationRequirements {
   certifications?: string[]
   tempMinF?: number | null
   tempMaxF?: number | null
+  /** Whether the site has any ramp. When true the ramp gate is a YELLOW review
+   *  regardless of grade. Falls back to `maxRampGrade > 0` for legacy projects. */
+  rampRequired?: boolean
   maxRampGrade?: number
   outdoorRequired?: boolean
   /** Legacy boolean freezer requirement — superseded by temperatureEnvironment. */

@@ -88,6 +88,7 @@ export const projectSchema = z.object({
   operatorsPerShift: z.number().int().min(0).default(0),
 
   // Section 7
+  rampRequired: z.boolean().default(false),
   rampDistanceFt: z.number().min(0).default(0),
   maxRampGrade: z.number().min(0).default(0),
 
