@@ -689,7 +689,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               />
             </div>
             <div className="fld">
-              <label>Max Ramp Grade <GatePill /></label>
+              <label>Max Ramp Grade <GatePill soft /></label>
               <div className="input-with-unit">
                 <input
                   type="number"

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-13 — Ramp grade is now a soft (YELLOW) gate
+
+- **Ramp grade gate changed from hard (RED) to soft (YELLOW).** A vehicle that can't handle
+  the required grade is now a "Review" (YELLOW), not "Not Compatible" (RED) — gradeability is
+  rarely an absolute blocker. `numericGate` gained an optional `severity` (defaults hard);
+  ramp passes `'soft'`. Step 1 "Max Ramp Grade" pill is now amber `soft`. Outdoor/Freezer
+  stay hard (RED) and default to not-required (skipped until set).
+
 ## 2026-06-13 — Comparison modal UX: neutral diff + best-value markers
 
 - **Differences no longer highlighted in red.** Red means "Not Compatible" elsewhere, so

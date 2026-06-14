@@ -98,20 +98,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -223,20 +223,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -350,20 +350,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "vehicleNumeric": 113,
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -475,6 +475,8 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "delta": -2,
         "gateId": "ramp",
@@ -483,14 +485,12 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "reason": "Handles only 3%, need 5%",
         "requiredNumeric": 5,
         "requiredValue": "5%",
-        "severity": "hard",
+        "severity": "soft",
         "skipped": false,
         "unit": "%",
         "vehicleNumeric": 3,
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -604,20 +604,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -733,20 +733,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -858,20 +858,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -983,20 +983,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -1110,20 +1110,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "vehicleNumeric": 113,
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -1235,6 +1235,8 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "delta": -2,
         "gateId": "ramp",
@@ -1243,14 +1245,12 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "reason": "Handles only 3%, need 5%",
         "requiredNumeric": 5,
         "requiredValue": "5%",
-        "severity": "hard",
+        "severity": "soft",
         "skipped": false,
         "unit": "%",
         "vehicleNumeric": 3,
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -1364,20 +1364,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -1493,20 +1493,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -1618,20 +1618,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "10%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -1743,20 +1743,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "10%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -1870,20 +1870,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "vehicleNumeric": 113,
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "10%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -1995,6 +1995,8 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "delta": 5,
         "gateId": "ramp",
@@ -2003,14 +2005,12 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "reason": "Handles 10% vs. 5% required",
         "requiredNumeric": 5,
         "requiredValue": "5%",
-        "severity": "hard",
+        "severity": "soft",
         "skipped": false,
         "unit": "%",
         "vehicleNumeric": 10,
         "vehicleValue": "10%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -2124,20 +2124,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "10%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -2253,20 +2253,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "113°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "10%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -2378,20 +2378,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "95°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -2503,20 +2503,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "95°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -2630,20 +2630,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "vehicleNumeric": 95,
         "vehicleValue": "95°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -2755,6 +2755,8 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "95°F",
       },
+    ],
+    "softPreferences": [
       {
         "delta": -2,
         "gateId": "ramp",
@@ -2763,14 +2765,12 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "reason": "Handles only 3%, need 5%",
         "requiredNumeric": 5,
         "requiredValue": "5%",
-        "severity": "hard",
+        "severity": "soft",
         "skipped": false,
         "unit": "%",
         "vehicleNumeric": 3,
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -2884,20 +2884,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "95°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -3013,20 +3013,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "95°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "3%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -3138,20 +3138,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "7%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -3263,20 +3263,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "7%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -3390,20 +3390,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "vehicleNumeric": 104,
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "7%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -3515,6 +3515,8 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "delta": 2,
         "gateId": "ramp",
@@ -3523,14 +3525,12 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "reason": "Handles 7% vs. 5% required",
         "requiredNumeric": 5,
         "requiredValue": "5%",
-        "severity": "hard",
+        "severity": "soft",
         "skipped": false,
         "unit": "%",
         "vehicleNumeric": 7,
         "vehicleValue": "7%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -3644,20 +3644,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "7%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -3773,20 +3773,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "7%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -3898,20 +3898,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "5%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -4023,20 +4023,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "5%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -4150,20 +4150,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "vehicleNumeric": 104,
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "5%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -4275,6 +4275,8 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "delta": 0,
         "gateId": "ramp",
@@ -4283,14 +4285,12 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "reason": "Handles 5% vs. 5% required",
         "requiredNumeric": 5,
         "requiredValue": "5%",
-        "severity": "hard",
+        "severity": "soft",
         "skipped": false,
         "unit": "%",
         "vehicleNumeric": 5,
         "vehicleValue": "5%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -4404,20 +4404,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "5%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",
@@ -4533,20 +4533,20 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "unit": "°F",
         "vehicleValue": "104°F",
       },
+    ],
+    "softPreferences": [
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
-        "severity": "hard",
+        "severity": "soft",
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": "%",
         "vehicleValue": "5%",
       },
-    ],
-    "softPreferences": [
       {
         "gateId": "certifications",
         "name": "Certifications",

@@ -420,8 +420,10 @@ YELLOW. Aisle width carries no pill — it is explicitly informational-only (ARC
 Gate field → pill mapping:
 - §01 Load: Max Load Weight → **gate**; Unit/Load Type → **gate**; Load Length / Load Width / Load Height → *no pill* (informational only — dimension gates removed)
 - §02 Transfer: Transfer Method, Delivery Pattern, Max Lift Height (conditional) → **gate**
-- §03 Environment: Min Temperature, Max Temperature, Outdoor Required?, Freezer Capable?,
-  Max Ramp Grade → **gate**; Min Aisle Width → *no pill* (informational)
+- §03 Environment: Min Temperature, Max Temperature, Outdoor Required?, Freezer Capable?
+  → **gate** (hard); Max Ramp Grade → **soft** (a ramp the vehicle can't handle is a YELLOW,
+  not a RED — gradeability is rarely an absolute blocker); Min Aisle Width → *no pill*
+  (informational)
 - §04 Certifications: Required Certifications → **soft**
 7. **"View details →"** flips the card.
 

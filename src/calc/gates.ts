@@ -56,6 +56,8 @@ function numericGate(o: {
   gateId: string
   name: string
   unit: string
+  /** Defaults to 'hard' (RED on fail). 'soft' makes a miss a YELLOW preference. */
+  severity?: Severity
   req: (app: ApplicationRequirements) => number | null | undefined
   present: (r: number) => boolean
   veh: (v: Vehicle) => number
@@ -64,22 +66,23 @@ function numericGate(o: {
   fmt: (n: number) => string
   reason: (passed: boolean, veh: number, req: number, delta: number) => string
 }): GateSpec {
+  const severity: Severity = o.severity ?? 'hard'
   return {
     id: o.gateId,
     name: o.name,
-    severity: 'hard',
+    severity,
     run(vehicle, app) {
       const vehVal = o.veh(vehicle)
       const reqRaw = o.req(app)
       if (reqRaw == null || !o.present(reqRaw)) {
-        return skippedGate(o.gateId, o.name, 'hard', o.fmt(vehVal), o.unit)
+        return skippedGate(o.gateId, o.name, severity, o.fmt(vehVal), o.unit)
       }
       const passed = o.pass(vehVal, reqRaw)
       const delta = o.delta(vehVal, reqRaw)
       return {
         gateId: o.gateId,
         name: o.name,
-        severity: 'hard',
+        severity,
         passed,
         skipped: false,
         vehicleValue: o.fmt(vehVal),
@@ -238,7 +241,7 @@ export const GATES: readonly GateSpec[] = [
   }),
 
   numericGate({
-    gateId: 'ramp', name: 'Ramp Grade', unit: '%',
+    gateId: 'ramp', name: 'Ramp Grade', unit: '%', severity: 'soft',
     req: a => a.maxRampGrade, present: r => r > 0,
     veh: v => v.specs.maxRampGrade,
     pass: (veh, req) => veh >= req,

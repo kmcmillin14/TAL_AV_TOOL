@@ -255,21 +255,22 @@ describe('qualifyVehicle — temperature gates', () => {
   })
 })
 
-describe('qualifyVehicle — ramp grade gate', () => {
+describe('qualifyVehicle — ramp grade gate (soft)', () => {
   it('skips ramp when no ramp grade specified', () => {
     const result = qualifyVehicle(fixtureVehicle(), emptyApp)
-    const ramp = result.hardGates.find(g => g.gateId === 'ramp')!
+    const ramp = result.softPreferences.find(g => g.gateId === 'ramp')!
     expect(ramp.skipped).toBe(true)
   })
 
-  it('fails ramp when grade exceeds vehicle capability', () => {
+  it('soft-fails ramp when grade exceeds vehicle capability → YELLOW', () => {
     const result = qualifyVehicle(
       fixtureVehicle({ specs: { ...fixtureVehicle().specs, maxRampGrade: 5 } }),
       { ...emptyApp, maxRampGrade: 15 },
     )
-    expect(result.status).toBe('RED')
-    const ramp = result.hardGates.find(g => g.gateId === 'ramp')!
+    expect(result.status).toBe('YELLOW')
+    const ramp = result.softPreferences.find(g => g.gateId === 'ramp')!
     expect(ramp.passed).toBe(false)
+    expect(ramp.severity).toBe('soft')
   })
 })
 
