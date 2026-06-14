@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-06-14 — Environment gates: temperature tiers, ramp auto-yellow, outdoor relabel
+
+- **Temperature Environment (Ambient / Refrigerated / Freezer)** replaces the Freezer Yes/No.
+  Ambient → no gate; **Refrigerated** → soft (YELLOW) on non-freezer-rated vehicles;
+  **Freezer** → hard (RED). Split into two gates (`freezer` hard, `refrigerated` soft) so the
+  severity is static per gate. New `temperatureEnvironment` field; legacy `freezerCapable`
+  boolean still maps (true ⇒ freezer) for back-compat.
+- **Ramp grade auto-yellows.** Any ramp on site (grade > 0) is now a YELLOW review for every
+  vehicle regardless of its rated grade — gradeability needs a site check (the gate no longer
+  auto-passes on a comparison).
+- **Outdoor → Operating Environment (Indoor / Outdoor)** choice; gate unchanged (Outdoor =
+  hard RED if not rated, Indoor skips).
+- **Card "Lift" row shows the class name** — `Forklift · 14.7 ft`, `Lift table`,
+  `Floor-to-floor`.
+
 ## 2026-06-13 — Lift modeled by class + pick/drop heights (elevation-change gate)
 
 Replaces the single "max lift height" number with a vertical-transfer model that

@@ -234,11 +234,34 @@ export const GATES: readonly GateSpec[] = [
     required: a => a.outdoorRequired, capable: v => v.specs.outdoorCapable,
     yes: 'Vehicle rated for outdoor operation', no: 'Vehicle is not outdoor-rated',
   }),
-  booleanGate({
-    gateId: 'freezer', name: 'Freezer Capable',
-    required: a => a.freezerCapable, capable: v => v.specs.freezerCapable,
-    yes: 'Vehicle rated for freezer operation', no: 'Vehicle is not freezer-rated',
-  }),
+  // Temperature environment: Ambient → no gate; Refrigerated → soft (YELLOW);
+  // Freezer → hard (RED). Resolved from temperatureEnvironment, falling back to
+  // the legacy freezerCapable boolean (true ⇒ 'freezer'). A freezer-rated vehicle
+  // is assumed to handle refrigerated too.
+  { id: 'freezer', name: 'Freezer', severity: 'hard',
+    run(vehicle, app) {
+      const env = app.temperatureEnvironment ?? (app.freezerCapable ? 'freezer' : undefined)
+      const cap = vehicle.specs.freezerCapable
+      if (env !== 'freezer') return skippedGate('freezer', 'Freezer', 'hard', cap ? 'Yes' : 'No')
+      return {
+        gateId: 'freezer', name: 'Freezer', severity: 'hard', passed: cap, skipped: false,
+        vehicleValue: cap ? 'Yes' : 'No', requiredValue: 'Freezer',
+        reason: cap ? 'Vehicle rated for freezer operation' : 'Vehicle is not freezer-rated',
+      }
+    } },
+  { id: 'refrigerated', name: 'Refrigerated', severity: 'soft',
+    run(vehicle, app) {
+      const env = app.temperatureEnvironment ?? (app.freezerCapable ? 'freezer' : undefined)
+      const cap = vehicle.specs.freezerCapable
+      if (env !== 'refrigerated') return skippedGate('refrigerated', 'Refrigerated', 'soft', cap ? 'Yes' : 'No')
+      return {
+        gateId: 'refrigerated', name: 'Refrigerated', severity: 'soft', passed: cap, skipped: false,
+        vehicleValue: cap ? 'Yes' : 'No', requiredValue: 'Refrigerated',
+        reason: cap
+          ? 'Vehicle rated for cold/refrigerated operation'
+          : 'Refrigerated rating unconfirmed — verify with vendor',
+      }
+    } },
 
   // Temps follow the app-wide "0/empty = no requirement" sentinel convention
   // (same as weight and ramp). Real freezer requirements are negative °F —
@@ -270,12 +293,12 @@ export const GATES: readonly GateSpec[] = [
     gateId: 'ramp', name: 'Ramp Grade', unit: '%', severity: 'soft',
     req: a => a.maxRampGrade, present: r => r > 0,
     veh: v => v.specs.maxRampGrade,
-    pass: (veh, req) => veh >= req,
+    // Any ramp on site is a YELLOW review by policy — ramp gradeability needs a
+    // site check regardless of the rated spec, so this never auto-passes.
+    pass: () => false,
     delta: (veh, req) => veh - req,
     fmt: n => `${n}%`,
-    reason: (passed, veh, req) => passed
-      ? `Handles ${veh}% vs. ${req}% required`
-      : `Handles only ${veh}%, need ${req}%`,
+    reason: (_passed, veh, req) => `Ramp on site (${req}%) — verify gradeability (rated ${veh}%)`,
   }),
 
   { id: 'certifications', name: 'Certifications', severity: 'soft',

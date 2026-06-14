@@ -68,7 +68,11 @@ export interface ApplicationRequirements {
   tempMaxF?: number | null
   maxRampGrade?: number
   outdoorRequired?: boolean
+  /** Legacy boolean freezer requirement — superseded by temperatureEnvironment. */
   freezerCapable?: boolean
+  /** Temperature environment the application operates in. `refrigerated` is a
+   *  soft (YELLOW) gate; `freezer` is a hard (RED) gate; `ambient`/unset skips. */
+  temperatureEnvironment?: 'ambient' | 'refrigerated' | 'freezer'
   loadLengthIn?: number | null
   loadWidthIn?: number | null
   loadHeightIn?: number | null

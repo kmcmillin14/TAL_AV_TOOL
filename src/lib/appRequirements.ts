@@ -35,6 +35,7 @@ export function appRequirementsFromProject(p: StoredProject): ApplicationRequire
     maxRampGrade: p.maxRampGrade ?? 0,
     outdoorRequired: p.outdoorRequired ?? false,
     freezerCapable: p.freezerCapable ?? false,
+    temperatureEnvironment: p.temperatureEnvironment,
     loadLengthIn: p.loadLengthIn,
     loadWidthIn: p.loadWidthIn,
     loadHeightIn: p.loadHeightIn,

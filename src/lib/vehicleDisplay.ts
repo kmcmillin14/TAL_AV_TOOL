@@ -15,16 +15,17 @@ export function capacityDisplay(v: Vehicle, unit: UnitSystem): string {
     : `${v.calc.maxWeightLbs.toLocaleString()} lbs`
 }
 
-/** Card "Lift" row value — reflects the vehicle's vertical-transfer class:
- *  forklift shows its reach, lift table shows "Matched height", floor shows
- *  "Floor-to-floor". */
+/** Card "Lift" row value — the vehicle's vertical-transfer class by name, with
+ *  the forklift's reach appended (e.g. `Forklift · 14.7 ft`). */
 export function liftValue(v: Vehicle, unit: UnitSystem): string {
   switch (v.calc.liftClass) {
-    case 'forklift':
-      return v.calc.maxLiftHeightFt != null
-        ? (unit === 'metric' ? `${units.distance.toMetric(v.calc.maxLiftHeightFt).toFixed(1)} m` : `${v.calc.maxLiftHeightFt} ft`)
-        : '—'
-    case 'lift_table': return 'Matched height'
+    case 'forklift': {
+      const ft = v.calc.maxLiftHeightFt
+      if (ft == null) return 'Forklift'
+      const reach = unit === 'metric' ? `${units.distance.toMetric(ft).toFixed(1)} m` : `${ft} ft`
+      return `Forklift · ${reach}`
+    }
+    case 'lift_table': return 'Lift table'
     case 'floor': return 'Floor-to-floor'
   }
 }

@@ -678,30 +678,40 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
           <div className="fld-grid-4" style={{ marginTop: 14 }}>
             <div className="fld">
-              <label>Outdoor Required? <GatePill /></label>
+              <label>Operating Environment <GatePill /></label>
               <Controller
                 name="outdoorRequired"
                 control={control}
                 render={({ field }) => (
                   <div className="seg-toggle">
-                    <button type="button" className={`seg-btn${field.value ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
-                    <button type="button" className={`seg-btn${!field.value ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                    <button type="button" className={`seg-btn${!field.value ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>Indoor</button>
+                    <button type="button" className={`seg-btn${field.value ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Outdoor</button>
                   </div>
                 )}
               />
+              <div className="help">Outdoor red-flags vehicles not rated for it</div>
             </div>
             <div className="fld">
-              <label>Freezer Capable? <GatePill /></label>
+              <label>Temperature Environment <GatePill /></label>
               <Controller
-                name="freezerCapable"
+                name="temperatureEnvironment"
                 control={control}
                 render={({ field }) => (
                   <div className="seg-toggle">
-                    <button type="button" className={`seg-btn${field.value ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
-                    <button type="button" className={`seg-btn${!field.value ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                    {(['ambient', 'refrigerated', 'freezer'] as const).map(opt => (
+                      <button
+                        key={opt}
+                        type="button"
+                        className={`seg-btn${(field.value ?? 'ambient') === opt ? ' on' : ''}`}
+                        onClick={() => { field.onChange(opt); onBlurSave() }}
+                      >
+                        {opt === 'ambient' ? 'Ambient' : opt === 'refrigerated' ? 'Refrigerated' : 'Freezer'}
+                      </button>
+                    ))}
                   </div>
                 )}
               />
+              <div className="help">Refrigerated = review (yellow) · Freezer = required (red)</div>
             </div>
             <div className="fld">
               <label>Max Ramp Grade <GatePill soft /></label>

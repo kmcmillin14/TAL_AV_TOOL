@@ -150,7 +150,8 @@ export const projectSchema = z.object({
   tempMinF: z.number().optional().nullable(),
   tempMaxF: z.number().optional().nullable(),
   outdoorRequired: z.boolean().default(false),
-  freezerCapable: z.boolean().default(false),
+  freezerCapable: z.boolean().default(false), // legacy — superseded by temperatureEnvironment
+  temperatureEnvironment: z.enum(['ambient', 'refrigerated', 'freezer']).optional(),
   dustMoisture: z.string().optional(),
 
   // Section 12

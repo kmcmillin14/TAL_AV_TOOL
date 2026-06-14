@@ -76,6 +76,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   tempMaxF: undefined,
   outdoorRequired: false,
   freezerCapable: false,
+  temperatureEnvironment: undefined,
   dustMoisture: undefined,
   wmsRequired: false,
   wmsVendor: undefined,

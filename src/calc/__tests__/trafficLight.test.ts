@@ -285,15 +285,48 @@ describe('qualifyVehicle — ramp grade gate (soft)', () => {
     expect(ramp.skipped).toBe(true)
   })
 
-  it('soft-fails ramp when grade exceeds vehicle capability → YELLOW', () => {
+  it('auto-yellows whenever a ramp grade > 0 is required (review flag, even if rated to it)', () => {
     const result = qualifyVehicle(
-      fixtureVehicle({ specs: { ...fixtureVehicle().specs, maxRampGrade: 5 } }),
-      { ...emptyApp, maxRampGrade: 15 },
+      fixtureVehicle({ specs: { ...fixtureVehicle().specs, maxRampGrade: 30 } }), // amply rated
+      { ...emptyApp, maxRampGrade: 5 },
     )
     expect(result.status).toBe('YELLOW')
     const ramp = result.softPreferences.find(g => g.gateId === 'ramp')!
     expect(ramp.passed).toBe(false)
     expect(ramp.severity).toBe('soft')
+  })
+})
+
+describe('qualifyVehicle — temperature environment', () => {
+  it('skips both temp gates when ambient / unset', () => {
+    const r = qualifyVehicle(fixtureVehicle(), emptyApp)
+    expect(r.hardGates.find(g => g.gateId === 'freezer')!.skipped).toBe(true)
+    expect(r.softPreferences.find(g => g.gateId === 'refrigerated')!.skipped).toBe(true)
+  })
+
+  it('refrigerated soft-fails (YELLOW) a non-freezer-rated vehicle', () => {
+    const r = qualifyVehicle(fixtureVehicle(), { ...emptyApp, temperatureEnvironment: 'refrigerated' })
+    expect(r.status).toBe('YELLOW')
+    expect(r.softPreferences.find(g => g.gateId === 'refrigerated')!.passed).toBe(false)
+  })
+
+  it('freezer hard-fails (RED) a non-freezer-rated vehicle', () => {
+    const r = qualifyVehicle(fixtureVehicle(), { ...emptyApp, temperatureEnvironment: 'freezer' })
+    expect(r.status).toBe('RED')
+    expect(r.hardGates.find(g => g.gateId === 'freezer')!.passed).toBe(false)
+  })
+
+  it('a freezer-rated vehicle passes both refrigerated and freezer', () => {
+    const cold = fixtureVehicle({ specs: { ...fixtureVehicle().specs, freezerCapable: true } })
+    expect(qualifyVehicle(cold, { ...emptyApp, temperatureEnvironment: 'refrigerated' })
+      .softPreferences.find(g => g.gateId === 'refrigerated')!.passed).toBe(true)
+    expect(qualifyVehicle(cold, { ...emptyApp, temperatureEnvironment: 'freezer' })
+      .hardGates.find(g => g.gateId === 'freezer')!.passed).toBe(true)
+  })
+
+  it('legacy freezerCapable=true still maps to a freezer requirement', () => {
+    const r = qualifyVehicle(fixtureVehicle(), { ...emptyApp, freezerCapable: true })
+    expect(r.hardGates.find(g => g.gateId === 'freezer')!.skipped).toBe(false)
   })
 })
 

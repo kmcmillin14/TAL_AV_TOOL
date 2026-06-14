@@ -64,7 +64,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -100,6 +100,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -189,7 +201,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -225,6 +237,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -314,10 +338,10 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": false,
         "reason": "Vehicle is not freezer-rated",
-        "requiredValue": "Required",
+        "requiredValue": "Freezer",
         "severity": "hard",
         "skipped": false,
         "vehicleValue": "No",
@@ -352,6 +376,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -441,7 +477,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -478,11 +514,23 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
     ],
     "softPreferences": [
       {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
+      {
         "delta": -2,
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": false,
-        "reason": "Handles only 3%, need 5%",
+        "reason": "Ramp on site (5%) — verify gradeability (rated 3%)",
         "requiredNumeric": 5,
         "requiredValue": "5%",
         "severity": "soft",
@@ -570,7 +618,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -606,6 +654,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -699,7 +759,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -735,6 +795,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -824,7 +896,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -860,6 +932,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -949,7 +1033,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -985,6 +1069,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -1074,10 +1170,10 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": false,
         "reason": "Vehicle is not freezer-rated",
-        "requiredValue": "Required",
+        "requiredValue": "Freezer",
         "severity": "hard",
         "skipped": false,
         "vehicleValue": "No",
@@ -1112,6 +1208,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -1201,7 +1309,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1238,11 +1346,23 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
     ],
     "softPreferences": [
       {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
+      {
         "delta": -2,
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": false,
-        "reason": "Handles only 3%, need 5%",
+        "reason": "Ramp on site (5%) — verify gradeability (rated 3%)",
         "requiredNumeric": 5,
         "requiredValue": "5%",
         "severity": "soft",
@@ -1330,7 +1450,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1366,6 +1486,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -1459,7 +1591,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1495,6 +1627,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -1584,7 +1728,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1620,6 +1764,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -1709,7 +1865,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1745,6 +1901,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -1834,10 +2002,10 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": false,
         "reason": "Vehicle is not freezer-rated",
-        "requiredValue": "Required",
+        "requiredValue": "Freezer",
         "severity": "hard",
         "skipped": false,
         "vehicleValue": "No",
@@ -1872,6 +2040,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -1961,7 +2141,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -1998,11 +2178,23 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
     ],
     "softPreferences": [
       {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
+      {
         "delta": 5,
         "gateId": "ramp",
         "name": "Ramp Grade",
-        "passed": true,
-        "reason": "Handles 10% vs. 5% required",
+        "passed": false,
+        "reason": "Ramp on site (5%) — verify gradeability (rated 10%)",
         "requiredNumeric": 5,
         "requiredValue": "5%",
         "severity": "soft",
@@ -2090,7 +2282,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2126,6 +2318,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -2219,7 +2423,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2255,6 +2459,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -2344,7 +2560,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2380,6 +2596,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -2469,7 +2697,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2505,6 +2733,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -2594,10 +2834,10 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": false,
         "reason": "Vehicle is not freezer-rated",
-        "requiredValue": "Required",
+        "requiredValue": "Freezer",
         "severity": "hard",
         "skipped": false,
         "vehicleValue": "No",
@@ -2632,6 +2872,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -2721,7 +2973,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2758,11 +3010,23 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
     ],
     "softPreferences": [
       {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
+      {
         "delta": -2,
         "gateId": "ramp",
         "name": "Ramp Grade",
         "passed": false,
-        "reason": "Handles only 3%, need 5%",
+        "reason": "Ramp on site (5%) — verify gradeability (rated 3%)",
         "requiredNumeric": 5,
         "requiredValue": "5%",
         "severity": "soft",
@@ -2850,7 +3114,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -2886,6 +3150,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -2979,7 +3255,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3015,6 +3291,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -3104,7 +3392,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3140,6 +3428,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -3229,7 +3529,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3265,6 +3565,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -3354,10 +3666,10 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": false,
         "reason": "Vehicle is not freezer-rated",
-        "requiredValue": "Required",
+        "requiredValue": "Freezer",
         "severity": "hard",
         "skipped": false,
         "vehicleValue": "No",
@@ -3392,6 +3704,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -3481,7 +3805,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3518,11 +3842,23 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
     ],
     "softPreferences": [
       {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
+      {
         "delta": 2,
         "gateId": "ramp",
         "name": "Ramp Grade",
-        "passed": true,
-        "reason": "Handles 7% vs. 5% required",
+        "passed": false,
+        "reason": "Ramp on site (5%) — verify gradeability (rated 7%)",
         "requiredNumeric": 5,
         "requiredValue": "5%",
         "severity": "soft",
@@ -3610,7 +3946,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3646,6 +3982,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -3739,7 +4087,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3775,6 +4123,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -3864,7 +4224,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -3900,6 +4260,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -3989,7 +4361,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -4025,6 +4397,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -4114,10 +4498,10 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": false,
         "reason": "Vehicle is not freezer-rated",
-        "requiredValue": "Required",
+        "requiredValue": "Freezer",
         "severity": "hard",
         "skipped": false,
         "vehicleValue": "No",
@@ -4152,6 +4536,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -4241,7 +4637,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -4278,11 +4674,23 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
     ],
     "softPreferences": [
       {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
+      {
         "delta": 0,
         "gateId": "ramp",
         "name": "Ramp Grade",
-        "passed": true,
-        "reason": "Handles 5% vs. 5% required",
+        "passed": false,
+        "reason": "Ramp on site (5%) — verify gradeability (rated 5%)",
         "requiredNumeric": 5,
         "requiredValue": "5%",
         "severity": "soft",
@@ -4370,7 +4778,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -4406,6 +4814,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
@@ -4499,7 +4919,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
       {
         "gateId": "freezer",
-        "name": "Freezer Capable",
+        "name": "Freezer",
         "passed": true,
         "reason": "Not evaluated — no requirement provided",
         "requiredValue": "—",
@@ -4535,6 +4955,18 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       },
     ],
     "softPreferences": [
+      {
+        "gateId": "refrigerated",
+        "name": "Refrigerated",
+        "passed": true,
+        "reason": "Not evaluated — no requirement provided",
+        "requiredValue": "—",
+        "severity": "soft",
+        "skipReason": "No requirement provided",
+        "skipped": true,
+        "unit": undefined,
+        "vehicleValue": "No",
+      },
       {
         "gateId": "ramp",
         "name": "Ramp Grade",
