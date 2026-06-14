@@ -108,7 +108,7 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
                   <span className="veh-gatebar-count mono">{passedCount}/{evaluated.length}</span>
                 </div>
                 <div className="veh-gatebar-segs">
-                  {allGates.map(g => (
+                  {evaluated.map(g => (
                     <span
                       key={g.gateId + g.name}
                       className={`vg-seg ${gateStatus(g)}`}
@@ -116,9 +116,10 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
                   ))}
                 </div>
 
-                {/* Hover/focus tooltip — full pass/fail breakdown at a glance */}
+                {/* Hover/focus tooltip — only the checks that actually applied
+                    (skipped/no-constraint gates are omitted, not shown as N/A) */}
                 <div className="veh-gatebar-tip" role="tooltip">
-                  {allGates.map(g => {
+                  {evaluated.map(g => {
                     const st = gateStatus(g)
                     return (
                       <div key={g.gateId + g.name} className="vgt-row">

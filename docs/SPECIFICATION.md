@@ -391,9 +391,11 @@ Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
 3. **Segmented gate bar**: one segment per gate (hard + soft). Color: `pass` (green) ·
    `fail` (red, hard gate) · `soft` (amber, soft gate miss) · `skip` (dimmed, gate not
    evaluated). Segment count shows `N/M`. Only rendered when ≥ 1 gate was evaluated.
-   **Hover or focus** the bar to reveal a tooltip listing every gate with a status dot,
+   **Hover or focus** the bar to reveal a tooltip listing each gate with a status dot,
    name, Pass/Fail/Review badge, and the reason for any fail/review — the at-a-glance
-   replacement for the old always-visible verdict line.
+   replacement for the old always-visible verdict line. Only gates that **actually applied**
+   are shown; skipped/no-constraint gates (e.g. Ambient temperature, Indoor, no ramp, no
+   above-floor transfer) are omitted rather than listed as N/A. The segmented bar matches.
 5. **Per-load chips** (YELLOW multi-load only): a chip per load showing compatible/not.
 6. **Spec rows** (7 rows):
    - *Capacity* — `maxWeightLbs` in the active unit (no headroom ratio annotation).

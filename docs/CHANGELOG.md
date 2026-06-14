@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-14 — Gate bar shows only applied checks (no N/A clutter / repeats)
+
+- The gate-bar segments and hover tooltip now render **only evaluated gates** — skipped
+  no-constraint gates are omitted instead of shown as "N/A". This removes the apparent
+  "repeats" (the Freezer + Refrigerated rows both showed N/A under Ambient) and the
+  confusing "N/A when answered" for permissive answers (Ambient / Indoor / No ramps /
+  Floor-Floor). Count and bar stay in sync with the tooltip.
+- (No code change for the "Outdoor PASS" report — the API already serves CB18
+  `outdoorCapable=false`; that was a stale in-memory vehicle cache from before the JSON
+  edit, cleared by a full page reload.)
+
 ## 2026-06-14 — Step 3 & 4 layout: summary aligned with content, nav raised
 
 - The top summary bar (Step 3 Total Fleet card / Step 4 ROM KPIs) now lives **inside the
