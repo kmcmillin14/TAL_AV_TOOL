@@ -1178,8 +1178,17 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .cmp-veh-remove:hover { color: var(--bad); border-color: var(--bad); }
 .cmp-cell { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.cmp-cell.diff { background: var(--accent-soft); }
 .cmp-cell .traffic-light { justify-content: center; }
+
+/* Differing rows: neutral emphasis (not red — red means "bad" elsewhere).
+   Identical rows are dimmed so the eye lands on what actually differs. */
+.cmp-table tbody tr:not(.cmp-row-diff):not(.cmp-section-row) .cmp-cell { color: var(--text-tertiary); }
+.cmp-row-diff .cmp-rowhead { color: var(--text-secondary); }
+.cmp-row-diff .cmp-cell { background: var(--bg-surface-2); }
+
+/* Best-in-row marker — positive (green), distinct from the neutral diff shade. */
+.cmp-cell.best { color: var(--good); font-weight: 700; }
+.cmp-best-mark { color: var(--good); margin-right: 4px; font-size: 11px; }
 .cmp-section-row td.cmp-section {
   position: sticky; left: 0;
   text-align: left; background: var(--bg-surface-3);

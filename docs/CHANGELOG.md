@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-13 — Comparison modal UX: neutral diff + best-value markers
+
+- **Differences no longer highlighted in red.** Red means "Not Compatible" elsewhere, so
+  tinting differing cells red was misleading. Now identical rows are dimmed and differing
+  rows get a neutral emphasis — the eye lands on what actually distinguishes the vehicles.
+- **Best-in-row marker (green ★).** For specs with a clear better direction, the winning
+  vehicle's cell is marked: Max payload / Max lift / Speed / Max ramp grade (higher),
+  Battery life (`ratedAh/dischargeA`, higher), Charge time / Turning radius / Price midpoint
+  (lower). Only shown when ≥ 2 vehicles have a value and they differ.
+- Direction metadata added as optional `SpecRow.compare` in `vehicleSpecSections()` (shared
+  source; back-of-card spec sheet ignores it).
+
 ## 2026-06-13 — New 8tb tugger render
 
 - Replaced the 8tb50a image with a new tugger render. The supplied export was partially

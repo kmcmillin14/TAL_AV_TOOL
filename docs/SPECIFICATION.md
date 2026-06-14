@@ -441,9 +441,15 @@ the user picks 2–4, then **Compare specs** opens a **side-by-side modal**
 (`ComparisonModal`) with vehicles as columns. It shows a **Status** row (traffic light +
 label) followed by the **full spec sheet** grouped into the same sections as the back-of-
 card sheet (Physical, Load Capacity, Performance, Power & Charging, Environment, Software
-& Navigation, Transfer, Compliance, Commercial). Rows whose values differ across the
-selected vehicles are highlighted. The modal closes on Escape, the ✕ button, backdrop
-click, or when the selection drops below 2.
+& Navigation, Transfer, Compliance, Commercial). **Rows that differ** across the selected
+vehicles are emphasized (neutral shade — identical rows are dimmed so the eye lands on the
+differences; red is reserved for "Not Compatible"). For rows with a clear better direction,
+the winning vehicle's cell is marked with a green **★** ("best in row"): Max payload, Max
+lift height, Speed (loaded/unloaded), Max ramp grade (higher = better); Battery life
+(`ratedAh/dischargeA`, higher); Charge time, Turning radius, Price midpoint (lower = better).
+A winner is only shown when ≥ 2 vehicles have a value and they aren't all equal. Direction
+metadata lives on `SpecRow.compare` in `vehicleSpecSections()`. The modal closes on Escape,
+the ✕ button, backdrop click, or when the selection drops below 2.
 
 The back-of-card spec sheet and the comparison modal both render from one shared pure
 source, **`vehicleSpecSections(vehicle, unitSystem)`** in `src/lib/vehicleDisplay.ts`,

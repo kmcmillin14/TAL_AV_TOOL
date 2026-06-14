@@ -82,8 +82,18 @@ export function liftOrRampDisplay(v: Vehicle, unit: UnitSystem): string {
 
 // ── Full spec sheet (shared by VehicleSpecSheet + ComparisonModal) ──────────
 
-export interface SpecRow { label: string; value: string }
+export interface SpecRow {
+  label: string
+  value: string
+  /** When present, the comparison modal ranks this row across vehicles and marks
+   *  the winner(s). `num` is the comparable magnitude; `better` is the direction. */
+  compare?: { num: number; better: 'higher' | 'lower' }
+}
 export interface SpecSection { title: string; rows: SpecRow[] }
+
+/** Build a `compare` descriptor, or undefined when the magnitude is missing. */
+const cmp = (num: number | null | undefined, better: 'higher' | 'lower') =>
+  num == null || !Number.isFinite(num) ? undefined : { num, better }
 
 const lbsToKg = (lbs: number) => Math.round(units.weight.toMetric(lbs))
 const ftToM = (ft: number) => +units.distance.toMetric(ft).toFixed(1)
@@ -122,14 +132,14 @@ export function vehicleSpecSections(v: Vehicle, unit: UnitSystem): SpecSection[]
         { label: 'Width', value: len(calc.widthFt) },
         { label: 'Length', value: len(calc.lengthFt) },
         { label: 'Height', value: len(calc.heightFt) },
-        { label: 'Turning radius', value: len(calc.turningRadiusFt) },
+        { label: 'Turning radius', value: len(calc.turningRadiusFt), compare: cmp(calc.turningRadiusFt, 'lower') },
       ],
     },
     {
       title: 'Load Capacity',
       rows: [
-        { label: 'Max payload', value: metric ? `${lbsToKg(calc.maxWeightLbs)} kg` : `${calc.maxWeightLbs.toLocaleString()} lbs` },
-        { label: 'Max lift height', value: calc.maxLiftHeightFt == null ? 'None (non-lifting)' : len(calc.maxLiftHeightFt) },
+        { label: 'Max payload', value: metric ? `${lbsToKg(calc.maxWeightLbs)} kg` : `${calc.maxWeightLbs.toLocaleString()} lbs`, compare: cmp(calc.maxWeightLbs, 'higher') },
+        { label: 'Max lift height', value: calc.maxLiftHeightFt == null ? 'None (non-lifting)' : len(calc.maxLiftHeightFt), compare: cmp(calc.maxLiftHeightFt, 'higher') },
         { label: 'Max load length', value: loadDim(calc.maxLoadLengthIn) },
         { label: 'Max load width', value: loadDim(calc.maxLoadWidthIn) },
         { label: 'Max load height', value: loadDim(calc.maxLoadHeightIn) },
@@ -139,19 +149,19 @@ export function vehicleSpecSections(v: Vehicle, unit: UnitSystem): SpecSection[]
     {
       title: 'Performance',
       rows: [
-        { label: 'Speed (loaded)', value: speed(calc.speedLoadedFps) },
-        { label: 'Speed (unloaded)', value: speed(calc.speedUnloadedFps) },
-        { label: 'Max ramp grade', value: `${specs.maxRampGrade}%` },
+        { label: 'Speed (loaded)', value: speed(calc.speedLoadedFps), compare: cmp(calc.speedLoadedFps, 'higher') },
+        { label: 'Speed (unloaded)', value: speed(calc.speedUnloadedFps), compare: cmp(calc.speedUnloadedFps, 'higher') },
+        { label: 'Max ramp grade', value: `${specs.maxRampGrade}%`, compare: cmp(specs.maxRampGrade, 'higher') },
       ],
     },
     {
       title: 'Power & Charging',
       rows: [
         { label: 'Battery', value: `${calc.ratedAh} Ah @ ${calc.voltageV} V (${((calc.voltageV * calc.ratedAh) / 1000).toFixed(1)} kWh)` },
-        { label: 'Battery life', value: batteryLifeDisplay(v) },
+        { label: 'Battery life', value: batteryLifeDisplay(v), compare: cmp(calc.dischargeA > 0 ? calc.ratedAh / calc.dischargeA : null, 'higher') },
         { label: 'Discharge (operating)', value: `${calc.dischargeA} A` },
         { label: 'Charge current', value: `${calc.chargeA} A` },
-        { label: 'Charge time', value: calc.chargeTimeMin == null ? DASH : `${calc.chargeTimeMin} min` },
+        { label: 'Charge time', value: calc.chargeTimeMin == null ? DASH : `${calc.chargeTimeMin} min`, compare: cmp(calc.chargeTimeMin, 'lower') },
         { label: 'Charging strategy', value: orDash(calc.chargerType) },
       ],
     },
@@ -188,7 +198,7 @@ export function vehicleSpecSections(v: Vehicle, unit: UnitSystem): SpecSection[]
     {
       title: 'Commercial',
       rows: [
-        { label: 'Price range', value: `${money(calc.priceRange.minUsd)} – ${money(calc.priceRange.maxUsd)}` },
+        { label: 'Price range', value: `${money(calc.priceRange.minUsd)} – ${money(calc.priceRange.maxUsd)}`, compare: cmp((calc.priceRange.minUsd + calc.priceRange.maxUsd) / 2, 'lower') },
       ],
     },
   ]

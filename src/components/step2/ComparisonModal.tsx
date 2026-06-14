@@ -97,7 +97,7 @@ export default function ComparisonModal({ entries, unitSystem, onClose, onRemove
 
         <div className="cmp-foot">
           <span className="cmp-foot-note">
-            Highlighted cells differ across the selected vehicles.
+            Rows that differ are emphasized · <span className="cmp-best-mark">★</span> marks the best in rows with a clear better direction.
           </span>
         </div>
       </div>
@@ -119,16 +119,35 @@ function SectionRows({
         <td className="cmp-section" colSpan={entries.length + 1}>{section.title}</td>
       </tr>
       {section.rows.map((row, ri) => {
-        const values = sections.map(s => s[sectionIndex]?.rows[ri]?.value ?? '—')
+        const cells = sections.map(s => s[sectionIndex]?.rows[ri])
+        const values = cells.map(c => c?.value ?? '—')
         const allSame = values.every(v => v === values[0])
+
+        // Best-value: rank rows that declare a direction, when ≥2 vehicles have a
+        // numeric magnitude and they aren't all equal (no winner if undifferentiated).
+        const nums = cells.map(c => c?.compare?.num)
+        const finite = nums.filter((n): n is number => n != null && Number.isFinite(n))
+        const better = cells.find(c => c?.compare)?.compare?.better
+        let best: number | null = null
+        if (better && finite.length >= 2 && new Set(finite).size > 1) {
+          best = better === 'higher' ? Math.max(...finite) : Math.min(...finite)
+        }
+
         return (
-          <tr key={row.label}>
+          <tr key={row.label} className={allSame ? '' : 'cmp-row-diff'}>
             <td className="cmp-rowhead">{row.label}</td>
-            {values.map((val, ci) => (
-              <td key={entries[ci].vehicle.id} className={`cmp-cell${allSame ? '' : ' diff'}`}>
-                {val}
-              </td>
-            ))}
+            {values.map((val, ci) => {
+              const isBest = best != null && nums[ci] === best
+              return (
+                <td
+                  key={entries[ci].vehicle.id}
+                  className={`cmp-cell${allSame ? '' : ' diff'}${isBest ? ' best' : ''}`}
+                >
+                  {isBest && <span className="cmp-best-mark" aria-label="best">★</span>}
+                  {val}
+                </td>
+              )
+            })}
           </tr>
         )
       })}
