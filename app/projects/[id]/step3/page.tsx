@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import PersistentHeader from '@/src/components/PersistentHeader'
@@ -91,21 +91,6 @@ export default function FleetEnginePage() {
     [groups, vehicleById, settings],
   )
 
-  // Hero is sticky; the side nav must stick BELOW it. Publish the hero's
-  // measured height as a CSS var the stylesheet consumes.
-  const heroRef = useRef<HTMLElement | null>(null)
-  const layoutRef = useRef<HTMLDivElement | null>(null)
-  useEffect(() => {
-    const hero = heroRef.current
-    const layout = layoutRef.current
-    if (!hero || !layout) return
-    const apply = () => layout.style.setProperty('--engine-hero-h', `${hero.offsetHeight}px`)
-    apply()
-    const ro = new ResizeObserver(apply)
-    ro.observe(hero)
-    return () => ro.disconnect()
-  }, [loading])
-
   const persistPatch = (patch: EnginePatch) => {
     if (!project) return
     const updated = updateProject(project.id, patch)
@@ -163,7 +148,27 @@ export default function FleetEnginePage() {
           </p>
         </div>
 
-        <section className="engine-result engine-result-sticky" aria-label="Total fleet" ref={heroRef}>
+        <div className="form-with-nav engine-layout">
+          <ScrollSpyNav
+            ariaLabel="Fleet Engine sections"
+            listLabel="Fleet Build-Up"
+            sections={[
+              { id: 'engine-raw', num: '01', label: 'Raw Fleet' },
+              { id: 'engine-charging', num: '02', label: 'Charging' },
+              { id: 'engine-buffer', num: '03', label: 'Buffer' },
+            ]}
+            topSlot={
+              <div className="section-nav-progress">
+                <div className="section-nav-progress-pct">{fleet.groups.length > 0 ? fleet.totalFleetSold : '—'}</div>
+                <div className="section-nav-progress-stat">
+                  {fleet.groups.length > 0 ? `vehicle${fleet.totalFleetSold === 1 ? '' : 's'} total` : 'assign vehicles to size'}
+                </div>
+              </div>
+            }
+          />
+
+          <div className="form-stack">
+        <section className="engine-result engine-result-sticky" aria-label="Total fleet">
           {fleet.groups.length > 0 ? (
             <>
               <div className="er-headline">
@@ -228,26 +233,6 @@ export default function FleetEnginePage() {
           )}
         </section>
 
-        <div className="form-with-nav engine-layout" ref={layoutRef}>
-          <ScrollSpyNav
-            ariaLabel="Fleet Engine sections"
-            listLabel="Fleet Build-Up"
-            sections={[
-              { id: 'engine-raw', num: '01', label: 'Raw Fleet' },
-              { id: 'engine-charging', num: '02', label: 'Charging' },
-              { id: 'engine-buffer', num: '03', label: 'Buffer' },
-            ]}
-            topSlot={
-              <div className="section-nav-progress">
-                <div className="section-nav-progress-pct">{fleet.groups.length > 0 ? fleet.totalFleetSold : '—'}</div>
-                <div className="section-nav-progress-stat">
-                  {fleet.groups.length > 0 ? `vehicle${fleet.totalFleetSold === 1 ? '' : 's'} total` : 'assign vehicles to size'}
-                </div>
-              </div>
-            }
-          />
-
-          <div className="form-stack">
             <ScrollSection
               id="engine-raw"
               num="01"

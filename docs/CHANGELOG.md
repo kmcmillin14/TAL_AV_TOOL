@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-14 — Step 3 & 4 layout: summary aligned with content, nav raised
+
+- The top summary bar (Step 3 Total Fleet card / Step 4 ROM KPIs) now lives **inside the
+  content column**, aligned with the first section (Raw Fleet / ROM), instead of spanning
+  full width above the two-column layout. The sticky side nav (Fleet Build-Up / ROM Proposal)
+  now starts at the top, level with the summary, and both stick at the same offset (126px).
+- Removed the hero-height `ResizeObserver` / `--engine-hero-h` plumbing on Step 3 — the nav
+  no longer needs to offset below a full-width hero. Step 4 `form-with-nav` gains the
+  `engine-layout` class so its nav uses the same 126px sticky offset.
+
 ## 2026-06-14 — Ramp is a Yes/No review · vehicle outdoor/freezer data
 
 - **Ramp is now a Yes/No question** (`rampRequired`). "Yes" auto-flags a YELLOW review on

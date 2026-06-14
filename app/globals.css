@@ -2657,12 +2657,17 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 /* Sticky on Step 3 — the bound TOTAL stays visible while the three sections
    scroll. --engine-hero-h is measured by the page (ResizeObserver) so the
    side nav can stick just below the hero. */
+/* Summary now lives in the content column (aligned with the sections); it sticks
+   at the same top as the side nav so the two line up while the sections scroll. */
 .engine-result-sticky {
   position: sticky;
   top: 126px; /* below the sticky hero-bar (no KPI band) */
   z-index: 30;
 }
-.engine-layout .section-nav { top: calc(126px + var(--engine-hero-h, 220px) + 16px); max-height: calc(100vh - 146px - var(--engine-hero-h, 220px)); }
+.engine-layout .section-nav { top: 126px; max-height: calc(100vh - 146px); }
+/* Step 4: the KPI bar sits in the content column (aligned with the ROM sections)
+   and sticks at the same top as the side nav. */
+.rom-kpis-sticky { margin-bottom: 16px; }
 
 .engine-result {
   display: flex;

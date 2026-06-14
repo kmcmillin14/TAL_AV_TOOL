@@ -98,9 +98,7 @@ export default function RomDashboardPage() {
           </p>
         </div>
 
-        <RomKpis fleet={fleet} rom={rom} flowCount={flowCount} totalThruPerHr={totalThruPerHr} />
-
-        <div className="form-with-nav">
+        <div className="form-with-nav engine-layout">
           <ScrollSpyNav
             ariaLabel="ROM dashboard sections"
             listLabel="ROM Proposal"
@@ -116,18 +114,23 @@ export default function RomDashboardPage() {
               </div>
             }
           />
-          <RomVisuals
-            project={project}
-            flows={flows}
-            derivedByFlowId={derivedByFlowId}
-            fleet={fleet}
-            rom={rom}
-            vehicleById={vehicleById}
-            costs={costs}
-            onPatch={patchCosts}
-            effDailyOpHr={effDailyOpHr(analyticsSchedule)}
-            serviceLifeYears={project.serviceLifeYears ?? 7}
-          />
+          <div className="form-stack">
+            <div className="engine-result-sticky rom-kpis-sticky">
+              <RomKpis fleet={fleet} rom={rom} flowCount={flowCount} totalThruPerHr={totalThruPerHr} />
+            </div>
+            <RomVisuals
+              project={project}
+              flows={flows}
+              derivedByFlowId={derivedByFlowId}
+              fleet={fleet}
+              rom={rom}
+              vehicleById={vehicleById}
+              costs={costs}
+              onPatch={patchCosts}
+              effDailyOpHr={effDailyOpHr(analyticsSchedule)}
+              serviceLifeYears={project.serviceLifeYears ?? 7}
+            />
+          </div>
         </div>
 
         <section className="rom-card rom-card-export">
