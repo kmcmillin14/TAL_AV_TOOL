@@ -182,8 +182,10 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
       certifications: initialData?.certifications ?? [],
       interlocks: initialData?.interlocks ?? [],
       otherAGVs: initialData?.otherAGVs ?? false,
-      outdoorRequired: initialData?.outdoorRequired ?? false,
-      freezerCapable: initialData?.freezerCapable ?? false,
+      // Tri-state environment fields — no default so nothing is pre-selected.
+      outdoorRequired: initialData?.outdoorRequired,
+      temperatureEnvironment: initialData?.temperatureEnvironment,
+      rampRequired: initialData?.rampRequired,
       wmsRequired: initialData?.wmsRequired ?? false,
       distanceType: initialData?.distanceType ?? 'one_way',
       flows: initialFlowRows(initialData),
@@ -685,8 +687,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 control={control}
                 render={({ field }) => (
                   <div className="seg-toggle">
-                    <button type="button" className={`seg-btn${!field.value ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>Indoor</button>
-                    <button type="button" className={`seg-btn${field.value ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Outdoor</button>
+                    <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>Indoor</button>
+                    <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Outdoor</button>
                   </div>
                 )}
               />
@@ -703,7 +705,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                       <button
                         key={opt}
                         type="button"
-                        className={`seg-btn${(field.value ?? 'ambient') === opt ? ' on' : ''}`}
+                        className={`seg-btn${field.value === opt ? ' on' : ''}`}
                         onClick={() => { field.onChange(opt); onBlurSave() }}
                       >
                         {opt === 'ambient' ? 'Ambient' : opt === 'refrigerated' ? 'Refrigerated' : 'Freezer'}
@@ -721,8 +723,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 control={control}
                 render={({ field }) => (
                   <div className="seg-toggle">
-                    <button type="button" className={`seg-btn${!field.value ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
-                    <button type="button" className={`seg-btn${field.value ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
+                    <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                    <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
                   </div>
                 )}
               />

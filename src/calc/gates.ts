@@ -104,36 +104,6 @@ function numericGate(o: {
   }
 }
 
-/** Required-capability boolean gate (outdoor, freezer). */
-function booleanGate(o: {
-  gateId: string
-  name: string
-  required: (app: ApplicationRequirements) => boolean | undefined
-  capable: (v: Vehicle) => boolean
-  yes: string
-  no: string
-}): GateSpec {
-  return {
-    id: o.gateId,
-    name: o.name,
-    severity: 'hard',
-    run(vehicle, app) {
-      const cap = o.capable(vehicle)
-      if (!o.required(app)) return skippedGate(o.gateId, o.name, 'hard', cap ? 'Yes' : 'No')
-      return {
-        gateId: o.gateId,
-        name: o.name,
-        severity: 'hard',
-        passed: cap,
-        skipped: false,
-        vehicleValue: cap ? 'Yes' : 'No',
-        requiredValue: 'Required',
-        reason: cap ? o.yes : o.no,
-      }
-    },
-  }
-}
-
 
 // ── The registry (evaluation order preserved from the original code) ─────────
 
@@ -229,37 +199,55 @@ export const GATES: readonly GateSpec[] = [
       }
     } },
 
-  booleanGate({
-    gateId: 'outdoor', name: 'Outdoor Capable',
-    required: a => a.outdoorRequired, capable: v => v.specs.outdoorCapable,
-    yes: 'Vehicle rated for outdoor operation', no: 'Vehicle is not outdoor-rated',
-  }),
-  // Temperature environment: Ambient → no gate; Refrigerated → soft (YELLOW);
-  // Freezer → hard (RED). Resolved from temperatureEnvironment, falling back to
-  // the legacy freezerCapable boolean (true ⇒ 'freezer'). A freezer-rated vehicle
-  // is assumed to handle refrigerated too.
-  { id: 'freezer', name: 'Freezer', severity: 'hard',
+  // Operating environment. Tri-state: unset → skipped ("Not set"); Indoor
+  // (false) → green pass (any vehicle works indoors); Outdoor (true) → hard,
+  // vehicle must be outdoor-rated.
+  { id: 'outdoor', name: 'Operating Environment', severity: 'hard',
     run(vehicle, app) {
-      const env = app.temperatureEnvironment ?? (app.freezerCapable ? 'freezer' : undefined)
-      const cap = vehicle.specs.freezerCapable
-      if (env !== 'freezer') return skippedGate('freezer', 'Freezer', 'hard', cap ? 'Yes' : 'No')
+      const req = app.outdoorRequired
+      const cap = vehicle.specs.outdoorCapable
+      if (req == null) return skippedGate('outdoor', 'Operating Environment', 'hard', cap ? 'Outdoor-rated' : 'Indoor only')
+      if (req === false) {
+        return {
+          gateId: 'outdoor', name: 'Operating Environment', severity: 'hard', passed: true, skipped: false,
+          vehicleValue: 'Indoor', requiredValue: 'Indoor',
+          reason: 'Indoor operation — compatible',
+        }
+      }
       return {
-        gateId: 'freezer', name: 'Freezer', severity: 'hard', passed: cap, skipped: false,
-        vehicleValue: cap ? 'Yes' : 'No', requiredValue: 'Freezer',
-        reason: cap ? 'Vehicle rated for freezer operation' : 'Vehicle is not freezer-rated',
+        gateId: 'outdoor', name: 'Operating Environment', severity: 'hard', passed: cap, skipped: false,
+        vehicleValue: cap ? 'Outdoor-rated' : 'Indoor only', requiredValue: 'Outdoor',
+        reason: cap ? 'Vehicle rated for outdoor operation' : 'Vehicle is not outdoor-rated',
       }
     } },
-  { id: 'refrigerated', name: 'Refrigerated', severity: 'soft',
+  // Temperature environment — ONE gate with answer-driven severity. Unset →
+  // skipped ("Not set"); Ambient → green pass; Refrigerated → SOFT (YELLOW) if
+  // the vehicle isn't cold-rated; Freezer → HARD (RED) if not freezer-rated.
+  // Falls back to the legacy freezerCapable boolean (true ⇒ Freezer).
+  { id: 'temperature_env', name: 'Temperature', severity: 'hard',
     run(vehicle, app) {
       const env = app.temperatureEnvironment ?? (app.freezerCapable ? 'freezer' : undefined)
       const cap = vehicle.specs.freezerCapable
-      if (env !== 'refrigerated') return skippedGate('refrigerated', 'Refrigerated', 'soft', cap ? 'Yes' : 'No')
+      if (env == null) return skippedGate('temperature_env', 'Temperature', 'hard', cap ? 'Freezer-rated' : 'Ambient')
+      if (env === 'ambient') {
+        return {
+          gateId: 'temperature_env', name: 'Temperature', severity: 'hard', passed: true, skipped: false,
+          vehicleValue: 'Ambient', requiredValue: 'Ambient',
+          reason: 'Ambient environment — no thermal constraint',
+        }
+      }
+      if (env === 'refrigerated') {
+        return {
+          gateId: 'temperature_env', name: 'Temperature', severity: 'soft', passed: cap, skipped: false,
+          vehicleValue: cap ? 'Freezer-rated' : 'Ambient', requiredValue: 'Refrigerated',
+          reason: cap ? 'Vehicle rated for cold/refrigerated operation' : 'Refrigerated rating unconfirmed — verify with vendor',
+        }
+      }
+      // freezer
       return {
-        gateId: 'refrigerated', name: 'Refrigerated', severity: 'soft', passed: cap, skipped: false,
-        vehicleValue: cap ? 'Yes' : 'No', requiredValue: 'Refrigerated',
-        reason: cap
-          ? 'Vehicle rated for cold/refrigerated operation'
-          : 'Refrigerated rating unconfirmed — verify with vendor',
+        gateId: 'temperature_env', name: 'Temperature', severity: 'hard', passed: cap, skipped: false,
+        vehicleValue: cap ? 'Freezer-rated' : 'Ambient', requiredValue: 'Freezer',
+        reason: cap ? 'Vehicle rated for freezer operation' : 'Vehicle is not freezer-rated',
       }
     } },
 
@@ -292,11 +280,23 @@ export const GATES: readonly GateSpec[] = [
   // Ramp: a Yes/No requirement. When the site has a ramp it's always a YELLOW
   // review (gradeability needs a site check) — never auto-passes. Falls back to
   // the legacy `maxRampGrade > 0` for projects predating `rampRequired`.
+  // Ramp. Tri-state: unset → skipped ("Not set"); No (false) → green pass; Yes
+  // (true, or legacy maxRampGrade > 0) → soft YELLOW site review regardless of
+  // rated grade. Soft — never blocks.
   { id: 'ramp', name: 'Ramp', severity: 'soft',
     run(vehicle, app) {
-      const hasRamp = app.rampRequired ?? ((app.maxRampGrade ?? 0) > 0)
       const veh = vehicle.specs.maxRampGrade
-      if (!hasRamp) return skippedGate('ramp', 'Ramp', 'soft', `${veh}%`, '%')
+      const legacyRamp = (app.maxRampGrade ?? 0) > 0
+      if (app.rampRequired == null && !legacyRamp) {
+        return skippedGate('ramp', 'Ramp', 'soft', `${veh}%`, '%')
+      }
+      if (app.rampRequired === false) {
+        return {
+          gateId: 'ramp', name: 'Ramp', severity: 'soft', passed: true, skipped: false,
+          vehicleValue: 'No ramps', requiredValue: 'No ramps',
+          reason: 'No ramps on site',
+        }
+      }
       const grade = app.maxRampGrade ?? 0
       return {
         gateId: 'ramp', name: 'Ramp', severity: 'soft', passed: false, skipped: false,

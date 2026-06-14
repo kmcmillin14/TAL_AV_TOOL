@@ -48,7 +48,10 @@ export function qualifyVehicle(vehicle: Vehicle, app: ApplicationRequirements): 
   for (const spec of GATES) {
     if (useLoads && LOAD_COUPLED_GATES.has(spec.id)) continue
     const result = spec.run(vehicle, app)
-    if (spec.severity === 'soft') softPreferences.push(result)
+    // Group by the RESULT's severity, not the spec's — a gate may decide its
+    // severity from the answer (e.g. Temperature: Refrigerated = soft/YELLOW,
+    // Freezer = hard/RED).
+    if (result.severity === 'soft') softPreferences.push(result)
     else hardGates.push(result)
   }
   const independentHardFail = hardGates.some(g => !g.skipped && !g.passed)

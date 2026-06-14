@@ -421,13 +421,14 @@ YELLOW. Aisle width carries no pill — it is explicitly informational-only (ARC
 Gate field → pill mapping:
 - §01 Load: Max Load Weight → **gate**; Unit/Load Type → **gate**; Load Length / Load Width / Load Height → *no pill* (informational only — dimension gates removed)
 - §02 Transfer: Transfer Method, Delivery Pattern, Drop Height → **gate**; Pick Height → *no pill*
-- §03 Environment: Min Temperature, Max Temperature → **gate** (hard); **Operating
-  Environment** (Indoor / Outdoor) → **gate** (hard — Outdoor RED-flags vehicles not rated
-  for it; Indoor skips); **Temperature Environment** (Ambient / Refrigerated / Freezer) →
-  Ambient skips, **Refrigerated** is a **soft** (YELLOW) gate, **Freezer** is a **hard**
-  (RED) gate; **Ramps on Site?** (Yes/No) → **soft** — Yes auto-flags a YELLOW review on
-  every vehicle (gradeability needs a site check); grade + distance inputs appear only when
-  Yes (informational, not gates); Min Aisle Width → *no pill* (informational)
+- §03 Environment: Min Temperature, Max Temperature → **gate** (hard). The three
+  environment toggles are **tri-state** — nothing pre-selected; unset → skipped ("Not set"):
+  **Operating Environment** (Indoor / Outdoor) — Indoor → green PASS, Outdoor → hard RED if
+  not outdoor-rated; **Temperature Environment** (Ambient / Refrigerated / Freezer) — ONE
+  gate, answer-driven severity: Ambient → green PASS, Refrigerated → **soft** (YELLOW),
+  Freezer → **hard** (RED); **Ramps on Site?** (No / Yes) — No → green PASS, Yes → **soft**
+  YELLOW site review regardless of grade (grade + distance inputs appear only when Yes,
+  informational). Min Aisle Width → *no pill* (informational)
 - §04 Certifications: Required Certifications → **soft**
 7. **"View details →"** flips the card.
 

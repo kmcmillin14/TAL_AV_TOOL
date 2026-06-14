@@ -88,7 +88,7 @@ export const projectSchema = z.object({
   operatorsPerShift: z.number().int().min(0).default(0),
 
   // Section 7
-  rampRequired: z.boolean().default(false),
+  rampRequired: z.boolean().optional(), // tri-state: unset / No / Yes
   rampDistanceFt: z.number().min(0).default(0),
   maxRampGrade: z.number().min(0).default(0),
 
@@ -150,8 +150,8 @@ export const projectSchema = z.object({
   // Section 11
   tempMinF: z.number().optional().nullable(),
   tempMaxF: z.number().optional().nullable(),
-  outdoorRequired: z.boolean().default(false),
-  freezerCapable: z.boolean().default(false), // legacy — superseded by temperatureEnvironment
+  outdoorRequired: z.boolean().optional(), // tri-state: unset / Indoor / Outdoor
+  freezerCapable: z.boolean().optional(), // legacy — superseded by temperatureEnvironment
   temperatureEnvironment: z.enum(['ambient', 'refrigerated', 'freezer']).optional(),
   dustMoisture: z.string().optional(),
 

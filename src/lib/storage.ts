@@ -56,7 +56,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   avgDistanceFt: 0,
   distanceType: 'one_way',
   operatorsPerShift: 0,
-  rampRequired: false,
+  rampRequired: undefined, // tri-state — no No/Yes pre-selected
   rampDistanceFt: 0,
   maxRampGrade: 0,
   desiredInstallDate: undefined,
@@ -75,8 +75,8 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   otherAGVVendor: undefined,
   tempMinF: undefined,
   tempMaxF: undefined,
-  outdoorRequired: false,
-  freezerCapable: false,
+  outdoorRequired: undefined, // tri-state — no Indoor/Outdoor pre-selected
+  freezerCapable: undefined,
   temperatureEnvironment: undefined,
   dustMoisture: undefined,
   wmsRequired: false,

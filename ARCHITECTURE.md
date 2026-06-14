@@ -38,12 +38,20 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
 - **Soft gates (→ YELLOW, never block).** **Temperature Environment = Refrigerated** (review if
   not cold-rated); **Ramps on Site = Yes** (any ramp is a site-walk review regardless of rated
   grade); **required certifications** (review if any selected cert is missing). *Why:* these are
-  "verify / review" concerns, not absolute disqualifiers. A gate whose requirement is unset is
-  SKIPPED (not shown), per the app-wide "no requirement" sentinel.
+  "verify / review" concerns, not absolute disqualifiers.
 
-  > Note (2026-06-14): ramp and certifications were moved from hard → soft, and freezer/outdoor
-  > became the explicit Freezer / Outdoor options of Temperature- and Operating-Environment, at
-  > the product owner's direction. See `docs/CHANGELOG.md`.
+- **Tri-state environment fields & answer-driven severity.** Operating Environment, Temperature
+  Environment, and Ramps are **tri-state**: unset → SKIPPED ("Not set", nothing pre-selected);
+  the permissive answer (Indoor / Ambient / No) → green PASS; the restrictive answer is
+  evaluated. **Temperature is ONE gate** (`temperature_env`) whose severity comes from the
+  answer (Refrigerated = soft, Freezer = hard) — so `qualifyVehicle` groups gates by each
+  **result's** severity, not the spec's. Other unset gates still SKIP per the "no requirement"
+  sentinel.
+
+  > Note (2026-06-14): ramp and certifications moved hard → soft; freezer/outdoor became the
+  > Freezer / Outdoor options of Temperature- / Operating-Environment; the two temperature
+  > gates were consolidated into one answer-driven gate — all at the product owner's direction.
+  > See `docs/CHANGELOG.md`.
 
 - **Aisle width is informational only** — never blocks qualification. *Why:* real-world aisle compatibility depends on turn radius, blind spots, and on-site verification, not a single dimension on a spec sheet.
 

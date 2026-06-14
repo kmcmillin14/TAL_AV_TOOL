@@ -13,6 +13,23 @@
   .githooks`) runs the check and blocks commits that touch the data model / architecture
   without a CHANGELOG entry. `--no-verify` bypasses intentionally.
 
+## 2026-06-14 — Environment fields tri-state + permissive-pass + temperature consolidated
+
+Fixes: Indoor/Ambient/No-ramp appeared pre-selected at start, and a chosen permissive
+answer showed "Not set" in the matrix.
+
+- **Tri-state environment fields.** `outdoorRequired` and `rampRequired` are now `.optional()`
+  (no `.default(false)`); storage no longer pre-sets them; the form toggles highlight only on
+  an explicit value (`=== false`/`=== true`, and `=== opt` for temperature — dropped the
+  `?? 'ambient'` fallback). Nothing is pre-selected until the engineer chooses.
+- **Permissive answers pass green** (not "Not set"): Operating Environment = Indoor, Ramps =
+  No, Temperature = Ambient all evaluate to a green PASS; only an unanswered field skips.
+- **Temperature is now ONE gate** (`temperature_env`) with answer-driven severity — Ambient
+  green, Refrigerated soft/YELLOW, Freezer hard/RED — replacing the separate `freezer` +
+  `refrigerated` gates (kills the duplicate temperature rows). `qualifyVehicle` now groups by
+  each gate's **result** severity, not the spec's, so one gate can be hard or soft.
+- Removed the orphaned `booleanGate` helper. Verified env fields round-trip through storage.
+
 ## 2026-06-14 — Gate bar always shows every hard gate (answered or not)
 
 - The matrix bar now renders **all hard gates** as segments whether or not they've been
