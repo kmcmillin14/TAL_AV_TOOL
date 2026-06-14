@@ -252,7 +252,8 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
     sec('Section 2 — How is it transferred?')
     row('Transfer method', project.transferMethod)
     row('Delivery pattern', project.deliveryPattern)
-    row('Max lift height', project.maxLiftHeightFt != null ? `${project.maxLiftHeightFt} ft` : null)
+    row('Pick height', project.pickHeightFt != null ? `${project.pickHeightFt} ft` : null)
+    row('Drop height', project.dropHeightFt != null ? `${project.dropHeightFt} ft` : null)
 
     sec('Section 3 — Where does it operate?')
     row('Min aisle width', project.minAisleWidthFt ? `${project.minAisleWidthFt} ft` : null)

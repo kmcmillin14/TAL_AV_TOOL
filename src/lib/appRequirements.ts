@@ -26,6 +26,8 @@ export function appRequirementsFromProject(p: StoredProject): ApplicationRequire
     transferMethod: p.transferMethod ?? '',
     deliveryPattern: p.deliveryPattern ?? '',
     maxLiftHeightFt: p.maxLiftHeightFt,
+    pickHeightFt: p.pickHeightFt,
+    dropHeightFt: p.dropHeightFt,
     minAisleWidthFt: p.minAisleWidthFt ?? 0,
     certifications: Array.isArray(p.certifications) ? p.certifications : [],
     tempMinF: p.tempMinF,

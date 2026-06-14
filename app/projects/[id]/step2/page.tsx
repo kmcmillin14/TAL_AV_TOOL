@@ -86,6 +86,8 @@ export default function Step2Page() {
     transferMethod: project?.transferMethod ?? '',
     deliveryPattern: project?.deliveryPattern ?? '',
     maxLiftHeightFt: project?.maxLiftHeightFt,
+    pickHeightFt: project?.pickHeightFt,
+    dropHeightFt: project?.dropHeightFt,
     minAisleWidthFt: project?.minAisleWidthFt ?? 0,
     certifications: Array.isArray(project?.certifications) ? project.certifications : [],
     tempMinF: project?.tempMinF,

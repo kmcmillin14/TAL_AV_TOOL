@@ -14,10 +14,20 @@
     "order": 5
   },
   "transferMethods": [
-    { "method": "Custom", "loadTimeSec": 10, "unloadTimeSec": 10 },
-    { "method": "Powered Conveyor Cart", "loadTimeSec": 5, "unloadTimeSec": 5 }
+    {
+      "method": "Custom",
+      "loadTimeSec": 10,
+      "unloadTimeSec": 10
+    },
+    {
+      "method": "Powered Conveyor Cart",
+      "loadTimeSec": 5,
+      "unloadTimeSec": 5
+    }
   ],
-  "payloadTypes": ["Cart"],
+  "payloadTypes": [
+    "Cart"
+  ],
   "calc": {
     "maxWeightLbs": 10000,
     "widthFt": 3.33,
@@ -36,7 +46,11 @@
     "chargeA": 400,
     "chargeTimeMin": 90,
     "chargerType": "shift_swap",
-    "priceRange": { "minUsd": 200000, "maxUsd": 275000 }
+    "priceRange": {
+      "minUsd": 200000,
+      "maxUsd": 275000
+    },
+    "liftClass": "floor"
   },
   "specs": {
     "tempMinF": 14,
@@ -44,6 +58,9 @@
     "outdoorCapable": false,
     "freezerCapable": false,
     "maxRampGrade": 3,
-    "certifications": ["ISO 3691-4", "ANSI B56.5"]
+    "certifications": [
+      "ISO 3691-4",
+      "ANSI B56.5"
+    ]
   }
 }

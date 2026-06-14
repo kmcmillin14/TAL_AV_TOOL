@@ -42,6 +42,8 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   transferMethod: '',
   deliveryPattern: '',
   maxLiftHeightFt: undefined,
+  pickHeightFt: undefined,
+  dropHeightFt: undefined,
   minAisleWidthFt: 0,
   floorCondition: '',
   shiftsPerDay: 1,

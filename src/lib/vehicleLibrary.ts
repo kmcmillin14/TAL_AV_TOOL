@@ -34,12 +34,20 @@ export interface VehicleDisplay {
   order?: number
 }
 
+/** How a vehicle transfers a load vertically:
+ *  - `forklift`: lifts pick→drop to any height up to `maxLiftHeightFt` (stacking).
+ *  - `lift_table`: transfers only at a matched height (pick == drop), e.g. conveyor/roller top.
+ *  - `floor`: floor-to-floor only; no above-floor transfer. */
+export type LiftClass = 'forklift' | 'lift_table' | 'floor'
+
 export interface VehicleCalc {
   maxWeightLbs: number
   widthFt: number
   lengthFt?: number
   heightFt?: number
   turningRadiusFt?: number
+  /** Vertical-transfer class — drives the lift gate (see {@link LiftClass}). */
+  liftClass: LiftClass
   maxLiftHeightFt: number | null
   maxLoadLengthIn?: number | null
   maxLoadWidthIn?: number | null

@@ -55,7 +55,13 @@ export interface ApplicationRequirements {
   typicalUnitType: string
   transferMethod: string
   deliveryPattern: string
+  /** Legacy single "lift to" requirement — fallback when pick/drop are unset. */
   maxLiftHeightFt?: number | null
+  /** Transfer heights above floor (ft). The lift gate compares the elevation
+   *  change |drop − pick| and the higher of the two against the vehicle's
+   *  {@link LiftClass}. Unset/0 → floor-to-floor, gate skipped. */
+  pickHeightFt?: number | null
+  dropHeightFt?: number | null
   minAisleWidthFt: number
   certifications?: string[]
   tempMinF?: number | null

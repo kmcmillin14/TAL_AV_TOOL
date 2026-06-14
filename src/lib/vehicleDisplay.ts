@@ -6,6 +6,7 @@
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { units, type UnitSystem } from '@/src/lib/utils/units'
 import { DEFAULT_DOD } from '@/src/calc/types'
+import { LIFT_CLASS_LABEL } from '@/src/calc/gates'
 
 /** Max weight capacity — `4,000 lbs` imperial / `1,814 kg` metric. */
 export function capacityDisplay(v: Vehicle, unit: UnitSystem): string {
@@ -14,22 +15,18 @@ export function capacityDisplay(v: Vehicle, unit: UnitSystem): string {
     : `${v.calc.maxWeightLbs.toLocaleString()} lbs`
 }
 
-/** True when the vehicle has a real lift height (not a floor-only tugger). */
-function canLift(v: Vehicle): boolean {
-  const ft = v.calc.maxLiftHeightFt
-  return ft != null && ft > 0
-}
-
-/** Max lift height — `14.67 ft` / `4.5 m`; `—` for floor-only vehicles. */
-function liftDisplay(v: Vehicle, unit: UnitSystem): string {
-  if (!canLift(v)) return '—'
-  const ft = v.calc.maxLiftHeightFt as number
-  return unit === 'metric' ? `${units.distance.toMetric(ft).toFixed(1)} m` : `${ft} ft`
-}
-
-/** Max ramp grade — `5%`. */
-function rampDisplay(v: Vehicle): string {
-  return `${v.specs.maxRampGrade}%`
+/** Card "Lift" row value — reflects the vehicle's vertical-transfer class:
+ *  forklift shows its reach, lift table shows "Matched height", floor shows
+ *  "Floor-to-floor". */
+export function liftValue(v: Vehicle, unit: UnitSystem): string {
+  switch (v.calc.liftClass) {
+    case 'forklift':
+      return v.calc.maxLiftHeightFt != null
+        ? (unit === 'metric' ? `${units.distance.toMetric(v.calc.maxLiftHeightFt).toFixed(1)} m` : `${v.calc.maxLiftHeightFt} ft`)
+        : '—'
+    case 'lift_table': return 'Matched height'
+    case 'floor': return 'Floor-to-floor'
+  }
 }
 
 /** Loaded travel speed in dual units — `9.84 ft/s (6.7 mph)` / `3.00 m/s (10.8 km/h)`. */
@@ -68,16 +65,6 @@ export function transferDisplay(v: Vehicle): string {
 /** Payload types joined — `Standard Pallet, Rack, IBC`. */
 export function payloadsDisplay(v: Vehicle): string {
   return v.payloadTypes.join(', ')
-}
-
-/** Row label for the contextual lift/ramp slot used on the card. */
-export function liftOrRampLabel(v: Vehicle): string {
-  return canLift(v) ? 'Max Lift' : 'Max Ramp'
-}
-
-/** Row value for the contextual lift/ramp slot used on the card. */
-export function liftOrRampDisplay(v: Vehicle, unit: UnitSystem): string {
-  return canLift(v) ? liftDisplay(v, unit) : rampDisplay(v)
 }
 
 // ── Full spec sheet (shared by VehicleSpecSheet + ComparisonModal) ──────────
@@ -139,7 +126,8 @@ export function vehicleSpecSections(v: Vehicle, unit: UnitSystem): SpecSection[]
       title: 'Load Capacity',
       rows: [
         { label: 'Max payload', value: metric ? `${lbsToKg(calc.maxWeightLbs)} kg` : `${calc.maxWeightLbs.toLocaleString()} lbs`, compare: cmp(calc.maxWeightLbs, 'higher') },
-        { label: 'Max lift height', value: calc.maxLiftHeightFt == null ? 'None (non-lifting)' : len(calc.maxLiftHeightFt), compare: cmp(calc.maxLiftHeightFt, 'higher') },
+        { label: 'Lift type', value: LIFT_CLASS_LABEL[calc.liftClass] },
+        { label: 'Max lift height', value: calc.liftClass === 'forklift' && calc.maxLiftHeightFt != null ? len(calc.maxLiftHeightFt) : '—', compare: cmp(calc.liftClass === 'forklift' ? calc.maxLiftHeightFt : null, 'higher') },
         { label: 'Max load length', value: loadDim(calc.maxLoadLengthIn) },
         { label: 'Max load width', value: loadDim(calc.maxLoadWidthIn) },
         { label: 'Max load height', value: loadDim(calc.maxLoadHeightIn) },

@@ -14,9 +14,15 @@
     "order": 4
   },
   "transferMethods": [
-    { "method": "Pin", "loadTimeSec": 5, "unloadTimeSec": 5 }
+    {
+      "method": "Pin",
+      "loadTimeSec": 5,
+      "unloadTimeSec": 5
+    }
   ],
-  "payloadTypes": ["Cart"],
+  "payloadTypes": [
+    "Cart"
+  ],
   "calc": {
     "maxWeightLbs": 2200,
     "widthFt": 1.22,
@@ -35,7 +41,11 @@
     "chargeA": 17.9,
     "chargeTimeMin": 75,
     "chargerType": "opportunity",
-    "priceRange": { "minUsd": 85000, "maxUsd": 115000 }
+    "priceRange": {
+      "minUsd": 85000,
+      "maxUsd": 115000
+    },
+    "liftClass": "floor"
   },
   "specs": {
     "tempMinF": 50,
@@ -43,6 +53,9 @@
     "outdoorCapable": false,
     "freezerCapable": false,
     "maxRampGrade": 7,
-    "certifications": ["ISO 3691-4", "ANSI B56.5"]
+    "certifications": [
+      "ISO 3691-4",
+      "ANSI B56.5"
+    ]
   }
 }

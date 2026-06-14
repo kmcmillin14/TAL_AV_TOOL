@@ -8,7 +8,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { QualificationResult } from '@/src/calc/types'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import {
-  capacityDisplay, liftOrRampLabel, liftOrRampDisplay,
+  capacityDisplay, liftValue,
   speedDisplay as fmtSpeed, batteryDisplay as fmtBattery, batteryLifeDisplay as fmtBatteryLife,
   transferDisplay, payloadsDisplay,
 } from '@/src/lib/vehicleDisplay'
@@ -53,8 +53,7 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
   // Spec display strings — shared with the comparison modal (src/lib/vehicleDisplay.ts)
   const capDisplay = capacityDisplay(vehicle, unitSystem)
   const transfers = transferDisplay(vehicle)
-  const row2Label = liftOrRampLabel(vehicle)
-  const row2Value = liftOrRampDisplay(vehicle, unitSystem)
+  const liftVal = liftValue(vehicle, unitSystem)
   const speedDisplay = fmtSpeed(vehicle, unitSystem)
   const batteryDisplay = fmtBattery(vehicle)
   const batteryLifeDisplay = fmtBatteryLife(vehicle)
@@ -155,8 +154,8 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
                 <span className="spec-v">{capDisplay}</span>
               </div>
               <div className="veh-spec-row">
-                <span className="spec-k">{row2Label}</span>
-                <span className="spec-v">{row2Value}</span>
+                <span className="spec-k">Lift</span>
+                <span className="spec-v">{liftVal}</span>
               </div>
               <div className="veh-spec-row">
                 <span className="spec-k">Max Speed</span>

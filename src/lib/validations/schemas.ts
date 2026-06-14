@@ -63,6 +63,9 @@ export const projectSchema = z.object({
   transferMethod: z.string().optional(),
   deliveryPattern: z.string().optional(),
   maxLiftHeightFt: z.number().positive().optional().nullable(),
+  // Transfer heights above floor (ft). Drive the lift / transfer gate.
+  pickHeightFt: z.number().min(0).optional().nullable(),
+  dropHeightFt: z.number().min(0).optional().nullable(),
 
   // Section 3
   minAisleWidthFt: z.number().min(0).optional(),

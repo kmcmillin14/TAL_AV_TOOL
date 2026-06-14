@@ -14,10 +14,22 @@
     "order": 3
   },
   "transferMethods": [
-    { "method": "Lift", "loadTimeSec": 8, "unloadTimeSec": 8, "lifts": true },
-    { "method": "Pin", "loadTimeSec": 5, "unloadTimeSec": 5 }
+    {
+      "method": "Lift",
+      "loadTimeSec": 8,
+      "unloadTimeSec": 8,
+      "lifts": true
+    },
+    {
+      "method": "Pin",
+      "loadTimeSec": 5,
+      "unloadTimeSec": 5
+    }
   ],
-  "payloadTypes": ["Standard Pallet", "Rack"],
+  "payloadTypes": [
+    "Standard Pallet",
+    "Rack"
+  ],
   "calc": {
     "maxWeightLbs": 2645,
     "widthFt": 2.68,
@@ -37,7 +49,11 @@
     "chargeA": 32,
     "chargeTimeMin": 150,
     "chargerType": "opportunity",
-    "priceRange": { "minUsd": 70000, "maxUsd": 95000 }
+    "priceRange": {
+      "minUsd": 70000,
+      "maxUsd": 95000
+    },
+    "liftClass": "lift_table"
   },
   "specs": {
     "tempMinF": 41,
@@ -45,6 +61,8 @@
     "outdoorCapable": false,
     "freezerCapable": false,
     "maxRampGrade": 3,
-    "certifications": ["ISO 3691-4"]
+    "certifications": [
+      "ISO 3691-4"
+    ]
   }
 }

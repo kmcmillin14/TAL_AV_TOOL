@@ -1,5 +1,4 @@
 import type { ProjectFormData } from '@/src/lib/validations/schemas'
-import { deliveryPatternRequiresLift } from '@/src/calc/trafficLight'
 
 // All 12 sections of the Step 1 questionnaire, grouped into three tiers
 // (qualification → sizing → proposal). The order here is the order they
@@ -106,8 +105,8 @@ export function filledRequired(values: Partial<ProjectFormData>): number {
 // ── Qualification readiness meter ────────────────────────────────────────────
 // Counts the gate-engine inputs (src/calc/gates.ts) that have an answer.
 // Excluded by design: outdoorRequired/freezerCapable (unchecked is an answer,
-// not a gap) and certifications (optional soft gate). maxLiftHeightFt counts
-// only while the delivery pattern implies a lift.
+// not a gap), certifications (optional soft gate), and pick/drop heights
+// (floor-to-floor — both 0 — is a valid, common answer, not a gap).
 
 const QUALIFICATION_INPUTS: ReadonlyArray<keyof ProjectFormData> = [
   'maxLoadWeightLbs', 'typicalUnitType',
@@ -127,16 +126,10 @@ function isAnswered(value: unknown): boolean {
   return false
 }
 
-function qualificationInputs(values: Partial<ProjectFormData>): ReadonlyArray<keyof ProjectFormData> {
-  return deliveryPatternRequiresLift(values.deliveryPattern)
-    ? [...QUALIFICATION_INPUTS, 'maxLiftHeightFt']
-    : QUALIFICATION_INPUTS
-}
-
-export function qualificationInputsTotal(values: Partial<ProjectFormData>): number {
-  return qualificationInputs(values).length
+export function qualificationInputsTotal(_values: Partial<ProjectFormData>): number {
+  return QUALIFICATION_INPUTS.length
 }
 
 export function qualificationInputsFilled(values: Partial<ProjectFormData>): number {
-  return qualificationInputs(values).filter(f => isAnswered(values[f])).length
+  return QUALIFICATION_INPUTS.filter(f => isAnswered(values[f])).length
 }

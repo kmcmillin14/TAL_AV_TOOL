@@ -14,12 +14,31 @@
     "order": 2
   },
   "transferMethods": [
-    { "method": "Conveyor", "loadTimeSec": 3, "unloadTimeSec": 3 },
-    { "method": "Lift", "loadTimeSec": 8, "unloadTimeSec": 8, "lifts": true },
-    { "method": "Pin", "loadTimeSec": 5, "unloadTimeSec": 5 },
-    { "method": "Custom", "loadTimeSec": 8, "unloadTimeSec": 8 }
+    {
+      "method": "Conveyor",
+      "loadTimeSec": 3,
+      "unloadTimeSec": 3
+    },
+    {
+      "method": "Lift",
+      "loadTimeSec": 8,
+      "unloadTimeSec": 8,
+      "lifts": true
+    },
+    {
+      "method": "Pin",
+      "loadTimeSec": 5,
+      "unloadTimeSec": 5
+    },
+    {
+      "method": "Custom",
+      "loadTimeSec": 8,
+      "unloadTimeSec": 8
+    }
   ],
-  "payloadTypes": ["Tote"],
+  "payloadTypes": [
+    "Tote"
+  ],
   "calc": {
     "maxWeightLbs": 440,
     "widthFt": 1.98,
@@ -39,7 +58,11 @@
     "chargeA": 101,
     "chargeTimeMin": 30,
     "chargerType": "opportunity",
-    "priceRange": { "minUsd": 95000, "maxUsd": 130000 }
+    "priceRange": {
+      "minUsd": 95000,
+      "maxUsd": 130000
+    },
+    "liftClass": "lift_table"
   },
   "specs": {
     "tempMinF": 32,
@@ -47,6 +70,9 @@
     "outdoorCapable": false,
     "freezerCapable": false,
     "maxRampGrade": 5,
-    "certifications": ["ISO 3691-4", "RIA R15.08"]
+    "certifications": [
+      "ISO 3691-4",
+      "RIA R15.08"
+    ]
   }
 }

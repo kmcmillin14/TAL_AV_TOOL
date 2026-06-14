@@ -14,9 +14,17 @@
     "order": 6
   },
   "transferMethods": [
-    { "method": "Lift", "loadTimeSec": 6, "unloadTimeSec": 6, "lifts": true }
+    {
+      "method": "Lift",
+      "loadTimeSec": 6,
+      "unloadTimeSec": 6,
+      "lifts": true
+    }
   ],
-  "payloadTypes": ["Standard Pallet", "Rack"],
+  "payloadTypes": [
+    "Standard Pallet",
+    "Rack"
+  ],
   "calc": {
     "maxWeightLbs": 8000,
     "widthFt": 2.71,
@@ -36,7 +44,11 @@
     "chargeA": 400,
     "chargeTimeMin": 90,
     "chargerType": "shift_swap",
-    "priceRange": { "minUsd": 180000, "maxUsd": 240000 }
+    "priceRange": {
+      "minUsd": 180000,
+      "maxUsd": 240000
+    },
+    "liftClass": "floor"
   },
   "specs": {
     "tempMinF": 14,
@@ -44,6 +56,9 @@
     "outdoorCapable": false,
     "freezerCapable": false,
     "maxRampGrade": 3,
-    "certifications": ["ISO 3691-4", "ANSI B56.5"]
+    "certifications": [
+      "ISO 3691-4",
+      "ANSI B56.5"
+    ]
   }
 }

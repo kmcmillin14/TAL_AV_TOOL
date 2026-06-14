@@ -63,7 +63,7 @@ export async function downloadProjectPptx(project: StoredProject, vehicles: Vehi
         const wt = l.weightLbs ? ` · ${l.weightLbs.toLocaleString()} lbs` : ''
         return `${l.unitType || '—'}${dims}${wt}`
       }).join('\n')],
-      ['Transfer', `${project.transferMethod || '—'} · ${project.deliveryPattern || '—'}${project.maxLiftHeightFt ? ` · lift to ${project.maxLiftHeightFt} ft` : ''}`],
+      ['Transfer', `${project.transferMethod || '—'} · ${project.deliveryPattern || '—'}${(project.pickHeightFt || project.dropHeightFt) ? ` · pick ${project.pickHeightFt ?? 0} ft → drop ${project.dropHeightFt ?? 0} ft` : ''}`],
       ['Environment', `${project.tempMinF ?? '—'}–${project.tempMaxF ?? '—'} °F${project.outdoorRequired ? ' · outdoor' : ''}${project.freezerCapable ? ' · freezer' : ''}${project.maxRampGrade ? ` · ramps to ${project.maxRampGrade}%` : ''}`],
       ['Schedule', `${project.shiftsPerDay ?? 1} shift(s) × ${project.hoursPerShift ?? 8} h = ${settings.dailyOpHr} h/day · ${costs.operatingDaysPerYear} days/yr`],
       ['Demand', `${flows.length} flow(s) · ${totalThru} moves/hr peak`],

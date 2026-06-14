@@ -23,6 +23,7 @@ const fixtureVehicle = (overrides: Partial<Vehicle> = {}): Vehicle => ({
   calc: {
     maxWeightLbs: 4000,
     widthFt: 4,
+    liftClass: 'forklift',
     maxLiftHeightFt: 15,
     maxLoadLengthIn: 48,
     maxLoadWidthIn: 48,
@@ -146,35 +147,57 @@ describe('qualifyVehicle — per-gate v2 schema', () => {
   })
 })
 
-describe('qualifyVehicle — lift height gate', () => {
-  it('skips lift when delivery pattern is Floor-Floor', () => {
+describe('qualifyVehicle — lift / transfer gate (lift class)', () => {
+  it('skips when pick and drop are both at floor (no above-floor transfer)', () => {
     const result = qualifyVehicle(
       fixtureVehicle(),
-      { ...emptyApp, deliveryPattern: 'Floor-Floor', maxLiftHeightFt: 10 },
+      { ...emptyApp, pickHeightFt: 0, dropHeightFt: 0 },
     )
     const lift = result.hardGates.find(g => g.gateId === 'lift_height')!
     expect(lift.skipped).toBe(true)
-    expect(lift.skipReason).toContain('Delivery pattern does not involve height')
   })
 
-  it('evaluates lift when delivery pattern involves height', () => {
+  it('forklift passes a floor→height lift within its reach', () => {
     const result = qualifyVehicle(
-      fixtureVehicle(),
-      { ...emptyApp, deliveryPattern: 'Floor-Height', maxLiftHeightFt: 10 },
+      fixtureVehicle(), // forklift, reach 15
+      { ...emptyApp, pickHeightFt: 0, dropHeightFt: 10 },
     )
     const lift = result.hardGates.find(g => g.gateId === 'lift_height')!
     expect(lift.skipped).toBe(false)
     expect(lift.passed).toBe(true)
   })
 
-  it('fails lift when vehicle cannot reach height', () => {
+  it('forklift fails when the drop exceeds its reach', () => {
     const result = qualifyVehicle(
       fixtureVehicle({ calc: { ...fixtureVehicle().calc, maxLiftHeightFt: 5 } }),
-      { ...emptyApp, deliveryPattern: 'Floor-Height', maxLiftHeightFt: 12 },
+      { ...emptyApp, pickHeightFt: 0, dropHeightFt: 12 },
     )
     expect(result.status).toBe('RED')
+    expect(result.hardGates.find(g => g.gateId === 'lift_height')!.passed).toBe(false)
+  })
+
+  it('lift table passes a matched-height transfer but fails an elevation change', () => {
+    const liftTable = fixtureVehicle({ calc: { ...fixtureVehicle().calc, liftClass: 'lift_table', maxLiftHeightFt: null } })
+    const matched = qualifyVehicle(liftTable, { ...emptyApp, pickHeightFt: 2.5, dropHeightFt: 2.5 })
+    expect(matched.hardGates.find(g => g.gateId === 'lift_height')!.passed).toBe(true)
+    const changed = qualifyVehicle(liftTable, { ...emptyApp, pickHeightFt: 0, dropHeightFt: 5 })
+    expect(changed.hardGates.find(g => g.gateId === 'lift_height')!.passed).toBe(false)
+  })
+
+  it('floor-to-floor fails any above-floor transfer', () => {
+    const tugger = fixtureVehicle({ calc: { ...fixtureVehicle().calc, liftClass: 'floor', maxLiftHeightFt: null } })
+    const result = qualifyVehicle(tugger, { ...emptyApp, pickHeightFt: 0, dropHeightFt: 4 })
+    expect(result.hardGates.find(g => g.gateId === 'lift_height')!.passed).toBe(false)
+  })
+
+  it('falls back to legacy maxLiftHeightFt when pick/drop are unset', () => {
+    const result = qualifyVehicle(
+      fixtureVehicle(), // forklift reach 15
+      { ...emptyApp, maxLiftHeightFt: 10 },
+    )
     const lift = result.hardGates.find(g => g.gateId === 'lift_height')!
-    expect(lift.passed).toBe(false)
+    expect(lift.skipped).toBe(false)
+    expect(lift.passed).toBe(true)
   })
 })
 

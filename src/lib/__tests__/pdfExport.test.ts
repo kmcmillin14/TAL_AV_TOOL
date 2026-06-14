@@ -177,6 +177,8 @@ describe('exportProjectPdf — fully populated project', () => {
     transferMethod: 'Fork',
     deliveryPattern: 'Floor-Height',
     maxLiftHeightFt: 14,
+    pickHeightFt: 0,
+    dropHeightFt: 14,
 
     // Section 3 — Where
     minAisleWidthFt: 12,

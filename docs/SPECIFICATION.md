@@ -23,8 +23,8 @@ engineer can see which answers move the Step 2 traffic lights:
 **Qualification readiness meter** (SectionNav): counts answered gate inputs —
 `maxLoadWeightLbs, typicalUnitType, loadLengthIn, loadWidthIn, loadHeightIn,
 transferMethod, deliveryPattern, tempMinF, tempMaxF, maxRampGrade, minAisleWidthFt`
-(11), plus `maxLiftHeightFt` only while `deliveryPatternRequiresLift(deliveryPattern)`
-(12). "Answered" = non-empty string / finite **nonzero** number — 0 is the app-wide
+(11, always). Pick/Drop heights are **not** counted (floor-to-floor — both 0 — is a valid
+answer, not a gap). "Answered" = non-empty string / finite **nonzero** number — 0 is the app-wide
 "no requirement" sentinel, for temps too (real freezer specs are negative °F; the
 temp gates likewise skip at 0 — see gates.ts). Cleared fields don't count.
 Checkboxes (outdoor/freezer) and certifications are excluded — unchecked is an answer.
@@ -397,10 +397,9 @@ Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
 5. **Per-load chips** (YELLOW multi-load only): a chip per load showing compatible/not.
 6. **Spec rows** (7 rows):
    - *Capacity* — `maxWeightLbs` in the active unit (no headroom ratio annotation).
-   - *Max Lift / Max Ramp* — `maxLiftHeightFt` for lift-capable vehicles; for
-     non-lift vehicles (`maxLiftHeightFt = null`) the label becomes **Max Ramp** and
-     shows `vehicle.specs.maxRampGrade %` — a hard gate value that meaningfully
-     differentiates floor-level vehicles (3–5 % spread across the library).
+   - *Lift* — reflects the vehicle's `liftClass`: a **forklift** shows its reach
+     (`maxLiftHeightFt`), a **lift table** shows "Matched height", a **floor** vehicle
+     shows "Floor-to-floor". See the lift / transfer gate below.
    - *Max Speed* — `speedLoadedFps` in dual-unit format: `ft/s (mph)` imperial /
      `m/s (km/h)` metric. Shown on every vehicle.
    - *Battery* — `ratedAh Ah` (amp-hours only).
@@ -419,7 +418,7 @@ YELLOW. Aisle width carries no pill — it is explicitly informational-only (ARC
 
 Gate field → pill mapping:
 - §01 Load: Max Load Weight → **gate**; Unit/Load Type → **gate**; Load Length / Load Width / Load Height → *no pill* (informational only — dimension gates removed)
-- §02 Transfer: Transfer Method, Delivery Pattern, Max Lift Height (conditional) → **gate**
+- §02 Transfer: Transfer Method, Delivery Pattern, Drop Height → **gate**; Pick Height → *no pill*
 - §03 Environment: Min Temperature, Max Temperature, Outdoor Required?, Freezer Capable?
   → **gate** (hard); Max Ramp Grade → **soft** (a ramp the vehicle can't handle is a YELLOW,
   not a RED — gradeability is rarely an absolute blocker); Min Aisle Width → *no pill*
@@ -469,13 +468,28 @@ module. Comparison is informational only — it never selects a vehicle (ARCHITE
   app-wide "no requirement" sentinel). Exception: `outdoor` and `freezer` are boolean —
   unchecked = no requirement, always skipped.
 
-### No-lift vehicle gate behavior
+### Lift / transfer gate (lift class)
 
-When a lift is required (`deliveryPatternRequiresLift` = true and `maxLiftHeightFt > 0`)
-and the vehicle has `maxLiftHeightFt = null` (floor-level transport, no mast), the
-`lift_height` gate returns **passed = false, reason = "No lift capability — floor-level
-transport only"**. The gate bar segment shows red. In the skipped-gate path (lift not
-required), `vehicleValue` renders as "No lift" instead of "0 ft".
+Each vehicle has a `liftClass` (`src/lib/vehicleLibrary.ts`):
+- **forklift** — lifts pick→drop to any height up to `maxLiftHeightFt` (stacking). CB18.
+- **lift_table** — transfers only at a *matched* height (pick == drop), e.g. a conveyor /
+  roller top. E7/Oppent, ML2.
+- **floor** — floor-to-floor only; no above-floor transfer. 8HBC, 8TB, M10.
+
+Step 1 captures **Pick Height** and **Drop Height** (ft above floor; both default 0 =
+floor-to-floor). The `lift_height` (hard) gate:
+- Skips when `max(pick, drop) ≤ 0` (no above-floor transfer requested).
+- **forklift**: passes when `maxLiftHeightFt ≥ max(pick, drop)`.
+- **lift_table**: passes when `pick == drop` (matched height); fails any elevation change.
+- **floor**: fails any above-floor transfer.
+
+Back-compat: when pick/drop are unset, the gate falls back to the legacy single
+`maxLiftHeightFt` requirement (treated as a floor→`maxLiftHeightFt` lift). Pick Height
+carries no gate pill; **Drop Height** carries the hard `gate` pill.
+
+> **Vehicle data note:** `liftClass` for CB18 (forklift), E7 (lift table), and 8HBC (floor)
+> is confirmed by the user; ML2 (lift table), M10 and 8TB (floor) are inferred from category
+> and transfer methods — confirm against cutsheets.
 
 ---
 

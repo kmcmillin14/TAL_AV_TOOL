@@ -4,9 +4,16 @@
 // Adding a gate = appending one entry; SP3's comparison grid can iterate GATES.
 
 import type { GateResult, Severity, ApplicationRequirements } from './types'
-import type { Vehicle } from '../lib/vehicleLibrary'
+import type { Vehicle, LiftClass } from '../lib/vehicleLibrary'
 
 const SKIP_REASON = 'No requirement provided'
+
+/** Human label for each vertical-transfer class (gate reasons + spec display). */
+export const LIFT_CLASS_LABEL: Record<LiftClass, string> = {
+  forklift: 'Forklift (lifts to height)',
+  lift_table: 'Lift table (matched height)',
+  floor: 'Floor-to-floor',
+}
 
 /** Whether a delivery pattern implies a vertical lift — and therefore a
  *  lift-height hard gate. Shared by the gate engine and the Step 1 form so the
@@ -172,35 +179,54 @@ export const GATES: readonly GateSpec[] = [
       }
     } },
 
-  { id: 'lift_height', name: 'Lift Height', severity: 'hard',
+  { id: 'lift_height', name: 'Lift / Transfer', severity: 'hard',
     run(vehicle, app) {
-      const requiresLift = deliveryPatternRequiresLift(app.deliveryPattern)
-      const liftReq = app.maxLiftHeightFt
-      if (requiresLift && liftReq != null && liftReq > 0) {
-        // Vehicle with no lift capability at all (tugger/tow class, null in JSON)
-        if (vehicle.calc.maxLiftHeightFt == null) {
-          return {
-            gateId: 'lift_height', name: 'Lift Height', severity: 'hard', passed: false, skipped: false,
-            vehicleValue: 'No lift', requiredValue: `${liftReq} ft`,
-            vehicleNumeric: 0, requiredNumeric: liftReq, unit: 'ft', delta: -liftReq,
-            reason: 'No lift capability — floor-level transport only',
-          }
-        }
-        const vehLift = vehicle.calc.maxLiftHeightFt
-        const passed = vehLift >= liftReq
-        const delta = vehLift - liftReq
+      // Resolve pick/drop heights; fall back to the legacy single "lift to"
+      // requirement (treated as a floor→drop lift) for pre-pick/drop projects.
+      const pick = app.pickHeightFt ?? 0
+      const drop = app.dropHeightFt
+        ?? (app.pickHeightFt == null ? (app.maxLiftHeightFt ?? 0) : 0)
+      const hi = Math.max(pick, drop)
+      const klass = vehicle.calc.liftClass
+      const typeLabel = LIFT_CLASS_LABEL[klass]
+
+      // No above-floor transfer requested → not a differentiator, skip.
+      if (hi <= 0) {
+        return skippedGate('lift_height', 'Lift / Transfer', 'hard', typeLabel, 'ft')
+      }
+
+      const sameHeight = Math.abs(drop - pick) < 0.01
+      const reqDesc = sameHeight ? `transfer at ${hi} ft` : `lift ${pick}→${drop} ft`
+
+      if (klass === 'forklift') {
+        const reach = vehicle.calc.maxLiftHeightFt ?? 0
+        const passed = reach >= hi
         return {
-          gateId: 'lift_height', name: 'Lift Height', severity: 'hard', passed, skipped: false,
-          vehicleValue: `${vehLift} ft`, requiredValue: `${liftReq} ft`,
-          vehicleNumeric: vehLift, requiredNumeric: liftReq, unit: 'ft', delta,
+          gateId: 'lift_height', name: 'Lift / Transfer', severity: 'hard', passed, skipped: false,
+          vehicleValue: `Forklift · ${reach} ft reach`, requiredValue: reqDesc,
+          vehicleNumeric: reach, requiredNumeric: hi, unit: 'ft', delta: reach - hi,
           reason: passed
-            ? `Lifts to ${vehLift} ft vs. ${liftReq} ft required`
-            : `Lifts to ${vehLift} ft, need ${liftReq} ft (${Math.abs(delta).toFixed(1)} ft short)`,
+            ? `Forklift reaches ${reach} ft — covers ${reqDesc}`
+            : `Forklift reaches only ${reach} ft, need ${hi} ft`,
         }
       }
-      const reason = !requiresLift ? 'Delivery pattern does not involve height' : SKIP_REASON
-      const vehLiftDisplay = vehicle.calc.maxLiftHeightFt != null ? `${vehicle.calc.maxLiftHeightFt} ft` : 'No lift'
-      return skippedGate('lift_height', 'Lift Height', 'hard', vehLiftDisplay, 'ft', reason)
+      if (klass === 'lift_table') {
+        return {
+          gateId: 'lift_height', name: 'Lift / Transfer', severity: 'hard', passed: sameHeight, skipped: false,
+          vehicleValue: 'Lift table · matched height', requiredValue: reqDesc,
+          vehicleNumeric: 0, requiredNumeric: hi, unit: 'ft', delta: 0,
+          reason: sameHeight
+            ? `Lift table transfers at a matched height (${hi} ft)`
+            : `Lift table needs equal pick/drop — application changes elevation ${pick}→${drop} ft`,
+        }
+      }
+      // floor-to-floor: cannot transfer above the ground at all
+      return {
+        gateId: 'lift_height', name: 'Lift / Transfer', severity: 'hard', passed: false, skipped: false,
+        vehicleValue: 'Floor-to-floor', requiredValue: reqDesc,
+        vehicleNumeric: 0, requiredNumeric: hi, unit: 'ft', delta: -hi,
+        reason: `Floor-to-floor only — cannot ${reqDesc}`,
+      }
     } },
 
   booleanGate({

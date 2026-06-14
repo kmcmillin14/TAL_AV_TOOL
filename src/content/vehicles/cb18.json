@@ -14,9 +14,18 @@
     "order": 1
   },
   "transferMethods": [
-    { "method": "Lift", "loadTimeSec": 5, "unloadTimeSec": 5, "lifts": true }
+    {
+      "method": "Lift",
+      "loadTimeSec": 5,
+      "unloadTimeSec": 5,
+      "lifts": true
+    }
   ],
-  "payloadTypes": ["Standard Pallet", "Rack", "IBC"],
+  "payloadTypes": [
+    "Standard Pallet",
+    "Rack",
+    "IBC"
+  ],
   "calc": {
     "maxWeightLbs": 4000,
     "widthFt": 4.19,
@@ -36,7 +45,11 @@
     "chargeA": 284,
     "chargeTimeMin": 90,
     "chargerType": "opportunity",
-    "priceRange": { "minUsd": 165000, "maxUsd": 210000 }
+    "priceRange": {
+      "minUsd": 165000,
+      "maxUsd": 210000
+    },
+    "liftClass": "forklift"
   },
   "specs": {
     "tempMinF": 14,
@@ -44,6 +57,9 @@
     "outdoorCapable": true,
     "freezerCapable": false,
     "maxRampGrade": 10,
-    "certifications": ["ISO 3691-4", "ANSI B56.5"]
+    "certifications": [
+      "ISO 3691-4",
+      "ANSI B56.5"
+    ]
   }
 }

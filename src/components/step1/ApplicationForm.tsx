@@ -9,7 +9,6 @@ import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject } from '@/src/lib/storage'
-import { deliveryPatternRequiresLift } from '@/src/calc/trafficLight'
 import { TRANSFER_METHODS, TYPICAL_UNIT_TYPES, CERTIFICATIONS } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
 import SectionNav from './SectionNav'
@@ -222,7 +221,6 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   }
 
   const formValues = watch()
-  const deliveryPattern = watch('deliveryPattern')
   const oemDealer = watch('oemDealer')
   const otherAGVs = watch('otherAGVs')
   const wmsRequired = watch('wmsRequired')
@@ -232,8 +230,6 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   const hoursPerShift = watch('hoursPerShift')
   const operatingDaysPattern = watch('operatingDaysPattern')
   const operatingDaysCustom = watch('operatingDaysCustom') || []
-
-  const requiresLift = deliveryPatternRequiresLift(deliveryPattern)
 
   const secProps = (id: string) => {
     const m = FORM_SECTIONS.find(s => s.id === id)!
@@ -570,29 +566,48 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               <div className="help">e.g., Floor-Height = pick from floor, drop on rack</div>
             </div>
 
-            {requiresLift && (
-              <div className="fld">
-                <label>Max Lift Height <GatePill /> ({dLabel}) <span className="req">*</span></label>
-                <div className="input-with-unit">
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    placeholder="14.7"
-                    className="mono"
-                    defaultValue={dispFt(initialData?.maxLiftHeightFt)}
-                    {...register('maxLiftHeightFt', {
-                      setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'ft', unitSystem),
-                      onBlur: onBlurSave,
-                    })}
-                  />
-                  <div className="unit">{dLabel}</div>
-                </div>
-                <div className="help" style={{ color: 'var(--warn)' }}>
-                  No tolerance — vehicle must meet or exceed this exactly
-                </div>
+            <div className="fld">
+              <label>Pick Height ({dLabel})</label>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  placeholder="0"
+                  className="mono"
+                  defaultValue={dispFt(initialData?.pickHeightFt)}
+                  {...register('pickHeightFt', {
+                    setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'ft', unitSystem),
+                    onBlur: onBlurSave,
+                  })}
+                />
+                <div className="unit">{dLabel}</div>
               </div>
-            )}
+              <div className="help">Height loads are picked from (0 = floor)</div>
+            </div>
+
+            <div className="fld">
+              <label>Drop Height <GatePill /> ({dLabel})</label>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  placeholder="0"
+                  className="mono"
+                  defaultValue={dispFt(initialData?.dropHeightFt)}
+                  {...register('dropHeightFt', {
+                    setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'ft', unitSystem),
+                    onBlur: onBlurSave,
+                  })}
+                />
+                <div className="unit">{dLabel}</div>
+              </div>
+              <div className="help">
+                Height loads are dropped at. Floor→height needs a forklift; matched
+                heights suit a lift table.
+              </div>
+            </div>
           </div>
         </FormSection>
 

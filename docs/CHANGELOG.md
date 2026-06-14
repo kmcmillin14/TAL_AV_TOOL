@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-06-13 — Lift modeled by class + pick/drop heights (elevation-change gate)
+
+Replaces the single "max lift height" number with a vertical-transfer model that
+distinguishes forklift / lift table / floor-to-floor.
+
+- **`liftClass` on every vehicle** (`forklift | lift_table | floor`): CB18 forklift; E7 &
+  ML2 lift table; 8HBC, 8TB, M10 floor. (ML2/M10/8TB inferred — flagged in SPEC for cutsheet
+  confirmation.)
+- **Step 1 captures Pick Height + Drop Height** (ft above floor; both default 0 = floor-to-
+  floor). Replaces the conditional "Max Lift Height" input. Drop Height carries the hard
+  gate pill; Pick Height none.
+- **Lift / Transfer gate** qualifies by elevation change: skips when no above-floor transfer;
+  forklift passes if reach ≥ the higher height; lift table passes only if pick == drop
+  (matched height); floor fails any above-floor transfer. Legacy `maxLiftHeightFt` is kept as
+  a fallback when pick/drop are unset (and for import round-trips).
+- **Card "Lift" row** + spec-sheet "Lift type" row show the class. Exports (PDF/XLSX/PPTX)
+  now report pick/drop heights.
+- Readiness meter no longer counts a lift input (always 11 qualification inputs).
+
 ## 2026-06-13 — Ramp grade is now a soft (YELLOW) gate
 
 - **Ramp grade gate changed from hard (RED) to soft (YELLOW).** A vehicle that can't handle
