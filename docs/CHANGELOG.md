@@ -13,6 +13,14 @@
   .githooks`) runs the check and blocks commits that touch the data model / architecture
   without a CHANGELOG entry. `--no-verify` bypasses intentionally.
 
+## 2026-06-14 — Gate bar always shows every hard gate (answered or not)
+
+- The matrix bar now renders **all hard gates** as segments whether or not they've been
+  answered — unanswered hard gates show as a dimmed "Not set" segment, so the full set of
+  hard requirements is always visible. Soft gates still appear only once they're in play
+  (keeps the Refrigerated/Ramp clutter out until selected). Count = `passed / total shown`;
+  tooltip badges add a **Not set** state. (Refines the earlier "only applied checks" pass.)
+
 ## 2026-06-14 — Gate bar shows only applied checks (no N/A clutter / repeats)
 
 - The gate-bar segments and hover tooltip now render **only evaluated gates** — skipped

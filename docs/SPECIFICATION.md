@@ -388,14 +388,14 @@ Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
    (check / alert-triangle / x) + colored label — GREEN Compatible / YELLOW Review Required
    / RED Not Compatible. No glow or dot. The same component renders the comparison modal's
    Status row.
-3. **Segmented gate bar**: one segment per gate (hard + soft). Color: `pass` (green) ·
-   `fail` (red, hard gate) · `soft` (amber, soft gate miss) · `skip` (dimmed, gate not
-   evaluated). Segment count shows `N/M`. Only rendered when ≥ 1 gate was evaluated.
-   **Hover or focus** the bar to reveal a tooltip listing each gate with a status dot,
-   name, Pass/Fail/Review badge, and the reason for any fail/review — the at-a-glance
-   replacement for the old always-visible verdict line. Only gates that **actually applied**
-   are shown; skipped/no-constraint gates (e.g. Ambient temperature, Indoor, no ramp, no
-   above-floor transfer) are omitted rather than listed as N/A. The segmented bar matches.
+3. **Segmented gate bar**: **every hard gate is always shown** (answered or not) so the
+   full set of hard requirements is visible at a glance, plus any soft gate currently in
+   play. Color per segment: `pass` (green) · `fail` (red, hard gate) · `soft` (amber, soft
+   gate miss) · `skip`/incomplete (dimmed, hard gate not yet answered). Soft gates appear
+   only once evaluated (so an unselected Refrigerated/Ramp doesn't clutter the bar). Count
+   shows `passed / total shown`. **Hover or focus** reveals a tooltip listing each segment
+   with a status dot, name, Pass/Fail/Review/**Not set** badge, and the reason for any
+   fail/review — the at-a-glance replacement for the old always-visible verdict line.
 5. **Per-load chips** (YELLOW multi-load only): a chip per load showing compatible/not.
 6. **Spec rows** (7 rows):
    - *Capacity* — `maxWeightLbs` in the active unit (no headroom ratio annotation).

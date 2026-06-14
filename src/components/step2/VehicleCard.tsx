@@ -41,14 +41,19 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
   const isBack = face === 'back'
 
   // ── Triage derivations (front face) ──────────────────────────────────────
-  const allGates = [...result.hardGates, ...result.softPreferences]
-  const evaluated = allGates.filter(g => !g.skipped)
-  const passedCount = evaluated.filter(g => g.passed).length
+  // The bar always shows EVERY hard gate (answered or not) so the full set of
+  // hard requirements is visible; soft gates appear only once they're in play.
+  // Unanswered hard gates render as a neutral "incomplete" segment.
+  const barGates = [
+    ...result.hardGates,
+    ...result.softPreferences.filter(g => !g.skipped),
+  ]
+  const passedCount = barGates.filter(g => !g.skipped && g.passed).length
   // Per-gate status class for the bar + hover tooltip.
-  const gateStatus = (g: typeof allGates[number]) =>
+  const gateStatus = (g: typeof barGates[number]) =>
     g.skipped ? 'skip' : g.passed ? 'pass' : g.severity === 'hard' ? 'fail' : 'soft'
   const gateStatusLabel: Record<string, string> = {
-    pass: 'Pass', fail: 'Fail', soft: 'Review', skip: 'n/a',
+    pass: 'Pass', fail: 'Fail', soft: 'Review', skip: 'Not set',
   }
   // Spec display strings — shared with the comparison modal (src/lib/vehicleDisplay.ts)
   const capDisplay = capacityDisplay(vehicle, unitSystem)
@@ -97,18 +102,18 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
               <TrafficLight status={status} />
             </div>
 
-            {evaluated.length > 0 && (
+            {barGates.length > 0 && (
               <div
                 className="veh-gatebar"
                 tabIndex={isBack ? -1 : 0}
-                aria-label={`${passedCount} of ${evaluated.length} requirement checks pass — hover for detail`}
+                aria-label={`${passedCount} of ${barGates.length} requirement checks pass — hover for detail`}
               >
                 <div className="veh-gatebar-top">
                   <span className="veh-gatebar-cap">Requirement checks</span>
-                  <span className="veh-gatebar-count mono">{passedCount}/{evaluated.length}</span>
+                  <span className="veh-gatebar-count mono">{passedCount}/{barGates.length}</span>
                 </div>
                 <div className="veh-gatebar-segs">
-                  {evaluated.map(g => (
+                  {barGates.map(g => (
                     <span
                       key={g.gateId + g.name}
                       className={`vg-seg ${gateStatus(g)}`}
@@ -116,10 +121,10 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
                   ))}
                 </div>
 
-                {/* Hover/focus tooltip — only the checks that actually applied
-                    (skipped/no-constraint gates are omitted, not shown as N/A) */}
+                {/* Hover/focus tooltip — every hard gate (answered or not) plus
+                    any soft gate in play; unanswered hard gates read "Not set". */}
                 <div className="veh-gatebar-tip" role="tooltip">
-                  {evaluated.map(g => {
+                  {barGates.map(g => {
                     const st = gateStatus(g)
                     return (
                       <div key={g.gateId + g.name} className="vgt-row">
