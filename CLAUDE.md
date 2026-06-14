@@ -66,3 +66,16 @@ single, version-controlled source of Claude Code instructions for the project
 Build (`/frontend-design` for new UI) → `/simplify` (pre-commit cleanup) → `/review`
 (pre-merge) → commit + push. Auto-commit: after a set of changes, stage all, commit with a
 summary, push to `origin main`.
+
+## Enforcement (run once per clone)
+
+```
+git config core.hooksPath .githooks
+```
+
+Enables the pre-commit hook, which runs `npm run check:arch` (calc purity · module
+boundaries · Toyota-Type-only · vehicle data in JSON — ARCHITECTURE.md §3/§6) and blocks a
+commit that changes the data model / architecture (`src/calc/`, `schemas.ts`,
+`src/content/vehicles/`, `ARCHITECTURE.md`) without a `docs/CHANGELOG.md` entry. Bypass an
+intentional exception with `git commit --no-verify`. CI can run the same gate via
+`npm run check:arch`.

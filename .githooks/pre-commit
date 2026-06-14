@@ -1,0 +1,22 @@
+#!/bin/sh
+# TAL Fleet Calculator pre-commit hook.
+# Enables: git config core.hooksPath .githooks   (run once per clone; see README/CLAUDE.md)
+# Bypass intentionally with:  git commit --no-verify
+
+cd "$(git rev-parse --show-toplevel)" || exit 1
+
+# 1. Architecture invariants (ARCHITECTURE.md §3/§6): calc purity, module
+#    boundaries, Toyota-Type-only, vehicle data in JSON.
+node scripts/check-architecture.mjs || exit 1
+
+# 2. Spec discipline: changes to the data model / architecture must be logged.
+staged=$(git diff --cached --name-only)
+core=$(echo "$staged" | grep -E '^(src/calc/|src/lib/validations/schemas\.ts|src/content/vehicles/|ARCHITECTURE\.md)' || true)
+if [ -n "$core" ] && ! echo "$staged" | grep -q '^docs/CHANGELOG\.md'; then
+  echo "✗ Architecture / data-model files changed but docs/CHANGELOG.md was not updated:"
+  echo "$core" | sed 's/^/    /'
+  echo "  Add a CHANGELOG entry (per ARCHITECTURE.md §6), or bypass with: git commit --no-verify"
+  exit 1
+fi
+
+exit 0

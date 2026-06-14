@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-14 — Governance consolidation + architecture-invariant pre-commit hook
+
+- **Single source of truth:** moved governance into the in-repo `CLAUDE.md` (was an untracked
+  parent-folder copy); reconciled the committed `ARCHITECTURE.md` §3 gate model. Parent-folder
+  `CLAUDE.md`/`ARCHITECTURE.md` duplicates removed.
+- **`scripts/check-architecture.mjs`** (`npm run check:arch`) enforces ARCHITECTURE.md §6
+  invariants: calc-layer purity (no React/fs/next/localStorage in `src/calc/`), step module
+  boundaries (no cross-step component imports), Toyota-Type-only fonts, and vehicle data in
+  JSON only.
+- **Tracked pre-commit hook** (`.githooks/pre-commit`, enable via `git config core.hooksPath
+  .githooks`) runs the check and blocks commits that touch the data model / architecture
+  without a CHANGELOG entry. `--no-verify` bypasses intentionally.
+
 ## 2026-06-14 — Gate bar shows only applied checks (no N/A clutter / repeats)
 
 - The gate-bar segments and hover tooltip now render **only evaluated gates** — skipped
