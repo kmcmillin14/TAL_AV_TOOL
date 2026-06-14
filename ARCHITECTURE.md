@@ -28,7 +28,22 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
 
 - **No backend database.** Every user's session is a record in their browser's `localStorage`. Cross-session and cross-device persistence is the user's responsibility via JSON export/import. *Why:* anonymous multi-user, zero hosting cost, no PII to handle.
 
-- **Hard gates are absolute.** Max load weight, max lift height, freezer/outdoor flags, required certifications. A vehicle that fails any hard gate is **RED**, with no override. *Why:* misqualifying a vehicle has downstream safety and contractual consequences; the traffic light must be conservative.
+- **Hard gates are absolute (→ RED, no override).** Max load weight; payload type; transfer
+  method; **lift / transfer** (by lift class — forklift reach ≥ max(pick,drop); lift table only
+  matched-height pick==drop; floor only floor-to-floor); temperature min/max range; **Operating
+  Environment = Outdoor** (vehicle must be outdoor-rated); **Temperature Environment = Freezer**
+  (vehicle must be freezer-rated). *Why:* misqualifying on these has downstream safety/contractual
+  consequences; the light must be conservative.
+
+- **Soft gates (→ YELLOW, never block).** **Temperature Environment = Refrigerated** (review if
+  not cold-rated); **Ramps on Site = Yes** (any ramp is a site-walk review regardless of rated
+  grade); **required certifications** (review if any selected cert is missing). *Why:* these are
+  "verify / review" concerns, not absolute disqualifiers. A gate whose requirement is unset is
+  SKIPPED (not shown), per the app-wide "no requirement" sentinel.
+
+  > Note (2026-06-14): ramp and certifications were moved from hard → soft, and freezer/outdoor
+  > became the explicit Freezer / Outdoor options of Temperature- and Operating-Environment, at
+  > the product owner's direction. See `docs/CHANGELOG.md`.
 
 - **Aisle width is informational only** — never blocks qualification. *Why:* real-world aisle compatibility depends on turn radius, blind spots, and on-site verification, not a single dimension on a spec sheet.
 
