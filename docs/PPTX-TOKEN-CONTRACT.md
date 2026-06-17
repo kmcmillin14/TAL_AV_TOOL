@@ -42,13 +42,20 @@ A placeholder with no value is left as-is (editable bracket), never blanked.
 **Filename:** `Rev# Opp# Customer Project.pptx` (empty parts skipped; spaces kept;
 filesystem-illegal chars stripped) — `buildFilename` in `pptxTemplateExport.ts`.
 
-### P1 — live now (money slides via runtime shape injection)
+### P1 — live now (Fleet Engine math + money slides, via placeholder fill)
 
-The empty step shells are filled by **injecting native, editable `<p:sp>` text boxes at
-build time** (`src/lib/pptx/content.ts` → `fillRomContent`) — the template stays a clean
-branded shell; the content lives in code (reviewable, testable), not as template tokens.
-Injection is no-op for any slide the user removed.
+The empty step shells each ship with one body **Content Placeholder** (`<p:ph idx="1"/>`)
+laid out by the template. `src/lib/pptx/content.ts` → `fillRomContent` writes paragraphs into
+that placeholder's `<p:txBody>` (`fillBodyPlaceholder` in `ooxml.ts`) so the content **inherits
+the slide's branded position/style** rather than appearing in a free-floating box. The content
+lives in code (reviewable, testable), not as template tokens. No-op for any slide the user removed.
 
+Fleet Engine (mirrors the Step 3 / Fleet Engine waterfall in `computeFleetModel`):
+- **S21 Raw fleet:** per chassis `raw → base = ⌈Σ demand⌉`; total base fleet; daily op hours.
+- **S22 Charging:** regime; per chassis availability `→ +N for charging`; total with charging.
+- **S23 Buffer:** buffer %; `(base + charging) × (1 + buffer) → ⌈ ⌉`; fleet sold.
+
+ROM money:
 - **S25 KPIs:** fleet total · flow count · throughput; base + charging → buffered.
 - **S26 KPIs:** per-vehicle fleet mix.
 - **S27 Investment Summary:** CAPEX range (`rom.pricing.totalMin–totalMax`), total fleet, mix.
@@ -59,6 +66,8 @@ local `usd()`; TAL red via theme `accent1`.
 
 ### P2 — planned
 
-Remaining step slides (App Requirements S18, Matrix S19–20, Fleet Engine S21–23, Material
-Flow S24) and dynamic `<a:tbl>` tables (pricing/mix rows cloned per item) — same injection
-approach (a `graphicFrame`/`a:tbl` builder alongside `textBox`).
+Remaining step slides (App Requirements S18, Matrix S19–20, Material Flow S24), **graphics**
+(material-flow diagram / charts — likely rendered images placed via a media-part helper), and
+dynamic `<a:tbl>` tables (pricing/mix rows cloned per item). The free-standing `textBox` +
+`appendShapesToSlide` helpers (kept in `ooxml.ts`) are for content that has no placeholder,
+e.g. those graphics.

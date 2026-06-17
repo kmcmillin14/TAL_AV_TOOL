@@ -81,20 +81,48 @@ const fillXml = (color?: string) =>
   !color ? ''
     : `<a:solidFill>${color.length === 6 ? `<a:srgbClr val="${color}"/>` : `<a:schemeClr val="${color}"/>`}</a:solidFill>`
 
-/** A native, editable text box `<p:sp>` (rect, theme font). EMU units. */
+/** A run's `<a:rPr>` — minimal so unset props inherit the placeholder/layout style. */
+const runXml = (r: TextRun) =>
+  `<a:r><a:rPr lang="en-US"${r.sz ? ` sz="${r.sz}"` : ''}${r.bold ? ' b="1"' : ''} dirty="0">${fillXml(r.color)}</a:rPr><a:t>${escapeXml(r.t)}</a:t></a:r>`
+
+/** Paragraphs `<a:p>…</a:p>` from rows of runs (empty row → blank line). */
+export function parasXml(paras: TextRun[][]): string {
+  return paras.map(p => (p.length ? `<a:p>${p.map(runXml).join('')}</a:p>` : '<a:p/>')).join('')
+}
+
+/**
+ * Fill the slide's body Content Placeholder (`<p:ph idx="1"/>`) — the empty box
+ * the template already lays out — by replacing its `<p:txBody>` paragraphs.
+ * Inherits the placeholder's position + style from the layout. No-op if the
+ * slide or placeholder is absent.
+ */
+export function fillBodyPlaceholder(zip: PizZip, slideNum: number, paras: TextRun[][]): boolean {
+  const path = `ppt/slides/slide${slideNum}.xml`
+  const f = zip.file(path)
+  if (!f) return false
+  const xml = f.asText()
+  // The single <p:sp> whose placeholder is idx="1" (content); not the title/date/etc.
+  const spRe = /<p:sp>(?:(?!<\/p:sp>)[\s\S])*?<p:ph\b[^>]*\bidx="1"[^>]*\/>(?:(?!<\/p:sp>)[\s\S])*?<\/p:sp>/
+  const m = xml.match(spRe)
+  if (!m) return false
+  const filled = m[0].replace(
+    /<p:txBody>[\s\S]*?<\/p:txBody>/,
+    `<p:txBody><a:bodyPr/><a:lstStyle/>${parasXml(paras)}</p:txBody>`,
+  )
+  zip.file(path, xml.replace(m[0], filled))
+  return true
+}
+
+/** A native, editable text box `<p:sp>` (rect, theme font). EMU units. Kept for
+ *  free-standing content (e.g. images/graphics) where no placeholder exists. */
 export function textBox(opts: {
   id: number; x: number; y: number; cx: number; cy: number; paras: TextRun[][]
 }): string {
-  const run = (r: TextRun) =>
-    `<a:r><a:rPr lang="en-US" sz="${r.sz ?? 1800}"${r.bold ? ' b="1"' : ''} dirty="0">${fillXml(r.color)}</a:rPr><a:t>${escapeXml(r.t)}</a:t></a:r>`
-  const paras = opts.paras
-    .map(p => (p.length ? `<a:p>${p.map(run).join('')}</a:p>` : '<a:p/>'))
-    .join('')
   return `<p:sp><p:nvSpPr><p:cNvPr id="${opts.id}" name="ROM Content ${opts.id}"/>`
     + `<p:cNvSpPr><a:spLocks noGrp="1"/></p:cNvSpPr><p:nvPr/></p:nvSpPr>`
     + `<p:spPr><a:xfrm><a:off x="${opts.x}" y="${opts.y}"/><a:ext cx="${opts.cx}" cy="${opts.cy}"/></a:xfrm>`
     + `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr>`
-    + `<p:txBody><a:bodyPr wrap="square"><a:normAutofit/></a:bodyPr><a:lstStyle/>${paras}</p:txBody></p:sp>`
+    + `<p:txBody><a:bodyPr wrap="square"><a:normAutofit/></a:bodyPr><a:lstStyle/>${parasXml(opts.paras)}</p:txBody></p:sp>`
 }
 
 /** Insert raw shape XML before `</p:spTree>` on a slide (no-op if slide absent). */

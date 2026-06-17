@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId } from '../ooxml'
+import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder } from '../ooxml'
 import { slidesToRemove, type PptxSelection, PPTX_SECTIONS } from '../sections'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -83,6 +83,39 @@ describe('appendShapesToSlide + textBox', () => {
     const zip = load()
     removeSlides(zip, [27])
     expect(appendShapesToSlide(zip, 27, '<p:sp/>')).toBe(false)
+  })
+})
+
+describe('fillBodyPlaceholder', () => {
+  it('writes paragraphs into the existing idx="1" content placeholder, not a new box', () => {
+    const zip = load()
+    const before = zip.file('ppt/slides/slide27.xml')!.asText()
+    // template ships an empty content placeholder
+    expect(before).toMatch(/<p:ph\b[^>]*\bidx="1"/)
+    const beforeShapes = (before.match(/<p:sp>/g) ?? []).length
+
+    const ok = fillBodyPlaceholder(zip, 27, [
+      [{ t: 'System CAPEX', sz: 1400, color: '8A8A8E' }],
+      [{ t: '$1.2M – $1.6M', sz: 3200, bold: true, color: 'accent1' }],
+      [],
+    ])
+    expect(ok).toBe(true)
+
+    const out = reopen(zip)                       // must re-parse cleanly
+    const s27 = out.file('ppt/slides/slide27.xml')!.asText()
+    expect(s27).toContain('$1.2M – $1.6M')
+    expect(s27).toContain('<a:schemeClr val="accent1"/>')
+    expect(s27).toContain('<a:p/>')               // blank-line row
+    // no new shape: filled in place, shape count unchanged
+    expect((s27.match(/<p:sp>/g) ?? []).length).toBe(beforeShapes)
+    // content lives inside a placeholder shape (idx="1" still present)
+    expect(s27).toMatch(/<p:ph\b[^>]*\bidx="1"/)
+  })
+
+  it('returns false for a removed/absent slide', () => {
+    const zip = load()
+    removeSlides(zip, [27])
+    expect(fillBodyPlaceholder(zip, 27, [[{ t: 'x' }]])).toBe(false)
   })
 })
 

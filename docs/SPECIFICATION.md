@@ -357,11 +357,13 @@ preserving its theme, masters, and media (Toyota Type, TAL red). Client-side via
 to include; **Product Overview slides are auto-limited to the fleet chassis** (vehicles
 assigned to flows; Cleanfix always dropped). The builder removes unselected slides via OOXML
 (`presentation.xml` sldIdLst + rels + `[Content_Types]`). Content is filled two ways: cover
-(S1) + contact (S34) **bracket replacement**, and the money slides (KPIs S25/26, Investment
-S27, ROI S28) by **injecting editable native `<p:sp>` text boxes at build time**
+(S1) + contact (S34) **bracket replacement**, and the step slides — Fleet Engine math (Raw
+S21 / Charging S22 / Buffer S23), KPIs (S25/26), Investment (S27), ROI (S28) — by **writing
+into each slide's existing body Content Placeholder** (`<p:ph idx="1"/>`, via
+`fillBodyPlaceholder`) so the text inherits the branded layout instead of a free-floating box
 (`src/lib/pptx/content.ts`, from `computeFleetModel`). Filename: `Rev# Opp# Customer
-Project.pptx`. **P2** (pending): remaining step slides + dynamic `<a:tbl>` tables. Contract:
-`docs/PPTX-TOKEN-CONTRACT.md`.
+Project.pptx`. **P2** (pending): App Requirements / Matrix / Material Flow slides, graphics,
+and dynamic `<a:tbl>` tables. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
 
 ---
 
