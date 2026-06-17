@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder } from '../ooxml'
+import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, table } from '../ooxml'
 import { slidesToRemove, type PptxSelection, PPTX_SECTIONS } from '../sections'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -116,6 +116,31 @@ describe('fillBodyPlaceholder', () => {
     const zip = load()
     removeSlides(zip, [27])
     expect(fillBodyPlaceholder(zip, 27, [[{ t: 'x' }]])).toBe(false)
+  })
+})
+
+describe('table', () => {
+  it('builds an editable graphic-frame table that re-parses with header + cells', () => {
+    const zip = load()
+    const id = nextShapeId(zip, 18)
+    const ok = appendShapesToSlide(zip, 18, table({
+      id, x: 685800, y: 1828800, cx: 9000000, cy: 1000000,
+      colW: [3000000, 6000000],
+      rows: [
+        [{ t: 'Requirement' }, { t: 'Value' }],
+        [{ t: 'Max load weight', bold: true }, { t: '2,500 lbs' }],
+        [{ t: 'Verdict' }, { t: 'GREEN', fill: '2E7D32', color: 'FFFFFF' }],
+      ],
+    }))
+    expect(ok).toBe(true)
+    const out = reopen(zip)                          // must re-parse cleanly
+    const s18 = out.file('ppt/slides/slide18.xml')!.asText()
+    expect(s18).toContain('<a:tbl>')
+    expect(s18).toContain('graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table"')
+    expect(s18).toContain('2,500 lbs')
+    expect(s18).toContain('<a:srgbClr val="2E7D32"/>')   // verdict fill
+    expect((s18.match(/<a:gridCol\b/g) ?? []).length).toBe(2)
+    expect((s18.match(/<a:tr\b/g) ?? []).length).toBe(3)
   })
 })
 

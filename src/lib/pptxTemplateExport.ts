@@ -8,6 +8,7 @@ import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { removeSlides, replaceInSlides } from '@/src/lib/pptx/ooxml'
 import { buildCoverTokens } from '@/src/lib/pptx/tokenMap'
 import { fillRomContent } from '@/src/lib/pptx/content'
+import { fillRequirements, fillMatrix, fillFlows } from '@/src/lib/pptx/tables'
 import {
   PPTX_SECTIONS, VEHICLE_SLIDE, slidesToRemove, type PptxSelection,
 } from '@/src/lib/pptx/sections'
@@ -69,11 +70,15 @@ export async function exportBrandedRomPptx(
   removeSlides(zip, slidesToRemove(selection))
   replaceInSlides(zip, buildCoverTokens(project))
 
-  // P1: inject editable native content into the kept money slides.
+  // P1/P2: fill the kept step slides with native editable content. Each filler
+  // no-ops on any slide the user removed, so these run unconditionally.
   const vehicles = await fetchVehiclesCached()
   const model = computeFleetModel(project, vehicles)
   const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-  fillRomContent(zip, model, names)
+  fillRomContent(zip, model, names)            // S21–23 fleet math + S25–28 money
+  fillRequirements(zip, project)               // S18 Application Requirements
+  fillMatrix(zip, project, vehicles)           // S19–20 Vehicle Selection Matrix
+  fillFlows(zip, model, names)                 // S24 Material Flow table
 
   const blob = zip.generate({ type: 'blob', mimeType: PPTX_MIME }) as Blob
   triggerDownload(blob, buildFilename(project))

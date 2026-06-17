@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-17 — Branded ROM PowerPoint — P2 (requirements + matrix + flows via native tables)
+
+- **Native editable `<a:tbl>` table builder** added to `ooxml.ts` (`table()`): explicit cell
+  borders/fills (TAL-red header, no table-style dependency) so it renders identically in
+  PowerPoint/Keynote/LibreOffice. Appended as a `<p:graphicFrame>` in the slide body.
+- **`src/lib/pptx/tables.ts`** fills three step slides from project data:
+  - **S18 Application Requirements** — requirement → value table (imperial), captured rows only.
+  - **S19 Vehicle Selection Matrix** — per-chassis verdict (GREEN/YELLOW/RED, color-filled) +
+    failing/review notes, for **all** candidate chassis (selection rationale).
+  - **S20 Vehicle Selection Matrix** — gate × vehicle grid (✓/✗/~/–) from `qualifyVehicle`;
+    only gates that ran are shown.
+  - **S24 Material Flow** — flow list table (route, distance, moves/hr, layout, lift, vehicle).
+- Wired into `exportBrandedRomPptx` after the P1 fills; each no-ops on a removed slide.
+- Tests: `table()` re-parse test + an end-to-end `tables.test.ts` that fills S18/19/20/24 on the
+  real template with live vehicle data and confirms the deck re-parses. **P3** = material-flow
+  diagram image, charts, dynamic pricing/mix rows.
+
 ## 2026-06-17 — Branded ROM PowerPoint — P1 (Fleet Engine math + money slides) + filename
 
 - **Content fills the template's existing body placeholder** (`<p:ph idx="1"/>`) instead of

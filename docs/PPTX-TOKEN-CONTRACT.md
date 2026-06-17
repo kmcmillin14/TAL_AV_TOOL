@@ -13,10 +13,10 @@ the **code** (`src/lib/pptx/tokenMap.ts`). Keep them in sync.
 | 1 | `cover` | always; bracket placeholders |
 | 2–10 | `company` | static marketing |
 | 11–17 | *(per-vehicle)* | overviews; included only for fleet chassis. 11 8TB · 12 8HBC · 13 M10 · 14 ML2 · 15 E7(ebase7) · 16 CB18 · 17 Cleanfix(always dropped) |
-| 18 | `appReq` | Application Requirements (P2) |
-| 19–20 | `matrix` | Vehicle Selection Matrix (P2) |
-| 21–23 | `fleetEngine` | Raw / Charging / Buffer (P2) |
-| 24 | `materialFlow` | Material Flow (P2) |
+| 18 | `appReq` | Application Requirements table (P2) |
+| 19–20 | `matrix` | Vehicle Selection Matrix — verdict + gate grid (P2) |
+| 21–23 | `fleetEngine` | Raw / Charging / Buffer fleet math (P1) |
+| 24 | `materialFlow` | Material Flow table (P2); diagram image (P3) |
 | 25–26 | `kpis` | KPIs (P1) |
 | 27 | `investment` | Investment Summary / CAPEX (P1) |
 | 28 | `roi` | ROI / payback (P1) |
@@ -64,10 +64,25 @@ ROM money:
 Data comes from `computeFleetModel(project, vehicles)` (`src/lib/fleetModel.ts`); money via a
 local `usd()`; TAL red via theme `accent1`.
 
-### P2 — planned
+### P2 — live now (requirements + matrix + flows, via native tables)
 
-Remaining step slides (App Requirements S18, Matrix S19–20, Material Flow S24), **graphics**
-(material-flow diagram / charts — likely rendered images placed via a media-part helper), and
-dynamic `<a:tbl>` tables (pricing/mix rows cloned per item). The free-standing `textBox` +
-`appendShapesToSlide` helpers (kept in `ooxml.ts`) are for content that has no placeholder,
-e.g. those graphics.
+`src/lib/pptx/tables.ts` appends native, editable `<a:tbl>` graphic frames (built by `table()`
+in `ooxml.ts` — explicit cell borders/fills, no table-style dependency) into the slide body.
+No-op for any slide the user removed.
+
+- **S18 Application Requirements:** requirement → value table from project fields (imperial),
+  only rows with a captured value.
+- **S19 Vehicle Selection Matrix:** per-chassis verdict (GREEN/YELLOW/RED, color-filled) + notes
+  (failing gates / review items). Shows **all** candidate chassis — it's the selection rationale.
+- **S20 Vehicle Selection Matrix:** gate × vehicle grid (✓ pass / ✗ fail / ~ review / – n/a),
+  from `qualifyVehicle` (`src/calc/trafficLight.ts`); only gates that actually ran are shown.
+- **S24 Material Flow:** flow list table (route, distance, moves/hr, layout, lift, vehicle).
+
+### P3 — planned
+
+- **Material-flow *diagram* image** (S24): a rendered node-link picture of the flows placed via a
+  media part. Needs DOM/canvas capture wiring at export time — separate from the data table above.
+- **Charts** (e.g. CAPEX/payback) and **dynamic pricing/mix `<a:tbl>` rows** on the money slides.
+
+The free-standing `textBox` + `appendShapesToSlide` helpers (kept in `ooxml.ts`) are for content
+that has no placeholder, e.g. those graphics/images.

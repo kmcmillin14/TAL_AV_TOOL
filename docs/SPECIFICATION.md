@@ -361,9 +361,12 @@ assigned to flows; Cleanfix always dropped). The builder removes unselected slid
 S21 / Charging S22 / Buffer S23), KPIs (S25/26), Investment (S27), ROI (S28) — by **writing
 into each slide's existing body Content Placeholder** (`<p:ph idx="1"/>`, via
 `fillBodyPlaceholder`) so the text inherits the branded layout instead of a free-floating box
-(`src/lib/pptx/content.ts`, from `computeFleetModel`). Filename: `Rev# Opp# Customer
-Project.pptx`. **P2** (pending): App Requirements / Matrix / Material Flow slides, graphics,
-and dynamic `<a:tbl>` tables. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
+(`src/lib/pptx/content.ts`, from `computeFleetModel`). The matrix and data slides — App
+Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle grid, from
+`qualifyVehicle`), Material Flow (S24) — are filled with **native editable `<a:tbl>` tables**
+(`src/lib/pptx/tables.ts`; `table()` in `ooxml.ts`). Filename: `Rev# Opp# Customer
+Project.pptx`. **P3** (pending): a rendered material-flow *diagram* image, charts, and dynamic
+pricing/mix table rows. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
 
 ---
 
