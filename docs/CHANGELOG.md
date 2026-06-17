@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-17 — Branded ROM PowerPoint — P3a (material-flow diagram image)
+
+- **`addImage` in `ooxml.ts`** embeds a PNG as a native `<p:pic>`: writes the media part, adds a
+  fresh slide relationship, and inserts the picture shape (template already declares the `png`
+  content-type, so no `[Content_Types]` edit). Reusable for future chart images.
+- **`src/lib/pptx/flowDiagram.ts`** (`renderFlowDiagramPng`) draws the material-flow network —
+  locations as nodes, flows as labelled arrows (moves/hr · vehicle) — on an offscreen `<canvas>`
+  with a longest-path column layout, and returns PNG bytes. Browser-only; returns `null` in
+  non-DOM contexts.
+- **S24** now shows the diagram image on top with a compact flow table beneath
+  (`fillMaterialFlow`, was `fillFlows`); falls back to the full flow table when no image renders.
+- Tests: `addImage` (media part + fresh rId + `<p:pic>` re-parse, no-op on removed slide) and
+  S24 with/without a supplied PNG. **P3 remaining:** money-slide charts + dynamic pricing rows.
+
 ## 2026-06-17 — Branded ROM PowerPoint — P2 (requirements + matrix + flows via native tables)
 
 - **Native editable `<a:tbl>` table builder** added to `ooxml.ts` (`table()`): explicit cell

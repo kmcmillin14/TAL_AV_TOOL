@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import PizZip from 'pizzip'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
-import { fillRequirements, fillMatrix, fillFlows } from '../tables'
+import { fillRequirements, fillMatrix, fillMaterialFlow } from '../tables'
 import type { StoredProject } from '../../storage'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -33,7 +33,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
     fillRequirements(zip, PROJECT)
     fillMatrix(zip, PROJECT, vehicles)
-    fillFlows(zip, model, names)
+    fillMaterialFlow(zip, model, names)
 
     const out = reopen(zip) // PizZip re-parse = valid zip + well-formed parts
     for (const n of [18, 19, 20, 24]) {
@@ -68,9 +68,28 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    fillFlows(zip, model, names)
+    fillMaterialFlow(zip, model, names)
     const s24 = reopen(zip).file('ppt/slides/slide24.xml')!.asText()
     expect(s24).toContain('Dock → Rack A')
     expect(s24).toContain('Mixed')                     // medium route label
+    expect(s24).not.toContain('<p:pic>')               // no image when none supplied
+  })
+
+  it('S24 embeds the diagram image (media part + picture) when a PNG is supplied', () => {
+    const zip = load()
+    const model = computeFleetModel(PROJECT, vehicles)
+    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+    const png = new Uint8Array(Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64'))
+    fillMaterialFlow(zip, model, names, png)
+    const out = reopen(zip)
+    const s24 = out.file('ppt/slides/slide24.xml')!.asText()
+    expect(s24).toContain('<p:pic>')
+    expect(s24).toMatch(/r:embed="rId\d+"/)
+    // media part written and referenced by the slide rels
+    const media = Object.keys(out.files).filter(n => /^ppt\/media\/image\d+\.png$/.test(n))
+    expect(media.length).toBeGreaterThan(0)
+    expect(out.file('ppt/slides/_rels/slide24.xml.rels')!.asText()).toMatch(/media\/image\d+\.png/)
   })
 })

@@ -364,9 +364,12 @@ into each slide's existing body Content Placeholder** (`<p:ph idx="1"/>`, via
 (`src/lib/pptx/content.ts`, from `computeFleetModel`). The matrix and data slides — App
 Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle grid, from
 `qualifyVehicle`), Material Flow (S24) — are filled with **native editable `<a:tbl>` tables**
-(`src/lib/pptx/tables.ts`; `table()` in `ooxml.ts`). Filename: `Rev# Opp# Customer
-Project.pptx`. **P3** (pending): a rendered material-flow *diagram* image, charts, and dynamic
-pricing/mix table rows. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
+(`src/lib/pptx/tables.ts`; `table()` in `ooxml.ts`). The Material Flow slide (S24) also carries a
+**rendered diagram image** of the flow network (`src/lib/pptx/flowDiagram.ts` draws locations +
+labelled flow arrows on an offscreen canvas → PNG; `addImage` in `ooxml.ts` embeds it as a native
+`<p:pic>` media part), with the flow table beneath it; it falls back to the table-only layout in
+non-DOM contexts. Filename: `Rev# Opp# Customer Project.pptx`. **P3** (remaining): money-slide
+charts and dynamic pricing/mix table rows. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
 
 ---
 

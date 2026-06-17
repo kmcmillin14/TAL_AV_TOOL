@@ -180,6 +180,48 @@ export function table(opts: {
     + `</a:graphicData></a:graphic></p:graphicFrame>`
 }
 
+const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image'
+
+/**
+ * Place a PNG on a slide as a native `<p:pic>`: writes the media part, adds the
+ * slide relationship, and inserts the picture shape at the given EMU rect. The
+ * template already declares the `png` default content-type, so no
+ * `[Content_Types]` edit is needed. No-op (returns false) if the slide absent.
+ */
+export function addImage(
+  zip: PizZip, slideNum: number, png: Uint8Array,
+  rect: { x: number; y: number; cx: number; cy: number },
+): boolean {
+  const slidePath = `ppt/slides/slide${slideNum}.xml`
+  const slide = zip.file(slidePath)
+  const relPath = `ppt/slides/_rels/slide${slideNum}.xml.rels`
+  const relsFile = zip.file(relPath)
+  if (!slide || !relsFile) return false
+
+  // Unique media name across the whole deck.
+  const used = Object.keys(zip.files)
+    .map(n => /^ppt\/media\/image(\d+)\./.exec(n)?.[1]).filter(Boolean).map(Number)
+  const mediaName = `image${(used.length ? Math.max(...used) : 0) + 1}.png`
+  zip.file(`ppt/media/${mediaName}`, png)
+
+  // Next free rId in this slide's rels.
+  let rels = relsFile.asText()
+  const rIds = [...rels.matchAll(/Id="rId(\d+)"/g)].map(m => Number(m[1]))
+  const rId = `rId${(rIds.length ? Math.max(...rIds) : 0) + 1}`
+  rels = rels.replace('</Relationships>',
+    `<Relationship Id="${rId}" Type="${IMAGE_REL}" Target="../media/${mediaName}"/></Relationships>`)
+  zip.file(relPath, rels)
+
+  const id = nextShapeId(zip, slideNum)
+  const pic = `<p:pic><p:nvPicPr><p:cNvPr id="${id}" name="Material Flow ${id}"/>`
+    + `<p:cNvPicPr><a:picLocks noChangeAspect="1"/></p:cNvPicPr><p:nvPr/></p:nvPicPr>`
+    + `<p:blipFill><a:blip r:embed="${rId}"/><a:stretch><a:fillRect/></a:stretch></p:blipFill>`
+    + `<p:spPr><a:xfrm><a:off x="${rect.x}" y="${rect.y}"/><a:ext cx="${rect.cx}" cy="${rect.cy}"/></a:xfrm>`
+    + `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom></p:spPr></p:pic>`
+  zip.file(slidePath, slide.asText().replace('</p:spTree>', `${pic}</p:spTree>`))
+  return true
+}
+
 /** Insert raw shape XML before `</p:spTree>` on a slide (no-op if slide absent). */
 export function appendShapesToSlide(zip: PizZip, slideNum: number, shapesXml: string): boolean {
   const path = `ppt/slides/slide${slideNum}.xml`

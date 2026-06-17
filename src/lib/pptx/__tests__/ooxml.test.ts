@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, table } from '../ooxml'
+import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, table, addImage } from '../ooxml'
 import { slidesToRemove, type PptxSelection, PPTX_SECTIONS } from '../sections'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -141,6 +141,37 @@ describe('table', () => {
     expect(s18).toContain('<a:srgbClr val="2E7D32"/>')   // verdict fill
     expect((s18.match(/<a:gridCol\b/g) ?? []).length).toBe(2)
     expect((s18.match(/<a:tr\b/g) ?? []).length).toBe(3)
+  })
+})
+
+describe('addImage', () => {
+  const PNG = new Uint8Array(Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    'base64'))
+
+  it('writes a media part, a fresh slide rel, and a <p:pic> that re-parses', () => {
+    const zip = load()
+    const rels0 = zip.file('ppt/slides/_rels/slide24.xml.rels')!.asText()
+    const usedRId = new Set([...rels0.matchAll(/Id="(rId\d+)"/g)].map(m => m[1]))
+
+    expect(addImage(zip, 24, PNG, { x: 685800, y: 1828800, cx: 9000000, cy: 2500000 })).toBe(true)
+    const out = reopen(zip)
+
+    const s24 = out.file('ppt/slides/slide24.xml')!.asText()
+    expect(s24).toContain('<p:pic>')
+    const embed = /r:embed="(rId\d+)"/.exec(s24)![1]
+    expect(usedRId.has(embed)).toBe(false)             // a NEW rId, not reused
+
+    const rels = out.file('ppt/slides/_rels/slide24.xml.rels')!.asText()
+    expect(rels).toContain(`Id="${embed}"`)
+    const target = new RegExp(`Id="${embed}"[^>]*Target="\\.\\./media/(image\\d+\\.png)"`).exec(rels)![1]
+    expect(out.file(`ppt/media/${target}`)).not.toBeNull()
+  })
+
+  it('returns false for a removed/absent slide', () => {
+    const zip = load()
+    removeSlides(zip, [24])
+    expect(addImage(zip, 24, PNG, { x: 0, y: 0, cx: 1, cy: 1 })).toBe(false)
   })
 })
 

@@ -16,7 +16,7 @@ the **code** (`src/lib/pptx/tokenMap.ts`). Keep them in sync.
 | 18 | `appReq` | Application Requirements table (P2) |
 | 19–20 | `matrix` | Vehicle Selection Matrix — verdict + gate grid (P2) |
 | 21–23 | `fleetEngine` | Raw / Charging / Buffer fleet math (P1) |
-| 24 | `materialFlow` | Material Flow table (P2); diagram image (P3) |
+| 24 | `materialFlow` | Material Flow — diagram image (P3) + table (P2) |
 | 25–26 | `kpis` | KPIs (P1) |
 | 27 | `investment` | Investment Summary / CAPEX (P1) |
 | 28 | `roi` | ROI / payback (P1) |
@@ -78,11 +78,17 @@ No-op for any slide the user removed.
   from `qualifyVehicle` (`src/calc/trafficLight.ts`); only gates that actually ran are shown.
 - **S24 Material Flow:** flow list table (route, distance, moves/hr, layout, lift, vehicle).
 
-### P3 — planned
+### P3 — partial (material-flow diagram image live)
 
-- **Material-flow *diagram* image** (S24): a rendered node-link picture of the flows placed via a
-  media part. Needs DOM/canvas capture wiring at export time — separate from the data table above.
-- **Charts** (e.g. CAPEX/payback) and **dynamic pricing/mix `<a:tbl>` rows** on the money slides.
+- **Material-flow diagram image** (S24) — **live.** `src/lib/pptx/flowDiagram.ts`
+  (`renderFlowDiagramPng`) draws the flow network (locations as nodes, flows as labelled arrows)
+  on an offscreen `<canvas>` and returns PNG bytes; `addImage` in `ooxml.ts` writes the media part
+  + slide rel + `<p:pic>`. The image sits on top of S24 with a compact flow table beneath it. The
+  renderer returns `null` in non-DOM contexts → the exporter falls back to the full flow table.
+
+Still planned:
+- **Charts** (e.g. CAPEX/payback bars) on the money slides — same canvas-PNG + `addImage` path.
+- **Dynamic pricing/mix `<a:tbl>` rows** on S27 (per-line CAPEX / per-vehicle mix).
 
 The free-standing `textBox` + `appendShapesToSlide` helpers (kept in `ooxml.ts`) are for content
 that has no placeholder, e.g. those graphics/images.

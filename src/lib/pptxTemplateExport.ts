@@ -8,7 +8,8 @@ import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { removeSlides, replaceInSlides } from '@/src/lib/pptx/ooxml'
 import { buildCoverTokens } from '@/src/lib/pptx/tokenMap'
 import { fillRomContent } from '@/src/lib/pptx/content'
-import { fillRequirements, fillMatrix, fillFlows } from '@/src/lib/pptx/tables'
+import { fillRequirements, fillMatrix, fillMaterialFlow } from '@/src/lib/pptx/tables'
+import { renderFlowDiagramPng } from '@/src/lib/pptx/flowDiagram'
 import {
   PPTX_SECTIONS, VEHICLE_SLIDE, slidesToRemove, type PptxSelection,
 } from '@/src/lib/pptx/sections'
@@ -78,7 +79,9 @@ export async function exportBrandedRomPptx(
   fillRomContent(zip, model, names)            // S21–23 fleet math + S25–28 money
   fillRequirements(zip, project)               // S18 Application Requirements
   fillMatrix(zip, project, vehicles)           // S19–20 Vehicle Selection Matrix
-  fillFlows(zip, model, names)                 // S24 Material Flow table
+  // S24 Material Flow — diagram image (browser canvas) on top, table beneath.
+  const flowPng = renderFlowDiagramPng(model.flows, names)
+  fillMaterialFlow(zip, model, names, flowPng)
 
   const blob = zip.generate({ type: 'blob', mimeType: PPTX_MIME }) as Blob
   triggerDownload(blob, buildFilename(project))
