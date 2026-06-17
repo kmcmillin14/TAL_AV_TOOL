@@ -356,9 +356,12 @@ preserving its theme, masters, and media (Toyota Type, TAL red). Client-side via
 (`PptxSectionPicker`, from the Step 4 export bar and the header menu) chooses which sections
 to include; **Product Overview slides are auto-limited to the fleet chassis** (vehicles
 assigned to flows; Cleanfix always dropped). The builder removes unselected slides via OOXML
-(`presentation.xml` sldIdLst + rels + `[Content_Types]`), then fills placeholders. **P0**:
-cover (S1) + contact (S34) bracket placeholders. **P1**: KPIs/Investment/ROI tokens + dynamic
-tables. **P2**: remaining step slides. Token/slide contract: `docs/PPTX-TOKEN-CONTRACT.md`.
+(`presentation.xml` sldIdLst + rels + `[Content_Types]`). Content is filled two ways: cover
+(S1) + contact (S34) **bracket replacement**, and the money slides (KPIs S25/26, Investment
+S27, ROI S28) by **injecting editable native `<p:sp>` text boxes at build time**
+(`src/lib/pptx/content.ts`, from `computeFleetModel`). Filename: `Rev# Opp# Customer
+Project.pptx`. **P2** (pending): remaining step slides + dynamic `<a:tbl>` tables. Contract:
+`docs/PPTX-TOKEN-CONTRACT.md`.
 
 ---
 

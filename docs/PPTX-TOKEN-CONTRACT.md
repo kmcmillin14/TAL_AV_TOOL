@@ -39,14 +39,26 @@ the **code** (`src/lib/pptx/tokenMap.ts`). Keep them in sync.
 A placeholder with no value is left as-is (editable bracket), never blanked.
 `[Title]` / `[Email]` / `[Phone Number]` on S34 have no app field → left as brackets.
 
-### P1/P2 — planned (`{{token}}` + skeleton tables to add to step slides)
+**Filename:** `Rev# Opp# Customer Project.pptx` (empty parts skipped; spaces kept;
+filesystem-illegal chars stripped) — `buildFilename` in `pptxTemplateExport.ts`.
 
-To be added to the prepped template, styled natively, then filled by code:
-- KPIs/Investment/ROI: `{{fleetTotal}}`, `{{capexLow}}`, `{{capexHigh}}`, `{{paybackYears}}`,
-  `{{annualOffset}}`, `{{opexEnergy}}`, `{{opexMaint}}`, …
-- Dynamic tables (one tokenized data row, cloned per item): fleet mix
-  (`{{veh}} {{qty}} {{raw}}`), pricing (`{{veh}} {{qty}} {{unitLow}} {{unitHigh}}`),
-  flows, requirements.
+### P1 — live now (money slides via runtime shape injection)
 
-Run-normalization (merge adjacent runs within an `<a:p>`) will be applied before
-`{{token}}` replacement so PowerPoint run-splitting doesn't cause misses.
+The empty step shells are filled by **injecting native, editable `<p:sp>` text boxes at
+build time** (`src/lib/pptx/content.ts` → `fillRomContent`) — the template stays a clean
+branded shell; the content lives in code (reviewable, testable), not as template tokens.
+Injection is no-op for any slide the user removed.
+
+- **S25 KPIs:** fleet total · flow count · throughput; base + charging → buffered.
+- **S26 KPIs:** per-vehicle fleet mix.
+- **S27 Investment Summary:** CAPEX range (`rom.pricing.totalMin–totalMax`), total fleet, mix.
+- **S28 ROI:** simple payback, annual labor offset, annual operating cost.
+
+Data comes from `computeFleetModel(project, vehicles)` (`src/lib/fleetModel.ts`); money via a
+local `usd()`; TAL red via theme `accent1`.
+
+### P2 — planned
+
+Remaining step slides (App Requirements S18, Matrix S19–20, Fleet Engine S21–23, Material
+Flow S24) and dynamic `<a:tbl>` tables (pricing/mix rows cloned per item) — same injection
+approach (a `graphicFrame`/`a:tbl` builder alongside `textBox`).

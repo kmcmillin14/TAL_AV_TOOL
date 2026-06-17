@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { removeSlides, replaceInSlides, slideParts } from '../ooxml'
+import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId } from '../ooxml'
 import { slidesToRemove, type PptxSelection, PPTX_SECTIONS } from '../sections'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -56,6 +56,33 @@ describe('removeSlides (OOXML round-trip)', () => {
     const types = out.file('[Content_Types].xml')!.asText()
     expect(types).not.toContain('/ppt/slides/slide17.xml')
     expect(types).toContain('/ppt/slides/slide1.xml')
+  })
+})
+
+describe('appendShapesToSlide + textBox', () => {
+  it('injects an editable text box that re-parses and carries the content', () => {
+    const zip = load()
+    const id = nextShapeId(zip, 27)
+    const ok = appendShapesToSlide(zip, 27, textBox({
+      id, x: 685800, y: 1828800, cx: 10820400, cy: 4114800,
+      paras: [
+        [{ t: 'System CAPEX', sz: 1400, color: '8A8A8E' }],
+        [{ t: '$1.2M – $1.6M', sz: 3200, bold: true, color: 'accent1' }],
+      ],
+    }))
+    expect(ok).toBe(true)
+    const out = reopen(zip)                       // must re-parse cleanly
+    const s27 = out.file('ppt/slides/slide27.xml')!.asText()
+    expect(s27).toContain('$1.2M – $1.6M')
+    expect(s27).toContain('<a:schemeClr val="accent1"/>')
+    // exactly one closing spTree, shape nested inside it
+    expect((s27.match(/<\/p:spTree>/g) ?? []).length).toBe(1)
+  })
+
+  it('returns false for a removed/absent slide', () => {
+    const zip = load()
+    removeSlides(zip, [27])
+    expect(appendShapesToSlide(zip, 27, '<p:sp/>')).toBe(false)
   })
 })
 

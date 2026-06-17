@@ -3,8 +3,11 @@
 // and download. Preserves the template's theme/masters/media. Client-side only.
 import PizZip from 'pizzip'
 import type { StoredProject } from '@/src/lib/storage'
+import { computeFleetModel } from '@/src/lib/fleetModel'
+import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { removeSlides, replaceInSlides } from '@/src/lib/pptx/ooxml'
 import { buildCoverTokens } from '@/src/lib/pptx/tokenMap'
+import { fillRomContent } from '@/src/lib/pptx/content'
 import {
   PPTX_SECTIONS, VEHICLE_SLIDE, slidesToRemove, type PptxSelection,
 } from '@/src/lib/pptx/sections'
@@ -42,8 +45,16 @@ function triggerDownload(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-const safeName = (s: string | undefined, fallback: string) =>
-  (s?.trim() || fallback).replace(/[^\w.-]+/g, '_')
+/** Filename convention: "Rev# Opp# Customer Project". Empty parts are skipped;
+ *  only filesystem-illegal characters are stripped (spaces kept). */
+function buildFilename(p: StoredProject): string {
+  const oppPrefix = p.opportunityType === 'lead' ? 'LEAD' : 'OPP'
+  const opp = p.opportunityNumber?.trim() ? `${oppPrefix}${p.opportunityNumber.trim()}` : ''
+  const parts = [p.versionNumber?.trim(), opp, p.customerName?.trim(), p.projectName?.trim()]
+    .filter(Boolean) as string[]
+  const base = parts.length ? parts.join(' ') : 'TAL ROM Proposal'
+  return `${base.replace(/[/\\:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim()}.pptx`
+}
 
 /** Build and download the branded ROM deck for the given section/vehicle selection. */
 export async function exportBrandedRomPptx(
@@ -58,6 +69,12 @@ export async function exportBrandedRomPptx(
   removeSlides(zip, slidesToRemove(selection))
   replaceInSlides(zip, buildCoverTokens(project))
 
+  // P1: inject editable native content into the kept money slides.
+  const vehicles = await fetchVehiclesCached()
+  const model = computeFleetModel(project, vehicles)
+  const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+  fillRomContent(zip, model, names)
+
   const blob = zip.generate({ type: 'blob', mimeType: PPTX_MIME }) as Blob
-  triggerDownload(blob, `${safeName(project.projectName, 'TAL-ROM-Proposal')}.pptx`)
+  triggerDownload(blob, buildFilename(project))
 }

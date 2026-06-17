@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-17 — Branded ROM PowerPoint — P1 (money slides) + filename
+
+- **Money slides filled** with editable native text: S25/26 KPIs, S27 Investment Summary
+  (CAPEX range + fleet + mix), S28 ROI (payback + labor offset + opex). Implemented by
+  **injecting `<p:sp>` text boxes at build time** (`src/lib/pptx/content.ts`,
+  `appendShapesToSlide`/`textBox` in `ooxml.ts`) from `computeFleetModel` — content lives in
+  code, the template stays a clean shell; injection skips any slide the user removed.
+- **Filename convention**: `Rev# Opp# Customer Project.pptx` (`buildFilename`).
+- OOXML test extended (injected shape re-parses; no-op on removed slide). P2 = remaining step
+  slides + dynamic tables.
+
 ## 2026-06-17 — Branded ROM PowerPoint export (template-fill) — P0
 
 Replaces the from-scratch `pptxgenjs` deck with a **template-fill** pipeline over the official
