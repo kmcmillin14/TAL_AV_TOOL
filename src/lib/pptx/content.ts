@@ -1,7 +1,8 @@
-// Fills the kept ROM step slides — Fleet Engine math (S21 Raw / S22 Charging /
-// S23 Buffer), KPIs (S25/26), Investment (S27), ROI (S28) — by writing into the
-// template's existing body Content Placeholder (<p:ph idx="1"/>), so the content
-// inherits the slide's branded position/style instead of a free-floating box.
+// Fills the kept ROM text slides by writing into the template's existing body
+// Content Placeholder (<p:ph idx="1"/>) so content inherits the slide's branded
+// position/style. Two groups: the Fleet Engine math (S21/22/23) — used as a
+// FALLBACK when the canvas charts can't render (see engineChart.ts) — and the
+// money slides KPIs (S25/26), Investment (S27), ROI (S28).
 import type PizZip from 'pizzip'
 import type { FleetModel } from '@/src/lib/fleetModel'
 import { money as usd } from '@/src/lib/vehicleDisplay'
@@ -17,27 +18,18 @@ const line = (t: string, sz = 1800): TextRun[] => [{ t, sz }]
 const note = (t: string): TextRun[] => [{ t, sz: 1200, color: GRAY }]
 const GAP: TextRun[] = [] // intentional blank line (rendered as <a:p/>)
 
-/** Fill S21–S28 with the project's fleet/ROM figures (only slides still present).
- *  Falsy rows (e.g. a conditional that resolved to undefined) are dropped; an
- *  explicit GAP row is kept as a blank line. */
-export function fillRomContent(
-  zip: PizZip,
-  model: FleetModel,
-  names: Record<string, string>,
-): void {
-  const { fleet, rom, flows, settings } = model
+/** Fill a body placeholder; falsy rows are dropped, an explicit GAP stays blank. */
+const fill = (zip: PizZip, slide: number, paras: Array<TextRun[] | null | undefined>) =>
+  fillBodyPlaceholder(zip, slide, paras.filter((p): p is TextRun[] => p != null))
+
+/** S21/22/23 Fleet Engine math as TEXT — the fallback when the canvas charts
+ *  (engineChart.ts) aren't available (e.g. non-DOM export context). */
+export function fillFleetEngineText(zip: PizZip, model: FleetModel, names: Record<string, string>): void {
+  const { fleet, settings } = model
   const nm = (id: string) => names[id] ?? id
-  const mix = fleet.groups.map(g => `${nm(g.vehicleId)} ×${g.fleetSold}`).join(' · ') || '—'
-  const throughput = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
-  const payback = rom.payback.paybackYears
-
-  const put = (slide: number, paras: Array<TextRun[] | null | undefined>) =>
-    fillBodyPlaceholder(zip, slide, paras.filter((p): p is TextRun[] => p != null))
-
-  // ── Fleet Engine math (mirrors the Step 3/Fleet Engine waterfall) ──────────
 
   // S21 — Raw fleet: demand per group (Σ fractional vehicles → ceil = base).
-  put(ROM_SLIDE.rawFleet, [
+  fill(zip, ROM_SLIDE.rawFleet, [
     label('Raw fleet — demand before charging & buffer'),
     ...fleet.groups.map(g =>
       line(`${nm(g.vehicleId)}:  raw ${g.groupRaw.toFixed(2)}  →  base ⌈ ⌉ = ${g.baseFleet}`, 1600)),
@@ -47,7 +39,7 @@ export function fillRomContent(
   ])
 
   // S22 — Charging: extra vehicles so charge downtime doesn't starve the line.
-  put(ROM_SLIDE.charging, [
+  fill(zip, ROM_SLIDE.charging, [
     label(`Charging — ${settings.regime === 'overnight' ? 'overnight' : 'continuous'} regime`),
     ...fleet.groups.map(g => {
       const c = g.charging
@@ -59,7 +51,7 @@ export function fillRomContent(
   ])
 
   // S23 — Buffer: spare capacity applied after base + charging.
-  put(ROM_SLIDE.buffer, [
+  fill(zip, ROM_SLIDE.buffer, [
     label('Buffer — spare capacity for variability & maintenance'),
     line(`Buffer: ${Math.round(settings.bufferPct * 100)}%`, 1600),
     line(`(${fleet.totalBaseFleet} base + ${fleet.totalChargingDelta} charging) × ${(1 + settings.bufferPct).toFixed(2)}  →  ⌈ ⌉`, 1600),
@@ -67,8 +59,16 @@ export function fillRomContent(
     hero(`${fleet.totalFleetSold} vehicles`),
     note('Fleet sold = ⌈ (base + charging) × (1 + buffer) ⌉ per chassis.'),
   ])
+}
 
-  // ── ROM money slides ───────────────────────────────────────────────────────
+/** S25–S28 money slides (KPIs, Investment, ROI). */
+export function fillRomMoney(zip: PizZip, model: FleetModel, names: Record<string, string>): void {
+  const { fleet, rom, flows } = model
+  const nm = (id: string) => names[id] ?? id
+  const mix = fleet.groups.map(g => `${nm(g.vehicleId)} ×${g.fleetSold}`).join(' · ') || '—'
+  const throughput = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
+  const payback = rom.payback.paybackYears
+  const put = (slide: number, paras: Array<TextRun[] | null | undefined>) => fill(zip, slide, paras)
 
   // S25 — KPIs (headline)
   put(ROM_SLIDE.kpisHeadline, [

@@ -3,6 +3,7 @@
 // returns null in non-DOM contexts or when there are no flows, so the exporter
 // falls back to the flow table. Pure w.r.t. app state: input is flow data only.
 import type { Flow } from '@/src/calc/types'
+import { newCanvas, roundRect, toPngBytes } from './canvas'
 
 const W = 1600, H = 860            // 16:9-ish raster (scaled into the slide)
 const RED = '#EB0A1E', INK = '#2B2B2B', GRAY = '#8A8A8E', LINE = '#C9CDD2'
@@ -23,16 +24,6 @@ function rankNodes(nodes: string[], edges: Array<[string, string]>): Map<string,
   return rank
 }
 
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath()
-  ctx.moveTo(x + r, y)
-  ctx.arcTo(x + w, y, x + w, y + h, r)
-  ctx.arcTo(x + w, y + h, x, y + h, r)
-  ctx.arcTo(x, y + h, x, y, r)
-  ctx.arcTo(x, y, x + w, y, r)
-  ctx.closePath()
-}
-
 function arrow(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number, y2: number) {
   ctx.strokeStyle = LINE; ctx.fillStyle = LINE; ctx.lineWidth = 2.5
   ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke()
@@ -44,26 +35,16 @@ function arrow(ctx: CanvasRenderingContext2D, x1: number, y1: number, x2: number
   ctx.closePath(); ctx.fill()
 }
 
-function dataUrlToBytes(dataUrl: string): Uint8Array {
-  const b64 = dataUrl.slice(dataUrl.indexOf(',') + 1)
-  const bin = atob(b64)
-  const bytes = new Uint8Array(bin.length)
-  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i)
-  return bytes
-}
-
 /** PNG bytes for the flow diagram, or null when unavailable (no DOM / no flows). */
 export function renderFlowDiagramPng(flows: Flow[], names: Record<string, string>): Uint8Array | null {
-  if (typeof document === 'undefined') return null
   const edges: Array<[string, string]> = flows
     .map(f => [f.origin?.trim() || '—', f.destination?.trim() || '—'] as [string, string])
   const nodes = [...new Set(edges.flat())]
   if (nodes.length === 0) return null
 
-  const canvas = document.createElement('canvas')
-  canvas.width = W; canvas.height = H
-  const ctx = canvas.getContext('2d')
-  if (!ctx) return null
+  const cv = newCanvas(W, H)
+  if (!cv) return null
+  const { canvas, ctx } = cv
   ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H)
 
   // Position: x by rank (column), y stacked within the rank, vertically centered.
@@ -107,5 +88,5 @@ export function renderFlowDiagramPng(flows: Flow[], names: Record<string, string
     ctx.fillText(text, p.x + NODE_W / 2, p.y + NODE_H / 2)
   }
 
-  return dataUrlToBytes(canvas.toDataURL('image/png'))
+  return toPngBytes(canvas)
 }

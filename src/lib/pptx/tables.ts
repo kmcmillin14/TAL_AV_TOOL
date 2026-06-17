@@ -91,6 +91,24 @@ export function fillRequirements(zip: PizZip, project: StoredProject): void {
   put(zip, ROM_SLIDE.requirements, [3600000, 7220400], rows)
 }
 
+/** Place the rendered Fleet Engine charts on S21/22/23 (one per stage),
+ *  removing each body placeholder first. The image is centered in the body,
+ *  preserving the 1700×920 render aspect. */
+export function fillFleetEngineCharts(
+  zip: PizZip, charts: { raw: Uint8Array; charging: Uint8Array; buffer: Uint8Array },
+): void {
+  const ASPECT = 1700 / 920
+  const cy = BODY.cy
+  const cx = Math.round(cy * ASPECT)
+  const x = BODY.x + Math.round((BODY.cx - cx) / 2)
+  const slideFor = { raw: ROM_SLIDE.rawFleet, charging: ROM_SLIDE.charging, buffer: ROM_SLIDE.buffer } as const
+  for (const stage of ['raw', 'charging', 'buffer'] as const) {
+    const slide = slideFor[stage]
+    removeBodyPlaceholder(zip, slide)
+    addImage(zip, slide, charts[stage], { x, y: BODY.y, cx, cy })
+  }
+}
+
 /** Per-vehicle qualification, in deck-overview order (8TB · 8HBC · M10 · ML2 · E7 · CB18). */
 function qualifyAll(project: StoredProject, vehicles: Vehicle[]) {
   const app = appRequirementsFromProject(project)

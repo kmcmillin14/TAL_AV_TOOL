@@ -356,12 +356,16 @@ preserving its theme, masters, and media (Toyota Type, TAL red). Client-side via
 (`PptxSectionPicker`, from the Step 4 export bar and the header menu) chooses which sections
 to include; **Product Overview slides are auto-limited to the fleet chassis** (vehicles
 assigned to flows; Cleanfix always dropped). The builder removes unselected slides via OOXML
-(`presentation.xml` sldIdLst + rels + `[Content_Types]`). Content is filled two ways: cover
-(S1) + contact (S34) **bracket replacement**, and the step slides — Fleet Engine math (Raw
-S21 / Charging S22 / Buffer S23), KPIs (S25/26), Investment (S27), ROI (S28) — by **writing
-into each slide's existing body Content Placeholder** (`<p:ph idx="1"/>`, via
-`fillBodyPlaceholder`) so the text inherits the branded layout instead of a free-floating box
-(`src/lib/pptx/content.ts`, from `computeFleetModel`). The matrix and data slides — App
+(`presentation.xml` sldIdLst + rels + `[Content_Types]`). Content is filled three ways: cover
+(S1) + contact (S34) **bracket replacement**; the money slides — KPIs (S25/26), Investment
+(S27), ROI (S28) — by **writing into each slide's existing body Content Placeholder**
+(`<p:ph idx="1"/>`, via `fillBodyPlaceholder`, from `computeFleetModel`); and graphic slides as
+**native shapes** (tables/images) with the body placeholder removed first (`removeBodyPlaceholder`)
+so nothing ghosts behind them. The **Fleet Engine slides (S21/22/23)** render as **canvas charts
+matching the web app's engine-result panel** (`src/lib/pptx/engineChart.ts` → `addImage`): the
+TOTAL FLEET figure, the `Raw + Charging × Buffer = Total` build-up bar with the active stage lit,
+demand KPIs, and the per-vehicle breakdown; they fall back to text (`fillFleetEngineText`) in
+non-DOM export contexts. The matrix and data slides — App
 Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle grid, from
 `qualifyVehicle`), Material Flow (S24) — are filled with **native editable `<a:tbl>` tables**
 (`src/lib/pptx/tables.ts`; `table()` in `ooxml.ts`). The Material Flow slide (S24) also carries a

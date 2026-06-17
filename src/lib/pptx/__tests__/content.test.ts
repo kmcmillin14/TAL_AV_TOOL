@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import PizZip from 'pizzip'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
-import { fillRomContent } from '../content'
+import { fillRomMoney, fillFleetEngineText } from '../content'
 import type { StoredProject } from '../../storage'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -21,7 +21,7 @@ const PROJECT = {
   ],
 } as unknown as StoredProject
 
-describe('fillRomContent (Fleet Engine math + money slides)', () => {
+describe('fillFleetEngineText + fillRomMoney (text fallback + money slides)', () => {
   let vehicles: Vehicle[]
   beforeAll(async () => { vehicles = await loadVehicleLibrary() })
 
@@ -29,7 +29,8 @@ describe('fillRomContent (Fleet Engine math + money slides)', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    fillRomContent(zip, model, names)
+    fillFleetEngineText(zip, model, names)
+    fillRomMoney(zip, model, names)
 
     const out = reopen(zip)
     // Fleet math headings written into the body placeholders.
@@ -51,7 +52,7 @@ describe('fillRomContent (Fleet Engine math + money slides)', () => {
     zip.remove('ppt/slides/slide27.xml')      // simulate the section being dropped
     const model = computeFleetModel(PROJECT, vehicles)
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    expect(() => fillRomContent(zip, model, names)).not.toThrow()
+    expect(() => fillRomMoney(zip, model, names)).not.toThrow()
     // other money slides still filled
     expect(reopen(zip).file('ppt/slides/slide28.xml')!.asText()).toContain('payback')
   })

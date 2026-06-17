@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-06-17 — Branded ROM PowerPoint — Fleet Engine charts + placeholder cleanup
+
+- **Fleet Engine slides (S21/22/23) now render as charts matching the web app's engine-result
+  panel** — TOTAL FLEET number, the `Raw + Charging × Buffer = Total` build-up bar (the active
+  stage + Total lit), demand KPIs, and the per-vehicle breakdown — drawn on an offscreen canvas
+  (`src/lib/pptx/engineChart.ts`, dark card + TAL red, Toyota Type / mono fonts) and embedded via
+  `addImage`. Falls back to the text slides (`fillFleetEngineText`) in non-DOM export contexts.
+- **Shared canvas helpers** extracted to `src/lib/pptx/canvas.ts` (palette, fonts, `newCanvas`,
+  `roundRect`, `toPngBytes`); `flowDiagram.ts` refactored onto them (removes duplication).
+- **`removeBodyPlaceholder`** clears the empty body placeholder on graphic slides (tables S18–20,
+  diagram/charts S21–24) so content no longer sits over a "click to add text" ghost in edit mode.
+- `fillRomContent` split into `fillFleetEngineText` (S21–23 fallback) + `fillRomMoney` (S25–28).
+- Tests: `removeBodyPlaceholder`, `fillFleetEngineCharts` (image on S21–23 + placeholder cleared),
+  updated content tests. Charts are browser-only, so pixel output isn't unit-tested.
+
 ## 2026-06-17 — Branded ROM PowerPoint — P3a (material-flow diagram image)
 
 - **`addImage` in `ooxml.ts`** embeds a PNG as a native `<p:pic>`: writes the media part, adds a
