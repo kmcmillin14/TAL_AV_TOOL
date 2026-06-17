@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, table, addImage } from '../ooxml'
+import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, removeBodyPlaceholder, table, addImage } from '../ooxml'
 import { slidesToRemove, type PptxSelection, PPTX_SECTIONS } from '../sections'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -141,6 +141,24 @@ describe('table', () => {
     expect(s18).toContain('<a:srgbClr val="2E7D32"/>')   // verdict fill
     expect((s18.match(/<a:gridCol\b/g) ?? []).length).toBe(2)
     expect((s18.match(/<a:tr\b/g) ?? []).length).toBe(3)
+  })
+})
+
+describe('removeBodyPlaceholder', () => {
+  it('drops the idx="1" content placeholder so a graphic has nothing behind it', () => {
+    const zip = load()
+    expect(zip.file('ppt/slides/slide18.xml')!.asText()).toMatch(/<p:ph\b[^>]*\bidx="1"/)
+    expect(removeBodyPlaceholder(zip, 18)).toBe(true)
+    const s18 = reopen(zip).file('ppt/slides/slide18.xml')!.asText()
+    expect(s18).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
+    // title placeholder untouched
+    expect(s18).toMatch(/<p:ph\b[^>]*type="title"/)
+  })
+
+  it('returns false for a removed/absent slide', () => {
+    const zip = load()
+    removeSlides(zip, [18])
+    expect(removeBodyPlaceholder(zip, 18)).toBe(false)
   })
 })
 

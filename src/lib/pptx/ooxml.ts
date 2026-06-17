@@ -90,6 +90,9 @@ export function parasXml(paras: TextRun[][]): string {
   return paras.map(p => (p.length ? `<a:p>${p.map(runXml).join('')}</a:p>` : '<a:p/>')).join('')
 }
 
+// The single body Content Placeholder `<p:sp>` (idx="1") — not title/date/footer.
+const BODY_PH_RE = /<p:sp>(?:(?!<\/p:sp>)[\s\S])*?<p:ph\b[^>]*\bidx="1"[^>]*\/>(?:(?!<\/p:sp>)[\s\S])*?<\/p:sp>/
+
 /**
  * Fill the slide's body Content Placeholder (`<p:ph idx="1"/>`) — the empty box
  * the template already lays out — by replacing its `<p:txBody>` paragraphs.
@@ -101,15 +104,29 @@ export function fillBodyPlaceholder(zip: PizZip, slideNum: number, paras: TextRu
   const f = zip.file(path)
   if (!f) return false
   const xml = f.asText()
-  // The single <p:sp> whose placeholder is idx="1" (content); not the title/date/etc.
-  const spRe = /<p:sp>(?:(?!<\/p:sp>)[\s\S])*?<p:ph\b[^>]*\bidx="1"[^>]*\/>(?:(?!<\/p:sp>)[\s\S])*?<\/p:sp>/
-  const m = xml.match(spRe)
+  const m = xml.match(BODY_PH_RE)
   if (!m) return false
   const filled = m[0].replace(
     /<p:txBody>[\s\S]*?<\/p:txBody>/,
     `<p:txBody><a:bodyPr/><a:lstStyle/>${parasXml(paras)}</p:txBody>`,
   )
   zip.file(path, xml.replace(m[0], filled))
+  return true
+}
+
+/**
+ * Remove the body Content Placeholder shape entirely — for slides where a table,
+ * image, or chart takes its place, so the engineer isn't left with an empty
+ * "click to add text" box ghosting behind the graphic. No-op if absent.
+ */
+export function removeBodyPlaceholder(zip: PizZip, slideNum: number): boolean {
+  const path = `ppt/slides/slide${slideNum}.xml`
+  const f = zip.file(path)
+  if (!f) return false
+  const xml = f.asText()
+  const m = xml.match(BODY_PH_RE)
+  if (!m) return false
+  zip.file(path, xml.replace(m[0], ''))
   return true
 }
 

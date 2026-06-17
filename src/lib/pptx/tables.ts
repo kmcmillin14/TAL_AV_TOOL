@@ -14,7 +14,7 @@ import { qualifyVehicle } from '@/src/calc/trafficLight'
 import { GATES } from '@/src/calc/gates'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
 import { VEHICLE_SLIDE, ROM_SLIDE } from './sections'
-import { table, appendShapesToSlide, addImage, nextShapeId, type TableCell } from './ooxml'
+import { table, appendShapesToSlide, addImage, removeBodyPlaceholder, nextShapeId, type TableCell } from './ooxml'
 
 // Body region below the template's title bar (EMU; slide is 12192000×6858000).
 const BODY = { x: 685800, y: 1828800, cx: 10820400, cy: 4114800 }
@@ -26,6 +26,8 @@ const FLOW_IMG_H = 2500000   // height reserved for the S24 diagram image
 const STATUS_COLOR = { GREEN: '2E7D32', YELLOW: 'C77700', RED: 'C62828' } as const
 
 const put = (zip: PizZip, slide: number, colW: number[], rows: TableCell[][], y = BODY.y): void => {
+  // The graphic replaces the body text box — drop the empty placeholder behind it.
+  removeBodyPlaceholder(zip, slide)
   appendShapesToSlide(zip, slide, table({
     id: nextShapeId(zip, slide),
     x: BODY.x, y, cx: BODY.cx, cy: rows.length * ROW_H,
