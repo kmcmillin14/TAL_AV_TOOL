@@ -4,6 +4,7 @@ import { useState } from 'react'
 import type { StoredProject } from '@/src/lib/storage'
 import { downloadProjectPdf, projectJsonBlob } from '@/src/lib/pdfExport'
 import Icon from '@/src/design-system/components/Icon'
+import PptxSectionPicker from './PptxSectionPicker'
 
 interface Props { project: StoredProject }
 
@@ -18,6 +19,7 @@ function download(blob: Blob, name: string) {
 /** Proposal export: PDF (embedded JSON) + raw project JSON. */
 export default function RomExportBar({ project }: Props) {
   const [busy, setBusy] = useState(false)
+  const [pptxOpen, setPptxOpen] = useState(false)
   const base = (project.projectName || 'project').replace(/[^a-z0-9-_]+/gi, '_')
 
   return (
@@ -32,11 +34,19 @@ export default function RomExportBar({ project }: Props) {
       </button>
       <button
         type="button" className="rom-export-btn"
+        onClick={() => setPptxOpen(true)}
+      >
+        <Icon name="download" size={14} />
+        Branded PowerPoint
+      </button>
+      <button
+        type="button" className="rom-export-btn"
         onClick={() => download(projectJsonBlob(project), `${base}.json`)}
       >
         <Icon name="download" size={14} />
         Export JSON
       </button>
+      {pptxOpen && <PptxSectionPicker project={project} onClose={() => setPptxOpen(false)} />}
     </div>
   )
 }

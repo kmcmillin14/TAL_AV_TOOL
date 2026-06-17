@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-06-17 — Branded ROM PowerPoint export (template-fill) — P0
+
+Replaces the from-scratch `pptxgenjs` deck with a **template-fill** pipeline over the official
+35-slide TAL ROM deck (`public/templates/tal-rom-template.pptx`), preserving its theme, masters,
+and media. Client-side only (PizZip), editable native output.
+
+- **Section Picker** (`PptxSectionPicker`) opens from the Step 4 export bar and the header menu:
+  choose which sections to include; **Product Overviews auto-limited to the fleet chassis**
+  (vehicles assigned to flows; Cleanfix never).
+- **OOXML slide removal** (`src/lib/pptx/ooxml.ts`): drops unselected slides and prunes
+  `presentation.xml` (sldIdLst), `presentation.xml.rels`, and `[Content_Types].xml`; verified by
+  a node round-trip test (deck re-parses, counts/control files consistent).
+- **P0 fills** the cover (S1) + contact (S34) bracket placeholders from project fields
+  (`src/lib/pptx/tokenMap.ts`); unfilled fields keep their editable brackets.
+- Removed `src/lib/pptxExport.ts` + the `pptxgenjs` dependency (folder hygiene). Token/slide
+  contract in `docs/PPTX-TOKEN-CONTRACT.md`. P1 (KPIs/Investment/ROI tables) + P2 (other step
+  slides) to follow.
+
 ## 2026-06-14 — Governance consolidation + architecture-invariant pre-commit hook
 
 - **Single source of truth:** moved governance into the in-repo `CLAUDE.md` (was an untracked

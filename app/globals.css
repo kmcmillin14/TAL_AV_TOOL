@@ -1202,6 +1202,21 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .cmp-foot-note { font-size: 11px; color: var(--text-tertiary); }
 @media (max-width: 700px) { .cmp-overlay { padding: 12px; } }
 
+/* ── Branded-PPTX section picker (reuses .cmp-* modal shell + .chk checkboxes) ── */
+.pptx-pick-modal { max-width: 560px; }
+.pptx-pick-body { padding: 18px 24px; }
+.pptx-pick-hint { font-size: 12px; color: var(--text-tertiary); margin-bottom: 12px; }
+.pptx-pick-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 16px; }
+.pptx-pick-subhead {
+  margin: 18px 0 8px; font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.pptx-pick-always { color: var(--text-disabled); font-weight: 600; }
+.pptx-pick-row.disabled { opacity: 0.6; cursor: default; }
+.pptx-pick-foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+.pptx-pick-error { margin-right: auto; color: var(--bad); font-size: 12px; }
+@media (max-width: 700px) { .pptx-pick-grid { grid-template-columns: 1fr; } }
+
 /* Card body */
 .veh-body {
   padding: 14px 20px 16px; display: flex; flex-direction: column; gap: 14px; flex: 1;

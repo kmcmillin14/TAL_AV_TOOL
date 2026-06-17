@@ -4,11 +4,12 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
-import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects } from '@/src/lib/storage'
+import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
 import { useTheme } from '@/src/lib/uiPrefs'
 import HelpDrawer from './HelpDrawer'
 import { downloadProjectPdf } from '@/src/lib/pdfExport'
 import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
+import PptxSectionPicker from './rom/PptxSectionPicker'
 
 interface HeaderData {
   id: string
@@ -68,6 +69,7 @@ export default function PersistentHeader({
   const [theme, toggleTheme] = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [pptxProject, setPptxProject] = useState<StoredProject | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -145,19 +147,10 @@ export default function PersistentHeader({
     }
   }
 
-  const handleExportPptx = async () => {
+  const handleExportPptx = () => {
     setMenuOpen(false)
     const current = getProject(project.id)
-    if (!current) return
-    try {
-      const [{ downloadProjectPptx }, vehicles] = await Promise.all([
-        import('@/src/lib/pptxExport'),
-        fetchVehiclesCached(),
-      ])
-      await downloadProjectPptx(current, vehicles)
-    } catch (err) {
-      alert(`Could not generate PowerPoint: ${err instanceof Error ? err.message : 'Unknown error'}`)
-    }
+    if (current) setPptxProject(current)
   }
 
   const handleExportXlsx = async () => {
@@ -484,6 +477,7 @@ export default function PersistentHeader({
       </nav>
     </header>
     <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} currentStep={currentStep} />
+    {pptxProject && <PptxSectionPicker project={pptxProject} onClose={() => setPptxProject(null)} />}
     </>
   )
 }

@@ -345,13 +345,20 @@ asynchronously. Computation is inline (no dependency on the parent `costs` memo)
 — not netted against the offset.
 
 **Export:** proposal PDF (embedded-JSON pattern, with a fleet/ROM page) · project
-JSON · **PowerPoint deck** (`.pptx`, client-side via pptxgenjs — title, requirements,
-fleet build-up, ROM/payback slides on the dark TAL theme; Toyota Type requested as
-the font face with graceful fallback) · **Excel workbook** (`.xlsx`, client-side via
-SheetJS — Summary, Requirements, Flows, Fleet waterfall, ROM sheets). Both build on
-`src/lib/fleetModel.ts` (`computeFleetModel` — the same derivation chain
-`useFleetData` runs) and are dynamically imported so neither weighs on the initial
-bundle. All header export-menu entries: .pdf · .pptx · .xlsx · .json.
+JSON · **Branded PowerPoint** (see below) · **Excel workbook** (`.xlsx`, client-side via
+SheetJS — Summary, Requirements, Flows, Fleet waterfall, ROM sheets). Excel builds on
+`src/lib/fleetModel.ts` (`computeFleetModel`) and is dynamically imported.
+
+**Branded PowerPoint (template-fill).** The `.pptx` export fills the official 35-slide TAL
+deck (`public/templates/tal-rom-template.pptx`) rather than building slides from scratch —
+preserving its theme, masters, and media (Toyota Type, TAL red). Client-side via **PizZip**
+(`src/lib/pptxTemplateExport.ts` + `src/lib/pptx/*`). A **Section Picker**
+(`PptxSectionPicker`, from the Step 4 export bar and the header menu) chooses which sections
+to include; **Product Overview slides are auto-limited to the fleet chassis** (vehicles
+assigned to flows; Cleanfix always dropped). The builder removes unselected slides via OOXML
+(`presentation.xml` sldIdLst + rels + `[Content_Types]`), then fills placeholders. **P0**:
+cover (S1) + contact (S34) bracket placeholders. **P1**: KPIs/Investment/ROI tokens + dynamic
+tables. **P2**: remaining step slides. Token/slide contract: `docs/PPTX-TOKEN-CONTRACT.md`.
 
 ---
 
