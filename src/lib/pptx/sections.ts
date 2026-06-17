@@ -39,6 +39,23 @@ export const VEHICLE_SLIDE: Readonly<Record<string, number>> = {
   'cb18': 16,
 }
 
+/** Semantic slide numbers the content fillers write into — single source of
+ *  truth so `content.ts`/`tables.ts` never hardcode literals that can drift
+ *  from the section map above. */
+export const ROM_SLIDE = {
+  requirements: 18,    // Application Requirements (table)
+  matrixVerdict: 19,   // Vehicle Selection Matrix — verdicts
+  matrixGrid: 20,      // Vehicle Selection Matrix — gate × vehicle grid
+  rawFleet: 21,        // Fleet Engine — raw demand
+  charging: 22,        // Fleet Engine — charging
+  buffer: 23,          // Fleet Engine — buffer
+  materialFlow: 24,    // Material Flow (table)
+  kpisHeadline: 25,
+  kpisMix: 26,
+  investment: 27,
+  roi: 28,
+} as const
+
 /** Every product-overview slide (used to compute the default "remove" set). */
 export const ALL_VEHICLE_SLIDES: readonly number[] = [11, 12, 13, 14, 15, 16, 17]
 

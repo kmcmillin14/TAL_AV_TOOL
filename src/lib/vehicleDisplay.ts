@@ -88,7 +88,9 @@ const ftToM = (ft: number) => +units.distance.toMetric(ft).toFixed(1)
 const inToMm = (i: number) => Math.round(units.dimension.toMetric(i))
 const fToC = (f: number) => Math.round(units.temperature.toMetric(f))
 const fpsToMps = (fps: number) => +units.distance.toMetric(fps).toFixed(1)
-const money = (n: number) =>
+/** Compact USD: "$1.25M" / "$50K" / "$500". Shared by the spec sheet and the
+ *  PPTX/ROM exporters. */
+export const money = (n: number) =>
   n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
   : n >= 1_000 ? `$${Math.round(n / 1_000)}K`
   : `$${n.toLocaleString()}`

@@ -13,15 +13,16 @@ import type { RouteLayout } from '@/src/calc/types'
 import { qualifyVehicle } from '@/src/calc/trafficLight'
 import { GATES } from '@/src/calc/gates'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
-import { VEHICLE_SLIDE } from './sections'
+import { VEHICLE_SLIDE, ROM_SLIDE } from './sections'
 import { table, appendShapesToSlide, nextShapeId, type TableCell } from './ooxml'
 
 // Body region below the template's title bar (EMU; slide is 12192000×6858000).
 const BODY = { x: 685800, y: 1828800, cx: 10820400 }
 const ROW_H = 320000
 
-// Status colors (fill for verdict cells, text for grid glyphs).
-const STATUS_FILL: Record<string, string> = { GREEN: '2E7D32', YELLOW: 'C77700', RED: 'C62828' }
+// Verdict palette — shared by the S19 verdict-cell fills and the S20 grid glyphs
+// (pass = GREEN, review = YELLOW, fail = RED).
+const STATUS_COLOR = { GREEN: '2E7D32', YELLOW: 'C77700', RED: 'C62828' } as const
 
 const put = (zip: PizZip, slide: number, colW: number[], rows: TableCell[][]): void => {
   appendShapesToSlide(zip, slide, table({
@@ -84,7 +85,7 @@ export function fillRequirements(zip: PizZip, project: StoredProject): void {
   if (hrPerDay > 0) add('Operating schedule', `${project.shiftsPerDay} shift${project.shiftsPerDay === 1 ? '' : 's'} × ${project.hoursPerShift} hr = ${hrPerDay} hr/day`)
 
   if (rows.length === 1) rows.push([{ t: '—' }, { t: 'No requirements captured yet (Step 1).' }])
-  put(zip, 18, [3600000, 7220400], rows)
+  put(zip, ROM_SLIDE.requirements, [3600000, 7220400], rows)
 }
 
 /** Per-vehicle qualification, in deck-overview order (8TB · 8HBC · M10 · ML2 · E7 · CB18). */
@@ -110,11 +111,11 @@ export function fillMatrix(zip: PizZip, project: StoredProject, vehicles: Vehicl
       : 'All gates pass'
     verdictRows.push([
       { t: vehicle.name, bold: true },
-      { t: q.status, align: 'ctr', fill: STATUS_FILL[q.status], color: 'FFFFFF', bold: true },
+      { t: q.status, align: 'ctr', fill: STATUS_COLOR[q.status], color: 'FFFFFF', bold: true },
       { t: notes },
     ])
   }
-  put(zip, 19, [3000000, 2000000, 5820400], verdictRows)
+  put(zip, ROM_SLIDE.matrixVerdict, [3000000, 2000000, 5820400], verdictRows)
 
   // ── S20: Gate × vehicle pass/fail grid ──────────────────────────────────
   // Per vehicle, collapse multi-load gate entries to one verdict per gateId.
@@ -142,7 +143,7 @@ export function fillMatrix(zip: PizZip, project: StoredProject, vehicles: Vehicl
   if (activeGates.length === 0) gridRows.push([{ t: 'No requirements captured yet (Step 1).' }, ...byVeh.map(() => ({ t: '' }))])
 
   const vehColW = Math.round((BODY.cx - 3000000) / byVeh.length)
-  put(zip, 20, [3000000, ...byVeh.map(() => vehColW)], gridRows)
+  put(zip, ROM_SLIDE.matrixGrid, [3000000, ...byVeh.map(() => vehColW)], gridRows)
 }
 
 /** S24 — Material flows as a table (origin → destination + key parameters). */
@@ -165,7 +166,7 @@ export function fillFlows(zip: PizZip, model: FleetModel, names: Record<string, 
   if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(5).fill({ t: '' })])
   if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(5).fill({ t: '' })])
 
-  put(zip, 24, [560000, 4060400, 1300000, 1300000, 1300000, 1100000, 1200000], rows)
+  put(zip, ROM_SLIDE.materialFlow, [560000, 4060400, 1300000, 1300000, 1300000, 1100000, 1200000], rows)
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -183,9 +184,9 @@ function partialLoadNote(q: ReturnType<typeof qualifyVehicle>): string[] {
 /** Pass/fail/review/skip glyph for the S20 grid cell. */
 function glyphCell(r?: { passed: boolean; skipped: boolean; severity: string }): TableCell {
   if (!r || r.skipped) return { t: '–', align: 'ctr', color: 'BBBBBB' }
-  if (r.passed) return { t: '✓', align: 'ctr', color: '2E7D32', bold: true }
-  if (r.severity === 'soft') return { t: '~', align: 'ctr', color: 'C77700', bold: true }
-  return { t: '✗', align: 'ctr', color: 'C62828', bold: true }
+  if (r.passed) return { t: '✓', align: 'ctr', color: STATUS_COLOR.GREEN, bold: true }
+  if (r.severity === 'soft') return { t: '~', align: 'ctr', color: STATUS_COLOR.YELLOW, bold: true }
+  return { t: '✗', align: 'ctr', color: STATUS_COLOR.RED, bold: true }
 }
 
 /** Shorten a vehicle name for a narrow grid column header. */
