@@ -152,7 +152,7 @@ export interface TableCell {
   bold?: boolean
 }
 
-const TAL_RED = 'EB0A1E'
+export const TAL_RED = 'EB0A1E'
 const HEADER_TXT = 'FFFFFF'
 const BODY_TXT = '2B2B2B'
 const CELL_BORDER = 'D9D9D9'
@@ -174,19 +174,37 @@ function cellXml(c: TableCell, header: boolean): string {
     + `<a:tcPr marL="45720" marR="45720" marT="22860" marB="22860" anchor="ctr">${border}${fillXml}</a:tcPr></a:tc>`
 }
 
-/** A native, editable table as a `<p:graphicFrame>`. Row 0 is the header. No
- *  table-style dependency — explicit cell borders/fills render identically in
- *  PowerPoint/Keynote/LibreOffice. EMU units; `colW` should sum to ~`cx`. */
+/** Optional grouped super-header (e.g. Vehicle · Route Input · Output) spanning
+ *  columns via gridSpan/hMerge. `span`s must sum to `colW.length`. */
+export interface TableBand { t: string; span: number }
+
+/** A merged band cell (red label) + its (span-1) covered cells. */
+function bandCellsXml(b: TableBand): string {
+  const first = `<a:tc gridSpan="${b.span}"><a:txBody><a:bodyPr/><a:lstStyle/>`
+    + `<a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="en-US" sz="1000" b="1" dirty="0">`
+    + `<a:solidFill><a:srgbClr val="${TAL_RED}"/></a:solidFill></a:rPr><a:t>${escapeXml(b.t)}</a:t></a:r></a:p>`
+    + `</a:txBody><a:tcPr marL="45720" marR="45720" anchor="ctr">`
+    + `<a:lnB w="6350" cap="flat"><a:solidFill><a:srgbClr val="${CELL_BORDER}"/></a:solidFill></a:lnB><a:noFill/></a:tcPr></a:tc>`
+  const merged = '<a:tc hMerge="1"><a:txBody><a:bodyPr/><a:lstStyle/><a:p/></a:txBody><a:tcPr/></a:tc>'.repeat(b.span - 1)
+  return first + merged
+}
+
+/** A native, editable table as a `<p:graphicFrame>`. Row 0 is the header (an
+ *  optional `bands` row sits above it). No table-style dependency — explicit cell
+ *  borders/fills render identically in PowerPoint/Keynote/LibreOffice. EMU units;
+ *  `colW` should sum to ~`cx`. */
 export function table(opts: {
   id: number
   x: number; y: number; cx: number; cy: number
   colW: number[]
   rows: TableCell[][]
   rowH?: number
+  bands?: TableBand[]
 }): string {
   const rowH = opts.rowH ?? 370000
   const grid = opts.colW.map(w => `<a:gridCol w="${w}"/>`).join('')
-  const rows = opts.rows.map((row, i) =>
+  const bandRow = opts.bands ? `<a:tr h="${rowH}">${opts.bands.map(bandCellsXml).join('')}</a:tr>` : ''
+  const rows = bandRow + opts.rows.map((row, i) =>
     `<a:tr h="${rowH}">${row.map(c => cellXml(c, i === 0)).join('')}</a:tr>`).join('')
   return `<p:graphicFrame><p:nvGraphicFramePr>`
     + `<p:cNvPr id="${opts.id}" name="ROM Table ${opts.id}"/><p:cNvGraphicFramePr>`

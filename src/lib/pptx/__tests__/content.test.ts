@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import PizZip from 'pizzip'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
-import { fillRomMoney, fillFleetEngineText } from '../content'
+import { fillRomMoney } from '../content'
 import type { StoredProject } from '../../storage'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -21,30 +21,24 @@ const PROJECT = {
   ],
 } as unknown as StoredProject
 
-describe('fillFleetEngineText + fillRomMoney (text fallback + money slides)', () => {
+describe('fillRomMoney (money slides)', () => {
   let vehicles: Vehicle[]
   beforeAll(async () => { vehicles = await loadVehicleLibrary() })
 
-  it('fills S21–28 placeholders and the deck re-parses cleanly', () => {
+  it('fills S25–28 placeholders and the deck re-parses cleanly', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    fillFleetEngineText(zip, model, names)
     fillRomMoney(zip, model, names)
 
     const out = reopen(zip)
-    // Fleet math headings written into the body placeholders.
-    expect(out.file('ppt/slides/slide21.xml')!.asText()).toContain('Raw fleet')
-    expect(out.file('ppt/slides/slide22.xml')!.asText()).toContain('Charging')
-    expect(out.file('ppt/slides/slide23.xml')!.asText()).toContain('Buffer')
-    // Buffered total appears as the S23 hero figure.
-    expect(out.file('ppt/slides/slide23.xml')!.asText()).toContain(`${model.fleet.totalFleetSold} vehicles`)
     // Money slides: CAPEX range uses the shared money() formatter ($…M/$…K).
     const s27 = out.file('ppt/slides/slide27.xml')!.asText()
     expect(s27).toContain('System CAPEX')
     expect(s27).toMatch(/\$[\d.,]+[MK]?/)
     // Theme TAL red used for the hero figures.
     expect(s27).toContain('<a:schemeClr val="accent1"/>')
+    expect(out.file('ppt/slides/slide28.xml')!.asText()).toContain('payback')
   })
 
   it('no-ops on a removed slide (fills only what remains)', () => {

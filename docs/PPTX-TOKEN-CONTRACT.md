@@ -15,7 +15,7 @@ the **code** (`src/lib/pptx/tokenMap.ts`). Keep them in sync.
 | 11–17 | *(per-vehicle)* | overviews; included only for fleet chassis. 11 8TB · 12 8HBC · 13 M10 · 14 ML2 · 15 E7(ebase7) · 16 CB18 · 17 Cleanfix(always dropped) |
 | 18 | `appReq` | Application Requirements table (P2) |
 | 19–20 | `matrix` | Vehicle Selection Matrix — verdict + gate grid (P2) |
-| 21–23 | `fleetEngine` | Raw / Charging / Buffer — canvas chart (web-app panel), text fallback |
+| 21–23 | `fleetEngine` | Raw / Charging / Buffer — native tables (web-app views) + progression strip |
 | 24 | `materialFlow` | Material Flow — diagram image (P3) + table (P2) |
 | 25–26 | `kpis` | KPIs (P1) |
 | 27 | `investment` | Investment Summary / CAPEX (P1) |
@@ -50,14 +50,14 @@ that placeholder's `<p:txBody>` (`fillBodyPlaceholder` in `ooxml.ts`) so the con
 the slide's branded position/style** rather than appearing in a free-floating box. The content
 lives in code (reviewable, testable), not as template tokens. No-op for any slide the user removed.
 
-Fleet Engine (S21/22/23) — rendered as **canvas charts matching the web-app engine-result panel**
-(`src/lib/pptx/engineChart.ts` → `addImage`): TOTAL FLEET figure, the `Raw + Charging × Buffer =
-Total` build-up bar (active stage + Total lit), demand KPIs, per-vehicle breakdown. One image per
-stage (Raw S21 / Charging S22 / Buffer S23). Non-DOM contexts fall back to the text fill
-(`fillFleetEngineText` in `content.ts`), which mirrors the `computeFleetModel` waterfall:
-- **S21 Raw fleet:** per chassis `raw → base = ⌈Σ demand⌉`; total base fleet; daily op hours.
-- **S22 Charging:** regime; per chassis availability `→ +N for charging`; total with charging.
-- **S23 Buffer:** buffer %; `(base + charging) × (1 + buffer) → ⌈ ⌉`; fleet sold.
+Fleet Engine (S21/22/23) — **native tables** replicating the web-app Fleet Engine views
+(`src/lib/pptx/tables.ts` → `fillFleetEngine`). Each slide = a `Raw + Charging × Buffer = Total`
+**progression strip** (active stage + Total highlighted) above that stage's detail table, from the
+`computeFleetModel` outputs:
+- **S21 Raw:** Flows table — Vehicle · Route Input · Output bands (#/Vehicle/Transfer Type/Route
+  Avg Speed/Origin/Destination/Distance/Moves-hr/Cycle Time/Vehicle Count).
+- **S22 Charging:** Flow / Charge Method / Cycle / Vehicles / Runtime / Recharge / Availability / Charging.
+- **S23 Buffer:** Flow / Base / + Charging / × (1+buffer) / Fleet.
 
 ROM money:
 - **S25 KPIs:** fleet total · flow count · throughput; base + charging → buffered.

@@ -7,10 +7,9 @@ import { computeFleetModel } from '@/src/lib/fleetModel'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { removeSlides, replaceInSlides } from '@/src/lib/pptx/ooxml'
 import { buildCoverTokens } from '@/src/lib/pptx/tokenMap'
-import { fillRomMoney, fillFleetEngineText } from '@/src/lib/pptx/content'
-import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngineCharts } from '@/src/lib/pptx/tables'
+import { fillRomMoney } from '@/src/lib/pptx/content'
+import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine } from '@/src/lib/pptx/tables'
 import { renderFlowDiagramPng } from '@/src/lib/pptx/flowDiagram'
-import { renderFleetEngineCharts } from '@/src/lib/pptx/engineChart'
 import {
   PPTX_SECTIONS, VEHICLE_SLIDE, slidesToRemove, type PptxSelection,
 } from '@/src/lib/pptx/sections'
@@ -80,11 +79,7 @@ export async function exportBrandedRomPptx(
   fillRomMoney(zip, model, names)              // S25–28 KPIs / Investment / ROI
   fillRequirements(zip, project)               // S18 Application Requirements
   fillMatrix(zip, project, vehicles)           // S19–20 Vehicle Selection Matrix
-
-  // S21–23 Fleet Engine — canvas charts matching the web app, text fallback.
-  const engine = renderFleetEngineCharts(model, names)
-  if (engine) fillFleetEngineCharts(zip, engine)
-  else fillFleetEngineText(zip, model, names)
+  fillFleetEngine(zip, model, vehicles, names) // S21–23 Raw / Charging / Buffer tables
 
   // S24 Material Flow — diagram image (browser canvas) on top, table beneath.
   const flowPng = renderFlowDiagramPng(model.flows, names)

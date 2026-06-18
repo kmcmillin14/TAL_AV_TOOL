@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import PizZip from 'pizzip'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
-import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngineCharts } from '../tables'
+import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine } from '../tables'
 import type { StoredProject } from '../../storage'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -64,18 +64,32 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(cols).toBe(1 + vehicles.filter(v => ['8tb50a', '8hbc40a', 'm10', 'ml2', 'ebase7', 'cb18'].includes(v.id)).length)
   })
 
-  it('places a Fleet Engine chart image on S21/22/23 and clears their placeholders', () => {
+  it('fills S21/22/23 with the progression strip + that stage\'s table', () => {
     const zip = load()
-    const png = new Uint8Array(Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      'base64'))
-    fillFleetEngineCharts(zip, { raw: png, charging: png, buffer: png })
+    const model = computeFleetModel(PROJECT, vehicles)
+    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+    fillFleetEngine(zip, model, vehicles, names)
     const out = reopen(zip)
+
     for (const n of [21, 22, 23]) {
       const xml = out.file(`ppt/slides/slide${n}.xml`)!.asText()
-      expect(xml).toContain('<p:pic>')
-      expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)   // placeholder removed
+      // progression strip + detail table = two graphic frames; placeholder gone
+      expect((xml.match(/<a:tbl>/g) ?? []).length).toBe(2)
+      expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
+      expect(xml).toContain('TOTAL')                 // progression Raw…=Total
     }
+    // Raw table carries the Vehicle / Route Input / Output bands + columns,
+    // with Origin/Destination as separate cells.
+    const s21 = out.file('ppt/slides/slide21.xml')!.asText()
+    expect(s21).toContain('Route Input')
+    expect(s21).toContain('Vehicle Count')
+    expect(s21).toContain('Dock')
+    expect(s21).toContain('Rack A')
+    // Charging shows the combined route + its columns; Buffer shows the waterfall.
+    const s22 = out.file('ppt/slides/slide22.xml')!.asText()
+    expect(s22).toContain('Availability')
+    expect(s22).toContain('Dock → Rack A')
+    expect(out.file('ppt/slides/slide23.xml')!.asText()).toContain('Fleet')
   })
 
   it('S24 lists the flows with route and vehicle', () => {

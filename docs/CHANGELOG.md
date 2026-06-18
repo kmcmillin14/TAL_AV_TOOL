@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-17 — Branded ROM PowerPoint — Fleet Engine as web-app data tables
+
+- **S21/22/23 now render the actual web-app Fleet Engine tables** (not a summary chart): each
+  slide shows the `Raw + Charging × Buffer = Total` **progression strip** plus that stage's
+  detail table — Raw = Flows table (Vehicle · Route Input · Output bands; #/Vehicle/Transfer
+  Type/Route Avg Speed/Origin/Destination/Distance/Moves-hr/Cycle/Vehicle Count), Charging =
+  Flow/method/cycle/vehicles/runtime/recharge/availability/charging, Buffer = Flow/Base/+Charging/
+  ×buffer/Fleet. Native editable `<a:tbl>` (`fillFleetEngine` in `tables.ts`), so they work
+  without a DOM — the canvas approach (`engineChart.ts`) is removed.
+- **`table()` gains grouped super-headers** (`bands`, via gridSpan/hMerge) for the Raw table's
+  Vehicle / Route Input / Output grouping.
+- `fillRomContent` → `fillRomMoney` (S25–28 only); `fillFleetEngineText` removed (tables replace
+  it). `TAL_RED` exported from `ooxml.ts` (deduped); shared `appendOverflow` empty/+N-more helper;
+  named detail-column widths. Canvas helpers (`canvas.ts`) trimmed to what `flowDiagram.ts` uses.
+- Tests updated: `fillFleetEngine` (progression strip + stage table on S21–23, placeholder
+  cleared), money-only `fillRomMoney`.
+
 ## 2026-06-17 — Branded ROM PowerPoint — Fleet Engine charts + placeholder cleanup
 
 - **Fleet Engine slides (S21/22/23) now render as charts matching the web app's engine-result
