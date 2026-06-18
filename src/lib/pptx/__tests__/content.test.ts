@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import PizZip from 'pizzip'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
-import { fillRomMoney } from '../content'
+import { fillKpis } from '../content'
 import type { StoredProject } from '../../storage'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -21,33 +21,27 @@ const PROJECT = {
   ],
 } as unknown as StoredProject
 
-describe('fillRomMoney (money slides)', () => {
+describe('fillKpis (S25/26 KPI slides)', () => {
   let vehicles: Vehicle[]
   beforeAll(async () => { vehicles = await loadVehicleLibrary() })
 
-  it('fills S25–28 placeholders and the deck re-parses cleanly', () => {
+  it('fills S25/26 placeholders and the deck re-parses cleanly', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    fillRomMoney(zip, model, names)
+    fillKpis(zip, model, names)
 
     const out = reopen(zip)
-    // Money slides: CAPEX range uses the shared money() formatter ($…M/$…K).
-    const s27 = out.file('ppt/slides/slide27.xml')!.asText()
-    expect(s27).toContain('System CAPEX')
-    expect(s27).toMatch(/\$[\d.,]+[MK]?/)
-    // Theme TAL red used for the hero figures.
-    expect(s27).toContain('<a:schemeClr val="accent1"/>')
-    expect(out.file('ppt/slides/slide28.xml')!.asText()).toContain('payback')
+    expect(out.file('ppt/slides/slide25.xml')!.asText()).toContain('Fleet KPIs')
+    expect(out.file('ppt/slides/slide26.xml')!.asText()).toContain('Fleet mix')
   })
 
   it('no-ops on a removed slide (fills only what remains)', () => {
     const zip = load()
-    zip.remove('ppt/slides/slide27.xml')      // simulate the section being dropped
+    zip.remove('ppt/slides/slide25.xml')      // simulate the section being dropped
     const model = computeFleetModel(PROJECT, vehicles)
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    expect(() => fillRomMoney(zip, model, names)).not.toThrow()
-    // other money slides still filled
-    expect(reopen(zip).file('ppt/slides/slide28.xml')!.asText()).toContain('payback')
+    expect(() => fillKpis(zip, model, names)).not.toThrow()
+    expect(reopen(zip).file('ppt/slides/slide26.xml')!.asText()).toContain('Fleet mix')
   })
 })

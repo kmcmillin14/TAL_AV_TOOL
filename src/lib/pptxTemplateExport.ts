@@ -7,11 +7,14 @@ import { computeFleetModel } from '@/src/lib/fleetModel'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { removeSlides, replaceInSlides } from '@/src/lib/pptx/ooxml'
 import { buildCoverTokens } from '@/src/lib/pptx/tokenMap'
-import { fillRomMoney } from '@/src/lib/pptx/content'
-import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine } from '@/src/lib/pptx/tables'
-import { renderFlowDiagramPng } from '@/src/lib/pptx/flowDiagram'
+import { fillKpis } from '@/src/lib/pptx/content'
 import {
-  PPTX_SECTIONS, VEHICLE_SLIDE, slidesToRemove, type PptxSelection,
+  fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi,
+} from '@/src/lib/pptx/tables'
+import { renderFlowDiagramPng } from '@/src/lib/pptx/flowDiagram'
+import { renderPaybackChartPng } from '@/src/lib/pptx/romChart'
+import {
+  PPTX_SECTIONS, VEHICLE_SLIDE, ROM_SLIDE, slidesToRemove, type PptxSelection,
 } from '@/src/lib/pptx/sections'
 
 const TEMPLATE_URL = '/templates/tal-rom-template.pptx'
@@ -68,22 +71,29 @@ export async function exportBrandedRomPptx(
   const buf = await res.arrayBuffer()
   const zip = new PizZip(buf)
 
-  removeSlides(zip, slidesToRemove(selection))
+  const removed = slidesToRemove(selection)
+  removeSlides(zip, removed)
   replaceInSlides(zip, buildCoverTokens(project))
 
-  // P1/P2: fill the kept step slides with native editable content. Each filler
-  // no-ops on any slide the user removed, so these run unconditionally.
+  // Fill the kept step slides with native editable content. Each filler no-ops on
+  // any slide the user removed; the canvas images are only rendered when their
+  // slide survives (skip the PNG-encode work otherwise).
   const vehicles = await fetchVehiclesCached()
   const model = computeFleetModel(project, vehicles)
   const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-  fillRomMoney(zip, model, names)              // S25–28 KPIs / Investment / ROI
+  fillKpis(zip, model, names)                  // S25–26 KPIs
   fillRequirements(zip, project)               // S18 Application Requirements
   fillMatrix(zip, project, vehicles)           // S19–20 Vehicle Selection Matrix
   fillFleetEngine(zip, model, vehicles, names) // S21–23 Raw / Charging / Buffer tables
+  fillInvestment(zip, model, names)            // S27 dynamic per-line pricing table
 
   // S24 Material Flow — diagram image (browser canvas) on top, table beneath.
-  const flowPng = renderFlowDiagramPng(model.flows, names)
+  const flowPng = removed.includes(ROM_SLIDE.materialFlow) ? null : renderFlowDiagramPng(model.flows, names)
   fillMaterialFlow(zip, model, names, flowPng)
+
+  // S28 ROI — payback-curve chart (browser canvas) on top, metrics table beneath.
+  const paybackPng = removed.includes(ROM_SLIDE.roi) ? null : renderPaybackChartPng(model.rom)
+  fillRoi(zip, model, paybackPng)
 
   const blob = zip.generate({ type: 'blob', mimeType: PPTX_MIME }) as Blob
   triggerDownload(blob, buildFilename(project))

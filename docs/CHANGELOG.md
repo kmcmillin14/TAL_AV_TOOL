@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-17 — Branded ROM PowerPoint — P3 money slides (pricing table + payback chart)
+
+- **S27 Investment** is now a **dynamic per-line pricing table** (`fillInvestment` in `tables.ts`):
+  Vehicle · Qty · Unit Price (ROM range) · Line Total (ROM range), with a red TOTAL row — from
+  `rom.pricing.lines`, formatted with the shared `money()`.
+- **S28 ROI** renders the **payback-curve chart** (`src/lib/pptx/romChart.ts` → `renderPaybackChartPng`,
+  reusing the pure `paybackSeries`): cumulative cash flow crossing zero at break-even, with the
+  service-life window owned by the chart. The chart sits on top with an ROI metrics table beneath
+  (table-only fallback in non-DOM contexts).
+- `content.ts` reduced to `fillKpis` (S25/26 only); Investment/ROI moved to native tables/charts.
+- Export only renders the S24/S28 canvas images when those slides survive the section picker
+  (skips wasted PNG encoding). Tests: `fillInvestment` (pricing + TOTAL), `fillRoi` (table-only +
+  chart-embedded), `fillKpis`.
+
 ## 2026-06-17 — Branded ROM PowerPoint — Fleet Engine as web-app data tables
 
 - **S21/22/23 now render the actual web-app Fleet Engine tables** (not a summary chart): each

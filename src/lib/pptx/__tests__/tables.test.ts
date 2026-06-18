@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import PizZip from 'pizzip'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
-import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine } from '../tables'
+import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi } from '../tables'
 import type { StoredProject } from '../../storage'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -90,6 +90,36 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(s22).toContain('Availability')
     expect(s22).toContain('Dock → Rack A')
     expect(out.file('ppt/slides/slide23.xml')!.asText()).toContain('Fleet')
+  })
+
+  it('S27 builds the per-line pricing table with a TOTAL row', () => {
+    const zip = load()
+    const model = computeFleetModel(PROJECT, vehicles)
+    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+    fillInvestment(zip, model, names)
+    const s27 = reopen(zip).file('ppt/slides/slide27.xml')!.asText()
+    expect(s27).toContain('<a:tbl>')
+    expect(s27).toContain('Line Total (ROM)')
+    expect(s27).toContain('TOTAL')
+    expect(s27).toMatch(/\$[\d.,]+[MK]?/)              // money-formatted range
+    expect(s27).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)   // placeholder cleared
+  })
+
+  it('S28 ROI table fills alone, and embeds the chart when a PNG is supplied', () => {
+    const model = computeFleetModel(PROJECT, vehicles)
+    // table-only (non-DOM): no image
+    const a = load()
+    fillRoi(a, model)
+    const s28a = reopen(a).file('ppt/slides/slide28.xml')!.asText()
+    expect(s28a).toContain('Simple payback')
+    expect(s28a).not.toContain('<p:pic>')
+    // with a chart PNG
+    const b = load()
+    const png = new Uint8Array(Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64'))
+    fillRoi(b, model, png)
+    expect(reopen(b).file('ppt/slides/slide28.xml')!.asText()).toContain('<p:pic>')
   })
 
   it('S24 lists the flows with route and vehicle', () => {

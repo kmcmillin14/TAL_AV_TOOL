@@ -42,31 +42,33 @@ A placeholder with no value is left as-is (editable bracket), never blanked.
 **Filename:** `Rev# Opp# Customer Project.pptx` (empty parts skipped; spaces kept;
 filesystem-illegal chars stripped) — `buildFilename` in `pptxTemplateExport.ts`.
 
-### P1 — live now (Fleet Engine math + money slides, via placeholder fill)
+### KPI slides (S25/26) — placeholder text fill
 
 The empty step shells each ship with one body **Content Placeholder** (`<p:ph idx="1"/>`)
-laid out by the template. `src/lib/pptx/content.ts` → `fillRomContent` writes paragraphs into
-that placeholder's `<p:txBody>` (`fillBodyPlaceholder` in `ooxml.ts`) so the content **inherits
-the slide's branded position/style** rather than appearing in a free-floating box. The content
-lives in code (reviewable, testable), not as template tokens. No-op for any slide the user removed.
+laid out by the template. `src/lib/pptx/content.ts` → `fillKpis` writes paragraphs into that
+placeholder's `<p:txBody>` (`fillBodyPlaceholder` in `ooxml.ts`) so the content **inherits the
+slide's branded position/style**. No-op for any slide the user removed.
+- **S25 KPIs:** fleet total · flow count · throughput; base + charging → buffered.
+- **S26 KPIs:** per-vehicle fleet mix.
 
-Fleet Engine (S21/22/23) — **native tables** replicating the web-app Fleet Engine views
-(`src/lib/pptx/tables.ts` → `fillFleetEngine`). Each slide = a `Raw + Charging × Buffer = Total`
-**progression strip** (active stage + Total highlighted) above that stage's detail table, from the
-`computeFleetModel` outputs:
+### Fleet Engine (S21/22/23) — native tables (web-app views)
+
+`src/lib/pptx/tables.ts` → `fillFleetEngine`. Each slide = a `Raw + Charging × Buffer = Total`
+**progression strip** (active stage + Total highlighted) above that stage's detail table, from
+`computeFleetModel`:
 - **S21 Raw:** Flows table — Vehicle · Route Input · Output bands (#/Vehicle/Transfer Type/Route
   Avg Speed/Origin/Destination/Distance/Moves-hr/Cycle Time/Vehicle Count).
 - **S22 Charging:** Flow / Charge Method / Cycle / Vehicles / Runtime / Recharge / Availability / Charging.
 - **S23 Buffer:** Flow / Base / + Charging / × (1+buffer) / Fleet.
 
-ROM money:
-- **S25 KPIs:** fleet total · flow count · throughput; base + charging → buffered.
-- **S26 KPIs:** per-vehicle fleet mix.
-- **S27 Investment Summary:** CAPEX range (`rom.pricing.totalMin–totalMax`), total fleet, mix.
-- **S28 ROI:** simple payback, annual labor offset, annual operating cost.
+### Investment + ROI (S27/28) — native pricing table + payback chart
 
-Data comes from `computeFleetModel(project, vehicles)` (`src/lib/fleetModel.ts`); money via a
-local `usd()`; TAL red via theme `accent1`.
+- **S27 Investment:** dynamic per-line pricing **table** (`fillInvestment`) — Vehicle · Qty · Unit
+  Price (ROM range) · Line Total (ROM range) + red TOTAL row, from `rom.pricing.lines` via shared
+  `money()`.
+- **S28 ROI:** the **payback-curve chart** (`romChart.ts` → `renderPaybackChartPng`, reusing the
+  pure `paybackSeries`) on top of an ROI metrics table (simple payback · annual labor offset ·
+  annual operating cost); table-only fallback when no DOM. The chart owns its service-life window.
 
 ### P2 — live now (requirements + matrix + flows, via native tables)
 
@@ -82,17 +84,21 @@ No-op for any slide the user removed.
   from `qualifyVehicle` (`src/calc/trafficLight.ts`); only gates that actually ran are shown.
 - **S24 Material Flow:** flow list table (route, distance, moves/hr, layout, lift, vehicle).
 
-### P3 — partial (material-flow diagram image live)
+### P3 — live (graphics)
 
-- **Material-flow diagram image** (S24) — **live.** `src/lib/pptx/flowDiagram.ts`
-  (`renderFlowDiagramPng`) draws the flow network (locations as nodes, flows as labelled arrows)
-  on an offscreen `<canvas>` and returns PNG bytes; `addImage` in `ooxml.ts` writes the media part
-  + slide rel + `<p:pic>`. The image sits on top of S24 with a compact flow table beneath it. The
-  renderer returns `null` in non-DOM contexts → the exporter falls back to the full flow table.
+- **Material-flow diagram image** (S24) — `src/lib/pptx/flowDiagram.ts` (`renderFlowDiagramPng`)
+  draws the flow network (locations as nodes, flows as labelled arrows) on an offscreen `<canvas>`;
+  `addImage` in `ooxml.ts` writes the media part + slide rel + `<p:pic>`. Image on top of S24, flow
+  table beneath. Falls back to the full flow table in non-DOM contexts.
+- **Payback-curve chart** (S28) — `src/lib/pptx/romChart.ts` (`renderPaybackChartPng`), see above.
+- **Dynamic per-line pricing rows** (S27) — `fillInvestment`, see above.
 
-Still planned:
-- **Charts** (e.g. CAPEX/payback bars) on the money slides — same canvas-PNG + `addImage` path.
-- **Dynamic pricing/mix `<a:tbl>` rows** on S27 (per-line CAPEX / per-vehicle mix).
+Canvas images are only rendered when their slide survives the section picker (no wasted PNG
+encoding). The free-standing `textBox` + `appendShapesToSlide` helpers (kept in `ooxml.ts`) are
+for content that has no placeholder, e.g. those graphics/images.
 
-The free-standing `textBox` + `appendShapesToSlide` helpers (kept in `ooxml.ts`) are for content
-that has no placeholder, e.g. those graphics/images.
+### Still planned
+
+- A **CAPEX bar chart** (per-vehicle line totals via `capexBarsSeries`) if a visual alongside the
+  S27 pricing table is wanted. Other ROM dashboard charts (duty cycle, utilization, battery SoC,
+  TCO) already have pure series builders in `src/calc/romCharts.ts` and could be added the same way.

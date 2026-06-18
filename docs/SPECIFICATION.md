@@ -357,11 +357,13 @@ preserving its theme, masters, and media (Toyota Type, TAL red). Client-side via
 to include; **Product Overview slides are auto-limited to the fleet chassis** (vehicles
 assigned to flows; Cleanfix always dropped). The builder removes unselected slides via OOXML
 (`presentation.xml` sldIdLst + rels + `[Content_Types]`). Content is filled three ways: cover
-(S1) + contact (S34) **bracket replacement**; the money slides — KPIs (S25/26), Investment
-(S27), ROI (S28) — by **writing into each slide's existing body Content Placeholder**
-(`<p:ph idx="1"/>`, via `fillBodyPlaceholder`, from `computeFleetModel`); and graphic slides as
-**native shapes** (tables/images) with the body placeholder removed first (`removeBodyPlaceholder`)
-so nothing ghosts behind them. The **Fleet Engine slides (S21/22/23)** replicate the web app's
+(S1) + contact (S34) **bracket replacement**; the **KPI slides (S25/26)** by **writing into each
+slide's existing body Content Placeholder** (`<p:ph idx="1"/>`, via `fillBodyPlaceholder`); and
+graphic slides as **native shapes** (tables/images/charts) with the body placeholder removed first
+(`removeBodyPlaceholder`) so nothing ghosts behind them. **Investment (S27)** is a dynamic per-line
+CAPEX pricing table (`fillInvestment`) and **ROI (S28)** is the payback-curve chart
+(`romChart.ts` → `renderPaybackChartPng`, from the pure `paybackSeries`) over an ROI metrics
+table. The **Fleet Engine slides (S21/22/23)** replicate the web app's
 Fleet Engine views as **native tables** (`src/lib/pptx/tables.ts` → `fillFleetEngine`): each shows
 the `Raw + Charging × Buffer = Total` **progression strip** plus that stage's detail table — Raw
 (Flows: Vehicle / Route Input / Output bands), Charging (method · runtime · availability ·
@@ -372,8 +374,9 @@ Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle g
 **rendered diagram image** of the flow network (`src/lib/pptx/flowDiagram.ts` draws locations +
 labelled flow arrows on an offscreen canvas → PNG; `addImage` in `ooxml.ts` embeds it as a native
 `<p:pic>` media part), with the flow table beneath it; it falls back to the table-only layout in
-non-DOM contexts. Filename: `Rev# Opp# Customer Project.pptx`. **P3** (remaining): money-slide
-charts and dynamic pricing/mix table rows. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
+non-DOM contexts. Canvas images (S24 diagram, S28 chart) are only rendered when their slide
+survives the picker. Filename: `Rev# Opp# Customer Project.pptx`. Contract:
+`docs/PPTX-TOKEN-CONTRACT.md`.
 
 ---
 
