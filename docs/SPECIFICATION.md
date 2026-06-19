@@ -355,6 +355,13 @@ asynchronously. Computation is inline (no dependency on the parent `costs` memo)
 `payback = capexMid / annualOffset` (— when offset = 0). OPEX is informational only
 — not netted against the offset.
 
+**Section 04 — Methodology.** A `MethodologyPanel` (`src/components/rom/MethodologyPanel.tsx`,
+content in `src/content/methodology.ts`) explains *how every number is derived*: for each calc
+stage — Cycle time, Raw vehicle demand, Charging availability, Buffer, ROI/payback, OPEX — it
+shows the symbolic **formula**, a **variable glossary** (symbol → plain-language definition +
+unit), and a **"why this works"** rationale. It leads the section, above the live `FleetMath`
+worked numbers, the Requirements matrix, Resilience, and the Assumptions value-list.
+
 **Export:** proposal PDF (embedded-JSON pattern, with a fleet/ROM page) · project
 JSON · **Branded PowerPoint** (see below) · **Excel workbook** (`.xlsx`, client-side via
 SheetJS — Summary, Requirements, Flows, Fleet waterfall, ROM sheets). Excel builds on

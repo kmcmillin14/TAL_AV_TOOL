@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-19 — Step 4 · 04 Methodology: define the variables + explain the why
+
+- New **`MethodologyPanel`** (content in `src/content/methodology.ts`) leads the Step 4
+  Methodology section. The calcs previously showed formulas but never said *what the variables
+  are* or *why* the math is shaped that way; this closes that gap. For each stage — Cycle time,
+  Raw demand, Charging availability, Buffer, ROI/payback, OPEX — it presents the formula, a
+  variable glossary (symbol → meaning + unit), and a "why this works" rationale.
+- Engineering-datasheet styling within the TAL design system (Toyota Type, accent red, dark
+  theme): formula slab, accent symbol-chips, red-ruled "why" aside, staggered load reveal.
+- Content-as-data (like `help.ts`); content-integrity test added.
+
 ## 2026-06-19 — /simplify: unify the derivation trigger + build derivations lazily
 
 - **FlowRow now uses the shared `DerivTrigger`** instead of its own open-state + ref + inline

@@ -21,6 +21,7 @@ import TcoStacked from './charts/TcoStacked'
 import RequirementsMatrix from './RequirementsMatrix'
 import SensitivityPanel from './SensitivityPanel'
 import AssumptionsPanel from './AssumptionsPanel'
+import MethodologyPanel from './MethodologyPanel'
 import FleetMath from './FleetMath'
 import RomPricingTable from './RomPricingTable'
 import RomEconomics, { type RomPatch } from './RomEconomics'
@@ -92,7 +93,8 @@ export default function RomVisuals(p: Props) {
         </div>
       </ScrollSection>
 
-      <ScrollSection id="rom-methodology" num="04" title="Methodology" sub="Fleet math, requirements, resilience, assumptions">
+      <ScrollSection id="rom-methodology" num="04" title="Methodology" sub="How every number is derived — formulas, variables, and why">
+        <Card title="How the fleet is calculated — variables &amp; rationale"><MethodologyPanel /></Card>
         <FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} />
         <Card title="Requirements met"><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Card>
         <div className="rom-grid">
