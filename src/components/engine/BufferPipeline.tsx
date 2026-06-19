@@ -121,7 +121,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
                   <td className="pl-math-cell">
                     {g && (
                       <DerivTrigger
-                        derivation={bufferDerivation(g, bufferPct)}
+                        derivation={() => bufferDerivation(g, bufferPct)}
                         route={`${f.origin || '—'} → ${f.destination || '—'}`}
                       />
                     )}

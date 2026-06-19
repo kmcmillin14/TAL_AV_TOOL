@@ -6,7 +6,8 @@ import type { Derivation } from '@/src/lib/derivation'
 import DerivationPanel from './DerivationPanel'
 
 interface Props {
-  derivation: Derivation
+  /** Lazy — built only when the panel opens, not for every row on every render. */
+  derivation: () => Derivation
   route?: string
   disabled?: boolean
   /** Button class — defaults to the engine-table formula button. */
@@ -38,7 +39,7 @@ export default function DerivTrigger({
         <Icon name="formula" size={14} />
       </button>
       {open && (
-        <DerivationPanel anchorRef={ref} open={open} onClose={() => setOpen(false)} derivation={derivation} route={route} />
+        <DerivationPanel anchorRef={ref} open={open} onClose={() => setOpen(false)} derivation={derivation()} route={route} />
       )}
     </>
   )

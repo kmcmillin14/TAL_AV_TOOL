@@ -133,7 +133,7 @@ export default function ChargingPipeline({
                   <td className="pl-math-cell">
                     {g && veh && (
                       <DerivTrigger
-                        derivation={chargingDerivation(g, veh, { regime, dailyOpHr })}
+                        derivation={() => chargingDerivation(g, veh, { regime, dailyOpHr })}
                         route={`${f.origin || '—'} → ${f.destination || '—'}`}
                         disabled={!c?.sustainable}
                       />

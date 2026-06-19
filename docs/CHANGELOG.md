@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-19 — /simplify: unify the derivation trigger + build derivations lazily
+
+- **FlowRow now uses the shared `DerivTrigger`** instead of its own open-state + ref + inline
+  `DerivationPanel` — one trigger implementation across all three tiers (Flows/Charging/Buffer).
+- **Derivations are built lazily**: `DerivTrigger` takes a `() => Derivation` builder and only
+  materializes it when the panel opens, so table rows no longer build a full derivation per row on
+  every render. No behavior change.
+
 ## 2026-06-19 — Fleet math: every cycle input variable made visible
 
 - The Raw `cycleDerivation` now opens with an **Inputs** section listing every variable that feeds
