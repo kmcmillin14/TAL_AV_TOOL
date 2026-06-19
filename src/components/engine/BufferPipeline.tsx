@@ -4,6 +4,8 @@ import { useState } from 'react'
 import type { FleetGroup, Flow } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
+import DerivTrigger from '@/src/components/step3/DerivTrigger'
+import { bufferDerivation } from '@/src/lib/derivation'
 import type { EnginePatch } from './types'
 
 interface Props {
@@ -95,6 +97,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
               <th className="num">+ Charging</th>
               <th className="num">× {(1 + bufferPct).toFixed(2)}</th>
               <th className="num">Fleet</th>
+              <th className="pl-math-col" aria-label="Fleet math"></th>
             </tr>
           </thead>
           <tbody>
@@ -115,6 +118,14 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
                   <td className="num mono">{delta > 0 ? `+${delta}` : '—'}</td>
                   <td className="num mono wf-mid">{g ? (g.fleetWithCharging * (1 + bufferPct)).toFixed(2) : '—'}</td>
                   <td className="num mono wf-sold">{g?.fleetSold ?? '—'}</td>
+                  <td className="pl-math-cell">
+                    {g && (
+                      <DerivTrigger
+                        derivation={bufferDerivation(g, bufferPct)}
+                        route={`${f.origin || '—'} → ${f.destination || '—'}`}
+                      />
+                    )}
+                  </td>
                 </tr>
               )
             })}

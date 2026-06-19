@@ -3,6 +3,8 @@
 import type { ChargeMethod, ChargeRegime, FleetGroup, Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
+import DerivTrigger from '@/src/components/step3/DerivTrigger'
+import { chargingDerivation } from '@/src/lib/derivation'
 import type { EnginePatch } from './types'
 
 interface Props {
@@ -90,6 +92,7 @@ export default function ChargingPipeline({
               <th className="num">Recharge</th>
               <th className="num">Availability</th>
               <th className="num">Charging</th>
+              <th className="pl-math-col" aria-label="Fleet math"></th>
             </tr>
           </thead>
           <tbody>
@@ -126,6 +129,15 @@ export default function ChargingPipeline({
                     <span className={`ct-delta ct-delta-${delta > 0 ? 'warn' : 'good'}`} title={c?.reason}>
                       {delta > 0 ? `+${delta}` : (c?.availability === 1 ? 'fits' : '+0')}
                     </span>
+                  </td>
+                  <td className="pl-math-cell">
+                    {g && veh && (
+                      <DerivTrigger
+                        derivation={chargingDerivation(g, veh, { regime, dailyOpHr })}
+                        route={`${f.origin || '—'} → ${f.destination || '—'}`}
+                        disabled={!c?.sustainable}
+                      />
+                    )}
                   </td>
                 </tr>
               )

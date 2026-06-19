@@ -11,6 +11,7 @@ import SpeedsUsedSelect from './SpeedsUsedSelect'
 import CyclePopover from './CyclePopover'
 import CycleAnatomyBar from './CycleAnatomyBar'
 import DerivationPanel from './DerivationPanel'
+import { cycleDerivation } from '@/src/lib/derivation'
 
 interface Props {
   index: number
@@ -274,15 +275,15 @@ export default function FlowRow({
             anchorRef={derivTriggerRef}
             open={derivOpen}
             onClose={() => setDerivOpen(false)}
-            origin={flow.origin}
-            destination={flow.destination}
-            breakdown={derived.breakdown}
-            distanceFt={flow.distanceFt}
-            thruPerHr={flow.thruPerHr}
-            speedLoadedFps={selectedVehicle.calc.speedLoadedFps}
-            speedUnloadedFps={selectedVehicle.calc.speedUnloadedFps ?? selectedVehicle.calc.speedLoadedFps}
-            liftSpeedFps={selectedVehicle.calc.liftSpeedFps ?? null}
-            rawVehicles={derived.rawVehicles}
+            derivation={cycleDerivation(derived.breakdown, {
+              distanceFt: flow.distanceFt,
+              thruPerHr: flow.thruPerHr,
+              speedLoadedFps: selectedVehicle.calc.speedLoadedFps,
+              speedUnloadedFps: selectedVehicle.calc.speedUnloadedFps ?? selectedVehicle.calc.speedLoadedFps,
+              liftSpeedFps: selectedVehicle.calc.liftSpeedFps ?? null,
+              rawVehicles: derived.rawVehicles,
+            })}
+            route={flow.origin || flow.destination ? `${flow.origin || '—'} → ${flow.destination || '—'}` : undefined}
           />
         )}
       </td>

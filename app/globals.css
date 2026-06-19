@@ -2850,6 +2850,9 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   vertical-align: middle;
 }
 .charge-table .num, .waterfall-table .num { text-align: right; font-variant-numeric: tabular-nums; }
+/* "Show the math" trigger column on the Charging/Buffer tables. */
+.pl-math-col, .pl-math-cell { width: 34px; text-align: center; position: relative; }
+.pl-math-cell .flow-act-btn { margin: 0 auto; }
 .ct-veh { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
 .ct-method { display: inline-flex; gap: 2px; padding: 2px; background: var(--bg-surface-2); border-radius: 7px; }
 .ct-method-opt {

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-19 — Fleet math: worked derivations for all three tiers
+
+- **One pure derivation model** (`src/lib/derivation.ts`): `cycleDerivation` (Raw — travel +
+  transfer + lift = cycle, then throughput × cycle ÷ 3600 = demand), `chargingDerivation`
+  (usable Ah → runtime/recharge → availability → ⌈demand ÷ availability⌉ → +N), `bufferDerivation`
+  ((base + charging) × (1 + buffer) ⌈⌉ = fleet). Each step carries the symbolic formula (what it
+  means), the value-substituted form, and the result — so the math reads as a worked sheet, not a
+  bare sum. Rendered two ways: the web panel and (next) the PPTX.
+- **Web:** `DerivationPanel` is now generic (renders any `Derivation`); a shared `DerivTrigger`
+  ("show the math") opens it. Extended from Raw-only to **Charging and Buffer** tables — each row
+  on S3's Charging/Buffer tiers now has a formula button. FlowRow refactored onto the shared model.
+- Tests: `derivation.test.ts` (cycle sum + ÷3600, plugged vs overnight availability, buffer ⌈⌉).
+
 ## 2026-06-17 — Branded ROM PowerPoint — P3 money slides (pricing table + payback chart)
 
 - **S27 Investment** is now a **dynamic per-line pricing table** (`fillInvestment` in `tables.ts`):
