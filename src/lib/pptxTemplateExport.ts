@@ -9,7 +9,8 @@ import { removeSlides, replaceInSlides, cloneSlide, setSlideTitle } from '@/src/
 import { buildCoverTokens } from '@/src/lib/pptx/tokenMap'
 import { fillKpis } from '@/src/lib/pptx/content'
 import {
-  fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi, fillMethodology,
+  fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi,
+  fillMethodology, fillFlowMath,
 } from '@/src/lib/pptx/tables'
 import { renderFlowDiagramPng } from '@/src/lib/pptx/flowDiagram'
 import { renderPaybackChartPng } from '@/src/lib/pptx/romChart'
@@ -71,10 +72,21 @@ export async function exportBrandedRomPptx(
   const buf = await res.arrayBuffer()
   const zip = new PizZip(buf)
 
-  // Clone a content shell into an appended Methodology appendix slide BEFORE any
-  // removal/fill (so the source S18 is still a clean shell). The new slide sits
-  // past S35, so removeSlides never touches it.
+  const vehicles = await fetchVehiclesCached()
+  const model = computeFleetModel(project, vehicles)
+  const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+
+  // Append appendix slides cloned from a content shell BEFORE any removal/fill (so
+  // the source S18 is still a clean shell). New slides sit past S35, so removeSlides
+  // never touches them. Methodology + a paginated per-flow cycle-math appendix.
   const methodSlide = cloneSlide(zip, ROM_SLIDE.requirements)
+  const mathFlows = model.flows.filter(f => f.vehicleId && model.derivedByFlowId.get(f.id)?.breakdown)
+  const FLOWS_PER_SLIDE = 11
+  const mathPages: Array<{ slide: number; flows: typeof mathFlows }> = []
+  for (let i = 0; i < mathFlows.length; i += FLOWS_PER_SLIDE) {
+    const slide = cloneSlide(zip, ROM_SLIDE.requirements)
+    if (slide != null) mathPages.push({ slide, flows: mathFlows.slice(i, i + FLOWS_PER_SLIDE) })
+  }
 
   const removed = slidesToRemove(selection)
   removeSlides(zip, removed)
@@ -83,9 +95,6 @@ export async function exportBrandedRomPptx(
   // Fill the kept step slides with native editable content. Each filler no-ops on
   // any slide the user removed; the canvas images are only rendered when their
   // slide survives (skip the PNG-encode work otherwise).
-  const vehicles = await fetchVehiclesCached()
-  const model = computeFleetModel(project, vehicles)
-  const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
   fillKpis(zip, model, names)                  // S25–26 KPIs
   fillRequirements(zip, project)               // S18 Application Requirements
   fillMatrix(zip, project, vehicles)           // S19–20 Vehicle Selection Matrix
@@ -106,6 +115,13 @@ export async function exportBrandedRomPptx(
     setSlideTitle(zip, methodSlide, 'Methodology — how the fleet is calculated')
     fillMethodology(zip, methodSlide)
   }
+
+  // Per-flow cycle math appendix — each flow's substituted formula → cycle → demand.
+  mathPages.forEach((page, i) => {
+    const suffix = mathPages.length > 1 ? ` (${i + 1}/${mathPages.length})` : ''
+    setSlideTitle(zip, page.slide, `Cycle math — per flow${suffix}`)
+    fillFlowMath(zip, page.slide, model, vehicles, names, page.flows)
+  })
 
   const blob = zip.generate({ type: 'blob', mimeType: PPTX_MIME }) as Blob
   triggerDownload(blob, buildFilename(project))

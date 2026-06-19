@@ -108,6 +108,11 @@ Every export appends a **Methodology** slide after the template's last slide —
 table (Stage · Formula · Variables · Why) from `src/content/methodology.ts` — the same content
 as the web Methodology panel. This is the first pipeline step that *adds* (not just removes) a slide.
 
+A **per-flow cycle-math appendix** follows — `fillFlowMath` (`tables.ts`) builds, for each assigned
+flow, its substituted cycle formula → cycle → demand (`out + back + load + unload + lift = cycle`,
+`Q × cycle ÷ 3600 = vehicles`) from `cycleDerivation`, so the deck shows the actual figures in the
+formula for every flow. Paginated 11 flows/slide via `cloneSlide`.
+
 ### Still planned
 
 - A **CAPEX bar chart** (per-vehicle line totals via `capexBarsSeries`) if a visual alongside the

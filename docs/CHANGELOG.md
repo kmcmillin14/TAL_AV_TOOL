@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-19 — PPTX: per-flow cycle-math appendix (figures in the formulas)
+
+- New **`fillFlowMath`** appendix: each flow's cycle math with the actual figures substituted
+  into the formula — `out + back + load + unload + lift = cycle`, then `Q × cycle ÷ 3600 =
+  vehicles` — one row per assigned flow. Reuses `cycleDerivation` so the deck and the web panel
+  show identical worked numbers.
+- Paginated across appended appendix slides (11 flows/slide) via `cloneSlide`. The export now
+  computes the model up front so it can clone the right number of appendix slides before removal.
+- Test added; SPEC/CHANGELOG updated.
+
 ## 2026-06-19 — PPTX: dedicated Methodology appendix slide
 
 - **New slide-clone capability** (`cloneSlide` + `setSlideTitle` in `ooxml.ts`): the deck pipeline

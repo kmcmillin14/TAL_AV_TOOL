@@ -363,6 +363,43 @@ export function fillMethodology(zip: PizZip, slide: number): void {
   put(zip, slide, [1700000, 3300000, 3300000, 2520400], rows)
 }
 
+/** Per-flow cycle-math appendix: each flow's substituted formula → cycle → demand,
+ *  with the actual figures in the formula. Reuses `cycleDerivation` so the deck and
+ *  the web panel show the same worked numbers. `flowsSubset` is this slide's page. */
+export function fillFlowMath(
+  zip: PizZip, slide: number, model: FleetModel, vehicles: Vehicle[],
+  names: Record<string, string>, flowsSubset: FleetModel['flows'],
+): void {
+  const vById = new Map(vehicles.map(v => [v.id, v]))
+  const nm = (id: string) => names[id] ?? id
+  const rows: TableCell[][] = [[
+    { t: 'Flow' }, { t: 'Cycle = out + back + load + unload + lift  (s)' },
+    { t: 'Cycle', align: 'r' }, { t: 'Vehicles = Q × cycle ÷ 3600', align: 'r' },
+  ]]
+  for (const f of flowsSubset) {
+    const v = f.vehicleId ? vById.get(f.vehicleId) : undefined
+    const b = model.derivedByFlowId.get(f.id)?.breakdown
+    if (!v || !b) continue
+    const d = cycleDerivation(b, {
+      distanceFt: f.distanceFt, thruPerHr: f.thruPerHr,
+      speedLoadedFps: v.calc.speedLoadedFps,
+      speedUnloadedFps: v.calc.speedUnloadedFps ?? v.calc.speedLoadedFps,
+      liftSpeedFps: v.calc.liftSpeedFps ?? null,
+      rawVehicles: model.derivedByFlowId.get(f.id)?.rawVehicles ?? null,
+    })
+    const cyc = d.steps.find(s => s.label === 'Cycle time')
+    const cnt = d.steps.find(s => s.label === 'Vehicle count')
+    rows.push([
+      { t: `${nm(f.vehicleId!)} · ${f.origin || '—'} → ${f.destination || '—'}`, bold: true },
+      { t: cyc?.sub ?? '—' },
+      { t: cyc?.result ?? '—', align: 'r' },
+      { t: cnt ? `${cnt.sub} = ${cnt.result}` : '—', align: 'r' },
+    ])
+  }
+  if (rows.length === 1) rows.push([{ t: 'No flows with an assigned vehicle.' }, { t: '' }, { t: '' }, { t: '' }])
+  put(zip, slide, [3000000, 4000000, 1000000, 2820400], rows)
+}
+
 /** S28 ROI — the payback-curve chart (when rendered) on top, with an ROI metrics
  *  table beneath; table-only when no chart (non-DOM context). */
 export function fillRoi(

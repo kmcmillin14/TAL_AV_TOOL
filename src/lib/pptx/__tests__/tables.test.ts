@@ -4,7 +4,7 @@ import { resolve } from 'node:path'
 import PizZip from 'pizzip'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
-import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi, fillMethodology } from '../tables'
+import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi, fillMethodology, fillFlowMath } from '../tables'
 import { cloneSlide } from '../ooxml'
 import type { StoredProject } from '../../storage'
 
@@ -105,6 +105,20 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(xml).toContain('(Q × cycle) ÷ 3600')           // a formula
     expect(xml).toContain('Availability')                 // a variable name
     expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)       // body placeholder cleared
+  })
+
+  it('fillFlowMath shows each flow\'s substituted cycle formula and demand', () => {
+    const zip = load()
+    const slide = cloneSlide(zip, 18)!
+    const model = computeFleetModel(PROJECT, vehicles)
+    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+    fillFlowMath(zip, slide, model, vehicles, names, model.flows)
+    const xml = reopen(zip).file(`ppt/slides/slide${slide}.xml`)!.asText()
+    expect(xml).toContain('<a:tbl>')
+    expect(xml).toContain('Dock → Rack A')                 // a flow, by route
+    expect(xml).toContain('÷ 3600')                        // demand formula with figures
+    // a row per assigned flow (PROJECT has 2) + header
+    expect((xml.match(/<a:tr\b/g) ?? []).length).toBe(1 + model.flows.filter(f => f.vehicleId).length)
   })
 
   it('S27 builds the per-line pricing table with a TOTAL row', () => {
