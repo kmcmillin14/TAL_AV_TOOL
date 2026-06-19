@@ -126,7 +126,7 @@ const STAGE_META: Record<Stage, { n: string; name: string; slide: number; meanin
 // Progression strip: RAW + CHARGING × BUFFER = TOTAL (operators in thin columns).
 const PROG_COL = [2400000, 406800, 2400000, 406800, 2400000, 406800, 2400000]
 const PROG_H = 2 * ROW_H
-const CAP_H = 600000
+const CAP_H = 820000   // fits up to 4 caption lines (Raw adds an Inputs line)
 // Worked-derivation table: Step · What it means · Calculation · Result.
 const DERIV_COL = [2600000, 3400000, 3220400, 1600000]
 
@@ -145,11 +145,12 @@ function progressionRows(model: FleetModel, stage: Stage): TableCell[][] {
   ]
 }
 
-/** A Derivation → table rows (section headings dropped; emphasis steps in red). */
+/** A Derivation → table rows (section/input rows dropped — inputs go in the
+ *  caption; emphasis steps in red). */
 function derivationRows(d: Derivation): TableCell[][] {
   const rows: TableCell[][] = [[{ t: 'Step' }, { t: 'What it means' }, { t: 'Calculation' }, { t: 'Result', align: 'r' }]]
   for (const s of d.steps) {
-    if (s.kind === 'section') continue
+    if (s.kind === 'section' || s.kind === 'input') continue
     rows.push([
       { t: s.label, bold: s.emphasis },
       { t: s.expr ?? '' },
@@ -170,6 +171,10 @@ function renderTier(zip: PizZip, stage: Stage, model: FleetModel, deriv: Derivat
     [{ t: meta.meaning, sz: 1100, color: GRAY }],
   ]
   if (example) caption.push([{ t: example, sz: 1050, color: GRAY }])
+  // All input variables + values on one line (the worked steps below show how
+  // each is used); the table can't fit a row per input.
+  const inputs = (deriv?.steps ?? []).filter(s => s.kind === 'input')
+  if (inputs.length) caption.push([{ t: `Inputs — ${inputs.map(s => `${s.label} ${s.result}`).join('  ·  ')}`, sz: 950, color: GRAY }])
   appendShapesToSlide(zip, meta.slide, textBox({
     id: nextShapeId(zip, meta.slide), x: BODY.x, y: BODY.y, cx: BODY.cx, cy: CAP_H, paras: caption,
   }))

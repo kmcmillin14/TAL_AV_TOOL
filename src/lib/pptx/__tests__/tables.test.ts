@@ -84,6 +84,8 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(s21).toContain('TIER 1')
     expect(s21).toContain('Cycle time')
     expect(s21).toContain('throughput × cycle ÷ 3600')
+    expect(s21).toContain('Inputs —')                  // all variables in the caption
+    expect(s21).toContain('Loaded speed')
     const s22 = out.file('ppt/slides/slide22.xml')!.asText()
     expect(s22).toContain('TIER 2')
     expect(s22).toContain('Availability')

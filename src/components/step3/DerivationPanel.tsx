@@ -33,7 +33,7 @@ export default function DerivationPanel({ anchorRef, open, onClose, derivation, 
         s.kind === 'section' ? (
           <div key={i} className="deriv-section">{s.label}</div>
         ) : (
-          <div key={i} className={`deriv-row${s.emphasis ? ' emphasis' : ''}${s.muted ? ' muted' : ''}`}>
+          <div key={i} className={`deriv-row${s.emphasis ? ' emphasis' : ''}${s.muted ? ' muted' : ''}${s.kind === 'input' ? ' input' : ''}`}>
             <div className="deriv-formula">
               <span className="deriv-label">{s.label}</span>
               {s.expr && <span className="deriv-symbol">{s.expr}</span>}

@@ -2251,6 +2251,10 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .deriv-row.muted .deriv-label,
 .deriv-row.muted .deriv-symbol,
 .deriv-row.muted .deriv-result { color: var(--text-disabled); }
+/* Input rows: raw variables feeding the calc — lighter, tighter than a step. */
+.deriv-row.input { padding-top: 3px; padding-bottom: 3px; }
+.deriv-row.input .deriv-label { font-weight: 500; }
+.deriv-row.input .deriv-result { color: var(--text-secondary); }
 .deriv-row.emphasis {
   margin-top: 8px;
   padding: 10px 12px;

@@ -29,6 +29,20 @@ describe('cycleDerivation', () => {
     expect(count.result).toBe('0.36')
     expect(d.note).toContain('÷3600')
   })
+
+  it('lists every input variable with its value', () => {
+    const d = cycleDerivation(breakdown, {
+      distanceFt: 150, thruPerHr: 20, speedLoadedFps: 5, speedUnloadedFps: 4, liftSpeedFps: null, rawVehicles: 0.356,
+    })
+    const inputs = d.steps.filter(s => s.kind === 'input')
+    const byLabel = Object.fromEntries(inputs.map(s => [s.label, s.result]))
+    expect(byLabel['Distance (one-way leg)']).toBe('150.0 ft')
+    expect(byLabel['Loaded speed']).toBe('5.0 ft/s')
+    expect(byLabel['Empty speed']).toBe('4.0 ft/s')
+    expect(byLabel['Route pace']).toBe('×0.5')
+    expect(byLabel['Load (Lift)']).toBe('8.0 s')
+    expect(byLabel['Throughput']).toBe('20 /hr')
+  })
 })
 
 describe('chargingDerivation', () => {

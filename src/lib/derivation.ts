@@ -7,10 +7,11 @@ import { DEFAULT_DOD } from '@/src/calc/types'
 import type { CycleBreakdown, FleetGroup, FleetSettings } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
-/** One line of a worked derivation. A `section` carries only a heading; a step
- *  carries the formula (`expr`), its substituted form (`sub`), and the result. */
+/** One line of a worked derivation. A `section` carries only a heading; an
+ *  `input` names a raw variable + its value (no operation); a step carries the
+ *  formula (`expr`), its substituted form (`sub`), and the result. */
 export interface DerivStep {
-  kind?: 'section'
+  kind?: 'section' | 'input'
   label: string
   expr?: string          // symbolic — what it MEANS, e.g. "distance ÷ (speed × pace)"
   sub?: string           // value-substituted, e.g. "300 ÷ (4.5 × 0.5)"
@@ -31,6 +32,8 @@ const n1 = (v: number) => v.toFixed(1)
 const n2 = (v: number) => v.toFixed(2)
 const ROUTE_LABEL: Record<string, string> = { low: 'Low', medium: 'Medium', high: 'High' }
 const sec = (label: string): DerivStep => ({ kind: 'section', label })
+/** A named input variable + its value (and where it comes from). */
+const inp = (label: string, result: string, expr: string): DerivStep => ({ kind: 'input', label, expr, result })
 
 // ── Tier 1: Raw — cycle time → vehicle demand ────────────────────────────────
 
@@ -48,11 +51,25 @@ export interface CycleDerivInputs {
 export function cycleDerivation(b: CycleBreakdown, p: CycleDerivInputs): Derivation {
   const f = b.routeLayoutFactor
   const d = n1(p.distanceFt)
+  const route = ROUTE_LABEL[b.routeLayout] ?? 'Medium'
   const lifts = b.liftTimeSec > 0 && p.liftSpeedFps != null && p.liftSpeedFps > 0
   return {
     title: 'Raw fleet — cycle time → demand',
-    tag: `${ROUTE_LABEL[b.routeLayout] ?? 'Medium'} ×${f}`,
+    tag: `${route} ×${f}`,
     steps: [
+      // Every variable that feeds the cycle, with its value and where it comes from.
+      sec('Inputs'),
+      inp('Distance (one-way leg)', `${d} ft`, 'route length'),
+      inp('Loaded speed', `${n1(p.speedLoadedFps)} ft/s`, 'vehicle rated'),
+      inp('Empty speed', `${n1(p.speedUnloadedFps)} ft/s`, 'vehicle rated'),
+      inp('Route pace', `×${f}`, `${route} traffic — fraction of rated`),
+      inp(`Load (${b.methodName})`, `${n1(b.loadSec)} s`, 'transfer method'),
+      inp(`Unload (${b.methodName})`, `${n1(b.unloadSec)} s`, 'transfer method'),
+      ...(lifts ? [
+        inp('Lift height', `${n1(b.liftHeightFt)} ft`, 'flow input'),
+        inp('Lift speed', `${n1(p.liftSpeedFps!)} ft/s`, 'vehicle rated'),
+      ] : []),
+      inp('Throughput', `${p.thruPerHr} /hr`, 'demand'),
       sec('Time per cycle  (distance = one-way leg; times in seconds)'),
       { label: 'Travel out (loaded)', expr: 'distance ÷ (speed × pace)', sub: `${d} ÷ (${n1(p.speedLoadedFps)} × ${f})`, result: `${n1(b.travelLoadedSec)}s` },
       { label: 'Travel back (empty)', expr: 'distance ÷ (speed × pace)', sub: `${d} ÷ (${n1(p.speedUnloadedFps)} × ${f})`, result: `${n1(b.travelEmptySec)}s` },

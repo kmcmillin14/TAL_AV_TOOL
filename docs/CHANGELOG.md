@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-19 — Fleet math: every cycle input variable made visible
+
+- The Raw `cycleDerivation` now opens with an **Inputs** section listing every variable that feeds
+  the cycle — distance (one-way), loaded/empty speed, route pace, load & unload times (transfer
+  method), lift height/speed, throughput — each with its value and source, so it's clear *what*
+  goes in and the worked steps show *how* each is used (`distance ÷ (speed × pace)`, etc.).
+- Web panel renders the inputs as their own lighter rows; the PPTX lists them on one caption line
+  (worked steps stay in the table). New `kind: 'input'` on `DerivStep`.
+
 ## 2026-06-19 — PPTX: worked derivations + independent tiers + table polish
 
 - **Fleet Engine slides (S21/22/23) now lead with the worked derivation**, not bare per-flow sums.
