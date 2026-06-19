@@ -15,6 +15,7 @@ import { GATES } from '@/src/calc/gates'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
 import { money } from '@/src/lib/vehicleDisplay'
 import { cycleDerivation, chargingDerivation, bufferDerivation, type Derivation } from '@/src/lib/derivation'
+import { METHODOLOGY } from '@/src/content/methodology'
 import { VEHICLE_SLIDE, ROM_SLIDE } from './sections'
 import {
   table, textBox, appendShapesToSlide, addImage, removeBodyPlaceholder, nextShapeId, TAL_RED,
@@ -341,6 +342,25 @@ export function fillInvestment(zip: PizZip, model: FleetModel, names: Record<str
   const redCell = (t: string, align: TableCell['align'] = 'l'): TableCell => ({ t, align, fill: TAL_RED, color: 'FFFFFF', bold: true })
   rows.push([redCell('TOTAL'), redCell(String(fleet.totalFleetSold), 'ctr'), redCell(''), redCell(`${money(rom.pricing.totalMin)} – ${money(rom.pricing.totalMax)}`, 'r')])
   put(zip, ROM_SLIDE.investment, [4200000, 1200000, 2710200, 2710200], rows, { center: true })
+}
+
+/** Methodology appendix slide — a reference table covering every calc stage:
+ *  formula · variables (symbol = name) · why. Content from the shared
+ *  src/content/methodology.ts (same source as the web Methodology panel). */
+export function fillMethodology(zip: PizZip, slide: number): void {
+  const firstSentence = (s: string) => { const i = s.indexOf('. '); return i < 0 ? s : s.slice(0, i + 1) }
+  const rows: TableCell[][] = [[
+    { t: 'Stage' }, { t: 'Formula' }, { t: 'Variables' }, { t: 'Why' },
+  ]]
+  for (const t of METHODOLOGY) {
+    rows.push([
+      { t: `${t.num}  ${t.title}`, bold: true },
+      { t: t.formula },
+      { t: t.variables.map(v => `${v.sym} = ${v.name}`).join('  ·  ') },
+      { t: firstSentence(t.why) },
+    ])
+  }
+  put(zip, slide, [1700000, 3300000, 3300000, 2520400], rows)
 }
 
 /** S28 ROI — the payback-curve chart (when rendered) on top, with an ROI metrics

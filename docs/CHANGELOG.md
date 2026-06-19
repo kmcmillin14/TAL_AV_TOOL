@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-19 — PPTX: dedicated Methodology appendix slide
+
+- **New slide-clone capability** (`cloneSlide` + `setSlideTitle` in `ooxml.ts`): the deck pipeline
+  could only *remove* slides; it can now *append* one, cloned from a content shell (wires the slide
+  part + rels, `[Content_Types]` override, presentation relationship, and `sldIdLst` entry).
+- **Methodology appendix** (`fillMethodology` in `tables.ts`) is appended to every export — a
+  reference table (Stage · Formula · Variables · Why) built from the **same `src/content/methodology.ts`**
+  the web Methodology panel uses, so the deck now carries the variable definitions + rationale.
+- `fillBodyPlaceholder`/`setSlideTitle` now share a `fillPh` helper. Tests: cloneSlide round-trip
+  (deck re-opens, +1 slide, control parts wired) + fillMethodology content.
+
 ## 2026-06-19 — Methodology panel collapses (accordion)
 
 - The Step 4 Methodology explainer is now a **collapsed accordion** (native `<details>`): each

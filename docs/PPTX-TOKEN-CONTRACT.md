@@ -100,6 +100,14 @@ Canvas images are only rendered when their slide survives the section picker (no
 encoding). The free-standing `textBox` + `appendShapesToSlide` helpers (kept in `ooxml.ts`) are
 for content that has no placeholder, e.g. those graphics/images.
 
+### Methodology appendix (appended slide)
+
+Every export appends a **Methodology** slide after the template's last slide — `cloneSlide`
+(`ooxml.ts`) clones a content shell (S18) into a new slide and wires its part/rels/content-type/
+`sldIdLst`; `setSlideTitle` sets the heading; `fillMethodology` (`tables.ts`) builds a reference
+table (Stage · Formula · Variables · Why) from `src/content/methodology.ts` — the same content
+as the web Methodology panel. This is the first pipeline step that *adds* (not just removes) a slide.
+
 ### Still planned
 
 - A **CAPEX bar chart** (per-vehicle line totals via `capexBarsSeries`) if a visual alongside the

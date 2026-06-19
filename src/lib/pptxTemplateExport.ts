@@ -5,11 +5,11 @@ import PizZip from 'pizzip'
 import type { StoredProject } from '@/src/lib/storage'
 import { computeFleetModel } from '@/src/lib/fleetModel'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
-import { removeSlides, replaceInSlides } from '@/src/lib/pptx/ooxml'
+import { removeSlides, replaceInSlides, cloneSlide, setSlideTitle } from '@/src/lib/pptx/ooxml'
 import { buildCoverTokens } from '@/src/lib/pptx/tokenMap'
 import { fillKpis } from '@/src/lib/pptx/content'
 import {
-  fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi,
+  fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi, fillMethodology,
 } from '@/src/lib/pptx/tables'
 import { renderFlowDiagramPng } from '@/src/lib/pptx/flowDiagram'
 import { renderPaybackChartPng } from '@/src/lib/pptx/romChart'
@@ -71,6 +71,11 @@ export async function exportBrandedRomPptx(
   const buf = await res.arrayBuffer()
   const zip = new PizZip(buf)
 
+  // Clone a content shell into an appended Methodology appendix slide BEFORE any
+  // removal/fill (so the source S18 is still a clean shell). The new slide sits
+  // past S35, so removeSlides never touches it.
+  const methodSlide = cloneSlide(zip, ROM_SLIDE.requirements)
+
   const removed = slidesToRemove(selection)
   removeSlides(zip, removed)
   replaceInSlides(zip, buildCoverTokens(project))
@@ -94,6 +99,13 @@ export async function exportBrandedRomPptx(
   // S28 ROI — payback-curve chart (browser canvas) on top, metrics table beneath.
   const paybackPng = removed.includes(ROM_SLIDE.roi) ? null : renderPaybackChartPng(model.rom)
   fillRoi(zip, model, paybackPng)
+
+  // Methodology appendix — variable definitions, formulas, and why. Always
+  // included as a reference appendix (not one of the picker's selectable sections).
+  if (methodSlide != null) {
+    setSlideTitle(zip, methodSlide, 'Methodology — how the fleet is calculated')
+    fillMethodology(zip, methodSlide)
+  }
 
   const blob = zip.generate({ type: 'blob', mimeType: PPTX_MIME }) as Blob
   triggerDownload(blob, buildFilename(project))

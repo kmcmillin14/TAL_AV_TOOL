@@ -359,8 +359,10 @@ asynchronously. Computation is inline (no dependency on the parent `costs` memo)
 content in `src/content/methodology.ts`) explains *how every number is derived*: for each calc
 stage — Cycle time, Raw vehicle demand, Charging availability, Buffer, ROI/payback, OPEX — it
 shows the symbolic **formula**, a **variable glossary** (symbol → plain-language definition +
-unit), and a **"why this works"** rationale. It leads the section, above the live `FleetMath`
-worked numbers, the Requirements matrix, Resilience, and the Assumptions value-list.
+unit), and a **"why this works"** rationale. It's a **collapsed accordion** (native `<details>`,
+first stage open) leading the section, above the live `FleetMath` worked numbers, the Requirements
+matrix, Resilience, and the Assumptions value-list. The same content is appended to the **branded
+PPTX** as a Methodology appendix slide (cloned + filled — see below).
 
 **Export:** proposal PDF (embedded-JSON pattern, with a fleet/ROM page) · project
 JSON · **Branded PowerPoint** (see below) · **Excel workbook** (`.xlsx`, client-side via
@@ -395,8 +397,11 @@ Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle g
 labelled flow arrows on an offscreen canvas → PNG; `addImage` in `ooxml.ts` embeds it as a native
 `<p:pic>` media part), with the flow table beneath it; it falls back to the table-only layout in
 non-DOM contexts. Canvas images (S24 diagram, S28 chart) are only rendered when their slide
-survives the picker. Filename: `Rev# Opp# Customer Project.pptx`. Contract:
-`docs/PPTX-TOKEN-CONTRACT.md`.
+survives the picker. A **Methodology appendix slide** is appended to every deck — `cloneSlide`
+(`ooxml.ts`) clones a content shell into a new slide past S35 (wiring its part/rels/content-type/
+`sldIdLst` entry; the pipeline previously only removed slides), then `fillMethodology` builds a
+Stage · Formula · Variables · Why reference table from `src/content/methodology.ts`. Filename:
+`Rev# Opp# Customer Project.pptx`. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
 
 ---
 

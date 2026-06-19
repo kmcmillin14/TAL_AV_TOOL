@@ -23,6 +23,12 @@ export function slideParts(zip: PizZip): string[] {
   return Object.keys(zip.files).filter(n => /^ppt\/slides\/slide\d+\.xml$/.test(n))
 }
 
+/** Next free relationship id (`rIdN`) in a `.rels` document. */
+function nextRId(relsXml: string): string {
+  const ids = [...relsXml.matchAll(/Id="rId(\d+)"/g)].map(m => Number(m[1]))
+  return `rId${(ids.length ? Math.max(...ids) : 0) + 1}`
+}
+
 /**
  * Remove the given 1-based slides from the deck: drop the slide + its rels
  * parts, and prune the matching entries from presentation.xml (sldIdLst),
@@ -60,6 +66,43 @@ export function removeSlides(zip: PizZip, slideNums: number[]): void {
   zip.file(CONTENT_TYPES, types)
 }
 
+const SLIDE_CT = 'application/vnd.openxmlformats-officedocument.presentationml.slide+xml'
+const SLIDE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/slide'
+
+/**
+ * Append a NEW slide cloned from `sourceSlideNum` (its layout/placeholders), at
+ * the END of the deck. Wires the slide part + rels copy, the `[Content_Types]`
+ * override, the presentation relationship, and the `sldIdLst` entry. Returns the
+ * new slide number (caller then sets the title / fills the body), or null if the
+ * source is missing. The clone copies the source XML *as-is*, so clone BEFORE the
+ * source slide is filled to get a clean shell.
+ */
+export function cloneSlide(zip: PizZip, sourceSlideNum: number): number | null {
+  const src = zip.file(`ppt/slides/slide${sourceSlideNum}.xml`)
+  const srcRels = zip.file(`ppt/slides/_rels/slide${sourceSlideNum}.xml.rels`)
+  if (!src || !srcRels) return null
+
+  const newNum = Math.max(...slideParts(zip).map(n => Number(/slide(\d+)\.xml$/.exec(n)![1]))) + 1
+  zip.file(`ppt/slides/slide${newNum}.xml`, src.asText())
+  zip.file(`ppt/slides/_rels/slide${newNum}.xml.rels`, srcRels.asText())
+
+  zip.file(CONTENT_TYPES, readXml(zip, CONTENT_TYPES).replace(
+    '</Types>', `<Override PartName="/ppt/slides/slide${newNum}.xml" ContentType="${SLIDE_CT}"/></Types>`))
+
+  let rels = readXml(zip, PRES_RELS)
+  const rId = nextRId(rels)
+  rels = rels.replace('</Relationships>',
+    `<Relationship Id="${rId}" Type="${SLIDE_REL}" Target="slides/slide${newNum}.xml"/></Relationships>`)
+  zip.file(PRES_RELS, rels)
+
+  let pres = readXml(zip, PRESENTATION)
+  const sldId = Math.max(256, ...[...pres.matchAll(/<p:sldId\b[^>]*\bid="(\d+)"/g)].map(m => Number(m[1]))) + 1
+  pres = pres.replace('</p:sldIdLst>', `<p:sldId id="${sldId}" r:id="${rId}"/></p:sldIdLst>`)
+  zip.file(PRESENTATION, pres)
+
+  return newNum
+}
+
 // ── Native shape injection (editable content into a slide body) ──────────────
 
 export interface TextRun {
@@ -92,6 +135,24 @@ export function parasXml(paras: TextRun[][]): string {
 
 // The single body Content Placeholder `<p:sp>` (idx="1") — not title/date/footer.
 const BODY_PH_RE = /<p:sp>(?:(?!<\/p:sp>)[\s\S])*?<p:ph\b[^>]*\bidx="1"[^>]*\/>(?:(?!<\/p:sp>)[\s\S])*?<\/p:sp>/
+// The title placeholder `<p:sp>` (type="title").
+const TITLE_PH_RE = /<p:sp>(?:(?!<\/p:sp>)[\s\S])*?<p:ph\b[^>]*\btype="title"[^>]*\/?>(?:(?!<\/p:sp>)[\s\S])*?<\/p:sp>/
+
+/** Replace the matched placeholder shape's `<p:txBody>` with new paragraphs. */
+function fillPh(zip: PizZip, slideNum: number, re: RegExp, paras: TextRun[][]): boolean {
+  const path = `ppt/slides/slide${slideNum}.xml`
+  const f = zip.file(path)
+  if (!f) return false
+  const xml = f.asText()
+  const m = xml.match(re)
+  if (!m) return false
+  const filled = m[0].replace(
+    /<p:txBody>[\s\S]*?<\/p:txBody>/,
+    `<p:txBody><a:bodyPr/><a:lstStyle/>${parasXml(paras)}</p:txBody>`,
+  )
+  zip.file(path, xml.replace(m[0], filled))
+  return true
+}
 
 /**
  * Fill the slide's body Content Placeholder (`<p:ph idx="1"/>`) — the empty box
@@ -100,18 +161,12 @@ const BODY_PH_RE = /<p:sp>(?:(?!<\/p:sp>)[\s\S])*?<p:ph\b[^>]*\bidx="1"[^>]*\/>(
  * slide or placeholder is absent.
  */
 export function fillBodyPlaceholder(zip: PizZip, slideNum: number, paras: TextRun[][]): boolean {
-  const path = `ppt/slides/slide${slideNum}.xml`
-  const f = zip.file(path)
-  if (!f) return false
-  const xml = f.asText()
-  const m = xml.match(BODY_PH_RE)
-  if (!m) return false
-  const filled = m[0].replace(
-    /<p:txBody>[\s\S]*?<\/p:txBody>/,
-    `<p:txBody><a:bodyPr/><a:lstStyle/>${parasXml(paras)}</p:txBody>`,
-  )
-  zip.file(path, xml.replace(m[0], filled))
-  return true
+  return fillPh(zip, slideNum, BODY_PH_RE, paras)
+}
+
+/** Set the slide's title placeholder text (single run, inherits the title style). */
+export function setSlideTitle(zip: PizZip, slideNum: number, text: string): boolean {
+  return fillPh(zip, slideNum, TITLE_PH_RE, [[{ t: text }]])
 }
 
 /**
@@ -241,8 +296,7 @@ export function addImage(
 
   // Next free rId in this slide's rels.
   let rels = relsFile.asText()
-  const rIds = [...rels.matchAll(/Id="rId(\d+)"/g)].map(m => Number(m[1]))
-  const rId = `rId${(rIds.length ? Math.max(...rIds) : 0) + 1}`
+  const rId = nextRId(rels)
   rels = rels.replace('</Relationships>',
     `<Relationship Id="${rId}" Type="${IMAGE_REL}" Target="../media/${mediaName}"/></Relationships>`)
   zip.file(relPath, rels)

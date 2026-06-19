@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, removeBodyPlaceholder, table, addImage } from '../ooxml'
+import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, removeBodyPlaceholder, table, addImage, cloneSlide, setSlideTitle } from '../ooxml'
 import { slidesToRemove, type PptxSelection, PPTX_SECTIONS } from '../sections'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -141,6 +141,32 @@ describe('table', () => {
     expect(s18).toContain('<a:srgbClr val="2E7D32"/>')   // verdict fill
     expect((s18.match(/<a:gridCol\b/g) ?? []).length).toBe(2)
     expect((s18.match(/<a:tr\b/g) ?? []).length).toBe(3)
+  })
+})
+
+describe('cloneSlide + setSlideTitle', () => {
+  it('appends a new slide cloned from a source, wiring all four control parts', () => {
+    const zip = load()
+    expect(slideParts(zip)).toHaveLength(35)
+    const newNum = cloneSlide(zip, 18)
+    expect(newNum).toBe(36)
+    expect(setSlideTitle(zip, newNum!, 'Methodology — how the fleet is calculated')).toBe(true)
+
+    const out = reopen(zip)
+    expect(slideParts(out)).toHaveLength(36)
+    expect(out.file('ppt/slides/slide36.xml')).not.toBeNull()
+    expect(out.file('ppt/slides/_rels/slide36.xml.rels')).not.toBeNull()
+    // presentation gained one sldId; rels + content-types reference the new part
+    expect((out.file('ppt/presentation.xml')!.asText().match(/<p:sldId\b/g) ?? []).length).toBe(36)
+    expect(out.file('ppt/_rels/presentation.xml.rels')!.asText()).toContain('Target="slides/slide36.xml"')
+    expect(out.file('[Content_Types].xml')!.asText()).toContain('/ppt/slides/slide36.xml')
+    // title set
+    expect(out.file('ppt/slides/slide36.xml')!.asText()).toContain('Methodology — how the fleet is calculated')
+  })
+
+  it('returns null when the source slide is absent', () => {
+    const zip = load()
+    expect(cloneSlide(zip, 999)).toBeNull()
   })
 })
 

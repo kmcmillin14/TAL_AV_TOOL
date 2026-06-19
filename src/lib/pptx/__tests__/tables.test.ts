@@ -4,7 +4,8 @@ import { resolve } from 'node:path'
 import PizZip from 'pizzip'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
-import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi } from '../tables'
+import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi, fillMethodology } from '../tables'
+import { cloneSlide } from '../ooxml'
 import type { StoredProject } from '../../storage'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -92,6 +93,18 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     const s23 = out.file('ppt/slides/slide23.xml')!.asText()
     expect(s23).toContain('TIER 3')
     expect(s23).toContain('Fleet (sold)')
+  })
+
+  it('fillMethodology builds the variables/formula/why reference table on a cloned slide', () => {
+    const zip = load()
+    const slide = cloneSlide(zip, 18)!
+    fillMethodology(zip, slide)
+    const xml = reopen(zip).file(`ppt/slides/slide${slide}.xml`)!.asText()
+    expect(xml).toContain('<a:tbl>')
+    expect(xml).toContain('Variables')                    // header
+    expect(xml).toContain('(Q × cycle) ÷ 3600')           // a formula
+    expect(xml).toContain('Availability')                 // a variable name
+    expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)       // body placeholder cleared
   })
 
   it('S27 builds the per-line pricing table with a TOTAL row', () => {
