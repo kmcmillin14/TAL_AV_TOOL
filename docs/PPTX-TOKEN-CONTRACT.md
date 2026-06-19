@@ -51,15 +51,18 @@ slide's branded position/style**. No-op for any slide the user removed.
 - **S25 KPIs:** fleet total · flow count · throughput; base + charging → buffered.
 - **S26 KPIs:** per-vehicle fleet mix.
 
-### Fleet Engine (S21/22/23) — native tables (web-app views)
+### Fleet Engine (S21/22/23) — independent tiers + worked derivations
 
-`src/lib/pptx/tables.ts` → `fillFleetEngine`. Each slide = a `Raw + Charging × Buffer = Total`
-**progression strip** (active stage + Total highlighted) above that stage's detail table, from
-`computeFleetModel`:
-- **S21 Raw:** Flows table — Vehicle · Route Input · Output bands (#/Vehicle/Transfer Type/Route
-  Avg Speed/Origin/Destination/Distance/Moves-hr/Cycle Time/Vehicle Count).
-- **S22 Charging:** Flow / Charge Method / Cycle / Vehicles / Runtime / Recharge / Availability / Charging.
-- **S23 Buffer:** Flow / Base / + Charging / × (1+buffer) / Fleet.
+`src/lib/pptx/tables.ts` → `fillFleetEngine`. Each slide is a self-contained tier: a **meaning
+caption** (`TIER n — NAME` + what it does), the `Raw + Charging × Buffer = Total` **progression
+strip** (this tier + Total lit), and a **worked derivation table** (Step · What it means ·
+Calculation · Result) for a representative example, rendered from the shared `src/lib/derivation.ts`
+model (`cycleDerivation` / `chargingDerivation` / `bufferDerivation`):
+- **S21 Raw:** travel + transfer + lift = cycle, then throughput × cycle ÷ 3600 = vehicle count.
+- **S22 Charging:** usable Ah → runtime/recharge → availability → ⌈demand ÷ availability⌉ → +N.
+- **S23 Buffer:** (base + charging) × (1 + buffer), rounded up = fleet.
+
+(Per-flow detail data lives in the web app; the deck shows the method via one worked example.)
 
 ### Investment + ROI (S27/28) — native pricing table + payback chart
 

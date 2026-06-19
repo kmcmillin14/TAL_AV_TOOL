@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-19 — PPTX: worked derivations + independent tiers + table polish
+
+- **Fleet Engine slides (S21/22/23) now lead with the worked derivation**, not bare per-flow sums.
+  Each tier is an independent stage: a **meaning caption** ("TIER n — NAME" + what it does), the
+  `Raw + Charging × Buffer = Total` progression strip with that tier lit, and a **worked
+  derivation table** (Step · What it means · Calculation · Result) for a representative example —
+  rendered from the same pure `src/lib/derivation.ts` model the web app uses. Replaces the
+  per-flow detail tables (per-flow data still lives in the app).
+- **Table symmetry:** sole-table slides (Requirements S18, Matrix S19/20, Investment S27) are now
+  vertically centered in the body (`put({ center })`) so short tables sit balanced rather than
+  floating at the top.
+
 ## 2026-06-19 — Fleet math: worked derivations for all three tiers
 
 - **One pure derivation model** (`src/lib/derivation.ts`): `cycleDerivation` (Raw — travel +

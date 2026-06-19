@@ -371,14 +371,16 @@ assigned to flows; Cleanfix always dropped). The builder removes unselected slid
 (S1) + contact (S34) **bracket replacement**; the **KPI slides (S25/26)** by **writing into each
 slide's existing body Content Placeholder** (`<p:ph idx="1"/>`, via `fillBodyPlaceholder`); and
 graphic slides as **native shapes** (tables/images/charts) with the body placeholder removed first
-(`removeBodyPlaceholder`) so nothing ghosts behind them. **Investment (S27)** is a dynamic per-line
-CAPEX pricing table (`fillInvestment`) and **ROI (S28)** is the payback-curve chart
-(`romChart.ts` → `renderPaybackChartPng`, from the pure `paybackSeries`) over an ROI metrics
-table. The **Fleet Engine slides (S21/22/23)** replicate the web app's
-Fleet Engine views as **native tables** (`src/lib/pptx/tables.ts` → `fillFleetEngine`): each shows
-the `Raw + Charging × Buffer = Total` **progression strip** plus that stage's detail table — Raw
-(Flows: Vehicle / Route Input / Output bands), Charging (method · runtime · availability ·
-charging), Buffer (base → +charging → ×buffer → fleet). Editable, DOM-independent. The matrix and data slides — App
+(`removeBodyPlaceholder`) so nothing ghosts behind them; sole-table slides are vertically centered
+(`put({ center })`). **Investment (S27)** is a dynamic per-line CAPEX pricing table
+(`fillInvestment`) and **ROI (S28)** is the payback-curve chart (`romChart.ts` →
+`renderPaybackChartPng`, from the pure `paybackSeries`) over an ROI metrics table. The **Fleet
+Engine slides (S21/22/23)** present three **independent tiers** (`src/lib/pptx/tables.ts` →
+`fillFleetEngine`): each shows a **meaning caption** ("TIER n — NAME" + what the tier does), the
+`Raw + Charging × Buffer = Total` **progression strip** with that tier lit, and a **worked
+derivation table** (Step · What it means · Calculation · Result) for a representative example —
+rendered from the shared `src/lib/derivation.ts` model so the deck shows *how* each number is
+reached, not just the sum. Editable, DOM-independent. The matrix and data slides — App
 Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle grid, from
 `qualifyVehicle`), Material Flow (S24) — are filled with **native editable `<a:tbl>` tables**
 (`src/lib/pptx/tables.ts`; `table()` in `ooxml.ts`). The Material Flow slide (S24) also carries a

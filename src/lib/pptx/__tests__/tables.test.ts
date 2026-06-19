@@ -64,7 +64,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(cols).toBe(1 + vehicles.filter(v => ['8tb50a', '8hbc40a', 'm10', 'ml2', 'ebase7', 'cb18'].includes(v.id)).length)
   })
 
-  it('fills S21/22/23 with the progression strip + that stage\'s table', () => {
+  it('fills S21/22/23 with a tier caption, progression strip, and worked derivation', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
@@ -73,23 +73,23 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
 
     for (const n of [21, 22, 23]) {
       const xml = out.file(`ppt/slides/slide${n}.xml`)!.asText()
-      // progression strip + detail table = two graphic frames; placeholder gone
+      // progression strip + derivation table = two tables; placeholder gone
       expect((xml.match(/<a:tbl>/g) ?? []).length).toBe(2)
       expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
       expect(xml).toContain('TOTAL')                 // progression Raw…=Total
+      expect(xml).toContain('What it means')         // derivation columns
     }
-    // Raw table carries the Vehicle / Route Input / Output bands + columns,
-    // with Origin/Destination as separate cells.
+    // Each tier names itself and shows its headline derivation step.
     const s21 = out.file('ppt/slides/slide21.xml')!.asText()
-    expect(s21).toContain('Route Input')
-    expect(s21).toContain('Vehicle Count')
-    expect(s21).toContain('Dock')
-    expect(s21).toContain('Rack A')
-    // Charging shows the combined route + its columns; Buffer shows the waterfall.
+    expect(s21).toContain('TIER 1')
+    expect(s21).toContain('Cycle time')
+    expect(s21).toContain('throughput × cycle ÷ 3600')
     const s22 = out.file('ppt/slides/slide22.xml')!.asText()
+    expect(s22).toContain('TIER 2')
     expect(s22).toContain('Availability')
-    expect(s22).toContain('Dock → Rack A')
-    expect(out.file('ppt/slides/slide23.xml')!.asText()).toContain('Fleet')
+    const s23 = out.file('ppt/slides/slide23.xml')!.asText()
+    expect(s23).toContain('TIER 3')
+    expect(s23).toContain('Fleet (sold)')
   })
 
   it('S27 builds the per-line pricing table with a TOTAL row', () => {
