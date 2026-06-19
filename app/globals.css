@@ -3086,22 +3086,36 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .rv-assume dt { font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-secondary); margin: 0; }
 .rv-assume dd { margin: 0; font-family: var(--tal-font-numeric); font-size: 12.5px; color: var(--text-primary); text-align: right; }
 
-/* ─── Methodology reference (Step 4 · 04) — formula · variables · why ─── */
-.method { display: grid; gap: 26px; }
+/* ─── Methodology reference (Step 4 · 04) — collapsible formula · vars · why ─── */
+.method { display: grid; gap: 0; }
 .method-topic {
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent);
   opacity: 0; transform: translateY(8px);
   animation: methodIn 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
   animation-delay: calc(var(--i) * 70ms);
 }
+.method-topic:last-child { border-bottom: none; }
 @keyframes methodIn { to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .method-topic { animation: none; opacity: 1; transform: none; } }
 
-.method-topic-head { display: flex; align-items: baseline; gap: 11px; margin-bottom: 11px; }
+/* Accordion header (the <summary>). */
+.method-topic-head {
+  display: flex; align-items: center; gap: 11px; padding: 13px 2px; cursor: pointer;
+  list-style: none; user-select: none;
+}
+.method-topic-head::-webkit-details-marker { display: none; }
+.method-topic-head:hover .method-title { color: var(--accent); }
 .method-num {
   font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; color: var(--accent);
   border: 1px solid var(--accent-soft); border-radius: 5px; padding: 2px 7px;
 }
-.method-title { margin: 0; font-family: var(--tal-font-family); font-size: 16px; font-weight: 700; color: var(--text-primary); }
+.method-title { flex: 1; font-family: var(--tal-font-family); font-size: 15px; font-weight: 700; color: var(--text-primary); transition: color 0.15s; }
+.method-chev {
+  font-family: var(--tal-font-numeric); font-size: 18px; color: var(--text-tertiary);
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.method-topic[open] .method-chev { transform: rotate(90deg); color: var(--accent); }
+.method-body { padding: 2px 2px 16px; }
 
 /* Formula slab — the equation, front and centre. */
 .method-formula {

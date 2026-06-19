@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-06-19 — Methodology panel collapses (accordion)
+
+- The Step 4 Methodology explainer is now a **collapsed accordion** (native `<details>`): each
+  stage is a click-to-expand row (first open), so the section is no longer a long wall of text.
+  Chevron rotates on open; progressive disclosure matches the app's inline-minimal pattern.
+
 ## 2026-06-19 — Step 4 · 04 Methodology: define the variables + explain the why
 
 - New **`MethodologyPanel`** (content in `src/content/methodology.ts`) leads the Step 4
