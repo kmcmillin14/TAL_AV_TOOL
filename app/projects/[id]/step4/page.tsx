@@ -48,8 +48,10 @@ export default function RomDashboardPage() {
       ?? defaultOperatingDaysPerYear(project?.operatingDaysPattern, project?.operatingDaysCustom),
   }), [project])
 
-  const flowCount = flows.length
-  const totalThruPerHr = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
+  const names = useMemo(
+    () => Object.fromEntries([...vehicleById].map(([vid, v]) => [vid, v.name])),
+    [vehicleById],
+  )
 
   const patchCosts = (patch: RomPatch) => {
     const updated = updateProject(id, patch)
@@ -116,7 +118,7 @@ export default function RomDashboardPage() {
           />
           <div className="form-stack">
             <div className="engine-result-sticky rom-kpis-sticky">
-              <RomKpis fleet={fleet} rom={rom} flowCount={flowCount} totalThruPerHr={totalThruPerHr} />
+              <RomKpis fleet={fleet} rom={rom} flows={flows} settings={settings} names={names} />
             </div>
             <RomVisuals
               project={project}

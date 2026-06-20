@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-20 — Step 4: interactive KPI tiles (Power BI-style)
+
+- KPI tiles are now **interactive** (`KpiTile`): hover or focus reveals a popover with that metric's
+  breakdown — formula, mini bars, and rows — and **click pins** it open (touch/keyboard friendly).
+- Per-KPI detail is a **pure builder** (`src/lib/kpiDetails.ts`) so the same breakdowns can feed the
+  PPTX deck later. Mini-bars use the **TAL extended brand palette** (red · classic-blue ·
+  golden-orange · slate) — a deliberate, on-brand color deviation for data graphics.
+- `RomKpis` now takes the model subset + names; the page passes them. Test added for `kpiDetails`.
+  (Pass 1 of the dashboard rework: console restructure + chart palette + PPTX parity to follow.)
+
 ## 2026-06-20 — Step 4 dashboard polish (visual pass 1)
 
 - **KPI hero hierarchy:** the two headline KPIs (Total fleet, ROM CAPEX) now carry a top accent
