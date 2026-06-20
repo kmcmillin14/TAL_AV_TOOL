@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-20 — Step 4: charts on the TAL brand palette (pass 3)
+
+- Centralized the data-viz palette in `src/components/rom/palette.ts` (TAL red · classic-blue ·
+  golden-orange · green · slate) and shared it between the KPI tiles and the charts.
+- Recolored the off-brand chart series — Duty Cycle and Battery State-of-Charge now use the brand
+  palette instead of ad-hoc hex (#6aa9ff/#46c19a/#e0a23c/#9b7ad6). CSS-based charts (CAPEX,
+  utilization, charging) already used `--accent`/neutral, so they were left as-is.
+
 ## 2026-06-20 — Step 4: console restructure (pass 2)
 
 - The dashboard sections now read as a **console**: the heavy nested section surface is dropped so

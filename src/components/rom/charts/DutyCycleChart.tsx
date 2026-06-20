@@ -2,9 +2,10 @@
 
 import type { DutyCycleSeries, DutyKey } from '@/src/calc/romCharts'
 
+// TAL brand data palette (see ../palette.ts) + neutral for idle.
 const COLORS: Record<DutyKey, string> = {
-  driveLoaded: 'var(--accent)', driveEmpty: '#6aa9ff', transfer: '#46c19a',
-  lift: '#e0a23c', charging: '#9b7ad6', idle: 'var(--border)',
+  driveLoaded: 'var(--accent)', driveEmpty: 'var(--tal-classic-blue)', transfer: 'var(--good)',
+  lift: 'var(--tal-golden-orange)', charging: 'var(--tal-dark-grey)', idle: 'var(--border)',
 }
 
 interface Props { series: DutyCycleSeries }

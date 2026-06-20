@@ -2,9 +2,9 @@
 
 import type { BatterySocSeries } from '@/src/calc/romCharts'
 import { linScale, polyline } from './svgScale'
+import { SERIES as LINE_COLORS } from '../palette'
 
 const W = 520, H = 130, PAD = 24
-const LINE_COLORS = ['var(--accent)', '#6aa9ff', '#46c19a', '#e0a23c', '#9b7ad6']
 
 interface Props { series: BatterySocSeries }
 

@@ -3,6 +3,7 @@
 import { useRef, useState, type CSSProperties } from 'react'
 import FloatingPanel from '@/src/components/step3/FloatingPanel'
 import type { KpiDetail } from '@/src/lib/kpiDetails'
+import { seriesColor } from './palette'
 
 interface Props {
   label: string
@@ -12,9 +13,6 @@ interface Props {
   /** Index into the brand data palette for the mini-bar color. */
   colorIndex?: number
 }
-
-// TAL extended brand palette for data series (red · classic-blue · golden-orange · slate).
-const SERIES = ['var(--accent)', 'var(--tal-classic-blue)', 'var(--tal-golden-orange)', 'var(--tal-dark-grey)']
 
 /**
  * Interactive KPI tile (Power BI-style): shows the headline figure; on hover or
@@ -26,7 +24,7 @@ export default function KpiTile({ label, value, detail, accent, colorIndex = 0 }
   const [hovered, setHovered] = useState(false)
   const [pinned, setPinned] = useState(false)
   const open = hovered || pinned
-  const barColor = SERIES[colorIndex % SERIES.length]
+  const barColor = seriesColor(colorIndex)
 
   return (
     <>
