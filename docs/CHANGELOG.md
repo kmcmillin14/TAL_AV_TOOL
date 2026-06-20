@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-20 — Step 4 dashboard polish (visual pass 1)
+
+- **KPI hero hierarchy:** the two headline KPIs (Total fleet, ROM CAPEX) now carry a top accent
+  bar + larger figure so they read as the headline; all KPI cards gain depth (`--shadow-card`) and
+  a subtle hover lift. Sharper engineer-facing scan order.
+- **Cards:** depth shadow, accent "tick" before each eyebrow for consistent identity, responsive
+  padding.
+- **Spacing:** cleaner section rhythm (28px between the four sections; cards keep the tighter 16px);
+  mobile padding/size scale-downs. CSS-only, within the TAL design system.
+
 ## 2026-06-19 — PPTX: per-flow cycle-math appendix (figures in the formulas)
 
 - New **`fillFlowMath`** appendix: each flow's cycle math with the actual figures substituted

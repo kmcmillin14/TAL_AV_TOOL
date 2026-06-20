@@ -2904,35 +2904,55 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 
 /* ─── ROM Dashboard (Step 4) ─── */
 .rom-kpis {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; margin-bottom: 20px;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 22px;
 }
 @media (max-width: 1000px) { .rom-kpis { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 600px)  { .rom-kpis { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px)  { .rom-kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
 .rom-kpi {
-  display: flex; flex-direction: column; gap: 4px;
+  position: relative; overflow: hidden;
+  display: flex; flex-direction: column; gap: 5px;
   background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: 12px; padding: 14px 16px;
+  border-radius: 12px; padding: 15px 16px 14px;
+  box-shadow: var(--shadow-card);
+  transition: transform 0.18s cubic-bezier(0.32, 0.72, 0, 1), border-color 0.18s ease;
 }
-.rom-kpi-accent { border-color: var(--accent); background: var(--accent-soft); }
+.rom-kpi:hover { transform: translateY(-2px); border-color: var(--border-strong); }
+/* The two headline KPIs (fleet, CAPEX) carry a top accent bar + larger figure. */
+.rom-kpi-accent { border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); background: var(--accent-soft); }
+.rom-kpi-accent::before {
+  content: ''; position: absolute; inset: 0 0 auto 0; height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+}
 .rom-kpi-val {
   font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums;
-  font-size: 22px; font-weight: 800; line-height: 1.05; color: var(--text-primary);
+  font-size: 23px; font-weight: 800; line-height: 1.04; color: var(--text-primary);
 }
-.rom-kpi-accent .rom-kpi-val { color: var(--accent); }
+.rom-kpi-accent .rom-kpi-val { font-size: 28px; color: var(--accent); }
 .rom-kpi-lbl {
   font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
+}
+@media (max-width: 600px) {
+  .rom-kpi { padding: 12px 13px; }
+  .rom-kpi-val { font-size: 20px; }
+  .rom-kpi-accent .rom-kpi-val { font-size: 24px; }
 }
 
 .rom-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; margin-bottom: 16px; }
 @media (max-width: 900px) { .rom-grid { grid-template-columns: 1fr; } }
 .rom-card {
   background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: 14px; padding: 20px 22px;
+  border-radius: 14px; padding: 20px 22px; box-shadow: var(--shadow-card);
 }
+@media (max-width: 600px) { .rom-card { padding: 15px 16px; border-radius: 12px; } }
+/* Eyebrow gets a short accent tick for a consistent, scannable card identity. */
 .rom-card-eyebrow {
-  display: block; font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
   letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 14px;
+}
+.rom-card-eyebrow::before {
+  content: ''; width: 14px; height: 2px; border-radius: 2px; background: var(--accent); flex: 0 0 auto;
 }
 .rom-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
@@ -2993,7 +3013,9 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .rom-export-primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
 
 /* ─── ROM Dashboard visuals ─── */
-.rom-visuals { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+/* Generous rhythm between the four sections; cards inside keep the tighter 16px. */
+.rom-visuals { display: flex; flex-direction: column; gap: 28px; margin-top: 18px; }
+@media (max-width: 600px) { .rom-visuals { gap: 22px; } }
 .rv-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
 /* §1 flow map (SVG node-link) — capped to natural size so it renders ~1:1, not upscaled */
