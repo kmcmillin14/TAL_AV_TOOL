@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-20 — Step 4: console restructure (pass 2)
+
+- The dashboard sections now read as a **console**: the heavy nested section surface is dropped so
+  cards sit on the page, and each section leads with a header bar — accent **number chip · title ·
+  sub · hairline rule**. Cleaner hierarchy, more "dashboard," less boxed-in. Scoped to `.rom-visuals`
+  (Fleet Engine / step3 untouched). CSS-only.
+
 ## 2026-06-20 — Step 4: interactive KPI tiles (Power BI-style)
 
 - KPI tiles are now **interactive** (`KpiTile`): hover or focus reveals a popover with that metric's
