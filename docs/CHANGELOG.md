@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-21 — Step 00: three explicit entry modes
+
+- Redesigned the entry screen (`app/projects/[id]/step0/page.tsx`) from two cards to
+  **three peer cards** matching the product's three ways to begin: **Start New**,
+  **Import Customer Questionnaire**, and **Import Previous Revision**. The old single
+  "Import" button conflated a customer-supplied questionnaire with a prior revision of
+  this app; they are now distinct.
+- The two import cards reuse the existing parsers unchanged (`importProjectFromJson`,
+  `parseProjectPdf`) — no new parser. They differ only in accepted file types
+  (`.json` for the customer questionnaire, `.pdf,.json` for a previous revision) and
+  framing; an `importMode` state drives the hidden file input's `accept`.
+- New `.decision-trio` layout in `globals.css` (3 → 2 at 1000px → 1 at 600px), reusing
+  the `.decision-card-v` styling; dropped the binary "OR" divider.
+- Documented Step 00 in `docs/SPECIFICATION.md` (previously undocumented). The
+  customer-facing questionnaire artifact itself (a standalone web form exporting the
+  wrapped JSON) is specced as a pending follow-up sub-project, not built here.
+
 ## 2026-06-20 — Step 4: charts on the TAL brand palette (pass 3)
 
 - Centralized the data-viz palette in `src/components/rom/palette.ts` (TAL red · classic-blue ·

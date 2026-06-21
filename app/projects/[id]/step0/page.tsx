@@ -17,13 +17,22 @@ export default function Step0Page() {
   const [loaded, setLoaded] = useState(false)
   const [unitSystem, toggleUnitSystem] = useUnitSystem()
   const [importError, setImportError] = useState<string | null>(null)
+  // Which source the picker is opened for — drives the accepted file types.
+  // 'questionnaire' = customer-supplied questionnaire (.json only);
+  // 'revision' = a prior export of this app (.pdf or .json).
+  const [importMode, setImportMode] = useState<'questionnaire' | 'revision'>('revision')
 
   useEffect(() => {
     setProject(getProject(id))
     setLoaded(true)
   }, [id])
 
-  const handleImportClick = () => fileRef.current?.click()
+  const openPicker = (mode: 'questionnaire' | 'revision') => {
+    setImportMode(mode)
+    setImportError(null)
+    // Defer the click so the input's `accept` reflects the new mode first.
+    requestAnimationFrame(() => fileRef.current?.click())
+  }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -90,26 +99,7 @@ export default function Step0Page() {
           </div>
         </div>
 
-        <div className="decision-pair">
-          <button type="button" className="decision-card-v" onClick={handleImportClick}>
-            <div className="dc-icon" aria-hidden>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-            </div>
-            <div className="dc-content">
-              <h3>Import Existing Checklist</h3>
-              <p>Upload a previously exported proposal (.pdf) or data file (.json) to restore a project.</p>
-            </div>
-            <div className="dc-badge">Recommended for returning projects</div>
-          </button>
-
-          <div className="decision-or" aria-hidden>
-            <span className="decision-or-chip">OR</span>
-          </div>
-
+        <div className="decision-trio">
           <button
             type="button"
             className="decision-card-v"
@@ -124,10 +114,42 @@ export default function Step0Page() {
               </svg>
             </div>
             <div className="dc-content">
-              <h3>Fill Application Form</h3>
-              <p>Manually enter project information, operating schedule, and environmental requirements.</p>
+              <h3>Start New</h3>
+              <p>Fill the application questionnaire manually, from scratch.</p>
             </div>
             <div className="dc-badge">Start from scratch</div>
+          </button>
+
+          <button type="button" className="decision-card-v" onClick={() => openPicker('questionnaire')}>
+            <div className="dc-icon" aria-hidden>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                <polyline points="14 2 14 8 20 8" />
+                <path d="M9 13h6" />
+                <path d="M9 17h6" />
+                <path d="M9 9h1" />
+              </svg>
+            </div>
+            <div className="dc-content">
+              <h3>Import Customer Questionnaire</h3>
+              <p>Upload a completed customer questionnaire (.json) to auto-fill Step 01.</p>
+            </div>
+            <div className="dc-badge">From a customer</div>
+          </button>
+
+          <button type="button" className="decision-card-v" onClick={() => openPicker('revision')}>
+            <div className="dc-icon" aria-hidden>
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </div>
+            <div className="dc-content">
+              <h3>Import Previous Revision</h3>
+              <p>Upload a prior proposal (.pdf) or data file (.json) from this app to make a new revision.</p>
+            </div>
+            <div className="dc-badge">Continue / re-spec</div>
           </button>
         </div>
 
@@ -149,7 +171,11 @@ export default function Step0Page() {
         <input
           ref={fileRef}
           type="file"
-          accept=".pdf,.json,application/pdf,application/json"
+          accept={
+            importMode === 'questionnaire'
+              ? '.json,application/json'
+              : '.pdf,.json,application/pdf,application/json'
+          }
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />

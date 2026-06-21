@@ -4,6 +4,32 @@ The functional spec ("what the app does"). For architectural rules ("how it's bu
 
 ---
 
+## Step 00 — Project Setup / Entry
+
+The entry screen (`app/projects/[id]/step0/page.tsx`), reached when the root route
+finds-or-creates an entry project and redirects. It presents **three peer ways to
+begin**, one card each:
+
+1. **Start New** — go straight to Step 01 on the current empty project and fill the
+   questionnaire manually.
+2. **Import Customer Questionnaire** — upload a completed customer questionnaire
+   (`.json`) to auto-fill Step 01. The customer-facing questionnaire is a separate
+   artifact (a standalone web form that exports the wrapped JSON this app imports);
+   it is a **pending follow-up sub-project** and not yet built. The Step 00 picker
+   accepts `.json` for this mode and parses it via `importProjectFromJson`. This app
+   is qualification + fleet sizing only, so the questionnaire carries just the subset
+   of fields the app uses.
+3. **Import Previous Revision** — upload a prior export of this app (`.pdf` with
+   embedded JSON, or `.json`) to make a new revision. Parsed via `parseProjectPdf`
+   (PDF) or `importProjectFromJson` (JSON).
+
+Both import modes reuse the same parsers and the wrapped `{schemaVersion, project}`
+envelope (legacy unwrapped accepted); every import mints a fresh project id and lands
+on Step 01. Import failures show an inline error note. The only difference between
+modes 2 and 3 is the accepted file types and framing — there is no separate parser.
+
+---
+
 ## Step 1 — Application Questionnaire
 
 Thirteen flat sections became **three labeled tiers** (2026-06-10) so an applications
