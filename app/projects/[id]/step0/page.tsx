@@ -89,82 +89,99 @@ export default function Step0Page() {
       />
 
       <div className="workspace">
-        <div className="page-header">
-          <div className="page-title">
-            <span className="step-num">Step 00 / 04</span>
-            <h1>Project Setup</h1>
-            <div className="desc">
-              Choose how to provide application details. Project header info is editable in the bar above.
+        <div className="entry-wrap">
+          <div className="page-header">
+            <div className="page-title">
+              <span className="step-num">Step 00 / 04</span>
+              <h1>How would you like to begin?</h1>
+              <div className="desc">
+                Pick a starting point. Project header info is editable in the bar above.
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="decision-trio">
-          <button
-            type="button"
-            className="decision-card-v"
-            onClick={() => router.push(`/projects/${project.id}/step1`)}
-          >
-            <div className="dc-icon" aria-hidden>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-                <rect x="9" y="3" width="6" height="4" rx="1" />
-                <path d="M9 12h6" />
-                <path d="M9 16h6" />
-              </svg>
-            </div>
-            <div className="dc-content">
-              <h3>Start New</h3>
-              <p>Fill the application questionnaire manually, from scratch.</p>
-            </div>
-            <div className="dc-badge">Start from scratch</div>
-          </button>
+          <div className="entry-modes">
+            <button
+              type="button"
+              className="entry-mode is-featured"
+              onClick={() => router.push(`/projects/${project.id}/step1`)}
+            >
+              <span className="entry-index" aria-hidden>01</span>
+              <span className="entry-icon" aria-hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+                  <rect x="9" y="3" width="6" height="4" rx="1" />
+                  <path d="M9 12h6" /><path d="M9 16h6" />
+                </svg>
+              </span>
+              <span className="entry-body">
+                <h3>Start New</h3>
+                <p>Fill the application questionnaire manually, from scratch.</p>
+              </span>
+              <span className="entry-aside">
+                <span className="entry-badge">Start from scratch</span>
+                <span className="entry-chevron" aria-hidden>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                </span>
+              </span>
+            </button>
 
-          <button type="button" className="decision-card-v" onClick={() => openPicker('questionnaire')}>
-            <div className="dc-icon" aria-hidden>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                <polyline points="14 2 14 8 20 8" />
-                <path d="M9 13h6" />
-                <path d="M9 17h6" />
-                <path d="M9 9h1" />
-              </svg>
-            </div>
-            <div className="dc-content">
-              <h3>Import Customer Questionnaire</h3>
-              <p>Upload a completed customer questionnaire (.json) to auto-fill Step 01.</p>
-            </div>
-            <div className="dc-badge">From a customer</div>
-          </button>
+            <button type="button" className="entry-mode" onClick={() => openPicker('questionnaire')}>
+              <span className="entry-index" aria-hidden>02</span>
+              <span className="entry-icon" aria-hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <path d="M9 13h6" /><path d="M9 17h6" /><path d="M9 9h1" />
+                </svg>
+              </span>
+              <span className="entry-body">
+                <h3>Import Customer Questionnaire</h3>
+                <p>Upload a completed customer questionnaire (.json) to auto-fill Step 01.</p>
+              </span>
+              <span className="entry-aside">
+                <span className="entry-badge">From a customer</span>
+                <span className="entry-chevron" aria-hidden>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                </span>
+              </span>
+            </button>
 
-          <button type="button" className="decision-card-v" onClick={() => openPicker('revision')}>
-            <div className="dc-icon" aria-hidden>
-              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                <polyline points="7 10 12 15 17 10" />
-                <line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-            </div>
-            <div className="dc-content">
-              <h3>Import Previous Revision</h3>
-              <p>Upload a prior proposal (.pdf) or data file (.json) from this app to make a new revision.</p>
-            </div>
-            <div className="dc-badge">Continue / re-spec</div>
-          </button>
-        </div>
-
-        {importError && (
-          <div className="decision-note" style={{ marginTop: 16, borderColor: 'var(--bad)', color: 'var(--bad)', background: 'var(--bad-soft)' }}>
-            <Icon name="warn" size={16} />
-            <div>Could not import — {importError}</div>
+            <button type="button" className="entry-mode" onClick={() => openPicker('revision')}>
+              <span className="entry-index" aria-hidden>03</span>
+              <span className="entry-icon" aria-hidden>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                  <polyline points="7 10 12 15 17 10" />
+                  <line x1="12" y1="15" x2="12" y2="3" />
+                </svg>
+              </span>
+              <span className="entry-body">
+                <h3>Import Previous Revision</h3>
+                <p>Upload a prior proposal (.pdf) or data file (.json) from this app to make a new revision.</p>
+              </span>
+              <span className="entry-aside">
+                <span className="entry-badge">Continue / re-spec</span>
+                <span className="entry-chevron" aria-hidden>
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
+                </span>
+              </span>
+            </button>
           </div>
-        )}
 
-        <div className="decision-note" style={{ marginTop: 16 }}>
-          <Icon name="info" size={16} />
-          <div>
-            <strong>Tip:</strong> Step 2 (Vehicle Evaluation) is <strong>optional</strong> if you already know
-            which vehicles to use — you can skip to Step 3 (Fleet Engine) from the ribbon above.
+          {importError && (
+            <div className="decision-note" style={{ marginTop: 18, borderColor: 'var(--bad)', color: 'var(--bad)', background: 'var(--bad-soft)' }}>
+              <Icon name="warn" size={16} />
+              <div>Could not import — {importError}</div>
+            </div>
+          )}
+
+          <div className="decision-note" style={{ marginTop: 18 }}>
+            <Icon name="info" size={16} />
+            <div>
+              <strong>Tip:</strong> Step 2 (Vehicle Evaluation) is <strong>optional</strong> if you already know
+              which vehicles to use — you can skip to Step 3 (Fleet Engine) from the ribbon above.
+            </div>
           </div>
         </div>
 
