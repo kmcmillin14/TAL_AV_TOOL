@@ -205,71 +205,59 @@ export default function Step0Page() {
             </div>
           </div>
 
-          <div className="entry-modes">
+          <div className="entry-grid">
             <button
               type="button"
-              className="entry-mode is-featured"
+              className="entry-card is-featured"
               onClick={() => router.push(`/projects/${project.id}/step1`)}
             >
-              <span className="entry-index" aria-hidden>01</span>
-              <span className="entry-icon" aria-hidden>
+              <span className="entry-card-index" aria-hidden>01</span>
+              <span className="entry-card-icon" aria-hidden>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
                   <rect x="9" y="3" width="6" height="4" rx="1" />
                   <path d="M9 12h6" /><path d="M9 16h6" />
                 </svg>
               </span>
-              <span className="entry-body">
-                <h3>Start New</h3>
-                <p>Fill the application questionnaire manually, from scratch.</p>
-              </span>
-              <span className="entry-aside">
-                <span className="entry-badge">Start from scratch</span>
-                <span className="entry-chevron" aria-hidden>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                </span>
+              <h3>Start New</h3>
+              <p>Fill the application questionnaire manually, from scratch.</p>
+              <span className="entry-card-cta">
+                Start from scratch
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6" /></svg>
               </span>
             </button>
 
-            <button type="button" className="entry-mode" onClick={() => openPicker('questionnaire')}>
-              <span className="entry-index" aria-hidden>02</span>
-              <span className="entry-icon" aria-hidden>
+            <button type="button" className="entry-card" onClick={() => openPicker('questionnaire')}>
+              <span className="entry-card-index" aria-hidden>02</span>
+              <span className="entry-card-icon" aria-hidden>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                   <path d="M9 13h6" /><path d="M9 17h6" /><path d="M9 9h1" />
                 </svg>
               </span>
-              <span className="entry-body">
-                <h3>Import Customer Questionnaire</h3>
-                <p>Upload a completed customer questionnaire (.json) to auto-fill Step 01.</p>
-              </span>
-              <span className="entry-aside">
-                <span className="entry-badge">From a customer</span>
-                <span className="entry-chevron" aria-hidden>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                </span>
+              <h3>Import Customer Questionnaire</h3>
+              <p>Upload a completed customer questionnaire (.json) to auto-fill Step 01.</p>
+              <span className="entry-card-cta">
+                From a customer
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6" /></svg>
               </span>
             </button>
 
-            <button type="button" className="entry-mode" onClick={() => openPicker('revision')}>
-              <span className="entry-index" aria-hidden>03</span>
-              <span className="entry-icon" aria-hidden>
+            <button type="button" className="entry-card" onClick={() => openPicker('revision')}>
+              <span className="entry-card-index" aria-hidden>03</span>
+              <span className="entry-card-icon" aria-hidden>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
               </span>
-              <span className="entry-body">
-                <h3>Import Previous Revision</h3>
-                <p>Upload a prior proposal (.pdf) or data file (.json) from this app to make a new revision.</p>
-              </span>
-              <span className="entry-aside">
-                <span className="entry-badge">Continue / re-spec</span>
-                <span className="entry-chevron" aria-hidden>
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6" /></svg>
-                </span>
+              <h3>Import Previous Revision</h3>
+              <p>Upload a prior proposal (.pdf) or data file (.json) from this app to make a new revision.</p>
+              <span className="entry-card-cta">
+                Continue / re-spec
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6" /></svg>
               </span>
             </button>
           </div>
