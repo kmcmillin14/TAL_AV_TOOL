@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import Icon from '@/src/design-system/components/Icon'
-import { getProject, importProjectFromJson, type StoredProject } from '@/src/lib/storage'
+import { getProject, importProjectFromJson, updateProject, type StoredProject } from '@/src/lib/storage'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 
 export default function Step0Page() {
@@ -21,11 +21,40 @@ export default function Step0Page() {
   // 'questionnaire' = customer-supplied questionnaire (.json only);
   // 'revision' = a prior export of this app (.pdf or .json).
   const [importMode, setImportMode] = useState<'questionnaire' | 'revision'>('revision')
+  // Project header fields, fillable here and (live) in the bar above.
+  const [meta, setMeta] = useState({
+    versionNumber: '',
+    opportunityType: 'opp' as 'opp' | 'lead',
+    opportunityNumber: '',
+    customerName: '',
+    projectName: '',
+  })
 
   useEffect(() => {
-    setProject(getProject(id))
+    const p = getProject(id)
+    setProject(p)
+    if (p) {
+      setMeta({
+        versionNumber: p.versionNumber ?? '',
+        opportunityType: p.opportunityType ?? 'opp',
+        opportunityNumber: p.opportunityNumber ?? '',
+        customerName: p.customerName ?? '',
+        projectName: p.projectName ?? '',
+      })
+    }
     setLoaded(true)
   }, [id])
+
+  // Persist a single header field. versionNumber is project metadata; the rest
+  // are form fields. Mirrors PersistentHeader's save split.
+  const commitMeta = (field: keyof typeof meta) => {
+    const value = meta[field]
+    if (field === 'versionNumber') {
+      updateProject(id, {}, { versionNumber: value })
+    } else {
+      updateProject(id, { [field]: value })
+    }
+  }
 
   const openPicker = (mode: 'questionnaire' | 'revision') => {
     setImportMode(mode)
@@ -93,9 +122,85 @@ export default function Step0Page() {
           <div className="page-header">
             <div className="page-title">
               <span className="step-num">Step 00 / 04</span>
-              <h1>How would you like to begin?</h1>
+              <h1>Project Setup</h1>
               <div className="desc">
-                Pick a starting point. Project header info is editable in the bar above.
+                Add the project details, then choose how to begin. These fields are also
+                editable inline in the bar above.
+              </div>
+            </div>
+          </div>
+
+          <div className="setup-details">
+            <div className="setup-details-head">Project details</div>
+            <div className="setup-meta">
+              <div className="setup-meta-item">
+                <label htmlFor="sm-rev">Rev</label>
+                <input
+                  id="sm-rev"
+                  type="text"
+                  placeholder="v1.0"
+                  value={meta.versionNumber}
+                  onChange={e => setMeta(m => ({ ...m, versionNumber: e.target.value }))}
+                  onBlur={() => commitMeta('versionNumber')}
+                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                />
+              </div>
+
+              <span className="setup-meta-sep" aria-hidden />
+
+              <div className="setup-meta-item setup-meta-opp">
+                <select
+                  className="setup-opp-prefix"
+                  value={meta.opportunityType}
+                  onChange={e => {
+                    const t = e.target.value as 'opp' | 'lead'
+                    setMeta(m => ({ ...m, opportunityType: t }))
+                    updateProject(id, { opportunityType: t })
+                  }}
+                  aria-label="Opportunity prefix"
+                >
+                  <option value="opp">OPP</option>
+                  <option value="lead">LEAD</option>
+                </select>
+                <input
+                  id="sm-opp"
+                  type="text"
+                  placeholder="XXXXXXX"
+                  value={meta.opportunityNumber}
+                  onChange={e => setMeta(m => ({ ...m, opportunityNumber: e.target.value }))}
+                  onBlur={() => commitMeta('opportunityNumber')}
+                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                />
+              </div>
+
+              <span className="setup-meta-sep" aria-hidden />
+
+              <div className="setup-meta-item setup-meta-grow">
+                <label htmlFor="sm-cust">Customer</label>
+                <input
+                  id="sm-cust"
+                  type="text"
+                  placeholder="Customer name"
+                  value={meta.customerName}
+                  onChange={e => setMeta(m => ({ ...m, customerName: e.target.value }))}
+                  onBlur={() => commitMeta('customerName')}
+                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                />
+              </div>
+
+              <span className="setup-meta-sep" aria-hidden />
+
+              <div className="setup-meta-item setup-meta-grow">
+                <label htmlFor="sm-proj">Project</label>
+                <input
+                  id="sm-proj"
+                  type="text"
+                  placeholder="Project name"
+                  value={meta.projectName}
+                  onChange={e => setMeta(m => ({ ...m, projectName: e.target.value }))}
+                  onBlur={() => commitMeta('projectName')}
+                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                />
               </div>
             </div>
           </div>

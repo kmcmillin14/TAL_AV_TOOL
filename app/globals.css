@@ -1512,6 +1512,87 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   margin: 0 auto;
   padding: 8px 0 0;
 }
+
+/* Project details — inline-editable header fields, fillable on the setup page. */
+.setup-details {
+  margin-top: 26px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-card);
+  padding: 18px 24px 20px;
+}
+.setup-details-head {
+  font-family: var(--tal-font-numeric);
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--text-tertiary);
+  margin-bottom: 12px;
+}
+.setup-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 6px 0;
+}
+.setup-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.setup-meta-item.setup-meta-grow { flex: 1 1 200px; }
+.setup-meta-item > label {
+  font-family: var(--tal-font-numeric);
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-tertiary);
+  white-space: nowrap;
+}
+.setup-meta-item input {
+  flex: 1 1 auto;
+  min-width: 84px;
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 15px;
+  color: var(--text-primary);
+  padding: 4px 2px;
+  border-bottom: 1px solid var(--border);
+  transition: border-color 0.15s ease;
+}
+.setup-meta-item input:hover { border-bottom-color: var(--border-strong); }
+.setup-meta-item input:focus { outline: none; border-bottom-color: var(--accent); }
+.setup-meta-item input::placeholder { color: var(--text-tertiary); font-style: italic; }
+.setup-opp-prefix {
+  font-family: var(--tal-font-numeric);
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 6px;
+  cursor: pointer;
+}
+.setup-opp-prefix:focus { outline: none; border-color: var(--accent); }
+.setup-meta-opp { gap: 8px; }
+.setup-meta-sep {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border);
+  margin: 4px 22px;
+}
+@media (max-width: 720px) {
+  .setup-meta { flex-direction: column; align-items: stretch; gap: 4px; }
+  .setup-meta-item.setup-meta-grow { flex: 1 1 auto; }
+  .setup-meta-sep { display: none; }
+  .setup-meta-item { border-bottom: 1px solid var(--border); }
+  .setup-meta-item:last-child { border-bottom: none; }
+  .setup-meta-item input { border-bottom: none; }
+}
 .entry-modes {
   display: flex;
   flex-direction: column;
