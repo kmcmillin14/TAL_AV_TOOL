@@ -179,6 +179,8 @@ export default function Step0Page() {
                 />
               </div>
 
+              <span className="setup-meta-sep" aria-hidden />
+
               <div className="setup-meta-item setup-meta-opp">
                 <select
                   className="setup-opp-prefix"
@@ -197,7 +199,9 @@ export default function Step0Page() {
                 />
               </div>
 
-              <div className="setup-meta-item">
+              <span className="setup-meta-sep" aria-hidden />
+
+              <div className="setup-meta-item setup-meta-wide">
                 <label htmlFor="sm-cust">Customer</label>
                 <input
                   id="sm-cust"
@@ -207,7 +211,9 @@ export default function Step0Page() {
                 />
               </div>
 
-              <div className="setup-meta-item">
+              <span className="setup-meta-sep" aria-hidden />
+
+              <div className="setup-meta-item setup-meta-wide">
                 <label htmlFor="sm-proj">Project</label>
                 <input
                   id="sm-proj"

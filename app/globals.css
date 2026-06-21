@@ -1359,69 +1359,74 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   letter-spacing: 0.14em;
   color: var(--text-tertiary);
   margin-bottom: 12px;
+  text-align: center;
 }
+/* Compact, centered meta row — mirrors the header's .hero-meta-* treatment so the
+   panel reads as a body-sized echo of the header bar. */
 .setup-meta {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
+  column-gap: 0;
+  row-gap: 6px;
 }
 .setup-meta-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 4px 26px;
-  min-width: 0;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 14px;
+  white-space: nowrap;
 }
-.setup-meta-item:first-child { padding-left: 0; }
-.setup-meta-item:last-child { padding-right: 0; }
-.setup-meta-item + .setup-meta-item { border-left: 1px solid var(--border); }
 .setup-meta-item > label {
   font-family: var(--tal-font-numeric);
-  font-size: 11px; font-weight: 700;
+  font-size: 10px; font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   color: var(--text-tertiary);
   white-space: nowrap;
 }
 .setup-meta-item input {
-  flex: 1 1 auto;
-  min-width: 0;
+  min-width: 84px;
+  width: 100%;
   border: none;
   background: transparent;
   font: inherit;
-  font-size: 15px;
+  font-size: 14px; font-weight: 600;
   color: var(--text-primary);
-  padding: 4px 2px;
+  padding: 3px 2px;
   border-bottom: 1px solid var(--border);
   transition: border-color 0.15s ease;
 }
+.setup-meta-item.setup-meta-wide input { min-width: 160px; }
 .setup-meta-item input:hover { border-bottom-color: var(--border-strong); }
 .setup-meta-item input:focus { outline: none; border-bottom-color: var(--accent); }
-.setup-meta-item input::placeholder { color: var(--text-tertiary); font-style: italic; }
+.setup-meta-item input::placeholder { color: var(--text-disabled); font-style: italic; font-weight: 500; }
 .setup-opp-prefix {
   font-family: var(--tal-font-numeric);
-  font-size: 11px; font-weight: 700;
+  font-size: 10px; font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
   background: var(--bg-base);
   border: 1px solid var(--border);
   border-radius: 6px;
-  padding: 4px 6px;
+  padding: 3px 6px;
   cursor: pointer;
 }
 .setup-opp-prefix:focus { outline: none; border-color: var(--accent); }
 .setup-meta-opp { gap: 8px; }
-@media (max-width: 900px) {
-  .setup-meta { grid-template-columns: repeat(2, 1fr); row-gap: 6px; }
-  /* reset the row-based divider; only divide within a row (the 2nd col) */
-  .setup-meta-item + .setup-meta-item { border-left: none; }
-  .setup-meta-item:nth-child(even) { border-left: 1px solid var(--border); padding-left: 26px; }
-  .setup-meta-item:nth-child(odd) { padding-left: 0; }
+.setup-meta-sep {
+  display: inline-block;
+  width: 1px; height: 18px;
+  background: var(--border-strong);
+  margin: 0 4px;
+  align-self: center;
 }
 @media (max-width: 560px) {
-  .setup-meta { grid-template-columns: 1fr; }
-  .setup-meta-item { border-left: none !important; padding: 8px 0 !important; border-bottom: 1px solid var(--border); }
+  .setup-meta { flex-direction: column; align-items: stretch; }
+  .setup-meta-item { justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); }
   .setup-meta-item:last-child { border-bottom: none; }
+  .setup-meta-sep { display: none; }
 }
 .entry-grid {
   display: grid;
