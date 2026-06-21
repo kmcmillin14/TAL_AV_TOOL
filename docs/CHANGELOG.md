@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-06-21 — Light mode is the default theme
+
+- Default theme flipped dark → light (`app/layout.tsx` `data-theme`, plus the
+  `useTheme` initial state and no-preference fallback in `src/lib/uiPrefs.ts`). Users
+  who explicitly toggled a theme keep their choice (saved localStorage value still wins).
+
 ## 2026-06-21 — Compact page header standard, header OPP fix, pre-push gate
 
 - **Compact page header:** restyled `.page-header`/`.page-title` to match Step 3/4's

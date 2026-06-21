@@ -34,7 +34,7 @@ export function useUnitSystem(): readonly [UnitSystem, () => void] {
  *  `data-theme` attribute that globals.css keys off. Hydrates from localStorage,
  *  falling back to whatever attribute the document already carries. */
 export function useTheme(): readonly [Theme, () => void] {
-  const [theme, setTheme] = useState<Theme>('dark')
+  const [theme, setTheme] = useState<Theme>('light')
 
   useEffect(() => {
     const saved = localStorage.getItem(THEME_KEY)
@@ -42,7 +42,7 @@ export function useTheme(): readonly [Theme, () => void] {
     const initial: Theme =
       saved === 'light' || saved === 'dark' ? saved :
       fromDom === 'light' || fromDom === 'dark' ? fromDom :
-      'dark'
+      'light'
     setTheme(initial)
     document.documentElement.setAttribute('data-theme', initial)
   }, [])
