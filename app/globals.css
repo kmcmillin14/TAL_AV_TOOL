@@ -110,6 +110,10 @@ html {
   /* Reserve the scrollbar gutter on both sides so a vertical scrollbar can't
      nudge centered content (page title, card grid) ~7px to the left. */
   scrollbar-gutter: stable both-edges;
+  /* Standard view is the old 80% browser-zoom density: more content on screen,
+     tighter overall scale. `zoom` maps 1:1 to the browser zoom the team prefers
+     and keeps viewport units (100vh full-height layouts) correct in Chromium. */
+  zoom: 0.8;
 }
 html, body {
   margin: 0;

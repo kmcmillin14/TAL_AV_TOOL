@@ -130,6 +130,8 @@ export default function Step0Page() {
           facilityLocation: project.facilityLocation,
           versionNumber: project.versionNumber,
           bastianRep: project.bastianRep,
+          opportunityNumber: project.opportunityNumber,
+          opportunityType: project.opportunityType,
           createdAt: project.createdAt,
           step1Complete: project.step1Complete,
           step2Complete: project.step2Complete,
