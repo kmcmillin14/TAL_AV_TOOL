@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-21 — App-wide 80% density + Step 00 details panel, live sync, layout
+
+- **App-wide display density:** `html { zoom: 0.8 }` so the standard view matches the
+  80% browser-zoom density the team prefers (viewport units / full-height layouts stay
+  correct under `zoom`).
+- **Step 00 Project Details panel:** inline-editable Rev / Opp (+ OPP/LEAD) / Customer /
+  Project on the setup page, **synced live two-way** with the persistent header bar —
+  each field saves on change and both surfaces subscribe to `subscribeProjects`; a
+  focus/editing guard avoids clobbering the field being typed. Fixed the OPP number not
+  mirroring (Step 00 now passes `opportunityNumber`/`opportunityType` into the header).
+- **Step 00 layout:** settled on **three large vertical cards** (icon-top, description,
+  accent CTA) after iterating; removed the hover/featured red top-bar; full workspace
+  width; `.step0-fill` grows the card grid to fill the viewport height.
+
 ## 2026-06-21 — Step 00: three explicit entry modes
 
 - Redesigned the entry screen (`app/projects/[id]/step0/page.tsx`) from two cards to

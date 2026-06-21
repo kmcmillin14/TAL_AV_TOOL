@@ -7,8 +7,19 @@ The functional spec ("what the app does"). For architectural rules ("how it's bu
 ## Step 00 — Project Setup / Entry
 
 The entry screen (`app/projects/[id]/step0/page.tsx`), reached when the root route
-finds-or-creates an entry project and redirects. It presents **three peer ways to
-begin**, one card each:
+finds-or-creates an entry project and redirects. The page fills the viewport
+(`.step0-fill`) and has two parts: a **Project Details** panel and **three large
+entry cards**.
+
+**Project Details panel** — inline-editable fields (Rev, Opp + OPP/LEAD prefix,
+Customer, Project) so the project header can be filled in up front. These are the
+same fields shown in the persistent header bar; the two are **synced live in both
+directions** (each saves on change via `updateProject`, and both the panel and the
+header subscribe to `subscribeProjects` to mirror the latest value — the field being
+actively typed is never overwritten). `versionNumber` is saved as project metadata;
+the rest as form fields.
+
+**Three peer ways to begin**, one large card each:
 
 1. **Start New** — go straight to Step 01 on the current empty project and fill the
    questionnaire manually.
@@ -430,6 +441,13 @@ Stage · Formula · Variables · Why reference table from `src/content/methodolo
 `Rev# Opp# Customer Project.pptx`. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
 
 ---
+
+## App-wide display density
+
+The app renders at **80% scale by default** (`html { zoom: 0.8 }` in `globals.css`) —
+the density the team prefers, equivalent to setting the browser to 80% zoom while the
+browser itself stays at 100%. `zoom` is used (not a transform) so viewport units and
+the full-height layouts stay correct.
 
 ## App-wide help
 
