@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import Icon from '@/src/design-system/components/Icon'
-import { getProject, importProjectFromJson, updateProject, type StoredProject } from '@/src/lib/storage'
+import { getProject, importProjectFromJson, updateProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 
 export default function Step0Page() {
@@ -29,31 +29,53 @@ export default function Step0Page() {
     customerName: '',
     projectName: '',
   })
+  // Field the user is actively editing here — never overwrite it from an
+  // external (header) update mid-keystroke. Ref so the subscription closure
+  // always sees the current value without re-subscribing.
+  const focusedRef = useRef<keyof typeof meta | null>(null)
+
+  const syncMetaFrom = (p: StoredProject) =>
+    setMeta(m => ({
+      versionNumber:     focusedRef.current === 'versionNumber'     ? m.versionNumber     : (p.versionNumber ?? ''),
+      opportunityType:   focusedRef.current === 'opportunityType'   ? m.opportunityType   : (p.opportunityType ?? 'opp'),
+      opportunityNumber: focusedRef.current === 'opportunityNumber' ? m.opportunityNumber : (p.opportunityNumber ?? ''),
+      customerName:      focusedRef.current === 'customerName'      ? m.customerName      : (p.customerName ?? ''),
+      projectName:       focusedRef.current === 'projectName'       ? m.projectName       : (p.projectName ?? ''),
+    }))
 
   useEffect(() => {
     const p = getProject(id)
     setProject(p)
-    if (p) {
-      setMeta({
-        versionNumber: p.versionNumber ?? '',
-        opportunityType: p.opportunityType ?? 'opp',
-        opportunityNumber: p.opportunityNumber ?? '',
-        customerName: p.customerName ?? '',
-        projectName: p.projectName ?? '',
-      })
-    }
+    if (p) syncMetaFrom(p)
     setLoaded(true)
   }, [id])
 
-  // Persist a single header field. versionNumber is project metadata; the rest
-  // are form fields. Mirrors PersistentHeader's save split.
-  const commitMeta = (field: keyof typeof meta) => {
-    const value = meta[field]
-    if (field === 'versionNumber') {
-      updateProject(id, {}, { versionNumber: value })
-    } else {
-      updateProject(id, { [field]: value })
+  // Mirror live: any change to this project (from the header bar, undo, or
+  // another tab) re-reads it so the panel + the header prop stay in sync.
+  useEffect(() => {
+    return subscribeProjects(() => {
+      const p = getProject(id)
+      if (!p) return
+      setProject(p)
+      syncMetaFrom(p)
+    })
+  }, [id])
+
+  // Save a single field live (so the header mirrors it as you type).
+  // versionNumber is project metadata; the rest are form fields.
+  const saveMeta = (field: keyof typeof meta, value: string) => {
+    switch (field) {
+      case 'versionNumber':     updateProject(id, {}, { versionNumber: value }); break
+      case 'opportunityType':   updateProject(id, { opportunityType: value as 'opp' | 'lead' }); break
+      case 'opportunityNumber': updateProject(id, { opportunityNumber: value }); break
+      case 'customerName':      updateProject(id, { customerName: value }); break
+      case 'projectName':       updateProject(id, { projectName: value }); break
     }
+  }
+
+  const onMetaChange = (field: keyof typeof meta, value: string) => {
+    setMeta(m => ({ ...m, [field]: value }) as typeof m)
+    saveMeta(field, value)
   }
 
   const openPicker = (mode: 'questionnaire' | 'revision') => {
@@ -117,7 +139,7 @@ export default function Step0Page() {
         onUnitToggle={toggleUnitSystem}
       />
 
-      <div className="workspace">
+      <div className="workspace step0-fill">
         <div className="entry-wrap">
           <div className="page-header">
             <div className="page-title">
@@ -140,8 +162,9 @@ export default function Step0Page() {
                   type="text"
                   placeholder="v1.0"
                   value={meta.versionNumber}
-                  onChange={e => setMeta(m => ({ ...m, versionNumber: e.target.value }))}
-                  onBlur={() => commitMeta('versionNumber')}
+                  onChange={e => onMetaChange('versionNumber', e.target.value)}
+                  onFocus={() => { focusedRef.current = 'versionNumber' }}
+                  onBlur={() => { focusedRef.current = null }}
                   onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
                 />
               </div>
@@ -152,11 +175,7 @@ export default function Step0Page() {
                 <select
                   className="setup-opp-prefix"
                   value={meta.opportunityType}
-                  onChange={e => {
-                    const t = e.target.value as 'opp' | 'lead'
-                    setMeta(m => ({ ...m, opportunityType: t }))
-                    updateProject(id, { opportunityType: t })
-                  }}
+                  onChange={e => onMetaChange('opportunityType', e.target.value)}
                   aria-label="Opportunity prefix"
                 >
                   <option value="opp">OPP</option>
@@ -167,8 +186,9 @@ export default function Step0Page() {
                   type="text"
                   placeholder="XXXXXXX"
                   value={meta.opportunityNumber}
-                  onChange={e => setMeta(m => ({ ...m, opportunityNumber: e.target.value }))}
-                  onBlur={() => commitMeta('opportunityNumber')}
+                  onChange={e => onMetaChange('opportunityNumber', e.target.value)}
+                  onFocus={() => { focusedRef.current = 'opportunityNumber' }}
+                  onBlur={() => { focusedRef.current = null }}
                   onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
                 />
               </div>
@@ -182,8 +202,9 @@ export default function Step0Page() {
                   type="text"
                   placeholder="Customer name"
                   value={meta.customerName}
-                  onChange={e => setMeta(m => ({ ...m, customerName: e.target.value }))}
-                  onBlur={() => commitMeta('customerName')}
+                  onChange={e => onMetaChange('customerName', e.target.value)}
+                  onFocus={() => { focusedRef.current = 'customerName' }}
+                  onBlur={() => { focusedRef.current = null }}
                   onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
                 />
               </div>
@@ -197,8 +218,9 @@ export default function Step0Page() {
                   type="text"
                   placeholder="Project name"
                   value={meta.projectName}
-                  onChange={e => setMeta(m => ({ ...m, projectName: e.target.value }))}
-                  onBlur={() => commitMeta('projectName')}
+                  onChange={e => onMetaChange('projectName', e.target.value)}
+                  onFocus={() => { focusedRef.current = 'projectName' }}
+                  onBlur={() => { focusedRef.current = null }}
                   onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
                 />
               </div>

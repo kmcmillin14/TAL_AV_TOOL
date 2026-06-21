@@ -1512,6 +1512,12 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   padding: 8px 0 0;
 }
 
+/* Fill the viewport: the entry grid grows to consume leftover vertical space so
+   the three cards span the full page rather than floating in the top third. */
+.step0-fill { display: flex; flex-direction: column; }
+.step0-fill .entry-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+.step0-fill .entry-grid { flex: 1; grid-auto-rows: minmax(380px, 1fr); }
+
 /* Project details — inline-editable header fields, fillable on the setup page. */
 .setup-details {
   margin-top: 26px;
@@ -1595,18 +1601,19 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .entry-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  margin-top: 20px;
+  gap: 24px;
+  margin-top: 24px;
 }
 .entry-card {
   position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   text-align: center;
   width: 100%;
-  min-height: 360px;
-  padding: 40px 30px 30px;
+  min-height: 380px;
+  padding: 48px 40px 40px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -1663,7 +1670,7 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .entry-card-cta {
   display: inline-flex; align-items: center; gap: 8px;
-  margin-top: auto;
+  margin-top: 30px;
   padding: 11px 20px;
   border-radius: 9px;
   background: var(--accent);
@@ -1679,13 +1686,10 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .entry-card-cta svg { width: 14px; height: 14px; }
 
 @media (max-width: 880px) {
-  .entry-grid { grid-template-columns: 1fr; gap: 14px; }
-  .entry-card { min-height: 0; flex-direction: row; text-align: left; align-items: center; padding: 24px 26px; gap: 22px; }
-  .entry-card-index { display: none; }
-  .entry-card-icon { margin-bottom: 0; width: 56px; height: 56px; flex: none; }
-  .entry-card h3 { margin-bottom: 4px; }
-  .entry-card p { max-width: none; }
-  .entry-card-cta { margin: 0 0 0 auto; flex: none; }
+  .entry-grid { grid-template-columns: 1fr; gap: 16px; }
+  .step0-fill .entry-grid { flex: 0 0 auto; grid-auto-rows: auto; }
+  .entry-card { min-height: 0; padding: 36px 28px; }
+  .entry-card-cta { margin-top: 24px; }
 }
 
 /* ============================================ HEADER — UNIT TOGGLE + OVERFLOW MENU ============================================ */

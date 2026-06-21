@@ -82,6 +82,28 @@ export default function PersistentHeader({
     }
   }, [editing])
 
+  // Mirror external edits (e.g. the Step 00 Project Details panel writes the same
+  // fields) into local state — but never clobber a field the user is editing here.
+  useEffect(() => {
+    setEditValues(v => ({
+      ...v,
+      projectName:       editing === 'projectName'       ? v.projectName       : project.projectName,
+      customerName:      editing === 'customerName'      ? v.customerName      : project.customerName,
+      facilityLocation:  editing === 'facilityLocation'  ? v.facilityLocation  : (project.facilityLocation || ''),
+      bastianRep:        editing === 'bastianRep'        ? v.bastianRep        : (project.bastianRep || ''),
+      opportunityNumber: editing === 'opportunityNumber' ? v.opportunityNumber : (project.opportunityNumber || ''),
+      opportunityType:   project.opportunityType ?? v.opportunityType,
+      versionNumber:     editing === 'versionNumber'     ? v.versionNumber     : project.versionNumber,
+    }))
+    // Intentionally keyed on the project field values, not `editing`, so blurring
+    // a header field doesn't momentarily revert it before its debounced save lands.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    project.projectName, project.customerName, project.facilityLocation,
+    project.bastianRep, project.opportunityNumber, project.opportunityType,
+    project.versionNumber,
+  ])
+
   useEffect(() => () => {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     if (idleTimer.current) clearTimeout(idleTimer.current)
