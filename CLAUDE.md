@@ -67,15 +67,38 @@ Build (`/frontend-design` for new UI) → `/simplify` (pre-commit cleanup) → `
 (pre-merge) → commit + push. Auto-commit: after a set of changes, stage all, commit with a
 summary, push to `origin main`.
 
+## Pre-Push Checklist (run before EVERY push)
+
+Run this every push. The `.githooks/pre-push` hook automates the mechanical gates
+(steps 2–4); the rest are judgment steps the hook can't do.
+
+1. **Docs first** — update `docs/SPECIFICATION.md` (behavior) and `docs/CHANGELOG.md`
+   for any feature/behavior change (per "When Adding Features").
+2. **Typecheck / build** — `npx tsc --noEmit` (or `npm run build`) is clean.
+3. **Tests** — `npx vitest run` all green.
+4. **Architecture gate** — `npm run check:arch` passes.
+5. **`/simplify`** — quality cleanup of the diff (reuse · dead code · altitude).
+6. **`/review`** — correctness review of the diff.
+7. **CSS edited?** — after editing `app/globals.css`, restart the dev server clean
+   (`rm -rf .next` then `npm run dev`) so the served chunk isn't stale; hard-refresh
+   the browser (the chunk URL can stay the same hash).
+8. Stage all, commit with a summary, push to `origin main`.
+
+The `pre-push` hook enforces 2–4 and prints a reminder for the rest. Bypass with
+`git push --no-verify` only for an intentional exception.
+
 ## Enforcement (run once per clone)
 
 ```
 git config core.hooksPath .githooks
 ```
 
-Enables the pre-commit hook, which runs `npm run check:arch` (calc purity · module
-boundaries · Toyota-Type-only · vehicle data in JSON — ARCHITECTURE.md §3/§6) and blocks a
-commit that changes the data model / architecture (`src/calc/`, `schemas.ts`,
-`src/content/vehicles/`, `ARCHITECTURE.md`) without a `docs/CHANGELOG.md` entry. Bypass an
-intentional exception with `git commit --no-verify`. CI can run the same gate via
-`npm run check:arch`.
+Enables **two** hooks:
+- **pre-commit** — runs `npm run check:arch` (calc purity · module boundaries ·
+  Toyota-Type-only · vehicle data in JSON — ARCHITECTURE.md §3/§6) and blocks a commit
+  that changes the data model / architecture (`src/calc/`, `schemas.ts`,
+  `src/content/vehicles/`, `ARCHITECTURE.md`) without a `docs/CHANGELOG.md` entry.
+- **pre-push** — runs the Pre-Push Checklist gates (typecheck · `check:arch` · tests).
+
+Bypass an intentional exception with `git commit --no-verify` / `git push --no-verify`.
+CI can run the same gate via `npm run check:arch`.

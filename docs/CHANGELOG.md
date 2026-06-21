@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-21 — Compact page header standard, header OPP fix, pre-push gate
+
+- **Compact page header:** restyled `.page-header`/`.page-title` to match Step 3/4's
+  `.engine-head` (no surface banner / border / heavy padding; left-aligned) so every
+  step uses the same space-saving title block. Applies to Step 0/1/2 with no JSX change.
+- **Header OPP fix:** Steps 1–4 now pass `opportunityNumber`/`opportunityType` into
+  `PersistentHeader` (previously omitted), so the OPP number shows and stays in sync
+  across all steps, not just Step 00.
+- **Pre-push gate:** added `.githooks/pre-push` (typecheck · `check:arch` · tests) and a
+  "Pre-Push Checklist" in `CLAUDE.md` to run before every push.
+
 ## 2026-06-21 — App-wide 80% density + Step 00 details panel, live sync, layout
 
 - **App-wide display density:** `html { zoom: 0.8 }` so the standard view matches the
