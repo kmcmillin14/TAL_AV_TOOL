@@ -1361,18 +1361,20 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   margin-bottom: 12px;
 }
 .setup-meta {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  gap: 6px 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
 }
 .setup-meta-item {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 6px 0;
+  padding: 4px 26px;
+  min-width: 0;
 }
-.setup-meta-item.setup-meta-grow { flex: 1 1 200px; }
+.setup-meta-item:first-child { padding-left: 0; }
+.setup-meta-item:last-child { padding-right: 0; }
+.setup-meta-item + .setup-meta-item { border-left: 1px solid var(--border); }
 .setup-meta-item > label {
   font-family: var(--tal-font-numeric);
   font-size: 11px; font-weight: 700;
@@ -1383,7 +1385,7 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .setup-meta-item input {
   flex: 1 1 auto;
-  min-width: 84px;
+  min-width: 0;
   border: none;
   background: transparent;
   font: inherit;
@@ -1409,19 +1411,17 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .setup-opp-prefix:focus { outline: none; border-color: var(--accent); }
 .setup-meta-opp { gap: 8px; }
-.setup-meta-sep {
-  width: 1px;
-  align-self: stretch;
-  background: var(--border);
-  margin: 4px 22px;
+@media (max-width: 900px) {
+  .setup-meta { grid-template-columns: repeat(2, 1fr); row-gap: 6px; }
+  /* reset the row-based divider; only divide within a row (the 2nd col) */
+  .setup-meta-item + .setup-meta-item { border-left: none; }
+  .setup-meta-item:nth-child(even) { border-left: 1px solid var(--border); padding-left: 26px; }
+  .setup-meta-item:nth-child(odd) { padding-left: 0; }
 }
-@media (max-width: 720px) {
-  .setup-meta { flex-direction: column; align-items: stretch; gap: 4px; }
-  .setup-meta-item.setup-meta-grow { flex: 1 1 auto; }
-  .setup-meta-sep { display: none; }
-  .setup-meta-item { border-bottom: 1px solid var(--border); }
+@media (max-width: 560px) {
+  .setup-meta { grid-template-columns: 1fr; }
+  .setup-meta-item { border-left: none !important; padding: 8px 0 !important; border-bottom: 1px solid var(--border); }
   .setup-meta-item:last-child { border-bottom: none; }
-  .setup-meta-item input { border-bottom: none; }
 }
 .entry-grid {
   display: grid;
