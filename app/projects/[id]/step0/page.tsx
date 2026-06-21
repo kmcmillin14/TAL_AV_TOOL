@@ -78,6 +78,18 @@ export default function Step0Page() {
     saveMeta(field, value)
   }
 
+  // Shared props for the inline text inputs in the Project Details panel — keeps
+  // the value/change/focus/blur/Enter behavior single-sourced across all fields.
+  const fieldProps = (field: keyof typeof meta) => ({
+    value: meta[field],
+    onChange: (e: React.ChangeEvent<HTMLInputElement>) => onMetaChange(field, e.target.value),
+    onFocus: () => { focusedRef.current = field },
+    onBlur: () => { focusedRef.current = null },
+    onKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') (e.target as HTMLInputElement).blur()
+    },
+  })
+
   const openPicker = (mode: 'questionnaire' | 'revision') => {
     setImportMode(mode)
     setImportError(null)
@@ -163,11 +175,7 @@ export default function Step0Page() {
                   id="sm-rev"
                   type="text"
                   placeholder="v1.0"
-                  value={meta.versionNumber}
-                  onChange={e => onMetaChange('versionNumber', e.target.value)}
-                  onFocus={() => { focusedRef.current = 'versionNumber' }}
-                  onBlur={() => { focusedRef.current = null }}
-                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                  {...fieldProps('versionNumber')}
                 />
               </div>
 
@@ -187,11 +195,7 @@ export default function Step0Page() {
                   id="sm-opp"
                   type="text"
                   placeholder="XXXXXXX"
-                  value={meta.opportunityNumber}
-                  onChange={e => onMetaChange('opportunityNumber', e.target.value)}
-                  onFocus={() => { focusedRef.current = 'opportunityNumber' }}
-                  onBlur={() => { focusedRef.current = null }}
-                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                  {...fieldProps('opportunityNumber')}
                 />
               </div>
 
@@ -203,11 +207,7 @@ export default function Step0Page() {
                   id="sm-cust"
                   type="text"
                   placeholder="Customer name"
-                  value={meta.customerName}
-                  onChange={e => onMetaChange('customerName', e.target.value)}
-                  onFocus={() => { focusedRef.current = 'customerName' }}
-                  onBlur={() => { focusedRef.current = null }}
-                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                  {...fieldProps('customerName')}
                 />
               </div>
 
@@ -219,11 +219,7 @@ export default function Step0Page() {
                   id="sm-proj"
                   type="text"
                   placeholder="Project name"
-                  value={meta.projectName}
-                  onChange={e => onMetaChange('projectName', e.target.value)}
-                  onFocus={() => { focusedRef.current = 'projectName' }}
-                  onBlur={() => { focusedRef.current = null }}
-                  onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                  {...fieldProps('projectName')}
                 />
               </div>
             </div>
