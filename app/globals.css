@@ -2042,6 +2042,15 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .flows-table thead th:last-child { border-right: none; }
 .flows-table thead th.flow-th-num { text-align: center; }
+/* Two-line header: main label, then the "(parenthetical)" on its own line, smaller. */
+.flow-th-main { display: block; }
+.flow-th-paren {
+  display: block;
+  font-size: 0.82em;
+  font-weight: 400;
+  color: var(--text-tertiary);
+  margin-top: 1px;
+}
 .flows-table tbody td {
   padding: 4px 6px;
   border-bottom: 1px solid var(--border);

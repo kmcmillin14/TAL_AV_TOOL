@@ -30,6 +30,19 @@ interface Props {
 /** Total body/header column count (kept in sync with the colgroup + headers). */
 const COLS = 11
 
+/** Header label that drops any "(parenthetical)" onto its own line at a smaller
+ *  size, so columns stay narrow (e.g. "Distance" / "(Round Trip)"). */
+function HeaderLabel({ text }: { text: string }) {
+  const i = text.indexOf('(')
+  if (i === -1) return <>{text}</>
+  return (
+    <>
+      <span className="flow-th-main">{text.slice(0, i).trim()}</span>
+      <span className="flow-th-paren">{text.slice(i).trim()}</span>
+    </>
+  )
+}
+
 function genId(): string {
   return 'f_' + Math.random().toString(36).slice(2, 10)
 }
@@ -311,13 +324,13 @@ export default function FlowsTable({
                   className="flow-th-num"
                   title="Round-trip distance — total feet traveled per cycle (out loaded, back empty)."
                 >
-                  {distLabel}
+                  <HeaderLabel text={distLabel} />
                 </th>
                 <th
                   className="flow-th-num"
                   title="Throughput — moves (cycles) per hour. One move = one full pick-and-place round trip."
                 >
-                  Throughput (Moves per Hour)
+                  <HeaderLabel text="Throughput (Moves per Hour)" />
                 </th>
                 <th
                   className="flow-th-num flow-th-output"
