@@ -171,7 +171,11 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .hero-top {
   position: relative;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* Equal 1fr side columns → the middle (meta) column lands on the exact PAGE
+     center, regardless of brand vs actions widths, so it aligns with the centered
+     page title below. minmax(0,auto) lets the meta wrap instead of overflowing when
+     the window is narrow. */
+  grid-template-columns: 1fr minmax(0, auto) 1fr;
   align-items: stretch;
   padding: 0 32px;
   border-bottom: 1px solid var(--border);
@@ -179,9 +183,9 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   min-height: 84px;
 }
 .hero-top > .hero-brand,
-.hero-top > .hero-actions { padding: 14px 0; align-self: center; }
-.hero-top > .hero-brand { padding-right: 24px; }
-.hero-top > .hero-actions { padding-left: 24px; }
+.hero-top > .hero-actions { padding: 14px 0; align-self: center; min-width: 0; }
+.hero-top > .hero-brand { padding-right: 24px; justify-self: start; }
+.hero-top > .hero-actions { padding-left: 24px; justify-self: end; }
 
 .hero-brand { display: flex; align-items: center; gap: 18px; flex-shrink: 0; }
 .hero-brand .logo { height: 32px; width: auto; display: block; }
