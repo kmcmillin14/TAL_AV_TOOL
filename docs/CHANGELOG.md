@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-22 — Step 3 flows table: fit-to-width, full AGV names, wrapping headers
+
+- **Fit-to-width scaling:** the fixed-width flows table now scales down (root `zoom` via
+  a ResizeObserver in `FlowsTable.tsx`) to fit the available width on any screen instead
+  of horizontal-scrolling — never scales above 1, stays crisp.
+- **Full AGV name per flow:** widened the Vehicle column (188→280px) so the longest name
+  ("8HBC40A Automated Pallet Truck") shows in full, not truncated.
+- **Wrapping headers:** `thead th` now wraps to two lines (`white-space: normal`) so the
+  wide headers (Distance (round trip), Throughput (Moves per Hour), Route Average Speed)
+  no longer force wide columns — freeing horizontal space; the numeric/output columns were
+  narrowed to match.
+
 ## 2026-06-22 — Header 3-col grid (no overlap), centered title, restore 80% density
 
 - **Header layout:** restructured `hero-top` into a 3-column grid (brand · meta · actions)

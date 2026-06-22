@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useState } from 'react'
+import { Fragment, useState, useRef, useEffect } from 'react'
 import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
@@ -70,6 +70,36 @@ export default function FlowsTable({
 }: Props) {
   const metric = unitSystem === 'metric'
   const [focusGroup, setFocusGroup] = useState<string | null>(null)
+
+  // ---- Fit-to-width: scale the fixed-width table down so the whole thing
+  // (incl. full AGV names) fits any screen, instead of horizontal scroll.
+  // `zoom` keeps it crisp and reflows correctly; never scales above 1.
+  const fitRef = useRef<HTMLDivElement>(null)
+  const tableRef = useRef<HTMLTableElement>(null)
+  const appliedScale = useRef(1)
+  const [tableScale, setTableScale] = useState(1)
+  useEffect(() => {
+    const wrap = fitRef.current
+    const table = tableRef.current
+    if (!wrap || !table) return
+    let raf = 0
+    const fit = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(() => {
+        // offsetWidth reflects the currently-applied zoom, so divide it back out
+        // to recover the table's natural (unscaled) width.
+        const natural = table.offsetWidth / (appliedScale.current || 1)
+        if (!natural) return
+        const next = Math.min(1, wrap.clientWidth / natural)
+        appliedScale.current = next
+        setTableScale(next)
+      })
+    }
+    fit()
+    const ro = new ResizeObserver(fit)
+    ro.observe(wrap)
+    return () => { ro.disconnect(); cancelAnimationFrame(raf) }
+  }, [])
 
   // ---- Drag-to-reorder state ----
   const [dragId, setDragId] = useState<string | null>(null)
@@ -241,20 +271,24 @@ export default function FlowsTable({
           <p>Click <strong>+ Flow</strong> to model an origin → destination route, or <strong>+ Group</strong> to set up a zone first — or add flows in Step 1&apos;s Throughput &amp; distance section; they appear here. Cycle time and demand recompute as you type.</p>
         </div>
       ) : (
-        <div className="flows-scroll">
-          <table className="flows-table flows-table-banded">
+        <div className="flows-scroll" ref={fitRef}>
+          <table
+            className="flows-table flows-table-banded"
+            ref={tableRef}
+            style={{ zoom: tableScale }}
+          >
             <colgroup>
-              <col style={{ width: '58px' }} />
-              <col style={{ width: '188px' }} />
-              <col style={{ width: '205px' }} />
-              <col style={{ width: '175px' }} />
-              <col style={{ width: '118px' }} />
-              <col style={{ width: '118px' }} />
-              <col style={{ width: '138px' }} />
-              <col style={{ width: '128px' }} />
-              <col style={{ width: '118px' }} />
-              <col style={{ width: '128px' }} />
-              <col style={{ width: '100px' }} />
+              <col style={{ width: '52px' }} />   {/* # */}
+              <col style={{ width: '280px' }} />  {/* Vehicle — wide enough for the full AGV name */}
+              <col style={{ width: '170px' }} />  {/* Transfer Type */}
+              <col style={{ width: '120px' }} />  {/* Route Average Speed (header wraps) */}
+              <col style={{ width: '108px' }} />  {/* Origin */}
+              <col style={{ width: '108px' }} />  {/* Destination */}
+              <col style={{ width: '96px' }} />   {/* Distance (header wraps) */}
+              <col style={{ width: '96px' }} />   {/* Throughput (header wraps) */}
+              <col style={{ width: '96px' }} />   {/* Cycle Time (header wraps) */}
+              <col style={{ width: '100px' }} />  {/* Vehicle Count (header wraps) */}
+              <col style={{ width: '88px' }} />   {/* actions */}
             </colgroup>
             <thead>
               <tr className="flow-band-row">

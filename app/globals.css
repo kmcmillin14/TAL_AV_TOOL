@@ -1989,8 +1989,12 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   margin: 0 -4px;
 }
 .flows-table {
-  width: auto;
-  margin-inline: auto;
+  /* Stretch to fill the available width (columns grow proportionally), but never
+     below min-width — below that the fit-to-width zoom scales the whole table down
+     instead of truncating cells, so full AGV names always show. */
+  width: 100%;
+  min-width: 1300px;
+  margin-inline: 0;
   border-collapse: collapse;
   font-family: var(--tal-font-family);
   font-size: 13px;
@@ -2029,7 +2033,10 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   border-bottom: 1px solid var(--border);
   border-right: 1px solid var(--border);
   padding: 8px 6px;
-  white-space: nowrap;
+  /* Headers wrap to 2 lines so columns can be narrower (frees horizontal space —
+     e.g. "Distance (round trip)", "Throughput (Moves per Hour)"). */
+  white-space: normal;
+  line-height: 1.18;
   background: var(--bg-surface);
   vertical-align: middle;
 }
