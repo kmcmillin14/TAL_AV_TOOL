@@ -12,12 +12,13 @@ finds-or-creates an entry project and redirects. The page fills the viewport
 entry cards**.
 
 **Project Details panel** — inline-editable fields (Rev, Opp + OPP/LEAD prefix,
-Customer, Project) so the project header can be filled in up front. These are the
-same fields shown in the persistent header bar; the two are **synced live in both
-directions** (each saves on change via `updateProject`, and both the panel and the
-header subscribe to `subscribeProjects` to mirror the latest value — the field being
-actively typed is never overwritten). `versionNumber` is saved as project metadata;
-the rest as form fields.
+Customer, Project, TAL Engineer) so the project header can be filled in up front.
+These are the same fields shown in the persistent header bar's meta line; the two are
+**synced live in both directions** (each saves on change via `updateProject`, and both
+the panel and the header subscribe to `subscribeProjects` to mirror the latest value —
+the field being actively typed is never overwritten). `versionNumber` is saved as
+project metadata; the rest as form fields. The header meta line is page-centered (via
+`hero-top`'s equal `1fr` side columns) so it aligns with the centered page title.
 
 **Three peer ways to begin**, one large card each:
 
