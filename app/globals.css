@@ -110,10 +110,6 @@ html {
   /* Reserve the scrollbar gutter on both sides so a vertical scrollbar can't
      nudge centered content (page title, card grid) ~7px to the left. */
   scrollbar-gutter: stable both-edges;
-  /* Standard view is the old 80% browser-zoom density: more content on screen,
-     tighter overall scale. `zoom` maps 1:1 to the browser zoom the team prefers
-     and keeps viewport units (100vh full-height layouts) correct in Chromium. */
-  zoom: 0.8;
 }
 html, body {
   margin: 0;
@@ -1345,31 +1341,31 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 
 /* Project details — inline-editable header fields, fillable on the setup page. */
 .setup-details {
-  margin-top: 26px;
+  margin-top: 22px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: 14px;
+  border-radius: 12px;
   box-shadow: var(--shadow-card);
-  padding: 18px 24px 20px;
+  padding: 12px 20px 12px;
 }
 .setup-details-head {
   font-family: var(--tal-font-numeric);
-  font-size: 11px; font-weight: 700;
+  font-size: 10px; font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--text-tertiary);
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 .setup-meta {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   align-items: center;
 }
 .setup-meta-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 4px 26px;
+  gap: 10px;
+  padding: 2px 18px;
   min-width: 0;
 }
 .setup-meta-item:first-child { padding-left: 0; }
@@ -1377,7 +1373,7 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .setup-meta-item + .setup-meta-item { border-left: 1px solid var(--border); }
 .setup-meta-item > label {
   font-family: var(--tal-font-numeric);
-  font-size: 11px; font-weight: 700;
+  font-size: 10px; font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.1em;
   color: var(--text-tertiary);
@@ -1389,9 +1385,9 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   border: none;
   background: transparent;
   font: inherit;
-  font-size: 15px;
+  font-size: 14px;
   color: var(--text-primary);
-  padding: 4px 2px;
+  padding: 3px 2px;
   border-bottom: 1px solid var(--border);
   transition: border-color 0.15s ease;
 }
@@ -1411,14 +1407,21 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .setup-opp-prefix:focus { outline: none; border-color: var(--accent); }
 .setup-meta-opp { gap: 8px; }
-@media (max-width: 900px) {
-  .setup-meta { grid-template-columns: repeat(2, 1fr); row-gap: 6px; }
-  /* reset the row-based divider; only divide within a row (the 2nd col) */
+/* Wrap to fewer columns at narrow widths; only draw the vertical divider between
+   items within the same row (never on a row's first item). */
+@media (max-width: 1150px) {
+  .setup-meta { grid-template-columns: repeat(3, 1fr); row-gap: 8px; }
   .setup-meta-item + .setup-meta-item { border-left: none; }
-  .setup-meta-item:nth-child(even) { border-left: 1px solid var(--border); padding-left: 26px; }
-  .setup-meta-item:nth-child(odd) { padding-left: 0; }
+  .setup-meta-item:not(:nth-child(3n+1)) { border-left: 1px solid var(--border); padding-left: 18px; }
+  .setup-meta-item:nth-child(3n+1) { padding-left: 0; }
 }
-@media (max-width: 560px) {
+@media (max-width: 760px) {
+  .setup-meta { grid-template-columns: repeat(2, 1fr); }
+  .setup-meta-item:not(:nth-child(3n+1)) { border-left: none; padding-left: 18px; }
+  .setup-meta-item:nth-child(even) { border-left: 1px solid var(--border); }
+  .setup-meta-item:nth-child(odd) { border-left: none; padding-left: 0; }
+}
+@media (max-width: 480px) {
   .setup-meta { grid-template-columns: 1fr; }
   .setup-meta-item { border-left: none !important; padding: 8px 0 !important; border-bottom: 1px solid var(--border); }
   .setup-meta-item:last-child { border-bottom: none; }

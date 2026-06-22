@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-22 — Remove global zoom (fixes scaling/blur); add TAL Engineer to ribbon
+
+- **Scaling/blur fix:** removed `html { zoom: 0.8 }`. The non-integer zoom downscaled
+  raster images (blurry Step 2 vehicle cards) and skewed `100vh`/flex math (entry cards
+  not filling the page), and behaved differently per display. The app now renders at
+  native scale and sizes responsively.
+- **TAL Engineer in the ribbon:** added the `bastianRep` ("TAL Engineer") field to the
+  Step 00 Project Details panel and the persistent header meta line (live-synced like
+  the other fields). PPTX already maps `bastianRep` → `[TAL Representative]`
+  (`src/lib/pptx/tokenMap.ts`), so the deck was already covered.
+- **More compact ribbon:** slimmed the Project Details panel padding/typography and
+  moved it to a 5-column grid (Rev · Opp · Customer · Project · TAL Engineer), 5→3→2→1
+  responsive.
+
 ## 2026-06-21 — Light mode is the default theme
 
 - Default theme flipped dark → light (`app/layout.tsx` `data-theme`, plus the

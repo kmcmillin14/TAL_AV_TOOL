@@ -28,6 +28,7 @@ export default function Step0Page() {
     opportunityNumber: '',
     customerName: '',
     projectName: '',
+    bastianRep: '',
   })
   // Field the user is actively editing here — never overwrite it from an
   // external (header) update mid-keystroke. Ref so the subscription closure
@@ -41,6 +42,7 @@ export default function Step0Page() {
       opportunityNumber: focusedRef.current === 'opportunityNumber' ? m.opportunityNumber : (p.opportunityNumber ?? ''),
       customerName:      focusedRef.current === 'customerName'      ? m.customerName      : (p.customerName ?? ''),
       projectName:       focusedRef.current === 'projectName'       ? m.projectName       : (p.projectName ?? ''),
+      bastianRep:        focusedRef.current === 'bastianRep'        ? m.bastianRep        : (p.bastianRep ?? ''),
     }))
 
   useEffect(() => {
@@ -70,6 +72,7 @@ export default function Step0Page() {
       case 'opportunityNumber': updateProject(id, { opportunityNumber: value }); break
       case 'customerName':      updateProject(id, { customerName: value }); break
       case 'projectName':       updateProject(id, { projectName: value }); break
+      case 'bastianRep':        updateProject(id, { bastianRep: value }); break
     }
   }
 
@@ -214,6 +217,16 @@ export default function Step0Page() {
                   type="text"
                   placeholder="Project name"
                   {...fieldProps('projectName')}
+                />
+              </div>
+
+              <div className="setup-meta-item">
+                <label htmlFor="sm-eng">TAL Engineer</label>
+                <input
+                  id="sm-eng"
+                  type="text"
+                  placeholder="Engineer name"
+                  {...fieldProps('bastianRep')}
                 />
               </div>
             </div>

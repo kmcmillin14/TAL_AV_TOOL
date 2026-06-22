@@ -377,6 +377,8 @@ export default function PersistentHeader({
           {renderInlineItem('customerName', 'CUSTOMER', editValues.customerName)}
           <span className="hero-meta-sep" aria-hidden />
           {renderInlineItem('projectName',  'PROJECT',  editValues.projectName)}
+          <span className="hero-meta-sep" aria-hidden />
+          {renderInlineItem('bastianRep',   'TAL ENGINEER', editValues.bastianRep)}
           </div>
         </div>
 
