@@ -110,6 +110,13 @@ html {
   /* Reserve the scrollbar gutter on both sides so a vertical scrollbar can't
      nudge centered content (page title, card grid) ~7px to the left. */
   scrollbar-gutter: stable both-edges;
+  /* Standard density = the team's preferred 80% view. `zoom` on the ROOT keeps
+     viewport units honest (100vh full-height layouts still fit) and, unlike a
+     viewport-calc zoom, is stable (no feedback loop). Different screen WIDTHS are
+     handled by the responsive breakpoints (card grid 3→2→1, ribbon 5→3→2→1), so
+     the app stays usable from laptop to wide desktop. zoom DOWN also resamples
+     raster images sharper on hi-DPI, not blurrier. */
+  zoom: 0.8;
 }
 html, body {
   margin: 0;

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-22 — Header 3-col grid (no overlap), centered title, restore 80% density
+
+- **Header layout:** restructured `hero-top` into a 3-column grid (brand · meta · actions)
+  so the meta line is bounded by its column and flows all fields (now 5, incl. TAL
+  Engineer) as one centered wrapping row — fixes the TAL Engineer field overlapping the
+  unit toggle. Scales to any field count.
+- **Centered page title** again (`.page-header`/`.page-title`).
+- **Restored `html { zoom: 0.8 }`** as the standard density (the team's preferred 80%
+  view). Root `zoom` keeps `100vh` layouts correct and is stable (a viewport-calc zoom
+  would oscillate); different screen widths are handled by responsive breakpoints, not by
+  varying the zoom. Supersedes the earlier removal — native scale read as "too big."
+
 ## 2026-06-22 — Remove global zoom (fixes scaling/blur); add TAL Engineer to ribbon
 
 - **Scaling/blur fix:** removed `html { zoom: 0.8 }`. The non-integer zoom downscaled
