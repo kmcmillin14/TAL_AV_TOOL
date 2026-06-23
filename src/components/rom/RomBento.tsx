@@ -88,9 +88,11 @@ export default function RomBento(p: Props) {
       <Cell title="Requirements met" span={2}><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Cell>
       <Cell title="Resilience" span={2}><SensitivityPanel fleet={p.fleet} /></Cell>
 
-      <Cell title="How the fleet is calculated — variables &amp; rationale" span={4}><MethodologyPanel /></Cell>
-      <div className="rom2-span-4"><FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} /></div>
-      <Cell title="Assumptions &amp; methodology" span={4}><AssumptionsPanel project={p.project} /></Cell>
+      <Cell title="How the fleet is calculated" span={4}>
+        <MethodologyPanel />
+        <FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} />
+      </Cell>
+      <Cell title="Assumptions" span={4}><AssumptionsPanel project={p.project} /></Cell>
     </div>
   )
 }

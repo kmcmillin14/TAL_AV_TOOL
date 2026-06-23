@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-23 — Step 4: resilience status, combined methodology, grouped assumptions
+
+- **Resilience** moved out of the gauge strip (now 3 gauges: utilization/availability/charging)
+  into a clearer **status + bar**: a plain-English badge ("✓ Robust" / "85%") with a
+  demand-vs-(capacity−1) bar and the tightest-type explanation.
+- **Combined** the methodology formulas/glossary and the per-flow walkthrough into one
+  "How the fleet is calculated" card (formulas on top, flow tabs below).
+- **Assumptions** regrouped into Operations / Energy / Economics, each row with a why and a
+  "default" flag where it's still using an app default (so it's clear what to verify).
+
 ## 2026-06-23 — Step 4: service-life 10yr default, fewer drivers/exports, battery combined
 
 - **Default service life 7 → 10 years** (page, `kpiDetails`, AssumptionsPanel).

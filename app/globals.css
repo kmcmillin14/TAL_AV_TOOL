@@ -3002,8 +3002,8 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .rom2-hero-grid .rom-kpi-accent .rom-kpi-val { color: var(--accent); }
 .rom2-hero-grid .rom-kpi-pinned { box-shadow: inset 0 0 0 1px var(--accent); }
 
-/* Gauge strip — utilization / availability / charging / resilience at a glance. */
-.rom2-gauges { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
+/* Gauge strip — utilization / availability / charging at a glance. */
+.rom2-gauges { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
 .rom2-gauge {
   position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
@@ -3396,21 +3396,56 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .rv-req-sev { font-family: var(--tal-font-numeric); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-tertiary); }
 
 /* §4 sensitivity */
-.rv-sens { display: flex; flex-direction: column; gap: 10px; }
-.rv-sens-card { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--border); }
-.rv-sens-ok { border-color: #2faa5a; background: color-mix(in srgb, #2faa5a 12%, transparent); }
-.rv-sens-warn { border-color: var(--accent); background: var(--accent-soft); }
-.rv-sens-val { font-family: var(--tal-font-numeric); font-size: 22px; font-weight: 800; color: var(--text-primary); }
-.rv-sens-lbl { font-family: var(--tal-font-numeric); font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-tertiary); }
-.rv-sens-note { margin: 0; font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-secondary); }
+/* Resilience: status badge + headline, then a demand-vs-(capacity−1) bar. */
+.rv-sens2 { display: flex; flex-direction: column; gap: 14px; }
+.rv-sens2-status { display: flex; align-items: center; gap: 12px; }
+.rv-sens2-badge {
+  flex: none; font-family: var(--tal-font-numeric); font-size: 14px; font-weight: 800;
+  padding: 6px 12px; border-radius: 999px; white-space: nowrap;
+}
+.rv-sens2-badge.ok { color: var(--good); background: var(--good-soft); }
+.rv-sens2-badge.warn { color: var(--accent); background: var(--accent-soft); }
+.rv-sens2-headline { font-size: 14px; font-weight: 600; line-height: 1.35; color: var(--text-primary); }
+.rv-sens2-bar { display: flex; flex-direction: column; gap: 5px; }
+.rv-sens2-track {
+  position: relative; height: 16px; border-radius: 6px;
+  background: var(--bg-base); border: 1px solid var(--border); overflow: hidden;
+}
+.rv-sens2-fill { height: 100%; border-radius: 5px 0 0 5px; }
+.rv-sens2-fill.ok { background: var(--good); }
+.rv-sens2-fill.warn { background: var(--accent); }
+/* "demand = 100%" marker line. */
+.rv-sens2-demand { position: absolute; top: -2px; bottom: -2px; right: 0; width: 2px; background: var(--text-secondary); }
+.rv-sens2-scale {
+  display: flex; justify-content: space-between;
+  font-family: var(--tal-font-numeric); font-size: 9.5px; letter-spacing: 0.04em;
+  text-transform: uppercase; color: var(--text-tertiary);
+}
+.rv-sens-note { margin: 0; font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.5; color: var(--text-secondary); }
 
 /* §4 assumptions */
-.rv-assume { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 6px 18px; }
-@media (max-width: 720px) { .rv-assume { grid-template-columns: 1fr; } }
-.rv-assume > div { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 6px 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--border) 45%, transparent); }
-.rv-assume dt { font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-secondary); margin: 0; }
-.rv-assume dd { margin: 0; font-family: var(--tal-font-numeric); font-size: 12.5px; color: var(--text-primary); text-align: right; }
+/* Grouped, auditable assumptions with a why per row + a "default" flag. */
+.rv-assume2 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+@media (max-width: 900px) { .rv-assume2 { grid-template-columns: 1fr; } }
+.rv-assume2-head {
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+  padding-bottom: 6px; margin-bottom: 6px; border-bottom: 1px solid var(--border-strong);
+}
+.rv-assume2-list { margin: 0; display: flex; flex-direction: column; }
+.rv-assume2-row { padding: 8px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
+.rv-assume2-row:last-child { border-bottom: none; }
+.rv-assume2-row dt {
+  display: flex; align-items: center; gap: 7px; margin: 0;
+  font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-secondary);
+}
+.rv-assume2-row dd { margin: 2px 0 0; font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.rv-assume2-why { margin: 2px 0 0; font-size: 11px; line-height: 1.4; color: var(--text-tertiary); }
+.rv-assume2-tag {
+  font-family: var(--tal-font-numeric); font-size: 8.5px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-disabled);
+  padding: 1px 6px; border: 1px dashed var(--border-strong); border-radius: 999px;
+}
 
 /* ─── Methodology reference (Step 4 · 04) — collapsible formula · vars · why ─── */
 .method { display: grid; gap: 0; }
@@ -3513,6 +3548,12 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .fm-eq strong { color: var(--text-primary); font-weight: 800; }
 .fm-eq-muted { color: var(--text-tertiary); }
 .fm-why { margin: 10px 0 0; font-family: var(--tal-font-family); font-size: 12px; line-height: 1.5; color: var(--text-tertiary); }
+/* Walkthrough sits under the methodology in the combined "How it's calculated" card. */
+.fm-block { margin-top: 20px; padding-top: 18px; border-top: 1px solid var(--border); }
+.fm-subhead {
+  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary);
+}
 .fm-intro { margin: 4px 0 14px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
 /* The symbolic "sample formula" shown above each step's substituted numbers. */
 .fm-formula {

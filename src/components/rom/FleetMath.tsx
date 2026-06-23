@@ -32,12 +32,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
   const [scope, setScope] = useState<string>('system') // 'system' | flowId
 
   if (fleet.groups.length === 0) {
-    return (
-      <section className="rom-card">
-        <span className="rom-card-eyebrow">Fleet math — how we sized it</span>
-        <div className="rv-empty">Assign vehicles to flows to see the sizing math.</div>
-      </section>
-    )
+    return <div className="rv-empty">Assign vehicles to flows to see the sizing math.</div>
   }
 
   const groupFor = (vehicleId: string) => fleet.groups.find(g => g.vehicleId === vehicleId)
@@ -182,8 +177,8 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
   }
 
   return (
-    <section className="rom-card">
-      <span className="rom-card-eyebrow">Walk through the math</span>
+    <div className="fm-block">
+      <div className="fm-subhead">Walk through the math</div>
       <p className="fm-intro">Pick a flow to see each sample formula with that flow&apos;s actual numbers substituted in — cycle time → base fleet → charging → buffer.</p>
 
       <div className="fm-toggle" role="tablist" aria-label="Math scope">
@@ -198,6 +193,6 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
       <div className="fm-steps">
         {scope === 'system' ? renderSystem() : renderFlow(scope)}
       </div>
-    </section>
+    </div>
   )
 }
