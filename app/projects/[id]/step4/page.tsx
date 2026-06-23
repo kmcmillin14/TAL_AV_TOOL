@@ -1,65 +1,71 @@
 'use client'
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import { useFleetData } from '@/src/lib/useFleetData'
 import { updateProject } from '@/src/lib/storage'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
-import { romSummary, type RomCostInputs, type RomSchedule } from '@/src/calc/rom'
+import { computeFleetModel } from '@/src/lib/fleetModel'
+import { applyDrivers, scenarioKpis, diffKpis, type ScenarioDrivers } from '@/src/lib/scenario'
 import { effDailyOpHr, defaultOperatingDaysPerYear, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
 import RomKpis from '@/src/components/rom/RomKpis'
-import { type RomPatch } from '@/src/components/rom/RomEconomics'
+import RomDrivers from '@/src/components/rom/RomDrivers'
+import RomBento from '@/src/components/rom/RomBento'
 import RomExportBar from '@/src/components/rom/RomExportBar'
-import RomVisuals, { ROM_SECTIONS } from '@/src/components/rom/RomVisuals'
-import ScrollSpyNav from '@/src/components/ScrollSpyNav'
 
 export default function RomDashboardPage() {
   const params = useParams()
   const id = params.id as string
-  const { project, setProject, vehicleById, loading, error, flows, derivedByFlowId, fleet, settings } = useFleetData(id)
+  const { project, setProject, vehicleById, loading, error } = useFleetData(id)
   const [unitSystem, toggleUnitSystem] = useUnitSystem()
 
-  const costs: RomCostInputs = useMemo(() => ({
-    // `||` not `??`: projects created while numberOfOperators had a schema
-    // .default(0) carry a PINNED 0 override; a zero override is meaningless
-    // (payback is null either way), so 0 falls through to the derived value.
-    numberOfOperators: project?.numberOfOperators || ((project?.operatorsPerShift ?? 0) * (project?.shiftsPerDay ?? 1)),
+  // In-memory what-if state (no new persisted fields). `drivers` holds overrides;
+  // `mode` toggles whether the dashboard shows the scenario or the baseline.
+  const [drivers, setDrivers] = useState<ScenarioDrivers>({})
+  const [mode, setMode] = useState<'baseline' | 'scenario'>('scenario')
+
+  const vehicles = useMemo(() => [...vehicleById.values()], [vehicleById])
+  const baseModel = useMemo(
+    () => (project ? computeFleetModel(project, vehicles) : null),
+    [project, vehicles],
+  )
+  const scnProject = useMemo(
+    () => (project ? applyDrivers(project, drivers) : null),
+    [project, drivers],
+  )
+  const scnModel = useMemo(
+    () => (scnProject ? computeFleetModel(scnProject, vehicles) : null),
+    [scnProject, vehicles],
+  )
+
+  const hasOverrides = Object.values(drivers).some(v => v !== undefined && !Number.isNaN(v))
+  const showScenario = mode === 'scenario' && hasOverrides
+
+  const baselineDrivers: ScenarioDrivers = useMemo(() => ({
+    operatorsPerShift: project?.operatorsPerShift ?? 0,
+    shiftsPerDay: project?.shiftsPerDay ?? 1,
     fullyBurdenedRateUsdPerYear: project?.fullyBurdenedRateUsdPerYear ?? 65000,
     energyCostUsdPerKwh: project?.energyCostUsdPerKwh ?? 0.12,
     annualMaintenancePctOfCapex: project?.annualMaintenancePctOfCapex ?? 0.08,
-    operatingDaysPerYear: project?.operatingDaysPerYear
-      ?? defaultOperatingDaysPerYear(project?.operatingDaysPattern, project?.operatingDaysCustom),
+    bufferPct: project?.bufferPct ?? 0.10,
+    serviceLifeYears: project?.serviceLifeYears ?? 7,
   }), [project])
 
-  const schedule: RomSchedule = useMemo(() => ({
-    dailyOpHr: settings.dailyOpHr,
-  }), [settings.dailyOpHr])
-
-  const rom = useMemo(() => romSummary(fleet, vehicleById, costs, schedule), [fleet, vehicleById, costs, schedule])
-
-  const analyticsSchedule: AnalyticsSchedule = useMemo(() => ({
-    shiftsPerDay: project?.shiftsPerDay ?? 1,
-    hoursPerShift: project?.hoursPerShift ?? 8,
-    breaksPerShift: project?.breaksPerShift ?? 0,
-    breakDurationMin: project?.breakDurationMin ?? 0,
-    operatorsPerShift: project?.operatorsPerShift ?? 0,
-    operatingDaysPerYear: project?.operatingDaysPerYear
-      ?? defaultOperatingDaysPerYear(project?.operatingDaysPattern, project?.operatingDaysCustom),
-  }), [project])
-
-  const names = useMemo(
-    () => Object.fromEntries([...vehicleById].map(([vid, v]) => [vid, v.name])),
-    [vehicleById],
+  const deltas = useMemo(
+    () => (showScenario && baseModel && scnModel
+      ? diffKpis(scenarioKpis(baseModel), scenarioKpis(scnModel))
+      : null),
+    [showScenario, baseModel, scnModel],
   )
 
-  const patchCosts = (patch: RomPatch) => {
-    const updated = updateProject(id, patch)
-    if (updated) setProject(updated)
+  const applyToBaseline = () => {
+    const updated = updateProject(id, drivers)
+    if (updated) { setProject(updated); setDrivers({}) }
   }
 
   if (loading) return <div className="app-shell"><div className="step2-loading">Loading ROM dashboard…</div></div>
-  if (error || !project) {
+  if (error || !project || !baseModel || !scnModel) {
     return (
       <div className="app-shell">
         <div className="step2-error">
@@ -70,6 +76,20 @@ export default function RomDashboardPage() {
       </div>
     )
   }
+
+  const active = showScenario ? scnModel : baseModel
+  const activeProject = showScenario && scnProject ? scnProject : project
+
+  const analyticsSchedule: AnalyticsSchedule = {
+    shiftsPerDay: activeProject.shiftsPerDay ?? 1,
+    hoursPerShift: activeProject.hoursPerShift ?? 8,
+    breaksPerShift: activeProject.breaksPerShift ?? 0,
+    breakDurationMin: activeProject.breakDurationMin ?? 0,
+    operatorsPerShift: activeProject.operatorsPerShift ?? 0,
+    operatingDaysPerYear: activeProject.operatingDaysPerYear
+      ?? defaultOperatingDaysPerYear(activeProject.operatingDaysPattern, activeProject.operatingDaysCustom),
+  }
+  const names = Object.fromEntries([...vehicleById].map(([vid, v]) => [vid, v.name]))
 
   return (
     <div className="app-shell">
@@ -97,50 +117,44 @@ export default function RomDashboardPage() {
           <span className="eh-eyebrow mono">Step 04 / 04</span>
           <h1 className="eh-title">ROM Dashboard</h1>
           <p className="eh-sub">
-            Rough-order fleet economics — total fleet, CAPEX range, operating cost, and a
-            simple payback. Pricing is always a range; adjust the assumptions below to refine it.
+            Rough-order fleet economics. Adjust the drivers on the left to run a what-if
+            scenario — every KPI and chart recomputes live; toggle Baseline / Scenario to compare.
           </p>
         </div>
 
-        <div className="form-with-nav engine-layout">
-          <ScrollSpyNav
-            ariaLabel="ROM dashboard sections"
-            listLabel="ROM Proposal"
-            sections={ROM_SECTIONS}
-            topSlot={
-              <div className="section-nav-progress">
-                <div className="section-nav-progress-pct">
-                  {rom.payback.paybackYears == null ? '—' : rom.payback.paybackYears.toFixed(1)}
-                </div>
-                <div className="section-nav-progress-stat">
-                  {rom.payback.paybackYears == null ? 'payback — add operators' : 'year payback'}
-                </div>
-              </div>
-            }
+        <div className="rom2-shell">
+          <RomDrivers
+            baseline={baselineDrivers}
+            drivers={drivers}
+            onChange={setDrivers}
+            onApply={applyToBaseline}
+            hasOverrides={hasOverrides}
+            mode={mode}
+            onMode={setMode}
           />
-          <div className="form-stack">
-            <div className="engine-result-sticky rom-kpis-sticky">
-              <RomKpis fleet={fleet} rom={rom} flows={flows} settings={settings} names={names} />
+
+          <div className="rom2-main">
+            <div className={`rom2-kpiband ${showScenario ? 'is-scenario' : ''}`}>
+              <RomKpis fleet={active.fleet} rom={active.rom} flows={active.flows} settings={active.settings} names={names} deltas={deltas} />
             </div>
-            <RomVisuals
-              project={project}
-              flows={flows}
-              derivedByFlowId={derivedByFlowId}
-              fleet={fleet}
-              rom={rom}
+
+            <RomBento
+              project={activeProject}
+              flows={active.flows}
+              derivedByFlowId={active.derivedByFlowId}
+              fleet={active.fleet}
+              rom={active.rom}
               vehicleById={vehicleById}
-              costs={costs}
-              onPatch={patchCosts}
               effDailyOpHr={effDailyOpHr(analyticsSchedule)}
-              serviceLifeYears={project.serviceLifeYears ?? 7}
+              serviceLifeYears={activeProject.serviceLifeYears ?? 7}
             />
+
+            <section className="rom-card rom-card-export">
+              <span className="rom-card-eyebrow">Proposal</span>
+              <RomExportBar project={project} />
+            </section>
           </div>
         </div>
-
-        <section className="rom-card rom-card-export">
-          <span className="rom-card-eyebrow">Proposal</span>
-          <RomExportBar project={project} />
-        </section>
       </div>
     </div>
   )

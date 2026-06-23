@@ -12,6 +12,8 @@ interface Props {
   accent?: boolean
   /** Index into the brand data palette for the mini-bar color. */
   colorIndex?: number
+  /** Scenario-vs-baseline delta chip (already formatted, e.g. "▲ +2"). */
+  delta?: string
 }
 
 /**
@@ -19,7 +21,7 @@ interface Props {
  * focus a popover reveals the metric's breakdown (formula · mini bars · rows);
  * click pins it open. Read-only detail, so hover-to-read needs no pointer travel.
  */
-export default function KpiTile({ label, value, detail, accent, colorIndex = 0 }: Props) {
+export default function KpiTile({ label, value, detail, accent, colorIndex = 0, delta }: Props) {
   const ref = useRef<HTMLButtonElement>(null)
   const [hovered, setHovered] = useState(false)
   const [pinned, setPinned] = useState(false)
@@ -43,7 +45,9 @@ export default function KpiTile({ label, value, detail, accent, colorIndex = 0 }
       >
         <span className="rom-kpi-val mono">{value}</span>
         <span className="rom-kpi-lbl">{label}</span>
-        <span className="rom-kpi-hint" aria-hidden="true">{pinned ? '● pinned' : 'hover ⓘ'}</span>
+        {delta
+          ? <span className="rom-kpi-delta mono" aria-label={`change vs baseline ${delta}`}>{delta}</span>
+          : <span className="rom-kpi-hint" aria-hidden="true">{pinned ? '● pinned' : 'hover ⓘ'}</span>}
       </button>
 
       {open && (

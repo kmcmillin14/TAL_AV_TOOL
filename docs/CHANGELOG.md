@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-22 — Step 4 rebuild, slice 2: bento shell + driver rail + scenario A/B
+
+- New **bento layout** (`.rom2-*`): sticky left **driver rail** (`RomDrivers`) + a 4-column
+  bento of cards (`RomBento`), replacing the scroll-spy long page. Responsive 4→2→1.
+- **Scenario A/B**: the rail edits in-memory driver overrides (operators, shifts, labor $,
+  energy $, maintenance %, buffer %, service life); a Baseline/Scenario toggle recomputes the
+  whole dashboard live via `computeFleetModel`. "Apply to baseline" persists the overrides;
+  "Reset" clears them.
+- **KPI deltas**: KPI tiles show a ▲/▼ chip vs baseline in scenario mode (`diffKpis`).
+- Removed the buried `RomEconomics` 2-input card and the dead `RomVisuals` (its inputs are now
+  drivers in the rail; the operation map/charts moved into the bento). Charts reuse the
+  unchanged pure series builders — PPTX/Excel untouched.
+
 ## 2026-06-22 — Step 4 rebuild, slice 1: scenario engine (pure)
 
 - First slice of the Step 4 interactive-dashboard rebuild (design:
