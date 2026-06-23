@@ -1,5 +1,7 @@
 'use client'
 
+import Icon from '@/src/design-system/components/Icon'
+
 /** Radial 270° gauge (T-Hive style, TAL-formatted): grey track + brand-red fill,
  *  big centered % and a label below. Pure SVG, scales to its container. */
 
@@ -53,7 +55,7 @@ export default function RomGauge({ value, label, display, status, def }: Props) 
       </svg>
       <div className="rom2-gauge-lbl">
         {label}
-        {def && <span className="rom2-gauge-info" aria-hidden> ⓘ</span>}
+        {def && <Icon name="info" size={11} className="rom2-gauge-info" />}
       </div>
       {def && <div className="rom2-gauge-tip">{def}</div>}
     </div>

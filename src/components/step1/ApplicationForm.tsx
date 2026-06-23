@@ -1030,14 +1030,17 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
             <div className="fld">
               <label>Fully-burdened rate / operator</label>
-              <input
-                type="number"
-                min="0"
-                step="1000"
-                className="mono"
-                placeholder="65000"
-                {...register('fullyBurdenedRateUsdPerYear', { valueAsNumber: true, onBlur: onBlurSave })}
-              />
+              <div className="fld-money">
+                <span className="fld-money-sym" aria-hidden>$</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  className="mono"
+                  placeholder="65,000"
+                  {...register('fullyBurdenedRateUsdPerYear', { valueAsNumber: true, onBlur: onBlurSave })}
+                />
+              </div>
               <div className="help">$/yr all-in (wage + benefits + overhead). Feeds Step 4 payback (default $65,000).</div>
             </div>
           </div>

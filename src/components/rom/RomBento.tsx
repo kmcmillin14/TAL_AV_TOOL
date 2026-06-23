@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetSummary, Flow, FlowDerived } from '@/src/calc/types'
@@ -46,6 +46,21 @@ function Cell({ title, span = 1, children }: { title: string; span?: 1 | 2 | 4; 
   )
 }
 
+/** Collapsible bento cell — header toggles the body. Collapsed by default for the
+ *  detailed math section so the dashboard stays scannable. */
+function CollapsibleCell({ title, span = 4, defaultOpen = false, children }: { title: string; span?: 1 | 2 | 4; defaultOpen?: boolean; children: ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <section className={`rom2-cell rom2-span-${span} rom2-collapse${open ? ' is-open' : ''}`}>
+      <button type="button" className="rom2-collapse-head" aria-expanded={open} onClick={() => setOpen(o => !o)}>
+        <span className="rom-card-eyebrow">{title}</span>
+        <svg className="rom2-collapse-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="6 9 12 15 18 9" /></svg>
+      </button>
+      {open && <div className="rom2-collapse-body">{children}</div>}
+    </section>
+  )
+}
+
 /** The dashboard body as a responsive bento of cards (replaces the scroll-spy
  *  sections). Reuses the existing chart components; the driver rail + KPI band
  *  live in the page shell. */
@@ -86,12 +101,13 @@ export default function RomBento(p: Props) {
 
       {/* Trust & robustness. */}
       <Cell title="Requirements met" span={2}><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Cell>
-      <Cell title="Resilience" span={2}><SensitivityPanel fleet={p.fleet} /></Cell>
+      <Cell title="Redundancy — one vehicle down" span={2}><SensitivityPanel fleet={p.fleet} /></Cell>
 
-      <Cell title="How the fleet is calculated" span={4}>
+      <CollapsibleCell title="How the fleet is calculated" span={4} defaultOpen={false}>
+        <div className="fm-subhead">Formulas &amp; variables</div>
         <MethodologyPanel />
         <FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} />
-      </Cell>
+      </CollapsibleCell>
       <Cell title="Assumptions" span={4}><AssumptionsPanel project={p.project} /></Cell>
     </div>
   )

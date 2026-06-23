@@ -143,6 +143,9 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
           def="Share of the operating day a vehicle is available to work (not tied up recharging) — fleet uptime." />
         <RomGauge value={avgCharging} label="Charging" status
           def="Share of each duty cycle a vehicle spends recharging instead of moving loads." />
+        <RomGauge value={res.throughputHeldWithOneDown ? 1 : res.retainedPct} label="Redundancy" status
+          display={res.throughputHeldWithOneDown ? '✓' : pctChip(res.retainedPct)}
+          def="Backup capacity if one vehicle goes down: ✓ means full throughput is still met; a % is the share of demand the remaining fleet can cover." />
       </div>
     </>
   )

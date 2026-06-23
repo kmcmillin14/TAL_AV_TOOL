@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-23 — Redundancy gauge, collapsible math, info icon, $ rate
+
+- Renamed the resilience metric to **Redundancy** (clearer: backup capacity if one vehicle
+  is down) and re-added it as the **4th gauge** in the strip (utilization · availability ·
+  charging · redundancy); the detailed status+bar card stays in the bento.
+- "**How the fleet is calculated**" is now a **collapsible** card (collapsed by default), with
+  the methodology formulas/variables and the per-flow walkthrough together inside.
+- Gauge info affordance uses the design-system **circled-i** icon (replaces the unicode ⓘ).
+- Step 1 fully-burdened rate shows a **$** prefix (currency format).
+
 ## 2026-06-23 — App version-history log
 
 - The **app version** in the header (now `v1.0`) is clickable → opens a **version-history**
