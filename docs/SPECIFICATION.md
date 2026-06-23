@@ -372,10 +372,20 @@ baseline" persists). Charts are themed **Recharts** (payback, TCO, utilization, 
 with tooltips/crosshairs/annotations); duty-cycle, charging and the flow map stay bespoke.
 Pure series builders are unchanged, so **PPTX/Excel exports are unaffected**.
 
-**Fleet KPIs (14 tiles, interactive popovers + scenario deltas):** the 6 originals — total
-fleet, vehicle types, flows, throughput, ROM CAPEX, payback — plus 8 added: net benefit/yr,
-avg utilization, annual OPEX, labor offset/yr, annual energy, resilience, TCO @ service life,
-cost/move. `kpiDetails` builds each tile's breakdown (web-only; not used by PPTX).
+**Top summary (2026-06-23 redesign, T-Hive-inspired, TAL-formatted):** two **hero boxes** —
+**Financials** (headline ROM CAPEX + net benefit, payback, labor offset, OPEX, TCO, cost/move)
+and **Fleet & flow** (headline total fleet + types, flows, throughput, energy/day·week) — each
+combining like-items into one cohesive box with the headline figure large; hover any metric
+for its `kpiDetails` breakdown + scenario delta. Below, a **gauge strip** (`RomGauge`, SVG
+270° arc): Utilization · Availability · Charging · Resilience (availability/charging weighted
+across the fleet from the charging series).
+
+**Bento body:** full-width **material flow map** (symmetric origin/destination columns,
+throughput pills); paired money charts (payback · TCO · pricing · CAPEX); operations
+(duty-cycle · utilization · **Battery & runtime** · **Battery state of charge** as its own
+card); trust (requirements · resilience); and **Walk through the math** (`FleetMath`) — pick a
+flow to see each sample formula with that flow's actual numbers substituted (cycle-time
+breakdown → base → charging → buffer). `kpiDetails`/walkthrough are web-only; PPTX unaffected.
 
 **ROM pricing (range, never a point):** for each vehicle group,
 `fleetSold × priceRange` → line range; summed to `totalMin`/`totalMax`; `totalMid =
