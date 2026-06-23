@@ -177,8 +177,8 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
   }
 
   return (
-    <div className="fm-block">
-      <div className="fm-subhead">Walk through the math</div>
+    <div className="fm-walk">
+      <div className="fm-subhead">Walk through a flow</div>
       <p className="fm-intro">Pick a flow to see each sample formula with that flow&apos;s actual numbers substituted in — cycle time → base fleet → charging → buffer.</p>
 
       <div className="fm-toggle" role="tablist" aria-label="Math scope">

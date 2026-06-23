@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-23 — Hero polish: drop red rules; walkthrough open, formulas collapsed
+
+- Removed the red top-bar (`.rom-kpi-accent::before`) from the hero accent tiles — red now
+  lives on the figures, not as rules above the boxes.
+- "How the fleet is calculated": the **per-flow walkthrough is open**; the **Formulas &
+  variables** reference is a collapsible sub-section (collapsed by default).
+
 ## 2026-06-23 — Redundancy gauge, collapsible math, info icon, $ rate
 
 - Renamed the resilience metric to **Redundancy** (clearer: backup capacity if one vehicle

@@ -46,18 +46,18 @@ function Cell({ title, span = 1, children }: { title: string; span?: 1 | 2 | 4; 
   )
 }
 
-/** Collapsible bento cell — header toggles the body. Collapsed by default for the
- *  detailed math section so the dashboard stays scannable. */
-function CollapsibleCell({ title, span = 4, defaultOpen = false, children }: { title: string; span?: 1 | 2 | 4; defaultOpen?: boolean; children: ReactNode }) {
+/** Inline collapsible sub-section (e.g. the formula reference under the walkthrough).
+ *  Collapsed by default so the dashboard stays scannable. */
+function CollapsibleSection({ title, defaultOpen = false, children }: { title: string; defaultOpen?: boolean; children: ReactNode }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
-    <section className={`rom2-cell rom2-span-${span} rom2-collapse${open ? ' is-open' : ''}`}>
-      <button type="button" className="rom2-collapse-head" aria-expanded={open} onClick={() => setOpen(o => !o)}>
-        <span className="rom-card-eyebrow">{title}</span>
-        <svg className="rom2-collapse-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="6 9 12 15 18 9" /></svg>
+    <div className={`fm-block rom2-collapse${open ? ' is-open' : ''}`}>
+      <button type="button" className="rom2-sub-toggle" aria-expanded={open} onClick={() => setOpen(o => !o)}>
+        <span className="fm-subhead">{title}</span>
+        <svg className="rom2-collapse-chevron" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="6 9 12 15 18 9" /></svg>
       </button>
-      {open && <div className="rom2-collapse-body">{children}</div>}
-    </section>
+      {open && <div className="rom2-sub-body">{children}</div>}
+    </div>
   )
 }
 
@@ -103,11 +103,12 @@ export default function RomBento(p: Props) {
       <Cell title="Requirements met" span={2}><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Cell>
       <Cell title="Redundancy — one vehicle down" span={2}><SensitivityPanel fleet={p.fleet} /></Cell>
 
-      <CollapsibleCell title="How the fleet is calculated" span={4} defaultOpen={false}>
-        <div className="fm-subhead">Formulas &amp; variables</div>
-        <MethodologyPanel />
+      <Cell title="How the fleet is calculated" span={4}>
         <FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} />
-      </CollapsibleCell>
+        <CollapsibleSection title="Formulas &amp; variables" defaultOpen={false}>
+          <MethodologyPanel />
+        </CollapsibleSection>
+      </Cell>
       <Cell title="Assumptions" span={4}><AssumptionsPanel project={p.project} /></Cell>
     </div>
   )
