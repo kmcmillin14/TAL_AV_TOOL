@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-22 — Step 4 rebuild, slice 1: scenario engine (pure)
+
+- First slice of the Step 4 interactive-dashboard rebuild (design:
+  `docs/superpowers/specs/2026-06-22-step4-dashboard-rebuild-design.md`).
+- New pure `src/lib/scenario.ts`: `applyDrivers` (non-mutating driver overrides onto a
+  project), `scenarioKpis` (comparable scalars from a `FleetModel`), `diffKpis`
+  (scenario − baseline, null-payback safe). Recomputes via the existing pure
+  `computeFleetModel`; scenario state is in-memory (no new persisted fields). 7 unit tests.
+- No UI/behavior change yet — engine only.
+
 ## 2026-06-22 — Step 3 flows table: fit-to-width, full AGV names, wrapping headers
 
 - **Fit-to-width scaling:** the fixed-width flows table now scales down (root `zoom` via
