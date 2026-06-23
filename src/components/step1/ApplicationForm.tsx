@@ -1028,6 +1028,18 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               />
               <div className="help">Used for labor ROI calculation (optional)</div>
             </div>
+            <div className="fld">
+              <label>Fully-burdened rate / operator</label>
+              <input
+                type="number"
+                min="0"
+                step="1000"
+                className="mono"
+                placeholder="65000"
+                {...register('fullyBurdenedRateUsdPerYear', { valueAsNumber: true, onBlur: onBlurSave })}
+              />
+              <div className="help">$/yr all-in (wage + benefits + overhead). Feeds Step 4 payback (default $65,000).</div>
+            </div>
           </div>
         </FormSection>
 

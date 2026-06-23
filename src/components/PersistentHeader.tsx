@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
-import { updateProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
+import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
 import { useTheme } from '@/src/lib/uiPrefs'
 import HelpDrawer from './HelpDrawer'
 import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
@@ -152,6 +152,10 @@ export default function PersistentHeader({
     }, 400)
   }, [project.id])
 
+  const handleExportJson = () => {
+    downloadProject(project.id)
+    setMenuOpen(false)
+  }
 
   const handleExportPptx = () => {
     setMenuOpen(false)
@@ -440,6 +444,10 @@ export default function PersistentHeader({
                 <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportXlsx}>
                   <span>Export workbook</span>
                   <span className="hint">.xlsx</span>
+                </button>
+                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
+                  <span>Export data (re-import)</span>
+                  <span className="hint">.json</span>
                 </button>
                 <div className="header-menu-sep" aria-hidden />
                 <button
