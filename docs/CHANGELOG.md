@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-23 — Step 4 polish: equal-height tiles, gauge definitions, MFD/battery layout
+
+- **Equal-height tiles:** bento rows now stretch so cards sharing a row match the tallest
+  (`align-items: stretch` + flex-column cells) — symmetrical.
+- **Gauge hover definitions:** Utilization, Availability, Charging, Resilience gauges now show
+  a plain-language definition on hover (incl. a clear Resilience explanation).
+- **Battery:** state-of-charge chart spans full width with the Battery & runtime table directly
+  underneath (both span-4).
+- **Flow map:** resized down (max-width 900→680px, tighter rows) so it sits proportional to the
+  other cards instead of oversized.
+
 ## 2026-06-23 — Step 4: battery/SoC split, flow-map overhaul, per-flow formula walkthrough
 
 - **Battery & runtime** combined into one box; **Battery state of charge** is now its own

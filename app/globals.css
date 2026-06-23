@@ -3005,6 +3005,7 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 /* Gauge strip — utilization / availability / charging / resilience at a glance. */
 .rom2-gauges { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 16px; }
 .rom2-gauge {
+  position: relative;
   display: flex; flex-direction: column; align-items: center; gap: 6px;
   background: var(--bg-surface); border: 1px solid var(--border);
   border-radius: 16px; box-shadow: var(--shadow-card); padding: 14px 12px 12px;
@@ -3015,6 +3016,17 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
 }
+.rom2-gauge-info { color: var(--text-disabled); font-size: 9px; }
+/* Hover-to-define tooltip. */
+.rom2-gauge-tip {
+  position: absolute; left: 12px; right: 12px; bottom: calc(100% - 6px);
+  z-index: 20; opacity: 0; pointer-events: none; transform: translateY(4px);
+  background: var(--bg-surface); border: 1px solid var(--border-strong);
+  border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  padding: 8px 10px; font-size: 11px; line-height: 1.45; color: var(--text-secondary);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+.rom2-gauge:hover .rom2-gauge-tip, .rom2-gauge:focus-within .rom2-gauge-tip { opacity: 1; transform: translateY(0); }
 @media (max-width: 900px) {
   .rom2-summary { grid-template-columns: 1fr; }
   .rom2-gauges { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -3097,10 +3109,12 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
-  align-items: start;
+  /* Stretch so cards sharing a row are the same height (symmetry). */
+  align-items: stretch;
 }
 .rom2-cell {
   min-width: 0;
+  display: flex; flex-direction: column;
   background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px;
   box-shadow: var(--shadow-card); padding: 18px 20px;
 }
@@ -3292,7 +3306,7 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .rv-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
 /* §1 flow map (SVG node-link) — capped to natural size so it renders ~1:1, not upscaled */
-.rv-fd { width: 100%; max-width: 900px; height: auto; display: block; margin: 8px auto 0; }
+.rv-fd { width: 100%; max-width: 680px; height: auto; display: block; margin: 6px auto 0; }
 .rv-fd-link { fill: none; }
 /* Throughput pill behind the /hr label — keeps it legible over links. */
 .rv-fd-pill { fill: var(--bg-surface); stroke-width: 1; }

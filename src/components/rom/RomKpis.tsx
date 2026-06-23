@@ -137,11 +137,15 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
       </div>
 
       <div className="rom2-gauges">
-        <RomGauge value={avgUtil ?? 0} label="Utilization" display={avgUtil == null ? '—' : pctChip(avgUtil)} />
-        <RomGauge value={avgAvailability} label="Availability" status />
-        <RomGauge value={avgCharging} label="Charging" />
+        <RomGauge value={avgUtil ?? 0} label="Utilization" display={avgUtil == null ? '—' : pctChip(avgUtil)}
+          def="Raw demand ÷ provisioned fleet — how hard the fleet works. Lower means more spare headroom." />
+        <RomGauge value={avgAvailability} label="Availability" status
+          def="Share of the operating day a vehicle is available to work (not tied up recharging) — fleet uptime." />
+        <RomGauge value={avgCharging} label="Charging" status
+          def="Share of each duty cycle a vehicle spends recharging instead of moving loads." />
         <RomGauge value={res.throughputHeldWithOneDown ? 1 : res.retainedPct} label="Resilience" status
-          display={res.throughputHeldWithOneDown ? '✓' : pctChip(res.retainedPct)} />
+          display={res.throughputHeldWithOneDown ? '✓' : pctChip(res.retainedPct)}
+          def="Robustness if one vehicle goes down: ✓ means the fleet still meets full throughput; a % is the share of demand it can still hold with one vehicle out." />
       </div>
     </>
   )

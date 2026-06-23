@@ -33,23 +33,29 @@ interface Props {
   display?: string
   /** Color the fill by status when true (green/amber/red by value). */
   status?: boolean
+  /** Plain-language definition shown on hover (title + a tooltip). */
+  def?: string
 }
 
-export default function RomGauge({ value, label, display, status }: Props) {
+export default function RomGauge({ value, label, display, status, def }: Props) {
   const v = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0))
   const fill = status
     ? (v >= 0.85 ? 'var(--good)' : v >= 0.6 ? 'var(--tal-golden-orange)' : 'var(--accent)')
     : 'var(--accent)'
   return (
-    <div className="rom2-gauge">
-      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="rom2-gauge-svg" role="img" aria-label={`${label}: ${display ?? `${Math.round(v * 100)}%`}`}>
+    <div className="rom2-gauge" title={def}>
+      <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="rom2-gauge-svg" role="img" aria-label={`${label}: ${display ?? `${Math.round(v * 100)}%`}${def ? `. ${def}` : ''}`}>
         <path d={arc(START, SWEEP)} fill="none" stroke="var(--border)" strokeWidth={STROKE} strokeLinecap="round" />
         {v > 0 && (
           <path d={arc(START, SWEEP * v)} fill="none" stroke={fill} strokeWidth={STROKE} strokeLinecap="round" />
         )}
         <text x={CX} y={CY + 2} className="rom2-gauge-val" textAnchor="middle">{display ?? `${Math.round(v * 100)}%`}</text>
       </svg>
-      <div className="rom2-gauge-lbl">{label}</div>
+      <div className="rom2-gauge-lbl">
+        {label}
+        {def && <span className="rom2-gauge-info" aria-hidden> ⓘ</span>}
+      </div>
+      {def && <div className="rom2-gauge-tip">{def}</div>}
     </div>
   )
 }

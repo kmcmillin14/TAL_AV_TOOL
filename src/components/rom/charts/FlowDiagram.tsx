@@ -5,18 +5,18 @@ import { seriesColor } from '../palette'
 
 interface Props { series: FlowDiagramSeries }
 
-// Layout constants (SVG units; the svg scales to container width). Generous,
-// even spacing + symmetric origin/destination columns for a clean, legible map.
+// Layout constants (SVG units; the svg scales to container width). Even spacing +
+// symmetric origin/destination columns, sized to sit proportional to the other cards.
 const VIEW_W = 600
-const ROW_H = 66
-const GROUP_GAP = 28
-const PAD_Y = 18
+const ROW_H = 54
+const GROUP_GAP = 22
+const PAD_Y = 14
 const ORIGIN_X = 8
-const ORIGIN_W = 88
-const ORIGIN_H = 46
-const DEST_X = 254
-const DEST_W = 338
-const DEST_H = 50
+const ORIGIN_W = 84
+const ORIGIN_H = 40
+const DEST_X = 248
+const DEST_W = 344
+const DEST_H = 44
 
 /**
  * Node-link operation map rendered as one SVG: each origin node sits centered
@@ -93,8 +93,8 @@ export default function FlowDiagram({ series }: Props) {
         <g key={`d${i}`}>
           <rect x={d.node.x} y={d.node.y} width={d.node.w} height={d.node.h} rx={10} className="rv-fd-dest" />
           <rect x={d.node.x} y={d.node.y} width={4} height={d.node.h} rx={2} fill={d.color} />
-          <text x={d.node.x + 16} y={d.node.y + 20} className="rv-fd-dtitle">{d.title}</text>
-          <text x={d.node.x + 16} y={d.node.y + 37} className="rv-fd-dsub">{d.sub}</text>
+          <text x={d.node.x + 16} y={d.node.y + 18} className="rv-fd-dtitle">{d.title}</text>
+          <text x={d.node.x + 16} y={d.node.y + 33} className="rv-fd-dsub">{d.sub}</text>
         </g>
       ))}
     </svg>
