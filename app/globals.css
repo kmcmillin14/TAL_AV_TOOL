@@ -3292,8 +3292,10 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .rv-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
 /* §1 flow map (SVG node-link) — capped to natural size so it renders ~1:1, not upscaled */
-.rv-fd { width: 100%; max-width: 820px; height: auto; display: block; margin: 6px auto 0; }
+.rv-fd { width: 100%; max-width: 900px; height: auto; display: block; margin: 8px auto 0; }
 .rv-fd-link { fill: none; }
+/* Throughput pill behind the /hr label — keeps it legible over links. */
+.rv-fd-pill { fill: var(--bg-surface); stroke-width: 1; }
 .rv-fd-arrowhead { fill: color-mix(in srgb, var(--text-tertiary) 70%, transparent); }
 .rv-fd-thru { fill: var(--text-secondary); font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 600; }
 .rv-fd-origin { fill: var(--bg-surface-2); stroke: var(--accent); stroke-width: 1.5; }
@@ -3482,6 +3484,18 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .fm-eq strong { color: var(--text-primary); font-weight: 800; }
 .fm-eq-muted { color: var(--text-tertiary); }
 .fm-why { margin: 10px 0 0; font-family: var(--tal-font-family); font-size: 12px; line-height: 1.5; color: var(--text-tertiary); }
+.fm-intro { margin: 4px 0 14px; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
+/* The symbolic "sample formula" shown above each step's substituted numbers. */
+.fm-formula {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  margin: 0 0 10px; padding: 8px 10px;
+  background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px;
+}
+.fm-formula-lbl {
+  font-family: var(--tal-font-numeric); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--accent);
+}
+.fm-formula code { font-size: 12px; color: var(--text-primary); font-weight: 600; }
 .fm-total {
   margin-top: 4px; padding: 12px 16px; border-radius: 12px;
   border: 1px solid var(--accent); background: var(--accent-soft);

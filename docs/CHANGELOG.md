@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-23 — Step 4: battery/SoC split, flow-map overhaul, per-flow formula walkthrough
+
+- **Battery & runtime** combined into one box; **Battery state of charge** is now its own
+  dedicated card. Operations charts enlarged to span-2 (duty · utilization · battery · SoC).
+- **Material flow map** overhauled: even vertical rhythm + symmetric origin/destination
+  columns (generous spacing), throughput shown as colored **pills**, enlarged to 900px.
+- **Walk through the math**: `FleetMath` now shows the symbolic **sample formula** above
+  each step's substituted numbers, and the per-flow view gains a **cycle-time breakdown**
+  step (travel loaded/empty + load + unload + lift). Pick a flow → see each formula with
+  that flow's actual numbers (cycle → base → charging → buffer). Narration only; pure
+  engine values unchanged.
+
 ## 2026-06-23 — Step 4 hero boxes + gauges (T-Hive style, TAL-formatted)
 
 - Replaced the KPI band with two **hero summary boxes** — **Financials** (headline ROM

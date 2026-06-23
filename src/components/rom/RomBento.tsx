@@ -70,10 +70,12 @@ export default function RomBento(p: Props) {
       <Cell title="ROM CAPEX" span={2}><CapexRangeBars series={capex} /></Cell>
 
       {/* What the fleet does all day. */}
-      <Cell title="What the fleet does"><DutyCycleChart series={duty} /></Cell>
-      <Cell title="Utilization"><UtilizationChart series={util} /></Cell>
-      <Cell title="Charging"><ChargingSummary series={charge} /></Cell>
-      <Cell title="Battery state of charge"><BatterySocChart series={soc} /></Cell>
+      <Cell title="What the fleet does" span={2}><DutyCycleChart series={duty} /></Cell>
+      <Cell title="Utilization" span={2}><UtilizationChart series={util} /></Cell>
+
+      {/* Battery & runtime in one box; state-of-charge gets its own dedicated card. */}
+      <Cell title="Battery &amp; runtime" span={2}><ChargingSummary series={charge} /></Cell>
+      <Cell title="Battery state of charge" span={2}><BatterySocChart series={soc} /></Cell>
 
       {/* Trust & robustness. */}
       <Cell title="Requirements met" span={2}><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Cell>

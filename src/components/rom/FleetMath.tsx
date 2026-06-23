@@ -44,13 +44,19 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
   const vehName = (id: string) => vehicleById.get(id)?.name ?? id
 
   // ── Step blocks ──────────────────────────────────────────────────────────
-  const Step = ({ n, tag, title, why, children }: { n: number; tag: string; title: string; why: string; children: React.ReactNode }) => (
+  const Step = ({ n, tag, title, formula, why, children }: { n: number; tag: string; title: string; formula?: string; why: string; children: React.ReactNode }) => (
     <div className="fm-step">
       <div className="fm-step-head">
         <span className="fm-step-n mono">{n}</span>
         <span className="fm-step-title">{title}</span>
         <span className="fm-step-tag">{tag}</span>
       </div>
+      {formula && (
+        <div className="fm-formula">
+          <span className="fm-formula-lbl">Formula</span>
+          <code className="mono">{formula}</code>
+        </div>
+      )}
       <div className="fm-step-body">{children}</div>
       <p className="fm-why">{why}</p>
     </div>
@@ -84,7 +90,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
   // ── SYSTEM scope ─────────────────────────────────────────────────────────
   const renderSystem = () => (
     <>
-      <Step n={1} tag="engineering" title="Base fleet" why="Each vehicle completes one round-trip per cycle time; throughput sets how many cycles per hour are required, so raw vehicles = work ÷ capacity. Demand pools per vehicle type, then rounds up.">
+      <Step n={1} tag="engineering" title="Base fleet" formula="raw = throughput × cycle ÷ 3600  →  base = ⌈Σ raw per type⌉" why="Each vehicle completes one round-trip per cycle time; throughput sets how many cycles per hour are required, so raw vehicles = work ÷ capacity. Demand pools per vehicle type, then rounds up.">
         {fleet.groups.map(g => {
           const groupFlows = assigned.filter(f => f.vehicleId === g.vehicleId)
           return (
@@ -107,7 +113,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
         })}
       </Step>
 
-      <Step n={2} tag="physics" title="Charging" why="Batteries deplete in service and need time to recharge, so a vehicle isn't available 100% of the day. We add enough vehicles so the charging rotation never starves the operation.">
+      <Step n={2} tag="physics" title="Charging" formula="runtime = Ah × DoD ÷ draw  ·  +vehicles to cover recharge gap" why="Batteries deplete in service and need time to recharge, so a vehicle isn't available 100% of the day. We add enough vehicles so the charging rotation never starves the operation.">
         {fleet.groups.map(g => (
           <div key={g.vehicleId} className="fm-group">
             <div className="fm-group-name">{vehName(g.vehicleId)}</div>
@@ -116,7 +122,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
         ))}
       </Step>
 
-      <Step n={3} tag="policy" title="Buffer" why="A safety margin on top of base + charging absorbs demand variability, maintenance downtime, and ramp-up — then we round up to whole vehicles.">
+      <Step n={3} tag="policy" title="Buffer" formula="sold = ⌈(base + charging) × (1 + buffer)⌉" why="A safety margin on top of base + charging absorbs demand variability, maintenance downtime, and ramp-up — then we round up to whole vehicles.">
         {fleet.groups.map(g => (
           <div key={g.vehicleId} className="fm-group">
             <div className="fm-group-name">{vehName(g.vehicleId)}</div>
@@ -137,9 +143,23 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
     if (!f || !f.vehicleId) return <div className="rv-empty">Flow not found.</div>
     const d = derivedByFlowId.get(f.id)!
     const g = groupFor(f.vehicleId)
+    const b = d.breakdown
     return (
       <>
-        <Step n={1} tag="engineering" title="Base fleet" why="This flow's raw demand is its throughput times its cycle time. It then pools with every other flow that uses the same vehicle type before rounding up.">
+        <Step n={1} tag="kinematics" title="Cycle time" formula="cycle = travel loaded + travel empty + load + unload + lift" why="One round-trip per cycle: drive out loaded, transfer, drive back empty, plus any lift. Travel time uses the route-average speed (a fraction of rated cruise once accel/decel/turns are averaged in).">
+          {b ? (
+            <>
+              <div className="fm-eq mono">
+                {f1(b.travelLoadedSec)}s loaded + {f1(b.travelEmptySec)}s empty + {f1(b.loadSec)}s load + {f1(b.unloadSec)}s unload + {f1(b.liftTimeSec)}s lift = <strong>{secs(b.totalSec)}</strong>
+              </div>
+              <div className="fm-eq mono fm-eq-muted">
+                route {b.routeLayout} (×{f2(b.routeLayoutFactor)} speed) · transfer {b.methodName}{b.liftHeightFt > 0 ? ` · lift ${f1(b.liftHeightFt)} ft` : ''}
+              </div>
+            </>
+          ) : <div className="fm-eq mono">Assign a vehicle to compute cycle time.</div>}
+        </Step>
+
+        <Step n={2} tag="engineering" title="Base fleet" formula="raw = throughput × cycle ÷ 3600  →  base = ⌈Σ raw per type⌉" why="This flow's raw demand is its throughput times its cycle time. It then pools with every other flow that uses the same vehicle type before rounding up.">
           <div className="fm-eq mono">
             {f.thruPerHr}/hr × {secs(d.cycleSeconds)} ÷ 3600 = <strong>{f2(d.rawVehicles ?? 0)}</strong> vehicles for this flow
           </div>
@@ -150,11 +170,11 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
           )}
         </Step>
 
-        <Step n={2} tag="physics" title="Charging" why="Charging is modeled on the pooled vehicle type, not the single flow — the whole battery rotation shares chargers.">
+        <Step n={3} tag="physics" title="Charging" formula="runtime = Ah × DoD ÷ draw  ·  +vehicles to cover recharge gap" why="Charging is modeled on the pooled vehicle type, not the single flow — the whole battery rotation shares chargers.">
           {chargingLine(f.vehicleId)}
         </Step>
 
-        <Step n={3} tag="policy" title="Buffer" why="The safety buffer and final rounding apply to the pooled vehicle fleet this flow belongs to.">
+        <Step n={4} tag="policy" title="Buffer" formula="sold = ⌈(base + charging) × (1 + buffer)⌉" why="The safety buffer and final rounding apply to the pooled vehicle fleet this flow belongs to.">
           {bufferLine(f.vehicleId)}
         </Step>
       </>
@@ -163,7 +183,8 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
 
   return (
     <section className="rom-card">
-      <span className="rom-card-eyebrow">Fleet math — how we sized it</span>
+      <span className="rom-card-eyebrow">Walk through the math</span>
+      <p className="fm-intro">Pick a flow to see each sample formula with that flow&apos;s actual numbers substituted in — cycle time → base fleet → charging → buffer.</p>
 
       <div className="fm-toggle" role="tablist" aria-label="Math scope">
         <button type="button" role="tab" aria-selected={scope === 'system'} className={`fm-tab${scope === 'system' ? ' active' : ''}`} onClick={() => setScope('system')}>Full system</button>

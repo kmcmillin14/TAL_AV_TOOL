@@ -5,17 +5,18 @@ import { seriesColor } from '../palette'
 
 interface Props { series: FlowDiagramSeries }
 
-// Layout constants (SVG units; the svg scales to container width).
-const VIEW_W = 540
-const ROW_H = 52
-const GROUP_GAP = 16
-const PAD_Y = 8
-const ORIGIN_X = 6
-const ORIGIN_W = 72
-const ORIGIN_H = 36
-const DEST_X = 238
-const DEST_W = 296
-const DEST_H = 42
+// Layout constants (SVG units; the svg scales to container width). Generous,
+// even spacing + symmetric origin/destination columns for a clean, legible map.
+const VIEW_W = 600
+const ROW_H = 66
+const GROUP_GAP = 28
+const PAD_Y = 18
+const ORIGIN_X = 8
+const ORIGIN_W = 88
+const ORIGIN_H = 46
+const DEST_X = 254
+const DEST_W = 338
+const DEST_H = 50
 
 /**
  * Node-link operation map rendered as one SVG: each origin node sits centered
@@ -66,27 +67,34 @@ export default function FlowDiagram({ series }: Props) {
         </marker>
       </defs>
 
-      {links.map((l, i) => (
-        <g key={`l${i}`}>
-          <path d={path(l)} className="rv-fd-link" fill="none" stroke={l.color}
-            strokeWidth={1.5 + Math.min(4, l.thru / 15)} strokeOpacity={0.55} markerEnd="url(#rv-fd-arrow)" />
-          <text x={(l.x1 + l.x2) / 2} y={(l.y1 + l.y2) / 2 - 7} className="rv-fd-thru" textAnchor="middle">{l.thru}/hr</text>
-        </g>
-      ))}
+      {links.map((l, i) => {
+        const mx = (l.x1 + l.x2) / 2
+        const my = (l.y1 + l.y2) / 2
+        const label = `${l.thru}/hr`
+        const pw = label.length * 6.2 + 12
+        return (
+          <g key={`l${i}`}>
+            <path d={path(l)} className="rv-fd-link" fill="none" stroke={l.color}
+              strokeWidth={2 + Math.min(4, l.thru / 15)} strokeOpacity={0.5} markerEnd="url(#rv-fd-arrow)" />
+            <rect x={mx - pw / 2} y={my - 19} width={pw} height={16} rx={8} className="rv-fd-pill" stroke={l.color} />
+            <text x={mx} y={my - 7} className="rv-fd-thru" textAnchor="middle">{label}</text>
+          </g>
+        )
+      })}
 
       {origins.map((o, i) => (
         <g key={`o${i}`}>
-          <rect x={o.node.x} y={o.node.y} width={o.node.w} height={o.node.h} rx={11} className="rv-fd-origin" />
+          <rect x={o.node.x} y={o.node.y} width={o.node.w} height={o.node.h} rx={12} className="rv-fd-origin" />
           <text x={o.node.x + o.node.w / 2} y={o.node.y + o.node.h / 2 + 4} className="rv-fd-otext" textAnchor="middle">{o.label}</text>
         </g>
       ))}
 
       {dests.map((d, i) => (
         <g key={`d${i}`}>
-          <rect x={d.node.x} y={d.node.y} width={d.node.w} height={d.node.h} rx={9} className="rv-fd-dest" />
+          <rect x={d.node.x} y={d.node.y} width={d.node.w} height={d.node.h} rx={10} className="rv-fd-dest" />
           <rect x={d.node.x} y={d.node.y} width={4} height={d.node.h} rx={2} fill={d.color} />
-          <text x={d.node.x + 14} y={d.node.y + 17} className="rv-fd-dtitle">{d.title}</text>
-          <text x={d.node.x + 14} y={d.node.y + 32} className="rv-fd-dsub">{d.sub}</text>
+          <text x={d.node.x + 16} y={d.node.y + 20} className="rv-fd-dtitle">{d.title}</text>
+          <text x={d.node.x + 16} y={d.node.y + 37} className="rv-fd-dsub">{d.sub}</text>
         </g>
       ))}
     </svg>
