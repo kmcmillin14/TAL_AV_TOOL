@@ -52,6 +52,9 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   const costPerMove = lifetimeMoves > 0 ? tcoAtLife / lifetimeMoves : null
   const res = resilience({ fleet })
   const pctChip = (n: number) => `${Math.round(n * 100)}%`
+  const opDays = Math.max(1, costs.operatingDaysPerYear)
+  const energyPerDay = rom.opex.annualEnergyKwh / opDays
+  const energyPerWeek = rom.opex.annualEnergyKwh / 52
 
   // Grouped so related metrics read together: a "fleet & operations" row, then a
   // "the money" row (matches the 7-col KPI grid — 7 + 7).
@@ -66,8 +69,8 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
     { id: 'utilization', label: 'Avg utilization', value: avgUtil == null ? '—' : pctChip(avgUtil),
       delta: chip(deltas?.avgUtilization, pctChip) },
     { id: 'resilience', label: 'Resilience', value: res.throughputHeldWithOneDown ? '✓ holds' : `${Math.round(res.retainedPct * 100)}%` },
-    { id: 'energy', label: 'Annual energy', value: `${Math.round(rom.opex.annualEnergyKwh / 1000)}k kWh`,
-      delta: chip(deltas?.annualEnergyKwh, n => `${Math.round(n / 1000)}k kWh`) },
+    { id: 'energy', label: 'Energy kWh /d · /wk', value: `${Math.round(energyPerDay)} · ${Math.round(energyPerWeek)}`,
+      delta: chip(deltas?.annualEnergyKwh == null ? undefined : deltas.annualEnergyKwh / opDays, n => `${Math.round(n)}/d`) },
     // ── The money ──
     { id: 'capex', label: 'ROM CAPEX', value: usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true,
       delta: chip(deltas?.capexMid, usd) },

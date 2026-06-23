@@ -105,8 +105,10 @@ export function kpiDetails(
     },
     energy: {
       rows: [
-        { label: 'Energy / yr', value: kwh(rom.opex.annualEnergyKwh) },
-        { label: 'Energy cost', value: money(rom.opex.annualEnergyCost) },
+        { label: 'Per operating day', value: kwh(rom.opex.annualEnergyKwh / Math.max(1, costs.operatingDaysPerYear)) },
+        { label: 'Per week', value: kwh(rom.opex.annualEnergyKwh / 52) },
+        { label: 'Per year', value: kwh(rom.opex.annualEnergyKwh) },
+        { label: 'Energy cost / yr', value: money(rom.opex.annualEnergyCost) },
       ],
       note: 'Conservative full-draw estimate: kW (discharge × voltage) × op-hours × days × fleet.',
     },
