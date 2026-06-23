@@ -37,7 +37,7 @@ export function kpiDetails(
   const nm = (id: string) => names[id] ?? id
   const mult = (1 + settings.bufferPct).toFixed(2)
   const throughput = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
-  const life = opts?.serviceLifeYears ?? 7
+  const life = opts?.serviceLifeYears ?? 10
 
   // Derived economics shared by several new KPIs.
   const offset = rom.payback.annualLaborOffset

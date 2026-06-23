@@ -49,7 +49,7 @@ export default function RomDashboardPage() {
     energyCostUsdPerKwh: project?.energyCostUsdPerKwh ?? 0.12,
     annualMaintenancePctOfCapex: project?.annualMaintenancePctOfCapex ?? 0.08,
     bufferPct: project?.bufferPct ?? 0.10,
-    serviceLifeYears: project?.serviceLifeYears ?? 7,
+    serviceLifeYears: project?.serviceLifeYears ?? 10,
   }), [project])
 
   const deltas = useMemo(
@@ -135,7 +135,7 @@ export default function RomDashboardPage() {
 
           <div className="rom2-main">
             <div className={`rom2-kpiband ${showScenario ? 'is-scenario' : ''}`}>
-              <RomKpis fleet={active.fleet} rom={active.rom} flows={active.flows} settings={active.settings} costs={active.costs} serviceLifeYears={activeProject.serviceLifeYears ?? 7} vehicleById={vehicleById} names={names} deltas={deltas} />
+              <RomKpis fleet={active.fleet} rom={active.rom} flows={active.flows} settings={active.settings} costs={active.costs} serviceLifeYears={activeProject.serviceLifeYears ?? 10} vehicleById={vehicleById} names={names} deltas={deltas} />
             </div>
 
             <RomBento
@@ -146,7 +146,7 @@ export default function RomDashboardPage() {
               rom={active.rom}
               vehicleById={vehicleById}
               effDailyOpHr={effDailyOpHr(analyticsSchedule)}
-              serviceLifeYears={activeProject.serviceLifeYears ?? 7}
+              serviceLifeYears={activeProject.serviceLifeYears ?? 10}
             />
 
             <section className="rom-card rom-card-export">

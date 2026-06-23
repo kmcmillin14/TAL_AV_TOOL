@@ -21,7 +21,6 @@ const DRIVERS: DriverDef[] = [
   { key: 'operatorsPerShift', label: 'Operators / shift', step: 1, min: 0 },
   { key: 'shiftsPerDay', label: 'Shifts / day', step: 1, min: 1, max: 3 },
   { key: 'fullyBurdenedRateUsdPerYear', label: 'Fully-burdened labor', suffix: '$/yr', step: 1000, min: 0 },
-  { key: 'energyCostUsdPerKwh', label: 'Energy', suffix: '$/kWh', step: 0.01, min: 0 },
   { key: 'annualMaintenancePctOfCapex', label: 'Maintenance', suffix: '% of CAPEX', step: 1, min: 0,
     toInput: n => Math.round(n * 100), fromInput: n => n / 100 },
   { key: 'bufferPct', label: 'Buffer', suffix: '%', step: 1, min: 0, max: 100,

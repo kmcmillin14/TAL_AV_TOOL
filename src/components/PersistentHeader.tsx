@@ -4,10 +4,9 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
-import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
+import { updateProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
 import { useTheme } from '@/src/lib/uiPrefs'
 import HelpDrawer from './HelpDrawer'
-import { downloadProjectPdf } from '@/src/lib/pdfExport'
 import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import PptxSectionPicker from './rom/PptxSectionPicker'
 
@@ -153,21 +152,6 @@ export default function PersistentHeader({
     }, 400)
   }, [project.id])
 
-  const handleExportJson = () => {
-    downloadProject(project.id)
-    setMenuOpen(false)
-  }
-
-  const handleExportPdf = async () => {
-    setMenuOpen(false)
-    const current = getProject(project.id)
-    if (!current) return
-    try {
-      await downloadProjectPdf(current)
-    } catch (err) {
-      alert(`Could not generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`)
-    }
-  }
 
   const handleExportPptx = () => {
     setMenuOpen(false)
@@ -449,10 +433,6 @@ export default function PersistentHeader({
             </button>
             {menuOpen && (
               <div className="header-menu-popover" role="menu">
-                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPdf}>
-                  <span>Export proposal</span>
-                  <span className="hint">.pdf</span>
-                </button>
                 <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPptx}>
                   <span>Export deck</span>
                   <span className="hint">.pptx</span>
@@ -460,10 +440,6 @@ export default function PersistentHeader({
                 <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportXlsx}>
                   <span>Export workbook</span>
                   <span className="hint">.xlsx</span>
-                </button>
-                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
-                  <span>Export data only</span>
-                  <span className="hint">.json</span>
                 </button>
                 <div className="header-menu-sep" aria-hidden />
                 <button

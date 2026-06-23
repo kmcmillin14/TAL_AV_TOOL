@@ -25,7 +25,7 @@ export default function AssumptionsPanel({ project: p }: Props) {
     ['Fully-burdened operator', `$${(p.fullyBurdenedRateUsdPerYear ?? 65000).toLocaleString()}/yr`],
     ['Energy cost', `$${p.energyCostUsdPerKwh ?? 0.12}/kWh`],
     ['Maintenance', `${Math.round((p.annualMaintenancePctOfCapex ?? 0.08) * 100)}%/yr of CAPEX`],
-    ['Service life', `${p.serviceLifeYears ?? 7} yr`],
+    ['Service life', `${p.serviceLifeYears ?? 10} yr`],
   ]
   return (
     <dl className="rv-assume">

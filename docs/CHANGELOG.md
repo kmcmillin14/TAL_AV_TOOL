@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-23 — Step 4: service-life 10yr default, fewer drivers/exports, battery combined
+
+- **Default service life 7 → 10 years** (page, `kpiDetails`, AssumptionsPanel).
+- Removed the **Energy $/kWh** driver from the scenario rail (OPEX still uses the default rate,
+  still shown in Assumptions for transparency).
+- Removed **PDF** and **JSON** export (RomExportBar + header menu) — Step 4 export is the
+  branded PowerPoint (workbook .xlsx still in the header menu). *Note:* this drops the
+  PDF-embedded-JSON / JSON round-trip used by Step 00 "import previous revision".
+- **Battery** state-of-charge chart + runtime table combined into **one card** (chart on top,
+  table underneath), matching the operation-map pattern.
+
 ## 2026-06-23 — Step 4 flow map: industrial recolor + backing data table
 
 - Recolored the **material flow map** to an industrial TAL palette — dropped the per-flow
