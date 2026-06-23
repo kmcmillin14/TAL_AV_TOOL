@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-23 — Step 4 hero boxes + gauges (T-Hive style, TAL-formatted)
+
+- Replaced the KPI band with two **hero summary boxes** — **Financials** (headline ROM
+  CAPEX + Net benefit, Payback, Labor offset, OPEX, TCO, Cost/move) and **Fleet & flow**
+  (headline Total fleet + types, flows, throughput, energy). Like-items combined into one
+  box each; headline figure large, supporting metrics below; hover popovers kept.
+- Added a **gauge strip** (`RomGauge`, pure SVG 270° arc, brand red): **Utilization ·
+  Availability · Charging · Resilience** — makes utilization/availability legible at a
+  glance (availability/charging weighted across the fleet from the charging series).
+- Pure/series untouched; PPTX/Excel unaffected.
+
 ## 2026-06-23 — Step 4 KPIs grouped into 2 cards; Step 1 orphans flagged
 
 - **Step 4:** consolidated the 14 KPI tiles into two symmetrical group cards (Fleet &

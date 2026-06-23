@@ -1,11 +1,14 @@
 'use client'
 
 import type { FleetSummary, Flow, FleetSettings } from '@/src/calc/types'
+import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { RomSummary, RomCostInputs } from '@/src/calc/rom'
 import { resilience } from '@/src/calc/romSensitivity'
+import { chargingSeries } from '@/src/calc/romCharts'
 import { kpiDetails, type KpiId } from '@/src/lib/kpiDetails'
 import type { ScenarioDiff } from '@/src/lib/scenario'
 import KpiTile from './KpiTile'
+import RomGauge from './RomGauge'
 
 export const usd = (n: number) =>
   n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
@@ -22,6 +25,7 @@ interface Props {
   settings: FleetSettings
   costs: RomCostInputs
   serviceLifeYears: number
+  vehicleById: Map<string, Vehicle>
   names: Record<string, string>
   /** Scenario-vs-baseline deltas; when present, tiles show a delta chip. */
   deltas?: ScenarioDiff | null
@@ -36,7 +40,7 @@ function chip(d: number | null | undefined, fmt: (n: number) => string): string 
 
 /** Top KPI band — interactive tiles (hover/pin reveals each metric's breakdown).
  *  Fleet sold + ROM CAPEX are the accent headline; the rest are secondary. */
-export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLifeYears, names, deltas }: Props) {
+export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLifeYears, vehicleById, names, deltas }: Props) {
   const payback = rom.payback.paybackYears
   const throughput = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
   const detail = kpiDetails({ fleet, rom, flows, settings, costs }, names, { serviceLifeYears })
@@ -55,6 +59,21 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   const opDays = Math.max(1, costs.operatingDaysPerYear)
   const energyPerDay = rom.opex.annualEnergyKwh / opDays
   const energyPerWeek = rom.opex.annualEnergyKwh / 52
+
+  // Fleet-wide gauge aggregates (weighted by units sold).
+  const charge = chargingSeries(fleet, vehicleById)
+  let wAvail = 0, wCharge = 0
+  charge.rows.forEach((r, i) => {
+    const sold = fleet.groups[i]?.fleetSold ?? 0
+    const avail = r.availability ?? 0
+    const runHr = r.runHr ?? 0
+    const chargeHr = r.chargeHr ?? 0
+    wAvail += avail * sold
+    const frac = runHr + chargeHr > 0 ? chargeHr / (runHr + chargeHr) : 0
+    wCharge += frac * sold
+  })
+  const avgAvailability = totalSold > 0 ? wAvail / totalSold : 0
+  const avgCharging = totalSold > 0 ? wCharge / totalSold : 0
 
   // Grouped so related metrics read together: a "fleet & operations" row, then a
   // "the money" row (matches the 7-col KPI grid — 7 + 7).
@@ -86,28 +105,44 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
     { id: 'costPerMove', label: 'Cost / move', value: costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}` },
   ]
 
-  // Combine the 14 KPIs into two symmetrical group cards (7 each): one cohesive
-  // tile per theme, KPIs laid out inside it. Hover any KPI for its breakdown.
-  const groups: Array<{ label: string; ids: KpiId[] }> = [
-    { label: 'Fleet & operations', ids: ['fleet', 'types', 'flows', 'throughput', 'utilization', 'resilience', 'energy'] },
-    { label: 'Economics', ids: ['capex', 'payback', 'net', 'offset', 'opex', 'tco', 'costPerMove'] },
-  ]
   const byId = new Map(tiles.map((t, i) => [t.id, { ...t, colorIndex: i }]))
+  const tile = (id: KpiId) => {
+    const t = byId.get(id)
+    if (!t) return null
+    return <KpiTile key={id} label={t.label} value={t.value} detail={detail[id]} accent={t.accent} colorIndex={t.colorIndex} delta={t.delta} />
+  }
 
+  // Two hero boxes (Financials · Fleet & flow): each leads with its headline figure,
+  // supporting metrics below — like items combined into one cohesive box. Then a
+  // gauges strip makes utilization / availability / charging legible at a glance.
   return (
-    <div className="rom2-kpis-groups">
-      {groups.map(g => (
-        <section key={g.label} className="rom2-kgroup">
-          <div className="rom2-kgroup-head">{g.label}</div>
-          <div className="rom2-kgrid">
-            {g.ids.map(id => {
-              const t = byId.get(id)
-              if (!t) return null
-              return <KpiTile key={id} label={t.label} value={t.value} detail={detail[id]} accent={t.accent} colorIndex={t.colorIndex} delta={t.delta} />
-            })}
+    <>
+      <div className="rom2-summary">
+        <section className="rom2-hero">
+          <div className="rom2-hero-head">Financials</div>
+          <div className="rom2-hero-lead">{tile('capex')}</div>
+          <div className="rom2-hero-grid">
+            {tile('net')}{tile('payback')}{tile('offset')}
+            {tile('opex')}{tile('tco')}{tile('costPerMove')}
           </div>
         </section>
-      ))}
-    </div>
+
+        <section className="rom2-hero">
+          <div className="rom2-hero-head">Fleet &amp; flow</div>
+          <div className="rom2-hero-lead">{tile('fleet')}</div>
+          <div className="rom2-hero-grid">
+            {tile('types')}{tile('flows')}{tile('throughput')}{tile('energy')}
+          </div>
+        </section>
+      </div>
+
+      <div className="rom2-gauges">
+        <RomGauge value={avgUtil ?? 0} label="Utilization" display={avgUtil == null ? '—' : pctChip(avgUtil)} />
+        <RomGauge value={avgAvailability} label="Availability" status />
+        <RomGauge value={avgCharging} label="Charging" />
+        <RomGauge value={res.throughputHeldWithOneDown ? 1 : res.retainedPct} label="Resilience" status
+          display={res.throughputHeldWithOneDown ? '✓' : pctChip(res.retainedPct)} />
+      </div>
+    </>
   )
 }
