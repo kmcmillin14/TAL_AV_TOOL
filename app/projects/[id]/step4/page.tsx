@@ -25,6 +25,7 @@ export default function RomDashboardPage() {
   const [drivers, setDrivers] = useState<ScenarioDrivers>({})
   const [mode, setMode] = useState<'baseline' | 'scenario'>('scenario')
 
+  const hasOverrides = Object.values(drivers).some(v => v !== undefined && !Number.isNaN(v))
   const vehicles = useMemo(() => [...vehicleById.values()], [vehicleById])
   const baseModel = useMemo(
     () => (project ? computeFleetModel(project, vehicles) : null),
@@ -34,12 +35,13 @@ export default function RomDashboardPage() {
     () => (project ? applyDrivers(project, drivers) : null),
     [project, drivers],
   )
+  // Only run the second full fleet computation when there are actual overrides —
+  // the baseline path doesn't need it.
   const scnModel = useMemo(
-    () => (scnProject ? computeFleetModel(scnProject, vehicles) : null),
-    [scnProject, vehicles],
+    () => (hasOverrides && scnProject ? computeFleetModel(scnProject, vehicles) : null),
+    [hasOverrides, scnProject, vehicles],
   )
 
-  const hasOverrides = Object.values(drivers).some(v => v !== undefined && !Number.isNaN(v))
   const showScenario = mode === 'scenario' && hasOverrides
 
   const baselineDrivers: ScenarioDrivers = useMemo(() => ({
@@ -65,7 +67,7 @@ export default function RomDashboardPage() {
   }
 
   if (loading) return <div className="app-shell"><div className="step2-loading">Loading ROM dashboard…</div></div>
-  if (error || !project || !baseModel || !scnModel) {
+  if (error || !project || !baseModel) {
     return (
       <div className="app-shell">
         <div className="step2-error">
@@ -77,7 +79,7 @@ export default function RomDashboardPage() {
     )
   }
 
-  const active = showScenario ? scnModel : baseModel
+  const active = showScenario && scnModel ? scnModel : baseModel
   const activeProject = showScenario && scnProject ? scnProject : project
 
   const analyticsSchedule: AnalyticsSchedule = {

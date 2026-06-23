@@ -2996,12 +2996,14 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .rom-kpi:hover .rom-kpi-hint, .rom-kpi-pinned .rom-kpi-hint { opacity: 1; }
 .rom-kpi-pinned .rom-kpi-hint { color: var(--accent); }
-/* Scenario delta chip on a KPI tile. */
+/* Scenario delta chip on a KPI tile — larger, semantic color (green = better, red = worse). */
 .rom-kpi-delta {
-  position: absolute; top: 9px; right: 12px;
-  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
-  color: var(--text-secondary);
+  position: absolute; top: 8px; right: 12px;
+  font-family: var(--tal-font-numeric); font-size: 13px; font-weight: 800; letter-spacing: 0.01em;
+  padding: 2px 7px; border-radius: 999px; color: var(--text-secondary);
 }
+.rom-kpi-delta.good { color: var(--good); background: var(--good-soft); }
+.rom-kpi-delta.bad { color: var(--accent); background: var(--accent-soft); }
 
 /* Hero summary boxes — Financials + Fleet, each leads with a headline figure and
    combines its like-items below. Two equal, symmetrical boxes. */

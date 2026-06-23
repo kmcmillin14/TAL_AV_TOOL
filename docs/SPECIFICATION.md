@@ -375,17 +375,21 @@ Pure series builders are unchanged, so **PPTX/Excel exports are unaffected**.
 **Top summary (2026-06-23 redesign, T-Hive-inspired, TAL-formatted):** two **hero boxes** —
 **Financials** (headline ROM CAPEX + net benefit, payback, labor offset, OPEX, TCO, cost/move)
 and **Fleet & flow** (headline total fleet + types, flows, throughput, energy/day·week) — each
-combining like-items into one cohesive box with the headline figure large; hover any metric
-for its `kpiDetails` breakdown + scenario delta. Below, a **gauge strip** (`RomGauge`, SVG
-270° arc): Utilization · Availability · Charging · Resilience (availability/charging weighted
-across the fleet from the charging series).
+combining like-items into one cohesive box with the headline figure large (red on the figures,
+no red rules); hover any metric for its `kpiDetails` breakdown. In **scenario** mode each tile
+shows a larger **delta chip colored by benefit** — green when the change helps, red when it
+hurts (per-metric desirable direction). Below, a **gauge strip** (`RomGauge`, SVG 270° arc with
+a hover definition): Utilization · Availability · Charging · **Redundancy** (the resilience
+metric, renamed) — availability/charging weighted across the fleet from the charging series.
 
-**Bento body:** full-width **material flow map** (symmetric origin/destination columns,
-throughput pills); paired money charts (payback · TCO · pricing · CAPEX); operations
-(duty-cycle · utilization · **Battery & runtime** · **Battery state of charge** as its own
-card); trust (requirements · resilience); and **Walk through the math** (`FleetMath`) — pick a
-flow to see each sample formula with that flow's actual numbers substituted (cycle-time
-breakdown → base → charging → buffer). `kpiDetails`/walkthrough are web-only; PPTX unaffected.
+**Bento body:** full-width **material flow map** (industrial neutral + single red accent,
+symmetric columns, throughput pills) with a **backing data table** underneath; paired money
+charts (payback · TCO · pricing · CAPEX); operations (duty-cycle · utilization); **Battery —
+state of charge & runtime** (SoC chart + runtime table, one card); trust (requirements ·
+**Redundancy** status+bar); and a collapsible **How the fleet is calculated** card — the
+per-flow **Walk through a flow** (`FleetMath`, open) substitutes each flow's real numbers into
+the sample formulas (cycle-time breakdown → base → charging → buffer), with a collapsed
+**Formulas & variables** reference. `kpiDetails`/walkthrough are web-only; PPTX unaffected.
 
 **ROM pricing (range, never a point):** for each vehicle group,
 `fleetSold × priceRange` → line range; summed to `totalMin`/`totalMax`; `totalMid =

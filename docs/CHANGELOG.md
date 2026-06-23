@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-23 — Semantic scenario deltas + /simplify pass
+
+- **Scenario delta chips** are larger and **colored by benefit**: green when the change helps,
+  red when it hurts (each KPI carries its desirable direction — e.g. lower CAPEX/payback/OPEX
+  is good, higher net benefit/utilization is good).
+- **/simplify**: removed the dead `tiles` entries (utilization/resilience became gauges); gated
+  the scenario `computeFleetModel` so it only runs when there are actual driver overrides
+  (skips a full fleet computation on the default baseline view). `/code-review`: no correctness
+  bugs. Deferred (noted): consolidating the duplicated currency/percent formatters onto
+  `money()`/a shared `pct`, and moving the gauge aggregates into a pure `romCharts` helper.
+
 ## 2026-06-23 — Hero polish: drop red rules; walkthrough open, formulas collapsed
 
 - Removed the red top-bar (`.rom-kpi-accent::before`) from the hero accent tiles — red now

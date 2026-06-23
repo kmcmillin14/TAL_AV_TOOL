@@ -12,8 +12,8 @@ interface Props {
   accent?: boolean
   /** Index into the brand data palette for the mini-bar color. */
   colorIndex?: number
-  /** Scenario-vs-baseline delta chip (already formatted, e.g. "▲ +2"). */
-  delta?: string
+  /** Scenario-vs-baseline delta chip: text + good/bad/neutral tone. */
+  delta?: { text: string; tone: 'good' | 'bad' | 'neutral' }
 }
 
 /**
@@ -46,8 +46,8 @@ export default function KpiTile({ label, value, detail, accent, colorIndex = 0, 
         <span className="rom-kpi-val mono">{value}</span>
         <span className="rom-kpi-lbl">{label}</span>
         {delta
-          ? <span className="rom-kpi-delta mono" aria-label={`change vs baseline ${delta}`}>{delta}</span>
-          : <span className="rom-kpi-hint" aria-hidden="true">{pinned ? '● pinned' : 'hover ⓘ'}</span>}
+          ? <span className={`rom-kpi-delta mono ${delta.tone}`} aria-label={`change vs baseline ${delta.text}`}>{delta.text}</span>
+          : <span className="rom-kpi-hint" aria-hidden="true">{pinned ? '● pinned' : ''}</span>}
       </button>
 
       {open && (

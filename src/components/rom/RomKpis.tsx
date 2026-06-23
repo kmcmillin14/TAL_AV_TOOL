@@ -31,11 +31,17 @@ interface Props {
   deltas?: ScenarioDiff | null
 }
 
-/** Signed chip text, e.g. "▲ +2" / "▼ −0.3 yr". Omitted when the change is ~0. */
-function chip(d: number | null | undefined, fmt: (n: number) => string): string | undefined {
+type Delta = { text: string; tone: 'good' | 'bad' | 'neutral' }
+
+/** Signed delta chip with semantic tone. `good` says which direction is desirable
+ *  ('up' = higher is better, 'down' = lower is better, undefined = neutral); the
+ *  arrow shows the actual direction, the color shows whether it helped. */
+function chip(d: number | null | undefined, fmt: (n: number) => string, good?: 'up' | 'down'): Delta | undefined {
   if (d == null || Math.abs(d) < 1e-9) return undefined
-  const arrow = d > 0 ? '▲' : '▼'
-  return `${arrow} ${d > 0 ? '+' : '−'}${fmt(Math.abs(d))}`
+  const up = d > 0
+  const text = `${up ? '▲' : '▼'} ${up ? '+' : '−'}${fmt(Math.abs(d))}`
+  const tone: Delta['tone'] = good == null ? 'neutral' : (good === 'up') === up ? 'good' : 'bad'
+  return { text, tone }
 }
 
 /** Top KPI band — interactive tiles (hover/pin reveals each metric's breakdown).
@@ -75,32 +81,29 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   const avgAvailability = totalSold > 0 ? wAvail / totalSold : 0
   const avgCharging = totalSold > 0 ? wCharge / totalSold : 0
 
-  // Grouped so related metrics read together: a "fleet & operations" row, then a
-  // "the money" row (matches the 7-col KPI grid — 7 + 7).
-  const tiles: Array<{ id: KpiId; label: string; value: string; accent?: boolean; delta?: string }> = [
-    // ── Fleet & operations ──
+  // Tiles rendered inside the two hero boxes (Fleet & flow · Financials). Utilization,
+  // availability, charging and redundancy are shown as gauges below, not tiles here.
+  const tiles: Array<{ id: KpiId; label: string; value: string; accent?: boolean; delta?: Delta }> = [
+    // ── Fleet & flow ──
     { id: 'fleet', label: 'Total fleet', value: String(fleet.totalFleetSold), accent: true,
-      delta: chip(deltas?.totalFleetSold, n => String(Math.round(n))) },
+      delta: chip(deltas?.totalFleetSold, n => String(Math.round(n)), 'down') },
     { id: 'types', label: 'Vehicle types', value: String(fleet.groups.length),
       delta: chip(deltas?.vehicleTypes, n => String(Math.round(n))) },
     { id: 'flows', label: 'Flows', value: String(flows.length) },
     { id: 'throughput', label: 'Throughput', value: `${throughput} / hr` },
-    { id: 'utilization', label: 'Avg utilization', value: avgUtil == null ? '—' : pctChip(avgUtil),
-      delta: chip(deltas?.avgUtilization, pctChip) },
-    { id: 'resilience', label: 'Resilience', value: res.throughputHeldWithOneDown ? '✓ holds' : `${Math.round(res.retainedPct * 100)}%` },
     { id: 'energy', label: 'Energy kWh /d · /wk', value: `${Math.round(energyPerDay)} · ${Math.round(energyPerWeek)}`,
-      delta: chip(deltas?.annualEnergyKwh == null ? undefined : deltas.annualEnergyKwh / opDays, n => `${Math.round(n)}/d`) },
-    // ── The money ──
+      delta: chip(deltas?.annualEnergyKwh == null ? undefined : deltas.annualEnergyKwh / opDays, n => `${Math.round(n)}/d`, 'down') },
+    // ── Financials ──
     { id: 'capex', label: 'ROM CAPEX', value: usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true,
-      delta: chip(deltas?.capexMid, usd) },
+      delta: chip(deltas?.capexMid, usd, 'down') },
     { id: 'payback', label: 'Payback', value: payback == null ? '—' : `${payback.toFixed(1)} yr`,
-      delta: chip(deltas?.paybackYears, n => `${n.toFixed(1)} yr`) },
+      delta: chip(deltas?.paybackYears, n => `${n.toFixed(1)} yr`, 'down') },
     { id: 'net', label: 'Net benefit / yr', value: usd(offset - opex), accent: true,
-      delta: chip(deltas?.netAnnualBenefit, usd) },
+      delta: chip(deltas?.netAnnualBenefit, usd, 'up') },
     { id: 'offset', label: 'Labor offset / yr', value: usd(offset),
-      delta: chip(deltas?.annualLaborOffset, usd) },
+      delta: chip(deltas?.annualLaborOffset, usd, 'up') },
     { id: 'opex', label: 'Annual OPEX', value: usd(opex),
-      delta: chip(deltas?.annualOpex, usd) },
+      delta: chip(deltas?.annualOpex, usd, 'down') },
     { id: 'tco', label: `TCO @ ${serviceLifeYears}yr`, value: usd(tcoAtLife) },
     { id: 'costPerMove', label: 'Cost / move', value: costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}` },
   ]
