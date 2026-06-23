@@ -13,6 +13,9 @@ interface FormSectionProps {
   status?: SectionStatus
   collapsible?: boolean
   defaultOpen?: boolean
+  /** Fields here aren't used in any Step 2 gate / downstream calc yet — show an
+   *  "Advanced" tag + note so it's clear they don't move the traffic lights. */
+  notGated?: boolean
   children: React.ReactNode
 }
 
@@ -33,6 +36,7 @@ export default function FormSection({
   status,
   collapsible = true,
   defaultOpen = true,
+  notGated = false,
   children,
 }: FormSectionProps) {
   const [open, setOpen] = useState(defaultOpen)
@@ -48,6 +52,7 @@ export default function FormSection({
           <span className="sec-num">{sectionNum}.</span> {title}
         </h3>
         <div className="form-section-meta">
+          {notGated && <span className="sec-tag-advanced">Advanced · not yet gated</span>}
           {badge && <span className={`sec-badge sec-badge-${status}`}>{badge}</span>}
           {collapsible && (
             <Icon
@@ -58,7 +63,17 @@ export default function FormSection({
           )}
         </div>
       </div>
-      {open && <div className="form-section-body">{children}</div>}
+      {open && (
+        <div className="form-section-body">
+          {notGated && (
+            <p className="sec-notgated-note">
+              Captured for the proposal and planned qualification gates — these don&apos;t
+              affect the Step 2 traffic lights yet.
+            </p>
+          )}
+          {children}
+        </div>
+      )}
     </div>
   )
 }

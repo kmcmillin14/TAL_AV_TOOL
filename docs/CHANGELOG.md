@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-23 — Step 4 KPIs grouped into 2 cards; Step 1 orphans flagged
+
+- **Step 4:** consolidated the 14 KPI tiles into two symmetrical group cards (Fleet &
+  operations · Economics) — one cohesive surface each, KPIs as flat cells with hairline
+  dividers; hover still reveals each breakdown. Removed dead `.rom-kpis` CSS.
+- **Step 1:** audited every field vs gates/calc/exports — no truly removable fields (the
+  unused ones either feed the proposal export or are roadmap-MX1 future gates). Per the
+  decision, **kept all** and flagged the not-yet-gated sections (Site details, Integration)
+  with an "Advanced · not yet gated" tag + a note clarifying they don't affect Step 2
+  traffic lights. No schema change.
+
 ## 2026-06-22 — Step 4 rebuild, slice 4: 8 new KPIs (keep all current)
 
 - Kept all 6 existing KPIs and **added 8**: Net benefit/yr, Avg utilization, Annual OPEX,

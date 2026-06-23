@@ -236,7 +236,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
   const secProps = (id: string) => {
     const m = FORM_SECTIONS.find(s => s.id === id)!
-    return { sectionNum: m.num, title: m.label, id: m.id, status: sectionStatus(m, formValues), defaultOpen: !m.startCollapsed }
+    return { sectionNum: m.num, title: m.label, id: m.id, status: sectionStatus(m, formValues), defaultOpen: !m.startCollapsed, notGated: m.notGated }
   }
 
   // Pallet subtype auto-fill — writes into the load row it was picked on.

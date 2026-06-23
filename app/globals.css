@@ -476,6 +476,20 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* Section header badge */
 .form-section-meta { display: flex; align-items: center; gap: 10px; }
+/* "Advanced · not yet gated" tag for sections whose fields aren't used in any
+   Step 2 gate / downstream calc yet (roadmap MX1). */
+.sec-tag-advanced {
+  font-family: var(--tal-font-numeric);
+  font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 3px 8px; border-radius: 999px;
+  color: var(--text-tertiary); background: var(--bg-base); border: 1px dashed var(--border-strong);
+  white-space: nowrap;
+}
+.sec-notgated-note {
+  margin: 0 0 14px; padding: 8px 12px;
+  font-size: 12px; line-height: 1.5; color: var(--text-tertiary);
+  background: var(--bg-base); border: 1px solid var(--border); border-radius: 8px;
+}
 .sec-badge {
   font-family: var(--tal-font-numeric);
   font-size: 9px; font-weight: 700;
