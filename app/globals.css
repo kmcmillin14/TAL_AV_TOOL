@@ -3227,8 +3227,8 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .rv-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
 /* §1 flow map (SVG node-link) — capped to natural size so it renders ~1:1, not upscaled */
-.rv-fd { width: 100%; max-width: 540px; height: auto; display: block; }
-.rv-fd-link { stroke: color-mix(in srgb, var(--text-tertiary) 70%, transparent); stroke-width: 1.5; }
+.rv-fd { width: 100%; max-width: 820px; height: auto; display: block; margin: 6px auto 0; }
+.rv-fd-link { fill: none; }
 .rv-fd-arrowhead { fill: color-mix(in srgb, var(--text-tertiary) 70%, transparent); }
 .rv-fd-thru { fill: var(--text-secondary); font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 600; }
 .rv-fd-origin { fill: var(--bg-surface-2); stroke: var(--accent); stroke-width: 1.5; }

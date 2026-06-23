@@ -108,7 +108,7 @@ export function kpiDetails(
         { label: 'Energy / yr', value: kwh(rom.opex.annualEnergyKwh) },
         { label: 'Energy cost', value: money(rom.opex.annualEnergyCost) },
       ],
-      note: 'Duty-cycle-aware annual draw across the fleet.',
+      note: 'Conservative full-draw estimate: kW (discharge × voltage) × op-hours × days × fleet.',
     },
     utilization: {
       bars: bars(fleet.groups.map(g => ({

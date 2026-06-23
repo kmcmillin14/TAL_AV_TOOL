@@ -1,6 +1,7 @@
 'use client'
 
 import type { FlowDiagramSeries } from '@/src/calc/romCharts'
+import { seriesColor } from '../palette'
 
 interface Props { series: FlowDiagramSeries }
 
@@ -29,12 +30,13 @@ export default function FlowDiagram({ series }: Props) {
 
   // Lay groups out top-to-bottom; each origin owns a vertical band sized to its edges.
   type Node = { x: number; y: number; w: number; h: number }
-  type Link = { x1: number; y1: number; x2: number; y2: number; thru: number }
+  type Link = { x1: number; y1: number; x2: number; y2: number; thru: number; color: string }
   const origins: Array<{ label: string; node: Node }> = []
-  const dests: Array<{ title: string; sub: string; node: Node }> = []
+  const dests: Array<{ title: string; sub: string; node: Node; color: string }> = []
   const links: Link[] = []
 
   let y = PAD_Y
+  let colorIdx = 0
   for (const o of series.origins) {
     const n = Math.max(1, o.edges.length)
     const bandH = n * ROW_H
@@ -42,9 +44,10 @@ export default function FlowDiagram({ series }: Props) {
     origins.push({ label: o.label, node: { x: ORIGIN_X, y: originCy - ORIGIN_H / 2, w: ORIGIN_W, h: ORIGIN_H } })
 
     o.edges.forEach((e, i) => {
+      const color = seriesColor(colorIdx++)
       const destCy = y + i * ROW_H + ROW_H / 2
-      dests.push({ title: e.destLabel, sub: `Qty ${e.qty} · ${e.vehicleName}`, node: { x: DEST_X, y: destCy - DEST_H / 2, w: DEST_W, h: DEST_H } })
-      links.push({ x1: ORIGIN_X + ORIGIN_W, y1: originCy, x2: DEST_X, y2: destCy, thru: e.thruPerHr })
+      dests.push({ title: e.destLabel, sub: `Qty ${e.qty} · ${e.vehicleName}`, node: { x: DEST_X, y: destCy - DEST_H / 2, w: DEST_W, h: DEST_H }, color })
+      links.push({ x1: ORIGIN_X + ORIGIN_W, y1: originCy, x2: DEST_X, y2: destCy, thru: e.thruPerHr, color })
     })
     y += bandH + GROUP_GAP
   }
@@ -65,7 +68,8 @@ export default function FlowDiagram({ series }: Props) {
 
       {links.map((l, i) => (
         <g key={`l${i}`}>
-          <path d={path(l)} className="rv-fd-link" fill="none" markerEnd="url(#rv-fd-arrow)" />
+          <path d={path(l)} className="rv-fd-link" fill="none" stroke={l.color}
+            strokeWidth={1.5 + Math.min(4, l.thru / 15)} strokeOpacity={0.55} markerEnd="url(#rv-fd-arrow)" />
           <text x={(l.x1 + l.x2) / 2} y={(l.y1 + l.y2) / 2 - 7} className="rv-fd-thru" textAnchor="middle">{l.thru}/hr</text>
         </g>
       ))}
@@ -80,8 +84,9 @@ export default function FlowDiagram({ series }: Props) {
       {dests.map((d, i) => (
         <g key={`d${i}`}>
           <rect x={d.node.x} y={d.node.y} width={d.node.w} height={d.node.h} rx={9} className="rv-fd-dest" />
-          <text x={d.node.x + 12} y={d.node.y + 17} className="rv-fd-dtitle">{d.title}</text>
-          <text x={d.node.x + 12} y={d.node.y + 32} className="rv-fd-dsub">{d.sub}</text>
+          <rect x={d.node.x} y={d.node.y} width={4} height={d.node.h} rx={2} fill={d.color} />
+          <text x={d.node.x + 14} y={d.node.y + 17} className="rv-fd-dtitle">{d.title}</text>
+          <text x={d.node.x + 14} y={d.node.y + 32} className="rv-fd-dsub">{d.sub}</text>
         </g>
       ))}
     </svg>

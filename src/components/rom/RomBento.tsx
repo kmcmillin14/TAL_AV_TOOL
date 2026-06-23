@@ -60,20 +60,24 @@ export default function RomBento(p: Props) {
 
   return (
     <div className="rom2-bento">
-      <Cell title="Operation map" span={2}><FlowDiagram series={flowSeries} /></Cell>
-      <Cell title="Payback" span={2}><PaybackCurve series={payback} /></Cell>
+      {/* The operation map is the centerpiece — its own full-width row. */}
+      <Cell title="Operation map" span={4}><FlowDiagram series={flowSeries} /></Cell>
 
+      {/* The money, paired: cash over time, then the line-item detail. */}
+      <Cell title="Payback" span={2}><PaybackCurve series={payback} /></Cell>
+      <Cell title="Total cost of ownership" span={2}><TcoStacked series={tco} /></Cell>
       <Cell title="ROM pricing" span={2}><RomPricingTable pricing={p.rom.pricing} vehicleById={p.vehicleById} /></Cell>
       <Cell title="ROM CAPEX" span={2}><CapexRangeBars series={capex} /></Cell>
 
+      {/* What the fleet does all day. */}
       <Cell title="What the fleet does"><DutyCycleChart series={duty} /></Cell>
       <Cell title="Utilization"><UtilizationChart series={util} /></Cell>
       <Cell title="Charging"><ChargingSummary series={charge} /></Cell>
       <Cell title="Battery state of charge"><BatterySocChart series={soc} /></Cell>
 
-      <Cell title="Total cost of ownership" span={2}><TcoStacked series={tco} /></Cell>
-      <Cell title="Requirements met"><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Cell>
-      <Cell title="Resilience"><SensitivityPanel fleet={p.fleet} /></Cell>
+      {/* Trust & robustness. */}
+      <Cell title="Requirements met" span={2}><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Cell>
+      <Cell title="Resilience" span={2}><SensitivityPanel fleet={p.fleet} /></Cell>
 
       <Cell title="How the fleet is calculated — variables &amp; rationale" span={4}><MethodologyPanel /></Cell>
       <div className="rom2-span-4"><FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} /></div>

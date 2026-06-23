@@ -53,28 +53,32 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   const res = resilience({ fleet })
   const pctChip = (n: number) => `${Math.round(n * 100)}%`
 
+  // Grouped so related metrics read together: a "fleet & operations" row, then a
+  // "the money" row (matches the 7-col KPI grid — 7 + 7).
   const tiles: Array<{ id: KpiId; label: string; value: string; accent?: boolean; delta?: string }> = [
+    // ── Fleet & operations ──
     { id: 'fleet', label: 'Total fleet', value: String(fleet.totalFleetSold), accent: true,
       delta: chip(deltas?.totalFleetSold, n => String(Math.round(n))) },
-    { id: 'capex', label: 'ROM CAPEX', value: usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true,
-      delta: chip(deltas?.capexMid, usd) },
-    { id: 'payback', label: 'Payback', value: payback == null ? '—' : `${payback.toFixed(1)} yr`,
-      delta: chip(deltas?.paybackYears, n => `${n.toFixed(1)} yr`) },
-    { id: 'net', label: 'Net benefit / yr', value: usd(offset - opex), accent: true,
-      delta: chip(deltas?.netAnnualBenefit, usd) },
     { id: 'types', label: 'Vehicle types', value: String(fleet.groups.length),
       delta: chip(deltas?.vehicleTypes, n => String(Math.round(n))) },
     { id: 'flows', label: 'Flows', value: String(flows.length) },
     { id: 'throughput', label: 'Throughput', value: `${throughput} / hr` },
     { id: 'utilization', label: 'Avg utilization', value: avgUtil == null ? '—' : pctChip(avgUtil),
       delta: chip(deltas?.avgUtilization, pctChip) },
-    { id: 'opex', label: 'Annual OPEX', value: usd(opex),
-      delta: chip(deltas?.annualOpex, usd) },
-    { id: 'offset', label: 'Labor offset / yr', value: usd(offset),
-      delta: chip(deltas?.annualLaborOffset, usd) },
+    { id: 'resilience', label: 'Resilience', value: res.throughputHeldWithOneDown ? '✓ holds' : `${Math.round(res.retainedPct * 100)}%` },
     { id: 'energy', label: 'Annual energy', value: `${Math.round(rom.opex.annualEnergyKwh / 1000)}k kWh`,
       delta: chip(deltas?.annualEnergyKwh, n => `${Math.round(n / 1000)}k kWh`) },
-    { id: 'resilience', label: 'Resilience', value: res.throughputHeldWithOneDown ? '✓ holds' : `${Math.round(res.retainedPct * 100)}%` },
+    // ── The money ──
+    { id: 'capex', label: 'ROM CAPEX', value: usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true,
+      delta: chip(deltas?.capexMid, usd) },
+    { id: 'payback', label: 'Payback', value: payback == null ? '—' : `${payback.toFixed(1)} yr`,
+      delta: chip(deltas?.paybackYears, n => `${n.toFixed(1)} yr`) },
+    { id: 'net', label: 'Net benefit / yr', value: usd(offset - opex), accent: true,
+      delta: chip(deltas?.netAnnualBenefit, usd) },
+    { id: 'offset', label: 'Labor offset / yr', value: usd(offset),
+      delta: chip(deltas?.annualLaborOffset, usd) },
+    { id: 'opex', label: 'Annual OPEX', value: usd(opex),
+      delta: chip(deltas?.annualOpex, usd) },
     { id: 'tco', label: `TCO @ ${serviceLifeYears}yr`, value: usd(tcoAtLife) },
     { id: 'costPerMove', label: 'Cost / move', value: costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}` },
   ]
