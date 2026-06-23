@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-06-23 — App version-history log
+
+- The **app version** in the header (now `v1.0`) is clickable → opens a **version-history**
+  modal: each release with version · date · author · summary. Curated content in
+  `src/content/appVersions.ts` (the APP's release log, not project-specific). No schema change.
+
 ## 2026-06-23 — Step 4: resilience status, combined methodology, grouped assumptions
 
 - **Resilience** moved out of the gauge strip (now 3 gauges: utilization/availability/charging)

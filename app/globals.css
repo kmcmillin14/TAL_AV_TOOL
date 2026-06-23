@@ -195,6 +195,40 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .app-name .version { font-family: var(--tal-font-numeric); font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.04em; }
 .app-name .product-sub { font-family: var(--tal-font-numeric); font-size: 10px; color: var(--text-tertiary); letter-spacing: 0.14em; text-transform: uppercase; }
 .app-name .product-rev { font-family: var(--tal-font-numeric); font-size: 10px; letter-spacing: 0.14em; color: var(--text-tertiary); font-weight: 500; margin-top: 2px; }
+.product-rev-btn { background: none; border: none; padding: 0; cursor: pointer; text-align: left; transition: color 0.12s ease; }
+.product-rev-btn:hover { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+/* App version-history modal. */
+.avl-overlay {
+  position: fixed; inset: 0; z-index: 200; display: flex; align-items: flex-start; justify-content: center;
+  padding: 64px 20px; background: rgba(0,0,0,0.4); overflow-y: auto;
+}
+.avl-modal {
+  width: 100%; max-width: 560px; background: var(--bg-surface);
+  border: 1px solid var(--border-strong); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  overflow: hidden;
+}
+.avl-head {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+  padding: 18px 22px; border-bottom: 1px solid var(--border);
+}
+.avl-title { font-size: 18px; font-weight: 800; color: var(--text-primary); }
+.avl-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.avl-close { background: none; border: none; font-size: 24px; line-height: 1; color: var(--text-tertiary); cursor: pointer; padding: 0 4px; }
+.avl-close:hover { color: var(--text-primary); }
+.avl-body { padding: 8px 22px 20px; max-height: 70vh; overflow-y: auto; }
+.avl-entry { padding: 16px 0; border-bottom: 1px solid var(--border); }
+.avl-entry:last-child { border-bottom: none; }
+.avl-entry-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.avl-ver { font-family: var(--tal-font-numeric); font-size: 15px; font-weight: 800; color: var(--text-primary); }
+.avl-current-tag {
+  font-family: var(--tal-font-numeric); font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 999px;
+}
+.avl-date { font-family: var(--tal-font-numeric); font-size: 12px; color: var(--text-secondary); }
+.avl-author { font-size: 12px; color: var(--text-tertiary); margin-left: auto; }
+.avl-summary { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
+.avl-summary li { font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
 
 /* Meta line lives in the hero-top grid's middle column, so it is bounded by the
    brand (left) and actions (right) and can never overlap them. All items flow as

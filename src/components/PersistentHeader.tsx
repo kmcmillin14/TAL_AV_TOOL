@@ -7,6 +7,8 @@ import type { UnitSystem } from '@/src/lib/utils/units'
 import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
 import { useTheme } from '@/src/lib/uiPrefs'
 import HelpDrawer from './HelpDrawer'
+import AppVersionLog from './AppVersionLog'
+import { APP_VERSION } from '@/src/content/appVersions'
 import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import PptxSectionPicker from './rom/PptxSectionPicker'
 
@@ -68,6 +70,7 @@ export default function PersistentHeader({
   const [theme, toggleTheme] = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [versionLogOpen, setVersionLogOpen] = useState(false)
   const [pptxProject, setPptxProject] = useState<StoredProject | null>(null)
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -302,7 +305,7 @@ export default function PersistentHeader({
           <div className="divider" />
           <div className="app-name">
             <div className="product">Fleet Calculator</div>
-            <div className="product-rev mono">V1.0</div>
+            <button type="button" className="product-rev mono product-rev-btn" onClick={() => setVersionLogOpen(true)} title="App version history">{APP_VERSION}</button>
           </div>
         </div>
 
@@ -486,6 +489,7 @@ export default function PersistentHeader({
     </header>
     <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} currentStep={currentStep} />
     {pptxProject && <PptxSectionPicker project={pptxProject} onClose={() => setPptxProject(null)} />}
+    {versionLogOpen && <AppVersionLog onClose={() => setVersionLogOpen(false)} />}
     </>
   )
 }
