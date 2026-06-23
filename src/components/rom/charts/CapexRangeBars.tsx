@@ -1,30 +1,48 @@
 'use client'
 
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts'
 import type { CapexBarsSeries } from '@/src/calc/romCharts'
-
-const usd = (n: number) => n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M` : `$${Math.round(n / 1000)}K`
+import { ChartFrame, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, usdShort } from './recharts/ChartKit'
 
 interface Props { series: CapexBarsSeries }
 
-/** Per-vehicle price-range bars over a shared scale + total band. Always a range. */
+interface RangePayload { payload?: { name?: string; range?: [number, number] } }
+function RangeTip({ active, payload }: { active?: boolean; payload?: RangePayload[] }) {
+  const row = active && payload && payload[0]?.payload
+  if (!row || !row.range) return null
+  return (
+    <div className="rom2-tip">
+      <div className="rom2-tip-label">{row.name}</div>
+      <div className="rom2-tip-row"><span className="rom2-tip-val mono">{usdShort(row.range[0])} – {usdShort(row.range[1])}</span></div>
+    </div>
+  )
+}
+
+/** Per-vehicle price-range floating bars over a shared scale + total. Always a range. */
 export default function CapexRangeBars({ series }: Props) {
   if (series.rows.length === 0) return <div className="rv-empty">Size the fleet to see ROM pricing.</div>
-  const max = Math.max(series.totalMax, ...series.rows.map(r => r.lineMax)) || 1
-  const bar = (min: number, max2: number) => ({ left: `${(min / max) * 100}%`, width: `${((max2 - min) / max) * 100}%` })
+  const data = [
+    ...series.rows.map(r => ({ name: `${r.qty}× ${r.vehicleName}`, range: [r.lineMin, r.lineMax] as [number, number], total: false })),
+    { name: 'Total', range: [series.totalMin, series.totalMax] as [number, number], total: true },
+  ]
+  const height = Math.max(120, data.length * 40 + 24)
+
   return (
-    <div className="rv-capex">
-      {series.rows.map(r => (
-        <div key={r.vehicleName} className="rv-capex-row">
-          <span className="rv-capex-name">{r.qty}× {r.vehicleName}</span>
-          <span className="rv-capex-track"><span className="rv-capex-fill" style={bar(r.lineMin, r.lineMax)} /></span>
-          <span className="rv-capex-val mono">{usd(r.lineMin)}–{usd(r.lineMax)}</span>
-        </div>
-      ))}
-      <div className="rv-capex-row rv-capex-total">
-        <span className="rv-capex-name">Total</span>
-        <span className="rv-capex-track"><span className="rv-capex-fill" style={bar(series.totalMin, series.totalMax)} /></span>
-        <span className="rv-capex-val mono">{usd(series.totalMin)}–{usd(series.totalMax)}</span>
-      </div>
-    </div>
+    <>
+      <ChartFrame height={height}>
+        <BarChart data={data} layout="vertical" margin={{ top: 4, right: 16, bottom: 4, left: 8 }}>
+          <CartesianGrid stroke={GRID_STROKE} strokeDasharray="2 4" horizontal={false} />
+          <XAxis type="number" tick={TICK} stroke={AXIS_STROKE} tickFormatter={usdShort} />
+          <YAxis type="category" dataKey="name" tick={TICK} stroke={AXIS_STROKE} width={92} />
+          <Tooltip content={<RangeTip />} cursor={{ fill: 'var(--bg-hover)' }} />
+          <Bar dataKey="range" maxBarSize={18} radius={3}>
+            {data.map((d, i) => (
+              <Cell key={i} fill={d.total ? 'var(--accent)' : 'var(--tal-classic-blue)'} />
+            ))}
+          </Bar>
+        </BarChart>
+      </ChartFrame>
+      <ChartCaption>Range, never a point — {usdShort(series.totalMin)} to {usdShort(series.totalMax)} all-in.</ChartCaption>
+    </>
   )
 }

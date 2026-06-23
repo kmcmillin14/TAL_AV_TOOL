@@ -3054,6 +3054,32 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   .rom2-span-1, .rom2-span-2, .rom2-span-4 { grid-column: span 1; }
 }
 
+/* Recharts chrome — custom tooltip + chart caption (themed, not the library default). */
+.rom2-tip {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.18);
+  padding: 8px 10px;
+  font-family: var(--tal-font-family);
+  min-width: 120px;
+}
+.rom2-tip-label {
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary);
+  margin-bottom: 5px;
+}
+.rom2-tip-row { display: flex; align-items: center; gap: 7px; font-size: 12px; padding: 1px 0; }
+.rom2-tip-dot { width: 9px; height: 9px; border-radius: 2px; flex: none; }
+.rom2-tip-name { color: var(--text-secondary); flex: 1; }
+.rom2-tip-val { color: var(--text-primary); font-weight: 700; margin-left: auto; }
+.rom2-caption {
+  margin: 8px 0 0; font-size: 12px; line-height: 1.45; color: var(--text-tertiary);
+}
+/* Recharts text uses Toyota Type via inherited font; keep axis/legend on-brand. */
+.recharts-text, .recharts-cartesian-axis-tick-value { font-family: var(--tal-font-numeric); }
+.recharts-default-legend { font-family: var(--tal-font-numeric); }
+
 /* KPI drill popover (hover/pin) — formula · mini bars · rows. */
 .kpi-pop { width: 320px; max-width: 86vw; padding: 14px 16px; }
 .kpi-pop-head {

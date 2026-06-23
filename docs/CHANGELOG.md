@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-22 — Step 4 rebuild, slice 3: Recharts charts with chrome
+
+- Added **Recharts** (`^3.8.1`, React-19 compatible) for the web chart render.
+- Migrated the charts that gain from interactivity to themed Recharts with **tooltips,
+  crosshairs, and annotations**: Payback (line + break-even `ReferenceLine`), TCO (composed
+  stack + net line), Utilization (grouped bars), CAPEX (floating range bars), Battery SoC
+  (multi-line + DoD `ReferenceLine`). Each gets a one-line insight **caption**.
+- Shared `charts/recharts/ChartKit.tsx` keeps everything on the TAL system (Toyota Type,
+  `palette.ts`, token colors, custom tooltip) — not the generic library look.
+- **Duty cycle** (100% CSS bar) and **Charging** (table) stay bespoke — they don't benefit
+  from a charting lib. `FlowDiagram` stays bespoke (node-link).
+- **PPTX/Excel untouched**: the pure series builders are unchanged, so the export render
+  path and all parity tests stay green (208 tests). Deleted now-dead `svgScale.ts`.
+
 ## 2026-06-22 — Step 4 rebuild, slice 2: bento shell + driver rail + scenario A/B
 
 - New **bento layout** (`.rom2-*`): sticky left **driver rail** (`RomDrivers`) + a 4-column
