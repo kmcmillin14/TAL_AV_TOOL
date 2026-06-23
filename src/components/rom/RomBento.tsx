@@ -10,6 +10,7 @@ import {
   batterySocSeries, capexBarsSeries, paybackSeries, tcoSeries,
 } from '@/src/calc/romCharts'
 import FlowDiagram from './charts/FlowDiagram'
+import FlowMapTable from './charts/FlowMapTable'
 import DutyCycleChart from './charts/DutyCycleChart'
 import UtilizationChart from './charts/UtilizationChart'
 import ChargingSummary from './charts/ChargingSummary'
@@ -60,8 +61,12 @@ export default function RomBento(p: Props) {
 
   return (
     <div className="rom2-bento">
-      {/* The operation map is the centerpiece — its own full-width row. */}
-      <Cell title="Operation map" span={4}><FlowDiagram series={flowSeries} /></Cell>
+      {/* The operation map is the centerpiece — its own full-width row, with the
+          backing data table underneath. */}
+      <Cell title="Operation map" span={4}>
+        <FlowDiagram series={flowSeries} />
+        <FlowMapTable flows={p.flows} derivedByFlowId={p.derivedByFlowId} vehicleById={p.vehicleById} />
+      </Cell>
 
       {/* The money, paired: cash over time, then the line-item detail. */}
       <Cell title="Payback" span={2}><PaybackCurve series={payback} /></Cell>

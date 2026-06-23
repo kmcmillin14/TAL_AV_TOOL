@@ -3307,14 +3307,29 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 
 /* §1 flow map (SVG node-link) — capped to natural size so it renders ~1:1, not upscaled */
 .rv-fd { width: 100%; max-width: 680px; height: auto; display: block; margin: 6px auto 0; }
-.rv-fd-link { fill: none; }
+/* Industrial TAL palette: neutral links/cards, red as the single accent. */
+.rv-fd-link { fill: none; stroke: var(--border-strong); stroke-opacity: 0.85; }
 /* Throughput pill behind the /hr label — keeps it legible over links. */
-.rv-fd-pill { fill: var(--bg-surface); stroke-width: 1; }
-.rv-fd-arrowhead { fill: color-mix(in srgb, var(--text-tertiary) 70%, transparent); }
-.rv-fd-thru { fill: var(--text-secondary); font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 600; }
+.rv-fd-pill { fill: var(--bg-surface); stroke: var(--border); stroke-width: 1; }
+.rv-fd-arrowhead { fill: var(--border-strong); }
+.rv-fd-thru { fill: var(--accent); font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 12px; font-weight: 700; }
 .rv-fd-origin { fill: var(--bg-surface-2); stroke: var(--accent); stroke-width: 1.5; }
 .rv-fd-otext { fill: var(--text-primary); font-family: var(--tal-font-numeric); font-size: 14px; font-weight: 800; }
-.rv-fd-dest { fill: var(--bg-surface-2); stroke: var(--border); stroke-width: 1; }
+.rv-fd-dest { fill: var(--bg-surface-2); stroke: var(--border-strong); stroke-width: 1; }
+.rv-fd-dest-tick { fill: var(--accent); }
+/* Operation-map data table — the precise figures behind the diagram. */
+.rv-fdt { width: 100%; border-collapse: collapse; margin-top: 14px; font-family: var(--tal-font-family); font-size: 12px; }
+.rv-fdt thead th {
+  text-align: left; padding: 7px 10px; border-bottom: 1px solid var(--border-strong);
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.rv-fdt th.num, .rv-fdt td.num { text-align: right; }
+.rv-fdt tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); color: var(--text-secondary); }
+.rv-fdt tbody td.mono { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.rv-fdt tbody tr:last-child td { border-bottom: none; }
+.rv-fdt-arrow { color: var(--accent); font-weight: 700; }
+.rv-fdt-muted { color: var(--text-disabled); font-style: italic; }
 .rv-fd-dtitle { fill: var(--text-primary); font-family: var(--tal-font-numeric); font-size: 13px; font-weight: 800; }
 .rv-fd-dsub { fill: var(--text-tertiary); font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 11px; font-weight: 600; }
 

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-23 — Step 4 flow map: industrial recolor + backing data table
+
+- Recolored the **material flow map** to an industrial TAL palette — dropped the per-flow
+  rainbow; links/cards are neutral with **TAL red as the single accent** (origin nodes,
+  throughput value, a thin destination tick).
+- Added a clean read-only **flows data table** under the map (`FlowMapTable`): Route ·
+  Vehicle · Throughput · Round-trip distance · Cycle · Vehicles — the precise figures the
+  diagram visualizes. Read-only; reuses flows + derived values (no step-3 imports).
+
 ## 2026-06-23 — Step 4 polish: equal-height tiles, gauge definitions, MFD/battery layout
 
 - **Equal-height tiles:** bento rows now stretch so cards sharing a row match the tallest
