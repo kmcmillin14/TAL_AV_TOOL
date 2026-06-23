@@ -2924,13 +2924,6 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .waterfall-table .wf-total .wf-sold { color: var(--accent); font-size: 16px; }
 
 /* ─── ROM Dashboard (Step 4) ─── */
-.rom-kpis {
-  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px;
-}
-@media (max-width: 1200px) { .rom-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
-@media (max-width: 1000px) { .rom-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
-@media (max-width: 700px)  { .rom-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-@media (max-width: 520px)  { .rom-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 .rom-kpi {
   position: relative; overflow: hidden;
   display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
@@ -2957,6 +2950,36 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700; letter-spacing: 0.02em;
   color: var(--text-secondary);
 }
+
+/* Combined KPI group cards — two symmetrical tiles, each holding its KPIs as flat
+   cells (cohesive look instead of 14 separate boxes). */
+.rom2-kpis-groups { display: flex; flex-direction: column; gap: 14px; margin-bottom: 20px; }
+.rom2-kgroup {
+  background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 16px; box-shadow: var(--shadow-card); padding: 14px 18px 16px;
+}
+.rom2-kgroup-head {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary);
+  margin-bottom: 6px;
+}
+.rom2-kgroup-head::before { content: ''; width: 14px; height: 2px; background: var(--accent); border-radius: 1px; }
+.rom2-kgrid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+/* Flatten the inner tiles so the group card is the single surface. */
+.rom2-kgrid .rom-kpi {
+  border: none; background: none; box-shadow: none; border-radius: 8px;
+  padding: 8px 14px; gap: 3px; transform: none;
+}
+.rom2-kgrid .rom-kpi:hover { transform: none; background: var(--bg-hover); }
+.rom2-kgrid > .rom-kpi + .rom-kpi { border-left: 1px solid var(--border); }
+.rom2-kgrid .rom-kpi-accent { background: none; }
+.rom2-kgrid .rom-kpi-pinned { border-color: transparent; box-shadow: inset 0 0 0 1px var(--accent); }
+@media (max-width: 1100px) {
+  .rom2-kgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .rom2-kgrid > .rom-kpi + .rom-kpi { border-left: none; }
+}
+@media (max-width: 680px) { .rom2-kgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 
 /* ============================================ STEP 4 — DASHBOARD REBUILD (.rom2-*) ============================================ */
 /* Shell: sticky driver rail + main column. */

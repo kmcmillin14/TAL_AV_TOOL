@@ -86,11 +86,28 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
     { id: 'costPerMove', label: 'Cost / move', value: costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}` },
   ]
 
+  // Combine the 14 KPIs into two symmetrical group cards (7 each): one cohesive
+  // tile per theme, KPIs laid out inside it. Hover any KPI for its breakdown.
+  const groups: Array<{ label: string; ids: KpiId[] }> = [
+    { label: 'Fleet & operations', ids: ['fleet', 'types', 'flows', 'throughput', 'utilization', 'resilience', 'energy'] },
+    { label: 'Economics', ids: ['capex', 'payback', 'net', 'offset', 'opex', 'tco', 'costPerMove'] },
+  ]
+  const byId = new Map(tiles.map((t, i) => [t.id, { ...t, colorIndex: i }]))
+
   return (
-    <section className="rom-kpis" aria-label="Fleet summary — hover or click a tile for the breakdown">
-      {tiles.map((t, i) => (
-        <KpiTile key={t.id} label={t.label} value={t.value} detail={detail[t.id]} accent={t.accent} colorIndex={i} delta={t.delta} />
+    <div className="rom2-kpis-groups">
+      {groups.map(g => (
+        <section key={g.label} className="rom2-kgroup">
+          <div className="rom2-kgroup-head">{g.label}</div>
+          <div className="rom2-kgrid">
+            {g.ids.map(id => {
+              const t = byId.get(id)
+              if (!t) return null
+              return <KpiTile key={id} label={t.label} value={t.value} detail={detail[id]} accent={t.accent} colorIndex={t.colorIndex} delta={t.delta} />
+            })}
+          </div>
+        </section>
       ))}
-    </section>
+    </div>
   )
 }
