@@ -135,7 +135,7 @@ export default function RomDashboardPage() {
 
           <div className="rom2-main">
             <div className={`rom2-kpiband ${showScenario ? 'is-scenario' : ''}`}>
-              <RomKpis fleet={active.fleet} rom={active.rom} flows={active.flows} settings={active.settings} names={names} deltas={deltas} />
+              <RomKpis fleet={active.fleet} rom={active.rom} flows={active.flows} settings={active.settings} costs={active.costs} serviceLifeYears={activeProject.serviceLifeYears ?? 7} names={names} deltas={deltas} />
             </div>
 
             <RomBento

@@ -52,6 +52,8 @@ describe('scenarioKpis', () => {
     expect(k.annualOpex).toBeCloseTo(m.rom.opex.annualOpex, 6)
     expect(k.netAnnualBenefit).toBeCloseTo(
       m.rom.payback.annualLaborOffset - m.rom.opex.annualOpex, 6)
+    expect(k.avgUtilization).not.toBeNull()
+    expect(k.avgUtilization!).toBeGreaterThan(0)
     expect(k.paybackYears).toBe(m.rom.payback.paybackYears)
   })
 })

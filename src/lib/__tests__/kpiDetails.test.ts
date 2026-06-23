@@ -21,7 +21,12 @@ describe('kpiDetails', () => {
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
     const d = kpiDetails(model, names)
 
-    expect(Object.keys(d).sort()).toEqual(['capex', 'fleet', 'flows', 'payback', 'throughput', 'types'])
+    expect(Object.keys(d).sort()).toEqual(
+      ['capex', 'costPerMove', 'energy', 'fleet', 'flows', 'net', 'offset', 'opex',
+       'payback', 'resilience', 'tco', 'throughput', 'types', 'utilization'])
+    // New economics KPIs carry detail too.
+    expect(d.opex.formula).toContain('=')
+    expect(d.resilience.rows!.some(r => r.label === 'Throughput retained')).toBe(true)
     // Fleet: build-up formula with buffer multiplier.
     expect(d.fleet.formula).toContain('buffer')
     expect(d.fleet.bars!.length).toBe(model.fleet.groups.length)

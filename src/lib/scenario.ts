@@ -58,6 +58,8 @@ export interface ScenarioKpis {
   annualLaborOffset: number
   /** annual labor offset − annual OPEX */
   netAnnualBenefit: number
+  /** fleet-wide raw demand ÷ provisioned fleet (0–1); null when nothing is sized */
+  avgUtilization: number | null
   paybackYears: number | null
 }
 
@@ -65,6 +67,8 @@ export function scenarioKpis(model: FleetModel): ScenarioKpis {
   const { fleet, rom } = model
   const annualOpex = rom.opex.annualOpex
   const annualLaborOffset = rom.payback.annualLaborOffset
+  const totalRaw = fleet.groups.reduce((s, g) => s + g.groupRaw, 0)
+  const totalSold = fleet.groups.reduce((s, g) => s + g.fleetSold, 0)
   return {
     totalFleetSold: fleet.totalFleetSold,
     vehicleTypes: fleet.groups.length,
@@ -75,6 +79,7 @@ export function scenarioKpis(model: FleetModel): ScenarioKpis {
     annualEnergyKwh: rom.opex.annualEnergyKwh,
     annualLaborOffset,
     netAnnualBenefit: annualLaborOffset - annualOpex,
+    avgUtilization: totalSold > 0 ? totalRaw / totalSold : null,
     paybackYears: rom.payback.paybackYears,
   }
 }
@@ -85,11 +90,11 @@ export type ScenarioDiff = {
   [K in keyof ScenarioKpis]: ScenarioKpis[K] extends number | null ? number | null : number
 }
 
+/** Subtract two nullable numbers; null when either side is null. */
+const sub = (a: number | null, b: number | null): number | null =>
+  a == null || b == null ? null : a - b
+
 export function diffKpis(baseline: ScenarioKpis, scenario: ScenarioKpis): ScenarioDiff {
-  const payback =
-    baseline.paybackYears == null || scenario.paybackYears == null
-      ? null
-      : scenario.paybackYears - baseline.paybackYears
   return {
     totalFleetSold: scenario.totalFleetSold - baseline.totalFleetSold,
     vehicleTypes: scenario.vehicleTypes - baseline.vehicleTypes,
@@ -100,6 +105,7 @@ export function diffKpis(baseline: ScenarioKpis, scenario: ScenarioKpis): Scenar
     annualEnergyKwh: scenario.annualEnergyKwh - baseline.annualEnergyKwh,
     annualLaborOffset: scenario.annualLaborOffset - baseline.annualLaborOffset,
     netAnnualBenefit: scenario.netAnnualBenefit - baseline.netAnnualBenefit,
-    paybackYears: payback,
+    avgUtilization: sub(scenario.avgUtilization, baseline.avgUtilization),
+    paybackYears: sub(scenario.paybackYears, baseline.paybackYears),
   }
 }

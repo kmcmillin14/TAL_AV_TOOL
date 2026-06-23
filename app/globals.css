@@ -2925,10 +2925,12 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 
 /* ─── ROM Dashboard (Step 4) ─── */
 .rom-kpis {
-  display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; margin-bottom: 22px;
+  display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; margin-bottom: 22px;
 }
-@media (max-width: 1000px) { .rom-kpis { grid-template-columns: repeat(3, 1fr); } }
-@media (max-width: 600px)  { .rom-kpis { grid-template-columns: repeat(2, 1fr); gap: 10px; } }
+@media (max-width: 1200px) { .rom-kpis { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
+@media (max-width: 1000px) { .rom-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+@media (max-width: 700px)  { .rom-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 520px)  { .rom-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; } }
 .rom-kpi {
   position: relative; overflow: hidden;
   display: flex; flex-direction: column; align-items: flex-start; gap: 5px;

@@ -363,11 +363,19 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 
 ## Step 4 — ROM Dashboard
 
-Customer-facing summary fed by the Fleet Engine `FleetSummary`. Read-only except the
-economic assumptions.
+Customer-facing summary fed by the Fleet Engine `FleetSummary`. Rebuilt (2026-06-22) as an
+interactive **bento dashboard**: a sticky left **driver rail** (`RomDrivers`) edits in-memory
+what-if overrides (operators, shifts, labor $, energy $, maintenance %, buffer %, service
+life); a Baseline/Scenario toggle recomputes the whole dashboard live via `computeFleetModel`
+(`src/lib/scenario.ts` — `applyDrivers`/`scenarioKpis`/`diffKpis`, pure, in-memory; "Apply to
+baseline" persists). Charts are themed **Recharts** (payback, TCO, utilization, CAPEX, SoC,
+with tooltips/crosshairs/annotations); duty-cycle, charging and the flow map stay bespoke.
+Pure series builders are unchanged, so **PPTX/Excel exports are unaffected**.
 
-**Fleet KPIs:** total fleet sold, vehicle-type count, total throughput (moves/hr),
-total base→sold build-up.
+**Fleet KPIs (14 tiles, interactive popovers + scenario deltas):** the 6 originals — total
+fleet, vehicle types, flows, throughput, ROM CAPEX, payback — plus 8 added: net benefit/yr,
+avg utilization, annual OPEX, labor offset/yr, annual energy, resilience, TCO @ service life,
+cost/move. `kpiDetails` builds each tile's breakdown (web-only; not used by PPTX).
 
 **ROM pricing (range, never a point):** for each vehicle group,
 `fleetSold × priceRange` → line range; summed to `totalMin`/`totalMax`; `totalMid =

@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-22 — Step 4 rebuild, slice 4: 8 new KPIs (keep all current)
+
+- Kept all 6 existing KPIs and **added 8**: Net benefit/yr, Avg utilization, Annual OPEX,
+  Labor offset/yr, Annual energy, Resilience, TCO @ service life, Cost/move. 14 tiles in a
+  responsive band (7→5→4→3→2 cols).
+- Each new KPI has a `kpiDetails` popover (formula/rows) and — where the driver moves it —
+  a ▲/▼ **scenario delta** (OPEX, offset, net, energy, utilization). `scenario.ts` gained
+  `avgUtilization`; `kpiDetails` now takes `costs` + `serviceLifeYears` and computes
+  resilience/TCO/cost-per-move (pure). Tests updated (208 green).
+- `kpiDetails` is web-only (PPTX doesn't import it) — exports unaffected.
+
 ## 2026-06-22 — Step 4 rebuild, slice 3: Recharts charts with chrome
 
 - Added **Recharts** (`^3.8.1`, React-19 compatible) for the web chart render.

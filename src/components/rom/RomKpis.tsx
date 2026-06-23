@@ -1,7 +1,8 @@
 'use client'
 
 import type { FleetSummary, Flow, FleetSettings } from '@/src/calc/types'
-import type { RomSummary } from '@/src/calc/rom'
+import type { RomSummary, RomCostInputs } from '@/src/calc/rom'
+import { resilience } from '@/src/calc/romSensitivity'
 import { kpiDetails, type KpiId } from '@/src/lib/kpiDetails'
 import type { ScenarioDiff } from '@/src/lib/scenario'
 import KpiTile from './KpiTile'
@@ -19,6 +20,8 @@ interface Props {
   rom: RomSummary
   flows: Flow[]
   settings: FleetSettings
+  costs: RomCostInputs
+  serviceLifeYears: number
   names: Record<string, string>
   /** Scenario-vs-baseline deltas; when present, tiles show a delta chip. */
   deltas?: ScenarioDiff | null
@@ -33,22 +36,47 @@ function chip(d: number | null | undefined, fmt: (n: number) => string): string 
 
 /** Top KPI band — interactive tiles (hover/pin reveals each metric's breakdown).
  *  Fleet sold + ROM CAPEX are the accent headline; the rest are secondary. */
-export default function RomKpis({ fleet, rom, flows, settings, names, deltas }: Props) {
+export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLifeYears, names, deltas }: Props) {
   const payback = rom.payback.paybackYears
   const throughput = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
-  const detail = kpiDetails({ fleet, rom, flows, settings }, names)
+  const detail = kpiDetails({ fleet, rom, flows, settings, costs }, names, { serviceLifeYears })
+
+  const offset = rom.payback.annualLaborOffset
+  const opex = rom.opex.annualOpex
+  const totalRaw = fleet.groups.reduce((s, g) => s + g.groupRaw, 0)
+  const totalSold = fleet.groups.reduce((s, g) => s + g.fleetSold, 0)
+  const avgUtil = totalSold > 0 ? totalRaw / totalSold : null
+  const tcoAtLife = rom.pricing.totalMid + opex * serviceLifeYears
+  const annualMoves = throughput * settings.dailyOpHr * costs.operatingDaysPerYear
+  const lifetimeMoves = annualMoves * serviceLifeYears
+  const costPerMove = lifetimeMoves > 0 ? tcoAtLife / lifetimeMoves : null
+  const res = resilience({ fleet })
+  const pctChip = (n: number) => `${Math.round(n * 100)}%`
 
   const tiles: Array<{ id: KpiId; label: string; value: string; accent?: boolean; delta?: string }> = [
     { id: 'fleet', label: 'Total fleet', value: String(fleet.totalFleetSold), accent: true,
       delta: chip(deltas?.totalFleetSold, n => String(Math.round(n))) },
-    { id: 'types', label: 'Vehicle types', value: String(fleet.groups.length),
-      delta: chip(deltas?.vehicleTypes, n => String(Math.round(n))) },
-    { id: 'flows', label: 'Flows', value: String(flows.length) },
-    { id: 'throughput', label: 'Throughput', value: `${throughput} / hr` },
     { id: 'capex', label: 'ROM CAPEX', value: usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true,
       delta: chip(deltas?.capexMid, usd) },
     { id: 'payback', label: 'Payback', value: payback == null ? '—' : `${payback.toFixed(1)} yr`,
       delta: chip(deltas?.paybackYears, n => `${n.toFixed(1)} yr`) },
+    { id: 'net', label: 'Net benefit / yr', value: usd(offset - opex), accent: true,
+      delta: chip(deltas?.netAnnualBenefit, usd) },
+    { id: 'types', label: 'Vehicle types', value: String(fleet.groups.length),
+      delta: chip(deltas?.vehicleTypes, n => String(Math.round(n))) },
+    { id: 'flows', label: 'Flows', value: String(flows.length) },
+    { id: 'throughput', label: 'Throughput', value: `${throughput} / hr` },
+    { id: 'utilization', label: 'Avg utilization', value: avgUtil == null ? '—' : pctChip(avgUtil),
+      delta: chip(deltas?.avgUtilization, pctChip) },
+    { id: 'opex', label: 'Annual OPEX', value: usd(opex),
+      delta: chip(deltas?.annualOpex, usd) },
+    { id: 'offset', label: 'Labor offset / yr', value: usd(offset),
+      delta: chip(deltas?.annualLaborOffset, usd) },
+    { id: 'energy', label: 'Annual energy', value: `${Math.round(rom.opex.annualEnergyKwh / 1000)}k kWh`,
+      delta: chip(deltas?.annualEnergyKwh, n => `${Math.round(n / 1000)}k kWh`) },
+    { id: 'resilience', label: 'Resilience', value: res.throughputHeldWithOneDown ? '✓ holds' : `${Math.round(res.retainedPct * 100)}%` },
+    { id: 'tco', label: `TCO @ ${serviceLifeYears}yr`, value: usd(tcoAtLife) },
+    { id: 'costPerMove', label: 'Cost / move', value: costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}` },
   ]
 
   return (
