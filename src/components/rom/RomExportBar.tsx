@@ -17,8 +17,8 @@ export default function RomExportBar({ project }: Props) {
         type="button" className="rom-export-btn rom-export-primary"
         onClick={() => setPptxOpen(true)}
       >
-        <Icon name="download" size={14} />
-        Branded PowerPoint
+        <Icon name="export" size={18} />
+        Export proposal (PowerPoint)
       </button>
       {pptxOpen && <PptxSectionPicker project={project} onClose={() => setPptxOpen(false)} />}
     </div>

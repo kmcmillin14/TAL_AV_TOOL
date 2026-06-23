@@ -152,7 +152,7 @@ export default function RomDashboardPage() {
             />
 
             <section className="rom-card rom-card-export">
-              <span className="rom-card-eyebrow">Proposal</span>
+              <span className="rom-card-eyebrow">Export</span>
               <RomExportBar project={project} />
             </section>
           </div>

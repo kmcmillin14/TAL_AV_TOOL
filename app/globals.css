@@ -3330,7 +3330,12 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .rom-export-btn:hover { background: color-mix(in srgb, var(--bg-surface-2) 70%, var(--text-primary) 6%); }
 .rom-export-btn:active { transform: scale(0.97); }
 .rom-export-btn:disabled { opacity: 0.5; cursor: default; }
-.rom-export-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* Primary export — prominent so it's the obvious action on the dashboard. */
+.rom-export-primary {
+  background: var(--accent); border-color: var(--accent); color: #fff;
+  min-height: 50px; padding: 0 24px; font-size: 15px; font-weight: 700;
+  box-shadow: 0 6px 18px rgba(235, 10, 30, 0.22);
+}
 .rom-export-primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
 
 /* ─── ROM Dashboard visuals ─── */

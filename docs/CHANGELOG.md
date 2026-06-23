@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-23 — Prominent export action; version log = v1.0 only
+
+- Redrew the `export` icon (arrow out of a tray) and used it on Step 4's **export** action,
+  made prominent (large accent button "Export proposal (PowerPoint)", section relabeled
+  "Export") so it's the obvious dashboard action.
+- App version log trimmed to a single **v1.0 — Initial release** entry (date + author only).
+
 ## 2026-06-23 — Semantic scenario deltas + /simplify pass
 
 - **Scenario delta chips** are larger and **colored by benefit**: green when the change helps,
