@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-23 — Fix Step 03 flows-table hydration warning
+
+- Removed the inline `{/* … */}` comments after each `<col />` in `FlowsTable`'s
+  `<colgroup>`. They left whitespace text nodes between the columns, which HTML
+  disallows inside `<colgroup>` and React flagged as a hydration error. The column
+  legend now lives in one comment above the group.
+
 ## 2026-06-23 — JSON export uses the shared "Rev# Opp# Customer Project" filename
 
 - The JSON export (re-import file) is now named `Rev# Opp# Customer Project.json`, matching

@@ -290,18 +290,22 @@ export default function FlowsTable({
             ref={tableRef}
             style={{ zoom: tableScale }}
           >
+            {/* Column widths, in order: #, Vehicle (wide for full AGV name),
+                Transfer Type, Route Avg Speed, Origin, Destination, Distance,
+                Throughput, Cycle Time, Vehicle Count, actions. No inline
+                comments — whitespace text nodes are illegal inside <colgroup>. */}
             <colgroup>
-              <col style={{ width: '52px' }} />   {/* # */}
-              <col style={{ width: '280px' }} />  {/* Vehicle — wide enough for the full AGV name */}
-              <col style={{ width: '170px' }} />  {/* Transfer Type */}
-              <col style={{ width: '120px' }} />  {/* Route Average Speed (header wraps) */}
-              <col style={{ width: '108px' }} />  {/* Origin */}
-              <col style={{ width: '108px' }} />  {/* Destination */}
-              <col style={{ width: '96px' }} />   {/* Distance (header wraps) */}
-              <col style={{ width: '96px' }} />   {/* Throughput (header wraps) */}
-              <col style={{ width: '96px' }} />   {/* Cycle Time (header wraps) */}
-              <col style={{ width: '100px' }} />  {/* Vehicle Count (header wraps) */}
-              <col style={{ width: '88px' }} />   {/* actions */}
+              <col style={{ width: '52px' }} />
+              <col style={{ width: '280px' }} />
+              <col style={{ width: '170px' }} />
+              <col style={{ width: '120px' }} />
+              <col style={{ width: '108px' }} />
+              <col style={{ width: '108px' }} />
+              <col style={{ width: '96px' }} />
+              <col style={{ width: '96px' }} />
+              <col style={{ width: '96px' }} />
+              <col style={{ width: '100px' }} />
+              <col style={{ width: '88px' }} />
             </colgroup>
             <thead>
               <tr className="flow-band-row">
