@@ -16,10 +16,12 @@ export const usdShort = (n: number) =>
   `${n < 0 ? '−' : ''}$${Math.abs(n) >= 1_000_000 ? `${(Math.abs(n) / 1_000_000).toFixed(2)}M` : `${Math.round(Math.abs(n) / 1000)}K`}`
 export const pct = (n: number) => `${Math.round(n * 100)}%`
 
-/** Fixed-height responsive wrapper so charts size to the bento cell width. */
+/** Responsive chart wrapper. Sizes to its fixed `height` in the normal bento, but
+ *  in a full-screen tile (`.rom2-fs-body`) CSS lets it flex-grow to fill the panel —
+ *  `--frame-h` keeps the fixed height as the grow floor. */
 export function ChartFrame({ height = 200, children }: { height?: number; children: ReactNode }) {
   return (
-    <div style={{ width: '100%', height }}>
+    <div className="rom-chart-frame" style={{ width: '100%', height, ['--frame-h' as string]: `${height}px` }}>
       <ResponsiveContainer width="100%" height="100%">
         {children as React.ReactElement}
       </ResponsiveContainer>

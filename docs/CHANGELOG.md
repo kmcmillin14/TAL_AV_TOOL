@@ -4,7 +4,9 @@
 
 - **Full-screen any tile** — every bento cell gets a maximize control in its header
   that expands the tile to a full-screen overlay (portaled to `<body>`); Esc or a
-  backdrop click closes it. Charts use responsive containers, so they fill the space.
+  backdrop click closes it. In full screen the chart (`ChartFrame`) flex-grows to fill
+  the panel instead of staying at its bento height, and the flow-map SVG drops its
+  width cap, so a magnified tile uses all the available space.
 - **Throughput-boost driver** — new scenario lever "Throughput boost %". Unlike the
   other drivers it isn't a project scalar: `applyDrivers` scales every flow's moves/hr
   by `(1 + pct)`, so `computeFleetModel` sizes the fleet up to meet the higher demand

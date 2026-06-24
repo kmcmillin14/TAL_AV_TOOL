@@ -3192,7 +3192,12 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 16px;
   box-shadow: 0 24px 80px rgba(0,0,0,0.32); padding: 20px 24px; overflow: hidden;
 }
-.rom2-fs-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.rom2-fs-body { flex: 1 1 auto; min-height: 0; overflow: auto; display: flex; flex-direction: column; }
+/* In a full-screen tile, charts grow to fill the panel instead of staying at their
+   bento height. The chart frame becomes the flex grower (floored at its fixed height);
+   the bespoke flow-map SVG drops its width cap so it scales up too. */
+.rom2-fs-body .rom-chart-frame { flex: 1 1 auto; height: auto !important; min-height: var(--frame-h, 200px); }
+.rom2-fs-body .rv-fd { max-width: 100%; }
 /* Walkthrough leads the "How it's calculated" card (no top divider). */
 .fm-walk { margin-top: 4px; }
 /* Inline collapsible sub-section (formula reference under the walkthrough). */
