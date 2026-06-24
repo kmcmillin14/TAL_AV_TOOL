@@ -30,6 +30,12 @@ Fixed assumptions (out of scope to vary):
 - **100% round-trip efficiency** (no η loss factor).
 - **Off-shift charging assumed** — when the operation is < 24 h/day, the vehicle
   recharges during the off-shift window.
+- **Must last three horizons** — the fleet must sustain charge across a **single
+  shift**, a **full 24 h day**, and a **full 7-day week**. Rest days count as a
+  full-recharge recovery window (per `operatingDaysPattern`), but — because a
+  battery cannot bank more than its own usable capacity — recovery only relaxes
+  operations that already balance within their longest continuous run; it cannot
+  reduce vehicles for a 24 h operation that does not balance daily.
 
 Non-goals: discrete-event simulation, charger-count/queueing, battery-swap spare
 counts, demand-peak modeling (the buffer % already hedges variability).
@@ -84,6 +90,22 @@ runHr    = usableAh / dischargeA                          continuous run capacit
 chargeHr = usableAh / chargeA                             full recharge time
 numBreaks = breaksPerShift × shiftsPerDay
 segment   = Wp / (numBreaks + 1)        longest continuous productive run between top-ups
+restDays  = 7 − operatingDaysPerWeek    (Mon–Fri 2, Mon–Sat 1, Mon–Sun 0, Custom 7−n)
+nightlyReset = D < 24 AND Woff ≥ chargeHr    off-shift fully recharges each night
+```
+
+**Recovery horizon (weekly).** A full recharge is guaranteed (a) every night when
+`nightlyReset`, and (b) on each rest day. The battery cannot bank beyond `usableAh`,
+so the binding requirement is that it sustains the **longest continuous operating
+block** before one of those recharge windows:
+
+```
+nightlyReset      → block governed within the day (segment / Wp); weekly pattern
+                    does not change charge sizing (only annual operating days).
+not nightlyReset  → 24 h continuous: the day must be self-sustaining on in-day
+  (24 h ops)        windows (breaks + idle). A rest day confirms weekly survival
+                    but cannot reduce the fleet; if the day is not self-sustaining
+                    (A_energy < 1) the adder stands every operating day.
 ```
 
 The cycle breakdown's `moveFrac`/`dwellFrac` are **not** used for charging —
@@ -153,7 +175,10 @@ chargingDelta     = max(0, fleetWithCharging − baseFleet)
   no longer needed for sizing (kept only if other call sites use them — verify and
   delete if orphaned per folder-hygiene rule).
 - **`src/lib/fleetModel.ts`** — compute `B` from the schedule and pass it in;
-  `dailyOpHr` stays the clock day. This is the fix for gap 1 (breaks reach sizing).
+  `dailyOpHr` stays the clock day. Derive `restDays` from `operatingDaysPattern`
+  /`operatingDaysCustom` (the same source `defaultOperatingDaysPerYear` already
+  uses) and pass it so the model can evaluate the weekly horizon. This is the fix
+  for gap 1 (breaks reach sizing) and gap 4 (off-shift/weekly reach sizing).
 - Waterfall and `FleetSummary` shape unchanged; `romSummary` untouched.
 
 ## 6. Dashboard surfacing (web only; PPTX/Excel series untouched)
@@ -177,6 +202,10 @@ Pure unit tests in `src/calc/__tests__/fleet.test.ts`:
   the same runHr with a break that makes `segment ≤ runHr` adds none.
 - Endurance binds (`runHr < segment`) → `bufferTight` true and adder forced.
 - Breaks reduce `Wp` → `A_energy` falls → adder can rise (gap 1 regression).
+- **Weekly horizon:** a `< 24 h` op gives the same adder for Mon–Fri and Mon–Sun
+  (nightly reset governs); a `24 h` op that isn't daily-self-sustaining keeps its
+  adder for Mon–Sun *and* Mon–Fri (rest day cannot bank), confirming "lasts a full
+  7-day week."
 - Existing 208 tests stay green; PPTX/Excel content/parity tests unaffected.
 
 ## 8. Constraints honored
@@ -196,3 +225,6 @@ fields (all derived from Step 1) · no backend · Toyota Type · docs-first
   (real Li-ion tapers near full) — both slightly optimistic, accepted for ROM.
 - Lead-acid opportunity-charge damage / equalize cycles not modeled (DOD fixed,
   chemistry-agnostic).
+- Weekly rest days are recovery windows but cannot bank energy beyond `usableAh`,
+  so they do not reduce the fleet for a 24 h operation that fails the daily balance
+  — the model treats the longest continuous operating block as binding.
