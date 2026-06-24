@@ -45,6 +45,7 @@ export default function RomDashboardPage() {
   const showScenario = mode === 'scenario' && hasOverrides
 
   const baselineDrivers: ScenarioDrivers = useMemo(() => ({
+    throughputBoostPct: 0,
     operatorsPerShift: project?.operatorsPerShift ?? 0,
     shiftsPerDay: project?.shiftsPerDay ?? 1,
     fullyBurdenedRateUsdPerYear: project?.fullyBurdenedRateUsdPerYear ?? 65000,

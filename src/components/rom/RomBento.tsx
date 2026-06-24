@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetSummary, Flow, FlowDerived } from '@/src/calc/types'
@@ -36,12 +37,51 @@ interface Props {
   serviceLifeYears: number
 }
 
-/** Bento cell — `span` is the column count (1–4 in the 4-col grid). */
+/** Bento cell — `span` is the column count (1–4 in the 4-col grid). Any cell can
+ *  be expanded to a full-screen overlay (its content re-renders larger; charts use
+ *  responsive containers so they fill the space). Esc or the close button collapses it. */
 function Cell({ title, span = 1, children }: { title: string; span?: 1 | 2 | 4; children: ReactNode }) {
+  const [expanded, setExpanded] = useState(false)
+
+  useEffect(() => {
+    if (!expanded) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setExpanded(false) }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [expanded])
+
+  const head = (full: boolean) => (
+    <div className="rom2-cell-head">
+      <span className="rom-card-eyebrow">{title}</span>
+      <button
+        type="button"
+        className="rom2-cell-fs-btn"
+        onClick={() => setExpanded(!full)}
+        aria-label={full ? 'Exit full screen' : 'View full screen'}
+        title={full ? 'Exit full screen (Esc)' : 'View full screen'}
+      >
+        {full ? (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M9 9 4 4M9 9V5M9 9H5M15 9l5-5M15 9V5M15 9h4M9 15l-5 5M9 15v4M9 15H5M15 15l5 5M15 15v4M15 15h4" /></svg>
+        ) : (
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7" /></svg>
+        )}
+      </button>
+    </div>
+  )
+
   return (
     <section className={`rom2-cell rom2-span-${span}`}>
-      <span className="rom-card-eyebrow">{title}</span>
-      {children}
+      {head(false)}
+      {!expanded && children}
+      {expanded && createPortal(
+        <div className="rom2-fs-overlay" role="dialog" aria-modal="true" aria-label={title} onClick={() => setExpanded(false)}>
+          <div className="rom2-fs-panel" onClick={e => e.stopPropagation()}>
+            {head(true)}
+            <div className="rom2-fs-body">{children}</div>
+          </div>
+        </div>,
+        document.body,
+      )}
     </section>
   )
 }

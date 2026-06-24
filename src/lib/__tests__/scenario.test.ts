@@ -33,6 +33,17 @@ describe('applyDrivers', () => {
     expect(out.shiftsPerDay).toBe(base.shiftsPerDay)
   })
 
+  it('throughput boost scales every flow moves/hr by (1 + pct), non-mutating', () => {
+    const out = applyDrivers(base, { throughputBoostPct: 0.2 })
+    expect(out.flows![0].thruPerHr).toBeCloseTo(45 * 1.2, 6)
+    expect(base.flows![0].thruPerHr).toBe(45) // source unchanged
+  })
+
+  it('throughput boost = 0 (or absent) leaves flows untouched', () => {
+    expect(applyDrivers(base, { throughputBoostPct: 0 }).flows![0].thruPerHr).toBe(45)
+    expect(applyDrivers(base, {}).flows![0].thruPerHr).toBe(45)
+  })
+
   it('clears a pinned numberOfOperators when operators/shifts are part of the scenario', () => {
     const pinned = { ...base, numberOfOperators: 99 } as StoredProject
     const out = applyDrivers(pinned, { operatorsPerShift: 4 })
@@ -73,6 +84,12 @@ describe('scenario recompute (what-if)', () => {
     const s = scenarioKpis(computeFleetModel(applyDrivers(base, { bufferPct: 0.6 }), vehicles))
     expect(s.totalFleetSold).toBeGreaterThanOrEqual(b.totalFleetSold)
     expect(s.capexMax).toBeGreaterThanOrEqual(b.capexMax)
+  })
+
+  it('throughput boost raises demand → never a smaller fleet', () => {
+    const b = scenarioKpis(computeFleetModel(base, vehicles))
+    const s = scenarioKpis(computeFleetModel(applyDrivers(base, { throughputBoostPct: 0.5 }), vehicles))
+    expect(s.totalFleetSold).toBeGreaterThanOrEqual(b.totalFleetSold)
   })
 })
 

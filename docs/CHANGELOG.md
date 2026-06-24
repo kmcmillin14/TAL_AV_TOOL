@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-23 — Step 04: full-screen tiles + throughput-boost scenario driver
+
+- **Full-screen any tile** — every bento cell gets a maximize control in its header
+  that expands the tile to a full-screen overlay (portaled to `<body>`); Esc or a
+  backdrop click closes it. Charts use responsive containers, so they fill the space.
+- **Throughput-boost driver** — new scenario lever "Throughput boost %". Unlike the
+  other drivers it isn't a project scalar: `applyDrivers` scales every flow's moves/hr
+  by `(1 + pct)`, so `computeFleetModel` sizes the fleet up to meet the higher demand
+  ("what if volume grows X%?"). KPIs, charts, and deltas recompute live as usual.
+
 ## 2026-06-23 — Fix Step 03 flows-table hydration warning
 
 - Removed the inline `{/* … */}` comments after each `<col />` in `FlowsTable`'s

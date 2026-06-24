@@ -365,12 +365,16 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 
 Customer-facing summary fed by the Fleet Engine `FleetSummary`. Rebuilt (2026-06-22) as an
 interactive **bento dashboard**: a sticky left **driver rail** (`RomDrivers`) edits in-memory
-what-if overrides (operators, shifts, labor $, energy $, maintenance %, buffer %, service
-life); a Baseline/Scenario toggle recomputes the whole dashboard live via `computeFleetModel`
-(`src/lib/scenario.ts` — `applyDrivers`/`scenarioKpis`/`diffKpis`, pure, in-memory; "Apply to
-baseline" persists). Charts are themed **Recharts** (payback, TCO, utilization, CAPEX, SoC,
-with tooltips/crosshairs/annotations); duty-cycle, charging and the flow map stay bespoke.
-Pure series builders are unchanged, so **PPTX/Excel exports are unaffected**.
+what-if overrides (**throughput boost %**, operators, shifts, labor $, energy $, maintenance %,
+buffer %, service life); a Baseline/Scenario toggle recomputes the whole dashboard live via
+`computeFleetModel` (`src/lib/scenario.ts` — `applyDrivers`/`scenarioKpis`/`diffKpis`, pure,
+in-memory; "Apply to baseline" persists). The **throughput boost** driver is not a project
+scalar — `applyDrivers` scales every flow's moves/hr by `(1 + pct)` so the recompute sizes the
+fleet up to the higher demand ("what if volume grows X%?"). Charts are themed **Recharts**
+(payback, TCO, utilization, CAPEX, SoC, with tooltips/crosshairs/annotations); duty-cycle,
+charging and the flow map stay bespoke. Pure series builders are unchanged, so **PPTX/Excel
+exports are unaffected**. Any bento tile can be **expanded to a full-screen overlay** (maximize
+icon in the tile header; Esc or backdrop click closes) for a closer look at a chart or table.
 
 **Top summary (2026-06-23 redesign, T-Hive-inspired, TAL-formatted):** two **hero boxes** —
 **Financials** (headline ROM CAPEX + net benefit, payback, labor offset, OPEX, TCO, cost/move)

@@ -3165,6 +3165,34 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .rom2-span-1 { grid-column: span 1; }
 .rom2-span-2 { grid-column: span 2; }
 .rom2-span-4 { grid-column: span 4; }
+
+/* Cell header: eyebrow on the left, full-screen toggle on the right. The eyebrow
+   keeps its own bottom margin, so the head row needs none. */
+.rom2-cell-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.rom2-cell-head .rom-card-eyebrow { flex: 1 1 auto; }
+.rom2-cell-fs-btn {
+  flex: none; display: inline-flex; align-items: center; justify-content: center;
+  width: 26px; height: 26px; margin: -4px -4px 0 0; padding: 0;
+  background: none; border: 1px solid transparent; border-radius: 7px;
+  color: var(--text-tertiary); cursor: pointer; transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.rom2-cell-fs-btn:hover { background: var(--bg-surface-2); color: var(--accent); border-color: var(--border); }
+
+/* Full-screen tile overlay (portaled to <body>). */
+.rom2-fs-overlay {
+  position: fixed; inset: 0; z-index: 1200;
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  background: color-mix(in srgb, var(--text-primary) 42%, transparent);
+  backdrop-filter: blur(2px);
+  animation: rom2-fs-fade 0.14s ease;
+}
+@keyframes rom2-fs-fade { from { opacity: 0; } to { opacity: 1; } }
+.rom2-fs-panel {
+  display: flex; flex-direction: column; width: min(1400px, 100%); height: 100%;
+  background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.32); padding: 20px 24px; overflow: hidden;
+}
+.rom2-fs-body { flex: 1 1 auto; min-height: 0; overflow: auto; }
 /* Walkthrough leads the "How it's calculated" card (no top divider). */
 .fm-walk { margin-top: 4px; }
 /* Inline collapsible sub-section (formula reference under the walkthrough). */
