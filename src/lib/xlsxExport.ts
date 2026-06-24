@@ -4,6 +4,7 @@
 import type { StoredProject } from './storage'
 import type { Vehicle } from './vehicleLibrary'
 import { computeFleetModel } from './fleetModel'
+import { projectFilename } from './projectFilename'
 
 type Row = Array<string | number>
 
@@ -100,6 +101,5 @@ export async function downloadProjectXlsx(project: StoredProject, vehicles: Vehi
     ['Operating days / year', costs.operatingDaysPerYear],
   ])
 
-  const safeName = (project.projectName || 'tal-fleet').replace(/[^\w-]+/g, '-').toLowerCase()
-  XLSX.writeFile(wb, `${safeName}-fleet.xlsx`)
+  XLSX.writeFile(wb, projectFilename(project, 'xlsx'))
 }

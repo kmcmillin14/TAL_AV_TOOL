@@ -1,4 +1,5 @@
 import { partialProjectSchema, type PartialProjectFormData } from './validations/schemas'
+import { projectFilename } from './projectFilename'
 
 const STORAGE_KEY = 'tal:projects'
 
@@ -347,7 +348,7 @@ export function exportProjectJson(id: string): string | null {
 export function downloadProject(id: string): void {
   const project = getProject(id)
   if (!project) return
-  const filename = `${(project.projectName || 'project').replace(/[^a-z0-9-_]+/gi, '_')}_${project.versionNumber}.json`
+  const filename = projectFilename(project, 'json')
   const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')

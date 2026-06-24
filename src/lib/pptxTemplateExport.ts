@@ -4,6 +4,7 @@
 import PizZip from 'pizzip'
 import type { StoredProject } from '@/src/lib/storage'
 import { computeFleetModel } from '@/src/lib/fleetModel'
+import { projectFilename } from '@/src/lib/projectFilename'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { removeSlides, replaceInSlides, cloneSlide, setSlideTitle } from '@/src/lib/pptx/ooxml'
 import { buildCoverTokens } from '@/src/lib/pptx/tokenMap'
@@ -51,15 +52,9 @@ function triggerDownload(blob: Blob, filename: string): void {
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-/** Filename convention: "Rev# Opp# Customer Project". Empty parts are skipped;
- *  only filesystem-illegal characters are stripped (spaces kept). */
+/** Filename convention: "Rev# Opp# Customer Project.pptx" (shared by all exports). */
 function buildFilename(p: StoredProject): string {
-  const oppPrefix = p.opportunityType === 'lead' ? 'LEAD' : 'OPP'
-  const opp = p.opportunityNumber?.trim() ? `${oppPrefix}${p.opportunityNumber.trim()}` : ''
-  const parts = [p.versionNumber?.trim(), opp, p.customerName?.trim(), p.projectName?.trim()]
-    .filter(Boolean) as string[]
-  const base = parts.length ? parts.join(' ') : 'TAL ROM Proposal'
-  return `${base.replace(/[/\\:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim()}.pptx`
+  return projectFilename(p, 'pptx')
 }
 
 /** Build and download the branded ROM deck for the given section/vehicle selection. */

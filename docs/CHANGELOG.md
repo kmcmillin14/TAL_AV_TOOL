@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-06-23 — JSON export uses the shared "Rev# Opp# Customer Project" filename
+
+- The JSON export (re-import file) is now named `Rev# Opp# Customer Project.json`, matching
+  the PPTX/Excel exports. Extracted the convention to a shared `src/lib/projectFilename.ts`
+  and pointed PPTX, Excel, and JSON at it (one source, no drift).
+
 ## 2026-06-23 — Prominent export action; version log = v1.0 only
 
 - Redrew the `export` icon (arrow out of a tray) and used it on Step 4's **export** action,
