@@ -88,25 +88,27 @@ Wp   = D − B                                              production window (d
 Woff = 24 − D                                             off-shift charge window
 runHr    = usableAh / dischargeA                          continuous run capacity
 chargeHr = usableAh / chargeA                             full recharge time
-numBreaks = breaksPerShift × shiftsPerDay
-segment   = Wp / (numBreaks + 1)        longest continuous productive run between top-ups
-restDays  = 7 − operatingDaysPerWeek    (Mon–Fri 2, Mon–Sat 1, Mon–Sun 0, Custom 7−n)
-nightlyReset = D < 24 AND Woff ≥ chargeHr    off-shift fully recharges each night
+breaksPerDay = breaksPerShift × shiftsPerDay              number of break windows
+segment   = Wp / (breaksPerDay + 1)     longest continuous productive run between top-ups
 ```
 
-**Recovery horizon (weekly).** A full recharge is guaranteed (a) every night when
-`nightlyReset`, and (b) on each rest day. The battery cannot bank beyond `usableAh`,
-so the binding requirement is that it sustains the **longest continuous operating
-block** before one of those recharge windows:
+**Recovery horizon (weekly) — a property, not a separate input.** Because the fleet
+is sized to availability `A` (below), each operating day's energy balances at `A`,
+so SoC is periodic day-to-day and the model **sustains a full 7-day week by
+construction**, for any operating-days pattern. A battery cannot bank beyond
+`usableAh`, so a weekly rest day cannot reduce the fleet — it only confirms
+survival. Concretely:
 
 ```
-nightlyReset      → block governed within the day (segment / Wp); weekly pattern
-                    does not change charge sizing (only annual operating days).
-not nightlyReset  → 24 h continuous: the day must be self-sustaining on in-day
-  (24 h ops)        windows (breaks + idle). A rest day confirms weekly survival
-                    but cannot reduce the fleet; if the day is not self-sustaining
-                    (A_energy < 1) the adder stands every operating day.
+D < 24  → the off-shift window (encoded as the 24 in A_energy) fully recharges each
+          night; the weekly pattern does not change charge sizing.
+D = 24  → no off-shift; the day must be self-sustaining on in-day windows (breaks +
+          idle). A rest day cannot reduce the fleet; if the day is not self-
+          sustaining (A_energy < 1) the adder stands every operating day.
 ```
+
+`operatingDaysPattern` therefore feeds **only annual operating days (cost)** and a
+weekly-horizon note in the Assumptions panel — it is not a charging-calc input.
 
 The cycle breakdown's `moveFrac`/`dwellFrac` are **not** used for charging —
 per-cycle station dwell (~10 s) is too short to charge meaningfully. Charging is
@@ -166,19 +168,19 @@ chargingDelta     = max(0, fleetWithCharging − baseFleet)
 
 ## 5. Integration
 
-- **`src/calc/types.ts`** — `FleetSettings` gains `breakHrs` (B) and keeps
-  `dailyOpHr` as clock `D`; `ChargingResult` gains `aEnergy`, `aCap`, `availability`
-  (= final A), `segmentHr`, `runHr`, `chargeHr` (already present), `bufferTight`
-  (true when `A_cap < 1`, i.e. endurance binds).
+- **`src/calc/types.ts`** — `FleetSettings` gains `breakHrs` (B) and `breaksPerDay`
+  (count) and keeps `dailyOpHr` as clock `D`; `ChargingResult` gains `aEnergy`,
+  `aCap`, `segmentHr`, `bufferTight` (true when `A_cap < 1`, i.e. endurance binds);
+  `availability` (= final A), `runHr`, `chargeHr` already present.
 - **`src/calc/fleet.ts`** — `chargingForGroup` rewritten to §4. The overnight
   branch and the two old `A` formulas are removed; `defaultChargeRegime`/regime are
   no longer needed for sizing (kept only if other call sites use them — verify and
   delete if orphaned per folder-hygiene rule).
-- **`src/lib/fleetModel.ts`** — compute `B` from the schedule and pass it in;
-  `dailyOpHr` stays the clock day. Derive `restDays` from `operatingDaysPattern`
-  /`operatingDaysCustom` (the same source `defaultOperatingDaysPerYear` already
-  uses) and pass it so the model can evaluate the weekly horizon. This is the fix
-  for gap 1 (breaks reach sizing) and gap 4 (off-shift/weekly reach sizing).
+- **`src/lib/fleetModel.ts`** — compute `breakHrs` (B) and `breaksPerDay` (count)
+  from the schedule and pass them in; `dailyOpHr` stays the clock day. This is the
+  fix for gap 1 (breaks reach sizing) and gap 4 (off-shift reaches sizing via the
+  24 in `A_energy`). `operatingDaysPattern` keeps feeding only annual operating days
+  (cost) — it is not a charging-calc input (weekly survival is a property, §4).
 - Waterfall and `FleetSummary` shape unchanged; `romSummary` untouched.
 
 ## 6. Dashboard surfacing (web only; PPTX/Excel series untouched)
