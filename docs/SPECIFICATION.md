@@ -154,15 +154,22 @@ usableAh  = ratedAh × DOD
 runHr     = usableAh / dischargeA            (op-hours per charge)
 chargeHr  = chargeTimeMin/60  |  usableAh / chargeA
 dailyOpHr = min(24, shiftsPerDay × hoursPerShift)         (Step 1)
-
-A = plugged:     runHr / (runHr + chargeHr)
-    opportunity: chargeA / (chargeA + dischargeA)
-
-chargingDelta = (regime='overnight' AND runHr ≥ dailyOpHr) ? 0
-              : max(0, ⌈groupRaw / A⌉ − baseFleet)
 ```
-- **Regime** (`chargeRegime`, project-level): `overnight` (a daily off-shift window exists — a charge
-  that lasts the operating day adds nothing) vs `continuous` (24/7 — always uses the availability model).
+
+Charging adder per vehicle group uses a shift-coverage-aware energy balance. The
+charging availability is `A = min(1, A_energy, A_cap)`:
+`A_energy = chargeA·24 / (Wp·(dischargeA + chargeA))` (daily charge-vs-discharge,
+where breaks, idle and the off-shift window all charge; `Wp = D − breaks`,
+`D = min(24, shifts×hours)`), and `A_cap = runHr/(runHr+chargeHr)` when the battery
+cannot survive the longest run between break top-ups (`segment = Wp/(breaksPerDay+1)`),
+else 1. Then `fleetWithCharging = ⌈groupRaw/A⌉`. Breaks now enter sizing (previously
+they only affected the SoC chart). The model sustains a single shift, a full 24 h day,
+and a full 7-day week by construction; a battery cannot bank energy, so the
+operating-days pattern affects only annual cost, not the adder.
+
+- **Regime** (`chargeRegime`, project-level): kept for display only — `overnight` vs
+  `continuous` no longer branches the sizing math (the energy balance covers both by
+  construction).
 - **Method** (`chargeMethods[vehicleId]`, default from the vehicle's `chargerType`: `opportunity` →
   opportunity, else `plugged`): *opportunity* tops up during idle; *plugged* takes the vehicle offline
   to charge. Two methods only.
