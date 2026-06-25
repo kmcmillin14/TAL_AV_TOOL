@@ -23,9 +23,9 @@ export interface SectionMeta {
   requiredFields: Array<keyof ProjectFormData>
   /** Section starts collapsed in the form. */
   startCollapsed?: boolean
-  /** Fields here are captured for the proposal / future gates but aren't used in
-   *  any Step 2 qualification gate or downstream calc yet (see roadmap MX1). */
-  notGated?: boolean
+  /** Fields here are captured for the proposal but aren't matched in any Step 2
+   *  qualification check or downstream calc yet (see roadmap MX1). */
+  notMatched?: boolean
 }
 
 export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
@@ -49,9 +49,9 @@ export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
     tier: 'sizing', requiredFields: [] },
   // ── Tier 3 — PROPOSAL DETAILS (collapsed; consumers arrive in future revisions) ──
   { id: 'section-08', num: '08', label: 'Site details', short: 'Site',
-    tier: 'proposal', requiredFields: [], startCollapsed: true, notGated: true },
+    tier: 'proposal', requiredFields: [], startCollapsed: true, notMatched: true },
   { id: 'section-09', num: '09', label: 'Integration', short: 'Integration',
-    tier: 'proposal', requiredFields: [], startCollapsed: true, notGated: true },
+    tier: 'proposal', requiredFields: [], startCollapsed: true, notMatched: true },
   { id: 'section-10', num: '10', label: 'Dealer & contact', short: 'Dealer',
     tier: 'proposal', requiredFields: [], startCollapsed: true },
   { id: 'section-11', num: '11', label: 'Timeline', short: 'Timeline',

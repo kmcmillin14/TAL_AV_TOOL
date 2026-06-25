@@ -138,20 +138,6 @@ export function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFo
   ) as Partial<ProjectFormData>
 }
 
-/** Inline calibration marker — signals that filling this field changes vehicle
- *  colors in Step 2. Hard gates (red) affect GREEN/RED; soft (amber) affect YELLOW. */
-function GatePill({ soft }: { soft?: boolean }) {
-  return (
-    <span
-      className={`gate-pill${soft ? ' soft' : ''}`}
-      aria-label={soft ? 'soft gate — affects YELLOW' : 'hard gate — affects RED/GREEN'}
-      title={soft ? 'Soft gate: affects YELLOW vehicles' : 'Hard gate: affects RED / GREEN'}
-    >
-      {soft ? 'soft' : 'gate'}
-    </span>
-  )
-}
-
 function TierBand({ label, hint }: { label: string; hint?: string }) {
   return (
     <div className="form-tier-band">
@@ -236,7 +222,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
   const secProps = (id: string) => {
     const m = FORM_SECTIONS.find(s => s.id === id)!
-    return { sectionNum: m.num, title: m.label, id: m.id, status: sectionStatus(m, formValues), defaultOpen: !m.startCollapsed, notGated: m.notGated }
+    return { sectionNum: m.num, title: m.label, id: m.id, status: sectionStatus(m, formValues), defaultOpen: !m.startCollapsed, notMatched: m.notMatched }
   }
 
   // Pallet subtype auto-fill — writes into the load row it was picked on.
@@ -409,7 +395,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 )}
                 <div className="fld-grid-4">
                   <div className="fld">
-                    <label>Max Load Weight <GatePill /> {i === 0 && <span className="req">*</span>}</label>
+                    <label>Max Load Weight {i === 0 && <span className="req">*</span>}</label>
                     <div className="input-with-unit">
                       <input
                         type="number"
@@ -428,7 +414,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                   </div>
 
                   <div className="fld">
-                    <label>Unit / Load Type <GatePill /> {i === 0 && <span className="req">*</span>}</label>
+                    <label>Unit / Load Type {i === 0 && <span className="req">*</span>}</label>
                     <select
                       {...register(`loads.${i}.unitType`, { onBlur: onBlurSave })}
                       defaultValue={lf.unitType || ''}
@@ -544,7 +530,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-02')}>
           <div className="fld-grid-3">
             <div className="fld">
-              <label>Transfer Method <GatePill /> <span className="req">*</span></label>
+              <label>Transfer Method <span className="req">*</span></label>
               <select
                 {...register('transferMethod', { onBlur: onBlurSave })}
                 defaultValue={initialData?.transferMethod || ''}
@@ -558,7 +544,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>Delivery Pattern <GatePill /> <span className="req">*</span></label>
+              <label>Delivery Pattern <span className="req">*</span></label>
               <select
                 {...register('deliveryPattern', { onBlur: onBlurSave })}
                 defaultValue={initialData?.deliveryPattern || ''}
@@ -590,7 +576,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>Drop Height <GatePill /> ({dLabel})</label>
+              <label>Drop Height ({dLabel})</label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -636,7 +622,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 <div className="unit">{dLabel}</div>
               </div>
               <div className="help" style={{ color: 'var(--info)' }}>
-                Informational only — not a hard gate. Engineer verifies on-site.
+                Informational only — doesn’t affect qualification. Engineer verifies on-site.
               </div>
               {errors.minAisleWidthFt && (
                 <div className="help" style={{ color: 'var(--bad)' }}>{errors.minAisleWidthFt.message}</div>
@@ -644,7 +630,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>Min Temperature <GatePill /> ({tLabel})</label>
+              <label>Min Temperature ({tLabel})</label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -661,7 +647,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               </div>
             </div>
             <div className="fld">
-              <label>Max Temperature <GatePill /> ({tLabel})</label>
+              <label>Max Temperature ({tLabel})</label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -681,7 +667,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
           <div className="fld-grid-4" style={{ marginTop: 14 }}>
             <div className="fld">
-              <label>Operating Environment <GatePill /></label>
+              <label>Operating Environment</label>
               <Controller
                 name="outdoorRequired"
                 control={control}
@@ -695,7 +681,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               <div className="help">Outdoor red-flags vehicles not rated for it</div>
             </div>
             <div className="fld">
-              <label>Temperature Environment <GatePill /></label>
+              <label>Temperature Environment</label>
               <Controller
                 name="temperatureEnvironment"
                 control={control}
@@ -717,7 +703,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               <div className="help">Refrigerated = review (yellow) · Freezer = required (red)</div>
             </div>
             <div className="fld">
-              <label>Ramps on Site? <GatePill soft /></label>
+              <label>Ramps on Site?</label>
               <Controller
                 name="rampRequired"
                 control={control}
@@ -775,7 +761,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-04')}>
           <div className="fld-grid-4">
             <div className="fld span-4">
-              <label>Required Certifications <GatePill soft /></label>
+              <label>Required Certifications</label>
               <div className="cert-grid">
                 {CERTIFICATIONS.map(cert => {
                   const on = certifications.includes(cert)
@@ -801,7 +787,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 })}
               </div>
               <div className="help">
-                Selected certifications become hard gates — vehicles missing them will be RED
+                Selected certifications are matched in Step 2 — vehicles missing them are flagged YELLOW for review
               </div>
             </div>
           </div>

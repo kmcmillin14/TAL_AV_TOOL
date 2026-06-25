@@ -510,8 +510,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* Section header badge */
 .form-section-meta { display: flex; align-items: center; gap: 10px; }
-/* "Advanced · not yet gated" tag for sections whose fields aren't used in any
-   Step 2 gate / downstream calc yet (roadmap MX1). */
+/* "Advanced · proposal only" tag for sections whose fields aren't matched in
+   Step 2 / downstream calc yet (roadmap MX1). */
 .sec-tag-advanced {
   font-family: var(--tal-font-numeric);
   font-size: 9px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
@@ -832,30 +832,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* ── Gate indicator pills — inline calibration markers on Step 1 field labels ── */
 /* Hard gate (red): filling this field turns vehicles GREEN or RED in Step 2.     */
 /* Soft gate (amber): filling this field can turn vehicles YELLOW.                */
-.gate-pill {
-  display: inline-flex;
-  align-items: center;
-  margin-left: 6px;
-  padding: 2px 5px;
-  height: 15px;
-  font-family: var(--tal-font-family);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--bad);
-  background: var(--bad-soft);
-  border: 1.5px solid currentColor;
-  border-radius: 2px;
-  vertical-align: middle;
-  line-height: 1;
-  user-select: none;
-  pointer-events: none;
-}
-.gate-pill.soft {
-  color: var(--warn);
-  background: var(--warn-soft);
-}
 .save-status.saving { color: var(--warn); }
 .save-status.saved { color: var(--good); }
 .save-status.error { color: var(--bad); }

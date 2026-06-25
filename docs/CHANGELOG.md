@@ -1,6 +1,14 @@
 # Changelog
 
-## 2026-06-23 — Step 04: full-screen tiles + throughput-boost scenario driver
+## 2026-06-24 — Remove "gate" jargon from the questionnaire
+
+- Deleted the per-field `GatePill` ("gate"/"soft") badges from Step 1; the plain `*`
+  asterisk still marks the core qualification-driving fields. Renamed the internal
+  `notGated` section flag to `notMatched` and the "Advanced · not yet gated" tag to
+  "Advanced · proposal only". Removed the now-unused `.gate-pill` CSS.
+- Fixed a stale hint: certifications were described as "hard gates … RED" but are a
+  **soft** preference (YELLOW review) per ARCHITECTURE — corrected the copy. Aisle-width
+  hint reworded off "gate". Internal calc engine (`gates.ts`) is unchanged.
 
 - **Full-screen any tile** — every bento cell gets a maximize control in its header
   that expands the tile to a full-screen overlay (portaled to `<body>`); Esc or a

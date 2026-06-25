@@ -532,25 +532,21 @@ Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
    - *Payloads* — `payloadTypes.join(', ')`.
    - *Transfer* — all `transferMethods[].method` joined.
 
-### Gate indicator pills (Step 1)
+### Field markers (Step 1)
 
-Every Step 1 field that feeds the vehicle qualification gate engine carries an inline
-`<GatePill>` badge immediately after its label text. Hard gates (red, text `"gate"`)
-affect GREEN/RED verdicts; the certifications soft gate (amber, text `"soft"`) affects
-YELLOW. Aisle width carries no pill — it is explicitly informational-only (ARCHITECTURE.md).
+The questionnaire avoids "gate" jargon (2026-06-24): the per-field `<GatePill>` badges
+were removed to declutter the form. The core qualification-driving fields keep the plain
+red asterisk (`*`) marker (Max Load Weight, Unit/Load Type, Transfer Method, Delivery
+Pattern); the help text explains that `*` fields drive Step 2 matching. The underlying
+qualification still works the same in the engine — these fields feed the gate engine
+(`src/calc/gates.ts`), which is internal architecture, not user-facing copy.
 
-Gate field → pill mapping:
-- §01 Load: Max Load Weight → **gate**; Unit/Load Type → **gate**; Load Length / Load Width / Load Height → *no pill* (informational only — dimension gates removed)
-- §02 Transfer: Transfer Method, Delivery Pattern, Drop Height → **gate**; Pick Height → *no pill*
-- §03 Environment: Min Temperature, Max Temperature → **gate** (hard). The three
-  environment toggles are **tri-state** — nothing pre-selected; unset → skipped ("Not set"):
-  **Operating Environment** (Indoor / Outdoor) — Indoor → green PASS, Outdoor → hard RED if
-  not outdoor-rated; **Temperature Environment** (Ambient / Refrigerated / Freezer) — ONE
-  gate, answer-driven severity: Ambient → green PASS, Refrigerated → **soft** (YELLOW),
-  Freezer → **hard** (RED); **Ramps on Site?** (No / Yes) — No → green PASS, Yes → **soft**
-  YELLOW site review regardless of grade (grade + distance inputs appear only when Yes,
-  informational). Min Aisle Width → *no pill* (informational)
-- §04 Certifications: Required Certifications → **soft**
+The environment toggles remain **tri-state** (nothing pre-selected; unset → skipped "Not
+set"): **Operating Environment** (Indoor → PASS, Outdoor → RED if not outdoor-rated);
+**Temperature Environment** (Ambient → PASS, Refrigerated → **soft** YELLOW, Freezer →
+**hard** RED — one answer-driven gate); **Ramps on Site?** (No → PASS, Yes → **soft**
+YELLOW site review regardless of grade). Min Aisle Width and load dimensions are
+informational. Certifications are a **soft** preference (missing → YELLOW review).
 7. **"View details →"** flips the card.
 
 ### Card back face
