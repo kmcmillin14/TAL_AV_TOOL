@@ -478,14 +478,16 @@ the full-height layouts stay correct.
 
 ## App-wide help
 
-A single **`?` button** in the persistent header opens a right-side **`HelpDrawer`**
-(`src/components/HelpDrawer.tsx`) that explains how to use the tool. It is
-context-aware: on every step it defaults to that step's guide, and a left rail
-lets the engineer browse an **App Overview** plus every step (0–6). Content lives
-as data — `HelpSection[]` in `src/content/help.ts` with `id`, `title`, `summary`,
-ordered `howTo`, optional `tips`, and an optional `status: 'coming'` for the
-unbuilt Steps 4–6. Closes on outside-click, `Escape`, or the × in the drawer
-header.
+A single **`?` button** in the persistent header opens a **full-screen Help guide**
+(`src/components/HelpDrawer.tsx`) written for a first-time user. It is context-aware:
+on every step it opens to that step's section, and a left rail browses an **overview**
+plus all five steps (0–4). Each section has a plain-language summary, ordered
+**How to use it** steps, a worked **example**, an illustrative **figure**, and tips.
+Content lives as data — `HelpSection[]` in `src/content/help.ts` (`id`, `eyebrow`,
+`summary`, `howTo`, optional `example`, `figure`, `tips`). Figures are lightweight
+on-brand mockups drawn by `HelpMock.tsx` keyed on `figure.mock`; a real screenshot can
+replace any one later via `figure.shot` (HelpMock prefers the screenshot when set).
+Closes on outside-click, `Escape`, or the × in the header.
 
 ## Step 2 — Vehicle qualification matrix
 

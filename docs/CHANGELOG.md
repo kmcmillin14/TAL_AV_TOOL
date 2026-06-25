@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-24 — Full-screen Help guide
+
+- Rebuilt the `?` help from a side drawer into a **full-screen guide** written for a
+  first-time user: per-step summary, "How to use it" steps, a worked **example**, an
+  illustrative **figure**, and tips. Refreshed the stale content (now five steps 0–4;
+  Step 4 ROM is documented as built, not "coming").
+- Figures are lightweight on-brand mockups (`HelpMock.tsx`); a real screenshot can drop
+  into any section later via `figure.shot` without code changes.
+
+## 2026-06-24 — Obvious exports
+
+- Moved the exports out of the buried `⋯` overflow menu into a **dedicated header export
+  button** (PowerPoint .pptx · Excel .xlsx · Save project file .json); the `⋯` menu now
+  holds only "Clear all data". The export icon matches the other neutral header icons.
+- Added a prominent **Save project file (.json)** button beside the PowerPoint export on
+  the Step 4 ROM dashboard (the "export for later use" path).
+
 ## 2026-06-24 — Remove "gate" jargon from the questionnaire
 
 - Deleted the per-field `GatePill` ("gate"/"soft") badges from Step 1; the plain `*`

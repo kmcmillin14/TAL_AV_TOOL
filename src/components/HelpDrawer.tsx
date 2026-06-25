@@ -3,32 +3,31 @@
 import { useEffect, useState } from 'react'
 import Icon from '@/src/design-system/components/Icon'
 import { HELP } from '@/src/content/help'
+import HelpMock from './HelpMock'
 
 interface Props {
   open: boolean
   onClose: () => void
-  /** 0–6; the drawer opens to this step's guide. */
+  /** 0–4; the guide opens to this step's section. */
   currentStep: number
 }
 
 /**
- * App help. One entry point (the header "?") opens this right-side drawer. It's
- * context-aware — it opens to the current step's guide — and browsable via the
- * left rail (App Overview + every step). Content lives in `src/content/help.ts`.
+ * App help. One entry point (the header "?") opens this full-screen guide. It's
+ * context-aware — it opens to the current step's section — and browsable via the
+ * left rail (Overview + every step). Content lives in `src/content/help.ts`.
  */
 export default function HelpDrawer({ open, onClose, currentStep }: Props) {
   const [activeId, setActiveId] = useState<string>('app')
 
-  // Open to the current step each time the drawer is opened.
+  // Open to the current step each time the guide is opened.
   useEffect(() => {
     if (open) setActiveId(`step${currentStep}`)
   }, [open, currentStep])
 
   useEffect(() => {
     if (!open) return
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
-    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [open, onClose])
@@ -39,21 +38,21 @@ export default function HelpDrawer({ open, onClose, currentStep }: Props) {
 
   return (
     <div className="help-overlay" onMouseDown={onClose}>
-      <aside
-        className="help-drawer"
+      <section
+        className="help-panel"
         role="dialog"
         aria-modal="true"
         aria-label="Help — how to use this tool"
         onMouseDown={e => e.stopPropagation()}
       >
-        <div className="help-drawer-head">
-          <span className="help-drawer-title">Help · how to use this tool</span>
+        <header className="help-panel-head">
+          <span className="help-panel-title">Help · how to use this tool</span>
           <button type="button" className="help-close" onClick={onClose} aria-label="Close help">
-            <Icon name="x" size={16} />
+            <Icon name="x" size={18} />
           </button>
-        </div>
+        </header>
 
-        <div className="help-drawer-body">
+        <div className="help-panel-body">
           <nav className="help-rail" aria-label="Help sections">
             {HELP.map(s => (
               <button
@@ -62,37 +61,56 @@ export default function HelpDrawer({ open, onClose, currentStep }: Props) {
                 className={`help-rail-item${s.id === active.id ? ' active' : ''}`}
                 onClick={() => setActiveId(s.id)}
               >
-                <span>{s.title}</span>
-                {s.status === 'coming' && <span className="help-soon">soon</span>}
+                {s.eyebrow && <span className="help-rail-num">{s.eyebrow}</span>}
+                <span className="help-rail-name">{s.title}</span>
               </button>
             ))}
           </nav>
 
-          <section className="help-content">
-            <h2>{active.title}</h2>
+          <article className="help-content">
+            {active.eyebrow && <span className="help-eyebrow">{active.eyebrow}</span>}
+            <h2 className="help-h2">{active.title}</h2>
             <p className="help-summary">{active.summary}</p>
-            {active.status === 'coming' && (
-              <p className="help-coming">This step isn’t built yet — here’s what it will do.</p>
-            )}
-            {active.howTo.length > 0 && (
-              <>
-                <h3>How to use it</h3>
-                <ol className="help-howto">
-                  {active.howTo.map((h, i) => <li key={i}>{h}</li>)}
-                </ol>
-              </>
-            )}
-            {active.tips && active.tips.length > 0 && (
-              <>
-                <h3>Tips</h3>
-                <ul className="help-tips">
-                  {active.tips.map((t, i) => <li key={i}>{t}</li>)}
-                </ul>
-              </>
-            )}
-          </section>
+
+            <div className="help-grid">
+              <div className="help-grid-main">
+                {active.howTo.length > 0 && (
+                  <>
+                    <h3 className="help-h3">How to use it</h3>
+                    <ol className="help-howto">
+                      {active.howTo.map((h, i) => <li key={i}>{h}</li>)}
+                    </ol>
+                  </>
+                )}
+
+                {active.example && (
+                  <div className="help-example">
+                    <span className="help-example-cap">{active.example.title}</span>
+                    <ul className="help-example-lines">
+                      {active.example.lines.map((l, i) => <li key={i}>{l}</li>)}
+                    </ul>
+                  </div>
+                )}
+
+                {active.tips && active.tips.length > 0 && (
+                  <>
+                    <h3 className="help-h3">Tips</h3>
+                    <ul className="help-tips">
+                      {active.tips.map((t, i) => <li key={i}>{t}</li>)}
+                    </ul>
+                  </>
+                )}
+              </div>
+
+              {active.figure && (
+                <aside className="help-grid-aside">
+                  <HelpMock figure={active.figure} />
+                </aside>
+              )}
+            </div>
+          </article>
         </div>
-      </aside>
+      </section>
     </div>
   )
 }
