@@ -17,6 +17,9 @@ export default function Step0Page() {
   const [loaded, setLoaded] = useState(false)
   const [unitSystem, toggleUnitSystem] = useUnitSystem()
   const [importError, setImportError] = useState<string | null>(null)
+  // Import progress: idle → loading (parsing) → success (loaded ✓, brief pause, then navigate).
+  const [importState, setImportState] = useState<'idle' | 'loading' | 'success'>('idle')
+  const [importedName, setImportedName] = useState<string>('')
   // Which source the picker is opened for — drives the accepted file types.
   // 'questionnaire' = customer-supplied questionnaire (.json only);
   // 'revision' = a prior export of this app (.pdf or .json).
@@ -104,6 +107,7 @@ export default function Step0Page() {
     const file = e.target.files?.[0]
     if (!file) return
     setImportError(null)
+    setImportState('loading')
 
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
 
@@ -116,8 +120,12 @@ export default function Step0Page() {
         const text = await file.text()
         imported = importProjectFromJson(text)
       }
-      router.push(`/projects/${imported.id}/step1`)
+      // Show the "loaded ✓" confirmation briefly before opening the project.
+      setImportedName(file.name)
+      setImportState('success')
+      setTimeout(() => router.push(`/projects/${imported.id}/step1`), 1000)
     } catch (err) {
+      setImportState('idle')
       setImportError(err instanceof Error ? err.message : 'Could not parse file.')
     }
     e.target.value = ''
@@ -288,6 +296,20 @@ export default function Step0Page() {
               </span>
             </button>
           </div>
+
+          {importState === 'loading' && (
+            <div className="decision-note" style={{ marginTop: 18 }}>
+              <Icon name="download" size={16} />
+              <div>Importing…</div>
+            </div>
+          )}
+
+          {importState === 'success' && (
+            <div className="decision-note" style={{ marginTop: 18, borderColor: 'var(--good)', color: 'var(--good)', background: 'var(--good-soft)' }}>
+              <Icon name="check" size={16} />
+              <div><strong>Loaded</strong> — {importedName} imported. Opening Step 1…</div>
+            </div>
+          )}
 
           {importError && (
             <div className="decision-note" style={{ marginTop: 18, borderColor: 'var(--bad)', color: 'var(--bad)', background: 'var(--bad-soft)' }}>
