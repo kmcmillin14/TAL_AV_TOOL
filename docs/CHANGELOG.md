@@ -1,14 +1,5 @@
 # Changelog
 
-## 2026-06-23 — Shift-coverage-aware charging model
-
-- Replaced the Fleet Engine's overnight/availability charging logic with a
-  closed-form energy balance: `A = min(1, A_energy, A_cap)`. Breaks, idle time and
-  the off-shift window now all count as charge windows, and breaks finally enter the
-  fleet sizing (previously they only touched the SoC chart). An endurance check
-  (`runHr` vs the run between break top-ups) can force an adder. Sustains single
-  shift / 24 h day / 7-day week by construction. PPTX/Excel series unchanged.
-
 ## 2026-06-23 — Step 04: full-screen tiles + throughput-boost scenario driver
 
 - **Full-screen any tile** — every bento cell gets a maximize control in its header
