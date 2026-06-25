@@ -4,8 +4,8 @@
   "display": {
     "manufacturer": "Oppent",
     "partnership": "TAL 3rd Party",
-    "tHive": false,
-    "fleetSoftware": "Oppent Fleet Manager",
+    "tHive": true,
+    "fleetSoftware": "BlueBotics FM",
     "heroImage": "/images/vehicles/ebase7.png",
     "typicalLoad": "Unit Load",
     "category": "Unit Load",
@@ -21,9 +21,9 @@
       "lifts": true
     },
     {
-      "method": "Pin",
-      "loadTimeSec": 5,
-      "unloadTimeSec": 5
+      "method": "Conveyor",
+      "loadTimeSec": 3,
+      "unloadTimeSec": 3
     }
   ],
   "payloadTypes": [

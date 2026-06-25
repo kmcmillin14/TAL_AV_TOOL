@@ -510,7 +510,10 @@ Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
 2. **Name / manufacturer** + **status indicator** (`TrafficLight`): a flat semantic icon
    (check / alert-triangle / x) + colored label — GREEN Compatible / YELLOW Review Required
    / RED Not Compatible. No glow or dot. The same component renders the comparison modal's
-   Status row.
+   Status row. **Exception — "Eval in process":** while any hard gate is still unanswered
+   (a skipped hard gate) and nothing fails hard, the card shows an amber **Eval in process**
+   badge (caution icon) instead of the light, so a work-in-progress project doesn't read as
+   a final verdict. A hard fail (RED) always shows, since it is definitive.
 3. **Segmented gate bar**: **every hard gate is always shown** (answered or not) so the
    full set of hard requirements is visible at a glance, plus any soft gate currently in
    play. Color per segment: `pass` (green) · `fail` (red, hard gate) · `soft` (amber, soft

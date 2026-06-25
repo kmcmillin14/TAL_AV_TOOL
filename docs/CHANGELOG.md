@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-25 — "Eval in process" badge + E7 (Oppent) data
+
+- Step 2 vehicle cards now show an **"Eval in process"** badge (caution icon) instead of the
+  traffic light when a hard requirement hasn't been answered yet — so a partial/work-in-
+  progress project doesn't read as a final green/yellow. A hard **fail** (RED) still shows,
+  since that verdict is definitive.
+- **E7 Unit Load (Oppent)**: fleet software → **BlueBotics FM**, **T-Hive enabled**, and the
+  **Pin** transfer method replaced with **Conveyor** (3/3 s, estimate).
+
 ## 2026-06-24 — Step 1 "Lift type" + cart-payload matching
 
 - New Step 1 **Lift type** dropdown (`liftTypeNeeded`): *Lift to height (forklift)* /

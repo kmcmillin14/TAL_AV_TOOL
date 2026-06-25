@@ -2311,12 +2311,12 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       {
         "gateId": "transfer_method",
         "name": "Transfer Method",
-        "passed": false,
-        "reason": "Does not support Conveyor. Supports: Lift, Pin",
+        "passed": true,
+        "reason": "Supports Conveyor",
         "requiredValue": "Conveyor",
         "severity": "hard",
         "skipped": false,
-        "vehicleValue": "Lift, Pin",
+        "vehicleValue": "Lift, Conveyor",
       },
       {
         "gateId": "lift_height",
@@ -2403,7 +2403,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "vehicleValue": "ISO 3691-4",
       },
     ],
-    "status": "RED",
+    "status": "YELLOW",
   },
   "ebase7__empty": {
     "hardGates": [
@@ -2441,7 +2441,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Lift, Pin",
+        "vehicleValue": "Lift, Conveyor",
       },
       {
         "gateId": "lift_height",
@@ -2568,7 +2568,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Lift, Pin",
+        "vehicleValue": "Lift, Conveyor",
       },
       {
         "gateId": "lift_height",
@@ -2689,11 +2689,11 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "gateId": "transfer_method",
         "name": "Transfer Method",
         "passed": false,
-        "reason": "Does not support Fork. Supports: Lift, Pin",
+        "reason": "Does not support Fork. Supports: Lift, Conveyor",
         "requiredValue": "Fork",
         "severity": "hard",
         "skipped": false,
-        "vehicleValue": "Lift, Pin",
+        "vehicleValue": "Lift, Conveyor",
       },
       {
         "gateId": "lift_height",
@@ -2820,7 +2820,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Lift, Pin",
+        "vehicleValue": "Lift, Conveyor",
       },
       {
         "delta": 0,
@@ -2951,7 +2951,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Lift, Pin",
+        "vehicleValue": "Lift, Conveyor",
       },
       {
         "gateId": "lift_height",

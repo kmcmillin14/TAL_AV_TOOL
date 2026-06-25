@@ -1248,6 +1248,18 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .veh-name-block .mfr { font-size: 12px; color: var(--text-tertiary); margin-top: 3px; }
 
+/* "Eval in process" — shown instead of the traffic light while a hard requirement
+   is still unanswered (work-in-progress), so a partial project doesn't read as a
+   final green/yellow verdict. */
+.veh-eval-wip {
+  display: inline-flex; align-items: center; gap: 5px; flex-shrink: 0;
+  padding: 3px 8px; border-radius: 999px;
+  background: var(--warn-soft); color: var(--warn);
+  border: 1px solid color-mix(in srgb, var(--warn) 40%, transparent);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.01em; white-space: nowrap;
+}
+.veh-eval-wip svg { flex-shrink: 0; }
+
 /* Status indicator — flat semantic icon + colored label (no glow/dot). */
 .traffic-light { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; }
 .traffic-light .tl-icon { flex-shrink: 0; stroke-width: 2.4; }

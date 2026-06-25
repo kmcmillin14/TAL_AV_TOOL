@@ -55,6 +55,9 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
   const gateStatusLabel: Record<string, string> = {
     pass: 'Pass', fail: 'Fail', soft: 'Review', skip: 'Not set',
   }
+  // Evaluation is still "in process" when a hard requirement hasn't been answered
+  // yet (a skipped hard gate) — unless something already fails hard (RED is final).
+  const evalInProcess = status !== 'RED' && result.hardGates.some(g => g.skipped)
   // Spec display strings — shared with the comparison modal (src/lib/vehicleDisplay.ts)
   const capDisplay = capacityDisplay(vehicle, unitSystem)
   const transfers = transferDisplay(vehicle)
@@ -99,7 +102,14 @@ export default function VehicleCard({ vehicle, result, unitSystem, filterKey }: 
                 <div className="name">{vehicle.name}</div>
                 <div className="mfr">{vehicle.display.manufacturer}</div>
               </div>
-              <TrafficLight status={status} />
+              {evalInProcess ? (
+                <span className="veh-eval-wip" title="Not all requirements are answered yet — finish Step 1 for a final verdict">
+                  <Icon name="warn" size={13} />
+                  Eval in process
+                </span>
+              ) : (
+                <TrafficLight status={status} />
+              )}
             </div>
 
             {barGates.length > 0 && (
