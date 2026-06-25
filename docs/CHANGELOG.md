@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-24 — Real screenshots in the Help guide
+
+- Captured real screenshots of Steps 00–04 (from a seeded demo project) and wired them
+  into the Help figures via `figure.shot` — the on-brand mockups remain as the fallback.
+- Added `scripts/help-screenshots.mjs` (dev tooling, not shipped): seeds a demo project
+  into localStorage and drives the system Chrome via puppeteer-core to regenerate the
+  PNGs in `public/images/help/`.
+
 ## 2026-06-24 — Full-screen Help guide
 
 - Rebuilt the `?` help from a side drawer into a **full-screen guide** written for a

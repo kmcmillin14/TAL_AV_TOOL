@@ -84,7 +84,7 @@ export const HELP: HelpSection[] = [
         'The new project lands on Step 01 with everything pre-filled; bump REV to B.',
       ],
     },
-    figure: { mock: 'entry', caption: 'Three ways to begin, with the Project Details panel above.' },
+    figure: { mock: 'entry', shot: '/images/help/step0.png', caption: 'Step 00 — three ways to begin, with the Project Details panel above.' },
     tips: ['Importing is the fast path for a returning project or a new revision of one.'],
   },
   {
@@ -108,7 +108,7 @@ export const HELP: HelpSection[] = [
         'Flow: Receiving → Rack, 300 ft one-way, 30 moves/hr.',
       ],
     },
-    figure: { mock: 'form', caption: 'A flow row: origin, destination, distance, and moves/hr. No vehicle column — that’s Step 03.' },
+    figure: { mock: 'form', shot: '/images/help/step1.png', caption: 'Step 01 — the questionnaire. Fields marked * drive Step 02 matching; nothing is required to move on.' },
     tips: [
       'The red * marks the fields matched against vehicles in Step 02 — fill those first for a useful matrix.',
       'Partial input still flows through; you can refine numbers right up to the proposal.',
@@ -133,7 +133,7 @@ export const HELP: HelpSection[] = [
         'A vehicle that meets all of it → GREEN.',
       ],
     },
-    figure: { mock: 'matrix', caption: 'Each vehicle is a card with a green / yellow / red qualification light.' },
+    figure: { mock: 'matrix', shot: '/images/help/step2.png', caption: 'Step 02 — each vehicle is a card with requirement checks and a green / yellow / red light.' },
     tips: [
       'This step is optional — if you already know the vehicles, skip straight to the Fleet Engine.',
       'A RED light is a hard stop by design; the matrix stays conservative so the proposal is safe.',
@@ -159,7 +159,7 @@ export const HELP: HelpSection[] = [
         '× 10% buffer → 7 vehicles sold.',
       ],
     },
-    figure: { mock: 'engine', caption: 'The sizing waterfall: base fleet → + charging → × buffer → total.' },
+    figure: { mock: 'engine', shot: '/images/help/step3.png', caption: 'Step 03 — flows table and the live waterfall: base fleet → + charging → × buffer → total.' },
     tips: [
       'Vehicles are pooled per type across the whole project — grouping rows is just for organisation.',
       'Assigning a vehicle here is what “selects” it; Step 02 never picks for you.',
@@ -185,7 +185,7 @@ export const HELP: HelpSection[] = [
         'Toggle Baseline / Scenario to compare the two side by side.',
       ],
     },
-    figure: { mock: 'dashboard', caption: 'KPI band, driver rail for what-ifs, and the bento of charts.' },
+    figure: { mock: 'dashboard', shot: '/images/help/step4.png', caption: 'Step 04 — KPI band, driver rail for what-ifs, gauges, and the operation map.' },
     tips: [
       'Scenarios are in-memory — they never change your saved project until you click “Apply to baseline”.',
       'The PowerPoint export always reflects the baseline numbers, not an unsaved scenario.',
