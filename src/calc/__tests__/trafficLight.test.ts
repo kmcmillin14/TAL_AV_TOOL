@@ -555,3 +555,41 @@ describe('lift gate — explicit Step 1 "Lift type"', () => {
     expect(lift(qualifyVehicle(withClass('forklift', 15), emptyApp)).skipped).toBe(true)
   })
 })
+
+describe('transfer gate — Step 1 "Transfer type"', () => {
+  const veh = (over: Partial<Vehicle>): Vehicle => fixtureVehicle(over)
+  const forkliftVeh = veh({ transferMethods: [{ method: 'Lift', loadTimeSec: 5, unloadTimeSec: 5, lifts: true }], calc: { ...fixtureVehicle().calc, liftClass: 'forklift', maxLiftHeightFt: 15 } })
+  const tableVeh = veh({ transferMethods: [{ method: 'Lift', loadTimeSec: 5, unloadTimeSec: 5, lifts: true }], calc: { ...fixtureVehicle().calc, liftClass: 'lift_table', maxLiftHeightFt: null } })
+  const conveyorVeh = veh({ transferMethods: [{ method: 'Conveyor', loadTimeSec: 3, unloadTimeSec: 3 }], calc: { ...fixtureVehicle().calc, liftClass: 'lift_table', maxLiftHeightFt: null } })
+  const tuggerVeh = veh({ transferMethods: [{ method: 'Custom', loadTimeSec: 10, unloadTimeSec: 10 }], payloadTypes: ['Cart'], towsCarts: true, cartPayloads: ['Standard Pallet'], calc: { ...fixtureVehicle().calc, liftClass: 'floor', maxLiftHeightFt: null } })
+  const tm = (r: ReturnType<typeof qualifyVehicle>) => r.hardGates.find(g => g.gateId === 'transfer_method')!
+  const lift = (r: ReturnType<typeof qualifyVehicle>) => r.hardGates.find(g => g.gateId === 'lift_height')!
+
+  it('forklift → needs a Lift method AND lifts-to-height; a lift table fails the lift gate', () => {
+    const fk = qualifyVehicle(forkliftVeh, { ...emptyApp, transferType: 'forklift', transferHeightFt: 10 })
+    expect(tm(fk).passed).toBe(true)
+    expect(lift(fk).passed).toBe(true)
+    expect(lift(qualifyVehicle(tableVeh, { ...emptyApp, transferType: 'forklift', transferHeightFt: 10 })).passed).toBe(false)
+  })
+
+  it('forklift respects the reach vs transfer height', () => {
+    expect(lift(qualifyVehicle(forkliftVeh, { ...emptyApp, transferType: 'forklift', transferHeightFt: 20 })).passed).toBe(false)
+  })
+
+  it('conveyor → requires a Conveyor method', () => {
+    expect(tm(qualifyVehicle(conveyorVeh, { ...emptyApp, transferType: 'conveyor' })).passed).toBe(true)
+    expect(tm(qualifyVehicle(forkliftVeh, { ...emptyApp, transferType: 'conveyor' })).passed).toBe(false)
+  })
+
+  it('tow_cart → requires a cart-towing vehicle (not a specific method)', () => {
+    expect(tm(qualifyVehicle(tuggerVeh, { ...emptyApp, transferType: 'tow_cart' })).passed).toBe(true)
+    expect(tm(qualifyVehicle(forkliftVeh, { ...emptyApp, transferType: 'tow_cart' })).passed).toBe(false)
+  })
+
+  it('pallet_truck → Lift method, no lift-height constraint (floor passes)', () => {
+    const r = qualifyVehicle(forkliftVeh, { ...emptyApp, transferType: 'pallet_truck' })
+    expect(tm(r).passed).toBe(true)
+    expect(lift(r).passed).toBe(true)
+    expect(lift(r).skipped).toBe(false)
+  })
+})

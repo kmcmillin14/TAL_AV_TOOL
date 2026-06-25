@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-25 — Consolidated Step 1 "Transfer type"
+
+- Collapsed the redundant §02 fields (Transfer Method + Lift type + Delivery Pattern +
+  Pick/Drop Height) into **one "Transfer type"** named by what the vehicle is: **Forklift —
+  lifts to height** · **Lift table — same-height transfer** · **Pallet truck — floor-to-floor**
+  · **Conveyor** · **Tow cart (tugger)** · **Custom**. A single **Transfer height** appears
+  only for Forklift / Lift table.
+- One central `TRANSFER_TYPE_SPEC` (calc/gates.ts) maps the type to both gates: the transfer
+  mechanism the vehicle must support (or "tows carts" for Tow cart) and the lift need
+  (forklift → lifts-to-height w/ reach ≥ height; lift table → matched height; others → no
+  lift constraint). Legacy projects (transferMethod / liftTypeNeeded / pick-drop) still work
+  via fallback. Readiness meter now counts `transferType` (10 inputs).
+
 ## 2026-06-25 — "Eval in process" badge + E7 (Oppent) data
 
 - Step 2 vehicle cards now show an **"Eval in process"** badge (caution icon) instead of the

@@ -1,6 +1,6 @@
 // Canonical enums shared between Step 1 form, calc engine, and vehicle JSONs.
 // Single source of truth — never re-declare these arrays inline.
-import type { LiftTypeNeeded } from '@/src/calc/types'
+import type { TransferType } from '@/src/calc/types'
 
 export const TRANSFER_METHODS = [
   'Lift',
@@ -10,12 +10,16 @@ export const TRANSFER_METHODS = [
   'Powered Conveyor Cart',
 ] as const
 
-/** Step 1 "Lift type" options — the vertical-handling need, which drives the lift
- *  gate (forklift / lift table / floor-to-floor). Value ↔ calc `LiftTypeNeeded`. */
-export const LIFT_TYPE_OPTIONS: ReadonlyArray<{ value: LiftTypeNeeded; label: string }> = [
-  { value: 'to_height', label: 'Lift to height (forklift)' },
-  { value: 'matched_height', label: 'Same-height transfer (lift table)' },
-  { value: 'floor', label: 'Floor-to-floor (pallet truck)' },
+/** Step 1 "Transfer type" options — one field named by what the vehicle is. Drives
+ *  the transfer + lift gates (see `TRANSFER_TYPE_SPEC` in calc/gates.ts). Forklift and
+ *  Lift table also take a transfer height. */
+export const TRANSFER_TYPE_OPTIONS: ReadonlyArray<{ value: TransferType; label: string; needsHeight?: boolean }> = [
+  { value: 'forklift', label: 'Forklift — lifts to height', needsHeight: true },
+  { value: 'lift_table', label: 'Lift table — same-height transfer', needsHeight: true },
+  { value: 'pallet_truck', label: 'Pallet truck — floor-to-floor' },
+  { value: 'conveyor', label: 'Conveyor' },
+  { value: 'tow_cart', label: 'Tow cart (tugger)' },
+  { value: 'custom', label: 'Custom' },
 ]
 
 export const TYPICAL_UNIT_TYPES = [

@@ -3,7 +3,7 @@
 // (trafficLight.ts) just walks GATES and applies the GREEN/YELLOW/RED rollup.
 // Adding a gate = appending one entry; SP3's comparison grid can iterate GATES.
 
-import type { GateResult, Severity, ApplicationRequirements } from './types'
+import type { GateResult, Severity, ApplicationRequirements, LiftTypeNeeded, TransferType } from './types'
 import type { Vehicle, LiftClass } from '../lib/vehicleLibrary'
 
 const SKIP_REASON = 'No requirement provided'
@@ -13,6 +13,18 @@ export const LIFT_CLASS_LABEL: Record<LiftClass, string> = {
   forklift: 'Forklift (lifts to height)',
   lift_table: 'Lift table (matched height)',
   floor: 'Floor-to-floor',
+}
+
+/** The single source mapping a Step 1 transfer type to its gate requirements:
+ *  the transfer mechanism the vehicle must support (`method`, null = "tows carts"),
+ *  and the vertical-handling need (`lift`, null = no lift requirement). */
+export const TRANSFER_TYPE_SPEC: Record<TransferType, { method: string | null; lift: LiftTypeNeeded | null; tow?: boolean; label: string }> = {
+  forklift:     { method: 'Lift', lift: 'to_height', label: 'Forklift — lifts to height' },
+  lift_table:   { method: 'Lift', lift: 'matched_height', label: 'Lift table — same-height transfer' },
+  pallet_truck: { method: 'Lift', lift: null, label: 'Pallet truck — floor-to-floor' },
+  conveyor:     { method: 'Conveyor', lift: null, label: 'Conveyor' },
+  tow_cart:     { method: null, lift: null, tow: true, label: 'Tow cart (tugger)' },
+  custom:       { method: 'Custom', lift: null, label: 'Custom' },
 }
 
 /** Whether a delivery pattern implies a vertical lift — and therefore a
@@ -142,8 +154,31 @@ export const GATES: readonly GateSpec[] = [
 
   { id: 'transfer_method', name: 'Transfer Method', severity: 'hard',
     run(vehicle, app) {
-      const transferReq = app.transferMethod?.trim()
       const methods = vehicle.transferMethods.map(tm => tm.method)
+
+      // Step 1 transfer type drives this gate when set.
+      if (app.transferType) {
+        const spec = TRANSFER_TYPE_SPEC[app.transferType]
+        if (spec.tow) {
+          const ok = !!vehicle.towsCarts
+          return {
+            gateId: 'transfer_method', name: 'Transfer Method', severity: 'hard', passed: ok, skipped: false,
+            vehicleValue: vehicle.towsCarts ? 'Tows carts' : (methods.join(', ') || '—'), requiredValue: spec.label,
+            reason: ok ? 'Tows carts' : 'Does not tow carts',
+          }
+        }
+        const ok = methods.some(m => m.toLowerCase() === spec.method!.toLowerCase())
+        return {
+          gateId: 'transfer_method', name: 'Transfer Method', severity: 'hard', passed: ok, skipped: false,
+          vehicleValue: methods.join(', ') || '—', requiredValue: spec.label,
+          reason: ok
+            ? `Supports ${spec.method}`
+            : `Does not support ${spec.method}. Supports: ${methods.join(', ') || 'none'}`,
+        }
+      }
+
+      // Legacy: explicit transfer-method string.
+      const transferReq = app.transferMethod?.trim()
       if (!transferReq) return skippedGate('transfer_method', 'Transfer Method', 'hard', methods.join(', ') || '—')
       const supports = methods.some(m => m.toLowerCase() === transferReq.toLowerCase())
       return {
@@ -160,9 +195,12 @@ export const GATES: readonly GateSpec[] = [
       const klass = vehicle.calc.liftClass
       const klassLabel = LIFT_CLASS_LABEL[klass]
 
-      // Explicit "Lift type" (Step 1) drives the gate directly when set — clearer
-      // than inferring intent from pick/drop heights.
-      const need = app.liftTypeNeeded
+      // The Step 1 transfer type (preferred) or a legacy explicit lift need drives
+      // the gate directly when set — clearer than inferring intent from heights.
+      const tt = app.transferType
+      const spec = tt ? TRANSFER_TYPE_SPEC[tt] : null
+      const need = app.liftTypeNeeded ?? spec?.lift ?? null
+      const liftDrop = (tt ? app.transferHeightFt : app.dropHeightFt) ?? 0
       if (need) {
         if (need === 'floor') {
           // Floor-to-floor needed → no above-floor transfer → every vehicle qualifies.
@@ -184,7 +222,7 @@ export const GATES: readonly GateSpec[] = [
         }
         // need === 'to_height' — lift a load up to a height → forklift only.
         const reach = klass === 'forklift' ? (vehicle.calc.maxLiftHeightFt ?? 0) : 0
-        const drop = app.dropHeightFt ?? 0
+        const drop = liftDrop
         const ok = klass === 'forklift' && (drop <= 0 || reach >= drop)
         return {
           gateId: 'lift_height', name: 'Lift / Transfer', severity: 'hard', passed: ok, skipped: false,
@@ -196,6 +234,16 @@ export const GATES: readonly GateSpec[] = [
             : klass === 'forklift'
               ? `Forklift reaches only ${reach} ft, need ${drop} ft`
               : `${klassLabel} cannot lift a load up to a height`,
+        }
+      }
+
+      // Transfer type chosen but it imposes no lift requirement (pallet truck /
+      // conveyor / tow cart / custom) → floor-to-floor, every vehicle qualifies.
+      if (tt) {
+        return {
+          gateId: 'lift_height', name: 'Lift / Transfer', severity: 'hard', passed: true, skipped: false,
+          vehicleValue: klassLabel, requiredValue: 'Floor-to-floor',
+          reason: 'No above-floor transfer needed',
         }
       }
 

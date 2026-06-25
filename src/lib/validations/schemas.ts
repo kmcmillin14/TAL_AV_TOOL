@@ -60,9 +60,12 @@ export const projectSchema = z.object({
   loadHeightIn: z.number().positive().optional().nullable(),
 
   // Section 2
+  // Step 1 "Transfer type" — one field driving the transfer + lift gates.
+  transferType: z.enum(['forklift', 'lift_table', 'pallet_truck', 'conveyor', 'tow_cart', 'custom']).optional().nullable(),
+  transferHeightFt: z.number().min(0).optional().nullable(),
+  // Legacy transfer fields — kept for back-compat; superseded by transferType.
   transferMethod: z.string().optional(),
   deliveryPattern: z.string().optional(),
-  // Step 1 "Lift type" — drives the lift gate (see ApplicationRequirements.liftTypeNeeded).
   liftTypeNeeded: z.enum(['to_height', 'matched_height', 'floor']).optional().nullable(),
   maxLiftHeightFt: z.number().positive().optional().nullable(),
   // Transfer heights above floor (ft). Drive the lift / transfer gate.

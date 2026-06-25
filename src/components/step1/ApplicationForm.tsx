@@ -9,7 +9,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject } from '@/src/lib/storage'
-import { TRANSFER_METHODS, TYPICAL_UNIT_TYPES, CERTIFICATIONS, LIFT_TYPE_OPTIONS } from '@/src/lib/constants/enums'
+import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
 import SectionNav from './SectionNav'
 import ProgressStrip from './ProgressStrip'
@@ -24,7 +24,6 @@ const PALLET_AUTOFILL: Record<string, { l: number; w: number; h: number }> = {
 }
 
 const PALLET_SUBTYPES = ['GMA (48×40)', 'Euro (47.2×31.5)', 'CHEP (45.9×45.9)', 'Custom']
-const DELIVERY_PATTERNS = ['Floor-Floor', 'Floor-Height', 'Height-Floor', 'Height-Height', 'Conveyor-Conveyor']
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
 const INTERLOCKS = ['High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems', 'Other']
 const DUST_MOISTURE_OPTS = ['None', 'Dusty environment', 'Wash-down required', 'High humidity', 'Outdoor exposure']
@@ -209,6 +208,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   }
 
   const formValues = watch()
+  const transferTypeValue = watch('transferType')
+  const showTransferHeight = transferTypeValue === 'forklift' || transferTypeValue === 'lift_table'
   const oemDealer = watch('oemDealer')
   const otherAGVs = watch('otherAGVs')
   const wmsRequired = watch('wmsRequired')
@@ -530,85 +531,42 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-02')}>
           <div className="fld-grid-3">
             <div className="fld">
-              <label>Transfer Method <span className="req">*</span></label>
+              <label>Transfer type <span className="req">*</span></label>
               <select
-                {...register('transferMethod', { onBlur: onBlurSave })}
-                defaultValue={initialData?.transferMethod || ''}
+                {...register('transferType', { setValueAs: v => (v === '' ? null : v), onBlur: onBlurSave })}
+                defaultValue={initialData?.transferType || ''}
               >
-                <option value="" disabled>Select method…</option>
-                {TRANSFER_METHODS.map(m => <option key={m}>{m}</option>)}
+                <option value="" disabled>Select type…</option>
+                {TRANSFER_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
-              {errors.transferMethod && (
-                <div className="help" style={{ color: 'var(--bad)' }}>{errors.transferMethod.message}</div>
-              )}
+              <div className="help">How the load is handled — drives which vehicles qualify in Step 2.</div>
             </div>
 
-            <div className="fld">
-              <label>Lift type</label>
-              <select
-                {...register('liftTypeNeeded', { setValueAs: v => (v === '' ? null : v), onBlur: onBlurSave })}
-                defaultValue={initialData?.liftTypeNeeded || ''}
-              >
-                <option value="">Not specified</option>
-                {LIFT_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-              <div className="help">Vertical handling needed — forklift lifts to height, lift table transfers at the same height, pallet truck stays floor-to-floor.</div>
-            </div>
-
-            <div className="fld">
-              <label>Delivery Pattern <span className="req">*</span></label>
-              <select
-                {...register('deliveryPattern', { onBlur: onBlurSave })}
-                defaultValue={initialData?.deliveryPattern || ''}
-              >
-                <option value="" disabled>Select pattern…</option>
-                {DELIVERY_PATTERNS.map(p => <option key={p}>{p}</option>)}
-              </select>
-              <div className="help">e.g., Floor-Height = pick from floor, drop on rack</div>
-            </div>
-
-            <div className="fld">
-              <label>Pick Height ({dLabel})</label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  placeholder="0"
-                  className="mono"
-                  defaultValue={dispFt(initialData?.pickHeightFt)}
-                  {...register('pickHeightFt', {
-                    setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'ft', unitSystem),
-                    onBlur: onBlurSave,
-                  })}
-                />
-                <div className="unit">{dLabel}</div>
+            {showTransferHeight && (
+              <div className="fld">
+                <label>Transfer height ({dLabel})</label>
+                <div className="input-with-unit">
+                  <input
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    placeholder="0"
+                    className="mono"
+                    defaultValue={dispFt(initialData?.transferHeightFt)}
+                    {...register('transferHeightFt', {
+                      setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'ft', unitSystem),
+                      onBlur: onBlurSave,
+                    })}
+                  />
+                  <div className="unit">{dLabel}</div>
+                </div>
+                <div className="help">
+                  {transferTypeValue === 'forklift'
+                    ? 'Height the load is lifted to (e.g. onto racking).'
+                    : 'The matched transfer height.'}
+                </div>
               </div>
-              <div className="help">Height loads are picked from (0 = floor)</div>
-            </div>
-
-            <div className="fld">
-              <label>Drop Height ({dLabel})</label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  placeholder="0"
-                  className="mono"
-                  defaultValue={dispFt(initialData?.dropHeightFt)}
-                  {...register('dropHeightFt', {
-                    setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'ft', unitSystem),
-                    onBlur: onBlurSave,
-                  })}
-                />
-                <div className="unit">{dLabel}</div>
-              </div>
-              <div className="help">
-                Height loads are dropped at. Floor→height needs a forklift; matched
-                heights suit a lift table.
-              </div>
-            </div>
+            )}
           </div>
         </FormSection>
 

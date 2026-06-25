@@ -33,7 +33,7 @@ export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
   { id: 'section-01', num: '01', label: 'What are you moving?', short: 'Load',
     tier: 'qualification', requiredFields: ['maxLoadWeightLbs', 'typicalUnitType'] },
   { id: 'section-02', num: '02', label: 'How is it transferred?', short: 'Transfer',
-    tier: 'qualification', requiredFields: ['transferMethod', 'deliveryPattern'] },
+    tier: 'qualification', requiredFields: ['transferType'] },
   { id: 'section-03', num: '03', label: 'Environment & site', short: 'Environment',
     tier: 'qualification', requiredFields: ['minAisleWidthFt'] },
   { id: 'section-04', num: '04', label: 'Certifications', short: 'Certs',
@@ -114,7 +114,7 @@ export function filledRequired(values: Partial<ProjectFormData>): number {
 const QUALIFICATION_INPUTS: ReadonlyArray<keyof ProjectFormData> = [
   'maxLoadWeightLbs', 'typicalUnitType',
   'loadLengthIn', 'loadWidthIn', 'loadHeightIn',
-  'transferMethod', 'deliveryPattern',
+  'transferType',
   'tempMinF', 'tempMaxF', 'maxRampGrade', 'minAisleWidthFt',
 ]
 

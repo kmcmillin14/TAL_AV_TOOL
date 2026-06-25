@@ -4,10 +4,15 @@
 export type TrafficLightStatus = 'GREEN' | 'YELLOW' | 'RED'
 export type Severity = 'hard' | 'soft'
 
-/** The vertical-handling need a user expresses in Step 1 ("Lift type"):
+/** The vertical-handling need (derived from the Step 1 transfer type):
  *  lift a load up to a height (forklift), transfer at a matched height (lift
  *  table / forklift), or floor-to-floor (any vehicle). */
 export type LiftTypeNeeded = 'to_height' | 'matched_height' | 'floor'
+
+/** Step 1 "Transfer type" — one field named by what the vehicle is. Drives both
+ *  the transfer-method and lift gates via TRANSFER_TYPE_SPEC (in gates.ts). */
+export type TransferType =
+  | 'forklift' | 'lift_table' | 'pallet_truck' | 'conveyor' | 'tow_cart' | 'custom'
 
 export interface GateResult {
   gateId: string                  // stable key, e.g. 'weight', 'lift_height'
@@ -58,12 +63,17 @@ export interface QualificationResult {
 export interface ApplicationRequirements {
   maxLoadWeightLbs: number
   typicalUnitType: string
+  /** Step 1 "Transfer type" (forklift / lift table / pallet truck / conveyor / tow
+   *  cart / custom). When set it is the primary driver of the transfer-method AND
+   *  lift gates (see TRANSFER_TYPE_SPEC). Legacy projects leave it null and fall back
+   *  to `transferMethod` + pick/drop heights below. */
+  transferType?: TransferType | null
+  /** The transfer height (ft) for a forklift (lift-to-height) or lift table. */
+  transferHeightFt?: number | null
+  /** Legacy transfer mechanism string — fallback when `transferType` is unset. */
   transferMethod: string
   deliveryPattern: string
-  /** Explicit vertical-handling need (Step 1 "Lift type"). When set, it drives the
-   *  lift gate directly (clearer than inferring from heights): `to_height` needs a
-   *  forklift, `matched_height` a forklift or lift table, `floor` any vehicle.
-   *  Unset → the gate falls back to the pick/drop-height logic. */
+  /** Legacy explicit lift need — fallback when `transferType` is unset. */
   liftTypeNeeded?: LiftTypeNeeded | null
   /** Legacy single "lift to" requirement — fallback when pick/drop are unset. */
   maxLiftHeightFt?: number | null

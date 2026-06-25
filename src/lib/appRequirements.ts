@@ -23,6 +23,8 @@ export function appRequirementsFromProject(p: StoredProject): ApplicationRequire
     loads: effectiveLoads(p),
     maxLoadWeightLbs: p.maxLoadWeightLbs ?? 0,
     typicalUnitType: p.typicalUnitType ?? '',
+    transferType: p.transferType ?? null,
+    transferHeightFt: p.transferHeightFt ?? null,
     transferMethod: p.transferMethod ?? '',
     deliveryPattern: p.deliveryPattern ?? '',
     liftTypeNeeded: p.liftTypeNeeded ?? null,

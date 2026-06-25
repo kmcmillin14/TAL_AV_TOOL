@@ -84,6 +84,8 @@ export default function Step2Page() {
   const appReq = useMemo((): ApplicationRequirements => ({
     maxLoadWeightLbs: project?.maxLoadWeightLbs ?? 0,
     typicalUnitType: project?.typicalUnitType ?? '',
+    transferType: project?.transferType ?? null,
+    transferHeightFt: project?.transferHeightFt ?? null,
     transferMethod: project?.transferMethod ?? '',
     deliveryPattern: project?.deliveryPattern ?? '',
     liftTypeNeeded: project?.liftTypeNeeded ?? null,

@@ -24,11 +24,9 @@ describe('FORM_SECTIONS tiers', () => {
 })
 
 describe('qualification readiness meter', () => {
-  it('counts 11 inputs regardless of delivery pattern (lift is optional pick/drop)', () => {
-    expect(qualificationInputsTotal({ deliveryPattern: 'Floor-Floor' })).toBe(11)
-    expect(qualificationInputsTotal({})).toBe(11)
-    expect(qualificationInputsTotal({ deliveryPattern: 'Floor-Height' })).toBe(11)
-    expect(qualificationInputsTotal({ deliveryPattern: 'Conveyor-Conveyor' })).toBe(11)
+  it('counts 10 inputs (transfer type is one field; transfer height is optional)', () => {
+    expect(qualificationInputsTotal({})).toBe(10)
+    expect(qualificationInputsTotal({ transferType: 'forklift' })).toBe(10)
   })
 
   it('counts answered strings and nonzero numbers (0 = unset sentinel)', () => {
@@ -40,9 +38,10 @@ describe('qualification readiness meter', () => {
     expect(qualificationInputsFilled({ maxLoadWeightLbs: NaN })).toBe(0) // cleared field is not
   })
 
-  it('does not count pick/drop heights (floor-to-floor is a valid answer, not a gap)', () => {
-    // Lift is now modeled via optional pick/drop heights; they never inflate the meter.
-    expect(qualificationInputsFilled({ dropHeightFt: 14 })).toBe(0)
-    expect(qualificationInputsFilled({ deliveryPattern: 'Floor-Height', dropHeightFt: 14 })).toBe(1) // deliveryPattern only
+  it('counts transfer type but not the optional transfer height or legacy fields', () => {
+    expect(qualificationInputsFilled({ transferType: 'forklift' })).toBe(1)
+    expect(qualificationInputsFilled({ transferHeightFt: 14 })).toBe(0)        // height is optional, not a gap
+    expect(qualificationInputsFilled({ deliveryPattern: 'Floor-Height' })).toBe(0) // legacy field no longer counted
+    expect(qualificationInputsFilled({ transferMethod: 'Lift' })).toBe(0)     // legacy field no longer counted
   })
 })

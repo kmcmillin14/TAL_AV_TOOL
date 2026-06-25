@@ -49,7 +49,7 @@ engineer can see which answers move the Step 2 traffic lights:
 
 1. **VEHICLE QUALIFICATION** — every field the gate engine reads:
    01 *What are you moving?* (weight, unit type, load L×W×H, pallet subtype/custom),
-   02 *How is it transferred?* (transfer method, delivery pattern, conditional lift height),
+   02 *How is it transferred?* (one **Transfer type** + conditional transfer height),
    03 *Environment & site* (temp min/max, outdoor, freezer, ramp grade + ramp distance,
    aisle width — informational only), 04 *Certifications* (soft gate).
 2. **FLEET SIZING & ECONOMICS** — 05 schedule, 06 throughput & distance, 07 labor.
@@ -60,8 +60,8 @@ engineer can see which answers move the Step 2 traffic lights:
 
 **Qualification readiness meter** (SectionNav): counts answered gate inputs —
 `maxLoadWeightLbs, typicalUnitType, loadLengthIn, loadWidthIn, loadHeightIn,
-transferMethod, deliveryPattern, tempMinF, tempMaxF, maxRampGrade, minAisleWidthFt`
-(11, always). Pick/Drop heights are **not** counted (floor-to-floor — both 0 — is a valid
+transferType, tempMinF, tempMaxF, maxRampGrade, minAisleWidthFt`
+(10, always). Transfer height is **not** counted (optional; floor-to-floor is a valid
 answer, not a gap). "Answered" = non-empty string / finite **nonzero** number — 0 is the app-wide
 "no requirement" sentinel, for temps too (real freezer specs are negative °F; the
 temp gates likewise skip at 0 — see gates.ts). Cleared fields don't count.
@@ -606,14 +606,17 @@ Each vehicle has a `liftClass` (`src/lib/vehicleLibrary.ts`):
 - **floor** — floor-to-floor only; no above-floor transfer. 8HBC (pallet truck), 8TB / M10
   (tuggers — they tow carts).
 
-**Lift type (explicit, Step 1).** A **Lift type** dropdown sets `liftTypeNeeded`; when set it
-drives the gate directly (clearer than inferring from heights): `to_height` passes only a
-forklift (and its `maxLiftHeightFt` must cover the drop height); `matched_height` passes a
-forklift or lift table; `floor` passes any vehicle. When unset, the gate uses the pick/drop
-heights below.
+**Transfer type (Step 1, primary).** Step 1 has one **Transfer type** field
+(`transferType`) — Forklift / Lift table / Pallet truck / Conveyor / Tow cart / Custom —
+mapped by `TRANSFER_TYPE_SPEC` (calc/gates.ts) to both gates: the **transfer-method** gate
+requires the mapped mechanism (`Lift`/`Conveyor`/`Custom`, or "tows carts" for Tow cart), and
+the **lift** gate uses the mapped need — Forklift → lift-to-height (its `maxLiftHeightFt` must
+cover the **Transfer height**); Lift table → matched height; the rest → no lift constraint
+(passes). Legacy projects without `transferType` fall back to `transferMethod` +
+`liftTypeNeeded` + the pick/drop heights below.
 
-Step 1 captures **Pick Height** and **Drop Height** (ft above floor; both default 0 =
-floor-to-floor). The `lift_height` (hard) gate:
+Legacy: Step 1 once captured **Pick Height** and **Drop Height** (ft above floor; both
+default 0 = floor-to-floor). The `lift_height` (hard) gate fallback:
 - Skips when `max(pick, drop) ≤ 0` (no above-floor transfer requested).
 - **forklift**: passes when `maxLiftHeightFt ≥ max(pick, drop)`.
 - **lift_table**: passes when `pick == drop` (matched height); fails any elevation change.
