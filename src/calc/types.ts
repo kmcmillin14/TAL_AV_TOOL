@@ -150,14 +150,10 @@ export interface ChargingResult {
   method: ChargeMethod
   runHr: number | null        // operating hours one charge sustains
   chargeHr: number | null     // hours to a full recharge
-  availability: number | null // final A ∈ (0,1]
-  aEnergy: number | null      // daily energy-balance availability
-  aCap: number | null         // endurance-limited availability (battery vs longest run)
-  segmentHr: number | null    // longest productive run between break top-ups
-  bufferTight: boolean        // endurance binds (aCap < 1) — battery buffer tight
+  availability: number | null // A ∈ (0,1]
   chargingDelta: number       // extra vehicles for charging (≥ 0)
   sustainable: boolean        // false when inputs invalid/zero
-  reason: string              // human explanation
+  reason: string              // human explanation (e.g. "fits overnight", "+1 for charging")
 }
 
 export interface FleetGroup {
@@ -182,9 +178,7 @@ export interface FleetSummary {
 export interface FleetSettings {
   regime: ChargeRegime
   bufferPct: number
-  dailyOpHr: number           // clock day D = min(24, shifts × hours)
-  breakHrs: number            // total break hours per day (B)
-  breaksPerDay: number        // number of break windows per day
+  dailyOpHr: number
   chargeMethods: Record<string, ChargeMethod>
 }
 
