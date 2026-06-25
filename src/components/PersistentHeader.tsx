@@ -69,6 +69,7 @@ export default function PersistentHeader({
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [theme, toggleTheme] = useTheme()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [versionLogOpen, setVersionLogOpen] = useState(false)
   const [pptxProject, setPptxProject] = useState<StoredProject | null>(null)
@@ -76,6 +77,7 @@ export default function PersistentHeader({
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
+  const exportRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -125,6 +127,20 @@ export default function PersistentHeader({
     }
   }, [menuOpen])
 
+  useEffect(() => {
+    if (!exportOpen) return
+    const onDown = (e: MouseEvent) => {
+      if (exportRef.current && !exportRef.current.contains(e.target as Node)) setExportOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setExportOpen(false) }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [exportOpen])
+
   const saveMeta = useCallback((patch: Partial<typeof editValues>) => {
     if (saveTimer.current) clearTimeout(saveTimer.current)
     setSaveStatus('saving')
@@ -157,17 +173,17 @@ export default function PersistentHeader({
 
   const handleExportJson = () => {
     downloadProject(project.id)
-    setMenuOpen(false)
+    setExportOpen(false)
   }
 
   const handleExportPptx = () => {
-    setMenuOpen(false)
+    setExportOpen(false)
     const current = getProject(project.id)
     if (current) setPptxProject(current)
   }
 
   const handleExportXlsx = async () => {
-    setMenuOpen(false)
+    setExportOpen(false)
     const current = getProject(project.id)
     if (!current) return
     try {
@@ -423,6 +439,39 @@ export default function PersistentHeader({
             <Icon name="help" />
           </button>
 
+          <div className="header-menu-wrap" ref={exportRef}>
+            <button
+              type="button"
+              className="tbtn-icon tbtn-export"
+              aria-label="Export"
+              aria-haspopup="menu"
+              aria-expanded={exportOpen}
+              title="Export proposal, workbook, or save file"
+              onClick={() => setExportOpen(o => !o)}
+            >
+              <Icon name="export" size={15} />
+            </button>
+            {exportOpen && (
+              <div className="header-menu-popover" role="menu">
+                <div className="header-menu-cap">Share &amp; export</div>
+                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPptx}>
+                  <span>PowerPoint proposal</span>
+                  <span className="hint">.pptx</span>
+                </button>
+                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportXlsx}>
+                  <span>Excel workbook</span>
+                  <span className="hint">.xlsx</span>
+                </button>
+                <div className="header-menu-sep" aria-hidden />
+                <div className="header-menu-cap">Save for later</div>
+                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
+                  <span>Save project file</span>
+                  <span className="hint">.json</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           <div className="header-menu-wrap" ref={menuRef}>
             <button
               type="button"
@@ -440,19 +489,6 @@ export default function PersistentHeader({
             </button>
             {menuOpen && (
               <div className="header-menu-popover" role="menu">
-                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPptx}>
-                  <span>Export deck</span>
-                  <span className="hint">.pptx</span>
-                </button>
-                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportXlsx}>
-                  <span>Export workbook</span>
-                  <span className="hint">.xlsx</span>
-                </button>
-                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
-                  <span>Export data (re-import)</span>
-                  <span className="hint">.json</span>
-                </button>
-                <div className="header-menu-sep" aria-hidden />
                 <button
                   type="button"
                   className="header-menu-item destructive"

@@ -1599,8 +1599,26 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   cursor: not-allowed;
 }
 .tbtn-icon svg { width: 14px; height: 14px; display: block; }
+/* Export gets a subtle accent tint so it reads as the primary "share" action
+   among the neutral header icons — icon-only keeps it compact. */
+.tbtn-export {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  background: var(--accent-soft);
+}
+.tbtn-export:hover:not(:disabled) {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  border-color: var(--accent);
+}
+.tbtn-export svg { width: 15px; height: 15px; }
 
 .header-menu-wrap { position: relative; display: inline-flex; }
+.header-menu-cap {
+  padding: 6px 12px 4px;
+  font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
+}
 .header-menu-popover {
   position: absolute; top: calc(100% + 6px); right: 0;
   min-width: 200px;
@@ -3346,6 +3364,12 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   box-shadow: 0 6px 18px rgba(235, 10, 30, 0.22);
 }
 .rom-export-primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
+/* Secondary export — the re-importable save file; present but quieter than the deck. */
+.rom-export-secondary {
+  min-height: 50px; padding: 0 20px; font-size: 14px; font-weight: 700;
+  border-color: var(--border-strong);
+}
+.rom-export-secondary:hover { background: var(--bg-hover); border-color: var(--accent); }
 
 /* ─── ROM Dashboard visuals ─── */
 /* Generous rhythm between the four sections; cards inside keep the tighter 16px. */
