@@ -4,6 +4,11 @@
 export type TrafficLightStatus = 'GREEN' | 'YELLOW' | 'RED'
 export type Severity = 'hard' | 'soft'
 
+/** The vertical-handling need a user expresses in Step 1 ("Lift type"):
+ *  lift a load up to a height (forklift), transfer at a matched height (lift
+ *  table / forklift), or floor-to-floor (any vehicle). */
+export type LiftTypeNeeded = 'to_height' | 'matched_height' | 'floor'
+
 export interface GateResult {
   gateId: string                  // stable key, e.g. 'weight', 'lift_height'
   name: string                    // human label
@@ -55,6 +60,11 @@ export interface ApplicationRequirements {
   typicalUnitType: string
   transferMethod: string
   deliveryPattern: string
+  /** Explicit vertical-handling need (Step 1 "Lift type"). When set, it drives the
+   *  lift gate directly (clearer than inferring from heights): `to_height` needs a
+   *  forklift, `matched_height` a forklift or lift table, `floor` any vehicle.
+   *  Unset → the gate falls back to the pick/drop-height logic. */
+  liftTypeNeeded?: LiftTypeNeeded | null
   /** Legacy single "lift to" requirement — fallback when pick/drop are unset. */
   maxLiftHeightFt?: number | null
   /** Transfer heights above floor (ft). The lift gate compares the elevation

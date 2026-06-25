@@ -493,3 +493,65 @@ describe('qualifyVehicle — multi-load rollup (matrix-only)', () => {
     expect(result.hardGates.map(g => g.name)).toContain('Payload Type — Tote')
   })
 })
+
+describe('payload gate — cart-towing vehicles', () => {
+  // A tugger: floor class, doesn't carry the load directly, tows carts that carry pallets.
+  const tugger = (over: Partial<Vehicle> = {}): Vehicle => fixtureVehicle({
+    payloadTypes: ['Cart'],
+    towsCarts: true,
+    cartPayloads: ['Standard Pallet', 'Tote', 'Cart'],
+    transferMethods: [{ method: 'Custom', loadTimeSec: 10, unloadTimeSec: 10 }],
+    calc: { ...fixtureVehicle().calc, liftClass: 'floor', maxLiftHeightFt: null },
+    ...over,
+  })
+
+  it('passes when a towed cart carries the unit type', () => {
+    const result = qualifyVehicle(tugger(), { ...emptyApp, typicalUnitType: 'Standard Pallet' })
+    const pt = result.hardGates.find(g => g.gateId === 'payload_type')!
+    expect(pt.passed).toBe(true)
+    expect(pt.reason).toMatch(/cart/i)
+  })
+
+  it('still fails when neither the vehicle nor its carts carry the unit type', () => {
+    const result = qualifyVehicle(tugger({ cartPayloads: ['Tote'] }), { ...emptyApp, typicalUnitType: 'Standard Pallet' })
+    expect(result.hardGates.find(g => g.gateId === 'payload_type')!.passed).toBe(false)
+  })
+
+  it('a non-towing vehicle is unaffected (direct payloadTypes only)', () => {
+    const result = qualifyVehicle(fixtureVehicle({ payloadTypes: ['Tote'] }), { ...emptyApp, typicalUnitType: 'Standard Pallet' })
+    expect(result.hardGates.find(g => g.gateId === 'payload_type')!.passed).toBe(false)
+  })
+})
+
+describe('lift gate — explicit Step 1 "Lift type"', () => {
+  const withClass = (liftClass: 'forklift' | 'lift_table' | 'floor', maxLiftHeightFt: number | null = null) =>
+    fixtureVehicle({ calc: { ...fixtureVehicle().calc, liftClass, maxLiftHeightFt } })
+  const lift = (r: ReturnType<typeof qualifyVehicle>) => r.hardGates.find(g => g.gateId === 'lift_height')!
+
+  it('to_height → only a forklift qualifies', () => {
+    expect(lift(qualifyVehicle(withClass('forklift', 15), { ...emptyApp, liftTypeNeeded: 'to_height' })).passed).toBe(true)
+    expect(lift(qualifyVehicle(withClass('lift_table'), { ...emptyApp, liftTypeNeeded: 'to_height' })).passed).toBe(false)
+    expect(lift(qualifyVehicle(withClass('floor'), { ...emptyApp, liftTypeNeeded: 'to_height' })).passed).toBe(false)
+  })
+
+  it('to_height respects the forklift reach vs drop height', () => {
+    expect(lift(qualifyVehicle(withClass('forklift', 10), { ...emptyApp, liftTypeNeeded: 'to_height', dropHeightFt: 8 })).passed).toBe(true)
+    expect(lift(qualifyVehicle(withClass('forklift', 6), { ...emptyApp, liftTypeNeeded: 'to_height', dropHeightFt: 8 })).passed).toBe(false)
+  })
+
+  it('matched_height → forklift and lift table qualify, floor does not', () => {
+    expect(lift(qualifyVehicle(withClass('forklift', 15), { ...emptyApp, liftTypeNeeded: 'matched_height' })).passed).toBe(true)
+    expect(lift(qualifyVehicle(withClass('lift_table'), { ...emptyApp, liftTypeNeeded: 'matched_height' })).passed).toBe(true)
+    expect(lift(qualifyVehicle(withClass('floor'), { ...emptyApp, liftTypeNeeded: 'matched_height' })).passed).toBe(false)
+  })
+
+  it('floor → every vehicle qualifies', () => {
+    for (const k of ['forklift', 'lift_table', 'floor'] as const) {
+      expect(lift(qualifyVehicle(withClass(k, k === 'forklift' ? 15 : null), { ...emptyApp, liftTypeNeeded: 'floor' })).passed).toBe(true)
+    }
+  })
+
+  it('unset → falls back to the pick/drop-height logic (gate skips at floor-to-floor)', () => {
+    expect(lift(qualifyVehicle(withClass('forklift', 15), emptyApp)).skipped).toBe(true)
+  })
+})

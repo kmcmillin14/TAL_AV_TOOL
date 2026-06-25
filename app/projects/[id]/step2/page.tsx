@@ -86,6 +86,7 @@ export default function Step2Page() {
     typicalUnitType: project?.typicalUnitType ?? '',
     transferMethod: project?.transferMethod ?? '',
     deliveryPattern: project?.deliveryPattern ?? '',
+    liftTypeNeeded: project?.liftTypeNeeded ?? null,
     maxLiftHeightFt: project?.maxLiftHeightFt,
     pickHeightFt: project?.pickHeightFt,
     dropHeightFt: project?.dropHeightFt,

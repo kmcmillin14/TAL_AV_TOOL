@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-06-24 — Step 1 "Lift type" + cart-payload matching
+
+- New Step 1 **Lift type** dropdown (`liftTypeNeeded`): *Lift to height (forklift)* /
+  *Same-height transfer (lift table)* / *Floor-to-floor (pallet truck)*. When set it drives
+  the lift gate directly — clearer than inferring intent from pick/drop heights: `to_height`
+  needs a forklift (and its reach must cover the drop height), `matched_height` a forklift or
+  lift table, `floor` any vehicle. Unset → the gate falls back to the pick/drop-height logic
+  (back-compatible).
+- Modelled **what towed carts carry**: new `towsCarts` / `cartPayloads` on m10 and 8tb50a.
+  The hard **payload gate** now passes when a vehicle tows carts that carry the unit type —
+  so a Standard-Pallet project matches a pallet-cart tugger (it still fails the lift gate if
+  a height transfer is required).
+
 ## 2026-06-24 — Undo applies in place (no full-page reload)
 
 - The header **Undo** no longer does `window.location.reload()`. It reverts the project

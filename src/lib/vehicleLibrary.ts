@@ -89,6 +89,12 @@ export interface Vehicle {
   transferMethods: TransferMethod[]
   /** Payload categories this vehicle can carry — matched against ApplicationRequirements.typicalUnitType. */
   payloadTypes: string[]
+  /** This vehicle tows carts rather than carrying the load directly (tugger). */
+  towsCarts?: boolean
+  /** What the towed carts can carry. Matched in the payload gate (a project whose unit
+   *  type is here qualifies via the cart) and shown as "Tows carts → …". Entries must be
+   *  in TYPICAL_UNIT_TYPES. */
+  cartPayloads?: string[]
   calc: VehicleCalc
   specs: VehicleSpecs
 }

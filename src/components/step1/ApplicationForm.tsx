@@ -9,7 +9,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject } from '@/src/lib/storage'
-import { TRANSFER_METHODS, TYPICAL_UNIT_TYPES, CERTIFICATIONS } from '@/src/lib/constants/enums'
+import { TRANSFER_METHODS, TYPICAL_UNIT_TYPES, CERTIFICATIONS, LIFT_TYPE_OPTIONS } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
 import SectionNav from './SectionNav'
 import ProgressStrip from './ProgressStrip'
@@ -541,6 +541,18 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               {errors.transferMethod && (
                 <div className="help" style={{ color: 'var(--bad)' }}>{errors.transferMethod.message}</div>
               )}
+            </div>
+
+            <div className="fld">
+              <label>Lift type</label>
+              <select
+                {...register('liftTypeNeeded', { setValueAs: v => (v === '' ? null : v), onBlur: onBlurSave })}
+                defaultValue={initialData?.liftTypeNeeded || ''}
+              >
+                <option value="">Not specified</option>
+                {LIFT_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              </select>
+              <div className="help">Vertical handling needed — forklift lifts to height, lift table transfers at the same height, pallet truck stays floor-to-floor.</div>
             </div>
 
             <div className="fld">

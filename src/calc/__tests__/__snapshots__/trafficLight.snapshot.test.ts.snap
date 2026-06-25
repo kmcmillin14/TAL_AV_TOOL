@@ -1158,8 +1158,8 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       {
         "gateId": "payload_type",
         "name": "Payload Type",
-        "passed": false,
-        "reason": "Does not carry Standard Pallet. Carries: Cart",
+        "passed": true,
+        "reason": "Tows carts that carry Standard Pallet",
         "requiredValue": "Standard Pallet",
         "severity": "hard",
         "skipped": false,
@@ -3438,8 +3438,8 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
       {
         "gateId": "payload_type",
         "name": "Payload Type",
-        "passed": false,
-        "reason": "Does not carry Standard Pallet. Carries: Cart",
+        "passed": true,
+        "reason": "Tows carts that carry Standard Pallet",
         "requiredValue": "Standard Pallet",
         "severity": "hard",
         "skipped": false,

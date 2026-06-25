@@ -596,10 +596,18 @@ module. Comparison is informational only — it never selects a vehicle (ARCHITE
 ### Lift / transfer gate (lift class)
 
 Each vehicle has a `liftClass` (`src/lib/vehicleLibrary.ts`):
-- **forklift** — lifts pick→drop to any height up to `maxLiftHeightFt` (stacking). CB18.
+- **forklift** — lifts a load up to any height up to `maxLiftHeightFt` (e.g. onto racking).
+  CB18.
 - **lift_table** — transfers only at a *matched* height (pick == drop), e.g. a conveyor /
   roller top. E7/Oppent, ML2.
-- **floor** — floor-to-floor only; no above-floor transfer. 8HBC, 8TB, M10.
+- **floor** — floor-to-floor only; no above-floor transfer. 8HBC (pallet truck), 8TB / M10
+  (tuggers — they tow carts).
+
+**Lift type (explicit, Step 1).** A **Lift type** dropdown sets `liftTypeNeeded`; when set it
+drives the gate directly (clearer than inferring from heights): `to_height` passes only a
+forklift (and its `maxLiftHeightFt` must cover the drop height); `matched_height` passes a
+forklift or lift table; `floor` passes any vehicle. When unset, the gate uses the pick/drop
+heights below.
 
 Step 1 captures **Pick Height** and **Drop Height** (ft above floor; both default 0 =
 floor-to-floor). The `lift_height` (hard) gate:
@@ -609,8 +617,14 @@ floor-to-floor). The `lift_height` (hard) gate:
 - **floor**: fails any above-floor transfer.
 
 Back-compat: when pick/drop are unset, the gate falls back to the legacy single
-`maxLiftHeightFt` requirement (treated as a floor→`maxLiftHeightFt` lift). Pick Height
-carries no gate pill; **Drop Height** carries the hard `gate` pill.
+`maxLiftHeightFt` requirement (treated as a floor→`maxLiftHeightFt` lift).
+
+### Payload-type gate (carts)
+
+The hard `payload_type` gate passes when the vehicle carries the unit type **directly**
+(`payloadTypes`) **or** tows carts that carry it (`towsCarts && cartPayloads.includes(unitType)`).
+So a Standard-Pallet project matches a pallet-cart tugger (m10, 8tb50a) — it still fails the
+lift gate if a height transfer is required. The reason reads "Tows carts that carry …".
 
 > **Vehicle data note:** `liftClass` for CB18 (forklift), E7 (lift table), and 8HBC (floor)
 > is confirmed by the user; ML2 (lift table), M10 and 8TB (floor) are inferred from category

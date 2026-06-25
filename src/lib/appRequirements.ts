@@ -25,6 +25,7 @@ export function appRequirementsFromProject(p: StoredProject): ApplicationRequire
     typicalUnitType: p.typicalUnitType ?? '',
     transferMethod: p.transferMethod ?? '',
     deliveryPattern: p.deliveryPattern ?? '',
+    liftTypeNeeded: p.liftTypeNeeded ?? null,
     maxLiftHeightFt: p.maxLiftHeightFt,
     pickHeightFt: p.pickHeightFt,
     dropHeightFt: p.dropHeightFt,

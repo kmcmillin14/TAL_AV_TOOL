@@ -124,13 +124,19 @@ export const GATES: readonly GateSpec[] = [
     run(vehicle, app) {
       const unitType = app.typicalUnitType?.trim()
       if (!unitType) return skippedGate('payload_type', 'Payload Type', 'hard', vehicle.payloadTypes.join(', ') || 'None')
-      const supports = vehicle.payloadTypes.includes(unitType)
+      // A vehicle qualifies if it carries the load directly, OR tows carts that carry it
+      // (a tugger pulling pallet-carts can move pallets).
+      const directly = vehicle.payloadTypes.includes(unitType)
+      const viaCart = !!vehicle.towsCarts && (vehicle.cartPayloads ?? []).includes(unitType)
+      const supports = directly || viaCart
       return {
         gateId: 'payload_type', name: 'Payload Type', severity: 'hard', passed: supports, skipped: false,
         vehicleValue: vehicle.payloadTypes.join(', ') || 'None', requiredValue: unitType,
-        reason: supports
+        reason: directly
           ? `Carries ${unitType}`
-          : `Does not carry ${unitType}. Carries: ${vehicle.payloadTypes.join(', ') || 'none'}`,
+          : viaCart
+            ? `Tows carts that carry ${unitType}`
+            : `Does not carry ${unitType}. Carries: ${vehicle.payloadTypes.join(', ') || 'none'}`,
       }
     } },
 
@@ -151,14 +157,55 @@ export const GATES: readonly GateSpec[] = [
 
   { id: 'lift_height', name: 'Lift / Transfer', severity: 'hard',
     run(vehicle, app) {
+      const klass = vehicle.calc.liftClass
+      const klassLabel = LIFT_CLASS_LABEL[klass]
+
+      // Explicit "Lift type" (Step 1) drives the gate directly when set — clearer
+      // than inferring intent from pick/drop heights.
+      const need = app.liftTypeNeeded
+      if (need) {
+        if (need === 'floor') {
+          // Floor-to-floor needed → no above-floor transfer → every vehicle qualifies.
+          return {
+            gateId: 'lift_height', name: 'Lift / Transfer', severity: 'hard', passed: true, skipped: false,
+            vehicleValue: klassLabel, requiredValue: 'Floor-to-floor',
+            reason: 'Floor-to-floor — no above-floor transfer needed',
+          }
+        }
+        if (need === 'matched_height') {
+          const ok = klass === 'forklift' || klass === 'lift_table'
+          return {
+            gateId: 'lift_height', name: 'Lift / Transfer', severity: 'hard', passed: ok, skipped: false,
+            vehicleValue: klassLabel, requiredValue: 'Same-height transfer',
+            reason: ok
+              ? `${klassLabel} can transfer at a matched height`
+              : 'Floor-to-floor only — cannot transfer above the floor',
+          }
+        }
+        // need === 'to_height' — lift a load up to a height → forklift only.
+        const reach = klass === 'forklift' ? (vehicle.calc.maxLiftHeightFt ?? 0) : 0
+        const drop = app.dropHeightFt ?? 0
+        const ok = klass === 'forklift' && (drop <= 0 || reach >= drop)
+        return {
+          gateId: 'lift_height', name: 'Lift / Transfer', severity: 'hard', passed: ok, skipped: false,
+          vehicleValue: klass === 'forklift' ? `Forklift · ${reach} ft reach` : klassLabel,
+          requiredValue: drop > 0 ? `lift to ${drop} ft` : 'lift to height',
+          vehicleNumeric: reach, requiredNumeric: drop, unit: 'ft', delta: reach - drop,
+          reason: ok
+            ? (drop > 0 ? `Forklift reaches ${reach} ft — covers lift to ${drop} ft` : 'Forklift lifts loads to height')
+            : klass === 'forklift'
+              ? `Forklift reaches only ${reach} ft, need ${drop} ft`
+              : `${klassLabel} cannot lift a load up to a height`,
+        }
+      }
+
       // Resolve pick/drop heights; fall back to the legacy single "lift to"
       // requirement (treated as a floor→drop lift) for pre-pick/drop projects.
       const pick = app.pickHeightFt ?? 0
       const drop = app.dropHeightFt
         ?? (app.pickHeightFt == null ? (app.maxLiftHeightFt ?? 0) : 0)
       const hi = Math.max(pick, drop)
-      const klass = vehicle.calc.liftClass
-      const typeLabel = LIFT_CLASS_LABEL[klass]
+      const typeLabel = klassLabel
 
       // No above-floor transfer requested → not a differentiator, skip.
       if (hi <= 0) {

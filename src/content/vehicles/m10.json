@@ -23,6 +23,12 @@
   "payloadTypes": [
     "Cart"
   ],
+  "towsCarts": true,
+  "cartPayloads": [
+    "Standard Pallet",
+    "Tote",
+    "Cart"
+  ],
   "calc": {
     "maxWeightLbs": 2200,
     "widthFt": 1.22,

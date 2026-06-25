@@ -62,6 +62,8 @@ export const projectSchema = z.object({
   // Section 2
   transferMethod: z.string().optional(),
   deliveryPattern: z.string().optional(),
+  // Step 1 "Lift type" — drives the lift gate (see ApplicationRequirements.liftTypeNeeded).
+  liftTypeNeeded: z.enum(['to_height', 'matched_height', 'floor']).optional().nullable(),
   maxLiftHeightFt: z.number().positive().optional().nullable(),
   // Transfer heights above floor (ft). Drive the lift / transfer gate.
   pickHeightFt: z.number().min(0).optional().nullable(),
