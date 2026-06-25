@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { getProject, type StoredProject } from './storage'
+import { getProject, subscribeProjects, type StoredProject } from './storage'
 import { fetchVehiclesCached } from './vehicleCache'
 import type { Vehicle } from './vehicleLibrary'
 import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
@@ -28,11 +28,13 @@ export function useFleetData(id: string) {
 
   useEffect(() => {
     const refresh = () => { const p = getProject(id); if (p) setProject(p) }
-    window.addEventListener('storage', refresh)
+    window.addEventListener('storage', refresh)   // cross-tab writes
     window.addEventListener('focus', refresh)
+    const unsub = subscribeProjects(refresh)       // same-tab writes (e.g. undo)
     return () => {
       window.removeEventListener('storage', refresh)
       window.removeEventListener('focus', refresh)
+      unsub()
     }
   }, [id])
 

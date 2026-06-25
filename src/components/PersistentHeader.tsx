@@ -219,7 +219,10 @@ export default function PersistentHeader({
 
   const handleUndo = () => {
     const restored = undoLastChange(project.id)
-    if (restored) window.location.reload()
+    // undoLastChange writes + notify()s, so any step subscribed to
+    // subscribeProjects (steps 2–4) re-reads live. Step 1's form holds its own
+    // RHF state, so signal it to remount with the restored values — no full reload.
+    if (restored) window.dispatchEvent(new CustomEvent('tal:undo', { detail: restored.id }))
   }
 
   const handleClearAll = () => {

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-24 — Undo applies in place (no full-page reload)
+
+- The header **Undo** no longer does `window.location.reload()`. It reverts the project
+  via `undoLastChange` (which `notify()`s) and dispatches a `tal:undo` event. Steps 2–4
+  now subscribe to same-tab `subscribeProjects` so they update live; Step 1 remounts its
+  form (keyed) on the `tal:undo` signal to show the restored values without stealing focus
+  during normal edits. Verified headlessly: field reverts, no reload.
+
 ## 2026-06-24 — Real screenshots in the Help guide
 
 - Captured real screenshots of Steps 00–04 (from a seeded demo project) and wired them

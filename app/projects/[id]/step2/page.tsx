@@ -12,7 +12,7 @@ import { qualifyVehicle } from '@/src/calc/trafficLight'
 import type { ApplicationRequirements } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
-import { getProject, type StoredProject } from '@/src/lib/storage'
+import { getProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 
 type ProjectData = StoredProject
@@ -64,9 +64,8 @@ export default function Step2Page() {
       })
   }, [id])
 
-  // Re-read storage when another tab writes (cross-tab 'storage' event) or
-  // when this tab regains focus (covers same-tab edits that happened between
-  // mount and return, e.g. via PersistentHeader meta inputs).
+  // Re-read storage on cross-tab writes ('storage'), focus return, and same-tab
+  // mutations (subscribeProjects — e.g. an undo, or PersistentHeader meta edits).
   useEffect(() => {
     const refresh = () => {
       const proj = getProject(id)
@@ -74,9 +73,11 @@ export default function Step2Page() {
     }
     window.addEventListener('storage', refresh)
     window.addEventListener('focus', refresh)
+    const unsub = subscribeProjects(refresh)
     return () => {
       window.removeEventListener('storage', refresh)
       window.removeEventListener('focus', refresh)
+      unsub()
     }
   }, [id])
 
