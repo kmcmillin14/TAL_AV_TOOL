@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-25 — Charging model v2 (availability + weekend reset)
+
+- Reworked the per-type charging adder to `A = min(A_energy, A_cap)`: `A_energy` credits the
+  nightly off-shift and the day-off reset (`usableAh/C`, C = consecutive operating days),
+  `A_cap` is the within-window battery capacity. Fewest vehicles that meet throughput and stay
+  charged across the operating week; days off reset to 100% (no energy banking). Buffer applied
+  after. New pure `consecutiveOperatingDays` helper. Legacy method/regime kept for display only.
+
 ## 2026-06-25 — Consolidated Step 1 "Transfer type"
 
 - Collapsed the redundant §02 fields (Transfer Method + Lift type + Delivery Pattern +

@@ -149,24 +149,14 @@ pure engineering, no multipliers. Fully specified in **Step 3 — Material Flows
 Pure calc in `src/calc/fleet.ts`. Battery specs are amp-hours / amps (`ratedAh`, `voltageV`,
 `dischargeA`, `chargeA`, optional `chargeTimeMin`). `DEFAULT_DOD = 0.80`.
 
-```
-usableAh  = ratedAh × DOD
-runHr     = usableAh / dischargeA            (op-hours per charge)
-chargeHr  = chargeTimeMin/60  |  usableAh / chargeA
-dailyOpHr = min(24, shiftsPerDay × hoursPerShift)         (Step 1)
-
-A = plugged:     runHr / (runHr + chargeHr)
-    opportunity: chargeA / (chargeA + dischargeA)
-
-chargingDelta = (regime='overnight' AND runHr ≥ dailyOpHr) ? 0
-              : max(0, ⌈groupRaw / A⌉ − baseFleet)
-```
-- **Regime** (`chargeRegime`, project-level): `overnight` (a daily off-shift window exists — a charge
-  that lasts the operating day adds nothing) vs `continuous` (24/7 — always uses the availability model).
-- **Method** (`chargeMethods[vehicleId]`, default from the vehicle's `chargerType`: `opportunity` →
-  opportunity, else `plugged`): *opportunity* tops up during idle; *plugged* takes the vehicle offline
-  to charge. Two methods only.
-- Inputs missing/zero → a non-sustainable result shown as `—` (never NaN).
+Charging adder per vehicle type uses an availability ratio `A = min(A_energy, A_cap)`:
+`A_energy = min(1, (usableAh/C + 24·chargeRate) / (H·(dischargeA + chargeRate)))` credits the
+nightly off-shift (`24·chargeRate`) and the day-off reset (`usableAh/C`, where `C` = consecutive
+operating days before a rest day, ∞ for 24/7); `A_cap = runHrEff/(runHrEff+chargeHr)` (or 1 when
+the battery covers the production window `H = shifts×hours − breaks`). Then
+`fleetWithCharging = ⌈groupRaw/A⌉`. Like vehicles pool (per type); the buffer is applied after.
+Days off recharge to 100% (a reset, not banking), so the binding case is surviving the consecutive
+operating days. See `docs/superpowers/specs/2026-06-25-charging-model-v2-design.md`.
 
 ### Section 03 — Buffer (buffer + total)
 A single project **buffer %** (`bufferPct`, default `0.10`) — the only multiplier in the pipeline —
