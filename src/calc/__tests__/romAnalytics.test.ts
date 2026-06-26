@@ -53,3 +53,24 @@ describe('defaultOperatingDaysPerYear', () => {
     expect(defaultOperatingDaysPerYear('')).toBe(312)
   })
 })
+
+import { consecutiveOperatingDays } from '../romAnalytics'
+
+describe('consecutiveOperatingDays', () => {
+  it('maps the standard patterns', () => {
+    expect(consecutiveOperatingDays('Mon–Fri')).toBe(5)
+    expect(consecutiveOperatingDays('Mon–Sat')).toBe(6)
+    expect(consecutiveOperatingDays('Mon–Sun')).toBe(Infinity)
+  })
+  it('unset/unknown defaults to Mon–Sat (6), matching the cost-side default', () => {
+    expect(consecutiveOperatingDays(undefined)).toBe(6)
+    expect(consecutiveOperatingDays('whatever')).toBe(6)
+  })
+  it('computes the longest consecutive run for Custom, wrapping the week', () => {
+    expect(consecutiveOperatingDays('Custom', ['Mon', 'Tue', 'Wed'])).toBe(3)
+    expect(consecutiveOperatingDays('Custom', ['Fri', 'Sat', 'Sun', 'Mon'])).toBe(4) // wraps
+    expect(consecutiveOperatingDays('Custom', ['Mon', 'Wed', 'Fri'])).toBe(1)       // no two in a row
+    expect(consecutiveOperatingDays('Custom', ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'])).toBe(Infinity)
+    expect(consecutiveOperatingDays('Custom', [])).toBe(0)
+  })
+})
