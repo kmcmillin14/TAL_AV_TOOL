@@ -42,7 +42,7 @@ export default function ChargingPipeline({
 
   return (
     <div className="engine-panel pipeline-wrap">
-      <div className="engine-row">
+      <div className="engine-row charge-sched">
         <div className="engine-context mono">
           Schedule:{' '}
           <input
@@ -72,6 +72,7 @@ export default function ChargingPipeline({
             aria-label="Hours per shift"
           />
           {' '}h = <strong>{dailyOpHr} h</strong> operating / day
+          {breakHrs > 0 ? ` · ${+breakHrs.toFixed(2)} h breaks` : ''}
         </div>
         <div className="cr-days">
           <span className="cr-label">Operating days</span>
@@ -127,7 +128,7 @@ export default function ChargingPipeline({
                   <td className="num mono">{fmtPct(c?.availability)}</td>
                   <td className="num">
                     <span className={`ct-delta ct-delta-${delta > 0 ? 'warn' : 'good'}`} title={c?.reason}>
-                      {delta > 0 ? `+${delta}` : (c?.availability === 1 ? 'fits' : '+0')}
+                      {delta > 0 ? `+${delta}` : '+0'}
                     </span>
                   </td>
                   <td className="pl-math-cell">

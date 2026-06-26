@@ -400,12 +400,12 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* Compact page header — matches Step 3/4's `.engine-head` (no surface banner /
    border / heavy padding) so every step uses the same space-saving title block. */
 .page-header {
-  display: flex; flex-direction: column; align-items: center; text-align: center;
+  display: flex; flex-direction: column; align-items: flex-start; text-align: left;
   position: relative;
   margin-bottom: 24px; gap: 6px;
 }
-.page-title { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 100%; text-align: center; }
-.page-title h1, .page-title .desc, .page-title .step-num { text-align: center; }
+.page-title { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; text-align: left; }
+.page-title h1, .page-title .desc, .page-title .step-num { text-align: left; }
 /* Step 1's save-status + unit pill: keep top-right of the header row. */
 .page-header > .row { position: absolute; top: 0; right: 0; }
 .step-num { font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
@@ -722,7 +722,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* Currency field — "$" prefix inside the input. */
 .fld-money { position: relative; }
 .fld-money-sym { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); font-family: var(--tal-font-numeric); font-size: 13px; pointer-events: none; }
-.fld-money input { padding-left: 22px; }
+.fld .fld-money input { padding-left: 26px; }
 .fld label { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
 .req { color: var(--accent); }
 
@@ -3000,8 +3000,10 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 
 /* regime toggle */
-/* Operating-days control on the Charging section header (label · select · days/week). */
-.cr-days { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+/* Charging header stacks: schedule line, then the operating-days control beneath it. */
+.engine-row.charge-sched { flex-direction: column; align-items: flex-start; gap: 10px; }
+/* Operating-days control (label · select · days/week) — sits under the schedule line. */
+.cr-days { display: inline-flex; align-items: center; gap: 8px; }
 .cr-label {
   font-family: var(--tal-font-numeric);
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;

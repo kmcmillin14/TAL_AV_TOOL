@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-26 — Step polish: headers, currency, charging header
+
+- **Standardized step titles to left-aligned** (`.page-header` now matches Step 3/4's
+  `.engine-head`): Steps 0/1/2 were centered, 3/4 left — now all left.
+- **Currency field fix**: `$` prefix on the Step 1 fully-burdened rate was clipping the first
+  digit; bumped `.fld .fld-money input` padding (a later `.fld input` rule was overriding it).
+- **Charging header**: moved the Operating-days control **under** the schedule line (was on the
+  right), and the schedule now shows **breaks** (`… 24 h/day · 1.5 h breaks`).
+- **Unified "fits" → "+0"** in the Charging table (one consistent "no extra vehicles" label).
+
 ## 2026-06-26 — Charging UI follows v2 (drop dead toggles; show days/week)
 
 - Step 3 Charging: removed the **Recharge window** (Overnight/Continuous) and per-vehicle
