@@ -1,24 +1,26 @@
 'use client'
 
-import type { ChargeMethod, ChargeRegime, FleetGroup, Flow, FlowDerived } from '@/src/calc/types'
+import type { FleetGroup, Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import DerivTrigger from '@/src/components/step3/DerivTrigger'
 import { chargingDerivation } from '@/src/lib/derivation'
 import type { EnginePatch } from './types'
 
+const DAY_PATTERNS = ['Mon–Fri', 'Mon–Sat', 'Mon–Sun'] as const
+
 interface Props {
   flows: Flow[]
   vehicleById: Map<string, Vehicle>
   groupByVehicle: Map<string, FleetGroup>
   derivedByFlowId: Map<string, FlowDerived>
-  regime: ChargeRegime
   dailyOpHr: number
   breakHrs: number
   consecutiveOpDays: number
   shiftsPerDay: number
   hoursPerShift: number
-  chargeMethods: Record<string, ChargeMethod>
+  operatingDaysPattern: string
+  daysPerWeek: number
   onPatch: (patch: EnginePatch) => void
 }
 
@@ -29,16 +31,14 @@ const fmtCycle = (s: number | null | undefined) => (s == null ? '—' : `${Math.
 /**
  * Charging stage of the pipeline — the SAME per-flow rows as Flows, inputs
  * collapsed, now showing each flow's vehicle battery profile + the extra
- * vehicles charging pools in for that vehicle type. Charge regime (project) and
- * per-vehicle method are editable here; the rest is computed (read-only).
+ * vehicles charging pools in for that vehicle type. Schedule (shifts/hours) and the
+ * operating-days pattern are editable here; everything else is computed (read-only).
  */
 export default function ChargingPipeline({
   flows, vehicleById, groupByVehicle, derivedByFlowId,
-  regime, dailyOpHr, breakHrs, consecutiveOpDays, shiftsPerDay, hoursPerShift, chargeMethods, onPatch,
+  dailyOpHr, breakHrs, consecutiveOpDays, shiftsPerDay, hoursPerShift, operatingDaysPattern, daysPerWeek, onPatch,
 }: Props) {
   const rows = flows.filter(f => f.vehicleId)
-  const setMethod = (vehicleId: string, method: ChargeMethod) =>
-    onPatch({ chargeMethods: { ...chargeMethods, [vehicleId]: method } })
 
   return (
     <div className="engine-panel pipeline-wrap">
@@ -71,12 +71,19 @@ export default function ChargingPipeline({
             }}
             aria-label="Hours per shift"
           />
-          {' '}h = <strong>{dailyOpHr} h</strong> operating / day
+          {' '}h = <strong>{dailyOpHr} h</strong> / day × <strong>{daysPerWeek} days</strong> / week
         </div>
         <div className="cr-toggle">
-          <span className="cr-label">Recharge window</span>
-          <button type="button" className={`cr-opt${regime === 'overnight' ? ' active' : ''}`} onClick={() => onPatch({ chargeRegime: 'overnight' })}>Overnight</button>
-          <button type="button" className={`cr-opt${regime === 'continuous' ? ' active' : ''}`} onClick={() => onPatch({ chargeRegime: 'continuous' })}>Continuous 24/7</button>
+          <span className="cr-label">Operating days</span>
+          <select
+            className="engine-inline-num mono"
+            value={operatingDaysPattern || 'Mon–Sat'}
+            onChange={e => onPatch({ operatingDaysPattern: e.target.value })}
+            aria-label="Operating days per week"
+          >
+            {DAY_PATTERNS.map(p => <option key={p} value={p}>{p}</option>)}
+            {operatingDaysPattern === 'Custom' && <option value="Custom">Custom</option>}
+          </select>
         </div>
       </div>
 
@@ -87,7 +94,6 @@ export default function ChargingPipeline({
           <thead>
             <tr>
               <th>Flow</th>
-              <th>Charge method</th>
               <th className="num">Cycle</th>
               <th className="num">Vehicles</th>
               <th className="num">Runtime</th>
@@ -112,15 +118,6 @@ export default function ChargingPipeline({
                       {veh?.name ?? f.vehicleId}
                       <span className="pl-route mono">{f.origin || '—'} → {f.destination || '—'}</span>
                     </span>
-                  </td>
-                  <td>
-                    <div className="ct-method">
-                      {(['opportunity', 'plugged'] as ChargeMethod[]).map(m => (
-                        <button key={m} type="button" className={`ct-method-opt${c?.method === m ? ' active' : ''}`} onClick={() => setMethod(f.vehicleId!, m)}>
-                          {m === 'opportunity' ? 'Opportunity' : 'Plugged'}
-                        </button>
-                      ))}
-                    </div>
                   </td>
                   <td className="num mono">{fmtCycle(d?.cycleSeconds)}</td>
                   <td className="num mono">{d?.rawVehicles == null ? '—' : d.rawVehicles.toFixed(2)}</td>
@@ -148,7 +145,8 @@ export default function ChargingPipeline({
         </table>
       )}
       <div className="engine-note">
-        Method &amp; recharge window are inputs; runtime/availability are computed per the flow&apos;s vehicle.
+        Availability is computed per vehicle type from its battery, the schedule, and the operating
+        days — breaks, off-shift hours, and days off all charge (a day off recharges to 100%).
         The <strong>+N</strong> extra vehicles for charging pool per vehicle type at the project level.
       </div>
     </div>

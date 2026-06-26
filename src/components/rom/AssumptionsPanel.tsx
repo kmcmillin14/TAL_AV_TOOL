@@ -19,7 +19,7 @@ export default function AssumptionsPanel({ project: p }: Props) {
       rows: [
         { label: 'Usable depth of discharge', value: '80%', why: 'Battery sized to 80% DoD for cycle life.', isDefault: true },
         { label: 'Route speed factors', value: 'Low 30% · Med 50% · High 70%', why: 'Route-average speed as a fraction of rated cruise.', isDefault: true },
-        { label: 'Charging', value: 'Availability = min(energy, capacity)', why: 'Per vehicle type: energy availability credits the nightly off-shift and the day-off reset (a day off recharges to 100%); capacity availability is whether the battery covers a production window. Fleet = demand ÷ availability. 80% usable depth; buffer applied after.', isDefault: true },
+        { label: 'Charging', value: 'Availability = min(energy, capacity)', why: 'Per vehicle type: energy availability credits breaks, the nightly off-shift, and the day-off reset (a day off recharges to 100%); capacity availability is whether the battery covers a production window. Fleet = demand ÷ availability. 80% usable depth; buffer applied after.', isDefault: true },
         { label: 'Operating days / year', value: p.operatingDaysPattern && p.operatingDaysPerYear == null ? `${days} (from ${p.operatingDaysPattern})` : String(days), why: 'Annualizes energy and labor.', isDefault: p.operatingDaysPerYear == null },
       ],
     },

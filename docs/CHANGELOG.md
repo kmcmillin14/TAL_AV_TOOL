@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-26 — Charging UI follows v2 (drop dead toggles; show days/week)
+
+- Step 3 Charging: removed the **Recharge window** (Overnight/Continuous) and per-vehicle
+  **Charge method** (Opportunity/Plugged) controls — both were no-ops under v2. Replaced the
+  recharge-window toggle with an **Operating days** selector and show `… h/day × N days/week`,
+  since the schedule + days-off now drive the model. Note clarifies that breaks, off-shift, and
+  days off all charge. Removed the orphaned `.cr-opt`/`.ct-method` CSS.
+- Step 4 ROM: dropped the now-meaningless "Method" column in the charging table; assumptions
+  copy mentions breaks alongside off-shift + day-off reset.
+
 ## 2026-06-25 — Charging model v2 (availability + weekend reset)
 
 - Reworked the per-type charging adder to `A = min(A_energy, A_cap)`: `A_energy` credits the

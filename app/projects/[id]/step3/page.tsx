@@ -12,7 +12,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
 import { fleetSummary, defaultChargeRegime } from '@/src/calc/fleet'
-import { consecutiveOperatingDays } from '@/src/calc/romAnalytics'
+import { consecutiveOperatingDays, defaultOperatingDaysPerYear } from '@/src/calc/romAnalytics'
 import type { EnginePatch } from '@/src/components/engine/types'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import ScrollSpyNav from '@/src/components/ScrollSpyNav'
@@ -266,13 +266,13 @@ export default function FleetEnginePage() {
                 vehicleById={vehicleById}
                 groupByVehicle={groupByVehicle}
                 derivedByFlowId={derivedByFlowId}
-                regime={settings.regime}
                 dailyOpHr={settings.dailyOpHr}
                 breakHrs={settings.breakHrs}
                 consecutiveOpDays={settings.consecutiveOpDays}
                 shiftsPerDay={project.shiftsPerDay ?? 1}
                 hoursPerShift={project.hoursPerShift ?? 8}
-                chargeMethods={settings.chargeMethods}
+                operatingDaysPattern={project.operatingDaysPattern ?? 'Mon–Sat'}
+                daysPerWeek={Math.round(defaultOperatingDaysPerYear(project.operatingDaysPattern, project.operatingDaysCustom) / 52)}
                 onPatch={persistPatch}
               />
             </ScrollSection>

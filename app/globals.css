@@ -3006,18 +3006,6 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
   color: var(--text-tertiary); margin-right: 6px;
 }
-.cr-opt {
-  font-family: var(--tal-font-family);
-  font-size: 12.5px; font-weight: 600;
-  color: var(--text-secondary);
-  padding: 6px 14px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  cursor: pointer;
-  transition: all 0.12s ease;
-}
-.cr-opt.active { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
-
 /* charging table */
 .charge-table, .waterfall-table {
   width: 100%;
@@ -3044,15 +3032,6 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .pl-math-col, .pl-math-cell { width: 34px; text-align: center; position: relative; }
 .pl-math-cell .flow-act-btn { margin: 0 auto; }
 .ct-veh { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; }
-.ct-method { display: inline-flex; gap: 2px; padding: 2px; background: var(--bg-surface-2); border-radius: 7px; }
-.ct-method-opt {
-  font-family: var(--tal-font-family);
-  font-size: 11.5px; font-weight: 600;
-  color: var(--text-tertiary);
-  padding: 4px 10px; border-radius: 5px; cursor: pointer;
-  transition: all 0.12s ease;
-}
-.ct-method-opt.active { background: var(--bg-surface); color: var(--text-primary); }
 .ct-delta {
   font-family: var(--tal-font-numeric);
   font-variant-numeric: tabular-nums;

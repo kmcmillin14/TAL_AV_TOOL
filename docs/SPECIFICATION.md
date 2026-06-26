@@ -110,10 +110,12 @@ Step 1 sizing data seeds downstream values only while the user hasn't overridden
 - `breaksPerShift`/`breakDurationMin` → ROM effective op-hours.
 - `operatingDaysPattern` → ROM `operatingDaysPerYear` default via
   `defaultOperatingDaysPerYear`: Mon–Fri 260 · Mon–Sat 312 · Mon–Sun 364 ·
-  Custom = selected days × 52 · unset 312. Editable override always wins.
-- Shift coverage → `chargeRegime` default: schema field is optional (unset
-  representable); effective regime = stored value, else `continuous` when
-  `dailyOpHr ≥ 24`, else `overnight`. The engine toggle writes the explicit choice.
+  Custom = selected days × 52 · unset 312. Editable override always wins. Also drives the
+  charging model's days-per-week / weekend reset (`consecutiveOperatingDays`) and is
+  inline-editable on the Step 3 Charging section (an **Operating days** selector).
+- The legacy `chargeRegime` / per-vehicle `chargeMethods` fields remain in the schema but no
+  longer affect the fleet number under charging v2 (charger assumed always available); the
+  Step 3 Recharge-window and Charge-method controls were removed.
 
 ---
 

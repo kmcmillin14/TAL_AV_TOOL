@@ -14,4 +14,6 @@ export interface EnginePatch {
    *  section (ports both directions, like flows). */
   shiftsPerDay?: number
   hoursPerShift?: number
+  /** Operating-days pattern — drives the days-per-week / weekend-reset in charging. */
+  operatingDaysPattern?: string
 }
