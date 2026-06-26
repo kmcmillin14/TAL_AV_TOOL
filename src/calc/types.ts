@@ -170,10 +170,12 @@ export interface ChargingResult {
   method: ChargeMethod
   runHr: number | null        // operating hours one charge sustains
   chargeHr: number | null     // hours to a full recharge
-  availability: number | null // A ∈ (0,1]
+  availability: number | null // final A ∈ (0,1]
+  aEnergy: number | null      // energy availability (off-shift + weekend reset)
+  aCap: number | null         // within-window battery-capacity availability
   chargingDelta: number       // extra vehicles for charging (≥ 0)
   sustainable: boolean        // false when inputs invalid/zero
-  reason: string              // human explanation (e.g. "fits overnight", "+1 for charging")
+  reason: string              // human explanation
 }
 
 export interface FleetGroup {
@@ -196,9 +198,11 @@ export interface FleetSummary {
 /** Project-level fleet settings consumed by the engine. `dailyOpHr` is derived
  *  from Step 1 (shiftsPerDay × hoursPerShift, capped at 24). */
 export interface FleetSettings {
-  regime: ChargeRegime
+  regime: ChargeRegime            // legacy — kept for the engine UI's display toggle only
   bufferPct: number
-  dailyOpHr: number
+  dailyOpHr: number               // clock staffed hours/day = min(24, shifts × hours)
+  breakHrs: number                // total break hours/day
+  consecutiveOpDays: number       // C — consecutive operating days before a rest (Infinity if none)
   chargeMethods: Record<string, ChargeMethod>
 }
 
