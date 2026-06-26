@@ -34,55 +34,56 @@ export interface ChargingInput {
   dischargeA: number
   chargeA: number
   chargeTimeMin?: number
-  method: ChargeMethod
-  regime: ChargeRegime
-  dailyOpHr: number
+  method: ChargeMethod        // display only (carried onto ChargingResult)
+  hProd: number               // productive hrs/day = min(24, shifts×hours) − breakHrs
+  breakHrs: number            // total break hours/day
+  consecutiveOpDays: number   // C — Infinity when all 7 days operate
 }
 
 /**
- * Extra vehicles needed to cover charging downtime for one vehicle group.
+ * Extra vehicles to cover battery charging downtime for one vehicle type, via an
+ * availability ratio A = min(A_energy, A_cap) (see the 2026-06-25 charging-model-v2 spec).
  *
- *   usableAh = ratedAh × DOD
- *   runHr    = usableAh / dischargeA          (op-hours per charge)
- *   chargeHr = chargeTimeMin/60  |  usableAh / chargeA
- *   overnight & runHr ≥ dailyOpHr → delta 0   (recharges off-shift)
- *   else  A = plugged: runHr/(runHr+chargeHr) | opportunity: chargeA/(chargeA+dischargeA)
- *         delta = max(0, ⌈groupRaw / A⌉ − baseFleet)
+ *   usableAh   = ratedAh × DOD ;  runHr = usableAh/dischargeA ;  chargeHr = usableAh/chargeRate
+ *   A_energy   = min(1, ((C finite ? usableAh/C : 0) + 24·chargeRate) / (H·(dischargeA + chargeRate)))
+ *                — credits nightly off-shift + the day-off reset
+ *   A_cap      = runHrEff ≥ H ? 1 : runHrEff/(runHrEff + chargeHr)   — within-window capacity
+ *   delta      = max(0, ⌈groupRaw / min(A_energy, A_cap)⌉ − baseFleet)
  */
 export function chargingForGroup(i: ChargingInput): ChargingResult {
   const invalid = (reason: string): ChargingResult => ({
     method: i.method, runHr: null, chargeHr: null, availability: null,
-    chargingDelta: 0, sustainable: false, reason,
+    aEnergy: null, aCap: null, chargingDelta: 0, sustainable: false, reason,
   })
   if (!(i.ratedAh > 0) || !(i.dischargeA > 0)) return invalid('Missing battery / discharge data')
 
   const usableAh = i.ratedAh * DEFAULT_DOD
+  const chargeRate = i.chargeTimeMin && i.chargeTimeMin > 0
+    ? usableAh / (i.chargeTimeMin / 60)
+    : i.chargeA
+  if (!(chargeRate > 0)) return invalid('Missing charge data')
+  const H = i.hProd
+  if (!(H > 0)) return invalid('No production hours')
+
   const runHr = usableAh / i.dischargeA
-  const chargeHr = i.chargeTimeMin && i.chargeTimeMin > 0
-    ? i.chargeTimeMin / 60
-    : (i.chargeA > 0 ? usableAh / i.chargeA : null)
-  if (chargeHr == null) return invalid('Missing charge data')
+  const chargeHr = usableAh / chargeRate
+  const breakAh = chargeRate * Math.max(0, i.breakHrs)
+  const runHrEff = (usableAh + breakAh) / i.dischargeA
 
-  // Overnight regime: a single charge lasts the operating day → charge off-shift.
-  if (i.regime === 'overnight' && i.dailyOpHr > 0 && runHr >= i.dailyOpHr) {
-    return {
-      method: i.method, runHr, chargeHr, availability: 1,
-      chargingDelta: 0, sustainable: true,
-      reason: `Runtime ${runHr.toFixed(1)} h ≥ ${i.dailyOpHr} h/day — recharges overnight`,
-    }
-  }
+  const weekendTerm = Number.isFinite(i.consecutiveOpDays) && i.consecutiveOpDays > 0
+    ? usableAh / i.consecutiveOpDays
+    : 0
+  const aEnergy = Math.min(1, (weekendTerm + 24 * chargeRate) / (H * (i.dischargeA + chargeRate)))
+  const aCap = runHrEff >= H ? 1 : runHrEff / (runHrEff + chargeHr)
 
-  // Otherwise charging overlaps operations → availability model.
-  const A = i.method === 'plugged'
-    ? runHr / (runHr + chargeHr)
-    : (i.chargeA > 0 ? i.chargeA / (i.chargeA + i.dischargeA) : null)
-  if (A == null || !(A > 0)) return invalid('Cannot determine availability')
+  const A = Math.min(aEnergy, aCap)
+  if (!(A > 0)) return invalid('Cannot determine availability')
 
   const fleetWithCharging = Math.ceil(i.groupRaw / A)
   const chargingDelta = Math.max(0, fleetWithCharging - i.baseFleet)
   const pct = `${Math.round(A * 100)}%`
   return {
-    method: i.method, runHr, chargeHr, availability: A, chargingDelta, sustainable: true,
+    method: i.method, runHr, chargeHr, availability: A, aEnergy, aCap, chargingDelta, sustainable: true,
     reason: chargingDelta > 0
       ? `+${chargingDelta} for charging (availability ${pct})`
       : `Charging fits within the fleet (availability ${pct})`,

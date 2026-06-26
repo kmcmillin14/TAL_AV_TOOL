@@ -12,44 +12,69 @@ describe('defaultChargeMethod', () => {
   })
 })
 
-describe('chargingForGroup', () => {
-  // ratedAh 100 × 0.8 DoD = 80 usableAh; dischargeA 10 → runHr 8.
+describe('chargingForGroup (v2 availability)', () => {
+  // 100 Ah × 0.8 = 80 usableAh; dischargeA 10 → runHr 8; chargeA 10 → chargeHr 8.
   const base = {
     groupRaw: 4, baseFleet: 4,
-    ratedAh: 100, dischargeA: 10, chargeA: 40, chargeTimeMin: 120,
+    ratedAh: 100, dischargeA: 10, chargeA: 10, chargeTimeMin: undefined as number | undefined,
+    method: 'plugged' as const, breakHrs: 0,
   }
 
-  it('overnight + runtime covers the day → no extra vehicles', () => {
-    const r = chargingForGroup({ ...base, method: 'plugged', regime: 'overnight', dailyOpHr: 8 })
-    expect(r.runHr).toBeCloseTo(8, 5)
+  it('1 shift Mon–Fri, battery lasts the shift → A=1, no extra vehicles', () => {
+    const r = chargingForGroup({ ...base, hProd: 8, consecutiveOpDays: 5 })
+    expect(r.aEnergy).toBe(1)               // (80/5 + 240)/(8·20)=1.6→1
+    expect(r.aCap).toBe(1)                  // runHr 8 ≥ 8
     expect(r.availability).toBe(1)
     expect(r.chargingDelta).toBe(0)
-    expect(r.sustainable).toBe(true)
   })
 
-  it('plugged + continuous → availability = runHr/(runHr+chargeHr)', () => {
-    const r = chargingForGroup({ ...base, method: 'plugged', regime: 'continuous', dailyOpHr: 24 })
-    expect(r.chargeHr).toBeCloseTo(2, 5)            // 120 min
-    expect(r.availability).toBeCloseTo(8 / 10, 5)   // 0.8
-    expect(r.chargingDelta).toBe(1)                 // ⌈4 / 0.8⌉ − 4 = 1
+  it('2 shifts Mon–Fri, small battery → capacity binds at 0.5 → 2× fleet', () => {
+    const r = chargingForGroup({ ...base, hProd: 16, consecutiveOpDays: 5 })
+    expect(r.aEnergy).toBeCloseTo(0.8, 5)   // (80/5 + 240)/(16·20)=0.8
+    expect(r.aCap).toBeCloseTo(0.5, 5)      // runHr 8 < 16 → 8/16
+    expect(r.availability).toBeCloseTo(0.5, 5)
+    expect(r.chargingDelta).toBe(4)         // ⌈4/0.5⌉ − 4
   })
 
-  it('opportunity + continuous → availability = chargeA/(chargeA+dischargeA)', () => {
-    const r = chargingForGroup({ ...base, chargeA: 10, method: 'opportunity', regime: 'continuous', dailyOpHr: 24 })
-    expect(r.availability).toBeCloseTo(10 / 20, 5)  // 0.5
-    expect(r.chargingDelta).toBe(4)                 // ⌈4 / 0.5⌉ − 4 = 4
+  it('24/7 (no rest day) → no weekend credit → duty ratio', () => {
+    const r = chargingForGroup({ ...base, hProd: 24, consecutiveOpDays: Infinity })
+    expect(r.aEnergy).toBeCloseTo(0.5, 5)   // (0 + 240)/(24·20)
+    expect(r.availability).toBeCloseTo(0.5, 5)
   })
 
-  it('overnight but runtime < day → still uses availability model', () => {
-    const r = chargingForGroup({ ...base, method: 'plugged', regime: 'overnight', dailyOpHr: 16 })
-    expect(r.chargingDelta).toBe(1)
+  it('weekend reset lowers fleet vs running 7 days (big battery, A_cap=1)', () => {
+    const friday = chargingForGroup({ ...base, ratedAh: 225, hProd: 16, consecutiveOpDays: 5 }) // usableAh 180
+    const everyday = chargingForGroup({ ...base, ratedAh: 225, hProd: 16, consecutiveOpDays: Infinity })
+    expect(friday.aCap).toBe(1)             // runHr 18 ≥ 16
+    expect(friday.availability).toBeCloseTo(0.8625, 4)  // (180/5 + 240)/320
+    expect(everyday.availability).toBeCloseTo(0.75, 4)  // (0 + 240)/320
+    expect(friday.availability!).toBeGreaterThan(everyday.availability!)
   })
 
-  it('missing data → not sustainable, no NaN, delta 0', () => {
-    const r = chargingForGroup({ ...base, ratedAh: 0, method: 'plugged', regime: 'continuous', dailyOpHr: 24 })
-    expect(r.sustainable).toBe(false)
-    expect(r.runHr).toBeNull()
-    expect(r.chargingDelta).toBe(0)
+  it('faster charger raises availability', () => {
+    const r = chargingForGroup({ ...base, chargeA: 40, hProd: 16, consecutiveOpDays: 5 })
+    expect(r.aCap).toBeCloseTo(0.8, 5)      // runHr 8, chargeHr 2 → 8/10
+    expect(r.availability).toBeCloseTo(0.8, 5)
+  })
+
+  it('chargeTimeMin overrides chargeA for the charge rate', () => {
+    // 80 usableAh in 120 min = 2 h → chargeRate 40 A (same as chargeA 40 case)
+    const r = chargingForGroup({ ...base, chargeA: 10, chargeTimeMin: 120, hProd: 16, consecutiveOpDays: 5 })
+    expect(r.aCap).toBeCloseTo(0.8, 5)
+  })
+
+  it('credits breaks as extra Ah (raises runHrEff)', () => {
+    const noBreak = chargingForGroup({ ...base, hProd: 8, breakHrs: 0, consecutiveOpDays: 5 })
+    const withBreak = chargingForGroup({ ...base, dischargeA: 16, hProd: 7, breakHrs: 1, consecutiveOpDays: 5 })
+    expect(withBreak.runHr).not.toBeNull()  // break credit applied; no NaN
+    expect(noBreak.availability).toBe(1)
+  })
+
+  it('missing / invalid data → not sustainable, no NaN, delta 0', () => {
+    expect(chargingForGroup({ ...base, ratedAh: 0, hProd: 8, consecutiveOpDays: 5 }).sustainable).toBe(false)
+    expect(chargingForGroup({ ...base, dischargeA: 0, hProd: 8, consecutiveOpDays: 5 }).chargingDelta).toBe(0)
+    expect(chargingForGroup({ ...base, chargeA: 0, chargeTimeMin: undefined, hProd: 8, consecutiveOpDays: 5 }).sustainable).toBe(false)
+    expect(chargingForGroup({ ...base, hProd: 0, consecutiveOpDays: 5 }).sustainable).toBe(false)
   })
 })
 
