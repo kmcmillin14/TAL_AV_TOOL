@@ -226,3 +226,8 @@ export const DEFAULT_BUFFER_PCT = 0.10
 
 /** Usable depth-of-discharge fraction for battery runtime/charge math. */
 export const DEFAULT_DOD = 0.80
+
+/** Charge derate applied to the nameplate charge rate in the charging model — folds
+ *  round-trip loss, the near-full CV taper, and real charger-access overhead into one
+ *  honest factor, so effective recharge is ~15% slower than ideal (a safety margin). */
+export const CHARGE_EFFICIENCY = 0.85

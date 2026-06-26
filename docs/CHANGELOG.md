@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-26 — Charging: 85% charge-efficiency derate (safety margin)
+
+- Added a `CHARGE_EFFICIENCY = 0.85` derate applied to the effective charge rate in the v2
+  charging model. It folds the three rosy charge assumptions into one honest factor —
+  round-trip loss, the near-full CV taper, and the always-a-charger-free idealization (real
+  dock/travel/queue). Effective recharge is ~15% slower than nameplate → lower availability →
+  a few more vehicles, so the model is less optimistic. The buffer is left to its real job
+  (maintenance, training, demand peaks). Documented like the 80% DOD.
+
 ## 2026-06-26 — Step polish: headers, currency, charging header
 
 - **Standardized step titles to left-aligned** (`.page-header` now matches Step 3/4's

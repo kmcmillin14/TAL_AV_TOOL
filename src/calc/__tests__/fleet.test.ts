@@ -28,39 +28,41 @@ describe('chargingForGroup (v2 availability)', () => {
     expect(r.chargingDelta).toBe(0)
   })
 
-  it('2 shifts Mon–Fri, small battery → capacity binds at 0.5 → 2× fleet', () => {
+  it('2 shifts Mon–Fri, small battery → capacity binds → adds vehicles', () => {
+    // chargeRate = 10 × 0.85 = 8.5 → chargeHr = 80/8.5 = 9.412.
     const r = chargingForGroup({ ...base, hProd: 16, consecutiveOpDays: 5 })
-    expect(r.aEnergy).toBeCloseTo(0.8, 5)   // (80/5 + 240)/(16·20)=0.8
-    expect(r.aCap).toBeCloseTo(0.5, 5)      // runHr 8 < 16 → 8/16
-    expect(r.availability).toBeCloseTo(0.5, 5)
-    expect(r.chargingDelta).toBe(4)         // ⌈4/0.5⌉ − 4
+    expect(r.aEnergy).toBeCloseTo(0.7432, 4)   // (80/5 + 24·8.5)/(16·18.5)
+    expect(r.aCap).toBeCloseTo(0.4595, 4)      // 8/(8+9.412)
+    expect(r.availability).toBeCloseTo(0.4595, 4)
+    expect(r.chargingDelta).toBe(5)            // ⌈4/0.4595⌉ − 4
   })
 
   it('24/7 (no rest day) → no weekend credit → duty ratio', () => {
     const r = chargingForGroup({ ...base, hProd: 24, consecutiveOpDays: Infinity })
-    expect(r.aEnergy).toBeCloseTo(0.5, 5)   // (0 + 240)/(24·20)
-    expect(r.availability).toBeCloseTo(0.5, 5)
+    expect(r.aEnergy).toBeCloseTo(0.4595, 4)   // (0 + 24·8.5)/(24·18.5)
+    expect(r.availability).toBeCloseTo(0.4595, 4)
   })
 
   it('weekend reset lowers fleet vs running 7 days (big battery, A_cap=1)', () => {
-    const friday = chargingForGroup({ ...base, ratedAh: 225, hProd: 16, consecutiveOpDays: 5 }) // usableAh 180
+    const friday = chargingForGroup({ ...base, ratedAh: 225, hProd: 16, consecutiveOpDays: 5 }) // usableAh 180, runHr 18
     const everyday = chargingForGroup({ ...base, ratedAh: 225, hProd: 16, consecutiveOpDays: Infinity })
     expect(friday.aCap).toBe(1)             // runHr 18 ≥ 16
-    expect(friday.availability).toBeCloseTo(0.8625, 4)  // (180/5 + 240)/320
-    expect(everyday.availability).toBeCloseTo(0.75, 4)  // (0 + 240)/320
+    expect(friday.availability).toBeCloseTo(0.8108, 4)  // (180/5 + 204)/296
+    expect(everyday.availability).toBeCloseTo(0.6892, 4) // (0 + 204)/296
     expect(friday.availability!).toBeGreaterThan(everyday.availability!)
   })
 
   it('faster charger raises availability', () => {
+    // chargeA 40 × 0.85 = 34 → chargeHr 80/34 = 2.353.
     const r = chargingForGroup({ ...base, chargeA: 40, hProd: 16, consecutiveOpDays: 5 })
-    expect(r.aCap).toBeCloseTo(0.8, 5)      // runHr 8, chargeHr 2 → 8/10
-    expect(r.availability).toBeCloseTo(0.8, 5)
+    expect(r.aCap).toBeCloseTo(0.7727, 4)   // 8/(8+2.353)
+    expect(r.availability).toBeCloseTo(0.7727, 4)
   })
 
   it('chargeTimeMin overrides chargeA for the charge rate', () => {
-    // 80 usableAh in 120 min = 2 h → chargeRate 40 A (same as chargeA 40 case)
+    // 80 usableAh in 120 min = 40 A nameplate → ×0.85 = 34 (same as chargeA 40 case).
     const r = chargingForGroup({ ...base, chargeA: 10, chargeTimeMin: 120, hProd: 16, consecutiveOpDays: 5 })
-    expect(r.aCap).toBeCloseTo(0.8, 5)
+    expect(r.aCap).toBeCloseTo(0.7727, 4)
   })
 
   it('credits breaks as extra Ah (raises runHrEff)', () => {
@@ -92,15 +94,15 @@ describe('fleetSummary', () => {
 
   it('runs base → +charging → ×buffer → ⌈⌉ and totals', () => {
     const groups = [grp('a', 4, 4)]
-    // 24/7 default, chargeA 10 = dischargeA 10 → A 0.5 → fleetWithCharging 8.
+    // 24/7 default; chargeA 10 × 0.85 = 8.5, dischargeA 10 → A ≈ 0.4595 → fleetWithCharging 9.
     const byId = new Map([['a', veh('a', { chargeA: 10, chargeTimeMin: undefined }, 'opportunity')]])
     const s = fleetSummary(groups, byId, settings())
     const g = s.groups[0]
-    expect(g.charging.chargingDelta).toBe(4)        // ⌈4/0.5⌉ − 4
-    expect(g.fleetWithCharging).toBe(8)
-    expect(g.fleetSold).toBe(9)                     // ⌈8 × 1.10⌉
-    expect(s.totalChargingDelta).toBe(4)
-    expect(s.totalFleetSold).toBe(9)
+    expect(g.charging.chargingDelta).toBe(5)        // ⌈4/0.4595⌉ − 4
+    expect(g.fleetWithCharging).toBe(9)
+    expect(g.fleetSold).toBe(10)                    // ⌈9 × 1.10⌉
+    expect(s.totalChargingDelta).toBe(5)
+    expect(s.totalFleetSold).toBe(10)
   })
 
   it('bufferPct 0 is a no-op; ample coverage → no charging adder', () => {

@@ -2,7 +2,7 @@
 // No React, no fetch, no localStorage, no fs. (Type-only imports of Vehicle, as
 // in flowMetrics.ts, carry no runtime dependency.)
 
-import { DEFAULT_DOD } from './types'
+import { DEFAULT_DOD, CHARGE_EFFICIENCY } from './types'
 import type {
   ChargeMethod,
   ChargeRegime,
@@ -58,10 +58,13 @@ export function chargingForGroup(i: ChargingInput): ChargingResult {
   if (!(i.ratedAh > 0) || !(i.dischargeA > 0)) return invalid('Missing battery / discharge data')
 
   const usableAh = i.ratedAh * DEFAULT_DOD
-  const chargeRate = i.chargeTimeMin && i.chargeTimeMin > 0
+  // Nameplate charge rate, derated for real-world efficiency (round-trip loss, CV
+  // taper near full, charger-access overhead). A safety margin, like DOD.
+  const nameplateChargeRate = i.chargeTimeMin && i.chargeTimeMin > 0
     ? usableAh / (i.chargeTimeMin / 60)
     : i.chargeA
-  if (!(chargeRate > 0)) return invalid('Missing charge data')
+  if (!(nameplateChargeRate > 0)) return invalid('Missing charge data')
+  const chargeRate = nameplateChargeRate * CHARGE_EFFICIENCY
   const H = i.hProd
   if (!(H > 0)) return invalid('No production hours')
 

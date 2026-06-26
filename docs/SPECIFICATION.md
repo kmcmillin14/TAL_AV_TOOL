@@ -157,8 +157,10 @@ nightly off-shift (`24·chargeRate`) and the day-off reset (`usableAh/C`, where 
 operating days before a rest day, ∞ for 24/7); `A_cap = runHrEff/(runHrEff+chargeHr)` (or 1 when
 the battery covers the production window `H = shifts×hours − breaks`). Then
 `fleetWithCharging = ⌈groupRaw/A⌉`. Like vehicles pool (per type); the buffer is applied after.
-Days off recharge to 100% (a reset, not banking), so the binding case is surviving the consecutive
-operating days. See `docs/superpowers/specs/2026-06-25-charging-model-v2-design.md`.
+The charge rate is derated by `CHARGE_EFFICIENCY = 0.85` (round-trip loss + near-full taper +
+charger access) — a documented safety margin like the 80% DOD. Days off recharge to 100% (a
+reset, not banking), so the binding case is surviving the consecutive operating days. See
+`docs/superpowers/specs/2026-06-25-charging-model-v2-design.md`.
 
 ### Section 03 — Buffer (buffer + total)
 A single project **buffer %** (`bufferPct`, default `0.10`) — the only multiplier in the pipeline —

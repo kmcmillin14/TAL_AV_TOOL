@@ -59,7 +59,7 @@ export const METHODOLOGY: readonly MethodTopic[] = [
     variables: [
       { sym: 'usable', name: 'Usable capacity', def: 'Battery you can actually use = rated Ah × depth of discharge (80%).', unit: 'Ah' },
       { sym: 'run', name: 'Runtime', def: 'Operating hours one charge sustains = usable ÷ draw.', unit: 'h' },
-      { sym: 'recharge', name: 'Recharge time', def: 'Hours to refill — rated charge time, or usable ÷ charge current.', unit: 'h' },
+      { sym: 'recharge', name: 'Recharge time', def: 'Hours to refill — rated charge time (or usable ÷ charge current), with the charge rate derated to 85% for round-trip loss, near-full taper, and charger access.', unit: 'h' },
       { sym: 'C', name: 'Consecutive operating days', def: 'Days the fleet runs before a rest day that recharges to 100% (∞ for 24/7).', unit: 'days' },
       { sym: 'A_energy', name: 'Energy availability', def: 'Credits the nightly off-shift and the day-off reset = min(1, (usable/C + 24·charge) ÷ (H·(draw+charge))).', unit: '0–1' },
       { sym: 'A_cap', name: 'Capacity availability', def: 'Whether the battery covers the production window H = runtime ÷ (runtime + recharge), or 1 if it spans the window.', unit: '0–1' },

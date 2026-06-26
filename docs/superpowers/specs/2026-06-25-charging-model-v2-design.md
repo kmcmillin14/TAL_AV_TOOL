@@ -48,7 +48,8 @@ Per vehicle type. Inputs are all data we already have (vehicle `calc` + Step 1 s
 
 ```
 usableAh   = ratedAh × 0.80
-chargeRate = chargeTimeMin>0 ? usableAh/(chargeTimeMin/60) : chargeA        Ah/hr
+chargeRate = (chargeTimeMin>0 ? usableAh/(chargeTimeMin/60) : chargeA) × 0.85   Ah/hr
+             (×0.85 = CHARGE_EFFICIENCY: round-trip loss + near-full taper + charger access)
 dischargeRate = dischargeA                                                  Ah/hr
 breakAh    = chargeRate × (breaksPerShift × breakDurationMin/60 × shiftsPerDay)   Ah/day from breaks
 runHr_eff  = usableAh/dischargeRate + breakAh/dischargeRate     continuous run + break credit (real Ah, not a reset)
