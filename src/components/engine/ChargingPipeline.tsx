@@ -71,12 +71,12 @@ export default function ChargingPipeline({
             }}
             aria-label="Hours per shift"
           />
-          {' '}h = <strong>{dailyOpHr} h</strong> / day × <strong>{daysPerWeek} days</strong> / week
+          {' '}h = <strong>{dailyOpHr} h</strong> operating / day
         </div>
-        <div className="cr-toggle">
+        <div className="cr-days">
           <span className="cr-label">Operating days</span>
           <select
-            className="engine-inline-num mono"
+            className="cr-day-select mono"
             value={operatingDaysPattern || 'Mon–Sat'}
             onChange={e => onPatch({ operatingDaysPattern: e.target.value })}
             aria-label="Operating days per week"
@@ -84,6 +84,7 @@ export default function ChargingPipeline({
             {DAY_PATTERNS.map(p => <option key={p} value={p}>{p}</option>)}
             {operatingDaysPattern === 'Custom' && <option value="Custom">Custom</option>}
           </select>
+          <span className="cr-days-sub mono">{daysPerWeek} days / week</span>
         </div>
       </div>
 

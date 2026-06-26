@@ -3000,12 +3000,22 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 
 /* regime toggle */
-.cr-toggle { display: inline-flex; align-items: center; gap: 4px; }
+/* Operating-days control on the Charging section header (label · select · days/week). */
+.cr-days { display: inline-flex; flex-direction: column; align-items: flex-end; gap: 4px; }
 .cr-label {
   font-family: var(--tal-font-numeric);
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
-  color: var(--text-tertiary); margin-right: 6px;
+  color: var(--text-tertiary);
 }
+.cr-day-select {
+  font-family: var(--tal-font-family); font-size: 13px; font-weight: 600;
+  color: var(--text-primary); background: var(--bg-surface);
+  border: 1px solid var(--border); border-radius: 7px;
+  padding: 6px 10px; min-width: 104px; cursor: pointer;
+}
+.cr-day-select:hover { border-color: var(--border-strong); }
+.cr-days-sub { font-size: 11px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+
 /* charging table */
 .charge-table, .waterfall-table {
   width: 100%;
