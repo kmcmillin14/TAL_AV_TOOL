@@ -12,6 +12,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
 import { fleetSummary, defaultChargeRegime } from '@/src/calc/fleet'
+import { consecutiveOperatingDays } from '@/src/calc/romAnalytics'
 import type { EnginePatch } from '@/src/components/engine/types'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import ScrollSpyNav from '@/src/components/ScrollSpyNav'
@@ -82,6 +83,8 @@ export default function FleetEnginePage() {
       regime: project?.chargeRegime ?? defaultChargeRegime(dailyOpHr),
       bufferPct: project?.bufferPct ?? 0.10,
       dailyOpHr,
+      breakHrs: ((project?.breaksPerShift ?? 0) * ((project?.breakDurationMin ?? 0) / 60)) * (project?.shiftsPerDay ?? 1),
+      consecutiveOpDays: consecutiveOperatingDays(project?.operatingDaysPattern, project?.operatingDaysCustom),
       chargeMethods: project?.chargeMethods ?? {},
     }
   }, [project])

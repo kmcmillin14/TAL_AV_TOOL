@@ -12,7 +12,7 @@ const vehicle = { calc: { ratedAh: 200, dischargeA: 40, chargeA: 50, chargeTimeM
 
 const group = (over: Partial<FleetGroup> = {}): FleetGroup => ({
   vehicleId: 'x', groupRaw: 2.4, baseFleet: 3,
-  charging: { method: 'plugged', runHr: 4, chargeHr: 3.2, availability: 0.625, chargingDelta: 2, sustainable: true, reason: '' },
+  charging: { method: 'plugged', runHr: 4, chargeHr: 3.2, availability: 0.625, aEnergy: null, aCap: null, chargingDelta: 2, sustainable: true, reason: '' },
   fleetWithCharging: 5, fleetSold: 6, ...over,
 })
 
@@ -56,7 +56,7 @@ describe('chargingDerivation', () => {
 
   it('overnight where one charge covers the day: 100% availability, +0', () => {
     const d = chargingDerivation(
-      group({ charging: { method: 'plugged', runHr: 18, chargeHr: 3, availability: 1, chargingDelta: 0, sustainable: true, reason: '' }, fleetWithCharging: 3 }),
+      group({ charging: { method: 'plugged', runHr: 18, chargeHr: 3, availability: 1, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: true, reason: '' }, fleetWithCharging: 3 }),
       vehicle, { regime: 'overnight', dailyOpHr: 16 },
     )
     expect(d.steps.find(s => s.label === 'Recharges off-shift')!.result).toBe('100%')

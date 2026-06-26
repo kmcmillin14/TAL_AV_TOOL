@@ -6,7 +6,7 @@ import type { FleetSettings, Flow, FlowDerived, FleetSummary } from '../calc/typ
 import { flowDerived, groupSummary } from '../calc/flowMetrics'
 import { fleetSummary, defaultChargeRegime } from '../calc/fleet'
 import { romSummary, type RomSummary, type RomCostInputs } from '../calc/rom'
-import { defaultOperatingDaysPerYear } from '../calc/romAnalytics'
+import { defaultOperatingDaysPerYear, consecutiveOperatingDays } from '../calc/romAnalytics'
 
 export interface FleetModel {
   flows: Flow[]
@@ -32,10 +32,14 @@ export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): 
   const groups = ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
 
   const dailyOpHr = Math.min(24, (project.shiftsPerDay ?? 1) * (project.hoursPerShift ?? 8))
+  const shiftsPerDay = project.shiftsPerDay ?? 1
+  const breakHrs = (project.breaksPerShift ?? 0) * ((project.breakDurationMin ?? 0) / 60) * shiftsPerDay
   const settings: FleetSettings = {
     regime: project.chargeRegime ?? defaultChargeRegime(dailyOpHr),
     bufferPct: project.bufferPct ?? 0.10,
     dailyOpHr,
+    breakHrs,
+    consecutiveOpDays: consecutiveOperatingDays(project.operatingDaysPattern, project.operatingDaysCustom),
     chargeMethods: project.chargeMethods ?? {},
   }
   const fleet = fleetSummary(groups, vehicleById, settings)

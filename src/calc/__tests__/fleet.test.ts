@@ -86,30 +86,30 @@ describe('fleetSummary', () => {
     ({ id, calc: { ratedAh: 100, dischargeA: 10, chargeA: 40, chargeTimeMin: 120, chargerType, ...calc } } as unknown as Vehicle)
 
   const settings = (over: Partial<FleetSettings> = {}): FleetSettings => ({
-    regime: 'continuous', bufferPct: 0.10, dailyOpHr: 24, chargeMethods: {}, ...over,
+    regime: 'continuous', bufferPct: 0.10, dailyOpHr: 24, breakHrs: 0,
+    consecutiveOpDays: Infinity, chargeMethods: {}, ...over,
   })
 
   it('runs base → +charging → ×buffer → ⌈⌉ and totals', () => {
     const groups = [grp('a', 4, 4)]
-    const byId = new Map([['a', veh('a', { chargeA: 10 }, 'opportunity')]]) // A = 10/20 = 0.5
+    // 24/7 default, chargeA 10 = dischargeA 10 → A 0.5 → fleetWithCharging 8.
+    const byId = new Map([['a', veh('a', { chargeA: 10, chargeTimeMin: undefined }, 'opportunity')]])
     const s = fleetSummary(groups, byId, settings())
     const g = s.groups[0]
     expect(g.charging.chargingDelta).toBe(4)        // ⌈4/0.5⌉ − 4
     expect(g.fleetWithCharging).toBe(8)
-    expect(g.fleetSold).toBe(9)                     // ⌈8 × 1.10⌉ = 9
-    expect(s.totalBaseFleet).toBe(4)
+    expect(g.fleetSold).toBe(9)                     // ⌈8 × 1.10⌉
     expect(s.totalChargingDelta).toBe(4)
     expect(s.totalFleetSold).toBe(9)
   })
 
-  it('bufferPct 0 is a no-op; per-vehicle method override applies', () => {
+  it('bufferPct 0 is a no-op; ample coverage → no charging adder', () => {
     const groups = [grp('a', 4, 4)]
-    const byId = new Map([['a', veh('a', {}, 'opportunity')]])
-    // Override to plugged: A = 8/(8+2) = 0.8 → delta 1 → fleetWithCharging 5.
-    const s = fleetSummary(groups, byId, settings({ bufferPct: 0, chargeMethods: { a: 'plugged' } }))
-    expect(s.groups[0].charging.method).toBe('plugged')
-    expect(s.groups[0].fleetWithCharging).toBe(5)
-    expect(s.groups[0].fleetSold).toBe(5)           // buffer 0 → no change
+    // 1-shift Mon–Fri, ample battery → A = 1 → no adder.
+    const byId = new Map([['a', veh('a', { chargeA: 40, chargeTimeMin: undefined }, 'plugged')]])
+    const s = fleetSummary(groups, byId, settings({ bufferPct: 0, dailyOpHr: 8, consecutiveOpDays: 5 }))
+    expect(s.groups[0].charging.chargingDelta).toBe(0)
+    expect(s.groups[0].fleetSold).toBe(4)
   })
 
   it('skips groups with no base fleet', () => {

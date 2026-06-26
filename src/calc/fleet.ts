@@ -114,10 +114,11 @@ export function fleetSummary(
           chargeA: veh.calc.chargeA,
           chargeTimeMin: veh.calc.chargeTimeMin,
           method,
-          regime: settings.regime,
-          dailyOpHr: settings.dailyOpHr,
+          hProd: Math.max(0, settings.dailyOpHr - settings.breakHrs),
+          breakHrs: settings.breakHrs,
+          consecutiveOpDays: settings.consecutiveOpDays,
         })
-      : { method, runHr: null, chargeHr: null, availability: null, chargingDelta: 0, sustainable: false, reason: 'Vehicle not found' }
+      : { method, runHr: null, chargeHr: null, availability: null, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: false, reason: 'Vehicle not found' }
 
     const fleetWithCharging = g.baseFleet + charging.chargingDelta
     const fleetSold = Math.ceil(fleetWithCharging * (1 + settings.bufferPct))

@@ -16,7 +16,7 @@ function fleet(groups: Array<{ vehicleId: string; fleetSold: number }>): FleetSu
   return {
     groups: groups.map(g => ({
       vehicleId: g.vehicleId, groupRaw: 1, baseFleet: 1,
-      charging: { method: 'plugged', runHr: 5, chargeHr: 5, availability: 0.5, chargingDelta: 0, sustainable: true, reason: '' },
+      charging: { method: 'plugged', runHr: 5, chargeHr: 5, availability: 0.5, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: true, reason: '' },
       fleetWithCharging: g.fleetSold, fleetSold: g.fleetSold,
     })),
     totalBaseFleet: 0, totalChargingDelta: 0,
