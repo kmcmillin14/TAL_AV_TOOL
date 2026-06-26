@@ -46,21 +46,27 @@ describe('cycleDerivation', () => {
 })
 
 describe('chargingDerivation', () => {
-  it('plugged, overlapping: availability = runtime ÷ (runtime + recharge), +N extra', () => {
-    const d = chargingDerivation(group(), vehicle, { regime: 'continuous', dailyOpHr: 16 })
-    const avail = d.steps.find(s => s.label === 'Availability')!
-    expect(avail.expr).toBe('runtime ÷ (runtime + recharge)')
+  it('explains energy / capacity / availability and +N extra', () => {
+    const d = chargingDerivation(
+      group({ charging: { method: 'plugged', runHr: 4, chargeHr: 3.2, availability: 0.625, aEnergy: 0.8, aCap: 0.625, chargingDelta: 2, sustainable: true, reason: '' } }),
+      vehicle, { dailyOpHr: 16, breakHrs: 0, consecutiveOpDays: 5 },
+    )
+    expect(d.steps.find(s => s.label === 'Energy (off-shift + days-off reset)')!.result).toBe('80%')
+    expect(d.steps.find(s => s.label === 'Capacity (battery vs window)')!.result).toBe('63%')
+    const avail = d.steps.find(s => s.expr === 'min of the two')!
+    expect(avail.label).toBe('Availability')
     expect(avail.result).toBe('63%')
     expect(d.steps.find(s => s.label === 'Extra vehicles')!.result).toBe('+2')
   })
 
-  it('overnight where one charge covers the day: 100% availability, +0', () => {
+  it('charging fits the fleet: +0, no fleet-with-charging row', () => {
     const d = chargingDerivation(
-      group({ charging: { method: 'plugged', runHr: 18, chargeHr: 3, availability: 1, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: true, reason: '' }, fleetWithCharging: 3 }),
-      vehicle, { regime: 'overnight', dailyOpHr: 16 },
+      group({ charging: { method: 'plugged', runHr: 18, chargeHr: 3, availability: 1, aEnergy: 1, aCap: 1, chargingDelta: 0, sustainable: true, reason: '' }, fleetWithCharging: 3 }),
+      vehicle, { dailyOpHr: 16, breakHrs: 0, consecutiveOpDays: 5 },
     )
-    expect(d.steps.find(s => s.label === 'Recharges off-shift')!.result).toBe('100%')
+    expect(d.steps.find(s => s.expr === 'min of the two')!.result).toBe('100%')
     expect(d.steps.find(s => s.label === 'Extra vehicles')!.result).toBe('+0')
+    expect(d.steps.find(s => s.label === 'Fleet with charging')).toBeUndefined()
   })
 })
 

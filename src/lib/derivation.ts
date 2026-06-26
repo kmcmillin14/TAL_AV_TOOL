@@ -91,39 +91,36 @@ export function cycleDerivation(b: CycleBreakdown, p: CycleDerivInputs): Derivat
 /** Charging tier: usable capacity → runtime & recharge → availability →
  *  ⌈demand ÷ availability⌉ → extra vehicles. Mirrors `chargingForGroup`. */
 export function chargingDerivation(
-  group: FleetGroup, vehicle: Vehicle, settings: Pick<FleetSettings, 'regime' | 'dailyOpHr'>,
+  group: FleetGroup, vehicle: Vehicle,
+  settings: Pick<FleetSettings, 'dailyOpHr' | 'breakHrs' | 'consecutiveOpDays'>,
 ): Derivation {
   const c = group.charging
   const cal = vehicle.calc
   const usableAh = cal.ratedAh * DEFAULT_DOD
-  const tag = `${c.method === 'opportunity' ? 'Opportunity' : 'Plugged'} · ${settings.regime === 'overnight' ? 'Overnight' : 'Continuous'}`
+  const H = Math.max(0, settings.dailyOpHr - settings.breakHrs)
+  const cDays = settings.consecutiveOpDays
+  const tag = `${c.method === 'opportunity' ? 'Opportunity' : 'Plugged'} · ${Number.isFinite(cDays) ? `${cDays} days on` : '24/7'}`
 
   const steps: DerivStep[] = [
     sec('Battery'),
     { label: 'Usable capacity', expr: 'rated Ah × usable depth', sub: `${n1(cal.ratedAh)} × ${DEFAULT_DOD}`, result: `${n1(usableAh)} Ah` },
     { label: 'Runtime per charge', expr: 'usable Ah ÷ draw', sub: `${n1(usableAh)} ÷ ${n1(cal.dischargeA)}`, result: c.runHr == null ? '—' : `${n1(c.runHr)} h` },
     { label: 'Recharge time', expr: cal.chargeTimeMin ? 'rated charge time' : 'usable Ah ÷ charge rate', sub: cal.chargeTimeMin ? undefined : `${n1(usableAh)} ÷ ${n1(cal.chargeA)}`, result: c.chargeHr == null ? '—' : `${n1(c.chargeHr)} h` },
+    sec('Availability'),
+    { label: 'Energy (off-shift + days-off reset)', expr: '(usable/C + 24·charge) ÷ (H·(draw+charge))', result: c.aEnergy == null ? '—' : `${Math.round(c.aEnergy * 100)}%` },
+    { label: 'Capacity (battery vs window)', expr: `runtime vs ${n1(H)} h production`, result: c.aCap == null ? '—' : `${Math.round(c.aCap * 100)}%` },
+    { label: 'Availability', expr: 'min of the two', result: c.availability == null ? '—' : `${Math.round(c.availability * 100)}%`, emphasis: true },
   ]
 
-  // Overnight where one charge covers the day → no overlap, no extra vehicles.
-  if (c.chargingDelta === 0 && c.availability === 1) {
-    steps.push(
-      sec('Availability'),
-      { label: 'Recharges off-shift', expr: `runtime ≥ ${settings.dailyOpHr} h/day`, result: '100%', emphasis: true },
-      { label: 'Extra vehicles', expr: 'charging fits the day', result: '+0', emphasis: true },
-    )
-    return { title: 'Charging — battery → availability', tag, steps, note: 'A single charge lasts the operating day, so charging happens overnight and steals no operating time.' }
+  if (c.chargingDelta === 0) {
+    steps.push({ label: 'Extra vehicles', expr: 'charging fits the fleet', result: '+0', emphasis: true })
+    return { title: 'Charging — battery → availability', tag, steps, note: 'Off-shift and days-off charging keep the battery up, so charging steals no operating time.' }
   }
-
   steps.push(
-    sec('Availability & extra vehicles'),
-    c.method === 'plugged'
-      ? { label: 'Availability', expr: 'runtime ÷ (runtime + recharge)', sub: c.runHr != null && c.chargeHr != null ? `${n1(c.runHr)} ÷ (${n1(c.runHr)} + ${n1(c.chargeHr)})` : undefined, result: c.availability == null ? '—' : `${Math.round(c.availability * 100)}%` }
-      : { label: 'Availability', expr: 'charge ÷ (charge + draw)', sub: `${n1(cal.chargeA)} ÷ (${n1(cal.chargeA)} + ${n1(cal.dischargeA)})`, result: c.availability == null ? '—' : `${Math.round(c.availability * 100)}%` },
     { label: 'Fleet with charging', expr: 'demand ÷ availability, rounded up', sub: c.availability == null ? undefined : `⌈ ${n2(group.groupRaw)} ÷ ${n2(c.availability)} ⌉`, result: String(group.baseFleet + c.chargingDelta) },
-    { label: 'Extra vehicles', expr: 'fleet with charging − base', sub: `${group.baseFleet + c.chargingDelta} − ${group.baseFleet}`, result: c.chargingDelta > 0 ? `+${c.chargingDelta}` : '+0', emphasis: true },
+    { label: 'Extra vehicles', expr: 'fleet with charging − base', sub: `${group.baseFleet + c.chargingDelta} − ${group.baseFleet}`, result: `+${c.chargingDelta}`, emphasis: true },
   )
-  return { title: 'Charging — battery → availability → +N', tag, steps, note: 'Availability is the share of wall-clock time a vehicle can work while the rest is spent charging. Dividing demand by it covers the charging downtime.' }
+  return { title: 'Charging — battery → availability → +N', tag, steps, note: 'Availability is the share of the day a vehicle can work; the rest is charging. Dividing demand by it covers the downtime.' }
 }
 
 // ── Tier 3: Buffer — spare capacity → fleet sold ─────────────────────────────

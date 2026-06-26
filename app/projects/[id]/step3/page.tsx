@@ -268,6 +268,8 @@ export default function FleetEnginePage() {
                 derivedByFlowId={derivedByFlowId}
                 regime={settings.regime}
                 dailyOpHr={settings.dailyOpHr}
+                breakHrs={settings.breakHrs}
+                consecutiveOpDays={settings.consecutiveOpDays}
                 shiftsPerDay={project.shiftsPerDay ?? 1}
                 hoursPerShift={project.hoursPerShift ?? 8}
                 chargeMethods={settings.chargeMethods}

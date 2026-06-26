@@ -14,6 +14,8 @@ interface Props {
   derivedByFlowId: Map<string, FlowDerived>
   regime: ChargeRegime
   dailyOpHr: number
+  breakHrs: number
+  consecutiveOpDays: number
   shiftsPerDay: number
   hoursPerShift: number
   chargeMethods: Record<string, ChargeMethod>
@@ -32,7 +34,7 @@ const fmtCycle = (s: number | null | undefined) => (s == null ? '—' : `${Math.
  */
 export default function ChargingPipeline({
   flows, vehicleById, groupByVehicle, derivedByFlowId,
-  regime, dailyOpHr, shiftsPerDay, hoursPerShift, chargeMethods, onPatch,
+  regime, dailyOpHr, breakHrs, consecutiveOpDays, shiftsPerDay, hoursPerShift, chargeMethods, onPatch,
 }: Props) {
   const rows = flows.filter(f => f.vehicleId)
   const setMethod = (vehicleId: string, method: ChargeMethod) =>
@@ -133,7 +135,7 @@ export default function ChargingPipeline({
                   <td className="pl-math-cell">
                     {g && veh && (
                       <DerivTrigger
-                        derivation={() => chargingDerivation(g, veh, { regime, dailyOpHr })}
+                        derivation={() => chargingDerivation(g, veh, { dailyOpHr, breakHrs, consecutiveOpDays })}
                         route={`${f.origin || '—'} → ${f.destination || '—'}`}
                         disabled={!c?.sustainable}
                       />
