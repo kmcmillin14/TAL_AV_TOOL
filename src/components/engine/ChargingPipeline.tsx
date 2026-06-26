@@ -7,7 +7,8 @@ import DerivTrigger from '@/src/components/step3/DerivTrigger'
 import { chargingDerivation } from '@/src/lib/derivation'
 import type { EnginePatch } from './types'
 
-const DAY_PATTERNS = ['Mon–Fri', 'Mon–Sat', 'Mon–Sun'] as const
+/** Days/week ↔ standard operating pattern (the inline days box maps to a pattern). */
+const PATTERN_BY_DAYS: Record<number, string> = { 5: 'Mon–Fri', 6: 'Mon–Sat', 7: 'Mon–Sun' }
 
 interface Props {
   flows: Flow[]
@@ -19,7 +20,6 @@ interface Props {
   consecutiveOpDays: number
   shiftsPerDay: number
   hoursPerShift: number
-  operatingDaysPattern: string
   daysPerWeek: number
   onPatch: (patch: EnginePatch) => void
 }
@@ -36,13 +36,13 @@ const fmtCycle = (s: number | null | undefined) => (s == null ? '—' : `${Math.
  */
 export default function ChargingPipeline({
   flows, vehicleById, groupByVehicle, derivedByFlowId,
-  dailyOpHr, breakHrs, consecutiveOpDays, shiftsPerDay, hoursPerShift, operatingDaysPattern, daysPerWeek, onPatch,
+  dailyOpHr, breakHrs, consecutiveOpDays, shiftsPerDay, hoursPerShift, daysPerWeek, onPatch,
 }: Props) {
   const rows = flows.filter(f => f.vehicleId)
 
   return (
     <div className="engine-panel pipeline-wrap">
-      <div className="engine-row charge-sched">
+      <div className="engine-row">
         <div className="engine-context mono">
           Schedule:{' '}
           <input
@@ -71,20 +71,23 @@ export default function ChargingPipeline({
             }}
             aria-label="Hours per shift"
           />
-          {' '}h = <strong>{dailyOpHr} h</strong> × <strong>{daysPerWeek} days</strong> / week
-          {breakHrs > 0 ? ` · ${+breakHrs.toFixed(2)} h breaks` : ''}
-        </div>
-        <div className="cr-days">
-          <span className="cr-days-hint">operating days —</span>
+          {' '}h = <strong>{dailyOpHr} h</strong> ×{' '}
           <select
-            className="cr-day-select mono"
-            value={operatingDaysPattern || 'Mon–Sat'}
-            onChange={e => onPatch({ operatingDaysPattern: e.target.value })}
+            className="engine-inline-num mono"
+            value={String(daysPerWeek)}
+            onChange={e => {
+              const pat = PATTERN_BY_DAYS[Number(e.target.value)]
+              if (pat) onPatch({ operatingDaysPattern: pat })
+            }}
             aria-label="Operating days per week"
           >
-            {DAY_PATTERNS.map(p => <option key={p} value={p}>{p}</option>)}
-            {operatingDaysPattern === 'Custom' && <option value="Custom">Custom</option>}
+            {!PATTERN_BY_DAYS[daysPerWeek] && <option value={String(daysPerWeek)}>{daysPerWeek}</option>}
+            <option value="5">5</option>
+            <option value="6">6</option>
+            <option value="7">7</option>
           </select>
+          {' '}days / week
+          {breakHrs > 0 ? ` · ${+breakHrs.toFixed(2)} h breaks` : ''}
         </div>
       </div>
 

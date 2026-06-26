@@ -271,7 +271,6 @@ export default function FleetEnginePage() {
                 consecutiveOpDays={settings.consecutiveOpDays}
                 shiftsPerDay={project.shiftsPerDay ?? 1}
                 hoursPerShift={project.hoursPerShift ?? 8}
-                operatingDaysPattern={project.operatingDaysPattern ?? 'Mon–Sat'}
                 daysPerWeek={Math.round(defaultOperatingDaysPerYear(project.operatingDaysPattern, project.operatingDaysCustom) / 52)}
                 onPatch={persistPatch}
               />
