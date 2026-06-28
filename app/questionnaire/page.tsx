@@ -4,14 +4,16 @@ export const metadata = { title: 'TAL — Customer Questionnaire' }
 
 export default function QuestionnairePage() {
   return (
-    <main className="q-page">
-      <header className="q-hero">
-        <h1>Customer Questionnaire</h1>
-        <p>Tell us about your application. When you're done, download the PDF and send it to
-          your TAL engineer — it carries everything needed to size your fleet. Nothing is required;
-          fill in what you know.</p>
+    <div className="app-shell">
+      <header className="q-brandbar">
+        <div className="q-brandbar-inner">
+          {/* eslint-disable-next-line @next/next/no-img-element -- fixed-height brand logo, static asset */}
+          <img className="logo" src="/assets/TAL-Logo-Black.png" alt="TAL" />
+          <span className="q-brandbar-divider" />
+          <span className="q-brandbar-title">Customer Questionnaire</span>
+        </div>
       </header>
       <QuestionnaireForm />
-    </main>
+    </div>
   )
 }

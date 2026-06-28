@@ -11,10 +11,13 @@ const SRC = readFileSync(
 describe('questionnaire ↔ schema parity', () => {
   const schemaKeys = new Set(Object.keys(projectSchema.shape))
 
-  it('every register()/name= field is a real projectSchema key', () => {
+  it('every form-field key is a real projectSchema key', () => {
     const keys = new Set<string>()
+    // register('field') and the field-control components that bind a name
+    // (Controller / the local Chips + YesNo helpers). Scoped to those tags so
+    // non-field name= props (e.g. <Icon name="check">) aren't counted.
     for (const m of SRC.matchAll(/register\(\s*['"]([a-zA-Z0-9_]+)['"]/g)) keys.add(m[1])
-    for (const m of SRC.matchAll(/name=["']([a-zA-Z0-9_]+)["']/g)) keys.add(m[1])
+    for (const m of SRC.matchAll(/<(?:Controller|Chips|YesNo)\b[^>]*\bname="([a-zA-Z0-9_]+)"/g)) keys.add(m[1])
     expect(keys.size).toBeGreaterThan(10)
     const orphans = [...keys].filter(k => !schemaKeys.has(k))
     expect(orphans).toEqual([])
