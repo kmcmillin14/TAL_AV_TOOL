@@ -44,5 +44,29 @@ export const CERTIFICATIONS = [
   'VDA 5050',
 ] as const
 
+/** Customer-questionnaire specialty applications of interest. */
+export const SPECIALTY_APPLICATIONS = [
+  'Trailer loading',
+  'Trailer unloading',
+  'High reach / racking',
+  'Floor-to-floor',
+  'Long-haul transport',
+  'Conveyor interface',
+  'Outdoor / yard',
+  'Other',
+] as const
+
+/** Why the customer is automating — drives the questionnaire's driver chips. */
+export const PROJECT_DRIVERS = [
+  'Labor availability',
+  'Labor cost',
+  'Safety',
+  'Throughput / capacity',
+  'Quality / consistency',
+  'Ergonomics',
+  '24/7 operation',
+  'Other',
+] as const
+
 export type TransferMethod = typeof TRANSFER_METHODS[number]
 export type TypicalUnitType = typeof TYPICAL_UNIT_TYPES[number]

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-28 — Customer questionnaire: schema sales fields
+
+- Customer questionnaire: added optional opportunity/sales fields to projectSchema
+  (vehicleInMind, RFQ, CAD, stage/budget, drivers, growth, site readiness, specialty
+  applications, customer + TAL contact). SCHEMA_VERSION moved to schemas.ts. New enums
+  SPECIALTY_APPLICATIONS / PROJECT_DRIVERS.
+
 ## 2026-06-26 — Charging: 85% charge-efficiency derate (safety margin)
 
 - Added a `CHARGE_EFFICIENCY = 0.85` derate applied to the effective charge rate in the v2

@@ -1,5 +1,9 @@
 import { z } from 'zod'
 
+/** Bumped when the persisted project shape changes incompatibly. Lives here (not
+ *  storage.ts) so the standalone questionnaire can read it without importing storage. */
+export const SCHEMA_VERSION = 1
+
 export const projectHeaderSchema = z.object({
   projectName: z.string().optional(),
   customerName: z.string().optional(),
@@ -163,6 +167,37 @@ export const projectSchema = z.object({
   // Section 12
   wmsRequired: z.boolean().default(false),
   wmsVendor: z.string().optional(),
+
+  // ---- Customer questionnaire: opportunity / sales context (informational only) ----
+  vehicleInMind: z.string().optional(),
+  isRfq: z.boolean().optional(),
+  rfqNumber: z.string().optional(),
+  rfqDueDate: z.string().optional(),
+  cadAvailable: z.boolean().optional(),
+  cadNotes: z.string().optional(),
+  projectStage: z.enum(['exploring', 'budgeting', 'approved', 'committed']).optional(),
+  budgetStatus: z.enum(['budgetary', 'firm', 'allocated']).optional(),
+  budgetRange: z.string().optional(),
+  decisionDate: z.string().optional(),
+  targetGoLiveDate: z.string().optional(),
+  projectDrivers: z.array(z.string()).default([]),
+  currentProcess: z.string().optional(),
+  volumeGrowthNote: z.string().optional(),
+  seasonalityNote: z.string().optional(),
+  facilitySizeSqFt: z.number().min(0).optional().nullable(),
+  dockDoors: z.number().int().min(0).optional().nullable(),
+  networkReady: z.boolean().optional(),
+  itContact: z.string().optional(),
+  existingAutomation: z.string().optional(),
+  siteWalkthroughAvailable: z.boolean().optional(),
+  specialtyApplications: z.array(z.string()).default([]),
+  customerContactName: z.string().optional(),
+  customerContactRole: z.string().optional(),
+  customerContactEmail: z.string().optional(),
+  customerContactPhone: z.string().optional(),
+  talRepName: z.string().optional(),
+  talRepEmail: z.string().optional(),
+  talRepPhone: z.string().optional(),
 
   // Section 13
   projectNotes: z.string().optional(),
