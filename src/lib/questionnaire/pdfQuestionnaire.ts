@@ -128,6 +128,9 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   sec('What you move')
   row('Unit / load type', p.typicalUnitType ?? (p.loads?.[0]?.unitType))
   row('Max load weight', p.maxLoadWeightLbs ? `${p.maxLoadWeightLbs.toLocaleString()} lbs` : null)
+  row('Load L × W × H', [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].some(d => d != null)
+    ? [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].map(d => d != null ? `${d} in` : '—').join(' × ')
+    : null)
 
   sec('How it is transferred')
   row('Transfer type', p.transferType)
@@ -136,6 +139,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   sec('Environment & site')
   row('Facility size', p.facilitySizeSqFt ? `${p.facilitySizeSqFt.toLocaleString()} sq ft` : null)
   row('Dock doors', p.dockDoors)
+  row('Min aisle width', p.minAisleWidthFt != null ? `${p.minAisleWidthFt} ft` : null)
   row('Network ready', p.networkReady)
   row('IT contact', p.itContact)
   row('Site walkthrough available', p.siteWalkthroughAvailable)

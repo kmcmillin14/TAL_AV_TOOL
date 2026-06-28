@@ -24,6 +24,14 @@ function toggle(list: string[] | undefined, value: string): string[] {
   return cur.includes(value) ? cur.filter(v => v !== value) : [...cur, value]
 }
 
+const FIELD_LABELS: Record<string, string> = {
+  shiftsPerDay: 'Shifts / day (1–3)',
+  hoursPerShift: 'Hours / shift (4–12)',
+  requiredThroughputPerHour: 'Required throughput (whole moves/hr)',
+  breaksPerShift: 'Breaks / shift',
+  breakDurationMin: 'Break duration',
+}
+
 // RHF `register` value coercion. Empty selects emit "" and empty number inputs
 // emit NaN — both FAIL Zod enum/number validation in the resolver and would
 // silently block submit. Map empties to `undefined` so optional fields stay valid.
@@ -46,7 +54,9 @@ export default function QuestionnaireForm() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem(DRAFT_KEY)
-      if (raw) reset(JSON.parse(raw))
+      if (!raw) return
+      const parsed = partialProjectSchema.safeParse(JSON.parse(raw))
+      if (parsed.success) reset(parsed.data)
     } catch { /* ignore corrupt draft */ }
   }, [reset])
 
@@ -68,7 +78,8 @@ export default function QuestionnaireForm() {
   // outside 4–12). Surface a message + the offending fields so submit never fails silently.
   const onInvalid = useCallback((errors: Record<string, unknown>) => {
     setSubmitted(false)
-    setInvalidMsg(`Please fix: ${Object.keys(errors).join(', ')}`)
+    const names = Object.keys(errors).map(k => FIELD_LABELS[k] ?? k)
+    setInvalidMsg(`Please check these fields: ${names.join(', ')}`)
   }, [])
 
   const downloadJson = useCallback(() => {
