@@ -160,6 +160,10 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Average throughput', p.requiredThroughputPerHour ? `${p.requiredThroughputPerHour} moves/hr` : null)
   row('Peak throughput', p.peakThroughputPerHour ? `${p.peakThroughputPerHour} moves/hr` : null)
   row('Average distance', p.avgDistanceFt ? `${p.avgDistanceFt} ft` : null)
+  for (const f of p.flows ?? []) {
+    if (!f.origin && !f.destination && !f.distanceFt && !f.thruPerHr) continue
+    row('Flow', `${f.origin || '—'} → ${f.destination || '—'}  ·  ${f.distanceFt || 0} ft  ·  ${f.thruPerHr || 0}/hr`)
+  }
 
   sec('Notes')
   row('Notes', p.projectNotes)

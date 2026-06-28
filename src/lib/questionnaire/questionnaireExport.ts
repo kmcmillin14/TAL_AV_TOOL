@@ -8,12 +8,24 @@ export interface QuestionnaireEnvelope {
   project: PartialProjectFormData
 }
 
+/** Map questionnaire-specific fields onto the canonical Step-1 fields so an
+ *  imported project surfaces them in the main app (which reads bastianRep as the
+ *  "TAL engineer" and desiredInstallDate as the install date). Non-destructive:
+ *  only fills a canonical field when it's empty. */
+function normalizeForPort(a: PartialProjectFormData): PartialProjectFormData {
+  return {
+    ...a,
+    bastianRep: a.bastianRep || a.talRepName,
+    desiredInstallDate: a.desiredInstallDate || a.targetGoLiveDate,
+  }
+}
+
 /** Wrap questionnaire answers in the envelope `importProjectFromJson` understands. */
 export function buildQuestionnaireEnvelope(answers: PartialProjectFormData): QuestionnaireEnvelope {
   return {
     schemaVersion: SCHEMA_VERSION,
     exportedAt: new Date().toISOString(),
-    project: answers,
+    project: normalizeForPort(answers),
   }
 }
 

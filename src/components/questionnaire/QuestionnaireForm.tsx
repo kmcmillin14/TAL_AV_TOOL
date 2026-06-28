@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useForm, Controller, type SubmitHandler, type Resolver } from 'react-hook-form'
+import { useForm, useFieldArray, Controller, type SubmitHandler, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import FormSection from '@/src/components/step1/FormSection'
 import Icon from '@/src/design-system/components/Icon'
@@ -54,16 +54,16 @@ const SECTIONS: readonly QSection[] = [
     fields: ['minAisleWidthFt', 'floorCondition', 'outdoorRequired', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
   { id: 'q-sec-06', num: '06', short: 'Site readiness', tier: TIER_APP,
     fields: ['facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable'] },
-  { id: 'q-sec-07', num: '07', short: 'Throughput', tier: TIER_APP,
-    fields: ['requiredThroughputPerHour', 'peakThroughputPerHour', 'avgDistanceFt', 'distanceType'] },
+  { id: 'q-sec-07', num: '07', short: 'Throughput & flows', tier: TIER_APP,
+    fields: ['requiredThroughputPerHour', 'peakThroughputPerHour', 'avgDistanceFt', 'distanceType', 'flows'] },
   { id: 'q-sec-08', num: '08', short: 'Schedule', tier: TIER_APP,
     fields: ['shiftsPerDay', 'hoursPerShift', 'operatingDaysPattern', 'breaksPerShift', 'breakDurationMin'] },
   { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
     fields: ['certifications', 'interlocks', 'wmsRequired', 'wmsVendor'] },
   { id: 'q-sec-10', num: '10', short: 'Opportunity', tier: TIER_DETAILS,
-    fields: ['projectName', 'projectStage', 'isRfq', 'rfqNumber', 'rfqDueDate', 'budgetStatus', 'budgetRange', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactRole', 'customerContactPhone'] },
+    fields: ['projectName', 'projectStage', 'budgetRange', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactRole', 'customerContactPhone'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
-    fields: ['talRepName', 'oemDealer', 'dealershipName', 'dealerRep', 'currentToyotaForklifts', 'talHistory'] },
+    fields: ['talRepName', 'dealershipName', 'dealerRep', 'currentToyotaForklifts', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
     fields: ['projectDrivers', 'currentProcess', 'existingAutomation', 'volumeGrowthNote', 'seasonalityNote'] },
   { id: 'q-sec-13', num: '13', short: 'Notes', tier: TIER_DETAILS,
@@ -105,6 +105,11 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
     resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
     defaultValues: EMPTY_VALUES,
   })
+  const { fields: flowFields, append: appendFlow, remove: removeFlow } = useFieldArray({ control, name: 'flows' })
+  const addFlow = () => appendFlow({
+    id: 'f_' + Math.random().toString(36).slice(2, 10),
+    origin: '', destination: '', distanceFt: 0, thruPerHr: 0, routeLayout: 'medium', liftHeightFt: 0,
+  })
 
   // Restore a previously-saved draft (validated; corrupt/stale shapes dropped).
   useEffect(() => {
@@ -129,7 +134,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   // Branch flags (progressive disclosure).
   const isRfq = values.isRfq
   const cadAvailable = values.cadAvailable
-  const budgetStatus = values.budgetStatus
   const transferType = values.transferType
   const wmsRequired = values.wmsRequired
   const unitType = values.typicalUnitType
@@ -371,7 +375,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             </div>
           </FormSection>
 
-          <FormSection id="q-sec-07" sectionNum="07" title="Throughput">
+          <FormSection id="q-sec-07" sectionNum="07" title="Throughput & flows">
             <div className="fld-grid-4">
               <div className="fld"><label>Average throughput</label>
                 <div className="input-with-unit">
@@ -402,6 +406,39 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   </div>
                 )} />
               </div>
+            </div>
+
+            <div className="fld span-4" style={{ marginTop: 18 }}>
+              <label>Material flows</label>
+              {flowFields.length > 0 && (
+                <div className="step1-flows">
+                  {flowFields.map((f, i) => (
+                    <div className="step1-flow-row" key={f.id}>
+                      <div className="fld"><label>Origin</label><input type="text" placeholder="Dock A" {...register(`flows.${i}.origin`)} /></div>
+                      <div className="fld"><label>Destination</label><input type="text" placeholder="Storage 1" {...register(`flows.${i}.destination`)} /></div>
+                      <div className="fld"><label>Distance (ft)</label>
+                        <div className="input-with-unit">
+                          <input type="number" min="0" className="mono" placeholder="200" {...register(`flows.${i}.distanceFt`, { setValueAs: v => (v === '' || v == null ? 0 : Number(v)) })} />
+                          <div className="unit">ft</div>
+                        </div>
+                      </div>
+                      <div className="fld"><label>Throughput</label>
+                        <div className="input-with-unit">
+                          <input type="number" min="0" className="mono" placeholder="60" {...register(`flows.${i}.thruPerHr`, { setValueAs: v => (v === '' || v == null ? 0 : Number(v)) })} />
+                          <div className="unit">/hr</div>
+                        </div>
+                      </div>
+                      <div className="step1-flow-actions">
+                        <button type="button" className="tbtn-icon" aria-label="Delete flow" title="Delete flow" onClick={() => removeFlow(i)}>
+                          <Icon name="x" size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <button type="button" className="btn ghost step1-flow-add" onClick={addFlow}>+ Add flow</button>
+              <div className="help" style={{ marginTop: 8 }}>One row per origin → destination move. These are the same flows your TAL engineer sizes in Step 3.</div>
             </div>
           </FormSection>
 
@@ -446,19 +483,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <option value="committed">Committed</option>
                 </select>
               </div>
+              <div className="fld"><label>Budget range</label><input {...register('budgetRange')} placeholder="$1–2M" /></div>
               <div className="fld"><label>Is there an RFQ?</label><YesNo name="isRfq" /></div>
               {isRfq && <div className="fld"><label>RFQ number</label><input {...register('rfqNumber')} /></div>}
               {isRfq && <div className="fld"><label>RFQ due date</label><input type="date" {...register('rfqDueDate')} /></div>}
-              <div className="fld">
-                <label>Budget status</label>
-                <select {...register('budgetStatus', { setValueAs: emptyToUndef })} defaultValue="">
-                  <option value="">Select…</option>
-                  <option value="budgetary">Budgetary</option>
-                  <option value="firm">Firm</option>
-                  <option value="allocated">Allocated</option>
-                </select>
-              </div>
-              {budgetStatus && <div className="fld"><label>Budget range</label><input {...register('budgetRange')} placeholder="$1–2M" /></div>}
               <div className="fld"><label>Decision date</label><input type="date" {...register('decisionDate')} /></div>
               <div className="fld"><label>Target go-live</label><input type="date" {...register('targetGoLiveDate')} /></div>
               <div className="fld"><label>CAD / drawings available?</label><YesNo name="cadAvailable" /></div>
@@ -473,7 +501,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld"><label>TAL representative</label><input {...register('talRepName')} /></div>
             </div>
             <div className="fld-grid-3">
-              <div className="fld"><label>Dealer / OEM</label><input {...register('oemDealer')} /></div>
               <div className="fld"><label>Dealership name</label><input {...register('dealershipName')} /></div>
               <div className="fld"><label>Dealer rep</label><input {...register('dealerRep')} /></div>
             </div>

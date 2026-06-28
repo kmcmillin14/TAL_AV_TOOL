@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-28 — Questionnaire: interop with Step 1, flows table, dark mode
+
+- Two-questionnaire interop: questionnaire export now maps `talRepName→bastianRep` and
+  `targetGoLiveDate→desiredInstallDate` (non-destructive) so the customer form ports cleanly into
+  the app. New round-trip tests + `docs/questionnaire-interop.md` gap analysis.
+- Added a **material flows table** (origin → destination · distance · throughput) mirroring Step 1.
+- **Dark mode** support (logo swap + theme toggle in the brand bar).
+- Removed "Dealer / OEM" field; consolidated project stage + budget status (dropped budget status,
+  budget range always shown).
+
 ## 2026-06-28 — Questionnaire: TAL/Toyota layout, current Toyota forklifts, header date
 
 - TAL / Toyota section: TAL rep on its own line, dealer fields on the next row, added
