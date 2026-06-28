@@ -43,3 +43,6 @@ next-env.d.ts
 /app/generated/prisma
 tmp/
 /public/pdf.worker.min.mjs
+
+# local skill/agent scratch state
+.superpowers/

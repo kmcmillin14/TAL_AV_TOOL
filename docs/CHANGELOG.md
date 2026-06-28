@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-06-28 — Version-history redesign, button standardization, repo cleanup
+
+- Redesigned the Version history modal: timeline layout (marker dots + connector line), icon close
+  button, refined spacing.
+- Standardized the questionnaire action buttons — one `.q-export-btn` style (export icon + label)
+  used identically in the top header and the bottom action row.
+- Repo cleanup: untracked `.superpowers/` brainstorm scratch (logs/pids/mockups) and gitignored it.
+  Verified via knip that there are no orphaned source files or unused dependencies.
+
 ## 2026-06-28 — Questionnaire: interop with Step 1, flows table, dark mode
 
 - Two-questionnaire interop: questionnaire export now maps `talRepName→bastianRep` and

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import Icon from '@/src/design-system/components/Icon'
 import { APP_VERSIONS } from '@/src/content/appVersions'
 
 interface Props { onClose: () => void }
@@ -20,27 +21,32 @@ export default function AppVersionLog({ onClose }: Props) {
     <div className="avl-overlay" onClick={onClose}>
       <div className="avl-modal" role="dialog" aria-modal="true" aria-label="App version history" onClick={e => e.stopPropagation()}>
         <div className="avl-head">
-          <div>
+          <div className="avl-head-text">
             <div className="avl-title">Version history</div>
             <div className="avl-sub">Fleet Calculator — application releases</div>
           </div>
-          <button type="button" className="avl-close" onClick={onClose} aria-label="Close">×</button>
+          <button type="button" className="tbtn-icon avl-close" onClick={onClose} aria-label="Close">
+            <Icon name="x" size={16} />
+          </button>
         </div>
-        <div className="avl-body">
+        <ol className="avl-body">
           {APP_VERSIONS.map((v, i) => (
-            <div key={v.version} className={`avl-entry${i === 0 ? ' is-current' : ''}`}>
-              <div className="avl-entry-head">
-                <span className="avl-ver mono">{v.version}</span>
-                {i === 0 && <span className="avl-current-tag">Current</span>}
-                <span className="avl-date">{fmtDate(v.date)}</span>
-                <span className="avl-author">{v.author}</span>
+            <li key={v.version} className={`avl-entry${i === 0 ? ' is-current' : ''}`}>
+              <span className="avl-marker" aria-hidden />
+              <div className="avl-entry-main">
+                <div className="avl-entry-head">
+                  <span className="avl-ver mono">{v.version}</span>
+                  {i === 0 && <span className="avl-current-tag">Current</span>}
+                  <span className="avl-date">{fmtDate(v.date)}</span>
+                  <span className="avl-author">{v.author}</span>
+                </div>
+                <ul className="avl-summary">
+                  {v.summary.map((s, j) => <li key={j}>{s}</li>)}
+                </ul>
               </div>
-              <ul className="avl-summary">
-                {v.summary.map((s, j) => <li key={j}>{s}</li>)}
-              </ul>
-            </div>
+            </li>
           ))}
-        </div>
+        </ol>
       </div>
     </div>
   )

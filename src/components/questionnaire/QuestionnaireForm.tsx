@@ -204,7 +204,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           </div>
         </div>
         <div className="row" style={{ display: 'flex', gap: 8 }}>
-          <button type="submit" className="btn primary" disabled={busy} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <button type="submit" className="btn primary q-export-btn" disabled={busy}>
             <Icon name="export" size={16} /> {busy ? 'Preparing…' : 'Export'}
           </button>
           <button type="button" className="btn ghost" onClick={clearAll}>Clear</button>
@@ -549,9 +549,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
       </div>
 
       <div className="q-actions">
-        <button type="submit" className="btn primary q-submit-big" disabled={busy}>
-          <Icon name="export" size={16} />
-          <span>{busy ? 'Preparing…' : 'Export my AV Questionnaire'}</span>
+        <button type="submit" className="btn primary q-export-btn" disabled={busy}>
+          <Icon name="export" size={16} /> {busy ? 'Preparing…' : 'Export'}
         </button>
         <span className="q-actions-note">A single PDF to send to your TAL engineer.</span>
         {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Downloaded — send the PDF to your TAL engineer.</span>}

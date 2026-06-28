@@ -205,21 +205,33 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .avl-modal {
   width: 100%; max-width: 560px; background: var(--bg-surface);
-  border: 1px solid var(--border-strong); border-radius: 16px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  border: 1px solid var(--border); border-radius: 14px; box-shadow: 0 24px 64px rgba(0,0,0,0.28);
   overflow: hidden;
 }
 .avl-head {
   display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
-  padding: 18px 22px; border-bottom: 1px solid var(--border);
+  padding: 22px 24px 18px;
 }
-.avl-title { font-size: 18px; font-weight: 800; color: var(--text-primary); }
-.avl-sub { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
-.avl-close { background: none; border: none; font-size: 24px; line-height: 1; color: var(--text-tertiary); cursor: pointer; padding: 0 4px; }
-.avl-close:hover { color: var(--text-primary); }
-.avl-body { padding: 8px 22px 20px; max-height: 70vh; overflow-y: auto; }
-.avl-entry { padding: 16px 0; border-bottom: 1px solid var(--border); }
-.avl-entry:last-child { border-bottom: none; }
-.avl-entry-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.avl-title { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; color: var(--text-primary); }
+.avl-sub { font-size: 12.5px; color: var(--text-tertiary); margin-top: 3px; }
+.avl-close { flex-shrink: 0; }
+.avl-body {
+  list-style: none; margin: 0; padding: 6px 24px 24px; max-height: 70vh; overflow-y: auto;
+}
+/* Timeline: a marker dot on a vertical connector line down the left. */
+.avl-entry { position: relative; display: flex; gap: 16px; padding: 4px 0 22px; }
+.avl-entry::before { /* connector line */
+  content: ''; position: absolute; left: 5px; top: 14px; bottom: -4px; width: 1.5px; background: var(--border);
+}
+.avl-entry:last-child { padding-bottom: 4px; }
+.avl-entry:last-child::before { display: none; }
+.avl-marker {
+  position: relative; z-index: 1; flex-shrink: 0; width: 12px; height: 12px; margin-top: 4px;
+  border-radius: 50%; background: var(--bg-surface); border: 2px solid var(--border-strong);
+}
+.avl-entry.is-current .avl-marker { border-color: var(--accent); background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.avl-entry-main { flex: 1; min-width: 0; }
+.avl-entry-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 7px; }
 .avl-ver { font-family: var(--tal-font-numeric); font-size: 15px; font-weight: 800; color: var(--text-primary); }
 .avl-current-tag {
   font-family: var(--tal-font-numeric); font-size: 9px; font-weight: 700; letter-spacing: 0.08em;
@@ -227,8 +239,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .avl-date { font-family: var(--tal-font-numeric); font-size: 12px; color: var(--text-secondary); }
 .avl-author { font-size: 12px; color: var(--text-tertiary); margin-left: auto; }
-.avl-summary { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 5px; }
-.avl-summary li { font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
+.avl-summary { margin: 0; padding-left: 16px; display: flex; flex-direction: column; gap: 5px; }
+.avl-summary li { font-size: 13px; line-height: 1.55; color: var(--text-secondary); }
 
 /* Meta line lives in the hero-top grid's middle column, so it is bounded by the
    brand (left) and actions (right) and can never overlap them. All items flow as
@@ -3786,8 +3798,10 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   margin-top: 28px; padding-top: 26px; border-top: 1px solid var(--border);
 }
 .q-submit-big { min-width: 320px; }
-.q-submit-big { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 22px; font-size: 15px; line-height: 1; }
-.q-submit-big svg { display: block; flex-shrink: 0; }
+/* Single standard for the questionnaire's action buttons (icon + label), used
+   identically in the top header and the bottom action row. */
+.q-export-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.q-export-btn svg { display: block; flex-shrink: 0; }
 .q-actions-note { font-size: 13px; color: var(--text-tertiary); }
 .q-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
 .q-status-ok { color: var(--good); }
