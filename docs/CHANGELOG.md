@@ -6,6 +6,9 @@
   (vehicleInMind, RFQ, CAD, stage/budget, drivers, growth, site readiness, specialty
   applications, customer + TAL contact). SCHEMA_VERSION moved to schemas.ts. New enums
   SPECIALTY_APPLICATIONS / PROJECT_DRIVERS.
+- Customer questionnaire: standalone /questionnaire route capturing all Step 1 inputs +
+  opportunity/sales context; exports a TAL-branded PDF (logo top-right, contact blocks) with
+  embedded JSON importable via Step 00. App PDF now prints the imported opportunity fields.
 
 ## 2026-06-26 — Charging: 85% charge-efficiency derate (safety margin)
 

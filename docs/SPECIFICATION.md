@@ -42,6 +42,46 @@ modes 2 and 3 is the accepted file types and framing — there is no separate pa
 
 ---
 
+## Customer Questionnaire
+
+A standalone, customer-facing route at `/questionnaire` (no app chrome, no SSO) that sales
+engineers or customers fill out before a site visit. It is designed to seed a TAL Fleet
+Calculator project without requiring the customer to access the main application.
+
+**Architecture.** The questionnaire shares only the project Zod schema and enums with the
+main app — it imports no storage, calc engine, or step internals. This keeps the split clean:
+the questionnaire can be deployed as a separate artifact if needed.
+
+**What it captures.** The form collects all project-level Step 1 inputs plus a rich set of
+opportunity and sales context:
+
+- Vehicle in mind, RFQ flag + number + due date, CAD availability
+- Project stage, budget status and range, decision date and target go-live date
+- Project drivers (cost reduction, throughput, labor availability, safety, quality, etc.)
+- Current process description and volume growth / seasonality notes
+- Site readiness: facility size, number of dock doors, IT/network contact, existing automation,
+  and whether a facility walkthrough has been completed
+- Specialty applications of interest: trailer loading/unloading, high-reach, freezer/cold
+  storage, outdoor, hazardous materials, cleanroom, custom integration, etc.
+- Customer contact name + email, TAL representative name + email, OEM dealer and rep
+
+**What is intentionally deferred.** Per-flow rows (the `flows` array) and multi-load entry
+are not captured in the questionnaire. The applications engineer adds flows in Step 3 after
+importing the questionnaire response; the questionnaire seeds project-level inputs only.
+
+**Output.** The questionnaire produces a TAL-branded PDF — TAL logo in the top-right on every
+page, customer and TAL contact blocks, and a page footer — with the completed project data
+embedded as a JSON attachment in the same `{ schemaVersion, exportedAt, project }` envelope
+that Step 00 already imports. A plain `.json` download is offered as a fallback for customers
+whose PDF viewers do not support attachments.
+
+**Field treatment.** All opportunity and sales fields are **optional and informational** — they
+are printed in the questionnaire PDF and round-trip through import into the main app's own
+PDF export (Section 8 — Opportunity & Contact), but they do **not** affect gate evaluation,
+traffic-light status, or fleet sizing.
+
+---
+
 ## Step 1 — Application Questionnaire
 
 Thirteen flat sections became **three labeled tiers** (2026-06-10) so an applications
