@@ -43,7 +43,7 @@ const TIER_DETAILS = 'Project details'
 // per-section "started" progress meter.
 const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-01', num: '01', short: 'About you', tier: TIER_START,
-    fields: ['customerName', 'facilityLocation', 'customerContactName', 'customerContactEmail'] },
+    fields: ['customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail'] },
   { id: 'q-sec-02', num: '02', short: 'Vehicles', tier: TIER_START,
     fields: ['vehiclesOfInterest', 'vehicleInMind'] },
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
@@ -61,9 +61,9 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
     fields: ['certifications', 'interlocks', 'wmsRequired', 'wmsVendor'] },
   { id: 'q-sec-10', num: '10', short: 'Opportunity', tier: TIER_DETAILS,
-    fields: ['projectName', 'projectStage', 'budgetRange', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactRole', 'customerContactPhone'] },
+    fields: ['projectName', 'projectStage', 'budgetRange', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactPhone'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
-    fields: ['talRepName', 'dealershipName', 'dealerRep', 'currentToyotaForklifts', 'talHistory'] },
+    fields: ['dealershipName', 'dealerRep', 'currentToyotaForklifts', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
     fields: ['projectDrivers', 'currentProcess', 'existingAutomation', 'volumeGrowthNote', 'seasonalityNote'] },
   { id: 'q-sec-13', num: '13', short: 'Notes', tier: TIER_DETAILS,
@@ -101,6 +101,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const [busy, setBusy] = useState(false)
   const [invalidMsg, setInvalidMsg] = useState<string | null>(null)
   const [today] = useState(() => new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }))
+  // Volume can be given as overall averages OR per-flow detail — they're redundant, so pick one.
+  const [thruMode, setThruMode] = useState<'avg' | 'flows'>('avg')
   const { register, handleSubmit, control, reset, watch } = useForm<PartialProjectFormData>({
     resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
     defaultValues: EMPTY_VALUES,
@@ -203,7 +205,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
         </div>
         <div className="row" style={{ display: 'flex', gap: 8 }}>
           <button type="submit" className="btn primary" disabled={busy} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-            <Icon name="export" size={14} /> {busy ? 'Preparing…' : 'Export'}
+            <Icon name="export" size={16} /> {busy ? 'Preparing…' : 'Export'}
           </button>
           <button type="button" className="btn ghost" onClick={clearAll}>Clear</button>
         </div>
@@ -225,6 +227,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="help">Start typing — pick a suggestion to auto-fill</div>
               </div>
               <div className="fld"><label>Your name</label><input {...register('customerContactName')} /></div>
+              <div className="fld"><label>Your job title</label><input {...register('customerContactRole')} placeholder="e.g. Operations Manager" /></div>
               <div className="fld"><label>Your email</label><input type="email" {...register('customerContactEmail')} /></div>
               <div className="fld"><label>TAL representative</label><input {...register('talRepName')} /></div>
             </div>
@@ -377,6 +380,17 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
           <FormSection id="q-sec-07" sectionNum="07" title="Throughput & flows">
             <div className="fld-grid-4">
+              <div className="fld span-4">
+                <label>How would you like to describe volume?</label>
+                <div className="seg-toggle">
+                  <button type="button" className={`seg-btn${thruMode === 'avg' ? ' on' : ''}`} onClick={() => setThruMode('avg')}>Overall averages</button>
+                  <button type="button" className={`seg-btn${thruMode === 'flows' ? ' on' : ''}`} onClick={() => setThruMode('flows')}>Per-flow detail</button>
+                </div>
+                <div className="help">Give simple averages, or list each origin → destination flow — whichever is easier.</div>
+              </div>
+            </div>
+            {thruMode === 'avg' && (
+            <div className="fld-grid-4">
               <div className="fld"><label>Average throughput</label>
                 <div className="input-with-unit">
                   <input type="number" min="0" className="mono" placeholder="60" {...register('requiredThroughputPerHour', { setValueAs: emptyToNum })} />
@@ -407,7 +421,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 )} />
               </div>
             </div>
+            )}
 
+            {thruMode === 'flows' && (
             <div className="fld span-4" style={{ marginTop: 18 }}>
               <label>Material flows</label>
               {flowFields.length > 0 && (
@@ -440,6 +456,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <button type="button" className="btn ghost step1-flow-add" onClick={addFlow}>+ Add flow</button>
               <div className="help" style={{ marginTop: 8 }}>One row per origin → destination move. These are the same flows your TAL engineer sizes in Step 3.</div>
             </div>
+            )}
           </FormSection>
 
           <FormSection id="q-sec-08" sectionNum="08" title="Operating schedule">
@@ -491,15 +508,11 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld"><label>Target go-live</label><input type="date" {...register('targetGoLiveDate')} /></div>
               <div className="fld"><label>CAD / drawings available?</label><YesNo name="cadAvailable" /></div>
               {cadAvailable && <div className="fld"><label>CAD notes</label><input {...register('cadNotes')} placeholder="Format, what’s included…" /></div>}
-              <div className="fld"><label>Your role</label><input {...register('customerContactRole')} /></div>
               <div className="fld"><label>Your phone</label><input {...register('customerContactPhone')} /></div>
             </div>
           </FormSection>
 
           <FormSection id="q-sec-11" sectionNum="11" title="TAL / Toyota">
-            <div className="fld-grid-3">
-              <div className="fld"><label>TAL representative</label><input {...register('talRepName')} /></div>
-            </div>
             <div className="fld-grid-3">
               <div className="fld"><label>Dealership name</label><input {...register('dealershipName')} /></div>
               <div className="fld"><label>Dealer rep</label><input {...register('dealerRep')} /></div>
