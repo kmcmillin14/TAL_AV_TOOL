@@ -197,7 +197,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             fill in what you know. When you’re done, export the PDF and send it to your TAL engineer.
           </div>
         </div>
-        <div className="row">
+        <div className="row" style={{ display: 'flex', gap: 8 }}>
+          <button type="submit" className="btn primary" disabled={busy} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+            <Icon name="export" size={14} /> {busy ? 'Preparing…' : 'Export'}
+          </button>
           <button type="button" className="btn ghost" onClick={clearAll}>Clear</button>
         </div>
       </div>
