@@ -3784,6 +3784,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .q-status { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; }
 .q-status-ok { color: var(--good); }
 .q-status-bad { color: var(--bad); }
-/* Constrain the standalone form to a comfortable reading width (the app form
-   sits inside a wider shell; here there's no side nav). */
-.app-shell > .workspace { max-width: 1180px; margin: 0 auto; padding-top: 28px; }
+/* Constrain ONLY the standalone questionnaire form to a comfortable reading
+   width. Scoped via the brand bar's adjacent sibling so it never touches the
+   main app's .workspace (every step page is also .app-shell > .workspace). */
+.q-brandbar + .workspace { max-width: 1180px; margin: 0 auto; padding-top: 28px; }
