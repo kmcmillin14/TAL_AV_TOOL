@@ -18,7 +18,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
   const bold = await pdfDoc.embedFont(StandardFonts.HelveticaBold)
 
-  pdfDoc.setTitle(p.projectName || 'TAL Customer Questionnaire')
+  pdfDoc.setTitle(`${p.customerName || p.projectName || 'TAL'} — AV Questionnaire`)
   pdfDoc.setAuthor('TAL Fleet Calculator')
   pdfDoc.setSubject('AGV/AMR Customer Questionnaire')
 
@@ -90,11 +90,12 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
     y -= rowH
   }
 
-  // ── Cover header ──
-  page.drawText('CUSTOMER QUESTIONNAIRE', { x: MX, y: H - 110, size: 10, font: bold, color: TAL_RED })
+  // ── Cover header ── title = company, dated by submission day.
+  const submitted = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+  page.drawText('AV QUESTIONNAIRE', { x: MX, y: H - 110, size: 10, font: bold, color: TAL_RED })
   page.drawLine({ start: { x: MX, y: H - 120 }, end: { x: W - MX, y: H - 120 }, thickness: 0.5, color: RULE })
-  page.drawText(p.projectName || 'Untitled Opportunity', { x: MX, y: H - 156, size: 24, font: bold, color: TEXT })
-  page.drawText(p.customerName || 'Customer —', { x: MX, y: H - 178, size: 13, font, color: MUTED })
+  page.drawText(p.customerName || p.projectName || 'Untitled Opportunity', { x: MX, y: H - 156, size: 24, font: bold, color: TEXT })
+  page.drawText(`Submitted ${submitted}`, { x: MX, y: H - 178, size: 13, font, color: MUTED })
   y = H - 220
 
   sec('Contacts')
@@ -184,9 +185,11 @@ function triggerDownload(blob: Blob, name: string) {
 }
 
 function fileBase(p: PartialProjectFormData): string {
-  return (p.projectName || p.customerName || 'questionnaire').replace(/[^a-z0-9-_]+/gi, '_')
+  const name = (p.customerName || p.projectName || 'questionnaire').replace(/[^a-z0-9-_]+/gi, '_')
+  const date = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+  return `${name}_AV-Questionnaire_${date}`
 }
 
 export async function downloadQuestionnairePdf(p: PartialProjectFormData): Promise<void> {
-  triggerDownload(await exportQuestionnairePdf(p), `${fileBase(p)}_questionnaire.pdf`)
+  triggerDownload(await exportQuestionnairePdf(p), `${fileBase(p)}.pdf`)
 }

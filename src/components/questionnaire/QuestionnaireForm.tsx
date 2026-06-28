@@ -100,6 +100,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const [submitted, setSubmitted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [invalidMsg, setInvalidMsg] = useState<string | null>(null)
+  const [today] = useState(() => new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }))
   const { register, handleSubmit, control, reset, watch } = useForm<PartialProjectFormData>({
     resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
     defaultValues: EMPTY_VALUES,
@@ -189,11 +190,11 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
     <form className="workspace" onSubmit={handleSubmit(onSubmit, onInvalid)}>
       <div className="page-header">
         <div className="page-title">
-          <span className="step-num">AV Questionnaire</span>
-          <h1>Tell us about your application</h1>
+          <span className="step-num">AV Questionnaire · {today}</span>
+          <h1>{values.customerName?.trim() || 'Tell us about your application'}</h1>
           <div className="desc">
             A few quick details to start, then the specifics of what you move. Nothing is required —
-            fill in what you know. When you’re done, download the PDF and send it to your TAL engineer.
+            fill in what you know. When you’re done, export the PDF and send it to your TAL engineer.
           </div>
         </div>
         <div className="row">
