@@ -20,10 +20,6 @@ export default function Step0Page() {
   // Import progress: idle → loading (parsing) → success (loaded ✓, brief pause, then navigate).
   const [importState, setImportState] = useState<'idle' | 'loading' | 'success'>('idle')
   const [importedName, setImportedName] = useState<string>('')
-  // Which source the picker is opened for — drives the accepted file types.
-  // 'questionnaire' = customer-supplied questionnaire (.json only);
-  // 'revision' = a prior export of this app (.pdf or .json).
-  const [importMode, setImportMode] = useState<'questionnaire' | 'revision'>('revision')
   // Project header fields, fillable here and (live) in the bar above.
   const [meta, setMeta] = useState({
     versionNumber: '',
@@ -96,11 +92,9 @@ export default function Step0Page() {
     },
   })
 
-  const openPicker = (mode: 'questionnaire' | 'revision') => {
-    setImportMode(mode)
+  const openPicker = () => {
     setImportError(null)
-    // Defer the click so the input's `accept` reflects the new mode first.
-    requestAnimationFrame(() => fileRef.current?.click())
+    fileRef.current?.click()
   }
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -262,7 +256,7 @@ export default function Step0Page() {
               </span>
             </button>
 
-            <button type="button" className="entry-card" onClick={() => openPicker('questionnaire')}>
+            <button type="button" className="entry-card" onClick={() => openPicker()}>
               <span className="entry-card-index" aria-hidden>02</span>
               <span className="entry-card-icon" aria-hidden>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -272,14 +266,14 @@ export default function Step0Page() {
                 </svg>
               </span>
               <h3>Import Customer Questionnaire</h3>
-              <p>Upload a completed customer questionnaire (.json) to auto-fill Step 01.</p>
+              <p>Upload a completed customer questionnaire (.pdf or .json) to auto-fill Step 01.</p>
               <span className="entry-card-cta">
                 From a customer
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6" /></svg>
               </span>
             </button>
 
-            <button type="button" className="entry-card" onClick={() => openPicker('revision')}>
+            <button type="button" className="entry-card" onClick={() => openPicker()}>
               <span className="entry-card-index" aria-hidden>03</span>
               <span className="entry-card-icon" aria-hidden>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -330,11 +324,7 @@ export default function Step0Page() {
         <input
           ref={fileRef}
           type="file"
-          accept={
-            importMode === 'questionnaire'
-              ? '.json,application/json'
-              : '.pdf,.json,application/pdf,application/json'
-          }
+          accept=".pdf,.json,application/pdf,application/json"
           style={{ display: 'none' }}
           onChange={handleFileChange}
         />

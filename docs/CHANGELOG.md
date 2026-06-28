@@ -9,6 +9,9 @@
 - Customer questionnaire: standalone /questionnaire route capturing all Step 1 inputs +
   opportunity/sales context; exports a TAL-branded PDF (logo top-right, contact blocks) with
   embedded JSON importable via Step 00. App PDF now prints the imported opportunity fields.
+- Step 00 "Import Customer Questionnaire" now accepts the questionnaire **PDF** (with embedded
+  JSON) in addition to .json — the questionnaire's primary output is a PDF. Both import cards
+  accept .pdf/.json; removed the now-redundant per-mode accept filter + dead importMode state.
 
 ## 2026-06-26 — Charging: 85% charge-efficiency derate (safety margin)
 
