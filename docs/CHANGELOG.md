@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-06-28 — Questionnaire: Clear remount, export-icon button, Google-ready address finder
+
+- Clear now **remounts** the form (key bump) so every field truly resets — `reset()` alone left
+  uncontrolled selects on their defaultValue.
+- Export button uses the **export** icon, centered, labeled "Export my AV Questionnaire".
+- Address finder now uses **Google Places** when `NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is set (most
+  exact), falling back to free OpenStreetMap otherwise — no key needed for the fallback.
+
 ## 2026-06-28 — Questionnaire: customer-first rewrite (vehicle picker, scoping fields, scroller)
 
 - Customer questionnaire reorganized into 12 sections (two tiers) with a sticky section

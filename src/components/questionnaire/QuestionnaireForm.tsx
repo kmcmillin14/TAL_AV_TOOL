@@ -96,7 +96,7 @@ const FIELD_LABELS: Record<string, string> = {
   breakDurationMin: 'Break duration',
 }
 
-export default function QuestionnaireForm() {
+function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => void }) {
   const [submitted, setSubmitted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [invalidMsg, setInvalidMsg] = useState<string | null>(null)
@@ -150,10 +150,12 @@ export default function QuestionnaireForm() {
 
   const clearAll = useCallback(() => {
     if (!window.confirm('Clear all answers? This cannot be undone.')) return
-    reset(EMPTY_VALUES)
     try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
-    setSubmitted(false); setInvalidMsg(null)
-  }, [reset])
+    // Remount the form for a guaranteed-pristine state (reset() alone leaves
+    // uncontrolled selects with their defaultValue). Draft already cleared, so
+    // the fresh mount starts blank.
+    onRequestRemount()
+  }, [onRequestRemount])
 
   // Reusable chip multiselect (matches Step 1's .cert-grid / .chk).
   const Chips = ({ name, options }: { name: 'projectDrivers' | 'specialtyApplications' | 'certifications' | 'interlocks'; options: readonly string[] }) => (
@@ -499,7 +501,8 @@ export default function QuestionnaireForm() {
 
       <div className="q-actions">
         <button type="submit" className="btn primary q-submit-big" disabled={busy}>
-          <Icon name="download" size={16} /> {busy ? 'Preparing…' : 'Download my AV Questionnaire'}
+          <Icon name="export" size={16} />
+          <span>{busy ? 'Preparing…' : 'Export my AV Questionnaire'}</span>
         </button>
         <span className="q-actions-note">A single PDF to send to your TAL engineer.</span>
         {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Downloaded — send the PDF to your TAL engineer.</span>}
@@ -507,4 +510,10 @@ export default function QuestionnaireForm() {
       </div>
     </form>
   )
+}
+
+export default function QuestionnaireForm() {
+  // A Clear remounts the inner form (key bump) for a guaranteed-pristine state.
+  const [formKey, setFormKey] = useState(0)
+  return <QuestionnaireFormInner key={formKey} onRequestRemount={() => setFormKey(k => k + 1)} />
 }
