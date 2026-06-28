@@ -203,6 +203,7 @@ export const projectSchema = z.object({
   talRepEmail: z.string().optional(),
   talRepPhone: z.string().optional(),
   talHistory: z.string().optional(),
+  currentToyotaForklifts: z.string().optional(),
 
   // Section 13
   projectNotes: z.string().optional(),

@@ -63,7 +63,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-10', num: '10', short: 'Opportunity', tier: TIER_DETAILS,
     fields: ['projectName', 'projectStage', 'isRfq', 'rfqNumber', 'rfqDueDate', 'budgetStatus', 'budgetRange', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactRole', 'customerContactPhone'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
-    fields: ['talRepName', 'talHistory', 'oemDealer', 'dealershipName', 'dealerRep'] },
+    fields: ['talRepName', 'oemDealer', 'dealershipName', 'dealerRep', 'currentToyotaForklifts', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
     fields: ['projectDrivers', 'currentProcess', 'existingAutomation', 'volumeGrowthNote', 'seasonalityNote'] },
   { id: 'q-sec-13', num: '13', short: 'Notes', tier: TIER_DETAILS,
@@ -471,9 +471,14 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <FormSection id="q-sec-11" sectionNum="11" title="TAL / Toyota">
             <div className="fld-grid-3">
               <div className="fld"><label>TAL representative</label><input {...register('talRepName')} /></div>
+            </div>
+            <div className="fld-grid-3">
               <div className="fld"><label>Dealer / OEM</label><input {...register('oemDealer')} /></div>
               <div className="fld"><label>Dealership name</label><input {...register('dealershipName')} /></div>
               <div className="fld"><label>Dealer rep</label><input {...register('dealerRep')} /></div>
+            </div>
+            <div className="fld-grid-2">
+              <div className="fld"><label>Current Toyota forklifts?</label><input {...register('currentToyotaForklifts')} placeholder="How many / which models, if any" /></div>
             </div>
             <div className="fld-grid-2">
               <div className="fld span-2"><label>History with TAL / Toyota</label><textarea {...register('talHistory')} placeholder="Existing fleet, prior projects, current relationship…" /></div>

@@ -103,6 +103,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Customer email / phone', [p.customerContactEmail, p.customerContactPhone].filter(Boolean).join('  ·  '))
   row('TAL representative', p.talRepName)
   row('Dealer', [p.oemDealer, p.dealershipName, p.dealerRep].filter(Boolean).join(' — '))
+  row('Current Toyota forklifts', p.currentToyotaForklifts)
   row('History with TAL / Toyota', p.talHistory)
 
   sec('Opportunity')

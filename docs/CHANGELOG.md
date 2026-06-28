@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-06-28 — Questionnaire: TAL/Toyota layout, current Toyota forklifts, header date
+
+- TAL / Toyota section: TAL rep on its own line, dealer fields on the next row, added
+  "Current Toyota forklifts?" (`currentToyotaForklifts`); prints in the PDF.
+- Current date shown in the top brand-bar header (right side) in addition to the page eyebrow.
+
 ## 2026-06-28 — Questionnaire: Clear remount, export-icon button, Google-ready address finder
 
 - Clear now **remounts** the form (key bump) so every field truly resets — `reset()` alone left
