@@ -16,7 +16,6 @@ import {
   SPECIALTY_APPLICATIONS, PROJECT_DRIVERS,
 } from '@/src/lib/constants/enums'
 import { downloadQuestionnairePdf } from '@/src/lib/questionnaire/pdfQuestionnaire'
-import { questionnaireJsonBlob } from '@/src/lib/questionnaire/questionnaireExport'
 
 const DRAFT_KEY = 'tal:questionnaire-draft'
 
@@ -44,7 +43,7 @@ const TIER_DETAILS = 'Project details'
 // per-section "started" progress meter.
 const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-01', num: '01', short: 'About you', tier: TIER_START,
-    fields: ['customerName', 'facilityLocation', 'customerContactName', 'customerContactEmail', 'talRepName'] },
+    fields: ['customerName', 'facilityLocation', 'customerContactName', 'customerContactEmail'] },
   { id: 'q-sec-02', num: '02', short: 'Vehicles', tier: TIER_START,
     fields: ['vehiclesOfInterest', 'vehicleInMind'] },
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
@@ -62,10 +61,12 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
     fields: ['certifications', 'interlocks', 'wmsRequired', 'wmsVendor'] },
   { id: 'q-sec-10', num: '10', short: 'Opportunity', tier: TIER_DETAILS,
-    fields: ['projectName', 'projectStage', 'isRfq', 'rfqNumber', 'rfqDueDate', 'budgetStatus', 'budgetRange', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactRole', 'customerContactPhone', 'oemDealer', 'dealershipName', 'dealerRep'] },
-  { id: 'q-sec-11', num: '11', short: 'Why & today', tier: TIER_DETAILS,
+    fields: ['projectName', 'projectStage', 'isRfq', 'rfqNumber', 'rfqDueDate', 'budgetStatus', 'budgetRange', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactRole', 'customerContactPhone'] },
+  { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
+    fields: ['talRepName', 'talHistory', 'oemDealer', 'dealershipName', 'dealerRep'] },
+  { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
     fields: ['projectDrivers', 'currentProcess', 'existingAutomation', 'volumeGrowthNote', 'seasonalityNote'] },
-  { id: 'q-sec-12', num: '12', short: 'Notes', tier: TIER_DETAILS,
+  { id: 'q-sec-13', num: '13', short: 'Notes', tier: TIER_DETAILS,
     fields: ['projectNotes'] },
 ]
 
@@ -99,7 +100,7 @@ export default function QuestionnaireForm() {
   const [submitted, setSubmitted] = useState(false)
   const [busy, setBusy] = useState(false)
   const [invalidMsg, setInvalidMsg] = useState<string | null>(null)
-  const { register, handleSubmit, control, reset, getValues, watch } = useForm<PartialProjectFormData>({
+  const { register, handleSubmit, control, reset, watch } = useForm<PartialProjectFormData>({
     resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
     defaultValues: EMPTY_VALUES,
   })
@@ -154,15 +155,6 @@ export default function QuestionnaireForm() {
     setSubmitted(false); setInvalidMsg(null)
   }, [reset])
 
-  const downloadJson = useCallback(() => {
-    const blob = questionnaireJsonBlob(getValues())
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url; a.download = 'questionnaire.json'
-    document.body.appendChild(a); a.click(); document.body.removeChild(a)
-    URL.revokeObjectURL(url)
-  }, [getValues])
-
   // Reusable chip multiselect (matches Step 1's .cert-grid / .chk).
   const Chips = ({ name, options }: { name: 'projectDrivers' | 'specialtyApplications' | 'certifications' | 'interlocks'; options: readonly string[] }) => (
     <Controller control={control} name={name} render={({ field }) => (
@@ -195,12 +187,15 @@ export default function QuestionnaireForm() {
     <form className="workspace" onSubmit={handleSubmit(onSubmit, onInvalid)}>
       <div className="page-header">
         <div className="page-title">
-          <span className="step-num">Customer Questionnaire</span>
+          <span className="step-num">AV Questionnaire</span>
           <h1>Tell us about your application</h1>
           <div className="desc">
             A few quick details to start, then the specifics of what you move. Nothing is required —
             fill in what you know. When you’re done, download the PDF and send it to your TAL engineer.
           </div>
+        </div>
+        <div className="row">
+          <button type="button" className="btn ghost" onClick={clearAll}>Clear</button>
         </div>
       </div>
 
@@ -432,7 +427,7 @@ export default function QuestionnaireForm() {
           </FormSection>
 
           {/* ── Project details (commercial / context) ── */}
-          <FormSection id="q-sec-10" sectionNum="10" title="Opportunity & contacts">
+          <FormSection id="q-sec-10" sectionNum="10" title="Opportunity">
             <div className="fld-grid-3">
               <div className="fld"><label>Project / opportunity name</label><input {...register('projectName')} /></div>
               <div className="fld">
@@ -464,13 +459,22 @@ export default function QuestionnaireForm() {
               {cadAvailable && <div className="fld"><label>CAD notes</label><input {...register('cadNotes')} placeholder="Format, what’s included…" /></div>}
               <div className="fld"><label>Your role</label><input {...register('customerContactRole')} /></div>
               <div className="fld"><label>Your phone</label><input {...register('customerContactPhone')} /></div>
+            </div>
+          </FormSection>
+
+          <FormSection id="q-sec-11" sectionNum="11" title="TAL / Toyota">
+            <div className="fld-grid-3">
+              <div className="fld"><label>TAL representative</label><input {...register('talRepName')} /></div>
               <div className="fld"><label>Dealer / OEM</label><input {...register('oemDealer')} /></div>
               <div className="fld"><label>Dealership name</label><input {...register('dealershipName')} /></div>
               <div className="fld"><label>Dealer rep</label><input {...register('dealerRep')} /></div>
             </div>
+            <div className="fld-grid-2">
+              <div className="fld span-2"><label>History with TAL / Toyota</label><textarea {...register('talHistory')} placeholder="Existing fleet, prior projects, current relationship…" /></div>
+            </div>
           </FormSection>
 
-          <FormSection id="q-sec-11" sectionNum="11" title="Why & how it’s done today">
+          <FormSection id="q-sec-12" sectionNum="12" title="Why & how it’s done today">
             <div className="fld-grid-4">
               <div className="fld span-4">
                 <label>Why are you automating?</label>
@@ -485,7 +489,7 @@ export default function QuestionnaireForm() {
             </div>
           </FormSection>
 
-          <FormSection id="q-sec-12" sectionNum="12" title="Anything else">
+          <FormSection id="q-sec-13" sectionNum="13" title="Anything else">
             <div className="fld-grid-4">
               <div className="fld span-4"><label>Notes</label><textarea {...register('projectNotes')} placeholder="Anything that would help us understand the application" /></div>
             </div>
@@ -494,11 +498,10 @@ export default function QuestionnaireForm() {
       </div>
 
       <div className="q-actions">
-        <button type="submit" className="btn primary" disabled={busy}>
-          {busy ? 'Preparing…' : 'Download questionnaire (PDF)'}
+        <button type="submit" className="btn primary q-submit-big" disabled={busy}>
+          <Icon name="download" size={16} /> {busy ? 'Preparing…' : 'Download my AV Questionnaire'}
         </button>
-        <button type="button" className="btn ghost" onClick={downloadJson}>Download JSON</button>
-        <button type="button" className="btn ghost" onClick={clearAll}>Clear</button>
+        <span className="q-actions-note">A single PDF to send to your TAL engineer.</span>
         {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Downloaded — send the PDF to your TAL engineer.</span>}
         {invalidMsg && <span className="q-status q-status-bad"><Icon name="warn" size={14} /> {invalidMsg}</span>}
       </div>

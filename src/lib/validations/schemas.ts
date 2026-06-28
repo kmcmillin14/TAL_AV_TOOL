@@ -202,6 +202,7 @@ export const projectSchema = z.object({
   talRepName: z.string().optional(),
   talRepEmail: z.string().optional(),
   talRepPhone: z.string().optional(),
+  talHistory: z.string().optional(),
 
   // Section 13
   projectNotes: z.string().optional(),

@@ -12,6 +12,11 @@
 - IA pass: regrouped into 3 tiers (Getting started → Your application → Project details). Top is
   now light — trimmed "About you" to essentials and moved the vehicle picker to #2; commercial +
   extended contact/dealer fields moved to a "Opportunity & contacts" section near the end.
+- Renamed to **AV Questionnaire** (brand bar + header). **Clear** button moved to the top-right of
+  the header. Single, clear export — one "Download my AV Questionnaire" PDF button (JSON embedded
+  silently; removed the customer-facing JSON download). New **TAL / Toyota** section on its own
+  (TAL rep, history with TAL/Toyota, dealers) via new optional `talHistory` field; dealer + TAL rep
+  moved out of "About you"/"Opportunity" into it.
 - Added a **Clear** button (wipes the form + draft, with confirm). Facility location is now an
   **address finder** with type-ahead suggestions (OpenStreetMap/Nominatim, no key; degrades to
   plain typing). TAL rep is a single box (no TAL email/phone). Removed IT contact. Specialty
