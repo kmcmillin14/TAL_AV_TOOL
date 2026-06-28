@@ -48,12 +48,10 @@ export const CERTIFICATIONS = [
 export const SPECIALTY_APPLICATIONS = [
   'Trailer loading',
   'Trailer unloading',
-  'High reach / racking',
-  'Floor-to-floor',
-  'Long-haul transport',
-  'Conveyor interface',
-  'Outdoor / yard',
-  'Other',
+  'High reach',
+  'VNA',
+  'Outdoor',
+  'Freezer',
 ] as const
 
 /** Why the customer is automating — drives the questionnaire's driver chips. */

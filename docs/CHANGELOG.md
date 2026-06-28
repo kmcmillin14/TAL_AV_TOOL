@@ -12,6 +12,10 @@
 - IA pass: regrouped into 3 tiers (Getting started → Your application → Project details). Top is
   now light — trimmed "About you" to essentials and moved the vehicle picker to #2; commercial +
   extended contact/dealer fields moved to a "Opportunity & contacts" section near the end.
+- Added a **Clear** button (wipes the form + draft, with confirm). Facility location is now an
+  **address finder** with type-ahead suggestions (OpenStreetMap/Nominatim, no key; degrades to
+  plain typing). TAL rep is a single box (no TAL email/phone). Removed IT contact. Specialty
+  applications list set to: Trailer loading · Trailer unloading · High reach · VNA · Outdoor · Freezer.
 
 ## 2026-06-28 — Customer questionnaire: schema sales fields
 

@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import FormSection from '@/src/components/step1/FormSection'
 import Icon from '@/src/design-system/components/Icon'
 import VehiclePicker from './VehiclePicker'
+import AddressInput from './AddressInput'
 import QuestionnaireNav, { type QSection } from './QuestionnaireNav'
 import {
   partialProjectSchema, projectSchema, type PartialProjectFormData,
@@ -28,6 +29,11 @@ const OPERATING_DAYS = ['Mon–Fri', 'Mon–Sat', 'Mon–Sun', 'Custom']
 const PICK_DROP = ['Floor', 'Rack', 'Conveyor', 'Trailer', 'Machine', 'Other']
 const HEIGHT_TRANSFER = new Set(TRANSFER_TYPE_OPTIONS.filter(o => o.needsHeight).map(o => o.value))
 
+// Empty defaults — array fields seeded so chips/picker controllers start defined.
+const EMPTY_VALUES: PartialProjectFormData = {
+  projectDrivers: [], specialtyApplications: [], certifications: [], interlocks: [], vehiclesOfInterest: [],
+}
+
 // Three tiers: start light (who + what they're drawn to), then the application
 // scoping an apps engineer actually needs, then commercial/context detail last.
 const TIER_START = 'Getting started'
@@ -38,7 +44,7 @@ const TIER_DETAILS = 'Project details'
 // per-section "started" progress meter.
 const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-01', num: '01', short: 'About you', tier: TIER_START,
-    fields: ['customerName', 'facilityLocation', 'customerContactName', 'customerContactEmail', 'talRepName', 'talRepEmail'] },
+    fields: ['customerName', 'facilityLocation', 'customerContactName', 'customerContactEmail', 'talRepName'] },
   { id: 'q-sec-02', num: '02', short: 'Vehicles', tier: TIER_START,
     fields: ['vehiclesOfInterest', 'vehicleInMind'] },
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
@@ -48,7 +54,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-05', num: '05', short: 'Where it runs', tier: TIER_APP,
     fields: ['minAisleWidthFt', 'floorCondition', 'outdoorRequired', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
   { id: 'q-sec-06', num: '06', short: 'Site readiness', tier: TIER_APP,
-    fields: ['facilitySizeSqFt', 'dockDoors', 'networkReady', 'itContact', 'siteWalkthroughAvailable'] },
+    fields: ['facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable'] },
   { id: 'q-sec-07', num: '07', short: 'Throughput', tier: TIER_APP,
     fields: ['requiredThroughputPerHour', 'peakThroughputPerHour', 'avgDistanceFt', 'distanceType'] },
   { id: 'q-sec-08', num: '08', short: 'Schedule', tier: TIER_APP,
@@ -56,7 +62,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
     fields: ['certifications', 'interlocks', 'wmsRequired', 'wmsVendor'] },
   { id: 'q-sec-10', num: '10', short: 'Opportunity', tier: TIER_DETAILS,
-    fields: ['projectName', 'projectStage', 'isRfq', 'rfqNumber', 'rfqDueDate', 'budgetStatus', 'budgetRange', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactRole', 'customerContactPhone', 'talRepPhone', 'oemDealer', 'dealershipName', 'dealerRep'] },
+    fields: ['projectName', 'projectStage', 'isRfq', 'rfqNumber', 'rfqDueDate', 'budgetStatus', 'budgetRange', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactRole', 'customerContactPhone', 'oemDealer', 'dealershipName', 'dealerRep'] },
   { id: 'q-sec-11', num: '11', short: 'Why & today', tier: TIER_DETAILS,
     fields: ['projectDrivers', 'currentProcess', 'existingAutomation', 'volumeGrowthNote', 'seasonalityNote'] },
   { id: 'q-sec-12', num: '12', short: 'Notes', tier: TIER_DETAILS,
@@ -95,7 +101,7 @@ export default function QuestionnaireForm() {
   const [invalidMsg, setInvalidMsg] = useState<string | null>(null)
   const { register, handleSubmit, control, reset, getValues, watch } = useForm<PartialProjectFormData>({
     resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
-    defaultValues: { projectDrivers: [], specialtyApplications: [], certifications: [], interlocks: [], vehiclesOfInterest: [] },
+    defaultValues: EMPTY_VALUES,
   })
 
   // Restore a previously-saved draft (validated; corrupt/stale shapes dropped).
@@ -123,7 +129,6 @@ export default function QuestionnaireForm() {
   const cadAvailable = values.cadAvailable
   const budgetStatus = values.budgetStatus
   const transferType = values.transferType
-  const networkReady = values.networkReady
   const wmsRequired = values.wmsRequired
   const unitType = values.typicalUnitType
   const showHeight = !!transferType && HEIGHT_TRANSFER.has(transferType)
@@ -141,6 +146,13 @@ export default function QuestionnaireForm() {
     const names = Object.keys(errors).map(k => FIELD_LABELS[k] ?? k)
     setInvalidMsg(`Please check these fields: ${names.join(', ')}`)
   }, [])
+
+  const clearAll = useCallback(() => {
+    if (!window.confirm('Clear all answers? This cannot be undone.')) return
+    reset(EMPTY_VALUES)
+    try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
+    setSubmitted(false); setInvalidMsg(null)
+  }, [reset])
 
   const downloadJson = useCallback(() => {
     const blob = questionnaireJsonBlob(getValues())
@@ -200,11 +212,16 @@ export default function QuestionnaireForm() {
           <FormSection id="q-sec-01" sectionNum="01" title="About you">
             <div className="fld-grid-3">
               <div className="fld"><label>Customer / company</label><input {...register('customerName')} /></div>
-              <div className="fld"><label>Facility location</label><input {...register('facilityLocation')} placeholder="City, State" /></div>
+              <div className="fld span-2">
+                <label>Facility location</label>
+                <Controller control={control} name="facilityLocation" render={({ field }) => (
+                  <AddressInput value={field.value ?? ''} onChange={field.onChange} placeholder="Start typing an address…" />
+                )} />
+                <div className="help">Start typing — pick a suggestion to auto-fill</div>
+              </div>
               <div className="fld"><label>Your name</label><input {...register('customerContactName')} /></div>
               <div className="fld"><label>Your email</label><input type="email" {...register('customerContactEmail')} /></div>
               <div className="fld"><label>TAL representative</label><input {...register('talRepName')} /></div>
-              <div className="fld"><label>TAL email</label><input type="email" {...register('talRepEmail')} /></div>
             </div>
             <div className="help" style={{ marginTop: 12 }}>More contact &amp; commercial details come at the end — start with the essentials.</div>
           </FormSection>
@@ -349,7 +366,6 @@ export default function QuestionnaireForm() {
               <div className="fld"><label>Facility size (sq ft)</label><input type="number" className="mono" {...register('facilitySizeSqFt', { setValueAs: emptyToNum })} /></div>
               <div className="fld"><label>Dock doors</label><input type="number" className="mono" {...register('dockDoors', { setValueAs: emptyToNum })} /></div>
               <div className="fld"><label>Network / WiFi ready?</label><YesNo name="networkReady" /></div>
-              {networkReady && <div className="fld"><label>IT contact</label><input {...register('itContact')} /></div>}
               <div className="fld"><label>Site walkthrough available?</label><YesNo name="siteWalkthroughAvailable" /></div>
             </div>
           </FormSection>
@@ -448,7 +464,6 @@ export default function QuestionnaireForm() {
               {cadAvailable && <div className="fld"><label>CAD notes</label><input {...register('cadNotes')} placeholder="Format, what’s included…" /></div>}
               <div className="fld"><label>Your role</label><input {...register('customerContactRole')} /></div>
               <div className="fld"><label>Your phone</label><input {...register('customerContactPhone')} /></div>
-              <div className="fld"><label>TAL phone</label><input {...register('talRepPhone')} /></div>
               <div className="fld"><label>Dealer / OEM</label><input {...register('oemDealer')} /></div>
               <div className="fld"><label>Dealership name</label><input {...register('dealershipName')} /></div>
               <div className="fld"><label>Dealer rep</label><input {...register('dealerRep')} /></div>
@@ -483,6 +498,7 @@ export default function QuestionnaireForm() {
           {busy ? 'Preparing…' : 'Download questionnaire (PDF)'}
         </button>
         <button type="button" className="btn ghost" onClick={downloadJson}>Download JSON</button>
+        <button type="button" className="btn ghost" onClick={clearAll}>Clear</button>
         {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Downloaded — send the PDF to your TAL engineer.</span>}
         {invalidMsg && <span className="q-status q-status-bad"><Icon name="warn" size={14} /> {invalidMsg}</span>}
       </div>

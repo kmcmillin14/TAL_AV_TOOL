@@ -101,7 +101,6 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Customer contact', [p.customerContactName, p.customerContactRole].filter(Boolean).join(' — '))
   row('Customer email / phone', [p.customerContactEmail, p.customerContactPhone].filter(Boolean).join('  ·  '))
   row('TAL representative', p.talRepName)
-  row('TAL email / phone', [p.talRepEmail, p.talRepPhone].filter(Boolean).join('  ·  '))
   row('Dealer', [p.oemDealer, p.dealershipName, p.dealerRep].filter(Boolean).join(' — '))
 
   sec('Opportunity')
@@ -145,7 +144,6 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Dock doors', p.dockDoors)
   row('Min aisle width', p.minAisleWidthFt != null ? `${p.minAisleWidthFt} ft` : null)
   row('Network ready', p.networkReady)
-  row('IT contact', p.itContact)
   row('Site walkthrough available', p.siteWalkthroughAvailable)
   row('Min temperature', p.tempMinF != null ? `${p.tempMinF}°F` : null)
   row('Max temperature', p.tempMaxF != null ? `${p.tempMaxF}°F` : null)
