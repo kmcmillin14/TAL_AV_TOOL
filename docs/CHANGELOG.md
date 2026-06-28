@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-06-28 — Questionnaire: customer-first rewrite (vehicle picker, scoping fields, scroller)
+
+- Customer questionnaire reorganized into 12 sections (two tiers) with a sticky section
+  scroller matching Step 1 (progress meter + click-to-scroll + active highlight).
+- Added a visual **vehicle-interest picker** (image + name + type + unit load + max capacity)
+  backed by new `vehiclesOfInterest` field; plus `pickContext`/`dropContext` (where loads are
+  picked/dropped) and `peakThroughputPerHour` (peak vs. average). All optional/informational.
+- Plain-language labels throughout; split the overloaded environment section into Environment
+  + Site readiness. PDF export prints the new fields.
+
 ## 2026-06-28 — Customer questionnaire: schema sales fields
 
 - Customer questionnaire: added optional opportunity/sales fields to projectSchema

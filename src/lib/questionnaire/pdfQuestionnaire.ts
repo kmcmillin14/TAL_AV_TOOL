@@ -122,8 +122,10 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Seasonality', p.seasonalityNote)
   row('Existing automation', p.existingAutomation)
 
-  sec('Specialty applications of interest')
-  row('Applications', p.specialtyApplications)
+  sec('What you’re interested in')
+  row('Specialty applications', p.specialtyApplications)
+  row('Vehicles of interest', (p.vehiclesOfInterest ?? []).length ? p.vehiclesOfInterest : null)
+  row('Other / not listed', p.vehicleInMind)
 
   sec('What you move')
   row('Unit / load type', p.typicalUnitType ?? (p.loads?.[0]?.unitType))
@@ -132,7 +134,9 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
     ? [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].map(d => d != null ? `${d} in` : '—').join(' × ')
     : null)
 
-  sec('How it is transferred')
+  sec('How loads are handled')
+  row('Pick loads up from', p.pickContext)
+  row('Set loads down at', p.dropContext)
   row('Transfer type', p.transferType)
   row('Transfer height', p.transferHeightFt != null ? `${p.transferHeightFt} ft` : null)
 
@@ -152,7 +156,8 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Operating days', p.operatingDaysPattern)
 
   sec('Throughput')
-  row('Required throughput', p.requiredThroughputPerHour ? `${p.requiredThroughputPerHour} moves/hr` : null)
+  row('Average throughput', p.requiredThroughputPerHour ? `${p.requiredThroughputPerHour} moves/hr` : null)
+  row('Peak throughput', p.peakThroughputPerHour ? `${p.peakThroughputPerHour} moves/hr` : null)
   row('Average distance', p.avgDistanceFt ? `${p.avgDistanceFt} ft` : null)
 
   sec('Notes')

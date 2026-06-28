@@ -3788,3 +3788,35 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
    width. Scoped via the brand bar's adjacent sibling so it never touches the
    main app's .workspace (every step page is also .app-shell > .workspace). */
 .q-brandbar + .workspace { max-width: 1180px; margin: 0 auto; padding-top: 28px; }
+
+/* Section scroller offset: the standalone page has only the ~60px brand bar
+   (not Step 1's tall hero), so the sticky rail sits near the top. */
+.q-page-nav .section-nav { top: 24px; max-height: calc(100vh - 48px); }
+
+/* Vehicle-interest picker — image cards, multi-select (mirrors Step 2 cards). */
+.veh-pick-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 6px;
+}
+.veh-pick-card {
+  position: relative; display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  padding: 12px; text-align: left; cursor: pointer;
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 8px;
+  transition: border-color 0.12s, background 0.12s;
+}
+.veh-pick-card:hover { border-color: var(--border-strong); }
+.veh-pick-card.on { border-color: var(--accent); background: var(--accent-soft); }
+.veh-pick-check {
+  position: absolute; top: 8px; right: 8px; width: 18px; height: 18px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border-strong); border-radius: 5px; background: var(--bg-surface); color: transparent;
+}
+.veh-pick-card.on .veh-pick-check { background: var(--accent); border-color: var(--accent); color: #fff; }
+.veh-pick-img {
+  width: 100%; aspect-ratio: 16 / 9; object-fit: contain; margin-bottom: 6px;
+  background: var(--bg-surface-2, var(--bg-hover)); border-radius: 6px;
+}
+.veh-pick-name { font-family: var(--tal-font-family); font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.veh-pick-cat { font-family: var(--tal-font-numeric); font-size: 12px; font-weight: 600; color: var(--accent); }
+.veh-pick-meta { font-size: 12px; color: var(--text-tertiary); font-variant-numeric: tabular-nums; }
+@media (max-width: 900px) { .veh-pick-grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 600px) { .veh-pick-grid { grid-template-columns: 1fr; } }

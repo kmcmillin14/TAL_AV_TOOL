@@ -52,8 +52,20 @@ Calculator project without requiring the customer to access the main application
 main app — it imports no storage, calc engine, or step internals. This keeps the split clean:
 the questionnaire can be deployed as a separate artifact if needed.
 
+**Layout.** The form is organized into 12 sections across two tiers ("Your project",
+"Your application") with a sticky **section scroller** (the same component pattern as Step 1:
+progress meter + click-to-scroll + active-section highlight). Labels use plain customer
+language; sections reveal follow-up fields conditionally (RFQ→number/date, budget→range,
+CAD→notes, forklift/lift-table→transfer height, network→IT contact, WMS→vendor).
+
 **What it captures.** The form collects all project-level Step 1 inputs plus a rich set of
 opportunity and sales context:
+
+- A **visual vehicle-interest picker** — image cards for the TAL vehicles (name, category,
+  typical load, max capacity), multi-select, stored as `vehiclesOfInterest` (with a free-text
+  "other / not listed" fallback)
+- Where loads are picked up and set down (`pickContext` / `dropContext`), and peak vs. average
+  throughput (`peakThroughputPerHour` / `requiredThroughputPerHour`)
 
 - Vehicle in mind, RFQ flag + number + due date, CAD availability
 - Project stage, budget status and range, decision date and target go-live date

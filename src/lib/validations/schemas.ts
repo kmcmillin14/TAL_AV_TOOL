@@ -170,6 +170,10 @@ export const projectSchema = z.object({
 
   // ---- Customer questionnaire: opportunity / sales context (informational only) ----
   vehicleInMind: z.string().optional(),
+  vehiclesOfInterest: z.array(z.string()).default([]),
+  pickContext: z.string().optional(),
+  dropContext: z.string().optional(),
+  peakThroughputPerHour: z.number().int().min(0).optional(),
   isRfq: z.boolean().optional(),
   rfqNumber: z.string().optional(),
   rfqDueDate: z.string().optional(),

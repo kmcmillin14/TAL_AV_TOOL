@@ -7,6 +7,8 @@ describe('sales / opportunity schema fields', () => {
   it('parses a fully-populated sales block', () => {
     const r = partialProjectSchema.safeParse({
       vehicleInMind: 'CB18',
+      vehiclesOfInterest: ['cb18', '8tb50a'],
+      pickContext: 'Floor', dropContext: 'Rack', peakThroughputPerHour: 90,
       isRfq: true, rfqNumber: 'RFQ-42', rfqDueDate: '2026-08-01',
       cadAvailable: true, cadNotes: 'DWG attached',
       projectStage: 'budgeting', budgetStatus: 'budgetary', budgetRange: '$1-2M',
