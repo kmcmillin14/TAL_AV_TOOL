@@ -9,6 +9,9 @@
   picked/dropped) and `peakThroughputPerHour` (peak vs. average). All optional/informational.
 - Plain-language labels throughout; split the overloaded environment section into Environment
   + Site readiness. PDF export prints the new fields.
+- IA pass: regrouped into 3 tiers (Getting started → Your application → Project details). Top is
+  now light — trimmed "About you" to essentials and moved the vehicle picker to #2; commercial +
+  extended contact/dealer fields moved to a "Opportunity & contacts" section near the end.
 
 ## 2026-06-28 — Customer questionnaire: schema sales fields
 
