@@ -25,10 +25,18 @@ export async function parseProjectPdf(file: File): Promise<StoredProject> {
   // until a user actually imports a PDF.
   const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
 
+  // pdf.js needs a worker in the browser. v5 dropped the old `disableWorker`
+  // option, and the default workerSrc ("./pdf.worker.mjs") 404s under the app
+  // bundler — so point it at the version-matched worker copied into public/ by
+  // scripts/copy-pdf-worker.mjs (predev/prebuild). Only in the browser: in
+  // Node/tests there's no `window` and pdf.js uses an in-process worker.
+  if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
+  }
+
   let doc: { getAttachments(): Promise<Record<string, PdfAttachment> | undefined | null> }
   try {
-    // disableWorker is a runtime option not yet in the public type defs.
-    const params = { data: buf, disableWorker: true } as Parameters<typeof pdfjsLib.getDocument>[0]
+    const params = { data: buf } as Parameters<typeof pdfjsLib.getDocument>[0]
     doc = await pdfjsLib.getDocument(params).promise
   } catch {
     throw new Error("Couldn't open the PDF — the file may be corrupt or password-protected.")

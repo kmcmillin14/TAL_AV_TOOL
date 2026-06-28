@@ -12,6 +12,10 @@
 - Step 00 "Import Customer Questionnaire" now accepts the questionnaire **PDF** (with embedded
   JSON) in addition to .json — the questionnaire's primary output is a PDF. Both import cards
   accept .pdf/.json; removed the now-redundant per-mode accept filter + dead importMode state.
+- Fixed PDF import in the browser: pdf.js v5 dropped the `disableWorker` option, so the default
+  worker 404'd under the bundler and every PDF import failed ("Couldn't open the PDF"). Now the
+  version-matched worker is copied to `public/pdf.worker.min.mjs` (predev/prebuild) and
+  `GlobalWorkerOptions.workerSrc` points at it. Affected all PDF import, not just questionnaires.
 
 ## 2026-06-26 — Charging: 85% charge-efficiency derate (safety margin)
 
