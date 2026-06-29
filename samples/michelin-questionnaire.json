@@ -44,8 +44,7 @@
     "avgDistanceFt": 320,
     "distanceType": "one_way",
     "flows": [
-      { "id": "f_unload", "origin": "Inbound Dock", "destination": "Reserve Rack A", "distanceFt": 280, "thruPerHr": 45, "routeLayout": "medium", "liftHeightFt": 18 },
-      { "id": "f_replen", "origin": "Reserve Rack A", "destination": "Pick Face", "distanceFt": 360, "thruPerHr": 35, "routeLayout": "medium", "liftHeightFt": 6 }
+      { "id": "f_unload", "origin": "Inbound Trailer", "destination": "Reserve Rack", "distanceFt": 300, "thruPerHr": 55, "routeLayout": "medium", "liftHeightFt": 18 }
     ],
     "certifications": ["ANSI B56.5"],
     "interlocks": ["High-Speed Doors", "Conveyors"],
@@ -56,12 +55,12 @@
     "decisionDate": "2026-09-30",
     "targetGoLiveDate": "2027-04-01",
     "projectDrivers": ["Labor availability", "Throughput / capacity", "Safety"],
-    "currentProcess": "Manual sit-down forklifts unload trailers and put away to racking across two shifts; seasonal peaks strain staffing.",
+    "currentProcess": "Manual sit-down forklifts unload inbound trailers and put pallets away to reserve racking; seasonal peaks strain staffing.",
     "existingAutomation": "None on the floor today; an AS/RS runs in an adjacent building.",
     "volumeGrowthNote": "~8%/yr; new EV tire lines are expanding SKUs.",
     "seasonalityNote": "Spring and fall demand peaks.",
     "currentToyotaForklifts": "~15 Toyota sit-down counterbalance + 6 reach trucks",
     "talHistory": "Long-standing Toyota lift-truck fleet; this is their first AGV/AMR evaluation.",
-    "projectNotes": "Pilot scope = trailer unload + reserve putaway; expand to replenishment if the ROI lands."
+    "projectNotes": "Pilot scope = trailer unload to reserve racking only (no outbound trailer loading, no replenishment)."
   }
 }

@@ -12,9 +12,10 @@ import it into the **app** and size a fleet. Uses a realistic Michelin distribut
 
 ## The scenario
 
-Michelin's Greenville, SC distribution center wants to pilot AGVs to **unload trailers and put
-pallets of tires away into reserve racking**. Three shifts, six days, seasonal peaks, a long-standing
-Toyota lift-truck fleet but no AGVs yet.
+Michelin's Greenville, SC distribution center wants to pilot AGVs for **one move: unload inbound
+trailers and put pallets of tires away into reserve racking** (trailer → rack only — no outbound
+trailer loading, no replenishment). Three shifts, six days, seasonal peaks, a long-standing Toyota
+lift-truck fleet but no AGVs yet.
 
 ## Part 1 — Fill out the questionnaire (play the customer)
 
@@ -39,8 +40,7 @@ as you answer (e.g. RFQ, CAD, WMS).
 | **05 Where it runs** | Narrowest aisle | 11 ft · Floor: Smooth · Indoor · Ambient |
 | **06 Site readiness** | Facility size / dock doors | 480,000 sq ft / 32 · Network ready: Yes · Walkthrough: Yes |
 | **07 Throughput & flows** | Mode | Per-flow detail |
-| | Flow 1 | Inbound Dock → Reserve Rack A · 280 ft · 45/hr |
-| | Flow 2 | Reserve Rack A → Pick Face · 360 ft · 35/hr |
+| | Flow (only one) | Inbound Trailer → Reserve Rack · 300 ft · 55/hr |
 | **08 Schedule** | Shifts / hours / days | 3 / 8 / Mon–Sat · 2 breaks × 20 min |
 | **10 Opportunity** | Stage / budget | Budgeting / $1.5M–$3M |
 | | Decision / go-live | 2026-09-30 / 2027-04-01 |
@@ -62,13 +62,13 @@ embedded inside it). That PDF is what a real customer would email back.
    flows). Note the TAL rep / install date carried over from the questionnaire.
 4. **Step 2 — Vehicle matrix:** see which vehicles qualify (green / yellow / red) for a 2,200 lb
    pallet lifted to 18 ft. CB18 should qualify; note why others don't.
-5. **Step 3 — Fleet Engine:** the two flows are already there. Assign a vehicle per flow and watch
-   the cycle-time + fleet count update. (The engineer assigns vehicles here — never the customer.)
+5. **Step 3 — Fleet Engine:** the trailer → rack flow is already there. Assign a vehicle to it and
+   watch the cycle-time + fleet count update. (The engineer assigns vehicles here — never the customer.)
 6. **Step 4 — ROM dashboard:** review fleet size, CAPEX range, payback, and the assumptions panel.
    Try the throughput-scenario driver and full-screen a tile.
 
 ## Discussion points
-- Where did **per-flow** detail change the answer vs a single average throughput?
+- For a single trailer → rack flow, how close is the **per-flow** number to the simple average?
 - How did **18 ft high reach** + **2,200 lb** narrow the vehicle matrix?
 - What did the questionnaire **not** capture that the engineer had to add (operators, ROM economics)?
 - How would **3 shifts × 6 days** affect the charging adder and the recommended fleet?
