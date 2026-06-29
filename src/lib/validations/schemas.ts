@@ -50,7 +50,7 @@ export const projectSchema = z.object({
   opportunityType: z.enum(['opp', 'lead']).optional(),
 
   // Section 1
-  loads: z.array(loadSchema).default([]),
+  loads: z.array(loadSchema).max(100).default([]),
   // Legacy singular load fields — kept for back-compat (old exports/parsers);
   // mirrored from loads[0] on save, synthesized into a load on read when
   // `loads` is empty (see effectiveLoads in src/lib/appRequirements.ts).
@@ -108,15 +108,15 @@ export const projectSchema = z.object({
   dealerRep: z.string().optional(),
 
   // Section 9
-  certifications: z.array(z.string()).default([]),
+  certifications: z.array(z.string()).max(50).default([]),
 
   // Section 10
-  interlocks: z.array(z.string()).default([]),
-  flows: z.array(flowSchema).default([]),
+  interlocks: z.array(z.string()).max(50).default([]),
+  flows: z.array(flowSchema).max(500).default([]),
   /** Ordered list of Step 3 group (zone) names, e.g. "ASRS", "Dock". Visual
    *  organization only — fleet sizing pools per vehicleId, not per group.
    *  Flows reference a group via flowSchema.sectionName. */
-  flowGroups: z.array(z.string()).default([]),
+  flowGroups: z.array(z.string()).max(100).default([]),
   /** Optional per-group color override, keyed by group name. Absent name → the
    *  deterministic sectionColor(name) hash is used. Visual only. */
   flowGroupColors: z.record(z.string(), z.string()).default({}),
@@ -170,7 +170,7 @@ export const projectSchema = z.object({
 
   // ---- Customer questionnaire: opportunity / sales context (informational only) ----
   vehicleInMind: z.string().optional(),
-  vehiclesOfInterest: z.array(z.string()).default([]),
+  vehiclesOfInterest: z.array(z.string()).max(50).default([]),
   pickContext: z.string().optional(),
   dropContext: z.string().optional(),
   peakThroughputPerHour: z.number().int().min(0).optional(),
@@ -184,7 +184,7 @@ export const projectSchema = z.object({
   budgetRange: z.string().optional(),
   decisionDate: z.string().optional(),
   targetGoLiveDate: z.string().optional(),
-  projectDrivers: z.array(z.string()).default([]),
+  projectDrivers: z.array(z.string()).max(50).default([]),
   currentProcess: z.string().optional(),
   volumeGrowthNote: z.string().optional(),
   seasonalityNote: z.string().optional(),
@@ -194,7 +194,7 @@ export const projectSchema = z.object({
   itContact: z.string().optional(),
   existingAutomation: z.string().optional(),
   siteWalkthroughAvailable: z.boolean().optional(),
-  specialtyApplications: z.array(z.string()).default([]),
+  specialtyApplications: z.array(z.string()).max(50).default([]),
   customerContactName: z.string().optional(),
   customerContactRole: z.string().optional(),
   customerContactEmail: z.string().optional(),

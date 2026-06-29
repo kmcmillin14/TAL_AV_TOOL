@@ -4,7 +4,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 import type { UnitSystem } from '@/src/lib/utils/units'
-import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
+import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects, subscribeStorageError, type StoredProject } from '@/src/lib/storage'
 import { useTheme } from '@/src/lib/uiPrefs'
 import HelpDrawer from './HelpDrawer'
 import AppVersionLog from './AppVersionLog'
@@ -190,6 +190,9 @@ export default function PersistentHeader({
     // (this header's saves/undo/clear, sibling-step saves, cross-tab changes).
     return subscribeProjects(refresh)
   }, [project.id])
+
+  // A failed disk write (quota/serialization) must not read as "Saved ✓" — surface it.
+  useEffect(() => subscribeStorageError(() => setSaveStatus('error')), [])
 
   // Warm every step route + the vehicle library so step-dot navigation is
   // instant. router.prefetch on a non-current route triggers Next.js to

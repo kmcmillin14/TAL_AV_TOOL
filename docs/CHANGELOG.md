@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-06-28 — Hardening: multi-tab data integrity + import bounds (review stages A+B)
+
+- **Storage A (data integrity, multi-tab):** the cross-tab `storage` event now reconciles
+  **per project** (newest `updatedAt` wins) instead of dropping the cache, so two tabs editing
+  different projects no longer clobber each other and an unflushed edit isn't lost. `flush()` now
+  reports success/failure: a failed disk write (quota/serialization) keeps `dirty`, is **not**
+  reported as "Saved," and is surfaced via the new `subscribeStorageError` (the header flips to
+  "Save failed"). New pure `mergeProjects` helper (unit-tested).
+- **Import B (DoS bounds on untrusted input):** 25 MB upload cap before parsing (PDF + JSON, in
+  Step 00 and `parseProjectPdf`); 8 MB JSON-text cap in `importProjectFromJson`; stricter
+  `schemaVersion` guard (must be a positive integer); `.max()` bounds on user arrays
+  (flows 500, loads 100, certifications/interlocks/drivers/specialty/vehicles 50, flowGroups 100)
+  so a crafted import can't freeze the UI or blow the quota.
+
 ## 2026-06-28 — Version-history redesign, button standardization, repo cleanup
 
 - Redesigned the Version history modal: timeline layout (marker dots + connector line), icon close

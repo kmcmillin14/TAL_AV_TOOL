@@ -14,9 +14,16 @@ interface PdfAttachment {
  * Throws user-facing error strings for each failure mode so the caller
  * can surface them as-is.
  */
+/** Reject oversized uploads before pdf.js loads the whole file into memory and
+ *  parses it on the main thread (a giant/malformed PDF could freeze the tab). */
+const MAX_PDF_BYTES = 25 * 1024 * 1024
+
 export async function parseProjectPdf(file: File): Promise<StoredProject> {
   if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
     throw new Error('Selected file is not a PDF.')
+  }
+  if (file.size > MAX_PDF_BYTES) {
+    throw new Error('This PDF is too large to import (max 25 MB).')
   }
 
   const buf = new Uint8Array(await file.arrayBuffer())

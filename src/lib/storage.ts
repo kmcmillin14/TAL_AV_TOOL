@@ -118,24 +118,77 @@ function notify(): void {
   for (const cb of listeners) cb()
 }
 
-function readAll(): StoredProject[] {
-  if (cache) return cache
+/** Parse the persisted array straight from localStorage (no cache). One corrupt
+ *  blob falls back to [] rather than throwing. */
+function readDisk(): StoredProject[] {
   if (typeof window === 'undefined') return []
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
     const parsed = raw ? JSON.parse(raw) : []
-    cache = Array.isArray(parsed) ? parsed : []
+    return Array.isArray(parsed) ? parsed : []
   } catch {
-    cache = []
+    return []
   }
+}
+
+function readAll(): StoredProject[] {
+  if (cache) return cache
+  cache = readDisk()
   return cache
 }
 
-function flush(): void {
+/** Reconcile another tab's persisted array with our in-memory copy, PER PROJECT:
+ *  the newer updatedAt wins; ties keep ours (we may hold unflushed edits). This
+ *  prevents the whole-array clobber where one tab's write erased another tab's
+ *  edits to a *different* project. Exported for unit tests. */
+export function mergeProjects(local: StoredProject[], disk: StoredProject[]): StoredProject[] {
+  const byId = new Map<string, StoredProject>()
+  for (const p of disk) if (p && typeof p.id === 'string') byId.set(p.id, p)
+  for (const p of local) {
+    if (!p || typeof p.id !== 'string') continue
+    const other = byId.get(p.id)
+    if (!other || (p.updatedAt ?? '') >= (other.updatedAt ?? '')) byId.set(p.id, p)
+  }
+  return [...byId.values()]
+}
+
+// Surface persistence failures (quota, serialization) so the UI can warn instead
+// of falsely reporting "Saved" — the in-memory cache always succeeds; the disk
+// write may not.
+let lastStorageError: string | null = null
+const errorListeners = new Set<(msg: string) => void>()
+export function subscribeStorageError(cb: (msg: string) => void): () => void {
+  errorListeners.add(cb)
+  return () => { errorListeners.delete(cb) }
+}
+export function getStorageError(): string | null { return lastStorageError }
+function notifyStorageError(msg: string): void {
+  lastStorageError = msg
+  for (const cb of errorListeners) cb(msg)
+}
+
+function scheduleFlush(): void {
+  if (typeof window === 'undefined' || flushTimer) return
+  flushTimer = setTimeout(flush, 300)
+}
+
+/** Persist the cache to localStorage. Returns false (and KEEPS `dirty`) if the
+ *  write fails, so pending data isn't silently dropped and the UI can warn. */
+function flush(): boolean {
   if (flushTimer) { clearTimeout(flushTimer); flushTimer = null }
-  if (!dirty || cache == null || typeof window === 'undefined') return
-  try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cache)) } catch { /* quota */ }
+  if (!dirty || cache == null || typeof window === 'undefined') return true
+  try {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(cache))
+  } catch (err) {
+    const quota = err instanceof Error && /quota|exceeded/i.test(`${err.name} ${err.message}`)
+    notifyStorageError(quota
+      ? 'Storage is full — your latest changes are NOT saved. Export this project to a file, then free up space.'
+      : 'Saving failed — your latest changes are NOT saved. Export this project to a file as a backup.')
+    return false // keep `dirty`; the next edit or page-unload retries
+  }
   dirty = false
+  lastStorageError = null
+  return true
 }
 
 // Updates the in-memory cache immediately (so the current session reads live
@@ -145,8 +198,7 @@ function writeAll(projects: StoredProject[]): void {
   cache = projects
   dirty = true
   notify()
-  if (typeof window === 'undefined') return
-  if (!flushTimer) flushTimer = setTimeout(flush, 300)
+  scheduleFlush()
 }
 
 /** Drop the in-memory cache so the next read re-parses localStorage. Used by
@@ -160,10 +212,14 @@ if (typeof window !== 'undefined') {
   // The coalesced write may still be pending when the tab closes/reloads.
   window.addEventListener('beforeunload', flush)
   window.addEventListener('pagehide', flush)
-  // Another tab wrote storage → drop our cache so the next read re-syncs.
+  // Another tab wrote storage → reconcile per project (newest wins) instead of
+  // dropping our cache, so an unflushed local edit isn't lost; re-persist if we
+  // still hold pending changes after the merge.
   window.addEventListener('storage', e => {
     if (e.key === STORAGE_KEY || e.key === null) {
-      cache = null
+      const disk = readDisk()
+      cache = cache ? mergeProjects(cache, disk) : disk
+      if (dirty) scheduleFlush()
       notify()
     }
   })
@@ -359,7 +415,14 @@ export function downloadProject(id: string): void {
   URL.revokeObjectURL(url)
 }
 
+/** ~8 MB of JSON text — far above any real project, below what blocks the main
+ *  thread. Guards against a malicious/oversized import freezing the tab. */
+const MAX_IMPORT_JSON_CHARS = 8_000_000
+
 export function importProjectFromJson(json: string): StoredProject {
+  if (json.length > MAX_IMPORT_JSON_CHARS) {
+    throw new Error('This file is too large to import.')
+  }
   const parsed = JSON.parse(json)
 
   // Detect wrapped envelope: { schemaVersion, exportedAt?, project }
@@ -373,6 +436,9 @@ export function importProjectFromJson(json: string): StoredProject {
   let rawProject: Record<string, unknown>
   if (isWrapped) {
     const version = (parsed as Record<string, number>).schemaVersion
+    if (!Number.isInteger(version) || version < 1) {
+      throw new Error('This file is not a valid project export.')
+    }
     if (version > SCHEMA_VERSION) {
       throw new Error(
         'This file was created with a newer version of the calculator. Update the app to import it.',

@@ -101,6 +101,14 @@ export default function Step0Page() {
     const file = e.target.files?.[0]
     if (!file) return
     setImportError(null)
+
+    // Reject oversized uploads before parsing — a huge PDF/JSON would freeze the tab.
+    const MAX_IMPORT_BYTES = 25 * 1024 * 1024
+    if (file.size > MAX_IMPORT_BYTES) {
+      setImportError('File is too large to import (max 25 MB).')
+      e.target.value = ''
+      return
+    }
     setImportState('loading')
 
     const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
