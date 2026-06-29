@@ -7,6 +7,16 @@ and size the fleet. The point is to feel how the tool flows from a real (slightl
 - **AV Questionnaire:** `https://REPLACE-ME-questionnaire.vercel.app/questionnaire`
 - **App:** `https://REPLACE-ME-app.vercel.app`
 
+### Your instructions (high level)
+1. **Read the RFQ** below and pull out what matters for sizing.
+2. **Open the AV Questionnaire** and capture the opportunity the way you'd scope any deal — fill what the RFQ gives you, skip what it doesn't.
+3. **Export** the questionnaire to a PDF (top-right toolbar).
+4. **Open the App → Step 00** and **Import Customer Questionnaire** (the PDF you just made).
+5. **Work the steps:** Step 1 confirm the application → Step 2 review which vehicles qualify → Step 3 assign a vehicle to the flow → Step 4 review the ROM (fleet size, price range, payback).
+6. **Form your recommendation:** vehicle, fleet size, ROM price, payback — and note anything the RFQ left unanswered that you'd ask the customer.
+
+> Don't overthink the gaps — use judgment, just like a live opportunity. There's no answer sheet.
+
 ---
 
 ## REQUEST FOR QUOTE
