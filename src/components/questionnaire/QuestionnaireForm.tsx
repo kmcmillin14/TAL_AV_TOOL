@@ -15,6 +15,7 @@ import {
   TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS,
   SPECIALTY_APPLICATIONS, PROJECT_DRIVERS,
 } from '@/src/lib/constants/enums'
+import { useTheme } from '@/src/lib/uiPrefs'
 import { downloadQuestionnairePdf } from '@/src/lib/questionnaire/pdfQuestionnaire'
 
 const DRAFT_KEY = 'tal:questionnaire-draft'
@@ -103,6 +104,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const [today] = useState(() => new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }))
   // Volume can be given as overall averages OR per-flow detail — they're redundant, so pick one.
   const [thruMode, setThruMode] = useState<'avg' | 'flows'>('avg')
+  const [theme, toggleTheme] = useTheme()
   const { register, handleSubmit, control, reset, watch } = useForm<PartialProjectFormData>({
     resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
     defaultValues: EMPTY_VALUES,
@@ -203,11 +205,16 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             fill in what you know. When you’re done, export the PDF and send it to your TAL engineer.
           </div>
         </div>
-        <div className="row" style={{ display: 'flex', gap: 8 }}>
-          <button type="submit" className="btn primary q-export-btn" disabled={busy}>
-            <Icon name="export" size={16} /> {busy ? 'Preparing…' : 'Export'}
+        <div className="row q-toolbar">
+          <button type="button" className="tbtn-icon" onClick={toggleTheme} aria-label="Toggle light/dark" title="Toggle light/dark">
+            <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
           </button>
-          <button type="button" className="btn ghost" onClick={clearAll}>Clear</button>
+          <button type="submit" className="tbtn-icon" disabled={busy} aria-label="Export PDF" title="Export PDF">
+            <Icon name="export" />
+          </button>
+          <button type="button" className="tbtn-icon" onClick={clearAll} aria-label="Clear all answers" title="Clear all answers">
+            <Icon name="trash" />
+          </button>
         </div>
       </div>
 
@@ -549,10 +556,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
       </div>
 
       <div className="q-actions">
-        <button type="submit" className="btn primary q-export-btn" disabled={busy}>
-          <Icon name="export" size={16} /> {busy ? 'Preparing…' : 'Export'}
+        <button type="submit" className="tbtn-icon" disabled={busy} aria-label="Export PDF" title="Export PDF">
+          <Icon name="export" />
         </button>
-        <span className="q-actions-note">A single PDF to send to your TAL engineer.</span>
+        <span className="q-actions-note">{busy ? 'Preparing…' : 'Export a single PDF to send to your TAL engineer.'}</span>
         {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Downloaded — send the PDF to your TAL engineer.</span>}
         {invalidMsg && <span className="q-status q-status-bad"><Icon name="warn" size={14} /> {invalidMsg}</span>}
       </div>
