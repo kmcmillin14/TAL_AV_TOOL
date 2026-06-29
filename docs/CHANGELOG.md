@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-06-29 — Standalone questionnaire deployment gate (Vercel)
+
+- Added `proxy.ts` (Next 16 middleware): when `QUESTIONNAIRE_ONLY=1`, the deployment serves only
+  `/questionnaire` (+ `/api/vehicles` + assets) and redirects everything else there; unset = full
+  app, no-op. Lets a second Vercel project from the same repo host the customer questionnaire on its
+  own URL. See `docs/DEPLOYMENT.md`.
+
 ## 2026-06-28 — Hardening: multi-tab data integrity + import bounds (review stages A+B)
 
 - **Storage A (data integrity, multi-tab):** the cross-tab `storage` event now reconciles
