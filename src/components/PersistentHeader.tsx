@@ -68,7 +68,6 @@ export default function PersistentHeader({
   })
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [theme, toggleTheme] = useTheme()
-  const [menuOpen, setMenuOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
   const [versionLogOpen, setVersionLogOpen] = useState(false)
@@ -76,7 +75,6 @@ export default function PersistentHeader({
   const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const menuRef = useRef<HTMLDivElement>(null)
   const exportRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -113,19 +111,6 @@ export default function PersistentHeader({
     if (idleTimer.current) clearTimeout(idleTimer.current)
   }, [])
 
-  useEffect(() => {
-    if (!menuOpen) return
-    const onDown = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setMenuOpen(false) }
-    document.addEventListener('mousedown', onDown)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDown)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [menuOpen])
 
   useEffect(() => {
     if (!exportOpen) return
@@ -226,7 +211,6 @@ export default function PersistentHeader({
   }
 
   const handleClearAll = () => {
-    setMenuOpen(false)
     const ok = window.confirm(
       'Clear ALL project data? This resets every field on this project to blank. You can undo immediately after if it was a mistake.',
     )
@@ -475,35 +459,15 @@ export default function PersistentHeader({
             )}
           </div>
 
-          <div className="header-menu-wrap" ref={menuRef}>
-            <button
-              type="button"
-              className="tbtn-icon"
-              aria-label="More actions"
-              aria-haspopup="menu"
-              aria-expanded={menuOpen}
-              onClick={() => setMenuOpen(o => !o)}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                <circle cx="12" cy="5" r="2" />
-                <circle cx="12" cy="12" r="2" />
-                <circle cx="12" cy="19" r="2" />
-              </svg>
-            </button>
-            {menuOpen && (
-              <div className="header-menu-popover" role="menu">
-                <button
-                  type="button"
-                  className="header-menu-item destructive"
-                  role="menuitem"
-                  onClick={handleClearAll}
-                >
-                  <span>Clear all data</span>
-                  <span className="hint">reset</span>
-                </button>
-              </div>
-            )}
-          </div>
+          <button
+            type="button"
+            className="tbtn-icon"
+            aria-label="Clear all data"
+            title="Clear all data"
+            onClick={handleClearAll}
+          >
+            <Icon name="trash" />
+          </button>
         </div>
       </div>
 

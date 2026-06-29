@@ -3795,6 +3795,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 /* Icon-button toolbar (dark · export · clear) — matches the main app header. */
 .q-toolbar { display: flex; gap: 8px; }
+.q-brandbar .q-toolbar { margin-left: 16px; }
 .q-actions {
   display: flex; flex-direction: row; align-items: center; justify-content: center; flex-wrap: wrap; gap: 12px;
   margin-top: 28px; padding-top: 26px; border-top: 1px solid var(--border);

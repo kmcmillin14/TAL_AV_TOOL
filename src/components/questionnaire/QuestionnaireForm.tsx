@@ -15,7 +15,6 @@ import {
   TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS,
   SPECIALTY_APPLICATIONS, PROJECT_DRIVERS,
 } from '@/src/lib/constants/enums'
-import { useTheme } from '@/src/lib/uiPrefs'
 import { downloadQuestionnairePdf } from '@/src/lib/questionnaire/pdfQuestionnaire'
 
 const DRAFT_KEY = 'tal:questionnaire-draft'
@@ -104,7 +103,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const [today] = useState(() => new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }))
   // Volume can be given as overall averages OR per-flow detail — they're redundant, so pick one.
   const [thruMode, setThruMode] = useState<'avg' | 'flows'>('avg')
-  const [theme, toggleTheme] = useTheme()
   const { register, handleSubmit, control, reset, watch } = useForm<PartialProjectFormData>({
     resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
     defaultValues: EMPTY_VALUES,
@@ -166,6 +164,19 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
     onRequestRemount()
   }, [onRequestRemount])
 
+  // The export/clear icons live in the brand-bar header (a sibling component);
+  // they reach the form via window events.
+  useEffect(() => {
+    const onExport = () => handleSubmit(onSubmit, onInvalid)()
+    const onClear = () => clearAll()
+    window.addEventListener('tal:q-export', onExport)
+    window.addEventListener('tal:q-clear', onClear)
+    return () => {
+      window.removeEventListener('tal:q-export', onExport)
+      window.removeEventListener('tal:q-clear', onClear)
+    }
+  }, [handleSubmit, onSubmit, onInvalid, clearAll])
+
   // Reusable chip multiselect (matches Step 1's .cert-grid / .chk).
   const Chips = ({ name, options }: { name: 'projectDrivers' | 'specialtyApplications' | 'certifications' | 'interlocks'; options: readonly string[] }) => (
     <Controller control={control} name={name} render={({ field }) => (
@@ -204,17 +215,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             A few quick details to start, then the specifics of what you move. Nothing is required —
             fill in what you know. When you’re done, export the PDF and send it to your TAL engineer.
           </div>
-        </div>
-        <div className="row q-toolbar">
-          <button type="button" className="tbtn-icon" onClick={toggleTheme} aria-label="Toggle light/dark" title="Toggle light/dark">
-            <Icon name={theme === 'dark' ? 'sun' : 'moon'} />
-          </button>
-          <button type="submit" className="tbtn-icon" disabled={busy} aria-label="Export PDF" title="Export PDF">
-            <Icon name="export" />
-          </button>
-          <button type="button" className="tbtn-icon" onClick={clearAll} aria-label="Clear all answers" title="Clear all answers">
-            <Icon name="trash" />
-          </button>
         </div>
       </div>
 
