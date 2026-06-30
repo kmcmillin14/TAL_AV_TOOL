@@ -18,7 +18,7 @@ import { cycleDerivation, chargingDerivation, bufferDerivation, type Derivation 
 import { METHODOLOGY } from '@/src/content/methodology'
 import { VEHICLE_SLIDE, ROM_SLIDE } from './sections'
 import {
-  table, textBox, appendShapesToSlide, addImage, containRect, pngSize,
+  table, textBox, metricTile, appendShapesToSlide, addImage, containRect, pngSize,
   removeBodyPlaceholder, nextShapeId, TAL_RED,
   type TableCell, type TableBand,
 } from './ooxml'
@@ -49,6 +49,29 @@ const put = (
     x: BODY.x, y, cx: BODY.cx, cy,
     colW, rows, rowH: ROW_H, bands: opts.bands,
   }))
+}
+
+const TILE_GAP = 200000
+
+/** A row of engineering metric tiles across the body width (the modern KPI look,
+ *  reused on the step slides). Returns the bottom y. */
+function tileRow(
+  zip: PizZip, slide: number, y: number, h: number,
+  tiles: Array<{ value: string; label: string; barColor?: string; accent?: boolean; figSz?: number }>,
+): number {
+  const cols = tiles.length
+  const tileW = Math.round((BODY.cx - (cols - 1) * TILE_GAP) / cols)
+  let id = nextShapeId(zip, slide)
+  const xml = tiles.map((t, i) => {
+    const s = metricTile({
+      id, x: BODY.x + i * (tileW + TILE_GAP), y, cx: tileW, cy: h,
+      value: t.value, label: t.label, barColor: t.barColor, accent: t.accent, figSz: t.figSz,
+    })
+    id += 2
+    return s
+  }).join('')
+  appendShapesToSlide(zip, slide, xml)
+  return y + h
 }
 
 const ft = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)} ft`
@@ -259,7 +282,19 @@ export function fillMatrix(zip: PizZip, project: StoredProject, vehicles: Vehicl
       { t: notes },
     ])
   }
-  put(zip, ROM_SLIDE.matrixVerdict, [3000000, 2000000, 5820400], verdictRows, { center: true })
+  // Modern KPI-tile summary band on top: verdict counts (Pass / Review / Fail) +
+  // candidate total, then the per-vehicle verdict table beneath.
+  const counts = { GREEN: 0, YELLOW: 0, RED: 0 }
+  for (const { q } of results) counts[q.status]++
+  removeBodyPlaceholder(zip, ROM_SLIDE.matrixVerdict)
+  const tilesH = 1300000
+  tileRow(zip, ROM_SLIDE.matrixVerdict, BODY.y, tilesH, [
+    { value: String(counts.GREEN), label: 'PASS', barColor: STATUS_COLOR.GREEN },
+    { value: String(counts.YELLOW), label: 'REVIEW', barColor: STATUS_COLOR.YELLOW },
+    { value: String(counts.RED), label: 'FAIL', barColor: STATUS_COLOR.RED },
+    { value: String(results.length), label: 'CANDIDATES' },
+  ])
+  put(zip, ROM_SLIDE.matrixVerdict, [3000000, 2000000, 5820400], verdictRows, { y: BODY.y + tilesH + 240000 })
 
   // ── S20: Gate × vehicle pass/fail grid ──────────────────────────────────
   // Per vehicle, collapse multi-load gate entries to one verdict per gateId.

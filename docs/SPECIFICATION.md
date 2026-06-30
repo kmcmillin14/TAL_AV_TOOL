@@ -514,7 +514,12 @@ Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle g
 `qualifyVehicle`), Material Flow (S24) — are filled with **native editable `<a:tbl>` tables**
 (`src/lib/pptx/tables.ts`; `table()`/`cellXml()` in `ooxml.ts`), styled engineering-grade: a
 TAL-red header band with letter-spacing and a crisp ink rule, faint zebra data rows, and grid-token
-(`#E4E4E7`) hairlines, with right-aligned tabular numerics. The S24 diagram and S28 payback chart
+(`#E4E4E7`) hairlines, with right-aligned tabular numerics. To carry the KPI-tile look onto the step
+slides, **S19 leads with a metric-tile summary band** (Pass / Review / Fail verdict counts with
+status-colored accent rules + a Candidates total — `tileRow` reusing `metricTile`) above its table.
+The **S24 flow diagram merges parallel flows** (several flows between the same two locations collapse
+to one edge: summed moves/hr + the distinct vehicles), so arrows/labels never stack; the flow table
+still lists each flow. The S24 diagram and S28 payback chart
 (`flowDiagram.ts` / `romChart.ts`) are likewise refined — soft accent-bar cards and white label
 pills on the flow network; a two-tone (loss/gain) area fill, year gridlines, axis rules, a
 break-even callout chip and end-value label on the payback curve. The Material Flow slide (S24) also carries a

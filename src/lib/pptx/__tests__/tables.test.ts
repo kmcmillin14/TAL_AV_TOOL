@@ -65,6 +65,11 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     const s19 = out.file('ppt/slides/slide19.xml')!.asText()
     expect(s19).toMatch(/2E7D32|C77700|C62828/)        // a verdict fill color
     expect(s19).toMatch(/GREEN|YELLOW|RED/)            // a verdict label
+    // Modern KPI-tile summary band (verdict counts) above the table.
+    expect(s19).toContain('KPI Tile')
+    expect(s19).toContain('PASS')
+    expect(s19).toContain('REVIEW')
+    expect(s19).toContain('CANDIDATES')
     const s20 = out.file('ppt/slides/slide20.xml')!.asText()
     expect(s20).toMatch(/✓|✗|~/)                       // pass/fail/review glyphs
     // one Gate column + one column per candidate vehicle

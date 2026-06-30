@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-06-29 — Branded PPTX: MFD parallel-edge merge + modern tile band on the matrix
+
+- **Material Flow Diagram (S24): merge parallel flows.** Several flows between the *same* two
+  locations (e.g. 3× Conveyor 1 → Storage #2) previously drew stacked arrows and overlapping
+  label pills. `flowDiagram.ts` now merges flows by origin→destination into one edge: summed
+  moves/hr + the distinct vehicles used. The flow *table* still lists each flow individually.
+- **Vehicle Selection Matrix (S19): modern KPI-tile band.** Added a summary tile row (Pass /
+  Review / Fail counts with status-colored accent rules + Candidates total) above the verdict
+  table, so the step slides lead with the same metric-tile look as the KPI slides. New `tileRow`
+  helper (`tables.ts`) reuses `metricTile`, which gained a `barColor` override for status colors.
+- Tests extended (`tables`); docs updated.
+
 ## 2026-06-29 — Branded PPTX: full dashboard KPI tiles + fix squashed S24/S28 images
 
 - **KPI slides carry the full Step-4 dashboard tile set** (`content.ts` `fillKpis`). Replaced the

@@ -216,8 +216,10 @@ export function metricTile(opts: {
   value: string; unit?: string; label: string; accent?: boolean
   /** Override the figure size (hundredths of pt) for long values (e.g. money ranges). */
   figSz?: number
+  /** Override the accent-rule color (6-hex, e.g. a status color). Defaults to red/muted. */
+  barColor?: string
 }): string {
-  const barColor = opts.accent ? TAL_RED : TILE_LABEL
+  const barColor = opts.barColor ?? (opts.accent ? TAL_RED : TILE_LABEL)
   const figSz = opts.figSz ?? (opts.accent ? 3600 : 3000)
   const num = `<a:r><a:rPr lang="en-US" sz="${figSz}" b="1" dirty="0"><a:solidFill><a:srgbClr val="${TILE_INK}"/></a:solidFill></a:rPr><a:t>${escapeXml(opts.value)}</a:t></a:r>`
   const unit = opts.unit
