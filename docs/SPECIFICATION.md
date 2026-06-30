@@ -490,11 +490,18 @@ assigned to flows; Cleanfix always dropped). The builder removes unselected slid
 (S1) + contact (S34) **bracket replacement**; the **KPI slides (S25/26)** as **native engineering
 metric tiles** (`fillKpis` → `metricTile` in `ooxml.ts`) — each a soft card with a TAL-red (accent)
 or muted top accent rule, a big bold figure with optional unit, and a spaced caps label, laid out in
-a grid that mirrors the Step-4 dashboard's hero tiles (S25 headline: Total fleet · Vehicle types ·
-Flows · Throughput, with the `Base + charging → buffered` build-up beneath; S26: a tile per fleet
-chassis); and graphic slides as **native shapes** (tables/images/charts). All of these remove the
+a grid that mirrors the **Step-4 ROM dashboard's two hero boxes + gauges** (`RomKpis`): **S25
+Financials** (ROM CAPEX · Net benefit/yr · Payback · Labor offset/yr · Annual OPEX · TCO@life ·
+Cost/move) and **S26 Fleet & flow** (Total fleet · Vehicle types · Flows · Throughput · Energy)
+plus the status gauges (Utilization · Availability · Charging · Redundancy), with the fleet mix as a
+caption. The figures are recomputed from the shared `FleetModel` with the same math the dashboard
+runs (TCO/cost-per-move/energy from `costs` + `serviceLifeYears`; gauges from `chargingSeries`/
+`resilience`). Graphic slides are **native shapes** (tables/images/charts). All of these remove the
 template's empty body Content Placeholder first (`removeBodyPlaceholder`) so nothing ghosts behind
-them; sole-table slides are vertically centered (`put({ center })`). **Investment (S27)** is a dynamic per-line CAPEX pricing table
+them; sole-table slides are vertically centered (`put({ center })`). Canvas images (S24 flow diagram,
+S28 payback chart) are placed at their **native aspect ratio** via `containRect`/`pngSize` (the
+renderers size their canvases to the laid-out content) so they fill the wide body region without
+being squashed. **Investment (S27)** is a dynamic per-line CAPEX pricing table
 (`fillInvestment`) and **ROI (S28)** is the payback-curve chart (`romChart.ts` →
 `renderPaybackChartPng`, from the pure `paybackSeries`) over an ROI metrics table. The **Fleet
 Engine slides (S21/22/23)** present three **independent tiers** (`src/lib/pptx/tables.ts` →

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-06-29 — Branded PPTX: full dashboard KPI tiles + fix squashed S24/S28 images
+
+- **KPI slides carry the full Step-4 dashboard tile set** (`content.ts` `fillKpis`). Replaced the
+  partial S25/S26 tiles with the dashboard's two hero boxes + gauges: **S25 Financials** (ROM CAPEX,
+  Net benefit/yr, Payback, Labor offset/yr, Annual OPEX, TCO@life, Cost/move) and **S26 Fleet & flow**
+  (Total fleet, Vehicle types, Flows, Throughput, Energy) + status gauges (Utilization, Availability,
+  Charging, Redundancy) with the fleet mix as a caption. Figures recomputed from the shared
+  `FleetModel` with the same math `RomKpis` runs (`chargingSeries`/`resilience`; `costs` +
+  `serviceLifeYears`, threaded through from the exporter). `metricTile` gained a `figSz` override so
+  long money ranges fit.
+- **Fixed squashed Material Flow (S24) and ROI (S28) images.** PowerPoint stretches a `<p:pic>` to
+  fill its rect, and the rect was the full 4.3∶1 body box — distorting the ~2.4∶1 chart and the flow
+  diagram. New `containRect`/`pngSize` (`ooxml.ts`) place each image at its **native aspect**, centered.
+  The flow diagram (`flowDiagram.ts`) now sizes its canvas to the laid-out content (+higher-res nodes)
+  and the payback chart (`romChart.ts`) renders at a wider raster, so both fill the slide width cleanly.
+- Tests: extended `content`/`ooxml` (`pngSize`/`containRect`, full tile set).
+
 ## 2026-06-29 — Branded PPTX: engineering-grade data-slide polish (in-template)
 
 - **Tables** (`ooxml.ts` `cellXml`/`table`): industrial styling applied to all eight ROM tables —

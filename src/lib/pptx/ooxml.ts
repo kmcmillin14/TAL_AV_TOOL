@@ -214,9 +214,11 @@ const TILE_BAR = 386000         // accent-rule height (EMU, ~0.42pt of card top)
 export function metricTile(opts: {
   id: number; x: number; y: number; cx: number; cy: number
   value: string; unit?: string; label: string; accent?: boolean
+  /** Override the figure size (hundredths of pt) for long values (e.g. money ranges). */
+  figSz?: number
 }): string {
   const barColor = opts.accent ? TAL_RED : TILE_LABEL
-  const figSz = opts.accent ? 3600 : 3000
+  const figSz = opts.figSz ?? (opts.accent ? 3600 : 3000)
   const num = `<a:r><a:rPr lang="en-US" sz="${figSz}" b="1" dirty="0"><a:solidFill><a:srgbClr val="${TILE_INK}"/></a:solidFill></a:rPr><a:t>${escapeXml(opts.value)}</a:t></a:r>`
   const unit = opts.unit
     ? `<a:r><a:rPr lang="en-US" sz="1600" b="1" dirty="0"><a:solidFill><a:srgbClr val="${TILE_LABEL}"/></a:solidFill></a:rPr><a:t>${escapeXml(' ' + opts.unit)}</a:t></a:r>`
@@ -324,6 +326,26 @@ export function table(opts: {
     + `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table">`
     + `<a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid>${grid}</a:tblGrid>${rows}</a:tbl>`
     + `</a:graphicData></a:graphic></p:graphicFrame>`
+}
+
+/** Width/height (px) from a PNG's IHDR chunk (big-endian u32 at bytes 16 & 20). */
+export function pngSize(png: Uint8Array): { w: number; h: number } {
+  const u32 = (o: number) => ((png[o] << 24) | (png[o + 1] << 16) | (png[o + 2] << 8) | png[o + 3]) >>> 0
+  return { w: u32(16), h: u32(20) }
+}
+
+/**
+ * A rect inside `box` that contains a `natW×natH` image at its native aspect
+ * (no distortion), centered horizontally and top-aligned — a table usually sits
+ * beneath the image. PowerPoint stretches a `<p:pic>` to fill its rect, so the
+ * caller must size the rect to the image, not the other way round.
+ */
+export function containRect(
+  natW: number, natH: number, box: { x: number; y: number; cx: number; cy: number },
+): { x: number; y: number; cx: number; cy: number } {
+  const scale = Math.min(box.cx / natW, box.cy / natH)
+  const cx = Math.round(natW * scale), cy = Math.round(natH * scale)
+  return { x: box.x + Math.round((box.cx - cx) / 2), y: box.y, cx, cy }
 }
 
 const IMAGE_REL = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships/image'

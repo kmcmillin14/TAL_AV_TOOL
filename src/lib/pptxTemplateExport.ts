@@ -70,6 +70,8 @@ export async function exportBrandedRomPptx(
   const vehicles = await fetchVehiclesCached()
   const model = computeFleetModel(project, vehicles)
   const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+  const vehicleById = new Map(vehicles.map(v => [v.id, v]))
+  const serviceLifeYears = project.serviceLifeYears ?? 10
 
   // Append appendix slides cloned from a content shell BEFORE any removal/fill (so
   // the source S18 is still a clean shell). New slides sit past S35, so removeSlides
@@ -90,7 +92,7 @@ export async function exportBrandedRomPptx(
   // Fill the kept step slides with native editable content. Each filler no-ops on
   // any slide the user removed; the canvas images are only rendered when their
   // slide survives (skip the PNG-encode work otherwise).
-  fillKpis(zip, model, names)                  // S25–26 KPIs
+  fillKpis(zip, model, names, vehicleById, serviceLifeYears) // S25 Financials · S26 Fleet & flow
   fillRequirements(zip, project)               // S18 Application Requirements
   fillMatrix(zip, project, vehicles)           // S19–20 Vehicle Selection Matrix
   fillFleetEngine(zip, model, vehicles, names) // S21–23 Raw / Charging / Buffer tables

@@ -25,38 +25,48 @@ describe('fillKpis (S25/26 KPI slides)', () => {
   let vehicles: Vehicle[]
   beforeAll(async () => { vehicles = await loadVehicleLibrary() })
 
-  it('fills S25/26 with native metric tiles and the deck re-parses cleanly', () => {
+  const fill = (zip: PizZip, model: ReturnType<typeof computeFleetModel>) => {
+    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+    const vehicleById = new Map(vehicles.map(v => [v.id, v]))
+    fillKpis(zip, model, names, vehicleById, 10)
+  }
+
+  it('fills S25/26 with native metric tiles mirroring the dashboard, re-parsing cleanly', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
-    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    fillKpis(zip, model, names)
+    fill(zip, model)
 
     const out = reopen(zip)
     const s25 = out.file('ppt/slides/slide25.xml')!.asText()
     const s26 = out.file('ppt/slides/slide26.xml')!.asText()
-    // Section eyebrows.
-    expect(s25).toContain('FLEET KPIS')
-    expect(s26).toContain('FLEET MIX')
+    // Section eyebrows (two hero boxes like the Step-4 dashboard).
+    expect(s25).toContain('FINANCIALS')
+    expect(s26).toContain('FLEET &amp; FLOW')
     // Native tiles: rounded-rect cards with an accent rule, not placeholder text.
     expect(s25).toContain('KPI Tile')
     expect(s25).toContain('KPI Rule')
     expect(s25).toContain('roundRect')
-    expect(s25).toContain('TOTAL FLEET')              // a tile label
-    expect(s25).toContain('THROUGHPUT')
-    expect(s25).toContain('Base')                     // build-up caption
+    // S25 = full financial tile set.
+    for (const l of ['ROM CAPEX', 'NET BENEFIT / YR', 'PAYBACK', 'LABOR OFFSET / YR', 'ANNUAL OPEX', 'TCO @ 10YR', 'COST / MOVE']) {
+      expect(s25).toContain(l)
+    }
+    expect((s25.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(7)
+    // S26 = fleet/flow tiles + status gauges + fleet-mix caption.
+    for (const l of ['TOTAL FLEET', 'VEHICLE TYPES', 'FLOWS', 'THROUGHPUT', 'UTILIZATION', 'AVAILABILITY', 'CHARGING', 'REDUNDANCY']) {
+      expect(s26).toContain(l)
+    }
+    expect((s26.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(9)
+    expect(s26).toContain('Fleet mix —')
     // Body placeholder cleared so nothing ghosts behind the tiles.
     expect(s25).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
     expect(s26).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
-    // S26 has a tile per fleet chassis (PROJECT assigns cb18 + ml2 = 2 groups).
-    expect((s26.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(model.fleet.groups.length)
   })
 
   it('no-ops on a removed slide (fills only what remains)', () => {
     const zip = load()
     zip.remove('ppt/slides/slide25.xml')      // simulate the section being dropped
     const model = computeFleetModel(PROJECT, vehicles)
-    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    expect(() => fillKpis(zip, model, names)).not.toThrow()
-    expect(reopen(zip).file('ppt/slides/slide26.xml')!.asText()).toContain('FLEET MIX')
+    expect(() => fill(zip, model)).not.toThrow()
+    expect(reopen(zip).file('ppt/slides/slide26.xml')!.asText()).toContain('FLEET &amp; FLOW')
   })
 })

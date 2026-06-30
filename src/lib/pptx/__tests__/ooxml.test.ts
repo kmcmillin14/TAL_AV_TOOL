@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, removeBodyPlaceholder, table, metricTile, addImage, cloneSlide, setSlideTitle } from '../ooxml'
+import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, removeBodyPlaceholder, table, metricTile, addImage, containRect, pngSize, cloneSlide, setSlideTitle } from '../ooxml'
 import { slidesToRemove, type PptxSelection, PPTX_SECTIONS } from '../sections'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -141,6 +141,28 @@ describe('table', () => {
     expect(s18).toContain('<a:srgbClr val="2E7D32"/>')   // verdict fill
     expect((s18.match(/<a:gridCol\b/g) ?? []).length).toBe(2)
     expect((s18.match(/<a:tr\b/g) ?? []).length).toBe(3)
+  })
+})
+
+describe('pngSize + containRect (image fit, no squashing)', () => {
+  // 1×1 PNG (IHDR encodes 1×1); a real renderer PNG carries its true dims.
+  const PNG_1x1 = new Uint8Array(Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+    'base64'))
+
+  it('reads PNG width/height from the IHDR chunk', () => {
+    expect(pngSize(PNG_1x1)).toEqual({ w: 1, h: 1 })
+  })
+
+  it('contains a wide image at native aspect, centered, top-aligned (height-limited)', () => {
+    // image 2600×720 into the wide body box → limited by height, narrower than the box.
+    const box = { x: 685800, y: 1828800, cx: 10820400, cy: 2500000 }
+    const r = containRect(2600, 720, box)
+    expect(r.cy).toBe(2500000)                          // fills the available height
+    expect(r.cx).toBeLessThan(box.cx)                   // not stretched to full width
+    expect(Math.abs(r.cx / r.cy - 2600 / 720)).toBeLessThan(0.01)  // native aspect preserved
+    expect(r.x).toBeGreaterThan(box.x)                  // centered horizontally
+    expect(r.y).toBe(box.y)                             // top-aligned (table sits beneath)
   })
 })
 

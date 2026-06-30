@@ -7,8 +7,8 @@ import { paybackSeries } from '@/src/calc/romCharts'
 import { money } from '@/src/lib/vehicleDisplay'
 import { newCanvas, roundRect, toPngBytes } from './canvas'
 
-const W = 1700, H = 720
-const ML = 200, MR = 120, MT = 70, MB = 96   // plot margins (extra right for end label)
+const W = 2600, H = 720   // wide raster so it fills the slide region at native aspect
+const ML = 230, MR = 160, MT = 80, MB = 104   // plot margins (extra right for end label)
 const RED = '#EB0A1E', INK = '#2B2B2B', GRID = '#E4E4E7', GRAY = '#71717a'
 const AXIS = '#C9CDD2'                         // axis rules (darker than gridlines)
 const LOSS_FILL = 'rgba(235,10,30,0.08)'       // area below zero — still paying back
@@ -44,8 +44,8 @@ export function renderPaybackChartPng(rom: RomSummary): Uint8Array | null {
   ctx.textBaseline = 'middle'
 
   // Title.
-  ctx.font = "800 26px 'Toyota Type',-apple-system,sans-serif"; ctx.fillStyle = INK; ctx.textAlign = 'left'
-  ctx.fillText('Cumulative cash flow — simple payback', x0, 36)
+  ctx.font = "800 32px 'Toyota Type',-apple-system,sans-serif"; ctx.fillStyle = INK; ctx.textAlign = 'left'
+  ctx.fillText('Cumulative cash flow — simple payback', x0, 42)
 
   // Area between the curve and the zero baseline — two-tone (loss below / gain
   // above), so the break-even crossover reads at a glance. Drawn first, under
@@ -63,7 +63,7 @@ export function renderPaybackChartPng(rom: RomSummary): Uint8Array | null {
   }
 
   // Y gridlines + $ labels (5 steps).
-  ctx.font = "600 18px 'JetBrains Mono',ui-monospace,monospace"; ctx.textAlign = 'right'
+  ctx.font = "600 22px 'JetBrains Mono',ui-monospace,monospace"; ctx.textAlign = 'right'
   for (let i = 0; i <= 4; i++) {
     const v = lo + ((hi - lo) * i) / 4
     const y = py(v)
@@ -86,7 +86,7 @@ export function renderPaybackChartPng(rom: RomSummary): Uint8Array | null {
   ctx.beginPath(); ctx.moveTo(x0, y0); ctx.lineTo(x0, y1); ctx.lineTo(x1, y1); ctx.stroke()
 
   // X labels (years).
-  ctx.font = "600 18px 'JetBrains Mono',ui-monospace,monospace"; ctx.textAlign = 'center'; ctx.fillStyle = GRAY
+  ctx.font = "600 22px 'JetBrains Mono',ui-monospace,monospace"; ctx.textAlign = 'center'; ctx.fillStyle = GRAY
   for (let yr = 0; yr <= years; yr++) ctx.fillText(`Yr ${yr}`, px(yr), y1 + 30)
 
   // Break-even marker + a rounded callout chip on the crossover.
@@ -100,7 +100,7 @@ export function renderPaybackChartPng(rom: RomSummary): Uint8Array | null {
     ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 2.5; ctx.stroke()
     // chip
     const text = `Payback ${breakEvenYear.toFixed(1)} yr`
-    ctx.font = "800 22px 'Toyota Type',-apple-system,sans-serif"
+    ctx.font = "800 26px 'Toyota Type',-apple-system,sans-serif"
     const tw = ctx.measureText(text).width, padX = 16, chipH = 38
     const chipY = y0 - 6 < chipH ? y0 + 8 : y0 - chipH - 6
     let chipX = bx - (tw / 2 + padX)
@@ -109,21 +109,21 @@ export function renderPaybackChartPng(rom: RomSummary): Uint8Array | null {
     ctx.fillStyle = '#FFFFFF'; ctx.fill(); ctx.strokeStyle = RED; ctx.lineWidth = 1.5; ctx.stroke()
     ctx.fillStyle = RED; ctx.textAlign = 'center'; ctx.fillText(text, chipX + (tw / 2 + padX), chipY + chipH / 2)
   } else {
-    ctx.fillStyle = GRAY; ctx.font = "600 20px 'Toyota Type',-apple-system,sans-serif"; ctx.textAlign = 'left'
+    ctx.fillStyle = GRAY; ctx.font = "600 24px 'Toyota Type',-apple-system,sans-serif"; ctx.textAlign = 'left'
     ctx.fillText('No payback in service life — add operators displaced (Step 4)', x0 + 12, y0 + 18)
   }
 
   // Cumulative line + point markers.
-  ctx.strokeStyle = RED; ctx.lineWidth = 3.5; ctx.lineJoin = 'round'; ctx.beginPath()
+  ctx.strokeStyle = RED; ctx.lineWidth = 5; ctx.lineJoin = 'round'; ctx.beginPath()
   points.forEach((p, i) => (i ? ctx.lineTo(px(p.year), py(p.cumulative)) : ctx.moveTo(px(p.year), py(p.cumulative))))
   ctx.stroke()
   ctx.fillStyle = RED
-  for (const p of points) { ctx.beginPath(); ctx.arc(px(p.year), py(p.cumulative), 5, 0, Math.PI * 2); ctx.fill() }
+  for (const p of points) { ctx.beginPath(); ctx.arc(px(p.year), py(p.cumulative), 7, 0, Math.PI * 2); ctx.fill() }
 
   // Final cumulative value label at the right end of the curve.
   const last = points[points.length - 1]
   const positive = last.cumulative >= 0
-  ctx.font = "800 20px 'JetBrains Mono',ui-monospace,monospace"
+  ctx.font = "800 24px 'JetBrains Mono',ui-monospace,monospace"
   ctx.fillStyle = positive ? GAIN_INK : RED; ctx.textAlign = 'right'
   ctx.fillText((positive ? '+' : '-') + money(Math.abs(last.cumulative)), x1 - 4, py(last.cumulative) - 18)
 

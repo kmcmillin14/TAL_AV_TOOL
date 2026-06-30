@@ -18,7 +18,8 @@ import { cycleDerivation, chargingDerivation, bufferDerivation, type Derivation 
 import { METHODOLOGY } from '@/src/content/methodology'
 import { VEHICLE_SLIDE, ROM_SLIDE } from './sections'
 import {
-  table, textBox, appendShapesToSlide, addImage, removeBodyPlaceholder, nextShapeId, TAL_RED,
+  table, textBox, appendShapesToSlide, addImage, containRect, pngSize,
+  removeBodyPlaceholder, nextShapeId, TAL_RED,
   type TableCell, type TableBand,
 } from './ooxml'
 
@@ -298,7 +299,10 @@ export function fillMaterialFlow(
   const { flows } = model
   const hasImg = !!diagramPng
   if (diagramPng) {
-    addImage(zip, ROM_SLIDE.materialFlow, diagramPng, { x: BODY.x, y: BODY.y, cx: BODY.cx, cy: FLOW_IMG_H })
+    // Fit at native aspect (centered) so the diagram isn't squashed into the wide body box.
+    const { w, h } = pngSize(diagramPng)
+    const rect = containRect(w, h, { x: BODY.x, y: BODY.y, cx: BODY.cx, cy: FLOW_IMG_H })
+    addImage(zip, ROM_SLIDE.materialFlow, diagramPng, rect)
   }
   const tableY = hasImg ? BODY.y + FLOW_IMG_H + 140000 : BODY.y
   const MAX = hasImg ? 4 : 13
@@ -408,7 +412,10 @@ export function fillRoi(
   const { rom } = model
   const payback = rom.payback.paybackYears
   if (paybackPng) {
-    addImage(zip, ROM_SLIDE.roi, paybackPng, { x: BODY.x, y: BODY.y, cx: BODY.cx, cy: ROI_IMG_H })
+    // Fit at native aspect (centered) so the chart isn't stretched into the wide body box.
+    const { w, h } = pngSize(paybackPng)
+    const rect = containRect(w, h, { x: BODY.x, y: BODY.y, cx: BODY.cx, cy: ROI_IMG_H })
+    addImage(zip, ROM_SLIDE.roi, paybackPng, rect)
   }
   const tableY = paybackPng ? BODY.y + ROI_IMG_H + 140000 : BODY.y
   const rows: TableCell[][] = [
