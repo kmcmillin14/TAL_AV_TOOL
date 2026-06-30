@@ -487,11 +487,14 @@ preserving its theme, masters, and media (Toyota Type, TAL red). Client-side via
 to include; **Product Overview slides are auto-limited to the fleet chassis** (vehicles
 assigned to flows; Cleanfix always dropped). The builder removes unselected slides via OOXML
 (`presentation.xml` sldIdLst + rels + `[Content_Types]`). Content is filled three ways: cover
-(S1) + contact (S34) **bracket replacement**; the **KPI slides (S25/26)** by **writing into each
-slide's existing body Content Placeholder** (`<p:ph idx="1"/>`, via `fillBodyPlaceholder`); and
-graphic slides as **native shapes** (tables/images/charts) with the body placeholder removed first
-(`removeBodyPlaceholder`) so nothing ghosts behind them; sole-table slides are vertically centered
-(`put({ center })`). **Investment (S27)** is a dynamic per-line CAPEX pricing table
+(S1) + contact (S34) **bracket replacement**; the **KPI slides (S25/26)** as **native engineering
+metric tiles** (`fillKpis` → `metricTile` in `ooxml.ts`) — each a soft card with a TAL-red (accent)
+or muted top accent rule, a big bold figure with optional unit, and a spaced caps label, laid out in
+a grid that mirrors the Step-4 dashboard's hero tiles (S25 headline: Total fleet · Vehicle types ·
+Flows · Throughput, with the `Base + charging → buffered` build-up beneath; S26: a tile per fleet
+chassis); and graphic slides as **native shapes** (tables/images/charts). All of these remove the
+template's empty body Content Placeholder first (`removeBodyPlaceholder`) so nothing ghosts behind
+them; sole-table slides are vertically centered (`put({ center })`). **Investment (S27)** is a dynamic per-line CAPEX pricing table
 (`fillInvestment`) and **ROI (S28)** is the payback-curve chart (`romChart.ts` →
 `renderPaybackChartPng`, from the pure `paybackSeries`) over an ROI metrics table. The **Fleet
 Engine slides (S21/22/23)** present three **independent tiers** (`src/lib/pptx/tables.ts` →
@@ -502,7 +505,12 @@ rendered from the shared `src/lib/derivation.ts` model so the deck shows *how* e
 reached, not just the sum. Editable, DOM-independent. The matrix and data slides — App
 Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle grid, from
 `qualifyVehicle`), Material Flow (S24) — are filled with **native editable `<a:tbl>` tables**
-(`src/lib/pptx/tables.ts`; `table()` in `ooxml.ts`). The Material Flow slide (S24) also carries a
+(`src/lib/pptx/tables.ts`; `table()`/`cellXml()` in `ooxml.ts`), styled engineering-grade: a
+TAL-red header band with letter-spacing and a crisp ink rule, faint zebra data rows, and grid-token
+(`#E4E4E7`) hairlines, with right-aligned tabular numerics. The S24 diagram and S28 payback chart
+(`flowDiagram.ts` / `romChart.ts`) are likewise refined — soft accent-bar cards and white label
+pills on the flow network; a two-tone (loss/gain) area fill, year gridlines, axis rules, a
+break-even callout chip and end-value label on the payback curve. The Material Flow slide (S24) also carries a
 **rendered diagram image** of the flow network (`src/lib/pptx/flowDiagram.ts` draws locations +
 labelled flow arrows on an offscreen canvas → PNG; `addImage` in `ooxml.ts` embeds it as a native
 `<p:pic>` media part), with the flow table beneath it; it falls back to the table-only layout in

@@ -25,15 +25,30 @@ describe('fillKpis (S25/26 KPI slides)', () => {
   let vehicles: Vehicle[]
   beforeAll(async () => { vehicles = await loadVehicleLibrary() })
 
-  it('fills S25/26 placeholders and the deck re-parses cleanly', () => {
+  it('fills S25/26 with native metric tiles and the deck re-parses cleanly', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
     fillKpis(zip, model, names)
 
     const out = reopen(zip)
-    expect(out.file('ppt/slides/slide25.xml')!.asText()).toContain('Fleet KPIs')
-    expect(out.file('ppt/slides/slide26.xml')!.asText()).toContain('Fleet mix')
+    const s25 = out.file('ppt/slides/slide25.xml')!.asText()
+    const s26 = out.file('ppt/slides/slide26.xml')!.asText()
+    // Section eyebrows.
+    expect(s25).toContain('FLEET KPIS')
+    expect(s26).toContain('FLEET MIX')
+    // Native tiles: rounded-rect cards with an accent rule, not placeholder text.
+    expect(s25).toContain('KPI Tile')
+    expect(s25).toContain('KPI Rule')
+    expect(s25).toContain('roundRect')
+    expect(s25).toContain('TOTAL FLEET')              // a tile label
+    expect(s25).toContain('THROUGHPUT')
+    expect(s25).toContain('Base')                     // build-up caption
+    // Body placeholder cleared so nothing ghosts behind the tiles.
+    expect(s25).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
+    expect(s26).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
+    // S26 has a tile per fleet chassis (PROJECT assigns cb18 + ml2 = 2 groups).
+    expect((s26.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(model.fleet.groups.length)
   })
 
   it('no-ops on a removed slide (fills only what remains)', () => {
@@ -42,6 +57,6 @@ describe('fillKpis (S25/26 KPI slides)', () => {
     const model = computeFleetModel(PROJECT, vehicles)
     const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
     expect(() => fillKpis(zip, model, names)).not.toThrow()
-    expect(reopen(zip).file('ppt/slides/slide26.xml')!.asText()).toContain('Fleet mix')
+    expect(reopen(zip).file('ppt/slides/slide26.xml')!.asText()).toContain('FLEET MIX')
   })
 })

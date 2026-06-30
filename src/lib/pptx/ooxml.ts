@@ -197,6 +197,50 @@ export function textBox(opts: {
     + `<p:txBody><a:bodyPr wrap="square"><a:normAutofit/></a:bodyPr><a:lstStyle/>${parasXml(opts.paras)}</p:txBody></p:sp>`
 }
 
+// ── Engineering KPI metric tile (S25/26) ─────────────────────────────────────
+
+const TILE_CARD = 'FAFAFA'      // soft card surface
+const TILE_BORDER = 'E4E4E7'    // hairline card outline
+const TILE_LABEL = '8A8A8E'     // muted label / unit
+const TILE_INK = '2B2B2B'       // figure ink
+const TILE_BAR = 386000         // accent-rule height (EMU, ~0.42pt of card top)
+
+/**
+ * One engineering metric tile: a soft card with a TAL-red (accent) or muted top
+ * accent rule, a big bold figure with an optional smaller unit, and a spaced
+ * caps label beneath. Emitted as two shapes (card + accent bar) using `id` and
+ * `id+1`, so the caller must space tile ids by 2. EMU units.
+ */
+export function metricTile(opts: {
+  id: number; x: number; y: number; cx: number; cy: number
+  value: string; unit?: string; label: string; accent?: boolean
+}): string {
+  const barColor = opts.accent ? TAL_RED : TILE_LABEL
+  const figSz = opts.accent ? 3600 : 3000
+  const num = `<a:r><a:rPr lang="en-US" sz="${figSz}" b="1" dirty="0"><a:solidFill><a:srgbClr val="${TILE_INK}"/></a:solidFill></a:rPr><a:t>${escapeXml(opts.value)}</a:t></a:r>`
+  const unit = opts.unit
+    ? `<a:r><a:rPr lang="en-US" sz="1600" b="1" dirty="0"><a:solidFill><a:srgbClr val="${TILE_LABEL}"/></a:solidFill></a:rPr><a:t>${escapeXml(' ' + opts.unit)}</a:t></a:r>`
+    : ''
+  const label = `<a:r><a:rPr lang="en-US" sz="1050" spc="60" dirty="0"><a:solidFill><a:srgbClr val="${TILE_LABEL}"/></a:solidFill></a:rPr><a:t>${escapeXml(opts.label)}</a:t></a:r>`
+  const card = `<p:sp><p:nvSpPr><p:cNvPr id="${opts.id}" name="KPI Tile ${opts.id}"/>`
+    + `<p:cNvSpPr/><p:nvPr/></p:nvSpPr>`
+    + `<p:spPr><a:xfrm><a:off x="${opts.x}" y="${opts.y}"/><a:ext cx="${opts.cx}" cy="${opts.cy}"/></a:xfrm>`
+    + `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 6000"/></a:avLst></a:prstGeom>`
+    + `<a:solidFill><a:srgbClr val="${TILE_CARD}"/></a:solidFill>`
+    + `<a:ln w="6350"><a:solidFill><a:srgbClr val="${TILE_BORDER}"/></a:solidFill></a:ln></p:spPr>`
+    + `<p:txBody><a:bodyPr lIns="118872" tIns="${TILE_BAR + 91440}" rIns="118872" bIns="68580" anchor="t"/><a:lstStyle/>`
+    + `<a:p><a:pPr algn="l"/>${num}${unit}</a:p>`
+    + `<a:p><a:pPr algn="l"><a:spcBef><a:spcPts val="500"/></a:spcBef></a:pPr>${label}</a:p></p:txBody></p:sp>`
+  // Accent rule: a thin rect flush to the top of the card, inset to the rounded corners.
+  const bar = `<p:sp><p:nvSpPr><p:cNvPr id="${opts.id + 1}" name="KPI Rule ${opts.id + 1}"/>`
+    + `<p:cNvSpPr/><p:nvPr/></p:nvSpPr>`
+    + `<p:spPr><a:xfrm><a:off x="${opts.x + 91440}" y="${opts.y + 91440}"/><a:ext cx="${opts.cx - 182880}" cy="45720"/></a:xfrm>`
+    + `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`
+    + `<a:solidFill><a:srgbClr val="${barColor}"/></a:solidFill></p:spPr>`
+    + `<p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>`
+  return card + bar
+}
+
 // ── Native editable tables (`<a:tbl>` graphic frame) ─────────────────────────
 
 export interface TableCell {
@@ -210,23 +254,35 @@ export interface TableCell {
 export const TAL_RED = 'EB0A1E'
 const HEADER_TXT = 'FFFFFF'
 const BODY_TXT = '2B2B2B'
-const CELL_BORDER = 'D9D9D9'
+const GRID_LINE = 'E4E4E7'   // hairline between body rows (matches the dashboard grid token)
+const HEADER_RULE = '2B2B2B' // crisp ink rule under the header band
+const ZEBRA = 'F6F6F7'       // faint alternating-row fill (engineering ledger look)
 
-/** One `<a:tc>`; `header` rows get the TAL-red fill + white bold text. */
-function cellXml(c: TableCell, header: boolean): string {
+/**
+ * One `<a:tc>`. Header (row 0) gets the TAL-red band: white bold text, letter-
+ * spacing, and a heavy ink bottom rule. Body cells get a hairline bottom border
+ * and — on alternating rows with no explicit fill — a faint zebra fill.
+ */
+function cellXml(c: TableCell, header: boolean, rowIndex: number): string {
   const color = c.color ?? (header ? HEADER_TXT : BODY_TXT)
   const sz = header ? 1100 : 1000
   const bold = header || c.bold ? ' b="1"' : ''
+  const spc = header ? ' spc="40"' : ''   // band letter-spacing
   const run = c.t
-    ? `<a:r><a:rPr lang="en-US" sz="${sz}"${bold} dirty="0"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill></a:rPr><a:t>${escapeXml(c.t)}</a:t></a:r>`
+    ? `<a:r><a:rPr lang="en-US" sz="${sz}"${bold}${spc} dirty="0"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill></a:rPr><a:t>${escapeXml(c.t)}</a:t></a:r>`
     : '<a:endParaRPr lang="en-US"/>'
+  const zebra = !header && rowIndex % 2 === 0   // every other data row
   const fill = c.fill ? `<a:srgbClr val="${c.fill}"/>`
-    : header ? `<a:srgbClr val="${TAL_RED}"/>` : null
-  // tcPr child order per schema: borders (lnB) then fill group.
-  const border = `<a:lnB w="6350" cap="flat"><a:solidFill><a:srgbClr val="${CELL_BORDER}"/></a:solidFill></a:lnB>`
+    : header ? `<a:srgbClr val="${TAL_RED}"/>`
+    : zebra ? `<a:srgbClr val="${ZEBRA}"/>` : null
+  // tcPr child order per schema: borders (lnB) then fill group. Header carries a
+  // heavier ink rule to set the band off from the data; body rows hairline.
+  const border = header
+    ? `<a:lnB w="19050" cap="flat"><a:solidFill><a:srgbClr val="${HEADER_RULE}"/></a:solidFill></a:lnB>`
+    : `<a:lnB w="6350" cap="flat"><a:solidFill><a:srgbClr val="${GRID_LINE}"/></a:solidFill></a:lnB>`
   const fillXml = fill ? `<a:solidFill>${fill}</a:solidFill>` : '<a:noFill/>'
   return `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="${c.align ?? 'l'}"/>${run}</a:p></a:txBody>`
-    + `<a:tcPr marL="45720" marR="45720" marT="22860" marB="22860" anchor="ctr">${border}${fillXml}</a:tcPr></a:tc>`
+    + `<a:tcPr marL="68580" marR="68580" marT="34290" marB="34290" anchor="ctr">${border}${fillXml}</a:tcPr></a:tc>`
 }
 
 /** Optional grouped super-header (e.g. Vehicle · Route Input · Output) spanning
@@ -239,7 +295,7 @@ function bandCellsXml(b: TableBand): string {
     + `<a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="en-US" sz="1000" b="1" dirty="0">`
     + `<a:solidFill><a:srgbClr val="${TAL_RED}"/></a:solidFill></a:rPr><a:t>${escapeXml(b.t)}</a:t></a:r></a:p>`
     + `</a:txBody><a:tcPr marL="45720" marR="45720" anchor="ctr">`
-    + `<a:lnB w="6350" cap="flat"><a:solidFill><a:srgbClr val="${CELL_BORDER}"/></a:solidFill></a:lnB><a:noFill/></a:tcPr></a:tc>`
+    + `<a:lnB w="6350" cap="flat"><a:solidFill><a:srgbClr val="${GRID_LINE}"/></a:solidFill></a:lnB><a:noFill/></a:tcPr></a:tc>`
   const merged = '<a:tc hMerge="1"><a:txBody><a:bodyPr/><a:lstStyle/><a:p/></a:txBody><a:tcPr/></a:tc>'.repeat(b.span - 1)
   return first + merged
 }
@@ -260,7 +316,7 @@ export function table(opts: {
   const grid = opts.colW.map(w => `<a:gridCol w="${w}"/>`).join('')
   const bandRow = opts.bands ? `<a:tr h="${rowH}">${opts.bands.map(bandCellsXml).join('')}</a:tr>` : ''
   const rows = bandRow + opts.rows.map((row, i) =>
-    `<a:tr h="${rowH}">${row.map(c => cellXml(c, i === 0)).join('')}</a:tr>`).join('')
+    `<a:tr h="${rowH}">${row.map(c => cellXml(c, i === 0, i)).join('')}</a:tr>`).join('')
   return `<p:graphicFrame><p:nvGraphicFramePr>`
     + `<p:cNvPr id="${opts.id}" name="ROM Table ${opts.id}"/><p:cNvGraphicFramePr>`
     + `<a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>`

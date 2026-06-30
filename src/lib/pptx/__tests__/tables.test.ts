@@ -40,6 +40,13 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     for (const n of [18, 19, 20, 24]) {
       expect(out.file(`ppt/slides/slide${n}.xml`)!.asText()).toContain('<a:tbl>')
     }
+    // Engineering table styling: red header band, ink header rule, zebra rows, grid hairlines.
+    const s18 = out.file('ppt/slides/slide18.xml')!.asText()
+    expect(s18).toContain('<a:srgbClr val="EB0A1E"/>')          // header band fill
+    expect(s18).toContain('w="19050"')                          // heavy header rule
+    expect(s18).toContain('<a:srgbClr val="2B2B2B"/>')          // header rule ink
+    expect(s18).toContain('<a:srgbClr val="F6F6F7"/>')          // zebra data row
+    expect(s18).toContain('<a:srgbClr val="E4E4E7"/>')          // hairline border
   })
 
   it('S18 lists captured requirements imperial-first', () => {

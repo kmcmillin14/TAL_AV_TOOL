@@ -7,7 +7,8 @@ import { newCanvas, roundRect, toPngBytes } from './canvas'
 
 const W = 1600, H = 860            // 16:9-ish raster (scaled into the slide)
 const RED = '#EB0A1E', INK = '#2B2B2B', GRAY = '#8A8A8E', LINE = '#C9CDD2'
-const NODE_W = 200, NODE_H = 64, COL_GAP = 320, ROW_GAP = 110
+const CARD = '#FAFAFA', CARD_BORDER = '#E4E4E7'
+const NODE_W = 200, NODE_H = 72, COL_GAP = 320, ROW_GAP = 120
 
 /** Longest-path layering: rank(dest) = max(rank(origin)+1). Cycles are bounded
  *  by iterating at most |nodes| times (a back-edge just stops contributing). */
@@ -47,6 +48,11 @@ export function renderFlowDiagramPng(flows: Flow[], names: Record<string, string
   const { canvas, ctx } = cv
   ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, W, H)
 
+  // Title.
+  ctx.font = "800 30px 'Toyota Type',-apple-system,sans-serif"; ctx.fillStyle = INK
+  ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'
+  ctx.fillText('Material flow network', 40, 48)
+
   // Position: x by rank (column), y stacked within the rank, vertically centered.
   const rank = rankNodes(nodes, edges)
   const byRank = new Map<number, string[]>()
@@ -66,26 +72,35 @@ export function renderFlowDiagramPng(flows: Flow[], names: Record<string, string
     }))
   }
 
-  // Edges first (under the nodes), with throughput + vehicle labels.
-  ctx.font = '20px sans-serif'; ctx.textBaseline = 'middle'
+  // Edges first (under the nodes), with throughput + vehicle labels in a white
+  // pill so they stay legible where they cross an arrow.
+  ctx.font = "600 20px 'Toyota Type',-apple-system,sans-serif"; ctx.textBaseline = 'middle'
   flows.forEach(f => {
     const a = pos.get(f.origin?.trim() || '—'), b = pos.get(f.destination?.trim() || '—')
     if (!a || !b) return
     const x1 = a.x + NODE_W, y1 = a.y + NODE_H / 2, x2 = b.x, y2 = b.y + NODE_H / 2
     arrow(ctx, x1, y1, x2, y2)
     const label = `${f.thruPerHr ?? 0}/hr` + (f.vehicleId ? ` · ${names[f.vehicleId] ?? f.vehicleId}` : '')
-    ctx.fillStyle = GRAY; ctx.textAlign = 'center'
-    ctx.fillText(label, (x1 + x2) / 2, (y1 + y2) / 2 - 16)
+    const mx = (x1 + x2) / 2, my = (y1 + y2) / 2 - 14
+    const tw = ctx.measureText(label).width, padX = 12, pillH = 32
+    roundRect(ctx, mx - (tw / 2 + padX), my - pillH / 2, tw + 2 * padX, pillH, pillH / 2)
+    ctx.fillStyle = '#FFFFFF'; ctx.fill()
+    ctx.strokeStyle = CARD_BORDER; ctx.lineWidth = 1; ctx.stroke()
+    ctx.fillStyle = GRAY; ctx.textAlign = 'center'; ctx.fillText(label, mx, my)
   })
 
-  // Nodes.
+  // Nodes — soft card with a TAL-red top accent bar + ink label.
   for (const [name, p] of pos) {
     roundRect(ctx, p.x, p.y, NODE_W, NODE_H, 10)
-    ctx.fillStyle = '#FFFFFF'; ctx.fill()
-    ctx.strokeStyle = RED; ctx.lineWidth = 2.5; ctx.stroke()
-    ctx.fillStyle = INK; ctx.font = '22px sans-serif'; ctx.textAlign = 'center'
+    ctx.fillStyle = CARD; ctx.fill()
+    ctx.strokeStyle = CARD_BORDER; ctx.lineWidth = 1.5; ctx.stroke()
+    // accent bar clipped to the rounded top
+    ctx.save(); roundRect(ctx, p.x, p.y, NODE_W, NODE_H, 10); ctx.clip()
+    ctx.fillStyle = RED; ctx.fillRect(p.x, p.y, NODE_W, 8); ctx.restore()
+    ctx.fillStyle = INK; ctx.font = "700 22px 'Toyota Type',-apple-system,sans-serif"
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
     const text = name.length > 18 ? `${name.slice(0, 17)}…` : name
-    ctx.fillText(text, p.x + NODE_W / 2, p.y + NODE_H / 2)
+    ctx.fillText(text, p.x + NODE_W / 2, p.y + NODE_H / 2 + 4)
   }
 
   return toPngBytes(canvas)

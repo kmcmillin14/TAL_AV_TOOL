@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-06-29 — Branded PPTX: engineering-grade data-slide polish (in-template)
+
+- **Tables** (`ooxml.ts` `cellXml`/`table`): industrial styling applied to all eight ROM tables —
+  TAL-red header band with letter-spacing + a crisp 1.5pt ink bottom rule, faint zebra data rows
+  (`#F6F6F7`, skipped where a cell has an explicit fill so verdict/TOTAL cells stay intact),
+  grid-token hairlines (`#E4E4E7`, was `#D9D9D9`), and roomier cell padding. Backward-compatible
+  (row index threaded into `cellXml`; no caller changes).
+- **KPI slides S25/26** (`content.ts` `fillKpis` + new `metricTile` in `ooxml.ts`): replaced the
+  plain body-placeholder text with native engineering metric tiles — soft cards with a TAL-red
+  (accent) / muted top accent rule, a big bold figure + optional unit, and a spaced caps label,
+  laid out in a grid mirroring the Step-4 dashboard hero tiles. S25 = Total fleet · Vehicle types ·
+  Flows · Throughput with the Base + charging → buffered build-up beneath; S26 = a tile per fleet
+  chassis. Body placeholder removed first so nothing ghosts behind them.
+- **Payback chart** (`romChart.ts`): two-tone area fill (loss below / gain above zero), faint year
+  gridlines, L-shaped axis rules, a rounded break-even callout chip with a crossover dot, and an
+  end-of-curve final-value label.
+- **Flow diagram** (`flowDiagram.ts`): soft cards with a TAL-red top accent bar, white rounded
+  label pills on the edges, and a chart title.
+- Docs: `docs/SPECIFICATION.md` (export section) updated. Tests extended in
+  `src/lib/pptx/__tests__/` (content/ooxml/tables). No new dependencies (OOXML/canvas only).
+
 ## 2026-06-29 — Standalone questionnaire deployment gate (Vercel)
 
 - Added `proxy.ts` (Next 16 middleware): when `QUESTIONNAIRE_ONLY=1`, the deployment serves only

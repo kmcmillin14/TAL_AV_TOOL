@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, removeBodyPlaceholder, table, addImage, cloneSlide, setSlideTitle } from '../ooxml'
+import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, fillBodyPlaceholder, removeBodyPlaceholder, table, metricTile, addImage, cloneSlide, setSlideTitle } from '../ooxml'
 import { slidesToRemove, type PptxSelection, PPTX_SECTIONS } from '../sections'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -141,6 +141,27 @@ describe('table', () => {
     expect(s18).toContain('<a:srgbClr val="2E7D32"/>')   // verdict fill
     expect((s18.match(/<a:gridCol\b/g) ?? []).length).toBe(2)
     expect((s18.match(/<a:tr\b/g) ?? []).length).toBe(3)
+  })
+})
+
+describe('metricTile', () => {
+  it('emits an editable card + accent rule that re-parse, with figure/unit/label', () => {
+    const zip = load()
+    const id = nextShapeId(zip, 25)
+    const ok = appendShapesToSlide(zip, 25, metricTile({
+      id, x: 685800, y: 2000000, cx: 2500000, cy: 1600000,
+      value: '24', unit: '/ hr', label: 'THROUGHPUT', accent: true,
+    }))
+    expect(ok).toBe(true)
+    const s25 = reopen(zip).file('ppt/slides/slide25.xml')!.asText()
+    expect(s25).toContain('24')
+    expect(s25).toContain('/ hr')
+    expect(s25).toContain('THROUGHPUT')
+    expect(s25).toContain('roundRect')                     // card geometry
+    expect(s25).toContain(`name="KPI Tile ${id}"`)
+    expect(s25).toContain(`name="KPI Rule ${id + 1}"`)     // accent bar uses id+1
+    expect(s25).toContain('<a:srgbClr val="EB0A1E"/>')     // TAL-red accent on an accent tile
+    expect((s25.match(/<\/p:spTree>/g) ?? []).length).toBe(1)
   })
 })
 
