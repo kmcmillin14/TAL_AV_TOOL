@@ -218,9 +218,12 @@ export function metricTile(opts: {
   figSz?: number
   /** Override the accent-rule color (6-hex, e.g. a status color). Defaults to red/muted. */
   barColor?: string
+  /** Tighter vertical rhythm for short tiles (e.g. the Fleet-Engine progression row). */
+  compact?: boolean
 }): string {
   const barColor = opts.barColor ?? (opts.accent ? TAL_RED : TILE_LABEL)
-  const figSz = opts.figSz ?? (opts.accent ? 3600 : 3000)
+  const figSz = opts.figSz ?? (opts.compact ? 2400 : opts.accent ? 3600 : 3000)
+  const topIns = opts.compact ? 160020 : TILE_BAR + 91440
   const num = `<a:r><a:rPr lang="en-US" sz="${figSz}" b="1" dirty="0"><a:solidFill><a:srgbClr val="${TILE_INK}"/></a:solidFill></a:rPr><a:t>${escapeXml(opts.value)}</a:t></a:r>`
   const unit = opts.unit
     ? `<a:r><a:rPr lang="en-US" sz="1600" b="1" dirty="0"><a:solidFill><a:srgbClr val="${TILE_LABEL}"/></a:solidFill></a:rPr><a:t>${escapeXml(' ' + opts.unit)}</a:t></a:r>`
@@ -232,7 +235,7 @@ export function metricTile(opts: {
     + `<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 6000"/></a:avLst></a:prstGeom>`
     + `<a:solidFill><a:srgbClr val="${TILE_CARD}"/></a:solidFill>`
     + `<a:ln w="6350"><a:solidFill><a:srgbClr val="${TILE_BORDER}"/></a:solidFill></a:ln></p:spPr>`
-    + `<p:txBody><a:bodyPr lIns="118872" tIns="${TILE_BAR + 91440}" rIns="118872" bIns="68580" anchor="t"/><a:lstStyle/>`
+    + `<p:txBody><a:bodyPr lIns="118872" tIns="${topIns}" rIns="118872" bIns="68580" anchor="t"/><a:lstStyle/>`
     + `<a:p><a:pPr algn="l"/>${num}${unit}</a:p>`
     + `<a:p><a:pPr algn="l"><a:spcBef><a:spcPts val="500"/></a:spcBef></a:pPr>${label}</a:p></p:txBody></p:sp>`
   // Accent rule: a thin rect flush to the top of the card, inset to the rounded corners.

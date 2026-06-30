@@ -49,11 +49,16 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(s18).toContain('<a:srgbClr val="E4E4E7"/>')          // hairline border
   })
 
-  it('S18 lists captured requirements imperial-first', () => {
+  it('S18 leads with headline spec tiles + a table for the rest', () => {
     const zip = load()
     fillRequirements(zip, PROJECT)
     const s18 = reopen(zip).file('ppt/slides/slide18.xml')!.asText()
-    expect(s18).toContain('2,500 lbs')
+    // headline tiles
+    expect(s18).toContain('KPI Tile')
+    expect(s18).toContain('MAX LOAD')
+    expect(s18).toContain('2,500')            // max load figure (unit "lbs" is a separate run)
+    expect(s18).toContain('FOOTPRINT (L×W×H)')
+    // remaining requirements still in the table
     expect(s18).toContain('Refrigerated')
     expect(s18).toContain('Pallet')
   })
@@ -86,10 +91,12 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
 
     for (const n of [21, 22, 23]) {
       const xml = out.file(`ppt/slides/slide${n}.xml`)!.asText()
-      // progression strip + derivation table = two tables; placeholder gone
-      expect((xml.match(/<a:tbl>/g) ?? []).length).toBe(2)
+      // progression tile row + one derivation table; placeholder gone
+      expect((xml.match(/<a:tbl>/g) ?? []).length).toBe(1)
+      expect(xml).toContain('KPI Tile')              // progression tiles
       expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
-      expect(xml).toContain('TOTAL')                 // progression Raw…=Total
+      expect(xml).toContain('RAW FLEET')             // progression Raw…=Fleet sold
+      expect(xml).toContain('= FLEET SOLD')
       expect(xml).toContain('What it means')         // derivation columns
     }
     // Each tier names itself and shows its headline derivation step.

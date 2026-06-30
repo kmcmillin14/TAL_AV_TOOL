@@ -32,7 +32,6 @@ const ROI_IMG_H = 2500000    // height reserved for the S28 payback chart
 // Verdict palette — shared by the S19 verdict-cell fills and the S20 grid glyphs
 // (pass = GREEN, review = YELLOW, fail = RED).
 const STATUS_COLOR = { GREEN: '2E7D32', YELLOW: 'C77700', RED: 'C62828' } as const
-const RED_TINT = 'FBE3E5'    // light accent-soft for the active progression cell
 const GRAY = '8A8A8E'
 
 const put = (
@@ -55,17 +54,18 @@ const TILE_GAP = 200000
 
 /** A row of engineering metric tiles across the body width (the modern KPI look,
  *  reused on the step slides). Returns the bottom y. */
-function tileRow(
-  zip: PizZip, slide: number, y: number, h: number,
-  tiles: Array<{ value: string; label: string; barColor?: string; accent?: boolean; figSz?: number }>,
-): number {
+interface TileSpec {
+  value: string; unit?: string; label: string; barColor?: string; accent?: boolean; figSz?: number; compact?: boolean
+}
+function tileRow(zip: PizZip, slide: number, y: number, h: number, tiles: TileSpec[]): number {
   const cols = tiles.length
   const tileW = Math.round((BODY.cx - (cols - 1) * TILE_GAP) / cols)
   let id = nextShapeId(zip, slide)
   const xml = tiles.map((t, i) => {
     const s = metricTile({
       id, x: BODY.x + i * (tileW + TILE_GAP), y, cx: tileW, cy: h,
-      value: t.value, label: t.label, barColor: t.barColor, accent: t.accent, figSz: t.figSz,
+      value: t.value, unit: t.unit, label: t.label,
+      barColor: t.barColor, accent: t.accent, figSz: t.figSz, compact: t.compact,
     })
     id += 2
     return s
@@ -85,28 +85,42 @@ const TEMP_LABEL: Record<string, string> = {
 /** S18 — Application Requirements as a requirement → value table. Only rows with
  *  a meaningful value are shown (partial projects stay clean). */
 export function fillRequirements(zip: PizZip, project: StoredProject): void {
-  const rows: TableCell[][] = [[{ t: 'Requirement' }, { t: 'Value' }]]
-  const add = (k: string, v?: string | null) => { if (v) rows.push([{ t: k, bold: true }, { t: v }]) }
+  // ── Headline spec tiles (modern KPI-tile look) ───────────────────────────
+  const maxLoad = (project.maxLoadWeightLbs ?? 0) > 0
+    ? { value: project.maxLoadWeightLbs!.toLocaleString(), unit: 'lbs' } : { value: '—' }
 
-  if ((project.maxLoadWeightLbs ?? 0) > 0) add('Max load weight', `${project.maxLoadWeightLbs!.toLocaleString()} lbs`)
-  add('Payload / unit type', project.typicalUnitType?.trim())
-  add('Transfer method', project.transferMethod?.trim())
-  add('Delivery pattern', project.deliveryPattern?.trim())
-
-  // Lift / transfer height — pick/drop, else legacy "lift to".
   const pick = project.pickHeightFt, drop = project.dropHeightFt
-  if (pick != null || drop != null) {
-    add('Lift / transfer', `${ft(pick ?? 0)} → ${ft(drop ?? 0)}`)
-  } else if ((project.maxLiftHeightFt ?? 0) > 0) {
-    add('Lift / transfer', `to ${ft(project.maxLiftHeightFt!)}`)
-  }
+  const lift = pick != null || drop != null
+    ? { value: `${pick ?? 0}→${drop ?? 0}`, unit: 'ft' }
+    : (project.maxLiftHeightFt ?? 0) > 0 ? { value: `to ${project.maxLiftHeightFt}`, unit: 'ft' } : { value: '—' }
 
-  // Load footprint (declared load #1, else legacy singular fields).
   const l0 = project.loads?.[0]
   const L = l0?.lengthIn ?? project.loadLengthIn
   const W = l0?.widthIn ?? project.loadWidthIn
   const H = l0?.heightIn ?? project.loadHeightIn
-  if (L || W || H) add('Load footprint (L×W×H)', `${L ?? '—'} × ${W ?? '—'} × ${H ?? '—'} in`)
+  const footprint = (L || W || H)
+    ? { value: `${L ?? '—'}×${W ?? '—'}×${H ?? '—'}`, unit: 'in', figSz: 2000 } : { value: '—' }
+
+  const hrPerDay = Math.min(24, (project.shiftsPerDay ?? 0) * (project.hoursPerShift ?? 0))
+  const schedule = hrPerDay > 0 ? { value: String(hrPerDay), unit: 'hr/day' } : { value: '—' }
+
+  removeBodyPlaceholder(zip, ROM_SLIDE.requirements)
+  const tilesH = 1200000
+  tileRow(zip, ROM_SLIDE.requirements, BODY.y, tilesH, [
+    { ...maxLoad, label: 'MAX LOAD', accent: true },
+    { ...lift, label: 'LIFT / TRANSFER' },
+    { ...footprint, label: 'FOOTPRINT (L×W×H)' },
+    { ...schedule, label: 'SCHEDULE' },
+  ])
+
+  // ── Remaining requirements as a table (the headline specs above are dropped
+  //    here to avoid duplication) ──────────────────────────────────────────
+  const rows: TableCell[][] = [[{ t: 'Requirement' }, { t: 'Value' }]]
+  const add = (k: string, v?: string | null) => { if (v) rows.push([{ t: k, bold: true }, { t: v }]) }
+
+  add('Payload / unit type', project.typicalUnitType?.trim())
+  add('Transfer method', project.transferMethod?.trim())
+  add('Delivery pattern', project.deliveryPattern?.trim())
 
   const env = project.temperatureEnvironment ?? (project.freezerCapable ? 'freezer' : undefined)
   if (env) add('Temperature', TEMP_LABEL[env] ?? env)
@@ -123,11 +137,8 @@ export function fillRequirements(zip: PizZip, project: StoredProject): void {
   const certs = Array.isArray(project.certifications) ? project.certifications.filter(Boolean) : []
   if (certs.length) add('Certifications', certs.join(', '))
 
-  const hrPerDay = Math.min(24, (project.shiftsPerDay ?? 0) * (project.hoursPerShift ?? 0))
-  if (hrPerDay > 0) add('Operating schedule', `${project.shiftsPerDay} shift${project.shiftsPerDay === 1 ? '' : 's'} × ${project.hoursPerShift} hr = ${hrPerDay} hr/day`)
-
-  if (rows.length === 1) rows.push([{ t: '—' }, { t: 'No requirements captured yet (Step 1).' }])
-  put(zip, ROM_SLIDE.requirements, [3600000, 7220400], rows, { center: true })
+  if (rows.length === 1) rows.push([{ t: '—' }, { t: 'No further requirements captured yet (Step 1).' }])
+  put(zip, ROM_SLIDE.requirements, [3600000, 7220400], rows, { y: BODY.y + tilesH + 240000 })
 }
 
 // ── Fleet Engine (S21 Raw / S22 Charging / S23 Buffer) — worked derivations ───
@@ -148,25 +159,22 @@ const STAGE_META: Record<Stage, { n: string; name: string; slide: number; meanin
     meaning: '(base + charging) × (1 + buffer), rounded up — spare capacity for maintenance, training, and demand spikes = fleet sold.' },
 }
 
-// Progression strip: RAW + CHARGING × BUFFER = TOTAL (operators in thin columns).
-const PROG_COL = [2400000, 406800, 2400000, 406800, 2400000, 406800, 2400000]
-const PROG_H = 2 * ROW_H
-const CAP_H = 820000   // fits up to 4 caption lines (Raw adds an Inputs line)
+const CAP_H = 620000    // meaning caption + inputs line
+const PROG_H = 1180000  // progression tile row
 // Worked-derivation table: Step · What it means · Calculation · Result.
 const DERIV_COL = [2600000, 3400000, 3220400, 1600000]
 
-/** The Raw + Charging × Buffer = Total build-up, with `stage`'s segment lit. */
-function progressionRows(model: FleetModel, stage: Stage): TableCell[][] {
+/** The RAW + CHARGING × BUFFER = FLEET SOLD build-up as a compact tile row, with
+ *  this tier's tile lit (red accent) and the total always red. */
+function progressionTiles(model: FleetModel, stage: Stage): TileSpec[] {
   const { fleet, settings } = model
   const chg = fleet.totalChargingDelta
-  const hi = (s: Stage): Partial<TableCell> => (stage === s ? { fill: RED_TINT, color: TAL_RED, bold: true } : {})
+  const lit = (s: Stage): Partial<TileSpec> => (stage === s ? { barColor: TAL_RED } : {})
   return [
-    [{ t: 'RAW', align: 'ctr' }, { t: '', align: 'ctr' }, { t: 'CHARGING', align: 'ctr' },
-     { t: '', align: 'ctr' }, { t: 'BUFFER', align: 'ctr' }, { t: '', align: 'ctr' }, { t: 'TOTAL', align: 'ctr' }],
-    [{ t: String(fleet.totalBaseFleet), align: 'ctr', ...hi('raw') }, { t: '+', align: 'ctr' },
-     { t: chg > 0 ? `+${chg}` : '0', align: 'ctr', ...hi('charging') }, { t: '×', align: 'ctr' },
-     { t: `×${(1 + settings.bufferPct).toFixed(2)}`, align: 'ctr', ...hi('buffer') }, { t: '=', align: 'ctr' },
-     { t: String(fleet.totalFleetSold), align: 'ctr', fill: TAL_RED, color: 'FFFFFF', bold: true }],
+    { value: String(fleet.totalBaseFleet), label: 'RAW FLEET', compact: true, ...lit('raw') },
+    { value: chg > 0 ? `+${chg}` : '0', label: '+ CHARGING', compact: true, ...lit('charging') },
+    { value: `×${(1 + settings.bufferPct).toFixed(2)}`, label: '× BUFFER', compact: true, ...lit('buffer') },
+    { value: String(fleet.totalFleetSold), label: '= FLEET SOLD', compact: true, accent: true },
   ]
 }
 
@@ -204,9 +212,9 @@ function renderTier(zip: PizZip, stage: Stage, model: FleetModel, deriv: Derivat
     id: nextShapeId(zip, meta.slide), x: BODY.x, y: BODY.y, cx: BODY.cx, cy: CAP_H, paras: caption,
   }))
 
-  // Stacked layout: caption → 60k gap → progression strip → 150k gap → derivation.
+  // Stacked layout: caption → 60k gap → progression tile row → 150k gap → derivation.
   const progY = BODY.y + CAP_H + 60000
-  put(zip, meta.slide, PROG_COL, progressionRows(model, stage), { y: progY })
+  tileRow(zip, meta.slide, progY, PROG_H, progressionTiles(model, stage))
 
   const derivY = progY + PROG_H + 150000
   put(zip, meta.slide, DERIV_COL,

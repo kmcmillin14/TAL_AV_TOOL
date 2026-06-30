@@ -506,8 +506,9 @@ being squashed. **Investment (S27)** is a dynamic per-line CAPEX pricing table
 `renderPaybackChartPng`, from the pure `paybackSeries`) over an ROI metrics table. The **Fleet
 Engine slides (S21/22/23)** present three **independent tiers** (`src/lib/pptx/tables.ts` →
 `fillFleetEngine`): each shows a **meaning caption** ("TIER n — NAME" + what the tier does), the
-`Raw + Charging × Buffer = Total` **progression strip** with that tier lit, and a **worked
-derivation table** (Step · What it means · Calculation · Result) for a representative example —
+`RAW · + CHARGING · × BUFFER · = FLEET SOLD` **progression as a compact metric-tile row** (this
+tier's tile lit red, the total accented) — the modern KPI-tile look applied to the calc — and a
+**worked derivation table** (Step · What it means · Calculation · Result) for a representative example —
 rendered from the shared `src/lib/derivation.ts` model so the deck shows *how* each number is
 reached, not just the sum. Editable, DOM-independent. The matrix and data slides — App
 Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle grid, from
@@ -515,8 +516,10 @@ Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle g
 (`src/lib/pptx/tables.ts`; `table()`/`cellXml()` in `ooxml.ts`), styled engineering-grade: a
 TAL-red header band with letter-spacing and a crisp ink rule, faint zebra data rows, and grid-token
 (`#E4E4E7`) hairlines, with right-aligned tabular numerics. To carry the KPI-tile look onto the step
-slides, **S19 leads with a metric-tile summary band** (Pass / Review / Fail verdict counts with
-status-colored accent rules + a Candidates total — `tileRow` reusing `metricTile`) above its table.
+slides (`tileRow` reusing `metricTile`), **S18 leads with headline spec tiles** (Max load · Lift ·
+Footprint · Schedule, dropped from the table below to avoid duplication) and **S19 leads with a
+verdict-count band** (Pass / Review / Fail with status-colored accent rules + a Candidates total)
+above their tables.
 The **S24 flow diagram merges parallel flows** (several flows between the same two locations collapse
 to one edge: summed moves/hr + the distinct vehicles), so arrows/labels never stack; the flow table
 still lists each flow. The S24 diagram and S28 payback chart

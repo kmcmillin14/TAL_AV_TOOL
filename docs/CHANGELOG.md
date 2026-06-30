@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-06-29 — Branded PPTX: tile treatment across the Step 1–3 slides
+
+- **S18 Application Requirements** now leads with **headline spec tiles** (Max load · Lift/transfer ·
+  Footprint · Schedule) and keeps the remaining requirements in the table beneath (those four are
+  dropped from the table to avoid duplication).
+- **S21/22/23 Fleet Engine** progression is now a **compact metric-tile row** (RAW · + CHARGING ·
+  × BUFFER · = FLEET SOLD) with the active tier's tile lit red and the total accented, replacing the
+  small progression table. Caption tightened to make room. `metricTile` gained a `compact` mode
+  (tighter vertical rhythm) for short tiles.
+- Removed the now-unused `progressionRows`/`RED_TINT`/`PROG_COL`. Tests + docs updated.
+
 ## 2026-06-29 — Branded PPTX: MFD parallel-edge merge + modern tile band on the matrix
 
 - **Material Flow Diagram (S24): merge parallel flows.** Several flows between the *same* two
