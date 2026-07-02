@@ -40,13 +40,12 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     for (const n of [18, 19, 20, 24]) {
       expect(out.file(`ppt/slides/slide${n}.xml`)!.asText()).toContain('<a:tbl>')
     }
-    // Engineering table styling: red header band, ink header rule, zebra rows, grid hairlines.
+    // Restyled tables: white header (ink text) + TAL-red underline rule, no zebra.
     const s18 = out.file('ppt/slides/slide18.xml')!.asText()
-    expect(s18).toContain('<a:srgbClr val="EB0A1E"/>')          // header band fill
-    expect(s18).toContain('w="19050"')                          // heavy header rule
-    expect(s18).toContain('<a:srgbClr val="2B2B2B"/>')          // header rule ink
-    expect(s18).toContain('<a:srgbClr val="F6F6F7"/>')          // zebra data row
-    expect(s18).toContain('<a:srgbClr val="E4E4E7"/>')          // hairline border
+    expect(s18).toContain('<a:lnB w="19050" cap="flat"><a:solidFill><a:srgbClr val="EB0A1E"/></a:solidFill></a:lnB>') // red header rule
+    expect(s18).not.toContain('F6F6F7')                         // zebra gone
+    expect(s18).toContain('<a:srgbClr val="E4E4E7"/>')          // hairline body dividers
+    expect(s18).toContain('<a:srgbClr val="2B2B2B"/>')          // ink text
   })
 
   it('S18 leads with headline spec tiles + a table for the rest', () => {

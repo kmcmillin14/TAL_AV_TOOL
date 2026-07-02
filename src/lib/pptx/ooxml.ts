@@ -259,37 +259,31 @@ export interface TableCell {
 }
 
 export const TAL_RED = 'EB0A1E'
-const HEADER_TXT = 'FFFFFF'
+const HEADER_TXT = '2B2B2B'  // ink header text (band removed — brand carried by the red rule)
 const BODY_TXT = '2B2B2B'
 const GRID_LINE = 'E4E4E7'   // hairline between body rows (matches the dashboard grid token)
-const HEADER_RULE = '2B2B2B' // crisp ink rule under the header band
-const ZEBRA = 'F6F6F7'       // faint alternating-row fill (engineering ledger look)
 
 /**
- * One `<a:tc>`. Header (row 0) gets the TAL-red band: white bold text, letter-
- * spacing, and a heavy ink bottom rule. Body cells get a hairline bottom border
- * and — on alternating rows with no explicit fill — a faint zebra fill.
+ * One `<a:tc>`. Header (row 0): white background, bold ink text with letter-
+ * spacing, and a single TAL-red underline rule — the brand moment, once per
+ * table. Body cells: hairline bottom divider, no fill. An explicit `fill` /
+ * `color` on the cell (verdicts, TOTAL row) always wins.
  */
-function cellXml(c: TableCell, header: boolean, rowIndex: number): string {
+function cellXml(c: TableCell, header: boolean): string {
   const color = c.color ?? (header ? HEADER_TXT : BODY_TXT)
   const sz = header ? 1100 : 1000
   const bold = header || c.bold ? ' b="1"' : ''
-  const spc = header ? ' spc="40"' : ''   // band letter-spacing
+  const spc = header ? ' spc="40"' : ''   // header letter-spacing
   const run = c.t
     ? `<a:r><a:rPr lang="en-US" sz="${sz}"${bold}${spc} dirty="0"><a:solidFill><a:srgbClr val="${color}"/></a:solidFill></a:rPr><a:t>${escapeXml(c.t)}</a:t></a:r>`
     : '<a:endParaRPr lang="en-US"/>'
-  const zebra = !header && rowIndex % 2 === 0   // every other data row
-  const fill = c.fill ? `<a:srgbClr val="${c.fill}"/>`
-    : header ? `<a:srgbClr val="${TAL_RED}"/>`
-    : zebra ? `<a:srgbClr val="${ZEBRA}"/>` : null
-  // tcPr child order per schema: borders (lnB) then fill group. Header carries a
-  // heavier ink rule to set the band off from the data; body rows hairline.
+  // tcPr child order per schema: borders (lnB) then fill group.
   const border = header
-    ? `<a:lnB w="19050" cap="flat"><a:solidFill><a:srgbClr val="${HEADER_RULE}"/></a:solidFill></a:lnB>`
+    ? `<a:lnB w="19050" cap="flat"><a:solidFill><a:srgbClr val="${TAL_RED}"/></a:solidFill></a:lnB>`
     : `<a:lnB w="6350" cap="flat"><a:solidFill><a:srgbClr val="${GRID_LINE}"/></a:solidFill></a:lnB>`
-  const fillXml = fill ? `<a:solidFill>${fill}</a:solidFill>` : '<a:noFill/>'
+  const fillXml = c.fill ? `<a:solidFill><a:srgbClr val="${c.fill}"/></a:solidFill>` : '<a:noFill/>'
   return `<a:tc><a:txBody><a:bodyPr/><a:lstStyle/><a:p><a:pPr algn="${c.align ?? 'l'}"/>${run}</a:p></a:txBody>`
-    + `<a:tcPr marL="68580" marR="68580" marT="34290" marB="34290" anchor="ctr">${border}${fillXml}</a:tcPr></a:tc>`
+    + `<a:tcPr marL="91440" marR="91440" marT="45720" marB="45720" anchor="ctr">${border}${fillXml}</a:tcPr></a:tc>`
 }
 
 /** Optional grouped super-header (e.g. Vehicle · Route Input · Output) spanning
@@ -319,11 +313,11 @@ export function table(opts: {
   rowH?: number
   bands?: TableBand[]
 }): string {
-  const rowH = opts.rowH ?? 370000
+  const rowH = opts.rowH ?? 400000
   const grid = opts.colW.map(w => `<a:gridCol w="${w}"/>`).join('')
   const bandRow = opts.bands ? `<a:tr h="${rowH}">${opts.bands.map(bandCellsXml).join('')}</a:tr>` : ''
   const rows = bandRow + opts.rows.map((row, i) =>
-    `<a:tr h="${rowH}">${row.map(c => cellXml(c, i === 0, i)).join('')}</a:tr>`).join('')
+    `<a:tr h="${rowH}">${row.map(c => cellXml(c, i === 0)).join('')}</a:tr>`).join('')
   return `<p:graphicFrame><p:nvGraphicFramePr>`
     + `<p:cNvPr id="${opts.id}" name="ROM Table ${opts.id}"/><p:cNvGraphicFramePr>`
     + `<a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>`
