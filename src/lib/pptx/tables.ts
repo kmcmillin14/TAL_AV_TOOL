@@ -26,7 +26,7 @@ import { frame, type TileSpec } from './layout'
 
 // Body region below the template's title bar (EMU; slide is 12192000×6858000).
 const BODY = { x: 685800, y: 1828800, cx: 10820400, cy: 4114800 }
-const ROW_H = 320000
+const LEGACY_ROW_H = 320000
 const FLOW_IMG_H = 2500000   // height reserved for the S24 diagram image
 const ROI_IMG_H = 2500000    // height reserved for the S28 payback chart
 
@@ -41,13 +41,13 @@ const put = (
 ): void => {
   // The graphic replaces the body text box — drop the empty placeholder behind it.
   removeBodyPlaceholder(zip, slide)
-  const cy = (rows.length + (opts.bands ? 1 : 0)) * ROW_H
+  const cy = (rows.length + (opts.bands ? 1 : 0)) * LEGACY_ROW_H
   // `center` vertically balances a sole-table slide in the body region.
   const y = opts.center ? BODY.y + Math.max(0, (BODY.cy - cy) / 2) : (opts.y ?? BODY.y)
   appendShapesToSlide(zip, slide, table({
     id: nextShapeId(zip, slide),
     x: BODY.x, y, cx: BODY.cx, cy,
-    colW, rows, rowH: ROW_H, bands: opts.bands,
+    colW, rows, rowH: LEGACY_ROW_H, bands: opts.bands,
   }))
 }
 
@@ -136,7 +136,7 @@ export function fillRequirements(zip: PizZip, project: StoredProject): void {
   if (certs.length) add('Certifications', certs.join(', '))
 
   if (rows.length === 1) rows.push([{ t: '—' }, { t: 'No further requirements captured yet (Step 1).' }])
-  f.table([3600000, 7220400], rows)
+  f.table([3600000, 7220400], rows, { rowH: 320000 })
 }
 
 // ── Fleet Engine (S21 Raw / S22 Charging / S23 Buffer) — worked derivations ───
