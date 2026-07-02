@@ -39,6 +39,7 @@ export function fleetFlowTakeaway(model: FleetModel): TextRun[] | null {
     ink(` across ${plural(fleet.groups.length, 'type')} handle${sold === 1 ? 's' : ''} `),
     key(`${thru} moves/hr`),
   ]
+  // Fleet-average proxy: fractional demand ÷ units sold (includes charging + buffer units).
   if (totalRaw > 0) runs.push(ink(' at '), key(pct(totalRaw / sold)), ink(' utilization'))
   runs.push(ink('.'))
   return runs
@@ -55,15 +56,15 @@ export function investmentTakeaway(model: FleetModel): TextRun[] | null {
   ]
 }
 
-/** S28 — "Breaks even in 2.1 years — +$3.4M cumulative over 10 years." */
+/** S28 — "Simple payback in 2.1 years — +$3.4M cumulative labor offset over 10 years." */
 export function roiTakeaway(model: FleetModel, serviceLifeYears: number): TextRun[] | null {
   const payback = model.rom.payback.paybackYears
   if (payback == null) return null
-  const runs = [ink('Breaks even in '), key(`${payback.toFixed(1)} years`)]
+  const runs = [ink('Simple payback in '), key(`${payback.toFixed(1)} years`)]
   const { points } = paybackSeries(model.rom, serviceLifeYears)
   const last = points[points.length - 1]?.cumulative
   if (last != null && last > 0) {
-    runs.push(ink(' — '), key(`+${usd(last)}`), ink(` cumulative over ${serviceLifeYears} years`))
+    runs.push(ink(' — '), key(`+${usd(last)}`), ink(` cumulative labor offset over ${serviceLifeYears} years`))
   }
   runs.push(ink('.'))
   return runs

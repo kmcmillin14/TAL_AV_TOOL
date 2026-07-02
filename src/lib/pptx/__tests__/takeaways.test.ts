@@ -31,10 +31,11 @@ describe('money-slide takeaways', () => {
     const fin = financialsTakeaway(m)!
     expect(text(fin)).toMatch(/^A \$.+ investment returns \$.+\/yr net — payback in \d+\.\d years\.$/)
     expect(fin.some(r => r.bold && r.color === 'EB0A1E')).toBe(true)
+    expect(fin.every(r => r.sz === 2100)).toBe(true)           // one type size across the sentence
 
     expect(text(fleetFlowTakeaway(m))).toMatch(/^\d+ vehicles across \d+ types handle 35 moves\/hr at \d+% utilization\.$/)
     expect(text(investmentTakeaway(m))).toMatch(/^Total ROM investment: \$.+ for \d+ vehicles\.$/)
-    expect(text(roiTakeaway(m, 10))).toMatch(/^Breaks even in \d+\.\d years — \+\$.+ cumulative over 10 years\.$/)
+    expect(text(roiTakeaway(m, 10))).toMatch(/^Simple payback in \d+\.\d years — \+\$.+ cumulative labor offset over 10 years\.$/)
   })
 
   it('partial model → clauses drop, no placeholder text', () => {
