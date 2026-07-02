@@ -46,6 +46,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(s18).not.toContain('F6F6F7')                         // zebra gone
     expect(s18).toContain('<a:srgbClr val="E4E4E7"/>')          // hairline body dividers
     expect(s18).toContain('<a:srgbClr val="2B2B2B"/>')          // ink text
+    expect(s18).toContain('<a:noFill/>')                        // header/body cells unpainted
   })
 
   it('S18 leads with headline spec tiles + a table for the rest', () => {

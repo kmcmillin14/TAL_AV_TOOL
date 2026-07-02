@@ -259,18 +259,17 @@ export interface TableCell {
 }
 
 export const TAL_RED = 'EB0A1E'
-const HEADER_TXT = '2B2B2B'  // ink header text (band removed — brand carried by the red rule)
-const BODY_TXT = '2B2B2B'
+const INK = '2B2B2B'         // header + body text (band removed — brand carried by the red rule)
 const GRID_LINE = 'E4E4E7'   // hairline between body rows (matches the dashboard grid token)
 
 /**
- * One `<a:tc>`. Header (row 0): white background, bold ink text with letter-
+ * One `<a:tc>`. Header (row 0): no fill (the deck's slides are white), bold ink text with letter-
  * spacing, and a single TAL-red underline rule — the brand moment, once per
  * table. Body cells: hairline bottom divider, no fill. An explicit `fill` /
  * `color` on the cell (verdicts, TOTAL row) always wins.
  */
 function cellXml(c: TableCell, header: boolean): string {
-  const color = c.color ?? (header ? HEADER_TXT : BODY_TXT)
+  const color = c.color ?? INK
   const sz = header ? 1100 : 1000
   const bold = header || c.bold ? ' b="1"' : ''
   const spc = header ? ' spc="40"' : ''   // header letter-spacing
@@ -295,7 +294,7 @@ function bandCellsXml(b: TableBand): string {
   const first = `<a:tc gridSpan="${b.span}"><a:txBody><a:bodyPr/><a:lstStyle/>`
     + `<a:p><a:pPr algn="ctr"/><a:r><a:rPr lang="en-US" sz="1000" b="1" dirty="0">`
     + `<a:solidFill><a:srgbClr val="${TAL_RED}"/></a:solidFill></a:rPr><a:t>${escapeXml(b.t)}</a:t></a:r></a:p>`
-    + `</a:txBody><a:tcPr marL="45720" marR="45720" anchor="ctr">`
+    + `</a:txBody><a:tcPr marL="91440" marR="91440" anchor="ctr">`
     + `<a:lnB w="6350" cap="flat"><a:solidFill><a:srgbClr val="${GRID_LINE}"/></a:solidFill></a:lnB><a:noFill/></a:tcPr></a:tc>`
   const merged = '<a:tc hMerge="1"><a:txBody><a:bodyPr/><a:lstStyle/><a:p/></a:txBody><a:tcPr/></a:tc>'.repeat(b.span - 1)
   return first + merged
@@ -323,7 +322,7 @@ export function table(opts: {
     + `<a:graphicFrameLocks noGrp="1"/></p:cNvGraphicFramePr><p:nvPr/></p:nvGraphicFramePr>`
     + `<p:xfrm><a:off x="${opts.x}" y="${opts.y}"/><a:ext cx="${opts.cx}" cy="${opts.cy}"/></p:xfrm>`
     + `<a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/table">`
-    + `<a:tbl><a:tblPr firstRow="1" bandRow="1"/><a:tblGrid>${grid}</a:tblGrid>${rows}</a:tbl>`
+    + `<a:tbl><a:tblPr/><a:tblGrid>${grid}</a:tblGrid>${rows}</a:tbl>`
     + `</a:graphicData></a:graphic></p:graphicFrame>`
 }
 
