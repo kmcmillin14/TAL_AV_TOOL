@@ -27,6 +27,20 @@ the **code** (`src/lib/pptx/tokenMap.ts`). Keep them in sync.
 
 ## Placeholders
 
+### Slide anatomy (all filled data slides)
+
+Fillers compose through the shared frame in `src/lib/pptx/layout.ts` — zones in fixed
+order **eyebrow → hero (takeaway | tiles) → evidence (table/image) → caption**, each
+optional per slide, all placed at shared spacing tokens. Eyebrow strings:
+S18 `01 — APPLICATION REQUIREMENTS` · S19/S20 `02 — VEHICLE SELECTION` ·
+S21–23 `03 — FLEET ENGINE · TIER n OF 3 — NAME` · S24 `04 — MATERIAL FLOW` ·
+S25 `05 — FINANCIALS` · S26 `05 — FLEET & FLOW` · S27 `06 — INVESTMENT` ·
+S28 `06 — RETURN ON INVESTMENT` · appendices `APPENDIX — METHODOLOGY` /
+`APPENDIX — CYCLE MATH`. Money slides (S25–28) lead with an auto-generated takeaway
+sentence from `src/lib/pptx/takeaways.ts` (null → zone skipped). Table style: white
+header + TAL-red underline rule, hairline dividers, no zebra (`cellXml` in `ooxml.ts`);
+explicit per-cell `fill`/`color` (verdicts, TOTAL row) still wins.
+
 ### P0 — live now (cover S1 + contact S34, native single-run brackets)
 
 | Placeholder text (in template) | Filled with |
@@ -111,7 +125,7 @@ as the web Methodology panel. This is the first pipeline step that *adds* (not j
 A **per-flow cycle-math appendix** follows — `fillFlowMath` (`tables.ts`) builds, for each assigned
 flow, its substituted cycle formula → cycle → demand (`out + back + load + unload + lift = cycle`,
 `Q × cycle ÷ 3600 = vehicles`) from `cycleDerivation`, so the deck shows the actual figures in the
-formula for every flow. Paginated 11 flows/slide via `cloneSlide`.
+formula for every flow. Paginated 9 flows/slide via `cloneSlide`.
 
 ### Still planned
 

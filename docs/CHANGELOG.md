@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-02 — PPTX slide grammar (visual redesign of the branded deck)
+
+All filled data slides now compose one shared anatomy (eyebrow → hero → evidence →
+caption) via `src/lib/pptx/layout.ts`; tables restyled (white header + red underline
+rule, no zebra, taller rows); auto-generated takeaway sentences on S25–S28
+(`src/lib/pptx/takeaways.ts`, figures as bold red runs, graceful degradation to
+omission); S20 glyph legend; S21–23 tier meaning moved to the caption zone; flow
+diagram PNG no longer draws an internal title; per-flow math appendix paginates 9/slide.
+Spec: `docs/superpowers/specs/2026-07-02-pptx-slide-grammar-design.md`.
+
 ## 2026-06-29 — Branded PPTX: tile treatment across the Step 1–3 slides
 
 - **S18 Application Requirements** now leads with **headline spec tiles** (Max load · Lift/transfer ·

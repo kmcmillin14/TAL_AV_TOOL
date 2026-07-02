@@ -482,7 +482,25 @@ SheetJS — Summary, Requirements, Flows, Fleet waterfall, ROM sheets). Excel bu
 **Branded PowerPoint (template-fill).** The `.pptx` export fills the official 35-slide TAL
 deck (`public/templates/tal-rom-template.pptx`) rather than building slides from scratch —
 preserving its theme, masters, and media (Toyota Type, TAL red). Client-side via **PizZip**
-(`src/lib/pptxTemplateExport.ts` + `src/lib/pptx/*`). A **Section Picker**
+(`src/lib/pptxTemplateExport.ts` + `src/lib/pptx/*`).
+
+Every filled data slide (S18–S28 + appendices) composes one shared **slide grammar**
+(`src/lib/pptx/layout.ts` — a y-cursor `frame`): **eyebrow** (spaced red caps section
+label, e.g. `02 — VEHICLE SELECTION`) → **hero** (a takeaway sentence on the money
+slides, or the slide's metric tiles) → **evidence** (table / chart / diagram) →
+**caption** (muted context line), at shared spacing tokens. Tables are light: white
+header with ink text and a single TAL-red underline rule, no zebra fill, hairline row
+dividers — red appears only where it carries meaning (eyebrow, key figures, verdict
+fills, the TOTAL row). The four money slides (S25 Financials, S26 Fleet & flow,
+S27 Investment, S28 ROI) lead with an **auto-generated takeaway sentence** (key figures
+as bold red runs, e.g. "A $980K – $1.2M investment returns $520K/yr net — payback in
+2.1 years."); any figure that isn't computable drops its clause, and the takeaway is
+skipped entirely when nothing meaningful is available (no placeholder text ever reaches
+a customer deck). The S20 gate grid gains a glyph legend caption; the S21–23 tier
+meaning + example render as the slide caption; the flow-network PNG no longer draws its
+own internal title (the slide title + eyebrow carry it).
+
+A **Section Picker**
 (`PptxSectionPicker`, from the Step 4 export bar and the header menu) chooses which sections
 to include; **Product Overview slides are auto-limited to the fleet chassis** (vehicles
 assigned to flows; Cleanfix always dropped). The builder removes unselected slides via OOXML
