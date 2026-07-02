@@ -61,6 +61,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     // remaining requirements still in the table
     expect(s18).toContain('Refrigerated')
     expect(s18).toContain('Pallet')
+    expect(s18).toContain('01 — APPLICATION REQUIREMENTS')     // eyebrow
   })
 
   it('S19 colors each verdict and S20 builds a gate×vehicle grid', () => {
@@ -75,7 +76,10 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(s19).toContain('PASS')
     expect(s19).toContain('REVIEW')
     expect(s19).toContain('CANDIDATES')
+    expect(s19).toContain('02 — VEHICLE SELECTION')            // eyebrow
     const s20 = out.file('ppt/slides/slide20.xml')!.asText()
+    expect(s20).toContain('02 — VEHICLE SELECTION')
+    expect(s20).toContain('not evaluated')                     // glyph legend caption
     expect(s20).toMatch(/✓|✗|~/)                       // pass/fail/review glyphs
     // one Gate column + one column per candidate vehicle
     const cols = (s20.match(/<a:gridCol\b/g) ?? []).length

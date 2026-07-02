@@ -22,6 +22,7 @@ import {
   removeBodyPlaceholder, nextShapeId, TAL_RED,
   type TableCell, type TableBand,
 } from './ooxml'
+import { frame, type TileSpec } from './layout'
 
 // Body region below the template's title bar (EMU; slide is 12192000×6858000).
 const BODY = { x: 685800, y: 1828800, cx: 10820400, cy: 4114800 }
@@ -54,9 +55,6 @@ const TILE_GAP = 200000
 
 /** A row of engineering metric tiles across the body width (the modern KPI look,
  *  reused on the step slides). Returns the bottom y. */
-interface TileSpec {
-  value: string; unit?: string; label: string; barColor?: string; accent?: boolean; figSz?: number; compact?: boolean
-}
 function tileRow(zip: PizZip, slide: number, y: number, h: number, tiles: TileSpec[]): number {
   const cols = tiles.length
   const tileW = Math.round((BODY.cx - (cols - 1) * TILE_GAP) / cols)
@@ -104,14 +102,14 @@ export function fillRequirements(zip: PizZip, project: StoredProject): void {
   const hrPerDay = Math.min(24, (project.shiftsPerDay ?? 0) * (project.hoursPerShift ?? 0))
   const schedule = hrPerDay > 0 ? { value: String(hrPerDay), unit: 'hr/day' } : { value: '—' }
 
-  removeBodyPlaceholder(zip, ROM_SLIDE.requirements)
-  const tilesH = 1200000
-  tileRow(zip, ROM_SLIDE.requirements, BODY.y, tilesH, [
+  const f = frame(zip, ROM_SLIDE.requirements)
+  f.eyebrow('01 — APPLICATION REQUIREMENTS')
+  f.tiles([
     { ...maxLoad, label: 'MAX LOAD', accent: true },
     { ...lift, label: 'LIFT / TRANSFER' },
     { ...footprint, label: 'FOOTPRINT (L×W×H)' },
     { ...schedule, label: 'SCHEDULE' },
-  ])
+  ], { h: 1100000 })
 
   // ── Remaining requirements as a table (the headline specs above are dropped
   //    here to avoid duplication) ──────────────────────────────────────────
@@ -138,7 +136,7 @@ export function fillRequirements(zip: PizZip, project: StoredProject): void {
   if (certs.length) add('Certifications', certs.join(', '))
 
   if (rows.length === 1) rows.push([{ t: '—' }, { t: 'No further requirements captured yet (Step 1).' }])
-  put(zip, ROM_SLIDE.requirements, [3600000, 7220400], rows, { y: BODY.y + tilesH + 240000 })
+  f.table([3600000, 7220400], rows)
 }
 
 // ── Fleet Engine (S21 Raw / S22 Charging / S23 Buffer) — worked derivations ───
@@ -294,15 +292,15 @@ export function fillMatrix(zip: PizZip, project: StoredProject, vehicles: Vehicl
   // candidate total, then the per-vehicle verdict table beneath.
   const counts = { GREEN: 0, YELLOW: 0, RED: 0 }
   for (const { q } of results) counts[q.status]++
-  removeBodyPlaceholder(zip, ROM_SLIDE.matrixVerdict)
-  const tilesH = 1300000
-  tileRow(zip, ROM_SLIDE.matrixVerdict, BODY.y, tilesH, [
+  const f19 = frame(zip, ROM_SLIDE.matrixVerdict)
+  f19.eyebrow('02 — VEHICLE SELECTION')
+  f19.tiles([
     { value: String(counts.GREEN), label: 'PASS', barColor: STATUS_COLOR.GREEN },
     { value: String(counts.YELLOW), label: 'REVIEW', barColor: STATUS_COLOR.YELLOW },
     { value: String(counts.RED), label: 'FAIL', barColor: STATUS_COLOR.RED },
     { value: String(results.length), label: 'CANDIDATES' },
-  ])
-  put(zip, ROM_SLIDE.matrixVerdict, [3000000, 2000000, 5820400], verdictRows, { y: BODY.y + tilesH + 240000 })
+  ], { h: 1100000 })
+  f19.table([3000000, 2000000, 5820400], verdictRows)
 
   // ── S20: Gate × vehicle pass/fail grid ──────────────────────────────────
   // Per vehicle, collapse multi-load gate entries to one verdict per gateId.
@@ -330,7 +328,10 @@ export function fillMatrix(zip: PizZip, project: StoredProject, vehicles: Vehicl
   if (activeGates.length === 0) gridRows.push([{ t: 'No requirements captured yet (Step 1).' }, ...byVeh.map(() => ({ t: '' }))])
 
   const vehColW = Math.round((BODY.cx - 3000000) / byVeh.length)
-  put(zip, ROM_SLIDE.matrixGrid, [3000000, ...byVeh.map(() => vehColW)], gridRows, { center: true })
+  const f20 = frame(zip, ROM_SLIDE.matrixGrid)
+  f20.eyebrow('02 — VEHICLE SELECTION')
+  f20.table([3000000, ...byVeh.map(() => vehColW)], gridRows, { center: true, rowH: 340000 })
+  f20.caption('✓ pass   ·   ~ review   ·   ✗ fail   ·   –  not evaluated')
 }
 
 /** S24 — Material flows. When a rendered diagram PNG is supplied it goes on top
