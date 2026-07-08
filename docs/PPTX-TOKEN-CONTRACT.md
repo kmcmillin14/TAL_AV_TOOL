@@ -56,14 +56,17 @@ A placeholder with no value is left as-is (editable bracket), never blanked.
 **Filename:** `Rev# Opp# Customer Project.pptx` (empty parts skipped; spaces kept;
 filesystem-illegal chars stripped) — `buildFilename` in `pptxTemplateExport.ts`.
 
-### KPI slides (S25/26) — placeholder text fill
+### KPI slides (S25/26) — metric tiles via the frame
 
-The empty step shells each ship with one body **Content Placeholder** (`<p:ph idx="1"/>`)
-laid out by the template. `src/lib/pptx/content.ts` → `fillKpis` writes paragraphs into that
-placeholder's `<p:txBody>` (`fillBodyPlaceholder` in `ooxml.ts`) so the content **inherits the
-slide's branded position/style**. No-op for any slide the user removed.
-- **S25 KPIs:** fleet total · flow count · throughput; base + charging → buffered.
-- **S26 KPIs:** per-vehicle fleet mix.
+`src/lib/pptx/content.ts` → `fillKpis` composes both slides through the shared frame
+(`layout.ts`): eyebrow → auto-generated takeaway sentence (`takeaways.ts`; skipped when
+not computable) → native metric-tile grid (`metricTile` in `ooxml.ts`), plus the fleet-mix
+caption on S26. The template's empty body placeholder is removed so nothing ghosts
+behind the tiles. No-op for any slide the user removed.
+- **S25 Financials:** ROM CAPEX · Net benefit/yr · Payback · Labor offset/yr · Annual
+  OPEX · TCO @ life · Cost/move.
+- **S26 Fleet & flow:** Total fleet · Vehicle types · Flows · Throughput · Energy +
+  status gauges (Utilization · Availability · Charging · Redundancy) + fleet-mix caption.
 
 ### Fleet Engine (S21/22/23) — independent tiers + worked derivations
 
