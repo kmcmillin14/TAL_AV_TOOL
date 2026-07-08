@@ -329,7 +329,7 @@ export function fillMaterialFlow(
   if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(5).fill({ t: '' })])
   if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(5).fill({ t: '' })])
 
-  f.table([560000, 4060400, 1300000, 1300000, 1300000, 1100000, 1200000], rows)
+  f.table([560000, 4060400, 1300000, 1300000, 1300000, 1100000, 1200000], rows, { rowH: 320000 })
 }
 
 /** S27 Investment Summary — dynamic per-line CAPEX pricing table with a TOTAL row.
