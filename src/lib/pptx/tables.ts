@@ -128,14 +128,14 @@ type Stage = 'raw' | 'charging' | 'buffer'
 
 const STAGE_META: Record<Stage, { n: string; name: string; slide: number; meaning: string }> = {
   raw: { n: '1', name: 'RAW FLEET', slide: ROM_SLIDE.rawFleet,
-    meaning: "Each flow's cycle time → vehicles needed (throughput × cycle ÷ 3600), summed per chassis and rounded up = raw base fleet." },
+    meaning: 'Each flow’s cycle time → vehicles needed (throughput × cycle ÷ 3600), summed per chassis and rounded up = raw base fleet.' },
   charging: { n: '2', name: 'CHARGING', slide: ROM_SLIDE.charging,
     meaning: 'Battery runtime vs recharge sets availability; dividing demand by availability adds the vehicles needed to cover charging downtime.' },
   buffer: { n: '3', name: 'BUFFER', slide: ROM_SLIDE.buffer,
     meaning: '(base + charging) × (1 + buffer), rounded up — spare capacity for maintenance, training, and demand spikes = fleet sold.' },
 }
 
-const PROG_H = 1000000  // progression tile row
+const PROG_H = 900000   // progression tile row
 // Worked-derivation table: Step · What it means · Calculation · Result.
 const DERIV_COL = [2600000, 3400000, 3220400, 1600000]
 
@@ -178,8 +178,8 @@ function renderTier(zip: PizZip, stage: Stage, model: FleetModel, deriv: Derivat
   f.tiles(progressionTiles(model, stage), { h: PROG_H })
   f.table(DERIV_COL,
     deriv ? derivationRows(deriv)
-      : [[{ t: "How it's calculated" }], [{ t: 'Assign vehicles to flows (Step 3) to show the worked calculation.' }]],
-    { rowH: 320000 })
+      : [[{ t: 'How it’s calculated' }], [{ t: 'Assign vehicles to flows (Step 3) to show the worked calculation.' }]],
+    { rowH: 260000 })
   // Meaning + example + inputs live in the caption zone (the derivation table
   // shows how each input is used; a row per input wouldn't fit).
   const lines = [meta.meaning + (example ? `   ·   ${example}` : '')]
