@@ -184,6 +184,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(s24).toContain('Dock → Rack A')
     expect(s24).toContain('Mixed')                     // medium route label
     expect(s24).not.toContain('<p:pic>')               // no image when none supplied
+    expect(s24).toContain('04 — MATERIAL FLOW')                // eyebrow
   })
 
   it('S24 embeds the diagram image (media part + picture) when a PNG is supplied', () => {

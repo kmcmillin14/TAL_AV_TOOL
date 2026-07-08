@@ -27,7 +27,7 @@ import { frame, type TileSpec } from './layout'
 // Body region below the template's title bar (EMU; slide is 12192000×6858000).
 const BODY = { x: 685800, y: 1828800, cx: 10820400, cy: 4114800 }
 const LEGACY_ROW_H = 320000
-const FLOW_IMG_H = 2500000   // height reserved for the S24 diagram image
+const FLOW_IMG_H = 2100000   // height reserved for the S24 diagram image
 const ROI_IMG_H = 2500000    // height reserved for the S28 payback chart
 
 // Verdict palette — shared by the S19 verdict-cell fills and the S20 grid glyphs
@@ -308,33 +308,28 @@ export function fillMaterialFlow(
   zip: PizZip, model: FleetModel, names: Record<string, string>, diagramPng?: Uint8Array | null,
 ): void {
   const { flows } = model
-  const hasImg = !!diagramPng
-  if (diagramPng) {
-    // Fit at native aspect (centered) so the diagram isn't squashed into the wide body box.
-    const { w, h } = pngSize(diagramPng)
-    const rect = containRect(w, h, { x: BODY.x, y: BODY.y, cx: BODY.cx, cy: FLOW_IMG_H })
-    addImage(zip, ROM_SLIDE.materialFlow, diagramPng, rect)
-  }
-  const tableY = hasImg ? BODY.y + FLOW_IMG_H + 140000 : BODY.y
-  const MAX = hasImg ? 4 : 13
+  const f = frame(zip, ROM_SLIDE.materialFlow)
+  f.eyebrow('04 — MATERIAL FLOW')
+  if (diagramPng) f.image(diagramPng, FLOW_IMG_H)
+  const MAX = diagramPng ? 3 : 9
 
   const rows: TableCell[][] = [[
     { t: '#', align: 'ctr' }, { t: 'Route' }, { t: 'Distance', align: 'r' },
     { t: 'Moves/hr', align: 'r' }, { t: 'Layout', align: 'ctr' }, { t: 'Lift', align: 'r' }, { t: 'Vehicle' },
   ]]
-  flows.slice(0, MAX).forEach((f, i) => rows.push([
+  flows.slice(0, MAX).forEach((flow, i) => rows.push([
     { t: String(i + 1), align: 'ctr' },
-    { t: `${f.origin || '—'} → ${f.destination || '—'}` },
-    { t: ft(f.distanceFt), align: 'r' },
-    { t: String(f.thruPerHr ?? 0), align: 'r' },
-    { t: ROUTE_LABEL[f.routeLayout] ?? f.routeLayout, align: 'ctr' },
-    { t: ft(f.liftHeightFt), align: 'r' },
-    { t: f.vehicleId ? (names[f.vehicleId] ?? f.vehicleId) : 'Unassigned' },
+    { t: `${flow.origin || '—'} → ${flow.destination || '—'}` },
+    { t: ft(flow.distanceFt), align: 'r' },
+    { t: String(flow.thruPerHr ?? 0), align: 'r' },
+    { t: ROUTE_LABEL[flow.routeLayout] ?? flow.routeLayout, align: 'ctr' },
+    { t: ft(flow.liftHeightFt), align: 'r' },
+    { t: flow.vehicleId ? (names[flow.vehicleId] ?? flow.vehicleId) : 'Unassigned' },
   ]))
   if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(5).fill({ t: '' })])
   if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(5).fill({ t: '' })])
 
-  put(zip, ROM_SLIDE.materialFlow, [560000, 4060400, 1300000, 1300000, 1300000, 1100000, 1200000], rows, { y: tableY })
+  f.table([560000, 4060400, 1300000, 1300000, 1300000, 1100000, 1200000], rows)
 }
 
 /** S27 Investment Summary — dynamic per-line CAPEX pricing table with a TOTAL row.
