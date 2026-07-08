@@ -18,7 +18,7 @@ import { cycleDerivation, chargingDerivation, bufferDerivation, type Derivation 
 import { METHODOLOGY } from '@/src/content/methodology'
 import { VEHICLE_SLIDE, ROM_SLIDE } from './sections'
 import {
-  table, textBox, metricTile, appendShapesToSlide, addImage, containRect, pngSize,
+  table, appendShapesToSlide, addImage, containRect, pngSize,
   removeBodyPlaceholder, nextShapeId, TAL_RED,
   type TableCell, type TableBand,
 } from './ooxml'
@@ -33,7 +33,6 @@ const ROI_IMG_H = 2500000    // height reserved for the S28 payback chart
 // Verdict palette — shared by the S19 verdict-cell fills and the S20 grid glyphs
 // (pass = GREEN, review = YELLOW, fail = RED).
 const STATUS_COLOR = { GREEN: '2E7D32', YELLOW: 'C77700', RED: 'C62828' } as const
-const GRAY = '8A8A8E'
 
 const put = (
   zip: PizZip, slide: number, colW: number[], rows: TableCell[][],
@@ -49,27 +48,6 @@ const put = (
     x: BODY.x, y, cx: BODY.cx, cy,
     colW, rows, rowH: LEGACY_ROW_H, bands: opts.bands,
   }))
-}
-
-const TILE_GAP = 200000
-
-/** A row of engineering metric tiles across the body width (the modern KPI look,
- *  reused on the step slides). Returns the bottom y. */
-function tileRow(zip: PizZip, slide: number, y: number, h: number, tiles: TileSpec[]): number {
-  const cols = tiles.length
-  const tileW = Math.round((BODY.cx - (cols - 1) * TILE_GAP) / cols)
-  let id = nextShapeId(zip, slide)
-  const xml = tiles.map((t, i) => {
-    const s = metricTile({
-      id, x: BODY.x + i * (tileW + TILE_GAP), y, cx: tileW, cy: h,
-      value: t.value, unit: t.unit, label: t.label,
-      barColor: t.barColor, accent: t.accent, figSz: t.figSz, compact: t.compact,
-    })
-    id += 2
-    return s
-  }).join('')
-  appendShapesToSlide(zip, slide, xml)
-  return y + h
 }
 
 const ft = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)} ft`
@@ -150,15 +128,14 @@ type Stage = 'raw' | 'charging' | 'buffer'
 
 const STAGE_META: Record<Stage, { n: string; name: string; slide: number; meaning: string }> = {
   raw: { n: '1', name: 'RAW FLEET', slide: ROM_SLIDE.rawFleet,
-    meaning: 'Each flow’s cycle time → vehicles needed (throughput × cycle ÷ 3600), summed per chassis and rounded up = raw base fleet.' },
+    meaning: "Each flow's cycle time → vehicles needed (throughput × cycle ÷ 3600), summed per chassis and rounded up = raw base fleet." },
   charging: { n: '2', name: 'CHARGING', slide: ROM_SLIDE.charging,
     meaning: 'Battery runtime vs recharge sets availability; dividing demand by availability adds the vehicles needed to cover charging downtime.' },
   buffer: { n: '3', name: 'BUFFER', slide: ROM_SLIDE.buffer,
     meaning: '(base + charging) × (1 + buffer), rounded up — spare capacity for maintenance, training, and demand spikes = fleet sold.' },
 }
 
-const CAP_H = 620000    // meaning caption + inputs line
-const PROG_H = 1180000  // progression tile row
+const PROG_H = 1000000  // progression tile row
 // Worked-derivation table: Step · What it means · Calculation · Result.
 const DERIV_COL = [2600000, 3400000, 3220400, 1600000]
 
@@ -192,33 +169,23 @@ function derivationRows(d: Derivation): TableCell[][] {
   return rows
 }
 
-/** Render one tier slide: meaning caption → progression strip → worked example. */
+/** Render one tier slide: eyebrow → progression strip → worked example →
+ *  meaning/inputs caption. */
 function renderTier(zip: PizZip, stage: Stage, model: FleetModel, deriv: Derivation | null, example: string): void {
   const meta = STAGE_META[stage]
-  removeBodyPlaceholder(zip, meta.slide)
-
-  const caption: Parameters<typeof textBox>[0]['paras'] = [
-    [{ t: `TIER ${meta.n} — ${meta.name}`, bold: true, sz: 1400, color: TAL_RED }],
-    [{ t: meta.meaning, sz: 1100, color: GRAY }],
-  ]
-  if (example) caption.push([{ t: example, sz: 1050, color: GRAY }])
-  // All input variables + values on one line (the worked steps below show how
-  // each is used); the table can't fit a row per input.
-  const inputs = (deriv?.steps ?? []).filter(s => s.kind === 'input')
-  if (inputs.length) caption.push([{ t: `Inputs — ${inputs.map(s => `${s.label} ${s.result}`).join('  ·  ')}`, sz: 950, color: GRAY }])
-  appendShapesToSlide(zip, meta.slide, textBox({
-    id: nextShapeId(zip, meta.slide), x: BODY.x, y: BODY.y, cx: BODY.cx, cy: CAP_H, paras: caption,
-  }))
-
-  // Stacked layout: caption → 60k gap → progression tile row → 150k gap → derivation.
-  const progY = BODY.y + CAP_H + 60000
-  tileRow(zip, meta.slide, progY, PROG_H, progressionTiles(model, stage))
-
-  const derivY = progY + PROG_H + 150000
-  put(zip, meta.slide, DERIV_COL,
+  const f = frame(zip, meta.slide)
+  f.eyebrow(`03 — FLEET ENGINE · TIER ${meta.n} OF 3 — ${meta.name}`)
+  f.tiles(progressionTiles(model, stage), { h: PROG_H })
+  f.table(DERIV_COL,
     deriv ? derivationRows(deriv)
-      : [[{ t: 'How it’s calculated' }], [{ t: 'Assign vehicles to flows (Step 3) to show the worked calculation.' }]],
-    { y: derivY })
+      : [[{ t: "How it's calculated" }], [{ t: 'Assign vehicles to flows (Step 3) to show the worked calculation.' }]],
+    { rowH: 320000 })
+  // Meaning + example + inputs live in the caption zone (the derivation table
+  // shows how each input is used; a row per input wouldn't fit).
+  const lines = [meta.meaning + (example ? `   ·   ${example}` : '')]
+  const inputs = (deriv?.steps ?? []).filter(s => s.kind === 'input')
+  if (inputs.length) lines.push(`Inputs — ${inputs.map(s => `${s.label} ${s.result}`).join('  ·  ')}`)
+  f.caption(lines)
 }
 
 /**

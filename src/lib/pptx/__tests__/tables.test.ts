@@ -102,6 +102,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
       expect(xml).toContain('RAW FLEET')             // progression Raw…=Fleet sold
       expect(xml).toContain('= FLEET SOLD')
       expect(xml).toContain('What it means')         // derivation columns
+      expect(xml).toContain('03 — FLEET ENGINE · TIER')        // eyebrow
     }
     // Each tier names itself and shows its headline derivation step.
     const s21 = out.file('ppt/slides/slide21.xml')!.asText()
