@@ -129,7 +129,7 @@ const runXml = (r: TextRun) =>
   `<a:r><a:rPr lang="en-US"${r.sz ? ` sz="${r.sz}"` : ''}${r.bold ? ' b="1"' : ''} dirty="0">${fillXml(r.color)}</a:rPr><a:t>${escapeXml(r.t)}</a:t></a:r>`
 
 /** Paragraphs `<a:p>…</a:p>` from rows of runs (empty row → blank line). */
-export function parasXml(paras: TextRun[][]): string {
+function parasXml(paras: TextRun[][]): string {
   return paras.map(p => (p.length ? `<a:p>${p.map(runXml).join('')}</a:p>` : '<a:p/>')).join('')
 }
 
@@ -152,16 +152,6 @@ function fillPh(zip: PizZip, slideNum: number, re: RegExp, paras: TextRun[][]): 
   )
   zip.file(path, xml.replace(m[0], filled))
   return true
-}
-
-/**
- * Fill the slide's body Content Placeholder (`<p:ph idx="1"/>`) — the empty box
- * the template already lays out — by replacing its `<p:txBody>` paragraphs.
- * Inherits the placeholder's position + style from the layout. No-op if the
- * slide or placeholder is absent.
- */
-export function fillBodyPlaceholder(zip: PizZip, slideNum: number, paras: TextRun[][]): boolean {
-  return fillPh(zip, slideNum, BODY_PH_RE, paras)
 }
 
 /** Set the slide's title placeholder text (single run, inherits the title style). */

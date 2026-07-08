@@ -514,9 +514,7 @@ Cost/move) and **S26 Fleet & flow** (Total fleet · Vehicle types · Flows · Th
 plus the status gauges (Utilization · Availability · Charging · Redundancy), with the fleet mix as a
 caption. The figures are recomputed from the shared `FleetModel` with the same math the dashboard
 runs (TCO/cost-per-move/energy from `costs` + `serviceLifeYears`; gauges from `chargingSeries`/
-`resilience`). Graphic slides are **native shapes** (tables/images/charts). All of these remove the
-template's empty body Content Placeholder first (`removeBodyPlaceholder`) so nothing ghosts behind
-them; sole-table slides are vertically centered (`put({ center })`). Canvas images (S24 flow diagram,
+`resilience`). Graphic slides are **native shapes** (tables/images/charts). All of these compose through the shared frame (`layout.ts`), which removes the template's empty body Content Placeholder so nothing ghosts behind them; the S20 gate grid and S27 pricing table are vertically centered in the space below their eyebrow/takeaway (`frame.table({ center })`). Canvas images (S24 flow diagram,
 S28 payback chart) are placed at their **native aspect ratio** via `containRect`/`pngSize` (the
 renderers size their canvases to the laid-out content) so they fill the wide body region without
 being squashed. **Investment (S27)** is a dynamic per-line CAPEX pricing table
