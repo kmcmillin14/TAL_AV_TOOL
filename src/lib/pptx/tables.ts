@@ -21,11 +21,9 @@ import {
   TAL_RED,
   type TableCell,
 } from './ooxml'
-import { frame, type TileSpec } from './layout'
+import { frame, BODY, type TileSpec } from './layout'
 import { investmentTakeaway, roiTakeaway } from './takeaways'
 
-// Body region below the template's title bar (EMU; slide is 12192000×6858000).
-const BODY = { x: 685800, y: 1828800, cx: 10820400, cy: 4114800 }
 const FLOW_IMG_H = 2100000   // height reserved for the S24 diagram image
 const ROI_IMG_H = 1900000    // height reserved for the S28 payback chart
 
