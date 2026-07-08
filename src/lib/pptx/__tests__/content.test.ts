@@ -42,6 +42,11 @@ describe('fillKpis (S25/26 KPI slides)', () => {
     // Section eyebrows (two hero boxes like the Step-4 dashboard).
     expect(s25).toContain('FINANCIALS')
     expect(s26).toContain('FLEET &amp; FLOW')
+    // Eyebrows carry the section number; takeaway sentences lead the slides.
+    expect(s25).toContain('05 — FINANCIALS')
+    expect(s26).toContain('05 — FLEET &amp; FLOW')
+    expect(s25).toContain('investment')                        // financials takeaway
+    expect(s26).toContain('moves/hr')                          // fleet & flow takeaway
     // Native tiles: rounded-rect cards with an accent rule, not placeholder text.
     expect(s25).toContain('KPI Tile')
     expect(s25).toContain('KPI Rule')
