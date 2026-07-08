@@ -18,37 +18,21 @@ import { cycleDerivation, chargingDerivation, bufferDerivation, type Derivation 
 import { METHODOLOGY } from '@/src/content/methodology'
 import { VEHICLE_SLIDE, ROM_SLIDE } from './sections'
 import {
-  table, appendShapesToSlide, addImage, containRect, pngSize,
-  removeBodyPlaceholder, nextShapeId, TAL_RED,
-  type TableCell, type TableBand,
+  TAL_RED,
+  type TableCell,
 } from './ooxml'
 import { frame, type TileSpec } from './layout'
+import { investmentTakeaway, roiTakeaway } from './takeaways'
 
 // Body region below the template's title bar (EMU; slide is 12192000×6858000).
 const BODY = { x: 685800, y: 1828800, cx: 10820400, cy: 4114800 }
-const LEGACY_ROW_H = 320000
 const FLOW_IMG_H = 2100000   // height reserved for the S24 diagram image
-const ROI_IMG_H = 2500000    // height reserved for the S28 payback chart
+const ROI_IMG_H = 1900000    // height reserved for the S28 payback chart
 
 // Verdict palette — shared by the S19 verdict-cell fills and the S20 grid glyphs
 // (pass = GREEN, review = YELLOW, fail = RED).
 const STATUS_COLOR = { GREEN: '2E7D32', YELLOW: 'C77700', RED: 'C62828' } as const
 
-const put = (
-  zip: PizZip, slide: number, colW: number[], rows: TableCell[][],
-  opts: { y?: number; bands?: TableBand[]; center?: boolean } = {},
-): void => {
-  // The graphic replaces the body text box — drop the empty placeholder behind it.
-  removeBodyPlaceholder(zip, slide)
-  const cy = (rows.length + (opts.bands ? 1 : 0)) * LEGACY_ROW_H
-  // `center` vertically balances a sole-table slide in the body region.
-  const y = opts.center ? BODY.y + Math.max(0, (BODY.cy - cy) / 2) : (opts.y ?? BODY.y)
-  appendShapesToSlide(zip, slide, table({
-    id: nextShapeId(zip, slide),
-    x: BODY.x, y, cx: BODY.cx, cy,
-    colW, rows, rowH: LEGACY_ROW_H, bands: opts.bands,
-  }))
-}
 
 const ft = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)} ft`
 
@@ -351,7 +335,10 @@ export function fillInvestment(zip: PizZip, model: FleetModel, names: Record<str
   if (rom.pricing.lines.length === 0) rows.push([{ t: '—' }, { t: '', align: 'ctr' }, { t: '' }, { t: 'Assign vehicles to flows (Step 3).', align: 'r' }])
   const redCell = (t: string, align: TableCell['align'] = 'l'): TableCell => ({ t, align, fill: TAL_RED, color: 'FFFFFF', bold: true })
   rows.push([redCell('TOTAL'), redCell(String(fleet.totalFleetSold), 'ctr'), redCell(''), redCell(`${money(rom.pricing.totalMin)} – ${money(rom.pricing.totalMax)}`, 'r')])
-  put(zip, ROM_SLIDE.investment, [4200000, 1200000, 2710200, 2710200], rows, { center: true })
+  const f = frame(zip, ROM_SLIDE.investment)
+  f.eyebrow('06 — INVESTMENT')
+  f.takeaway(investmentTakeaway(model))
+  f.table([4200000, 1200000, 2710200, 2710200], rows, { center: true })
 }
 
 /** Methodology appendix slide — a reference table covering every calc stage:
@@ -370,7 +357,9 @@ export function fillMethodology(zip: PizZip, slide: number): void {
       { t: firstSentence(t.why) },
     ])
   }
-  put(zip, slide, [1700000, 3300000, 3300000, 2520400], rows)
+  const f = frame(zip, slide)
+  f.eyebrow('APPENDIX — METHODOLOGY')
+  f.table([1700000, 3300000, 3300000, 2520400], rows)
 }
 
 /** Per-flow cycle-math appendix: each flow's substituted formula → cycle → demand,
@@ -407,30 +396,28 @@ export function fillFlowMath(
     ])
   }
   if (rows.length === 1) rows.push([{ t: 'No flows with an assigned vehicle.' }, { t: '' }, { t: '' }, { t: '' }])
-  put(zip, slide, [3000000, 4000000, 1000000, 2820400], rows)
+  const f = frame(zip, slide)
+  f.eyebrow('APPENDIX — CYCLE MATH')
+  f.table([3000000, 4000000, 1000000, 2820400], rows, { rowH: 360000 })
 }
 
-/** S28 ROI — the payback-curve chart (when rendered) on top, with an ROI metrics
- *  table beneath; table-only when no chart (non-DOM context). */
+/** S28 ROI — eyebrow → takeaway → payback-curve chart (when rendered) → metrics
+ *  table; table-only when no chart (non-DOM context). */
 export function fillRoi(
-  zip: PizZip, model: FleetModel, paybackPng?: Uint8Array | null,
+  zip: PizZip, model: FleetModel, serviceLifeYears: number, paybackPng?: Uint8Array | null,
 ): void {
   const { rom } = model
   const payback = rom.payback.paybackYears
-  if (paybackPng) {
-    // Fit at native aspect (centered) so the chart isn't stretched into the wide body box.
-    const { w, h } = pngSize(paybackPng)
-    const rect = containRect(w, h, { x: BODY.x, y: BODY.y, cx: BODY.cx, cy: ROI_IMG_H })
-    addImage(zip, ROM_SLIDE.roi, paybackPng, rect)
-  }
-  const tableY = paybackPng ? BODY.y + ROI_IMG_H + 140000 : BODY.y
-  const rows: TableCell[][] = [
+  const f = frame(zip, ROM_SLIDE.roi)
+  f.eyebrow('06 — RETURN ON INVESTMENT')
+  f.takeaway(roiTakeaway(model, serviceLifeYears))
+  if (paybackPng) f.image(paybackPng, ROI_IMG_H)
+  f.table([5000000, 5820400], [
     [{ t: 'Metric' }, { t: 'Value', align: 'r' }],
     [{ t: 'Simple payback', bold: true }, { t: payback == null ? '—' : `${payback.toFixed(1)} years`, align: 'r' }],
     [{ t: 'Annual labor offset', bold: true }, { t: money(rom.payback.annualLaborOffset), align: 'r' }],
     [{ t: 'Annual operating cost', bold: true }, { t: money(rom.opex.annualOpex), align: 'r' }],
-  ]
-  put(zip, ROM_SLIDE.roi, [5000000, 5820400], rows, { y: tableY })
+  ], { rowH: 320000 })
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────

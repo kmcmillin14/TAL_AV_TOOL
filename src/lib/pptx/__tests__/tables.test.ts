@@ -17,6 +17,8 @@ const PROJECT = {
   transferMethod: 'Lift', deliveryPattern: 'Floor-Floor', minAisleWidthFt: 10,
   temperatureEnvironment: 'refrigerated', rampRequired: true, maxRampGrade: 5,
   outdoorRequired: false, shiftsPerDay: 2, hoursPerShift: 8, certifications: ['UL'],
+  // Labor cost data — required for a non-null paybackYears (drives S28 takeaway).
+  operatorsPerShift: 3, fullyBurdenedRateUsdPerYear: 65000,
   loads: [{ id: 'l1', unitType: 'Pallet', lengthIn: 48, widthIn: 40, heightIn: 50, weightLbs: 2500 }],
   flows: [
     { id: 'f1', origin: 'Dock', destination: 'Rack A', distanceFt: 300, thruPerHr: 20, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'cb18', transferMethodIdx: 0 },
@@ -129,6 +131,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(xml).toContain('(Q × cycle) ÷ 3600')           // a formula
     expect(xml).toContain('Availability')                 // a variable name
     expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)       // body placeholder cleared
+    expect(xml).toContain('APPENDIX — METHODOLOGY')        // eyebrow
   })
 
   it('fillFlowMath shows each flow\'s substituted cycle formula and demand', () => {
@@ -143,6 +146,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(xml).toContain('÷ 3600')                        // demand formula with figures
     // a row per assigned flow (PROJECT has 2) + header
     expect((xml.match(/<a:tr\b/g) ?? []).length).toBe(1 + model.flows.filter(f => f.vehicleId).length)
+    expect(xml).toContain('APPENDIX — CYCLE MATH')          // eyebrow
   })
 
   it('S27 builds the per-line pricing table with a TOTAL row', () => {
@@ -156,22 +160,26 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(s27).toContain('TOTAL')
     expect(s27).toMatch(/\$[\d.,]+[MK]?/)              // money-formatted range
     expect(s27).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)   // placeholder cleared
+    expect(s27).toContain('06 — INVESTMENT')             // eyebrow
+    expect(s27).toContain('Total ROM investment:')       // takeaway sentence
   })
 
   it('S28 ROI table fills alone, and embeds the chart when a PNG is supplied', () => {
     const model = computeFleetModel(PROJECT, vehicles)
     // table-only (non-DOM): no image
     const a = load()
-    fillRoi(a, model)
+    fillRoi(a, model, 10)
     const s28a = reopen(a).file('ppt/slides/slide28.xml')!.asText()
     expect(s28a).toContain('Simple payback')
     expect(s28a).not.toContain('<p:pic>')
+    expect(s28a).toContain('06 — RETURN ON INVESTMENT')   // eyebrow
+    expect(s28a).toContain('Simple payback in')           // takeaway sentence
     // with a chart PNG
     const b = load()
     const png = new Uint8Array(Buffer.from(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
       'base64'))
-    fillRoi(b, model, png)
+    fillRoi(b, model, 10, png)
     expect(reopen(b).file('ppt/slides/slide28.xml')!.asText()).toContain('<p:pic>')
   })
 

@@ -78,7 +78,7 @@ export async function exportBrandedRomPptx(
   // never touches them. Methodology + a paginated per-flow cycle-math appendix.
   const methodSlide = cloneSlide(zip, ROM_SLIDE.requirements)
   const mathFlows = model.flows.filter(f => f.vehicleId && model.derivedByFlowId.get(f.id)?.breakdown)
-  const FLOWS_PER_SLIDE = 11
+  const FLOWS_PER_SLIDE = 9
   const mathPages: Array<{ slide: number; flows: typeof mathFlows }> = []
   for (let i = 0; i < mathFlows.length; i += FLOWS_PER_SLIDE) {
     const slide = cloneSlide(zip, ROM_SLIDE.requirements)
@@ -104,7 +104,7 @@ export async function exportBrandedRomPptx(
 
   // S28 ROI — payback-curve chart (browser canvas) on top, metrics table beneath.
   const paybackPng = removed.includes(ROM_SLIDE.roi) ? null : renderPaybackChartPng(model.rom)
-  fillRoi(zip, model, paybackPng)
+  fillRoi(zip, model, serviceLifeYears, paybackPng)
 
   // Methodology appendix — variable definitions, formulas, and why. Always
   // included as a reference appendix (not one of the picker's selectable sections).
