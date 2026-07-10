@@ -1,71 +1,79 @@
-// Auto-generated headline takeaway sentences for the money slides (S25–S28).
-// Pure FleetModel → TextRun[] builders: key figures render as bold TAL-red runs
-// inside an ink sentence. A figure that isn't computable drops its clause; when
-// nothing meaningful is available the builder returns null and the slide renders
-// without the zone — no placeholder text ever reaches a customer deck.
+// Auto-generated title claims for the data slides — the slide's headline IS the
+// takeaway ("Your operation needs a fleet of 12"). Pure model → string builders:
+// short (≤ ~60 chars), second person, no trailing period. A claim that isn't
+// computable returns null and the caller falls back to the descriptive
+// FALLBACK_TITLE — a customer deck never shows a blank or a formula.
 import type { FleetModel } from '@/src/lib/fleetModel'
+import type { StoredProject } from '@/src/lib/storage'
 import { paybackSeries } from '@/src/calc/romCharts'
-import { TAL_RED, type TextRun } from './ooxml'
-import { usd, usdRange, pct } from './layout'
+import { usd, usdRange } from './layout'
 
-const SZ = 2100
-const ink = (t: string): TextRun => ({ t, sz: SZ })
-const key = (t: string): TextRun => ({ t, sz: SZ, bold: true, color: TAL_RED })
+export const FALLBACK_TITLE = {
+  requirements: 'Application requirements',
+  vehicles: 'Vehicle selection',
+  fleet: 'Fleet sizing',
+  flow: 'Material flow',
+  financials: 'Financials',
+  investment: 'Investment summary',
+  roi: 'Return on investment',
+} as const
+
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`
 
-/** S25 — "A $980K – $1.2M investment returns $520K/yr net — payback in 2.1 years." */
-export function financialsTakeaway(model: FleetModel): TextRun[] | null {
+/** S18 — "Moving 2,500-lb pallets, 16 hours a day" (schedule clause optional). */
+export function requirementsTitle(project: StoredProject): string | null {
+  const lbs = project.maxLoadWeightLbs
+  const unit = project.typicalUnitType?.trim().toLowerCase()
+  if (!lbs || lbs <= 0 || !unit) return null
+  const claim = `Moving ${lbs.toLocaleString()}-lb ${unit}s`
+  const hrPerDay = Math.min(24, (project.shiftsPerDay ?? 0) * (project.hoursPerShift ?? 0))
+  return hrPerDay > 0 ? `${claim}, ${hrPerDay} hours a day` : claim
+}
+
+/** S19 — "2 vehicles fit your application" (n = distinct assigned chassis). */
+export function vehiclesTitle(n: number): string | null {
+  if (n <= 0) return null
+  return n === 1 ? 'One vehicle fits your application' : `${n} vehicles fit your application`
+}
+
+/** S21 — "Your operation needs a fleet of 12". */
+export function fleetTitle(model: FleetModel): string | null {
+  const sold = model.fleet.totalFleetSold
+  return sold > 0 ? `Your operation needs a fleet of ${sold}` : null
+}
+
+/** S24 — "4 flows move 210 loads every hour". */
+export function flowTitle(model: FleetModel): string | null {
+  const n = model.flows.length
+  if (n === 0) return null
+  const thru = Math.round(model.flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
+  return thru > 0 ? `${plural(n, 'flow')} move ${thru} loads every hour`
+    : `${plural(n, 'flow')} across your facility`
+}
+
+/** S25 — "Payback in about 2.3 years", else the investment range. */
+export function financialsTitle(model: FleetModel): string | null {
   const { rom } = model
-  if (rom.pricing.totalMid <= 0) return null
-  const runs = [ink('A '), key(usdRange(rom.pricing.totalMin, rom.pricing.totalMax)), ink(' investment')]
-  const net = rom.payback.annualLaborOffset - rom.opex.annualOpex
-  if (net > 0) runs.push(ink(' returns '), key(`${usd(net)}/yr`), ink(' net'))
   if (rom.payback.paybackYears != null) {
-    runs.push(ink(' — payback in '), key(`${rom.payback.paybackYears.toFixed(1)} years`))
+    return `Payback in about ${rom.payback.paybackYears.toFixed(1)} years`
   }
-  runs.push(ink('.'))
-  return runs
+  return rom.pricing.totalMid > 0
+    ? `A ${usdRange(rom.pricing.totalMin, rom.pricing.totalMax)} ROM investment` : null
 }
 
-/** S26 — "13 vehicles across 2 types handle 221 moves/hr at 77% utilization." */
-export function fleetFlowTakeaway(model: FleetModel): TextRun[] | null {
-  const { fleet, flows } = model
-  const sold = fleet.totalFleetSold
-  if (sold <= 0) return null
-  const thru = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
-  const totalRaw = fleet.groups.reduce((s, g) => s + g.groupRaw, 0)
-  const runs = [
-    key(plural(sold, 'vehicle')),
-    ink(` across ${plural(fleet.groups.length, 'type')} handle${sold === 1 ? 's' : ''} `),
-    key(`${thru} moves/hr`),
-  ]
-  // Fleet-average proxy: fractional demand ÷ units sold (includes charging + buffer units).
-  if (totalRaw > 0) runs.push(ink(' at '), key(pct(totalRaw / sold)), ink(' utilization'))
-  runs.push(ink('.'))
-  return runs
-}
-
-/** S27 — "Total ROM investment: $980K – $1.2M for 13 vehicles." */
-export function investmentTakeaway(model: FleetModel): TextRun[] | null {
+/** S27 — "$980K – $1.2M for 13 vehicles". */
+export function investmentTitle(model: FleetModel): string | null {
   const { rom, fleet } = model
   if (rom.pricing.lines.length === 0 || rom.pricing.totalMid <= 0) return null
-  return [
-    ink('Total ROM investment: '),
-    key(usdRange(rom.pricing.totalMin, rom.pricing.totalMax)),
-    ink(' for '), key(plural(fleet.totalFleetSold, 'vehicle')), ink('.'),
-  ]
+  return `${usdRange(rom.pricing.totalMin, rom.pricing.totalMax)} for ${plural(fleet.totalFleetSold, 'vehicle')}`
 }
 
-/** S28 — "Simple payback in 2.1 years — +$3.4M cumulative labor offset over 10 years." */
-export function roiTakeaway(model: FleetModel, serviceLifeYears: number): TextRun[] | null {
+/** S28 — "$3.4M back over 10 years", else the payback claim. */
+export function roiTitle(model: FleetModel, serviceLifeYears: number): string | null {
   const payback = model.rom.payback.paybackYears
   if (payback == null) return null
-  const runs = [ink('Simple payback in '), key(`${payback.toFixed(1)} years`)]
   const { points } = paybackSeries(model.rom, serviceLifeYears)
   const last = points[points.length - 1]?.cumulative
-  if (last != null && last > 0) {
-    runs.push(ink(' — '), key(`+${usd(last)}`), ink(` cumulative labor offset over ${serviceLifeYears} years`))
-  }
-  runs.push(ink('.'))
-  return runs
+  if (last != null && last > 0) return `${usd(last)} back over ${serviceLifeYears} years`
+  return `Simple payback in ${payback.toFixed(1)} years`
 }

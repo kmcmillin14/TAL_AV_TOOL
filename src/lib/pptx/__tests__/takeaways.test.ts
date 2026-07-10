@@ -2,10 +2,10 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
 import type { StoredProject } from '../../storage'
-import type { TextRun } from '../ooxml'
-import { financialsTakeaway, fleetFlowTakeaway, investmentTakeaway, roiTakeaway } from '../takeaways'
-
-const text = (runs: TextRun[] | null) => (runs ?? []).map(r => r.t).join('')
+import {
+  requirementsTitle, vehiclesTitle, fleetTitle, flowTitle,
+  financialsTitle, investmentTitle, roiTitle, FALLBACK_TITLE,
+} from '../takeaways'
 
 // Sized fleet with labor economics → every takeaway computable.
 const FULL = {
@@ -22,36 +22,52 @@ const NO_LABOR = { ...FULL, numberOfOperators: undefined } as unknown as StoredP
 
 const EMPTY = { projectName: 'Empty' } as unknown as StoredProject
 
-describe('money-slide takeaways', () => {
+describe('slide title claims', () => {
   let vehicles: Vehicle[]
   beforeAll(async () => { vehicles = await loadVehicleLibrary() })
 
-  it('full model → complete sentences with figures as bold red runs', () => {
+  it('full model → short second-person claims (≤ 60 chars, no trailing period)', () => {
     const m = computeFleetModel(FULL, vehicles)
-    const fin = financialsTakeaway(m)!
-    expect(text(fin)).toMatch(/^A \$.+ investment returns \$.+\/yr net — payback in \d+\.\d years\.$/)
-    expect(fin.some(r => r.bold && r.color === 'EB0A1E')).toBe(true)
-    expect(fin.every(r => r.sz === 2100)).toBe(true)           // one type size across the sentence
-
-    expect(text(fleetFlowTakeaway(m))).toMatch(/^\d+ vehicles across \d+ types handle 35 moves\/hr at \d+% utilization\.$/)
-    expect(text(investmentTakeaway(m))).toMatch(/^Total ROM investment: \$.+ for \d+ vehicles\.$/)
-    expect(text(roiTakeaway(m, 10))).toMatch(/^Simple payback in \d+\.\d years — \+\$.+ cumulative labor offset over 10 years\.$/)
+    const titles = [
+      fleetTitle(m), flowTitle(m), financialsTitle(m), investmentTitle(m), roiTitle(m, 10),
+    ]
+    for (const t of titles) {
+      expect(t).toBeTruthy()
+      expect(t!.length).toBeLessThanOrEqual(60)
+      expect(t!.endsWith('.')).toBe(false)
+    }
+    expect(fleetTitle(m)).toMatch(/^Your operation needs a fleet of \d+$/)
+    expect(flowTitle(m)).toBe('2 flows move 35 loads every hour')
+    expect(financialsTitle(m)).toMatch(/^Payback in about \d+\.\d years$/)
+    expect(investmentTitle(m)).toMatch(/^\$.+ for \d+ vehicles$/)
+    expect(roiTitle(m, 10)).toMatch(/^\$.+ back over 10 years$/)
+    expect(vehiclesTitle(2)).toBe('2 vehicles fit your application')
+    expect(vehiclesTitle(1)).toBe('One vehicle fits your application')
   })
 
-  it('partial model → clauses drop, no placeholder text', () => {
+  it('requirements claim from load + schedule', () => {
+    const p = { projectName: 'R', maxLoadWeightLbs: 2500, typicalUnitType: 'Pallet',
+      shiftsPerDay: 2, hoursPerShift: 8 } as unknown as StoredProject
+    expect(requirementsTitle(p)).toBe('Moving 2,500-lb pallets, 16 hours a day')
+    expect(requirementsTitle({ ...p, shiftsPerDay: undefined } as unknown as StoredProject))
+      .toBe('Moving 2,500-lb pallets')
+    expect(requirementsTitle({ projectName: 'R' } as unknown as StoredProject)).toBeNull()
+  })
+
+  it('degrades: no payback → investment-range financials claim; nulls when empty', () => {
     const m = computeFleetModel(NO_LABOR, vehicles)
-    expect(roiTakeaway(m, 10)).toBeNull()                       // no payback at all
-    const fin = text(financialsTakeaway(m))
-    expect(fin).not.toContain('payback')                        // clause dropped
-    expect(fin).not.toContain('returns')                        // no net benefit clause
-    expect(fin).toMatch(/^A \$.+ investment\.$/)
+    expect(financialsTitle(m)).toMatch(/^A \$.+ ROM investment$/)
+    expect(roiTitle(m, 10)).toBeNull()
+
+    const e = computeFleetModel(EMPTY, vehicles)
+    expect(fleetTitle(e)).toBeNull()
+    expect(flowTitle(e)).toBeNull()
+    expect(financialsTitle(e)).toBeNull()
+    expect(investmentTitle(e)).toBeNull()
+    expect(vehiclesTitle(0)).toBeNull()
   })
 
-  it('empty project → every builder returns null', () => {
-    const m = computeFleetModel(EMPTY, vehicles)
-    expect(financialsTakeaway(m)).toBeNull()
-    expect(fleetFlowTakeaway(m)).toBeNull()
-    expect(investmentTakeaway(m)).toBeNull()
-    expect(roiTakeaway(m, 10)).toBeNull()
+  it('every slide has a descriptive fallback', () => {
+    expect(Object.values(FALLBACK_TITLE).every(t => t.length > 0)).toBe(true)
   })
 })
