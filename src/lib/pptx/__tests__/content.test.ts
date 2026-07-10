@@ -42,7 +42,8 @@ describe('fillFinancials (S25) + fillCostDetail (appendix)', () => {
   it('cost-detail appendix carries the relocated financial figures', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
-    const slide = cloneSlide(zip, 18)!
+    const slide = cloneSlide(zip, 18)
+    if (slide == null) throw new Error('cloneSlide returned null — template is missing slide 18')
     fillCostDetail(zip, slide, model, 10)
     const xml = reopen(zip).file(`ppt/slides/slide${slide}.xml`)!.asText()
     expect(xml).toContain('APPENDIX — COST DETAIL')
@@ -56,5 +57,6 @@ describe('fillFinancials (S25) + fillCostDetail (appendix)', () => {
     zip.remove('ppt/slides/slide25.xml')
     const model = computeFleetModel(PROJECT, vehicles)
     expect(() => fillFinancials(zip, model)).not.toThrow()
+    expect(() => reopen(zip)).not.toThrow()
   })
 })

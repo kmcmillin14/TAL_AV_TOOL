@@ -26,8 +26,10 @@ const CAPTION_LINE_H = 330000
 const MAX_Y = BODY.y + 4800000
 
 // Compact USD (mirrors RomKpis.usd): $1.02M / $367K / $42.
-export const usd = (n: number) =>
-  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
+// Negatives format as -$500K (sign before the dollar sign).
+export const usd = (n: number): string =>
+  n < 0 ? `-${usd(-n)}`
+  : n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
   : n >= 1_000 ? `$${Math.round(n / 1_000)}K`
   : `$${Math.round(n)}`
 export const usdRange = (min: number, max: number) =>

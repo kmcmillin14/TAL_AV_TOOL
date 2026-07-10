@@ -64,6 +64,7 @@ describe('frame (shared slide grammar)', () => {
     expect(usd(1_020_000)).toBe('$1.02M')
     expect(usd(366_500)).toBe('$367K')
     expect(usd(42)).toBe('$42')
+    expect(usd(-500_000)).toBe('-$500K')
     expect(usdRange(5, 5)).toBe('$5')
     expect(usdRange(900_000, 1_100_000)).toBe('$900K – $1.10M')
     expect(pct(0.766)).toBe('77%')

@@ -19,7 +19,7 @@ export function fillFinancials(zip: PizZip, model: FleetModel): void {
   const payback = rom.payback.paybackYears
   const tiles: TileSpec[] = [
     { value: usdRange(rom.pricing.totalMin, rom.pricing.totalMax), label: 'ROM INVESTMENT', accent: true, figSz: 2400 },
-    { value: usd(rom.payback.annualLaborOffset), label: 'LABOR OFFSET / YR', figSz: 2400 },
+    { value: rom.payback.annualLaborOffset > 0 ? usd(rom.payback.annualLaborOffset) : '—', label: 'LABOR OFFSET / YR', figSz: 2400 },
     { value: payback == null ? '—' : payback.toFixed(1), unit: 'yr', label: 'SIMPLE PAYBACK' },
   ]
   f.tiles(tiles, { h: 1500000 })
