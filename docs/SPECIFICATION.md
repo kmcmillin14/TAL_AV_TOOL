@@ -526,7 +526,7 @@ table-only in non-DOM contexts.
 
 **S25 Financials** — proof: three large-number tiles: ROM investment range · labor offset/yr ·
 simple payback. Figures recomputed from the shared `FleetModel`. TCO, cost/move, annual OPEX,
-and status gauges are relocated to the cost-detail appendix. No S26 (retired; always removed).
+Status gauges (Utilization · Availability · Charging · Redundancy) are web-app-only and dropped from the export entirely. No S26 (retired; always removed).
 
 **S27 Investment** — proof: dynamic per-line CAPEX pricing table (`fillInvestment`) — Vehicle ·
 Qty · Unit Price (ROM range) · Line Total (ROM range) + red TOTAL row, from `rom.pricing.lines`.

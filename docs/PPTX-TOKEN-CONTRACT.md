@@ -182,7 +182,7 @@ All appendix slides are appended via the existing `cloneSlide` machinery and car
    from `cycleDerivation`. Paginated 9 flows/slide via `cloneSlide`. Eyebrow:
    `APPENDIX — CYCLE MATH`.
 6. **Cost detail** — TCO @ service life, cost/move, and other financial tiles cut from
-   the body (annual OPEX, status gauges). Eyebrow: `APPENDIX — COST DETAIL`.
+   the body (annual OPEX). Status gauges (Utilization · Availability · Charging · Redundancy) are web-app-only and dropped from the export entirely. Eyebrow: `APPENDIX — COST DETAIL`.
 
 ### Still planned
 
