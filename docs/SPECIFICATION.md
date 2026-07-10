@@ -525,8 +525,10 @@ flow. Canvas image placed at native aspect ratio via `containRect`/`pngSize`; fa
 table-only in non-DOM contexts.
 
 **S25 Financials** — proof: three large-number tiles: ROM investment range · labor offset/yr ·
-simple payback. Figures recomputed from the shared `FleetModel`. TCO, cost/move, annual OPEX,
-Status gauges (Utilization · Availability · Charging · Redundancy) are web-app-only and dropped from the export entirely. No S26 (retired; always removed).
+simple payback. Figures recomputed from the shared `FleetModel`. TCO, cost/move, and annual
+OPEX relocate to the cost-detail appendix; status gauges (Utilization · Availability ·
+Charging · Redundancy) are web-app-only and are dropped from the export entirely. No S26
+(retired; always removed).
 
 **S27 Investment** — proof: dynamic per-line CAPEX pricing table (`fillInvestment`) — Vehicle ·
 Qty · Unit Price (ROM range) · Line Total (ROM range) + red TOTAL row, from `rom.pricing.lines`.
