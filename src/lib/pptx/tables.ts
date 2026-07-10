@@ -89,8 +89,13 @@ export function fillRequirements(zip: PizZip, project: StoredProject): void {
 const CARD_IMG_H = 1500000    // vehicle photo zone per fit card
 const CARD_TXT_H = 1900000    // name + verdict + why text zone
 
-/** Distinct chassis the engineer assigned to flows, in first-assignment order. */
-function assignedVehicleIds(project: StoredProject): string[] {
+/**
+ * Distinct chassis the engineer assigned to flows, in first-assignment order.
+ * Used by S19 (fit cards) and the exporter's S19-drop / photo-fetch logic.
+ * Note: S19 cards filter this list to library members; overview slides use
+ * `fleetVehicleIds` (VEHICLE_SLIDE membership) — the two rules are intentional.
+ */
+export function assignedVehicleIds(project: StoredProject): string[] {
   const ids: string[] = []
   for (const fl of project.flows ?? []) {
     if (fl.vehicleId && !ids.includes(fl.vehicleId)) ids.push(fl.vehicleId)

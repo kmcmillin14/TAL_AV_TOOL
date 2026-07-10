@@ -16,6 +16,7 @@ import {
   fillRequirements, fillVehicleCards, fillVerdictAppendix, fillGateGrid,
   fillFleetSizing, buildTierDerivations, fillDerivation,
   fillMaterialFlow, fillInvestment, fillRoi, fillMethodology, fillFlowMath,
+  assignedVehicleIds,
 } from '@/src/lib/pptx/tables'
 import { renderFlowDiagramPng } from '@/src/lib/pptx/flowDiagram'
 import { renderPaybackChartPng } from '@/src/lib/pptx/romChart'
@@ -96,9 +97,11 @@ export async function exportBrandedRomPptx(
 
   // ── Remove unselected slides. S19 shows only assigned chassis — nothing
   // assigned means the tool would have to pick, and it never picks: drop it.
+  // S19 cards use library membership (cardIds); overview slides use VEHICLE_SLIDE
+  // membership (fleetVehicleIds) — the two rules are intentional.
   const removed = new Set(slidesToRemove(selection))
-  const assignedIds = fleetVehicleIds(project)
-  if (assignedIds.length === 0) removed.add(ROM_SLIDE.vehicles)
+  const cardIds = assignedVehicleIds(project).filter(id => vehicleById.has(id))
+  if (cardIds.length === 0) removed.add(ROM_SLIDE.vehicles)
   removeSlides(zip, [...removed])
   replaceInSlides(zip, buildCoverTokens(project))
 
@@ -106,11 +109,16 @@ export async function exportBrandedRomPptx(
   // text-only for any photo that fails to load).
   const photos: Record<string, Uint8Array | null> = {}
   if (!removed.has(ROM_SLIDE.vehicles)) {
-    await Promise.all(assignedIds.map(async id => {
+    await Promise.all(cardIds.map(async id => {
       const hero = vehicleById.get(id)?.display.heroImage
       try {
         const r = hero ? await fetch(hero) : null
-        photos[id] = r?.ok ? new Uint8Array(await r.arrayBuffer()) : null
+        if (!r?.ok) { photos[id] = null; return }
+        const buf = await r.arrayBuffer()
+        const bytes = new Uint8Array(buf)
+        // Reject SPA fallback pages masquerading as images (PNG magic bytes: 89 50 4E 47)
+        photos[id] = (bytes[0] === 0x89 && bytes[1] === 0x50 && bytes[2] === 0x4E && bytes[3] === 0x47)
+          ? bytes : null
       } catch { photos[id] = null }
     }))
   }
