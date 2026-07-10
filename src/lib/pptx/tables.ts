@@ -35,7 +35,10 @@ const ROI_IMG_H = 1900000    // height reserved for the S28 payback chart
 
 // Verdict palette — shared by the S19 verdict-cell fills and the gate grid glyphs
 // (pass = GREEN, review = YELLOW, fail = RED).
-const STATUS_COLOR = { GREEN: '2E7D32', YELLOW: 'C77700', RED: 'C62828' } as const
+// INCOMPLETE is tolerated for forward-compatibility with the qualification engine
+// (widened TrafficLightStatus union); maps to muted gray so in-progress decks
+// render honestly rather than falling through to the RED else-branch.
+const STATUS_COLOR = { GREEN: '2E7D32', YELLOW: 'C77700', RED: 'C62828', INCOMPLETE: '8A8A8E' } as const
 
 const ft = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)} ft`
 
@@ -127,11 +130,14 @@ export function fillVehicleCards(
     }
     const q = qualifyVehicle(v, app)
     const verdict = q.status === 'GREEN' ? 'QUALIFIED'
-      : q.status === 'YELLOW' ? 'QUALIFIED — REVIEW' : 'REVIEW REQUIRED'
+      : q.status === 'YELLOW' ? 'QUALIFIED — REVIEW'
+      : q.status === 'INCOMPLETE' ? 'SCREENING IN PROGRESS'
+      : 'REVIEW REQUIRED'
     const hardFails = dedupe(q.hardGates.filter(g => !g.skipped && !g.passed).map(g => g.name))
     const softFails = dedupe(q.softPreferences.filter(g => !g.skipped && !g.passed).map(g => g.name))
     const why = q.status === 'GREEN' ? 'Meets every requirement screened'
       : q.status === 'YELLOW' ? `Review on site: ${softFails.join(', ')}`
+      : q.status === 'INCOMPLETE' ? 'Screening incomplete — capture the remaining requirements in Step 1'
       : `Screening flags: ${hardFails.join(', ')}`
     const served = (project.flows ?? []).filter(fl => fl.vehicleId === id).length
     const paras: TextRun[][] = [
@@ -165,6 +171,7 @@ export function fillVerdictAppendix(
     const softFails = q.softPreferences.filter(g => !g.skipped && !g.passed).map(g => g.name)
     const notes = q.status === 'RED' ? `Fails: ${dedupe(hardFails).join(', ')}`
       : q.status === 'YELLOW' ? `Review: ${dedupe([...softFails, ...partialLoadNote(q)]).join(', ')}`
+      : q.status === 'INCOMPLETE' ? 'Screening incomplete — some requirements not yet captured'
       : 'All gates pass'
     rows.push([
       { t: vehicle.name, bold: true },
