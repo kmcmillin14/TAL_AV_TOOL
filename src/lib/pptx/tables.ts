@@ -1,15 +1,16 @@
 // Fills the P2 ROM step slides with native editable tables:
-//   S18  Application Requirements  (requirement → value)
-//   S19  Vehicle Selection Matrix  (per-vehicle verdict + notes)
-//   S20  Vehicle Selection Matrix  (gate × vehicle pass/fail grid)
-//   S24  Material Flow Diagram      (flow list table)
+//   S18  Application Requirements  (requirement → value, ≤8 rows)
+//   S19  Vehicle Selection          (fit cards — assigned chassis only)
+//   S21  Fleet Sizing               (waterfall: Workload + Charging × Buffer = Fleet)
+//   S24  Material Flow Diagram      (trimmed flow list: # · Route · Moves/hr · Vehicle)
+//   S27  Investment Summary         (pricing table)
+//   S28  ROI                        (payback chart + 3-row table)
 // Tables are appended as native <a:tbl> graphic frames positioned in the slide
 // body (the title/footer placeholders stay intact). Pure data → XML.
 import type PizZip from 'pizzip'
 import type { StoredProject } from '@/src/lib/storage'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { FleetModel } from '@/src/lib/fleetModel'
-import type { RouteLayout } from '@/src/calc/types'
 import { qualifyVehicle } from '@/src/calc/trafficLight'
 import { GATES } from '@/src/calc/gates'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
@@ -20,119 +21,284 @@ import { VEHICLE_SLIDE, ROM_SLIDE } from './sections'
 import {
   TAL_RED,
   type TableCell,
+  type TextRun,
+  textBox, addImage, containRect, pngSize, nextShapeId, appendShapesToSlide,
 } from './ooxml'
-import { frame, BODY, type TileSpec } from './layout'
-import { investmentTakeaway, roiTakeaway } from './takeaways'
+import { frame, setTitle, BODY, GAP, GRAY, pct, type TileSpec } from './layout'
+import {
+  requirementsTitle, vehiclesTitle, fleetTitle, flowTitle,
+  investmentTitle, roiTitle, FALLBACK_TITLE,
+} from './takeaways'
 
 const FLOW_IMG_H = 2100000   // height reserved for the S24 diagram image
 const ROI_IMG_H = 1900000    // height reserved for the S28 payback chart
 
-// Verdict palette — shared by the S19 verdict-cell fills and the S20 grid glyphs
+// Verdict palette — shared by the S19 verdict-cell fills and the gate grid glyphs
 // (pass = GREEN, review = YELLOW, fail = RED).
 const STATUS_COLOR = { GREEN: '2E7D32', YELLOW: 'C77700', RED: 'C62828' } as const
 
-
 const ft = (n: number) => `${Number.isInteger(n) ? n : n.toFixed(1)} ft`
-
-const ROUTE_LABEL: Record<RouteLayout, string> = { low: 'Congested', medium: 'Mixed', high: 'Open' }
 
 const TEMP_LABEL: Record<string, string> = {
   ambient: 'Ambient', refrigerated: 'Refrigerated', freezer: 'Freezer',
 }
 
-/** S18 — Application Requirements as a requirement → value table. Only rows with
- *  a meaningful value are shown (partial projects stay clean). */
+const MAX_REQ_ROWS = 8
+
+/** S18 — the ~8 requirements that drive the design, as one table. The claim is
+ *  the title; the full captured input set stays in the app's project file. */
 export function fillRequirements(zip: PizZip, project: StoredProject): void {
-  // ── Headline spec tiles (modern KPI-tile look) ───────────────────────────
-  const maxLoad = (project.maxLoadWeightLbs ?? 0) > 0
-    ? { value: project.maxLoadWeightLbs!.toLocaleString(), unit: 'lbs' } : { value: '—' }
-
-  const pick = project.pickHeightFt, drop = project.dropHeightFt
-  const lift = pick != null || drop != null
-    ? { value: `${pick ?? 0}→${drop ?? 0}`, unit: 'ft' }
-    : (project.maxLiftHeightFt ?? 0) > 0 ? { value: `to ${project.maxLiftHeightFt}`, unit: 'ft' } : { value: '—' }
-
-  const l0 = project.loads?.[0]
-  const L = l0?.lengthIn ?? project.loadLengthIn
-  const W = l0?.widthIn ?? project.loadWidthIn
-  const H = l0?.heightIn ?? project.loadHeightIn
-  const footprint = (L || W || H)
-    ? { value: `${L ?? '—'}×${W ?? '—'}×${H ?? '—'}`, unit: 'in', figSz: 2000 } : { value: '—' }
-
-  const hrPerDay = Math.min(24, (project.shiftsPerDay ?? 0) * (project.hoursPerShift ?? 0))
-  const schedule = hrPerDay > 0 ? { value: String(hrPerDay), unit: 'hr/day' } : { value: '—' }
-
-  const f = frame(zip, ROM_SLIDE.requirements)
-  f.eyebrow('01 — APPLICATION REQUIREMENTS')
-  f.tiles([
-    { ...maxLoad, label: 'MAX LOAD', accent: true },
-    { ...lift, label: 'LIFT / TRANSFER' },
-    { ...footprint, label: 'FOOTPRINT (L×W×H)' },
-    { ...schedule, label: 'SCHEDULE' },
-  ], { h: 1100000 })
-
-  // ── Remaining requirements as a table (the headline specs above are dropped
-  //    here to avoid duplication) ──────────────────────────────────────────
+  setTitle(zip, ROM_SLIDE.requirements, requirementsTitle(project), FALLBACK_TITLE.requirements)
   const rows: TableCell[][] = [[{ t: 'Requirement' }, { t: 'Value' }]]
-  const add = (k: string, v?: string | null) => { if (v) rows.push([{ t: k, bold: true }, { t: v }]) }
+  const add = (k: string, v?: string | null) => {
+    if (v && rows.length <= MAX_REQ_ROWS) rows.push([{ t: k, bold: true }, { t: v }])
+  }
 
+  if ((project.maxLoadWeightLbs ?? 0) > 0) add('Max load', `${project.maxLoadWeightLbs!.toLocaleString()} lbs`)
   add('Payload / unit type', project.typicalUnitType?.trim())
   add('Transfer method', project.transferMethod?.trim())
-  add('Delivery pattern', project.deliveryPattern?.trim())
+
+  const pick = project.pickHeightFt, drop = project.dropHeightFt
+  if (pick != null || drop != null) add('Lift / transfer', `${ft(pick ?? 0)} → ${ft(drop ?? 0)}`)
+  else if ((project.maxLiftHeightFt ?? 0) > 0) add('Lift / transfer', `to ${ft(project.maxLiftHeightFt!)}`)
+
+  const hrPerDay = Math.min(24, (project.shiftsPerDay ?? 0) * (project.hoursPerShift ?? 0))
+  if (hrPerDay > 0) add('Schedule', `${hrPerDay} hr/day (${project.shiftsPerDay} × ${project.hoursPerShift})`)
 
   const env = project.temperatureEnvironment ?? (project.freezerCapable ? 'freezer' : undefined)
   if (env) add('Temperature', TEMP_LABEL[env] ?? env)
-  if (project.tempMinF != null && project.tempMinF !== 0) add('Min temperature', `${project.tempMinF}°F`)
-  if (project.tempMaxF != null && project.tempMaxF !== 0) add('Max temperature', `${project.tempMaxF}°F`)
-
+  if (project.outdoorRequired != null) add('Operating environment', project.outdoorRequired ? 'Outdoor' : 'Indoor')
   if (project.rampRequired != null || (project.maxRampGrade ?? 0) > 0) {
     const yes = project.rampRequired === true || (project.maxRampGrade ?? 0) > 0
     add('Ramp on site', yes ? ((project.maxRampGrade ?? 0) > 0 ? `Yes — ${project.maxRampGrade}% grade` : 'Yes') : 'No')
   }
-  if (project.outdoorRequired != null) add('Operating environment', project.outdoorRequired ? 'Outdoor' : 'Indoor')
-  if ((project.minAisleWidthFt ?? 0) > 0) add('Min aisle width', `${ft(project.minAisleWidthFt!)} (informational)`)
+  if (rows.length === 1) rows.push([{ t: '—' }, { t: 'No requirements captured yet (Step 1).' }])
 
-  const certs = Array.isArray(project.certifications) ? project.certifications.filter(Boolean) : []
-  if (certs.length) add('Certifications', certs.join(', '))
-
-  if (rows.length === 1) rows.push([{ t: '—' }, { t: 'No further requirements captured yet (Step 1).' }])
-  f.table([3600000, 7220400], rows, { rowH: 320000 })
+  const f = frame(zip, ROM_SLIDE.requirements)
+  f.eyebrow('01 — APPLICATION')
+  f.rule()
+  f.table([3600000, 7220400], rows, { rowH: 360000 })
+  f.caption('Captured in discovery · the project file holds the full input set')
 }
 
-// ── Fleet Engine (S21 Raw / S22 Charging / S23 Buffer) — worked derivations ───
-//
-// Each tier slide reads as an independent stage: a meaning caption (what the
-// tier does), the Raw + Charging × Buffer = Total progression strip with this
-// tier lit, then a worked derivation table for a representative example —
-// label · what it means · calculation · result (from src/lib/derivation.ts).
+// ── Vehicle Fit Cards (S19) + Screening Appendix ────────────────────────────
 
-type Stage = 'raw' | 'charging' | 'buffer'
+const CARD_IMG_H = 1500000    // vehicle photo zone per fit card
+const CARD_TXT_H = 1900000    // name + verdict + why text zone
 
-const STAGE_META: Record<Stage, { n: string; name: string; slide: number; meaning: string }> = {
-  raw: { n: '1', name: 'RAW FLEET', slide: ROM_SLIDE.rawFleet,
-    meaning: 'Each flow’s cycle time → vehicles needed (throughput × cycle ÷ 3600), summed per chassis and rounded up = raw base fleet.' },
-  charging: { n: '2', name: 'CHARGING', slide: ROM_SLIDE.charging,
-    meaning: 'Battery runtime vs recharge sets availability; dividing demand by availability adds the vehicles needed to cover charging downtime.' },
-  buffer: { n: '3', name: 'BUFFER', slide: ROM_SLIDE.buffer,
-    meaning: '(base + charging) × (1 + buffer), rounded up — spare capacity for maintenance, training, and demand spikes = fleet sold.' },
+/** Distinct chassis the engineer assigned to flows, in first-assignment order. */
+function assignedVehicleIds(project: StoredProject): string[] {
+  const ids: string[] = []
+  for (const fl of project.flows ?? []) {
+    if (fl.vehicleId && !ids.includes(fl.vehicleId)) ids.push(fl.vehicleId)
+  }
+  return ids
 }
 
-const PROG_H = 900000   // progression tile row
+/** S19 — one fit card per ASSIGNED chassis (photo · name · verdict · why-line).
+ *  The tool never picks a vehicle: no assignments → the slide is left untouched
+ *  (the exporter drops it). Photos are optional (text-only cards in non-DOM). */
+export function fillVehicleCards(
+  zip: PizZip, project: StoredProject, vehicles: Vehicle[],
+  photos: Record<string, Uint8Array | null>,
+): void {
+  const assigned = assignedVehicleIds(project)
+  if (assigned.length === 0) return
+  const vById = new Map(vehicles.map(v => [v.id, v]))
+  const app = appRequirementsFromProject(project)
+  const flowsTotal = (project.flows ?? []).length
+
+  setTitle(zip, ROM_SLIDE.vehicles, vehiclesTitle(assigned.length), FALLBACK_TITLE.vehicles)
+  const f = frame(zip, ROM_SLIDE.vehicles)
+  f.eyebrow('02 — VEHICLE SELECTION')
+  f.rule()
+
+  const ids = assigned.slice(0, 4)                      // 4 cards max across the body
+  const w = Math.round((BODY.cx - (ids.length - 1) * GAP) / ids.length)
+  const yTop = f.y
+  ids.forEach((id, i) => {
+    const v = vById.get(id)
+    if (!v) return
+    const x = BODY.x + i * (w + GAP)
+    const png = photos[id]
+    if (png) {
+      const { w: nw, h: nh } = pngSize(png)
+      addImage(zip, ROM_SLIDE.vehicles, png, containRect(nw, nh, { x, y: yTop, cx: w, cy: CARD_IMG_H }))
+    }
+    const q = qualifyVehicle(v, app)
+    const verdict = q.status === 'GREEN' ? 'QUALIFIED'
+      : q.status === 'YELLOW' ? 'QUALIFIED — REVIEW' : 'REVIEW REQUIRED'
+    const hardFails = dedupe(q.hardGates.filter(g => !g.skipped && !g.passed).map(g => g.name))
+    const softFails = dedupe(q.softPreferences.filter(g => !g.skipped && !g.passed).map(g => g.name))
+    const why = q.status === 'GREEN' ? 'Meets every requirement screened'
+      : q.status === 'YELLOW' ? `Review on site: ${softFails.join(', ')}`
+      : `Screening flags: ${hardFails.join(', ')}`
+    const served = (project.flows ?? []).filter(fl => fl.vehicleId === id).length
+    const paras: TextRun[][] = [
+      [{ t: v.name, bold: true, sz: 1400 }],
+      [{ t: verdict, bold: true, sz: 1000, color: STATUS_COLOR[q.status] }],
+      [],
+      [{ t: why, sz: 1000 }],
+      [{ t: `Serves ${served} of ${flowsTotal} flow${flowsTotal === 1 ? '' : 's'}`, sz: 950, color: GRAY }],
+    ]
+    appendShapesToSlide(zip, ROM_SLIDE.vehicles, textBox({
+      id: nextShapeId(zip, ROM_SLIDE.vehicles),
+      x, y: yTop + CARD_IMG_H + GAP, cx: w, cy: CARD_TXT_H, paras,
+    }))
+  })
+  f.skip(CARD_IMG_H + GAP + CARD_TXT_H)
+
+  const screenedOut = vehicles.length - assigned.length
+  f.caption(`Selected from ${vehicles.length} chassis screened`
+    + (screenedOut > 0 ? ` (${screenedOut} not selected)` : '')
+    + ' · screening matrix in appendix')
+}
+
+/** Appendix — the full per-chassis verdict table (was body S19). */
+export function fillVerdictAppendix(
+  zip: PizZip, slide: number, project: StoredProject, vehicles: Vehicle[],
+): void {
+  const results = qualifyAll(project, vehicles)
+  const rows: TableCell[][] = [[{ t: 'Vehicle' }, { t: 'Verdict', align: 'ctr' }, { t: 'Notes' }]]
+  for (const { vehicle, q } of results) {
+    const hardFails = q.hardGates.filter(g => !g.skipped && !g.passed).map(g => g.name)
+    const softFails = q.softPreferences.filter(g => !g.skipped && !g.passed).map(g => g.name)
+    const notes = q.status === 'RED' ? `Fails: ${dedupe(hardFails).join(', ')}`
+      : q.status === 'YELLOW' ? `Review: ${dedupe([...softFails, ...partialLoadNote(q)]).join(', ')}`
+      : 'All gates pass'
+    rows.push([
+      { t: vehicle.name, bold: true },
+      { t: q.status, align: 'ctr', fill: STATUS_COLOR[q.status], color: 'FFFFFF', bold: true },
+      { t: notes },
+    ])
+  }
+  const f = frame(zip, slide)
+  f.eyebrow('APPENDIX — VEHICLE SCREENING')
+  f.table([3000000, 2000000, 5820400], rows)
+  f.caption('Every chassis in the library, screened against the captured requirements')
+}
+
+/** Appendix — the gate × vehicle grid (was body S20). */
+export function fillGateGrid(
+  zip: PizZip, slide: number, project: StoredProject, vehicles: Vehicle[],
+): void {
+  const results = qualifyAll(project, vehicles)
+  const byVeh = results.map(({ vehicle, q }) => {
+    const map = new Map<string, { passed: boolean; skipped: boolean; severity: string }>()
+    for (const g of [...q.hardGates, ...q.softPreferences]) {
+      const prev = map.get(g.gateId)
+      map.set(g.gateId, prev
+        ? { passed: prev.passed && g.passed, skipped: prev.skipped && g.skipped, severity: g.severity }
+        : { passed: g.passed, skipped: g.skipped, severity: g.severity })
+    }
+    return { vehicle, map }
+  })
+  const activeGates = GATES.filter(spec => byVeh.some(v => !(v.map.get(spec.id)?.skipped ?? true)))
+
+  const header: TableCell[] = [{ t: 'Gate' }, ...byVeh.map(v => ({ t: shortName(v.vehicle.name), align: 'ctr' as const }))]
+  const gridRows: TableCell[][] = [header]
+  for (const spec of activeGates) {
+    gridRows.push([
+      { t: spec.name, bold: true },
+      ...byVeh.map(v => glyphCell(v.map.get(spec.id))),
+    ])
+  }
+  if (activeGates.length === 0) gridRows.push([{ t: 'No requirements captured yet (Step 1).' }, ...byVeh.map(() => ({ t: '' }))])
+
+  const vehColW = Math.round((BODY.cx - 3000000) / byVeh.length)
+  const f = frame(zip, slide)
+  f.eyebrow('APPENDIX — VEHICLE SCREENING')
+  f.table([3000000, ...byVeh.map(() => vehColW)], gridRows, { center: true, rowH: 340000 })
+  f.caption('✓ pass   ·   ~ review   ·   ✗ fail   ·   –  not evaluated')
+}
+
+// ── Fleet Sizing Waterfall (S21) + Derivation Appendix ──────────────────────
+
+const WATERFALL_H = 1600000
 // Worked-derivation table: Step · What it means · Calculation · Result.
 const DERIV_COL = [2600000, 3400000, 3220400, 1600000]
 
-/** The RAW + CHARGING × BUFFER = FLEET SOLD build-up as a compact tile row, with
- *  this tier's tile lit (red accent) and the total always red. */
-function progressionTiles(model: FleetModel, stage: Stage): TileSpec[] {
-  const { fleet, settings } = model
+export interface TierDerivation {
+  name: 'RAW FLEET' | 'CHARGING' | 'BUFFER'
+  meaning: string
+  deriv: Derivation | null
+  example: string
+}
+
+/** S21 — the whole sizing story on one slide: claim title, the
+ *  Workload + Charging × Buffer = Fleet waterfall as explained tiles, and the
+ *  fleet mix. The math lives in the sizing-derivation appendix. */
+export function fillFleetSizing(zip: PizZip, model: FleetModel, names: Record<string, string>): void {
+  const { fleet, flows, settings } = model
+  setTitle(zip, ROM_SLIDE.fleetSizing, fleetTitle(model), FALLBACK_TITLE.fleet)
+  const f = frame(zip, ROM_SLIDE.fleetSizing)
+  f.eyebrow('03 — FLEET SIZING')
+  f.rule()
+  const thru = Math.round(flows.reduce((s, fl) => s + (fl.thruPerHr || 0), 0))
   const chg = fleet.totalChargingDelta
-  const lit = (s: Stage): Partial<TileSpec> => (stage === s ? { barColor: TAL_RED } : {})
+  f.tiles([
+    { value: String(fleet.totalBaseFleet), label: 'WORKLOAD', compact: true,
+      desc: `vehicles to carry ${thru} moves/hr across ${flows.length} flow${flows.length === 1 ? '' : 's'}` },
+    { value: chg > 0 ? `+${chg}` : '+0', label: '+ CHARGING', compact: true,
+      desc: 'keeps the fleet moving while batteries recover' },
+    { value: `×${(1 + settings.bufferPct).toFixed(2)}`, label: '× BUFFER', compact: true,
+      desc: 'absorbs peaks and maintenance windows' },
+    { value: String(fleet.totalFleetSold), label: '= FLEET', accent: true, compact: true,
+      desc: 'recommended fleet size' },
+  ], { h: WATERFALL_H })
+  const mix = fleet.groups.map(g => `${names[g.vehicleId] ?? g.vehicleId} ×${g.fleetSold}`).join('   ·   ')
+  f.caption([
+    mix ? `Fleet mix — ${mix}` : 'Assign vehicles to flows (Step 3) to size the fleet.',
+    'Sized from your throughput, distances, and shift pattern · full derivation in appendix',
+  ])
+}
+
+/** The three worked tier derivations (representative examples), for the appendix. */
+export function buildTierDerivations(
+  model: FleetModel, vehicles: Vehicle[], names: Record<string, string>,
+): TierDerivation[] {
+  const { flows, derivedByFlowId, fleet, settings } = model
+  const vById = new Map(vehicles.map(v => [v.id, v]))
+  const rawFlow = flows.find(fl => fl.vehicleId && derivedByFlowId.get(fl.id)?.breakdown)
+  const rawVeh = rawFlow?.vehicleId ? vById.get(rawFlow.vehicleId) : undefined
+  const rawBreak = rawFlow ? derivedByFlowId.get(rawFlow.id)?.breakdown : null
+  const rawDeriv = rawFlow && rawVeh && rawBreak
+    ? cycleDerivation(rawBreak, {
+        distanceFt: rawFlow.distanceFt, thruPerHr: rawFlow.thruPerHr,
+        speedLoadedFps: rawVeh.calc.speedLoadedFps,
+        speedUnloadedFps: rawVeh.calc.speedUnloadedFps ?? rawVeh.calc.speedLoadedFps,
+        liftSpeedFps: rawVeh.calc.liftSpeedFps ?? null,
+        rawVehicles: derivedByFlowId.get(rawFlow.id)?.rawVehicles ?? null,
+      })
+    : null
+  const grp = fleet.groups[0]
+  const grpVeh = grp ? vById.get(grp.vehicleId) : undefined
+  const grpExample = grp ? `Example: ${names[grp.vehicleId] ?? grp.vehicleId}` : ''
   return [
-    { value: String(fleet.totalBaseFleet), label: 'RAW FLEET', compact: true, ...lit('raw') },
-    { value: chg > 0 ? `+${chg}` : '0', label: '+ CHARGING', compact: true, ...lit('charging') },
-    { value: `×${(1 + settings.bufferPct).toFixed(2)}`, label: '× BUFFER', compact: true, ...lit('buffer') },
-    { value: String(fleet.totalFleetSold), label: '= FLEET SOLD', compact: true, accent: true },
+    { name: 'RAW FLEET', deriv: rawDeriv,
+      meaning: 'Each flow’s cycle time → vehicles needed (throughput \xd7 cycle \xf7 3600), summed per chassis and rounded up = raw base fleet.',
+      example: rawFlow ? `Example: ${rawVeh?.name ?? rawFlow.vehicleId} \xb7 ${rawFlow.origin || '—'} → ${rawFlow.destination || '—'}` : '' },
+    { name: 'CHARGING', deriv: grp && grpVeh ? chargingDerivation(grp, grpVeh, settings) : null,
+      meaning: 'Battery runtime vs recharge sets availability; dividing demand by availability adds the vehicles needed to cover charging downtime.',
+      example: grpExample },
+    { name: 'BUFFER', deriv: grp ? bufferDerivation(grp, settings.bufferPct) : null,
+      meaning: '(base + charging) \xd7 (1 + buffer), rounded up — spare capacity for maintenance, training, and demand spikes = fleet sold.',
+      example: grpExample },
   ]
+}
+
+/** One tier's worked derivation on an appendix slide (was a body tier slide). */
+export function fillDerivation(zip: PizZip, slide: number, tier: TierDerivation): void {
+  const f = frame(zip, slide)
+  f.eyebrow('APPENDIX — SIZING DERIVATION')
+  f.table(DERIV_COL,
+    tier.deriv ? derivationRows(tier.deriv)
+      : [[{ t: 'How it’s calculated' }], [{ t: 'Assign vehicles to flows (Step 3) to show the worked calculation.' }]],
+    { rowH: 260000 })
+  const lines = [tier.meaning + (tier.example ? `   \xb7   ${tier.example}` : '')]
+  const inputs = (tier.deriv?.steps ?? []).filter(s => s.kind === 'input')
+  if (inputs.length) lines.push(`Inputs — ${inputs.map(s => `${s.label} ${s.result}`).join('  \xb7  ')}`)
+  f.caption(lines)
 }
 
 /** A Derivation → table rows (section/input rows dropped — inputs go in the
@@ -151,64 +317,7 @@ function derivationRows(d: Derivation): TableCell[][] {
   return rows
 }
 
-/** Render one tier slide: eyebrow → progression strip → worked example →
- *  meaning/inputs caption. */
-function renderTier(zip: PizZip, stage: Stage, model: FleetModel, deriv: Derivation | null, example: string): void {
-  const meta = STAGE_META[stage]
-  const f = frame(zip, meta.slide)
-  f.eyebrow(`03 — FLEET ENGINE · TIER ${meta.n} OF 3 — ${meta.name}`)
-  f.tiles(progressionTiles(model, stage), { h: PROG_H })
-  f.table(DERIV_COL,
-    deriv ? derivationRows(deriv)
-      : [[{ t: 'How it’s calculated' }], [{ t: 'Assign vehicles to flows (Step 3) to show the worked calculation.' }]],
-    { rowH: 260000 })
-  // Meaning + example + inputs live in the caption zone (the derivation table
-  // shows how each input is used; a row per input wouldn't fit).
-  const lines = [meta.meaning + (example ? `   ·   ${example}` : '')]
-  const inputs = (deriv?.steps ?? []).filter(s => s.kind === 'input')
-  if (inputs.length) lines.push(`Inputs — ${inputs.map(s => `${s.label} ${s.result}`).join('  ·  ')}`)
-  f.caption(lines)
-}
-
-/**
- * S21/22/23 Fleet Engine — three independent tiers, each with its meaning, the
- * progression strip (this tier lit), and a worked derivation for a representative
- * example (the math, not just the sums). Native editable tables (work without a DOM).
- */
-export function fillFleetEngine(
-  zip: PizZip, model: FleetModel, vehicles: Vehicle[], names: Record<string, string>,
-): void {
-  const { flows, derivedByFlowId, fleet, settings } = model
-  const vById = new Map(vehicles.map(v => [v.id, v]))
-
-  // One representative worked example per tier (the deck shows the *method*; the
-  // app holds the full per-flow data). Raw = first flow with a computed cycle.
-  const rawFlow = flows.find(f => f.vehicleId && derivedByFlowId.get(f.id)?.breakdown)
-  const rawVeh = rawFlow?.vehicleId ? vById.get(rawFlow.vehicleId) : undefined
-  const rawBreak = rawFlow ? derivedByFlowId.get(rawFlow.id)?.breakdown : null
-  const rawDeriv = rawFlow && rawVeh && rawBreak
-    ? cycleDerivation(rawBreak, {
-        distanceFt: rawFlow.distanceFt,
-        thruPerHr: rawFlow.thruPerHr,
-        speedLoadedFps: rawVeh.calc.speedLoadedFps,
-        speedUnloadedFps: rawVeh.calc.speedUnloadedFps ?? rawVeh.calc.speedLoadedFps,
-        liftSpeedFps: rawVeh.calc.liftSpeedFps ?? null,
-        rawVehicles: derivedByFlowId.get(rawFlow.id)?.rawVehicles ?? null,
-      })
-    : null
-  const rawExample = rawFlow
-    ? `Example: ${rawVeh?.name ?? rawFlow.vehicleId} · ${rawFlow.origin || '—'} → ${rawFlow.destination || '—'}`
-    : ''
-
-  // Representative Charging/Buffer example: first sized vehicle group.
-  const grp = fleet.groups[0]
-  const grpVeh = grp ? vById.get(grp.vehicleId) : undefined
-  const grpExample = grp ? `Example: ${names[grp.vehicleId] ?? grp.vehicleId}` : ''
-
-  renderTier(zip, 'raw', model, rawDeriv, rawExample)
-  renderTier(zip, 'charging', model, grp && grpVeh ? chargingDerivation(grp, grpVeh, settings) : null, grpExample)
-  renderTier(zip, 'buffer', model, grp ? bufferDerivation(grp, settings.bufferPct) : null, grpExample)
-}
+// ── Per-vehicle qualification helpers (shared by S19 cards + appendix) ───────
 
 /** Per-vehicle qualification, in deck-overview order (8TB · 8HBC · M10 · ML2 · E7 · CB18). */
 function qualifyAll(project: StoredProject, vehicles: Vehicle[]) {
@@ -218,100 +327,35 @@ function qualifyAll(project: StoredProject, vehicles: Vehicle[]) {
   return ordered.map(v => ({ vehicle: v, q: qualifyVehicle(v, app) }))
 }
 
-/** S19 verdict table + S20 gate×vehicle grid. Shows all candidate chassis — the
- *  matrix is the *selection rationale*, not just the chosen fleet. */
-export function fillMatrix(zip: PizZip, project: StoredProject, vehicles: Vehicle[]): void {
-  const results = qualifyAll(project, vehicles)
-
-  // ── S19: Vehicle | Verdict | Notes ──────────────────────────────────────
-  const verdictRows: TableCell[][] = [[{ t: 'Vehicle' }, { t: 'Verdict', align: 'ctr' }, { t: 'Notes' }]]
-  for (const { vehicle, q } of results) {
-    const hardFails = q.hardGates.filter(g => !g.skipped && !g.passed).map(g => g.name)
-    const softFails = q.softPreferences.filter(g => !g.skipped && !g.passed).map(g => g.name)
-    const notes = q.status === 'RED' ? `Fails: ${dedupe(hardFails).join(', ')}`
-      : q.status === 'YELLOW' ? `Review: ${dedupe([...softFails, ...partialLoadNote(q)]).join(', ')}`
-      : 'All gates pass'
-    verdictRows.push([
-      { t: vehicle.name, bold: true },
-      { t: q.status, align: 'ctr', fill: STATUS_COLOR[q.status], color: 'FFFFFF', bold: true },
-      { t: notes },
-    ])
-  }
-  // Modern KPI-tile summary band on top: verdict counts (Pass / Review / Fail) +
-  // candidate total, then the per-vehicle verdict table beneath.
-  const counts = { GREEN: 0, YELLOW: 0, RED: 0 }
-  for (const { q } of results) counts[q.status]++
-  const f19 = frame(zip, ROM_SLIDE.matrixVerdict)
-  f19.eyebrow('02 — VEHICLE SELECTION')
-  f19.tiles([
-    { value: String(counts.GREEN), label: 'PASS', barColor: STATUS_COLOR.GREEN },
-    { value: String(counts.YELLOW), label: 'REVIEW', barColor: STATUS_COLOR.YELLOW },
-    { value: String(counts.RED), label: 'FAIL', barColor: STATUS_COLOR.RED },
-    { value: String(results.length), label: 'CANDIDATES' },
-  ], { h: 1100000 })
-  f19.table([3000000, 2000000, 5820400], verdictRows)
-
-  // ── S20: Gate × vehicle pass/fail grid ──────────────────────────────────
-  // Per vehicle, collapse multi-load gate entries to one verdict per gateId.
-  const byVeh = results.map(({ vehicle, q }) => {
-    const map = new Map<string, { passed: boolean; skipped: boolean; severity: string }>()
-    for (const g of [...q.hardGates, ...q.softPreferences]) {
-      const prev = map.get(g.gateId)
-      map.set(g.gateId, prev
-        ? { passed: prev.passed && g.passed, skipped: prev.skipped && g.skipped, severity: g.severity }
-        : { passed: g.passed, skipped: g.skipped, severity: g.severity })
-    }
-    return { vehicle, map }
-  })
-  // Only gates that actually ran for ≥1 vehicle (skip is requirement-driven).
-  const activeGates = GATES.filter(spec => byVeh.some(v => !(v.map.get(spec.id)?.skipped ?? true)))
-
-  const header: TableCell[] = [{ t: 'Gate' }, ...byVeh.map(v => ({ t: shortName(v.vehicle.name), align: 'ctr' as const }))]
-  const gridRows: TableCell[][] = [header]
-  for (const spec of activeGates) {
-    gridRows.push([
-      { t: spec.name, bold: true },
-      ...byVeh.map(v => glyphCell(v.map.get(spec.id))),
-    ])
-  }
-  if (activeGates.length === 0) gridRows.push([{ t: 'No requirements captured yet (Step 1).' }, ...byVeh.map(() => ({ t: '' }))])
-
-  const vehColW = Math.round((BODY.cx - 3000000) / byVeh.length)
-  const f20 = frame(zip, ROM_SLIDE.matrixGrid)
-  f20.eyebrow('02 — VEHICLE SELECTION')
-  f20.table([3000000, ...byVeh.map(() => vehColW)], gridRows, { center: true, rowH: 340000 })
-  f20.caption('✓ pass   ·   ~ review   ·   ✗ fail   ·   –  not evaluated')
-}
-
-/** S24 — Material flows. When a rendered diagram PNG is supplied it goes on top
- *  (the slide is the "Material Flow Diagram") and a compact flow table sits
- *  beneath it; otherwise the table fills the body. */
+/** S24 — Material flows. Title claim + rule. When a rendered diagram PNG is
+ *  supplied it goes on top and a compact 4-column table sits beneath it;
+ *  otherwise the table fills the body. Columns: # · Route · Moves/hr · Vehicle
+ *  (Distance, Layout, Lift moved to the cycle-math appendix). */
 export function fillMaterialFlow(
   zip: PizZip, model: FleetModel, names: Record<string, string>, diagramPng?: Uint8Array | null,
 ): void {
   const { flows } = model
+  setTitle(zip, ROM_SLIDE.materialFlow, flowTitle(model), FALLBACK_TITLE.flow)
   const f = frame(zip, ROM_SLIDE.materialFlow)
   f.eyebrow('04 — MATERIAL FLOW')
+  f.rule()
   if (diagramPng) f.image(diagramPng, FLOW_IMG_H)
-  const MAX = diagramPng ? 3 : 9
+  const MAX = diagramPng ? 4 : 9
 
   const rows: TableCell[][] = [[
-    { t: '#', align: 'ctr' }, { t: 'Route' }, { t: 'Distance', align: 'r' },
-    { t: 'Moves/hr', align: 'r' }, { t: 'Layout', align: 'ctr' }, { t: 'Lift', align: 'r' }, { t: 'Vehicle' },
+    { t: '#', align: 'ctr' }, { t: 'Route' }, { t: 'Moves/hr', align: 'r' }, { t: 'Vehicle' },
   ]]
   flows.slice(0, MAX).forEach((flow, i) => rows.push([
     { t: String(i + 1), align: 'ctr' },
     { t: `${flow.origin || '—'} → ${flow.destination || '—'}` },
-    { t: ft(flow.distanceFt), align: 'r' },
     { t: String(flow.thruPerHr ?? 0), align: 'r' },
-    { t: ROUTE_LABEL[flow.routeLayout] ?? flow.routeLayout, align: 'ctr' },
-    { t: ft(flow.liftHeightFt), align: 'r' },
     { t: flow.vehicleId ? (names[flow.vehicleId] ?? flow.vehicleId) : 'Unassigned' },
   ]))
-  if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(5).fill({ t: '' })])
-  if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(5).fill({ t: '' })])
+  if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, { t: '' }, { t: '' }])
+  if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, { t: '' }, { t: '' }])
 
-  f.table([560000, 4060400, 1300000, 1300000, 1300000, 1100000, 1200000], rows, { rowH: 320000 })
+  f.table([560000, 5800400, 1580000, 2880000], rows, { rowH: 320000 })
+  f.caption('Per-flow distances, layouts, and lift heights are in the cycle-math appendix')
 }
 
 /** S27 Investment Summary — dynamic per-line CAPEX pricing table with a TOTAL row.
@@ -333,10 +377,13 @@ export function fillInvestment(zip: PizZip, model: FleetModel, names: Record<str
   if (rom.pricing.lines.length === 0) rows.push([{ t: '—' }, { t: '', align: 'ctr' }, { t: '' }, { t: 'Assign vehicles to flows (Step 3).', align: 'r' }])
   const redCell = (t: string, align: TableCell['align'] = 'l'): TableCell => ({ t, align, fill: TAL_RED, color: 'FFFFFF', bold: true })
   rows.push([redCell('TOTAL'), redCell(String(fleet.totalFleetSold), 'ctr'), redCell(''), redCell(`${money(rom.pricing.totalMin)} – ${money(rom.pricing.totalMax)}`, 'r')])
+
+  setTitle(zip, ROM_SLIDE.investment, investmentTitle(model), FALLBACK_TITLE.investment)
   const f = frame(zip, ROM_SLIDE.investment)
   f.eyebrow('06 — INVESTMENT')
-  f.takeaway(investmentTakeaway(model))
+  f.rule()
   f.table([4200000, 1200000, 2710200, 2710200], rows, { center: true })
+  f.caption('ROM pricing range pending final configuration — not a quote')
 }
 
 /** Methodology appendix slide — a reference table covering every calc stage:
@@ -351,7 +398,7 @@ export function fillMethodology(zip: PizZip, slide: number): void {
     rows.push([
       { t: `${t.num}  ${t.title}`, bold: true },
       { t: t.formula },
-      { t: t.variables.map(v => `${v.sym} = ${v.name}`).join('  ·  ') },
+      { t: t.variables.map(v => `${v.sym} = ${v.name}`).join('  \xb7  ') },
       { t: firstSentence(t.why) },
     ])
   }
@@ -371,23 +418,23 @@ export function fillFlowMath(
   const nm = (id: string) => names[id] ?? id
   const rows: TableCell[][] = [[
     { t: 'Flow' }, { t: 'Cycle = out + back + load + unload + lift  (s)' },
-    { t: 'Cycle', align: 'r' }, { t: 'Vehicles = Q × cycle ÷ 3600', align: 'r' },
+    { t: 'Cycle', align: 'r' }, { t: 'Vehicles = Q \xd7 cycle \xf7 3600', align: 'r' },
   ]]
-  for (const f of flowsSubset) {
-    const v = f.vehicleId ? vById.get(f.vehicleId) : undefined
-    const b = model.derivedByFlowId.get(f.id)?.breakdown
+  for (const fl of flowsSubset) {
+    const v = fl.vehicleId ? vById.get(fl.vehicleId) : undefined
+    const b = model.derivedByFlowId.get(fl.id)?.breakdown
     if (!v || !b) continue
     const d = cycleDerivation(b, {
-      distanceFt: f.distanceFt, thruPerHr: f.thruPerHr,
+      distanceFt: fl.distanceFt, thruPerHr: fl.thruPerHr,
       speedLoadedFps: v.calc.speedLoadedFps,
       speedUnloadedFps: v.calc.speedUnloadedFps ?? v.calc.speedLoadedFps,
       liftSpeedFps: v.calc.liftSpeedFps ?? null,
-      rawVehicles: model.derivedByFlowId.get(f.id)?.rawVehicles ?? null,
+      rawVehicles: model.derivedByFlowId.get(fl.id)?.rawVehicles ?? null,
     })
     const cyc = d.steps.find(s => s.label === 'Cycle time')
     const cnt = d.steps.find(s => s.label === 'Vehicle count')
     rows.push([
-      { t: `${nm(f.vehicleId!)} · ${f.origin || '—'} → ${f.destination || '—'}`, bold: true },
+      { t: `${nm(fl.vehicleId!)} \xb7 ${fl.origin || '—'} → ${fl.destination || '—'}`, bold: true },
       { t: cyc?.sub ?? '—' },
       { t: cyc?.result ?? '—', align: 'r' },
       { t: cnt ? `${cnt.sub} = ${cnt.result}` : '—', align: 'r' },
@@ -399,16 +446,17 @@ export function fillFlowMath(
   f.table([3000000, 4000000, 1000000, 2820400], rows, { rowH: 360000 })
 }
 
-/** S28 ROI — eyebrow → takeaway → payback-curve chart (when rendered) → metrics
- *  table; table-only when no chart (non-DOM context). */
+/** S28 ROI — title claim → eyebrow → rule → payback-curve chart (when rendered)
+ *  → 3-row metrics table; table-only when no chart (non-DOM context). */
 export function fillRoi(
   zip: PizZip, model: FleetModel, serviceLifeYears: number, paybackPng?: Uint8Array | null,
 ): void {
   const { rom } = model
   const payback = rom.payback.paybackYears
+  setTitle(zip, ROM_SLIDE.roi, roiTitle(model, serviceLifeYears), FALLBACK_TITLE.roi)
   const f = frame(zip, ROM_SLIDE.roi)
   f.eyebrow('06 — RETURN ON INVESTMENT')
-  f.takeaway(roiTakeaway(model, serviceLifeYears))
+  f.rule()
   if (paybackPng) f.image(paybackPng, ROI_IMG_H)
   f.table([5000000, 5820400], [
     [{ t: 'Metric' }, { t: 'Value', align: 'r' }],
@@ -416,6 +464,7 @@ export function fillRoi(
     [{ t: 'Annual labor offset', bold: true }, { t: money(rom.payback.annualLaborOffset), align: 'r' }],
     [{ t: 'Annual operating cost', bold: true }, { t: money(rom.opex.annualOpex), align: 'r' }],
   ], { rowH: 320000 })
+  f.caption('Labor offset is gross of operating cost \xb7 simple payback, undiscounted')
 }
 
 // ── helpers ──────────────────────────────────────────────────────────────────
@@ -424,13 +473,13 @@ function dedupe(xs: string[]): string[] {
   return [...new Set(xs)].filter(Boolean)
 }
 
-/** When only some declared loads pass, surface it as a review note on S19. */
+/** When only some declared loads pass, surface it as a review note. */
 function partialLoadNote(q: ReturnType<typeof qualifyVehicle>): string[] {
   if (!q.perLoad || q.perLoad.every(l => l.passed) || !q.perLoad.some(l => l.passed)) return []
   return [`${q.perLoad.filter(l => !l.passed).length} load(s) don't fit`]
 }
 
-/** Pass/fail/review/skip glyph for the S20 grid cell. */
+/** Pass/fail/review/skip glyph for the gate grid cell. */
 function glyphCell(r?: { passed: boolean; skipped: boolean; severity: string }): TableCell {
   if (!r || r.skipped) return { t: '–', align: 'ctr', color: 'BBBBBB' }
   if (r.passed) return { t: '✓', align: 'ctr', color: STATUS_COLOR.GREEN, bold: true }

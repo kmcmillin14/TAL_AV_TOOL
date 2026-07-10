@@ -4,7 +4,13 @@ import { resolve } from 'node:path'
 import PizZip from 'pizzip'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
-import { fillRequirements, fillMatrix, fillMaterialFlow, fillFleetEngine, fillInvestment, fillRoi, fillMethodology, fillFlowMath } from '../tables'
+import {
+  fillRequirements,
+  fillVehicleCards, fillVerdictAppendix, fillGateGrid,
+  fillFleetSizing, buildTierDerivations, fillDerivation,
+  fillMaterialFlow, fillInvestment, fillRoi,
+  fillMethodology, fillFlowMath,
+} from '../tables'
 import { cloneSlide } from '../ooxml'
 import type { StoredProject } from '../../storage'
 
@@ -28,22 +34,32 @@ const PROJECT = {
 
 describe('P2 table fillers (end-to-end on the real template)', () => {
   let vehicles: Vehicle[]
-  beforeAll(async () => { vehicles = await loadVehicleLibrary() })
+  let names: Record<string, string>
+  beforeAll(async () => {
+    vehicles = await loadVehicleLibrary()
+    names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
+  })
 
-  it('fills S18/19/20/24 with native tables that re-parse cleanly', () => {
+  // ── S18 — trimmed requirements table ───────────────────────────────────────
+
+  it('S18 = claim title + ≤8-row design-driver table + footnote (no tiles)', () => {
     const zip = load()
-    const model = computeFleetModel(PROJECT, vehicles)
-    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
     fillRequirements(zip, PROJECT)
-    fillMatrix(zip, PROJECT, vehicles)
-    fillMaterialFlow(zip, model, names)
+    const xml = reopen(zip).file('ppt/slides/slide18.xml')!.asText()
+    expect(xml).toContain('01 — APPLICATION')
+    expect(xml).toMatch(/Moving 2,500-lb pallets/)            // claim in the title
+    expect(xml).not.toContain('KPI Tile')                     // tiles retired here
+    for (const l of ['Max load', 'Payload / unit type', 'Transfer method']) expect(xml).toContain(l)
+    // ≤ 8 data rows + header
+    expect((xml.match(/<a:tr h=/g) ?? []).length).toBeLessThanOrEqual(9)
+    expect(xml).toContain('project file holds the full input set')
+  })
 
-    const out = reopen(zip) // PizZip re-parse = valid zip + well-formed parts
-    for (const n of [18, 19, 20, 24]) {
-      expect(out.file(`ppt/slides/slide${n}.xml`)!.asText()).toContain('<a:tbl>')
-    }
-    // Restyled tables: white header (ink text) + TAL-red underline rule, no zebra.
-    const s18 = out.file('ppt/slides/slide18.xml')!.asText()
+  it('S18 table structure is well-formed (red underline, no zebra)', () => {
+    const zip = load()
+    fillRequirements(zip, PROJECT)
+    const s18 = reopen(zip).file('ppt/slides/slide18.xml')!.asText()
+    expect(s18).toContain('<a:tbl>')
     expect(s18).toContain('<a:lnB w="19050" cap="flat"><a:solidFill><a:srgbClr val="EB0A1E"/></a:solidFill></a:lnB>') // red header rule
     expect(s18).not.toContain('F6F6F7')                         // zebra gone
     expect(s18).toContain('<a:srgbClr val="E4E4E7"/>')          // hairline body dividers
@@ -51,75 +67,151 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(s18).toContain('<a:noFill/>')                        // header/body cells unpainted
   })
 
-  it('S18 leads with headline spec tiles + a table for the rest', () => {
+  // ── S19 — fit cards + screening appendix ───────────────────────────────────
+
+  it('S19 = one card per assigned chassis with verdict + why-line', () => {
     const zip = load()
-    fillRequirements(zip, PROJECT)
-    const s18 = reopen(zip).file('ppt/slides/slide18.xml')!.asText()
-    // headline tiles
-    expect(s18).toContain('KPI Tile')
-    expect(s18).toContain('MAX LOAD')
-    expect(s18).toContain('2,500')            // max load figure (unit "lbs" is a separate run)
-    expect(s18).toContain('FOOTPRINT (L×W×H)')
-    // remaining requirements still in the table
-    expect(s18).toContain('Refrigerated')
-    expect(s18).toContain('Pallet')
-    expect(s18).toContain('01 — APPLICATION REQUIREMENTS')     // eyebrow
+    fillVehicleCards(zip, PROJECT, vehicles, {})       // PROJECT assigns cb18 + ml2
+    const xml = reopen(zip).file('ppt/slides/slide19.xml')!.asText()
+    expect(xml).toContain('02 — VEHICLE SELECTION')
+    expect(xml).toContain('2 vehicles fit your application')  // claim in the title
+    expect(xml).toContain('screening matrix in appendix')
+    // names of the two assigned chassis appear; unassigned chassis don't
+    const cb18 = vehicles.find(v => v.id === 'cb18')!, m10 = vehicles.find(v => v.id === 'm10')!
+    expect(xml).toContain(cb18.name)
+    expect(xml).not.toContain(m10.name)
   })
 
-  it('S19 colors each verdict and S20 builds a gate×vehicle grid', () => {
+  it('S19 no-ops when no vehicle is assigned', () => {
     const zip = load()
-    fillMatrix(zip, PROJECT, vehicles)
+    const before = zip.file('ppt/slides/slide19.xml')!.asText()
+    fillVehicleCards(zip, { projectName: 'E' } as unknown as StoredProject, vehicles, {})
+    expect(zip.file('ppt/slides/slide19.xml')!.asText()).toBe(before)
+  })
+
+  it('screening appendix = verdict table + gate grid on cloned slides', () => {
+    const zip = load()
+    const verdict = cloneSlide(zip, 18)!, grid = cloneSlide(zip, 18)!
+    fillVerdictAppendix(zip, verdict, PROJECT, vehicles)
+    fillGateGrid(zip, grid, PROJECT, vehicles)
     const out = reopen(zip)
-    const s19 = out.file('ppt/slides/slide19.xml')!.asText()
-    expect(s19).toMatch(/2E7D32|C77700|C62828/)        // a verdict fill color
-    expect(s19).toMatch(/GREEN|YELLOW|RED/)            // a verdict label
-    // Modern KPI-tile summary band (verdict counts) above the table.
-    expect(s19).toContain('KPI Tile')
-    expect(s19).toContain('PASS')
-    expect(s19).toContain('REVIEW')
-    expect(s19).toContain('CANDIDATES')
-    expect(s19).toContain('02 — VEHICLE SELECTION')            // eyebrow
-    const s20 = out.file('ppt/slides/slide20.xml')!.asText()
-    expect(s20).toContain('02 — VEHICLE SELECTION')
-    expect(s20).toContain('not evaluated')                     // glyph legend caption
-    expect(s20).toMatch(/✓|✗|~/)                       // pass/fail/review glyphs
-    // one Gate column + one column per candidate vehicle
-    const cols = (s20.match(/<a:gridCol\b/g) ?? []).length
-    expect(cols).toBe(1 + vehicles.filter(v => ['8tb50a', '8hbc40a', 'm10', 'ml2', 'ebase7', 'cb18'].includes(v.id)).length)
+    const vx = out.file(`ppt/slides/slide${verdict}.xml`)!.asText()
+    const gx = out.file(`ppt/slides/slide${grid}.xml`)!.asText()
+    expect(vx).toContain('APPENDIX — VEHICLE SCREENING')
+    for (const v of vehicles) expect(vx).toContain(v.name)     // all chassis, not just assigned
+    expect(gx).toContain('APPENDIX — VEHICLE SCREENING')
+    expect(gx).toContain('✓')
   })
 
-  it('fills S21/22/23 with a tier caption, progression strip, and worked derivation', () => {
+  // ── S21 — fleet-sizing waterfall + derivation appendix ─────────────────────
+
+  it('S21 = fleet claim + 4-tile waterfall with plain-English descs + mix caption', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
-    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    fillFleetEngine(zip, model, vehicles, names)
-    const out = reopen(zip)
-
-    for (const n of [21, 22, 23]) {
-      const xml = out.file(`ppt/slides/slide${n}.xml`)!.asText()
-      // progression tile row + one derivation table; placeholder gone
-      expect((xml.match(/<a:tbl>/g) ?? []).length).toBe(1)
-      expect(xml).toContain('KPI Tile')              // progression tiles
-      expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
-      expect(xml).toContain('RAW FLEET')             // progression Raw…=Fleet sold
-      expect(xml).toContain('= FLEET SOLD')
-      expect(xml).toContain('What it means')         // derivation columns
-      expect(xml).toContain('03 — FLEET ENGINE · TIER')        // eyebrow
-    }
-    // Each tier names itself and shows its headline derivation step.
-    const s21 = out.file('ppt/slides/slide21.xml')!.asText()
-    expect(s21).toContain('TIER 1')
-    expect(s21).toContain('Cycle time')
-    expect(s21).toContain('throughput × cycle ÷ 3600')
-    expect(s21).toContain('Inputs —')                  // all variables in the caption
-    expect(s21).toContain('Loaded speed')
-    const s22 = out.file('ppt/slides/slide22.xml')!.asText()
-    expect(s22).toContain('TIER 2')
-    expect(s22).toContain('Availability')
-    const s23 = out.file('ppt/slides/slide23.xml')!.asText()
-    expect(s23).toContain('TIER 3')
-    expect(s23).toContain('Fleet (sold)')
+    fillFleetSizing(zip, model, names)
+    const xml = reopen(zip).file('ppt/slides/slide21.xml')!.asText()
+    expect(xml).toContain('03 — FLEET SIZING')
+    expect(xml).toMatch(/Your operation needs a fleet of \d+/)
+    for (const l of ['WORKLOAD', '+ CHARGING', '× BUFFER', '= FLEET']) expect(xml).toContain(l)
+    expect((xml.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(4)
+    expect(xml).toContain('batteries recover')                 // human desc, not formula
+    expect(xml).toContain('Fleet mix —')
+    expect(xml).toContain('full derivation in appendix')
+    expect(xml).not.toContain('What it means')                 // derivation table gone from body
   })
+
+  it('tier derivations render on appendix slides', () => {
+    const zip = load()
+    const model = computeFleetModel(PROJECT, vehicles)
+    const tiers = buildTierDerivations(model, vehicles, names)
+    expect(tiers.map(t => t.name)).toEqual(['RAW FLEET', 'CHARGING', 'BUFFER'])
+    const slide = cloneSlide(zip, 18)!
+    fillDerivation(zip, slide, tiers[0])
+    const xml = reopen(zip).file(`ppt/slides/slide${slide}.xml`)!.asText()
+    expect(xml).toContain('APPENDIX — SIZING DERIVATION')
+    expect(xml).toContain('What it means')
+  })
+
+  // ── S24 — trimmed material flow table ──────────────────────────────────────
+
+  it('S24 flow table trims to # · Route · Moves/hr · Vehicle', () => {
+    const zip = load()
+    const model = computeFleetModel(PROJECT, vehicles)
+    fillMaterialFlow(zip, model, names, null)
+    const xml = reopen(zip).file('ppt/slides/slide24.xml')!.asText()
+    expect(xml).toContain('04 — MATERIAL FLOW')
+    expect(xml).toMatch(/2 flows move 35 loads every hour/)
+    for (const l of ['Route', 'Moves/hr', 'Vehicle']) expect(xml).toContain(l)
+    for (const l of ['Distance', 'Layout', 'Lift']) expect(xml).not.toContain(`<a:t>${l}</a:t>`)
+    expect(xml).toContain('cycle-math appendix')
+  })
+
+  it('S24 embeds the diagram image (media part + picture) when a PNG is supplied', () => {
+    const zip = load()
+    const model = computeFleetModel(PROJECT, vehicles)
+    const png = new Uint8Array(Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64'))
+    fillMaterialFlow(zip, model, names, png)
+    const out = reopen(zip)
+    const s24 = out.file('ppt/slides/slide24.xml')!.asText()
+    expect(s24).toContain('<p:pic>')
+    expect(s24).toMatch(/r:embed="rId\d+"/)
+    // media part written and referenced by the slide rels
+    const media = Object.keys(out.files).filter(n => /^ppt\/media\/image\d+\.png$/.test(n))
+    expect(media.length).toBeGreaterThan(0)
+    expect(out.file('ppt/slides/_rels/slide24.xml.rels')!.asText()).toMatch(/media\/image\d+\.png/)
+  })
+
+  // ── S27/S28 — title claims wired ───────────────────────────────────────────
+
+  it('S27/S28 lead with claims in the title placeholder (takeaway zone gone)', () => {
+    const zip = load()
+    const model = computeFleetModel(PROJECT, vehicles)
+    fillInvestment(zip, model, names)
+    fillRoi(zip, model, 10, null)
+    const s27 = reopen(zip).file('ppt/slides/slide27.xml')!.asText()
+    const s28 = reopen(zip).file('ppt/slides/slide28.xml')!.asText()
+    expect(s27).toMatch(/\$.+ for \d+ vehicles/)
+    expect(s27).toContain('TOTAL')
+    expect(s27).toContain('ROM pricing range pending final configuration')
+    expect(s28).toMatch(/back over 10 years|Simple payback in/)
+    expect(s28).toContain('Annual operating cost')
+    expect(s28).toContain('gross of operating cost')
+  })
+
+  it('S27 builds the per-line pricing table with a TOTAL row', () => {
+    const zip = load()
+    const model = computeFleetModel(PROJECT, vehicles)
+    fillInvestment(zip, model, names)
+    const s27 = reopen(zip).file('ppt/slides/slide27.xml')!.asText()
+    expect(s27).toContain('<a:tbl>')
+    expect(s27).toContain('Line Total (ROM)')
+    expect(s27).toContain('TOTAL')
+    expect(s27).toMatch(/\$[\d.,]+[MK]?/)              // money-formatted range
+    expect(s27).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)   // placeholder cleared
+    expect(s27).toContain('06 — INVESTMENT')             // eyebrow
+  })
+
+  it('S28 ROI table fills alone, and embeds the chart when a PNG is supplied', () => {
+    const model = computeFleetModel(PROJECT, vehicles)
+    // table-only (non-DOM): no image
+    const a = load()
+    fillRoi(a, model, 10)
+    const s28a = reopen(a).file('ppt/slides/slide28.xml')!.asText()
+    expect(s28a).toContain('Simple payback')
+    expect(s28a).not.toContain('<p:pic>')
+    expect(s28a).toContain('06 — RETURN ON INVESTMENT')   // eyebrow
+    // with a chart PNG
+    const b = load()
+    const png = new Uint8Array(Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
+      'base64'))
+    fillRoi(b, model, 10, png)
+    expect(reopen(b).file('ppt/slides/slide28.xml')!.asText()).toContain('<p:pic>')
+  })
+
+  // ── Appendix helpers (unchanged) ────────────────────────────────────────────
 
   it('fillMethodology builds the variables/formula/why reference table on a cloned slide', () => {
     const zip = load()
@@ -138,7 +230,6 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     const zip = load()
     const slide = cloneSlide(zip, 18)!
     const model = computeFleetModel(PROJECT, vehicles)
-    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
     fillFlowMath(zip, slide, model, vehicles, names, model.flows)
     const xml = reopen(zip).file(`ppt/slides/slide${slide}.xml`)!.asText()
     expect(xml).toContain('<a:tbl>')
@@ -147,69 +238,5 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     // a row per assigned flow (PROJECT has 2) + header
     expect((xml.match(/<a:tr\b/g) ?? []).length).toBe(1 + model.flows.filter(f => f.vehicleId).length)
     expect(xml).toContain('APPENDIX — CYCLE MATH')          // eyebrow
-  })
-
-  it('S27 builds the per-line pricing table with a TOTAL row', () => {
-    const zip = load()
-    const model = computeFleetModel(PROJECT, vehicles)
-    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    fillInvestment(zip, model, names)
-    const s27 = reopen(zip).file('ppt/slides/slide27.xml')!.asText()
-    expect(s27).toContain('<a:tbl>')
-    expect(s27).toContain('Line Total (ROM)')
-    expect(s27).toContain('TOTAL')
-    expect(s27).toMatch(/\$[\d.,]+[MK]?/)              // money-formatted range
-    expect(s27).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)   // placeholder cleared
-    expect(s27).toContain('06 — INVESTMENT')             // eyebrow
-    expect(s27).toContain('Total ROM investment:')       // takeaway sentence
-  })
-
-  it('S28 ROI table fills alone, and embeds the chart when a PNG is supplied', () => {
-    const model = computeFleetModel(PROJECT, vehicles)
-    // table-only (non-DOM): no image
-    const a = load()
-    fillRoi(a, model, 10)
-    const s28a = reopen(a).file('ppt/slides/slide28.xml')!.asText()
-    expect(s28a).toContain('Simple payback')
-    expect(s28a).not.toContain('<p:pic>')
-    expect(s28a).toContain('06 — RETURN ON INVESTMENT')   // eyebrow
-    expect(s28a).toContain('Simple payback in')           // takeaway sentence
-    // with a chart PNG
-    const b = load()
-    const png = new Uint8Array(Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      'base64'))
-    fillRoi(b, model, 10, png)
-    expect(reopen(b).file('ppt/slides/slide28.xml')!.asText()).toContain('<p:pic>')
-  })
-
-  it('S24 lists the flows with route and vehicle', () => {
-    const zip = load()
-    const model = computeFleetModel(PROJECT, vehicles)
-    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    fillMaterialFlow(zip, model, names)
-    const s24 = reopen(zip).file('ppt/slides/slide24.xml')!.asText()
-    expect(s24).toContain('Dock → Rack A')
-    expect(s24).toContain('Mixed')                     // medium route label
-    expect(s24).not.toContain('<p:pic>')               // no image when none supplied
-    expect(s24).toContain('04 — MATERIAL FLOW')                // eyebrow
-  })
-
-  it('S24 embeds the diagram image (media part + picture) when a PNG is supplied', () => {
-    const zip = load()
-    const model = computeFleetModel(PROJECT, vehicles)
-    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    const png = new Uint8Array(Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      'base64'))
-    fillMaterialFlow(zip, model, names, png)
-    const out = reopen(zip)
-    const s24 = out.file('ppt/slides/slide24.xml')!.asText()
-    expect(s24).toContain('<p:pic>')
-    expect(s24).toMatch(/r:embed="rId\d+"/)
-    // media part written and referenced by the slide rels
-    const media = Object.keys(out.files).filter(n => /^ppt\/media\/image\d+\.png$/.test(n))
-    expect(media.length).toBeGreaterThan(0)
-    expect(out.file('ppt/slides/_rels/slide24.xml.rels')!.asText()).toMatch(/media\/image\d+\.png/)
   })
 })

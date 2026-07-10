@@ -12,12 +12,18 @@ const reopen = (zip: PizZip) => new PizZip(zip.generate({ type: 'uint8array' }))
 describe('slidesToRemove', () => {
   const allSections = Object.fromEntries(PPTX_SECTIONS.map(s => [s.key, true]))
 
-  it('everything selected → removes only Cleanfix (S17)', () => {
+  it('everything selected → removes Cleanfix (S17) + retired body slides (S20/22/23/26)', () => {
     const sel: PptxSelection = {
       sections: allSections,
       vehicles: { '8tb50a': true, '8hbc40a': true, m10: true, ml2: true, ebase7: true, cb18: true },
     }
-    expect(slidesToRemove(sel)).toEqual([17])
+    const removed = slidesToRemove(sel)
+    // Cleanfix always removed
+    expect(removed).toContain(17)
+    // Retired body slides always removed by RETIRED_SLIDES
+    for (const n of [20, 22, 23, 26]) expect(removed).toContain(n)
+    // Nothing else removed when everything is selected
+    for (const n of [18, 19, 21, 24, 25, 27, 28]) expect(removed).not.toContain(n)
   })
 
   it('nothing selected → removes all toggleable + all vehicle slides, keeps cover/contact/trailing', () => {
