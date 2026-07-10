@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { frame, setTitle, usd, usdRange, pct } from '../layout'
+import { frame, setTitle, usd, usdRange, pct, GAP } from '../layout'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
 const load = () => new PizZip(readFileSync(TEMPLATE))
@@ -27,17 +27,28 @@ describe('frame (shared slide grammar)', () => {
     expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
   })
 
-  it('skip() advances the cursor; setTitle falls back when the claim is null', () => {
+  it('skip() advances the cursor by h + GAP', () => {
     const zip = load()
     const f = frame(zip, 18)
     const y0 = f.y
     f.skip(500000)
-    expect(f.y).toBe(y0 + 500000 + 200000)                    // h + GAP
+    expect(f.y).toBe(y0 + 500000 + GAP)                       // h + GAP
+  })
 
+  it('setTitle falls back to fallback when the claim is null', () => {
+    const zip = load()
     setTitle(zip, 18, null, 'Fleet sizing')
-    expect(zip.file('ppt/slides/slide18.xml')!.asText()).toContain('Fleet sizing')
-    setTitle(zip, 18, 'Your operation needs a fleet of 12', 'Fleet sizing')
-    expect(zip.file('ppt/slides/slide18.xml')!.asText()).toContain('Your operation needs a fleet of 12')
+    const xml = zip.file('ppt/slides/slide18.xml')!.asText()
+    expect(xml).toContain('Fleet sizing')
+    expect(xml).not.toContain('Your operation')
+  })
+
+  it('setTitle uses the claim when provided, ignoring the fallback', () => {
+    const zip2 = load()
+    setTitle(zip2, 18, 'Your operation needs a fleet of 12', 'Fleet sizing')
+    const xml = zip2.file('ppt/slides/slide18.xml')!.asText()
+    expect(xml).toContain('Your operation needs a fleet of 12')
+    expect(xml).not.toContain('Fleet sizing')
   })
 
   it('no-ops cleanly on a removed slide', () => {

@@ -44,6 +44,7 @@ export interface Frame {
   readonly y: number
   eyebrow(text: string): void
   rule(): void
+  /** Advance the cursor by h + GAP (same rhythm as every other zone). */
   skip(h: number): void
   tiles(specs: TileSpec[], opts?: { cols?: number; h?: number }): void
   image(png: Uint8Array, maxH: number): void
@@ -103,8 +104,8 @@ export function frame(zip: PizZip, slide: number): Frame {
     },
     image(png, maxH) {
       const { w, h } = pngSize(png)
-      const rect = containRect(w, h, { x: BODY.x, y, cx: BODY.cx, cy: maxH })
-      if (addImage(zip, slide, png, rect)) advance(rect.cy)
+      const box = containRect(w, h, { x: BODY.x, y, cx: BODY.cx, cy: maxH })
+      if (addImage(zip, slide, png, box)) advance(box.cy)
     },
     table(colW, rows, opts = {}) {
       const rowH = opts.rowH ?? ROW_H
