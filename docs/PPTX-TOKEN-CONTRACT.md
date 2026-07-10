@@ -75,7 +75,7 @@ filesystem-illegal chars stripped) — `buildFilename` in `pptxTemplateExport.ts
 
 ### S18 Application Requirements
 
-`src/lib/pptx/tables.ts` → `fillAppReq`. Slide title: takeaway claim (e.g. "Your
+`src/lib/pptx/tables.ts` → `fillRequirements`. Slide title: takeaway claim (e.g. "Your
 operation moves 240 pallets/hr across 5 flows") or descriptive fallback "Application
 requirements". Proof: a native `<a:tbl>` requirement → value table, at most 8 rows —
 only the fields that drive the design (max load, unit type, transfer method, throughput,
@@ -84,7 +84,7 @@ omitted. Footnote carries any ROM caveats.
 
 ### S19 Vehicle Selection fit cards — assigned chassis only
 
-`src/lib/pptx/tables.ts` → `fillFitCards`. Slide title: takeaway (e.g. "Two vehicles
+`src/lib/pptx/tables.ts` → `fillVehicleCards`. Slide title: takeaway (e.g. "Two vehicles
 fit your application") or fallback "Vehicle selection". Proof: one card per distinct
 chassis in the engineer's flow→vehicle assignments — vehicle photo, verdict pill (GREEN /
 YELLOW / RED), and a plain-English "why it fits" line derived from `qualifyVehicle`
@@ -99,7 +99,7 @@ the export** — the screening matrix remains in the appendix regardless.
 
 ### S21 Fleet Sizing waterfall (replaces S21–23)
 
-`src/lib/pptx/tables.ts` → `fillFleetEngine`. Slide title: headline claim (e.g. "Your
+`src/lib/pptx/tables.ts` → `fillFleetSizing`. Slide title: headline claim (e.g. "Your
 operation needs a fleet of 12") or fallback "Fleet sizing". Proof: the `Workload +
 Charging × Buffer = Fleet` waterfall tile strip — four tiles, each with the numeric
 result and a one-line human explanation (no formulas). Fleet-mix caption below the strip
@@ -118,8 +118,8 @@ Falls back to table-only in non-DOM contexts.
 
 ### S25 Financials — three big numbers
 
-`src/lib/pptx/content.ts` → `fillKpis`. Slide title: takeaway (e.g. "Payback in about
-2.3 years") or fallback "Financial overview". Proof: three large-number tiles —
+`src/lib/pptx/content.ts` → `fillFinancials`. Slide title: takeaway (e.g. "Payback in about
+2.3 years") or fallback "Financials". Proof: three large-number tiles —
 **ROM investment range** · **labor offset/yr** · **simple payback**. Each tile: big bold
 figure + unit + spaced caps label. Figures recomputed from the shared `FleetModel` via
 `costs` + `serviceLifeYears`. TCO, cost/move, and annual OPEX are relocated to the
