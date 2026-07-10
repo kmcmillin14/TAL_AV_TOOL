@@ -4,7 +4,8 @@ import { resolve } from 'node:path'
 import PizZip from 'pizzip'
 import { loadVehicleLibrary, type Vehicle } from '../../vehicleLibrary'
 import { computeFleetModel } from '../../fleetModel'
-import { fillKpis } from '../content'
+import { fillFinancials, fillCostDetail } from '../content'
+import { cloneSlide } from '../ooxml'
 import type { StoredProject } from '../../storage'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -21,57 +22,39 @@ const PROJECT = {
   ],
 } as unknown as StoredProject
 
-describe('fillKpis (S25/26 KPI slides)', () => {
+describe('fillFinancials (S25) + fillCostDetail (appendix)', () => {
   let vehicles: Vehicle[]
   beforeAll(async () => { vehicles = await loadVehicleLibrary() })
 
-  const fill = (zip: PizZip, model: ReturnType<typeof computeFleetModel>) => {
-    const names = Object.fromEntries(vehicles.map(v => [v.id, v.name]))
-    const vehicleById = new Map(vehicles.map(v => [v.id, v]))
-    fillKpis(zip, model, names, vehicleById, 10)
-  }
-
-  it('fills S25/26 with native metric tiles mirroring the dashboard, re-parsing cleanly', () => {
+  it('S25 = title claim + exactly 3 tiles + honesty footnote', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
-    fill(zip, model)
-
-    const out = reopen(zip)
-    const s25 = out.file('ppt/slides/slide25.xml')!.asText()
-    const s26 = out.file('ppt/slides/slide26.xml')!.asText()
-    // Section eyebrows (two hero boxes like the Step-4 dashboard).
-    expect(s25).toContain('FINANCIALS')
-    expect(s26).toContain('FLEET &amp; FLOW')
-    // Eyebrows carry the section number; takeaway sentences lead the slides.
+    fillFinancials(zip, model)
+    const s25 = reopen(zip).file('ppt/slides/slide25.xml')!.asText()
     expect(s25).toContain('05 — FINANCIALS')
-    expect(s26).toContain('05 — FLEET &amp; FLOW')
-    expect(s25).toContain('investment')                        // financials takeaway
-    expect(s26).toContain('moves/hr')                          // fleet & flow takeaway
-    // Native tiles: rounded-rect cards with an accent rule, not placeholder text.
-    expect(s25).toContain('KPI Tile')
-    expect(s25).toContain('KPI Rule')
-    expect(s25).toContain('roundRect')
-    // S25 = full financial tile set.
-    for (const l of ['ROM CAPEX', 'NET BENEFIT / YR', 'PAYBACK', 'LABOR OFFSET / YR', 'ANNUAL OPEX', 'TCO @ 10YR', 'COST / MOVE']) {
-      expect(s25).toContain(l)
-    }
-    expect((s25.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(7)
-    // S26 = fleet/flow tiles + status gauges + fleet-mix caption.
-    for (const l of ['TOTAL FLEET', 'VEHICLE TYPES', 'FLOWS', 'THROUGHPUT', 'UTILIZATION', 'AVAILABILITY', 'CHARGING', 'REDUNDANCY']) {
-      expect(s26).toContain(l)
-    }
-    expect((s26.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(9)
-    expect(s26).toContain('Fleet mix —')
-    // Body placeholder cleared so nothing ghosts behind the tiles.
+    expect(s25).toMatch(/Payback in about \d+\.\d years/)     // claim in the title placeholder
+    for (const l of ['ROM INVESTMENT', 'LABOR OFFSET / YR', 'SIMPLE PAYBACK']) expect(s25).toContain(l)
+    expect((s25.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(3)
+    expect(s25).toContain('cost detail in appendix')
     expect(s25).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
-    expect(s26).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
   })
 
-  it('no-ops on a removed slide (fills only what remains)', () => {
+  it('cost-detail appendix carries the relocated financial figures', () => {
     const zip = load()
-    zip.remove('ppt/slides/slide25.xml')      // simulate the section being dropped
     const model = computeFleetModel(PROJECT, vehicles)
-    expect(() => fill(zip, model)).not.toThrow()
-    expect(reopen(zip).file('ppt/slides/slide26.xml')!.asText()).toContain('FLEET &amp; FLOW')
+    const slide = cloneSlide(zip, 18)!
+    fillCostDetail(zip, slide, model, 10)
+    const xml = reopen(zip).file(`ppt/slides/slide${slide}.xml`)!.asText()
+    expect(xml).toContain('APPENDIX — COST DETAIL')
+    for (const l of ['Net benefit / yr', 'Annual operating cost', 'TCO @ 10 yr', 'Cost per move', 'Energy']) {
+      expect(xml).toContain(l)
+    }
+  })
+
+  it('no-ops on a removed slide', () => {
+    const zip = load()
+    zip.remove('ppt/slides/slide25.xml')
+    const model = computeFleetModel(PROJECT, vehicles)
+    expect(() => fillFinancials(zip, model)).not.toThrow()
   })
 })
