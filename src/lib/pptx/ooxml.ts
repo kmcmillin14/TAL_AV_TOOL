@@ -177,9 +177,10 @@ export function removeBodyPlaceholder(zip: PizZip, slideNum: number): boolean {
 
 /** A plain solid-fill rectangle shape (e.g. the short red title rule). EMU units. */
 export function rect(opts: {
-  id: number; x: number; y: number; cx: number; cy: number; color: string
+  id: number; x: number; y: number; cx: number; cy: number; color: string; name?: string
 }): string {
-  return `<p:sp><p:nvSpPr><p:cNvPr id="${opts.id}" name="ROM Rule ${opts.id}"/>`
+  const name = opts.name ?? `ROM Rule ${opts.id}`
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${opts.id}" name="${name}"/>`
     + `<p:cNvSpPr/><p:nvPr/></p:nvSpPr>`
     + `<p:spPr><a:xfrm><a:off x="${opts.x}" y="${opts.y}"/><a:ext cx="${opts.cx}" cy="${opts.cy}"/></a:xfrm>`
     + `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`
@@ -248,12 +249,11 @@ export function metricTile(opts: {
     + `<a:p><a:pPr algn="l"/>${num}${unit}</a:p>`
     + `<a:p><a:pPr algn="l"><a:spcBef><a:spcPts val="500"/></a:spcBef></a:pPr>${label}</a:p>${desc}</p:txBody></p:sp>`
   // Accent rule: a thin rect flush to the top of the card, inset to the rounded corners.
-  const bar = `<p:sp><p:nvSpPr><p:cNvPr id="${opts.id + 1}" name="KPI Rule ${opts.id + 1}"/>`
-    + `<p:cNvSpPr/><p:nvPr/></p:nvSpPr>`
-    + `<p:spPr><a:xfrm><a:off x="${opts.x + 91440}" y="${opts.y + 91440}"/><a:ext cx="${opts.cx - 182880}" cy="45720"/></a:xfrm>`
-    + `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`
-    + `<a:solidFill><a:srgbClr val="${barColor}"/></a:solidFill></p:spPr>`
-    + `<p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>`
+  const bar = rect({
+    id: opts.id + 1, x: opts.x + 91440, y: opts.y + 91440,
+    cx: opts.cx - 182880, cy: 45720, color: barColor,
+    name: `KPI Rule ${opts.id + 1}`,
+  })
   return card + bar
 }
 

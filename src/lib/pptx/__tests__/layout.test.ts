@@ -2,38 +2,42 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { frame, usd, usdRange, pct } from '../layout'
+import { frame, setTitle, usd, usdRange, pct } from '../layout'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
 const load = () => new PizZip(readFileSync(TEMPLATE))
 const reopen = (zip: PizZip) => new PizZip(zip.generate({ type: 'uint8array' }))
 
 describe('frame (shared slide grammar)', () => {
-  it('composes eyebrow → takeaway → tiles → table → caption in call order', () => {
+  it('composes eyebrow → rule → tiles → table → caption in call order', () => {
     const zip = load()
     const f = frame(zip, 18)
     f.eyebrow('01 — TEST SECTION')
-    f.takeaway([{ t: 'Headline ', sz: 2100 }, { t: '42', sz: 2100, bold: true, color: 'EB0A1E' }])
-    f.tiles([{ value: '1', label: 'A' }, { value: '2', label: 'B' }])
+    f.rule()
+    f.tiles([{ value: '1', label: 'A', desc: 'one of two' }, { value: '2', label: 'B' }])
     f.table([5000000, 5820400], [[{ t: 'K' }, { t: 'V' }], [{ t: 'a' }, { t: 'b' }]])
     f.caption('legend line')
 
     const xml = reopen(zip).file('ppt/slides/slide18.xml')!.asText()
-    const order = ['01 — TEST SECTION', 'Headline ', 'KPI Tile', '<a:tbl>', 'legend line']
+    const order = ['01 — TEST SECTION', 'ROM Rule', 'KPI Tile', '<a:tbl>', 'legend line']
       .map(s => xml.indexOf(s))
     expect(order.every(i => i >= 0)).toBe(true)
-    expect([...order].sort((a, b) => a - b)).toEqual(order)   // appended in call order
-    expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)          // body placeholder removed
+    expect([...order].sort((a, b) => a - b)).toEqual(order)
+    expect(xml).toContain('one of two')                       // tile desc rendered
+    expect(xml).not.toMatch(/<p:ph\b[^>]*\bidx="1"/)
   })
 
-  it('advances the cursor per zone and skips a null takeaway', () => {
+  it('skip() advances the cursor; setTitle falls back when the claim is null', () => {
     const zip = load()
     const f = frame(zip, 18)
     const y0 = f.y
-    f.takeaway(null)
-    expect(f.y).toBe(y0)                                      // null → skipped entirely
-    f.eyebrow('X')
-    expect(f.y).toBeGreaterThan(y0)
+    f.skip(500000)
+    expect(f.y).toBe(y0 + 500000 + 200000)                    // h + GAP
+
+    setTitle(zip, 18, null, 'Fleet sizing')
+    expect(zip.file('ppt/slides/slide18.xml')!.asText()).toContain('Fleet sizing')
+    setTitle(zip, 18, 'Your operation needs a fleet of 12', 'Fleet sizing')
+    expect(zip.file('ppt/slides/slide18.xml')!.asText()).toContain('Your operation needs a fleet of 12')
   })
 
   it('no-ops cleanly on a removed slide', () => {
@@ -41,7 +45,7 @@ describe('frame (shared slide grammar)', () => {
     zip.remove('ppt/slides/slide18.xml')
     expect(() => {
       const f = frame(zip, 18)
-      f.eyebrow('X'); f.tiles([{ value: '1', label: 'A' }]); f.caption('y')
+      f.eyebrow('X'); f.rule(); f.tiles([{ value: '1', label: 'A' }]); f.caption('y')
     }).not.toThrow()
   })
 

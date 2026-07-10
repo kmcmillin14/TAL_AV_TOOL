@@ -1,12 +1,14 @@
 // Shared slide grammar for the branded ROM deck. Every filled data slide
-// composes the same anatomy — eyebrow → hero (takeaway | tiles) → evidence
-// (table / image) → caption — through a y-cursor frame, so zone order and
-// spacing are identical on every slide by construction. Pure zip/XML edits.
+// composes the same anatomy — title(claim via setSlideTitle) → eyebrow → rule
+// → proof (tiles / image / table) → caption — through a y-cursor frame, so
+// zone order and spacing are identical on every slide by construction. Pure
+// zip/XML edits.
 import type PizZip from 'pizzip'
 import {
   appendShapesToSlide, removeBodyPlaceholder, nextShapeId, metricTile, textBox,
   table as tableShape, addImage, containRect, pngSize, TAL_RED,
-  type TextRun, type TableCell, type TableBand,
+  rect, setSlideTitle,
+  type TableCell, type TableBand,
 } from './ooxml'
 
 // Body region below the template's title bar (EMU; slide is 12192000×6858000).
@@ -16,7 +18,8 @@ export const ROW_H = 400000      // default table row height (PowerPoint grows r
 export const GRAY = '8A8A8E'     // muted label / caption ink
 
 const EYEBROW_H = 360000
-const TAKEAWAY_H = 520000
+const RULE_W = 600000     // short brand rule under the eyebrow (~0.63")
+const RULE_H = 45720
 const CAPTION_LINE_H = 330000
 // Content may run slightly past BODY.cy into the bottom margin (pre-existing
 // behavior); warn only past the slide-safe limit above the footer.
@@ -34,12 +37,14 @@ export const pct = (x: number) => `${Math.round(x * 100)}%`
 export interface TileSpec {
   value: string; unit?: string; label: string
   barColor?: string; accent?: boolean; figSz?: number; compact?: boolean
+  desc?: string
 }
 
 export interface Frame {
   readonly y: number
   eyebrow(text: string): void
-  takeaway(runs: TextRun[] | null): void
+  rule(): void
+  skip(h: number): void
   tiles(specs: TileSpec[], opts?: { cols?: number; h?: number }): void
   image(png: Uint8Array, maxH: number): void
   table(colW: number[], rows: TableCell[][],
@@ -68,13 +73,13 @@ export function frame(zip: PizZip, slide: number): Frame {
       }))
       advance(EYEBROW_H)
     },
-    takeaway(runs) {
-      if (!runs || runs.length === 0) return
-      appendShapesToSlide(zip, slide, textBox({
-        id: nextShapeId(zip, slide), x: BODY.x, y, cx: BODY.cx, cy: TAKEAWAY_H, paras: [runs],
+    rule() {
+      appendShapesToSlide(zip, slide, rect({
+        id: nextShapeId(zip, slide), x: BODY.x, y, cx: RULE_W, cy: RULE_H, color: TAL_RED,
       }))
-      advance(TAKEAWAY_H)
+      advance(RULE_H)
     },
+    skip(h) { advance(h) },
     tiles(specs, opts = {}) {
       if (specs.length === 0) return
       const cols = opts.cols ?? specs.length
@@ -87,6 +92,7 @@ export function frame(zip: PizZip, slide: number): Frame {
           id, x: BODY.x + c * (tileW + GAP), y: y + r * (h + GAP), cx: tileW, cy: h,
           value: t.value, unit: t.unit, label: t.label,
           barColor: t.barColor, accent: t.accent, figSz: t.figSz, compact: t.compact,
+          desc: t.desc,
         })
         id += 2   // metricTile consumes id and id+1 (card + accent rule)
         return s
@@ -121,4 +127,9 @@ export function frame(zip: PizZip, slide: number): Frame {
       advance(cy)
     },
   }
+}
+
+/** Claim → native title placeholder; descriptive fallback when not computable. */
+export function setTitle(zip: PizZip, slide: number, claim: string | null, fallback: string): void {
+  setSlideTitle(zip, slide, claim ?? fallback)
 }
