@@ -100,7 +100,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(vx).toContain('APPENDIX — VEHICLE SCREENING')
     for (const v of vehicles) expect(vx).toContain(v.name)     // all chassis, not just assigned
     expect(gx).toContain('APPENDIX — VEHICLE SCREENING')
-    expect(gx).toContain('✓')
+    expect(gx).toContain('✓ pass')
   })
 
   // ── S21 — fleet-sizing waterfall + derivation appendix ─────────────────────

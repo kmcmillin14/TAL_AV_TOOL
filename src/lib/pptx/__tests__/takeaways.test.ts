@@ -65,7 +65,7 @@ describe('slide title claims', () => {
   })
 
   it('flowTitle singular uses "moves" (verb agreement)', () => {
-    const oneFlow = { ...FULL, flows: [FULL.flows[0]] } as unknown as StoredProject
+    const oneFlow = { ...FULL, flows: [FULL.flows![0]] } as unknown as StoredProject
     const m = computeFleetModel(oneFlow, vehicles)
     expect(flowTitle(m)).toMatch(/^1 flow moves \d+ loads every hour$/)
   })

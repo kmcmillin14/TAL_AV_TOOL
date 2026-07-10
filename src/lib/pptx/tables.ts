@@ -24,7 +24,7 @@ import {
   type TextRun,
   textBox, addImage, containRect, pngSize, nextShapeId, appendShapesToSlide,
 } from './ooxml'
-import { frame, setTitle, BODY, GAP, GRAY, pct, type TileSpec } from './layout'
+import { frame, setTitle, BODY, GAP, GRAY } from './layout'
 import {
   requirementsTitle, vehiclesTitle, fleetTitle, flowTitle,
   investmentTitle, roiTitle, FALLBACK_TITLE,
@@ -102,9 +102,9 @@ export function fillVehicleCards(
   zip: PizZip, project: StoredProject, vehicles: Vehicle[],
   photos: Record<string, Uint8Array | null>,
 ): void {
-  const assigned = assignedVehicleIds(project)
-  if (assigned.length === 0) return
   const vById = new Map(vehicles.map(v => [v.id, v]))
+  const assigned = assignedVehicleIds(project).filter(id => vById.has(id))
+  if (assigned.length === 0) return
   const app = appRequirementsFromProject(project)
   const flowsTotal = (project.flows ?? []).length
 
@@ -340,7 +340,7 @@ export function fillMaterialFlow(
   f.eyebrow('04 — MATERIAL FLOW')
   f.rule()
   if (diagramPng) f.image(diagramPng, FLOW_IMG_H)
-  const MAX = diagramPng ? 4 : 9
+  const MAX = diagramPng ? 3 : 9
 
   const rows: TableCell[][] = [[
     { t: '#', align: 'ctr' }, { t: 'Route' }, { t: 'Moves/hr', align: 'r' }, { t: 'Vehicle' },
