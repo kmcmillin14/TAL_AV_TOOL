@@ -484,73 +484,77 @@ deck (`public/templates/tal-rom-template.pptx`) rather than building slides from
 preserving its theme, masters, and media (Toyota Type, TAL red). Client-side via **PizZip**
 (`src/lib/pptxTemplateExport.ts` + `src/lib/pptx/*`).
 
-Every filled data slide (S18–S28 + appendices) composes one shared **slide grammar**
-(`src/lib/pptx/layout.ts` — a y-cursor `frame`): **eyebrow** (spaced red caps section
-label, e.g. `02 — VEHICLE SELECTION`) → **hero** (a takeaway sentence on the money
-slides, or the slide's metric tiles) → **evidence** (table / chart / diagram) →
-**caption** (muted context line), at shared spacing tokens. Tables are light: white
-header with ink text and a single TAL-red underline rule, no zebra fill, hairline row
-dividers — red appears only where it carries meaning (eyebrow, key figures, verdict
-fills, the TOTAL row). The four money slides (S25 Financials, S26 Fleet & flow,
-S27 Investment, S28 ROI) lead with an **auto-generated takeaway sentence** (key figures
-as bold red runs, e.g. "A $980K – $1.2M investment returns $520K/yr net — payback in
-2.1 years."); any figure that isn't computable drops its clause, and the takeaway is
-skipped entirely when nothing meaningful is available (no placeholder text ever reaches
-a customer deck). The S20 gate grid gains a glyph legend caption; the S21–23 tier
-meaning + example render as the slide caption; the flow-network PNG no longer draws its
-own internal title (the slide title + eyebrow carry it).
+Every filled data slide (S18–S28 + appendices) follows a shared **slide anatomy**
+(`src/lib/pptx/layout.ts`): **native title** (an auto-generated claim set via `setSlideTitle`;
+second-person, confident, ≈ ≤ 60 chars — e.g. "Your operation needs a fleet of 12",
+"Payback in about 2.3 years"; a per-slide descriptive fallback `FALLBACK_TITLE` is used when
+the figure isn't computable — the title is never blank and never shows a formula) **→ eyebrow**
+(spaced red caps numbered section label) **→ red rule → proof** (at most one of: tile strip /
+table ≤ 6–8 rows / image+table) **→ gray footnote caption** (source / assumption / appendix
+pointer). Claims come from `src/lib/pptx/takeaways.ts` title builders. Tables are light: white
+header with a single TAL-red underline rule, hairline row dividers, no zebra — red appears only
+where it carries meaning (eyebrow, key figures, verdict fills, the TOTAL row).
 
-A **Section Picker**
-(`PptxSectionPicker`, from the Step 4 export bar and the header menu) chooses which sections
-to include; **Product Overview slides are auto-limited to the fleet chassis** (vehicles
-assigned to flows; Cleanfix always dropped). The builder removes unselected slides via OOXML
-(`presentation.xml` sldIdLst + rels + `[Content_Types]`). Content is filled three ways: cover
-(S1) + contact (S34) **bracket replacement**; the **KPI slides (S25/26)** as **native engineering
-metric tiles** (`fillKpis` → `metricTile` in `ooxml.ts`) — each a soft card with a TAL-red (accent)
-or muted top accent rule, a big bold figure with optional unit, and a spaced caps label, laid out in
-a grid that mirrors the **Step-4 ROM dashboard's two hero boxes + gauges** (`RomKpis`): **S25
-Financials** (ROM CAPEX · Net benefit/yr · Payback · Labor offset/yr · Annual OPEX · TCO@life ·
-Cost/move) and **S26 Fleet & flow** (Total fleet · Vehicle types · Flows · Throughput · Energy)
-plus the status gauges (Utilization · Availability · Charging · Redundancy), with the fleet mix as a
-caption. The figures are recomputed from the shared `FleetModel` with the same math the dashboard
-runs (TCO/cost-per-move/energy from `costs` + `serviceLifeYears`; gauges from `chargingSeries`/
-`resilience`). Graphic slides are **native shapes** (tables/images/charts). All of these compose through the shared frame (`layout.ts`), which removes the template's empty body Content Placeholder so nothing ghosts behind them; the S20 gate grid and S27 pricing table are vertically centered in the space below their eyebrow/takeaway (`frame.table({ center })`). Canvas images (S24 flow diagram,
-S28 payback chart) are placed at their **native aspect ratio** via `containRect`/`pngSize` (the
-renderers size their canvases to the laid-out content) so they fill the wide body region without
-being squashed. **Investment (S27)** is a dynamic per-line CAPEX pricing table
-(`fillInvestment`) and **ROI (S28)** is the payback-curve chart (`romChart.ts` →
-`renderPaybackChartPng`, from the pure `paybackSeries`) over an ROI metrics table. The **Fleet
-Engine slides (S21/22/23)** present three **independent tiers** (`src/lib/pptx/tables.ts` →
-`fillFleetEngine`): each shows a **meaning caption** ("TIER n — NAME" + what the tier does), the
-`RAW · + CHARGING · × BUFFER · = FLEET SOLD` **progression as a compact metric-tile row** (this
-tier's tile lit red, the total accented) — the modern KPI-tile look applied to the calc — and a
-**worked derivation table** (Step · What it means · Calculation · Result) for a representative example —
-rendered from the shared `src/lib/derivation.ts` model so the deck shows *how* each number is
-reached, not just the sum. Editable, DOM-independent. The matrix and data slides — App
-Requirements (S18), Vehicle Selection Matrix (S19 verdicts + S20 gate×vehicle grid, from
-`qualifyVehicle`), Material Flow (S24) — are filled with **native editable `<a:tbl>` tables**
-(`src/lib/pptx/tables.ts`; `table()`/`cellXml()` in `ooxml.ts`), styled engineering-grade: a
-TAL-red header band with letter-spacing and a crisp ink rule, faint zebra data rows, and grid-token
-(`#E4E4E7`) hairlines, with right-aligned tabular numerics. To carry the KPI-tile look onto the step
-slides (`tileRow` reusing `metricTile`), **S18 leads with headline spec tiles** (Max load · Lift ·
-Footprint · Schedule, dropped from the table below to avoid duplication) and **S19 leads with a
-verdict-count band** (Pass / Review / Fail with status-colored accent rules + a Candidates total)
-above their tables.
-The **S24 flow diagram merges parallel flows** (several flows between the same two locations collapse
-to one edge: summed moves/hr + the distinct vehicles), so arrows/labels never stack; the flow table
-still lists each flow. The S24 diagram and S28 payback chart
-(`flowDiagram.ts` / `romChart.ts`) are likewise refined — soft accent-bar cards and white label
-pills on the flow network; a two-tone (loss/gain) area fill, year gridlines, axis rules, a
-break-even callout chip and end-value label on the payback curve. The Material Flow slide (S24) also carries a
-**rendered diagram image** of the flow network (`src/lib/pptx/flowDiagram.ts` draws locations +
-labelled flow arrows on an offscreen canvas → PNG; `addImage` in `ooxml.ts` embeds it as a native
-`<p:pic>` media part), with the flow table beneath it; it falls back to the table-only layout in
-non-DOM contexts. Canvas images (S24 diagram, S28 chart) are only rendered when their slide
-survives the picker. A **Methodology appendix slide** is appended to every deck — `cloneSlide`
-(`ooxml.ts`) clones a content shell into a new slide past S35 (wiring its part/rels/content-type/
-`sldIdLst` entry; the pipeline previously only removed slides), then `fillMethodology` builds a
-Stage · Formula · Variables · Why reference table from `src/content/methodology.ts`. Filename:
-`Rev# Opp# Customer Project.pptx`. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
+The deck presents exactly **7 body data slides** (S18, S19, S21, S24, S25, S27, S28);
+**S20, S22, S23, and S26 are always removed** — their content is relocated to the appendix,
+not deleted. Eyebrow section labels: S18 `01 — APPLICATION` · S19 `02 — VEHICLE SELECTION` ·
+S21 `03 — FLEET SIZING` · S24 `04 — MATERIAL FLOW` · S25 `05 — FINANCIALS` ·
+S27 `06 — INVESTMENT` · S28 `06 — RETURN ON INVESTMENT`.
+
+**S18 Application Requirements** — proof: a native `<a:tbl>` requirement → value table,
+≤ 8 rows, only the fields that drive the design (max load, unit type, transfer method,
+throughput, distance/shifts, environment); rows with no captured value are omitted.
+
+**S19 Vehicle Selection fit cards** — proof: one card per distinct chassis the engineer
+assigned to flows: vehicle photo, verdict pill (GREEN / YELLOW / RED), and a plain-English
+"why it fits" line from `qualifyVehicle` results + which flows it serves. A REVIEW verdict
+names its review item. Footnote: "Selected from N chassis screened · screening matrix in
+appendix." **The tool never auto-selects a vehicle** (the engineer always assigns);
+if no flows have an assigned vehicle, S19 is **dropped from the export entirely** — the
+screening matrix remains in the appendix regardless.
+
+**S21 Fleet Sizing** (single slide, replaces former S21–23) — proof: the
+`Workload + Charging × Buffer = Fleet` waterfall tile strip, four tiles each with a numeric
+result and a one-line human explanation (no formulas), plus a fleet-mix caption. Worked
+derivation tables (Raw / Charging / Buffer) are relocated to the appendix.
+
+**S24 Material Flow** — proof: flow-network diagram PNG as hero + flow table trimmed to
+four columns: # · Route · Moves/hr · Vehicle. Parallel flows between the same two locations
+are merged on the diagram (summed moves/hr + distinct vehicles); the table still lists each
+flow. Canvas image placed at native aspect ratio via `containRect`/`pngSize`; falls back to
+table-only in non-DOM contexts.
+
+**S25 Financials** — proof: three large-number tiles: ROM investment range · labor offset/yr ·
+simple payback. Figures recomputed from the shared `FleetModel`. TCO, cost/move, annual OPEX,
+and status gauges are relocated to the cost-detail appendix. No S26 (retired; always removed).
+
+**S27 Investment** — proof: dynamic per-line CAPEX pricing table (`fillInvestment`) — Vehicle ·
+Qty · Unit Price (ROM range) · Line Total (ROM range) + red TOTAL row, from `rom.pricing.lines`.
+
+**S28 ROI** — proof: payback-curve chart (`romChart.ts` → `renderPaybackChartPng`, from the
+pure `paybackSeries`) over a 3-row metrics table (simple payback · annual labor offset · annual
+OPEX); table-only fallback when no DOM. Canvas image placed at native aspect ratio.
+
+A **Section Picker** (`PptxSectionPicker`, from the Step 4 export bar and the header menu)
+chooses which sections to include; **Product Overview slides are auto-limited to the
+engineer-assigned fleet chassis** (Cleanfix always dropped). The builder removes unselected and
+retired slides via OOXML (`presentation.xml` sldIdLst + rels + `[Content_Types]`). Cover (S1)
++ contact (S34) use **bracket replacement**. All body and appendix slides compose through the
+shared `layout.ts` frame, which removes the template's empty body Content Placeholder so
+nothing ghosts behind them.
+
+An **appendix chain** is cloned after S35 for every export (via `cloneSlide` in `ooxml.ts`,
+which wires part/rels/content-type/`sldIdLst`), in this order: (1) **vehicle verdict table**
+(all screened chassis, verdict + notes, eyebrow `APPENDIX — VEHICLE SCREENING`); (2) **gate ×
+vehicle screening grid** (✓/✗/~/– per gate×chassis from `qualifyVehicle`, with glyph legend,
+eyebrow `APPENDIX — VEHICLE SCREENING`); (3) **sizing derivations** (3 slides: Raw / Charging /
+Buffer — worked Step · What it means · Calculation · Result tables from `src/lib/derivation.ts`,
+eyebrow `APPENDIX — SIZING DERIVATION`); (4) **methodology** (Stage · Formula · Variables · Why
+from `src/content/methodology.ts`, eyebrow `APPENDIX — METHODOLOGY`); (5) **per-flow cycle
+math** (`fillFlowMath` — each assigned flow's substituted formula, paginated 9 flows/slide,
+eyebrow `APPENDIX — CYCLE MATH`); (6) **cost detail** (TCO @ service life, cost/move, and
+other cut financial figures, eyebrow `APPENDIX — COST DETAIL`). Detail is relocated, never
+deleted. Filename: `Rev# Opp# Customer Project.pptx`. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
 
 ---
 

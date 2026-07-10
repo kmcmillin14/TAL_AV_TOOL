@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-10 — PPTX export: customer-deck redesign (one idea per slide)
+
+- Every data slide now leads with an auto-generated claim in the native title
+  placeholder ("Your operation needs a fleet of 12"); descriptive fallback when
+  not computable. The separate takeaway zone is retired.
+- Body slides 11 → 7: S20 gate grid, S22/S23 tier math, and S26 KPI-tile grid
+  moved out of the presented body. S19 shows fit cards for the engineer-assigned
+  chassis only (slide dropped when nothing is assigned — the tool never picks).
+- New appendix chain after contact: vehicle verdicts · gate grid · sizing
+  derivations · methodology · per-flow cycle math · cost detail. Detail is
+  relocated, never deleted.
+- Spec: docs/superpowers/specs/2026-07-10-pptx-customer-deck-redesign-design.md
+
 ## 2026-07-02 — PPTX slide grammar (visual redesign of the branded deck)
 
 All filled data slides now compose one shared anatomy (eyebrow → hero → evidence →
