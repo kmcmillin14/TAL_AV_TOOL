@@ -55,7 +55,7 @@ The 7-tile dashboard treatment (current S25/S26) is retired.
 | Template slide | Eyebrow | Treatment | Content |
 |---|---|---|---|
 | S18 Application Requirements | `01 — APPLICATION` | C | Only the ~8 requirements that drive the design (max load, unit type, transfer method, throughput, distances/shifts, environment). Not every captured field. |
-| S19 Vehicle Selection | `02 — VEHICLE SELECTION` | Fit-first cards | Only QUALIFIED + REVIEW chassis: vehicle photo, verdict pill, one plain-English "why it fits" line derived from gate results + the engineer's flow→vehicle assignments. Footnote: "N other chassis screened out · screening matrix in appendix". |
+| S19 Vehicle Selection | `02 — VEHICLE SELECTION` | Fit-first cards | Only the vehicles the engineer **assigned to flows** (the selected fleet): vehicle photo, verdict pill, one plain-English "why it fits" line derived from gate results + which flows it serves. Footnote: "Selected from N chassis screened · screening matrix in appendix". |
 | S21 Fleet Sizing (replaces S21–23) | `03 — FLEET SIZING` | B + proof | Headline = fleet number. Waterfall tile strip `Workload + Charging × Buffer = Fleet`, each tile with a one-line human explanation (no formulas). Fleet-mix caption (from old S26). |
 | S24 Material Flow | `04 — MATERIAL FLOW` | C | Flow diagram as hero + flow table trimmed to route · moves/hr · assigned vehicle. |
 | S25 Financials | `05 — FINANCIALS` | B | Three big numbers: ROM investment range · labor offset/yr · simple payback. |
@@ -68,11 +68,14 @@ Utilization/Availability/Charging/Redundancy are web-app material and are
 dropped from the export; TCO and cost-per-move move to the appendix; annual
 OPEX resurfaces in the S28 ROI table).
 
-**Vehicle fit cards (S19) data rule:** cards never auto-select a vehicle — they
-reflect `qualifyVehicle` verdicts plus the engineer's actual flow assignments
-(consistent with the app rule that the engineer always assigns vehicles). A
-REVIEW card's line names its review item ("viable if the ramp survives the site
-walk").
+**Vehicle fit cards (S19) data rule:** the card set is exactly the distinct
+chassis in the engineer's flow→vehicle assignments — the tool never auto-selects
+a vehicle (consistent with the app rule that the engineer always assigns). Each
+card's "why it fits" line comes from its `qualifyVehicle` result + the flows it
+serves; an assigned chassis whose verdict is REVIEW names its review item
+("viable if the ramp survives the site walk"). If no flows have an assigned
+vehicle yet, S19 is dropped from the export (the screening matrix remains in
+the appendix).
 
 ## Appendix (after contact, in this order)
 
