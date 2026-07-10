@@ -175,6 +175,18 @@ export function removeBodyPlaceholder(zip: PizZip, slideNum: number): boolean {
   return true
 }
 
+/** A plain solid-fill rectangle shape (e.g. the short red title rule). EMU units. */
+export function rect(opts: {
+  id: number; x: number; y: number; cx: number; cy: number; color: string
+}): string {
+  return `<p:sp><p:nvSpPr><p:cNvPr id="${opts.id}" name="ROM Rule ${opts.id}"/>`
+    + `<p:cNvSpPr/><p:nvPr/></p:nvSpPr>`
+    + `<p:spPr><a:xfrm><a:off x="${opts.x}" y="${opts.y}"/><a:ext cx="${opts.cx}" cy="${opts.cy}"/></a:xfrm>`
+    + `<a:prstGeom prst="rect"><a:avLst/></a:prstGeom>`
+    + `<a:solidFill><a:srgbClr val="${opts.color}"/></a:solidFill></p:spPr>`
+    + `<p:txBody><a:bodyPr/><a:lstStyle/><a:p/></p:txBody></p:sp>`
+}
+
 /** A native, editable text box `<p:sp>` (rect, theme font). EMU units. Kept for
  *  free-standing content (e.g. images/graphics) where no placeholder exists. */
 export function textBox(opts: {
@@ -210,6 +222,8 @@ export function metricTile(opts: {
   barColor?: string
   /** Tighter vertical rhythm for short tiles (e.g. the Fleet-Engine progression row). */
   compact?: boolean
+  /** One-line plain-English explanation under the label (sz 900, muted). */
+  desc?: string
 }): string {
   const barColor = opts.barColor ?? (opts.accent ? TAL_RED : TILE_LABEL)
   const figSz = opts.figSz ?? (opts.compact ? 2400 : opts.accent ? 3600 : 3000)
@@ -219,6 +233,11 @@ export function metricTile(opts: {
     ? `<a:r><a:rPr lang="en-US" sz="1600" b="1" dirty="0"><a:solidFill><a:srgbClr val="${TILE_LABEL}"/></a:solidFill></a:rPr><a:t>${escapeXml(' ' + opts.unit)}</a:t></a:r>`
     : ''
   const label = `<a:r><a:rPr lang="en-US" sz="1050" spc="60" dirty="0"><a:solidFill><a:srgbClr val="${TILE_LABEL}"/></a:solidFill></a:rPr><a:t>${escapeXml(opts.label)}</a:t></a:r>`
+  const desc = opts.desc
+    ? `<a:p><a:pPr algn="l"><a:spcBef><a:spcPts val="300"/></a:spcBef></a:pPr>`
+      + `<a:r><a:rPr lang="en-US" sz="900" dirty="0"><a:solidFill><a:srgbClr val="${TILE_LABEL}"/></a:solidFill></a:rPr>`
+      + `<a:t>${escapeXml(opts.desc)}</a:t></a:r></a:p>`
+    : ''
   const card = `<p:sp><p:nvSpPr><p:cNvPr id="${opts.id}" name="KPI Tile ${opts.id}"/>`
     + `<p:cNvSpPr/><p:nvPr/></p:nvSpPr>`
     + `<p:spPr><a:xfrm><a:off x="${opts.x}" y="${opts.y}"/><a:ext cx="${opts.cx}" cy="${opts.cy}"/></a:xfrm>`
@@ -227,7 +246,7 @@ export function metricTile(opts: {
     + `<a:ln w="6350"><a:solidFill><a:srgbClr val="${TILE_BORDER}"/></a:solidFill></a:ln></p:spPr>`
     + `<p:txBody><a:bodyPr lIns="118872" tIns="${topIns}" rIns="118872" bIns="68580" anchor="t"/><a:lstStyle/>`
     + `<a:p><a:pPr algn="l"/>${num}${unit}</a:p>`
-    + `<a:p><a:pPr algn="l"><a:spcBef><a:spcPts val="500"/></a:spcBef></a:pPr>${label}</a:p></p:txBody></p:sp>`
+    + `<a:p><a:pPr algn="l"><a:spcBef><a:spcPts val="500"/></a:spcBef></a:pPr>${label}</a:p>${desc}</p:txBody></p:sp>`
   // Accent rule: a thin rect flush to the top of the card, inset to the rounded corners.
   const bar = `<p:sp><p:nvSpPr><p:cNvPr id="${opts.id + 1}" name="KPI Rule ${opts.id + 1}"/>`
     + `<p:cNvSpPr/><p:nvPr/></p:nvSpPr>`

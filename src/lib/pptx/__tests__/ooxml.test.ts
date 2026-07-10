@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import PizZip from 'pizzip'
-import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, removeBodyPlaceholder, table, metricTile, addImage, containRect, pngSize, cloneSlide, setSlideTitle } from '../ooxml'
+import { removeSlides, replaceInSlides, slideParts, appendShapesToSlide, textBox, nextShapeId, removeBodyPlaceholder, table, metricTile, addImage, containRect, pngSize, cloneSlide, setSlideTitle, rect } from '../ooxml'
 import { slidesToRemove, type PptxSelection, PPTX_SECTIONS } from '../sections'
 
 const TEMPLATE = resolve(process.cwd(), 'public/templates/tal-rom-template.pptx')
@@ -242,5 +242,23 @@ describe('replaceInSlides', () => {
     expect(s1).not.toContain('[TAL Representative]')
     expect(s1).toContain('Jane &amp; Co &lt;Rep&gt;') // escaped
     expect(s1).toContain('Acme — Phoenix, AZ')
+  })
+})
+
+describe('rect + metricTile desc', () => {
+  it('rect emits a solid-fill shape at the given EMU box', () => {
+    const xml = rect({ id: 7, x: 1, y: 2, cx: 600000, cy: 45720, color: 'EB0A1E' })
+    expect(xml).toContain('<a:off x="1" y="2"/>')
+    expect(xml).toContain('<a:ext cx="600000" cy="45720"/>')
+    expect(xml).toContain('<a:srgbClr val="EB0A1E"/>')
+    expect(xml).toContain('name="ROM Rule 7"')
+  })
+  it('metricTile renders an optional desc paragraph under the label', () => {
+    const base = { id: 1, x: 0, y: 0, cx: 100, cy: 100, value: '12', label: 'FLEET' }
+    expect(metricTile(base)).not.toContain('sz="900"')
+    const xml = metricTile({ ...base, desc: 'recommended fleet size' })
+    expect(xml).toContain('recommended fleet size')
+    expect(xml).toContain('sz="900"')
+    expect(xml.indexOf('FLEET')).toBeLessThan(xml.indexOf('recommended fleet size'))
   })
 })
