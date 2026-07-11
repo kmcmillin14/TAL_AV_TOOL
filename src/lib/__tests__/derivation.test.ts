@@ -71,12 +71,25 @@ describe('chargingDerivation', () => {
 })
 
 describe('bufferDerivation', () => {
-  it('rounds (base + charging) × (1 + buffer) up to fleet sold', () => {
+  it('buffers the unrounded availability-adjusted demand, rounded up once', () => {
+    // demand = groupRaw ÷ availability = 2.4 ÷ 0.625 = 3.84 (unrounded)
     const d = bufferDerivation(group(), 0.1)
     expect(d.tag).toBe('Buffer 10%')
+    const demand = d.steps.find(s => s.label === 'Demand with charging')!
+    expect(demand.sub).toBe('2.40 ÷ 0.63')
+    expect(demand.result).toBe('3.84')
     const fleet = d.steps.find(s => s.label === 'Fleet (sold)')!
-    expect(fleet.sub).toBe('⌈ 5 × 1.10 ⌉')
-    expect(fleet.result).toBe('6')
+    expect(fleet.sub).toBe('⌈ 3.84 × 1.10 ⌉')
+    expect(fleet.result).toBe('6')          // fixture's fleetSold (reported, not recomputed)
     expect(fleet.emphasis).toBe(true)
+    expect(d.note).toContain('exactly once')
+  })
+
+  it('falls back to raw demand when availability is unknown', () => {
+    const g = group({ charging: { ...group().charging, availability: null } })
+    const d = bufferDerivation(g, 0.1)
+    const demand = d.steps.find(s => s.label === 'Demand with charging')!
+    expect(demand.expr).toBe('raw demand')
+    expect(demand.result).toBe('2.40')
   })
 })

@@ -297,7 +297,7 @@ export function buildTierDerivations(
       meaning: 'Battery runtime vs recharge sets availability; dividing demand by availability adds the vehicles needed to cover charging downtime.',
       example: grpExample },
     { name: 'BUFFER', deriv: grp ? bufferDerivation(grp, settings.bufferPct) : null,
-      meaning: '(base + charging) \xd7 (1 + buffer), rounded up — spare capacity for maintenance, training, and demand spikes = fleet sold.',
+      meaning: '(raw ÷ availability) × (1 + buffer), rounded up once per chassis — spare capacity for maintenance, training, and demand spikes = fleet sold.',
       example: grpExample },
   ]
 }

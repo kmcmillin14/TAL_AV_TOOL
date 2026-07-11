@@ -100,9 +100,22 @@ describe('fleetSummary', () => {
     const g = s.groups[0]
     expect(g.charging.chargingDelta).toBe(5)        // ⌈4/0.4595⌉ − 4
     expect(g.fleetWithCharging).toBe(9)
-    expect(g.fleetSold).toBe(10)                    // ⌈9 × 1.10⌉
+    expect(g.fleetSold).toBe(10)                    // ⌈(4 ÷ 0.4595) × 1.10⌉ = ⌈9.58⌉
     expect(s.totalChargingDelta).toBe(5)
     expect(s.totalFleetSold).toBe(10)
+  })
+
+  it('rounds ONCE at the end — buffer multiplies unrounded demand, not the ceiled base', () => {
+    // A = 1 (ample battery): demand 4.05 → ⌈4.05 × 1.15⌉ = ⌈4.66⌉ = 5.
+    // The old per-stage ceiling gave ⌈⌈4.05⌉ × 1.15⌉ = ⌈5.75⌉ = 6.
+    const groups = [grp('a', 4.05, 5)]
+    const byId = new Map([['a', veh('a', { chargeA: 40, chargeTimeMin: undefined }, 'plugged')]])
+    const s = fleetSummary(groups, byId, settings({ bufferPct: 0.15, dailyOpHr: 8, consecutiveOpDays: 5 }))
+    expect(s.groups[0].charging.availability).toBe(1)
+    expect(s.groups[0].fleetSold).toBe(5)
+    // baseFleet stays the physical floor: buffer 0 can never sell below it.
+    const s0 = fleetSummary(groups, byId, settings({ bufferPct: 0, dailyOpHr: 8, consecutiveOpDays: 5 }))
+    expect(s0.groups[0].fleetSold).toBe(5)          // max(baseFleet 5, ⌈4.05⌉)
   })
 
   it('bufferPct 0 is a no-op; ample coverage → no charging adder', () => {

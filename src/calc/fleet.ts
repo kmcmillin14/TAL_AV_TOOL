@@ -94,9 +94,13 @@ export function chargingForGroup(i: ChargingInput): ChargingResult {
 }
 
 /**
- * Compose the whole waterfall per vehicle group: base → +charging → ×buffer → ⌈⌉.
- * Groups with no base fleet are skipped. `dailyOpHr` is provided by the caller
- * (Step 1 schedule) so this stays pure.
+ * Compose the whole waterfall per vehicle group. Base and charging remain the
+ * reported stages; the SOLD count rounds ONCE per group, at the end:
+ * `fleetSold = ⌈(groupRaw ÷ availability) × (1 + buffer)⌉` (owner decision
+ * 2026-07-10 — per-stage ceilings let the buffer multiply already-purchased
+ * rounding slack, silently adding 0–1 vehicles per chassis). Groups with no
+ * base fleet are skipped. `dailyOpHr` is provided by the caller (Step 1
+ * schedule) so this stays pure.
  */
 export function fleetSummary(
   groups: GroupSummary[],
@@ -124,7 +128,11 @@ export function fleetSummary(
       : { method, runHr: null, chargeHr: null, availability: null, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: false, reason: 'Vehicle not found' }
 
     const fleetWithCharging = g.baseFleet + charging.chargingDelta
-    const fleetSold = Math.ceil(fleetWithCharging * (1 + settings.bufferPct))
+    // Buffer multiplies the UNROUNDED availability-adjusted demand — one ceil,
+    // at the end. baseFleet stays as the physical floor (availability ≤ 1 makes
+    // the max a no-op today; kept as an explicit invariant).
+    const demand = charging.availability != null ? g.groupRaw / charging.availability : g.groupRaw
+    const fleetSold = Math.max(g.baseFleet, Math.ceil(demand * (1 + settings.bufferPct)))
     out.push({ vehicleId: g.vehicleId, groupRaw: g.groupRaw, baseFleet: g.baseFleet, charging, fleetWithCharging, fleetSold })
   }
   return {

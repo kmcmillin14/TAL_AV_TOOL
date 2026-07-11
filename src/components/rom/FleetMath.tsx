@@ -77,7 +77,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
     if (!g) return null
     return (
       <div className="fm-eq mono">
-        ({g.baseFleet} base + {g.charging.chargingDelta} charging) × {f2(1 + buffer)} = {f2((g.baseFleet + g.charging.chargingDelta) * (1 + buffer))} → ⌈⌉ = <strong>{g.fleetSold} sold</strong>
+        ({f2(g.groupRaw)} raw{g.charging.availability != null ? ` ÷ ${f2(g.charging.availability)} avail` : ''}) × {f2(1 + buffer)} = {f2((g.charging.availability != null ? g.groupRaw / g.charging.availability : g.groupRaw) * (1 + buffer))} → ⌈⌉ = <strong>{g.fleetSold} sold</strong>
       </div>
     )
   }
@@ -117,7 +117,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
         ))}
       </Step>
 
-      <Step n={3} tag="policy" title="Buffer" formula="sold = ⌈(base + charging) × (1 + buffer)⌉" why="A safety margin on top of base + charging absorbs demand variability, maintenance downtime, and ramp-up — then we round up to whole vehicles.">
+      <Step n={3} tag="policy" title="Buffer" formula="sold = ⌈(raw ÷ availability) × (1 + buffer)⌉" why="A safety margin on the availability-adjusted demand absorbs variability, maintenance downtime, and ramp-up — rounded up to whole vehicles exactly once, so rounding slack is never buffered twice.">
         {fleet.groups.map(g => (
           <div key={g.vehicleId} className="fm-group">
             <div className="fm-group-name">{vehName(g.vehicleId)}</div>
@@ -127,7 +127,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
       </Step>
 
       <div className="fm-total mono">
-        Total: <strong>{fleet.totalBaseFleet}</strong> base + <strong>{fleet.totalChargingDelta}</strong> charging, ×{f2(1 + buffer)} buffer → <strong className="fm-total-sold">{fleet.totalFleetSold} vehicles sold</strong>
+        Total: <strong>{fleet.totalBaseFleet}</strong> base + <strong>{fleet.totalChargingDelta}</strong> charging · buffer ×{f2(1 + buffer)} on unrounded demand → <strong className="fm-total-sold">{fleet.totalFleetSold} vehicles sold</strong>
       </div>
     </>
   )
@@ -169,7 +169,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
           {chargingLine(f.vehicleId)}
         </Step>
 
-        <Step n={4} tag="policy" title="Buffer" formula="sold = ⌈(base + charging) × (1 + buffer)⌉" why="The safety buffer and final rounding apply to the pooled vehicle fleet this flow belongs to.">
+        <Step n={4} tag="policy" title="Buffer" formula="sold = ⌈(raw ÷ availability) × (1 + buffer)⌉" why="The safety buffer applies to the pooled unrounded demand of the vehicle fleet this flow belongs to — rounded up once per chassis.">
           {bufferLine(f.vehicleId)}
         </Step>
       </>

@@ -35,7 +35,7 @@ export default function AssumptionsPanel({ project: p }: Props) {
         { label: 'Operators displaced', value: String(p.numberOfOperators || ((p.operatorsPerShift ?? 0) * (p.shiftsPerDay ?? 1))), why: 'Operators × shifts the fleet replaces.', isDefault: !p.numberOfOperators && !p.operatorsPerShift },
         { label: 'Fully-burdened operator', value: `$${(p.fullyBurdenedRateUsdPerYear ?? 65000).toLocaleString()}/yr`, why: 'All-in annual cost (wage + benefits + overhead).', isDefault: p.fullyBurdenedRateUsdPerYear == null },
         { label: 'Maintenance', value: `${Math.round((p.annualMaintenancePctOfCapex ?? 0.08) * 100)}%/yr of CAPEX`, why: 'Annual upkeep as a share of CAPEX.', isDefault: p.annualMaintenancePctOfCapex == null },
-        { label: 'Safety buffer', value: `${Math.round((p.bufferPct ?? 0.10) * 100)}%`, why: 'Margin on base + charging fleet.', isDefault: p.bufferPct == null },
+        { label: 'Safety buffer', value: `${Math.round((p.bufferPct ?? 0.10) * 100)}%`, why: 'Margin on the availability-adjusted demand; rounded up once per chassis.', isDefault: p.bufferPct == null },
         { label: 'Service life', value: `${p.serviceLifeYears ?? 10} yr`, why: 'Equipment lifetime for TCO / payback.', isDefault: p.serviceLifeYears == null },
       ],
     },

@@ -125,18 +125,20 @@ export function chargingDerivation(
 
 // ── Tier 3: Buffer — spare capacity → fleet sold ─────────────────────────────
 
-/** Buffer tier: (base + charging) × (1 + buffer), rounded up = fleet. */
+/** Buffer tier: (raw ÷ availability) × (1 + buffer), rounded up ONCE = fleet. */
 export function bufferDerivation(group: FleetGroup, bufferPct: number): Derivation {
   const mult = (1 + bufferPct).toFixed(2)
+  const a = group.charging.availability
+  const demand = a != null ? group.groupRaw / a : group.groupRaw
   return {
     title: 'Buffer — spare capacity → fleet',
     tag: `Buffer ${Math.round(bufferPct * 100)}%`,
     steps: [
       sec('Waterfall'),
-      { label: 'Base + charging', expr: 'raw base + charging extra', sub: `${group.baseFleet} + ${group.charging.chargingDelta}`, result: String(group.fleetWithCharging) },
+      { label: 'Demand with charging', expr: a != null ? 'raw ÷ availability (unrounded)' : 'raw demand', sub: a != null ? `${n2(group.groupRaw)} ÷ ${n2(a)}` : n2(group.groupRaw), result: n2(demand) },
       { label: 'Buffer multiplier', expr: '1 + buffer %', sub: `1 + ${(bufferPct).toFixed(2)}`, result: `×${mult}` },
-      { label: 'Fleet (sold)', expr: '(base + charging) × buffer, rounded up', sub: `⌈ ${group.fleetWithCharging} × ${mult} ⌉`, result: String(group.fleetSold), emphasis: true },
+      { label: 'Fleet (sold)', expr: 'buffered demand, rounded up once', sub: `⌈ ${n2(demand)} × ${mult} ⌉`, result: String(group.fleetSold), emphasis: true },
     ],
-    note: 'Buffer is the only multiplier in the pipeline — it covers maintenance, training, and demand spikes. Rounding up guarantees whole vehicles.',
+    note: 'Buffer covers maintenance, training, and demand spikes. Each chassis rounds up exactly once — at the end — so rounding slack is never buffered twice.',
   }
 }

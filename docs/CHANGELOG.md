@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-10 — Fleet engine: round ONCE per chassis, at the end
+
+- `fleetSold = ⌈(groupRaw ÷ availability) × (1 + buffer)⌉` (floor: baseFleet).
+  Previously the buffer multiplied the already-ceiled base+charging count, so
+  rounding slack was buffered again — an invisible 0–1 extra vehicles per
+  chassis. All conservatism now lives in explicit knobs (buffer, availability,
+  layout factor). Base and charging remain reported stages; only the final
+  sold count changes (occasionally −1 vehicle).
+- Derivations, methodology, Fleet Engine UI (FleetMath, BufferPipeline,
+  assumptions), and the PPTX sizing-derivation appendix restated to match.
+
 ## 2026-07-10 — PPTX S24 per-flow outputs · S19 spec cards · cover name-only (cont.)
 
 - S24 flow table gains the full output chain per flow: Raw · + Chg · Vehicles —

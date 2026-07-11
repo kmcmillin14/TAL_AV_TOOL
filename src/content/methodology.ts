@@ -71,14 +71,14 @@ export const METHODOLOGY: readonly MethodTopic[] = [
     id: 'buffer',
     num: '04',
     title: 'Buffer',
-    formula: 'fleet_sold = ⌈ (base + charging) × (1 + b) ⌉',
+    formula: 'fleet_sold = ⌈ (raw ÷ availability) × (1 + b) ⌉',
     variables: [
       { sym: 'base', name: 'Base fleet', def: 'Demand-driven vehicles (from step 02).', unit: 'veh' },
       { sym: 'charging', name: 'Charging add', def: 'Extra vehicles to cover charging downtime (from step 03).', unit: 'veh' },
       { sym: 'b', name: 'Buffer', def: 'Spare-capacity margin — Standard 10% · Medium 20% · Conservative 25%.', unit: '%' },
       { sym: 'fleet_sold', name: 'Fleet sold', def: 'Final recommended fleet per chassis.', unit: 'veh' },
     ],
-    why: 'Real operations lose vehicles to maintenance, operator training, and demand spikes. The buffer is headroom on top of the modeled need so one vehicle going down does not stall throughput. It is the only multiplier in the pipeline, applied after base and charging, then rounded up to whole vehicles.',
+    why: 'Real operations lose vehicles to maintenance, operator training, and demand spikes. The buffer is headroom on top of the modeled need so one vehicle going down does not stall throughput. It is the only multiplier in the pipeline, applied to the unrounded availability-adjusted demand; each chassis rounds up exactly once — at the end — so rounding slack is never buffered twice.',
   },
   {
     id: 'payback',

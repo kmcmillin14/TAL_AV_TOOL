@@ -193,7 +193,7 @@ form sections. Both pieces are the shared `src/components/ScrollSpyNav.tsx` /
 Right side: per-vehicle **raw → rounded base** mix with thumbnails.
 
 **Waterfall (per vehicle group `g`, one per `vehicleId`):**
-`baseFleet → + chargingDelta → × (1 + bufferPct) → ⌈⌉ = fleetSold`; project **TOTAL** = `Σ fleetSold`.
+`baseFleet → + chargingDelta` (reported stages) · `fleetSold = ⌈(groupRaw ÷ availability) × (1 + bufferPct)⌉` — each chassis rounds up exactly ONCE, at the end (2026-07-10; baseFleet remains the physical floor); project **TOTAL** = `Σ fleetSold`.
 
 ### Section 01 — Raw Fleet
 The material-flow table that produces the **base fleet** (`groupRaw`, `baseFleet = ⌈groupRaw⌉`) —
