@@ -4,8 +4,9 @@ import { qualifyVehicle } from '../trafficLight'
 import type { ApplicationRequirements } from '../types'
 
 // Characterization snapshot: locks qualifyVehicle output across all 6 real
-// vehicles × a matrix of representative requirements. The gate-engine refactor
-// must keep this snapshot byte-for-byte identical (behavior-preserving).
+// vehicles × a matrix of representative requirements. Re-baselined 2026-07-11:
+// INCOMPLETE status (no hard fails, unanswered hard gates) + temp_min/temp_max
+// gates retired (Temperature Environment is the single temperature qualifier).
 
 const base: ApplicationRequirements = {
   maxLoadWeightLbs: 0,

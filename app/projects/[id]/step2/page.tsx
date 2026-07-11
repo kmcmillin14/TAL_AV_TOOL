@@ -112,9 +112,10 @@ export default function Step2Page() {
   )
 
   const counts = useMemo(() => ({
-    green:  qualifiedVehicles.filter(qv => qv.result.status === 'GREEN').length,
-    yellow: qualifiedVehicles.filter(qv => qv.result.status === 'YELLOW').length,
-    red:    qualifiedVehicles.filter(qv => qv.result.status === 'RED').length,
+    green:      qualifiedVehicles.filter(qv => qv.result.status === 'GREEN').length,
+    yellow:     qualifiedVehicles.filter(qv => qv.result.status === 'YELLOW').length,
+    red:        qualifiedVehicles.filter(qv => qv.result.status === 'RED').length,
+    incomplete: qualifiedVehicles.filter(qv => qv.result.status === 'INCOMPLETE').length,
   }), [qualifiedVehicles])
 
   const categories = useMemo(
@@ -207,6 +208,9 @@ export default function Step2Page() {
             <span className="pill good"><span className="dot" /> {counts.green} Compatible</span>
             <span className="pill warn"><span className="dot" /> {counts.yellow} Review</span>
             <span className="pill bad"><span className="dot" /> {counts.red} Incompatible</span>
+            {counts.incomplete > 0 && (
+              <span className="pill neutral"><span className="dot" /> {counts.incomplete} In Progress</span>
+            )}
           </div>
         </div>
 

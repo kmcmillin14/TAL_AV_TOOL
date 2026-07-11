@@ -112,11 +112,12 @@ engineer can see which answers move the Step 2 traffic lights:
 
 **Qualification readiness meter** (SectionNav): counts answered gate inputs —
 `maxLoadWeightLbs, typicalUnitType, loadLengthIn, loadWidthIn, loadHeightIn,
-transferType, tempMinF, tempMaxF, maxRampGrade, minAisleWidthFt`
-(10, always). Transfer height is **not** counted (optional; floor-to-floor is a valid
+transferType, maxRampGrade, minAisleWidthFt`
+(8, always — `tempMinF`/`tempMaxF` left the count 2026-07-11 when the numeric temperature
+gates were retired; Temperature Environment is the single temperature qualifier).
+Transfer height is **not** counted (optional; floor-to-floor is a valid
 answer, not a gap). "Answered" = non-empty string / finite **nonzero** number — 0 is the app-wide
-"no requirement" sentinel, for temps too (real freezer specs are negative °F; the
-temp gates likewise skip at 0 — see gates.ts). Cleared fields don't count.
+"no requirement" sentinel. Cleared fields don't count.
 Checkboxes (outdoor/freezer) and certifications are excluded — unchecked is an answer.
 The meter is informational; no field is required to advance (architecture rule).
 
@@ -683,10 +684,13 @@ module. Comparison is informational only — it never selects a vehicle (ARCHITE
 
 ### Traffic-light logic
 
-- **GREEN** — all hard gates pass AND all soft preferences pass (or are skipped).
-- **YELLOW** — all hard gates pass AND ≥ 1 soft preference fails (or gate skipped, any
-  hard gate passes).
-- **RED** — ≥ 1 hard gate fails.
+- **GREEN** — every hard gate ANSWERED and passing, AND all soft preferences pass
+  (or are skipped).
+- **YELLOW** — every hard gate answered and passing AND ≥ 1 soft preference fails,
+  or (multi-load) some loads pass and some fail.
+- **RED** — ≥ 1 hard gate fails (beats every other status).
+- **INCOMPLETE** ("In Progress", gray clock) — no hard gate fails but ≥ 1 hard gate is
+  still unanswered. Shown instead of GREEN/YELLOW until qualification is complete.
 - Gates are skipped (not RED) when the corresponding requirement is empty / 0 (the
   app-wide "no requirement" sentinel). Exception: `outdoor` and `freezer` are boolean —
   unchecked = no requirement, always skipped.

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-11 — Qualification: INCOMPLETE status + single temperature gate
+
+- New traffic-light status **INCOMPLETE** ("In Progress", gray clock): no hard
+  gate fails but ≥ 1 hard gate is unanswered — the matrix no longer claims
+  Compatible for an unfinished screening. RED still beats INCOMPLETE; GREEN now
+  requires every hard gate answered and passing.
+- The numeric `temp_min` / `temp_max` gates are retired: the Temperature
+  Environment tier (Ambient / Refrigerated / Freezer) is the single temperature
+  qualifier. `tempMinF`/`tempMaxF` stay informational. Step-1 readiness meter
+  drops them (8 counted inputs).
+- Step 2 gains an "In Progress" pill + count; PPTX verdict rendering tolerates
+  the status. Characterization snapshot re-baselined.
+
 ## 2026-07-10 — Fleet engine: round ONCE per chassis, at the end
 
 - `fleetSold = ⌈(groupRaw ÷ availability) × (1 + buffer)⌉` (floor: baseFleet).

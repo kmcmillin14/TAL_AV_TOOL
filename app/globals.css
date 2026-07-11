@@ -1279,9 +1279,11 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .traffic-light.green  { color: var(--good); }
 .traffic-light.yellow { color: var(--warn); }
 .traffic-light.red    { color: var(--bad); }
+.traffic-light.incomplete { color: var(--text-tertiary); }
 .traffic-light.green .tl-label  { color: var(--good); }
 .traffic-light.yellow .tl-label { color: var(--warn); }
 .traffic-light.red .tl-label    { color: var(--bad); }
+.traffic-light.incomplete .tl-label { color: var(--text-tertiary); }
 
 /* Spec rows — single column, stacked */
 .veh-spec-list {

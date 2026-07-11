@@ -117,9 +117,11 @@ function numericGate(o: {
 }
 
 
-// ── The registry (evaluation order preserved from the original code) ─────────
+// ── The registry. Order = display order in Step 2's matrix bar/tooltip, grouped
+//    by concern: LOAD → TRANSFER → ENVIRONMENT → SITE → COMPLIANCE. ────────────
 
 export const GATES: readonly GateSpec[] = [
+  // ── LOAD ──
   numericGate({
     gateId: 'weight', name: 'Weight Capacity', unit: 'lbs',
     req: a => a.maxLoadWeightLbs, present: r => r > 0,
@@ -152,6 +154,7 @@ export const GATES: readonly GateSpec[] = [
       }
     } },
 
+  // ── TRANSFER ──
   { id: 'transfer_method', name: 'Transfer Method', severity: 'hard',
     run(vehicle, app) {
       const methods = vehicle.transferMethods.map(tm => tm.method)
@@ -294,6 +297,7 @@ export const GATES: readonly GateSpec[] = [
       }
     } },
 
+  // ── ENVIRONMENT ──
   // Operating environment. Tri-state: unset → skipped ("Not set"); Indoor
   // (false) → green pass (any vehicle works indoors); Outdoor (true) → hard,
   // vehicle must be outdoor-rated.
@@ -346,35 +350,11 @@ export const GATES: readonly GateSpec[] = [
       }
     } },
 
-  // Temps follow the app-wide "0/empty = no requirement" sentinel convention
-  // (same as weight and ramp). Real freezer requirements are negative °F —
-  // those evaluate; a stray 0 from a partial project skips.
-  numericGate({
-    gateId: 'temp_min', name: 'Min Temperature', unit: '°F',
-    req: a => a.tempMinF, present: r => r !== 0,
-    veh: v => v.specs.tempMinF,
-    pass: (veh, req) => veh <= req,
-    delta: (veh, req) => req - veh,
-    fmt: n => `${n}°F`,
-    reason: (passed, veh, req) => passed
-      ? `Rated to ${veh}°F vs. ${req}°F required`
-      : `Rated only to ${veh}°F, need ${req}°F`,
-  }),
-  numericGate({
-    gateId: 'temp_max', name: 'Max Temperature', unit: '°F',
-    req: a => a.tempMaxF, present: r => r !== 0,
-    veh: v => v.specs.tempMaxF,
-    pass: (veh, req) => veh >= req,
-    delta: (veh, req) => veh - req,
-    fmt: n => `${n}°F`,
-    reason: (passed, veh, req) => passed
-      ? `Rated to ${veh}°F vs. ${req}°F required`
-      : `Rated only to ${veh}°F, need ${req}°F`,
-  }),
+  // Min/Max Temperature are NO LONGER gates — the Temperature Environment tier
+  // (Ambient/Refrigerated/Freezer) is the single temperature qualifier. tempMinF/
+  // tempMaxF remain informational (spec sheet, exports), not qualification inputs.
 
-  // Ramp: a Yes/No requirement. When the site has a ramp it's always a YELLOW
-  // review (gradeability needs a site check) — never auto-passes. Falls back to
-  // the legacy `maxRampGrade > 0` for projects predating `rampRequired`.
+  // ── SITE ──
   // Ramp. Tri-state: unset → skipped ("Not set"); No (false) → green pass; Yes
   // (true, or legacy maxRampGrade > 0) → soft YELLOW site review regardless of
   // rated grade. Soft — never blocks.
@@ -403,6 +383,7 @@ export const GATES: readonly GateSpec[] = [
       }
     } },
 
+  // ── COMPLIANCE ──
   { id: 'certifications', name: 'Certifications', severity: 'soft',
     run(vehicle, app) {
       const requiredCerts = app.certifications?.filter(c => c && c.length > 0) ?? []

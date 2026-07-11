@@ -30,10 +30,19 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
 
 - **Hard gates are absolute (→ RED, no override).** Max load weight; payload type; transfer
   method; **lift / transfer** (by lift class — forklift reach ≥ max(pick,drop); lift table only
-  matched-height pick==drop; floor only floor-to-floor); temperature min/max range; **Operating
+  matched-height pick==drop; floor only floor-to-floor); **Operating
   Environment = Outdoor** (vehicle must be outdoor-rated); **Temperature Environment = Freezer**
   (vehicle must be freezer-rated). *Why:* misqualifying on these has downstream safety/contractual
   consequences; the light must be conservative.
+  > Note (2026-07-11): the numeric min/max temperature gates were retired — the
+  > Temperature Environment tier (Ambient / Refrigerated / Freezer) is the single
+  > temperature qualifier; `tempMinF`/`tempMaxF` remain informational (spec sheet,
+  > exports), not qualification inputs.
+
+- **INCOMPLETE (→ "In Progress", never claims Compatible).** When no hard gate fails but
+  ≥ 1 hard gate is still unanswered, the vehicle shows INCOMPLETE instead of GREEN/YELLOW.
+  RED still wins over INCOMPLETE. *Why:* a partial project must not display "Compatible"
+  for a screening that hasn't finished — GREEN is a completed, defensible verdict.
 
 - **Soft gates (→ YELLOW, never block).** **Temperature Environment = Refrigerated** (review if
   not cold-rated); **Ramps on Site = Yes** (any ramp is a site-walk review regardless of rated

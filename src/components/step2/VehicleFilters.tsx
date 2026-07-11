@@ -20,7 +20,7 @@ interface VehicleFiltersProps {
   manufacturers: string[]
   manufacturerFilter: string
   onManufacturerFilterChange: (v: string) => void
-  counts: { green: number; yellow: number; red: number }
+  counts: { green: number; yellow: number; red: number; incomplete: number }
   /** Comparison controls (rendered right-aligned in the toolbar). */
   compareOptions: CompareOption[]
   compareIds: string[]
@@ -72,7 +72,7 @@ export default function VehicleFilters({
         value={statusFilter}
         onChange={e => onStatusFilterChange(e.target.value as StatusFilter)}
       >
-        <option value="ALL">All vehicles ({counts.green + counts.yellow + counts.red})</option>
+        <option value="ALL">All vehicles ({counts.green + counts.yellow + counts.red + counts.incomplete})</option>
         <option value="GREEN">Compatible only ({counts.green})</option>
         <option value="GREEN+YELLOW">Compatible + Review ({counts.green + counts.yellow})</option>
       </select>

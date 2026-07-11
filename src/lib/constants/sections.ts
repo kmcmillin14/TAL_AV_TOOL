@@ -111,17 +111,18 @@ export function filledRequired(values: Partial<ProjectFormData>): number {
 // not a gap), certifications (optional soft gate), and pick/drop heights
 // (floor-to-floor — both 0 — is a valid, common answer, not a gap).
 
+// tempMinF/tempMaxF left the list 2026-07-11: the numeric temperature gates were
+// retired — Temperature Environment (Ambient/Refrigerated/Freezer) is the single
+// temperature qualifier, and the numeric temps are informational only.
 const QUALIFICATION_INPUTS: ReadonlyArray<keyof ProjectFormData> = [
   'maxLoadWeightLbs', 'typicalUnitType',
   'loadLengthIn', 'loadWidthIn', 'loadHeightIn',
   'transferType',
-  'tempMinF', 'tempMaxF', 'maxRampGrade', 'minAisleWidthFt',
+  'maxRampGrade', 'minAisleWidthFt',
 ]
 
 // Unlike isFilled (badge semantics, number > 0), negative numbers are real
-// answers here — e.g. -10 °F for a freezer. 0 stays the app-wide "unset"
-// sentinel, matching the gate engine (gates.ts skips temp gates at 0; real
-// freezer specs are negative °F).
+// answers here. 0 stays the app-wide "unset" sentinel, matching the gate engine.
 function isAnswered(value: unknown): boolean {
   if (value == null) return false
   if (typeof value === 'string') return value.trim().length > 0

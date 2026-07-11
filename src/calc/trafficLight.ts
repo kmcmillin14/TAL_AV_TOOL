@@ -92,6 +92,11 @@ export function qualifyVehicle(vehicle: Vehicle, app: ApplicationRequirements): 
     if (!perLoad.every(l => l.passed)) return { status: 'YELLOW', hardGates, softPreferences, ...detail }
   }
 
+  // No hard gate fails. If any hard gate is still unanswered, qualification
+  // isn't done — show INCOMPLETE ("In Progress") rather than claim Compatible.
+  const hardIncomplete = hardGates.some(g => g.skipped)
+  if (hardIncomplete) return { status: 'INCOMPLETE', hardGates, softPreferences, ...detail }
+
   const softFail = softPreferences.some(g => !g.skipped && !g.passed)
   if (softFail) return { status: 'YELLOW', hardGates, softPreferences, ...detail }
 

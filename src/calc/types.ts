@@ -1,7 +1,9 @@
 // Shared TypeScript types for the calculation engine
 // Pure types only — no React, no I/O imports
 
-export type TrafficLightStatus = 'GREEN' | 'YELLOW' | 'RED'
+// INCOMPLETE = qualification not finished: no hard gate fails, but at least one
+// hard gate is still unanswered, so the vehicle can't be confirmed Compatible yet.
+export type TrafficLightStatus = 'GREEN' | 'YELLOW' | 'RED' | 'INCOMPLETE'
 export type Severity = 'hard' | 'soft'
 
 /** The vertical-handling need (derived from the Step 1 transfer type):
