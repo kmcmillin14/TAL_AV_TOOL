@@ -116,7 +116,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
                   </td>
                   <td className="num mono">{g?.baseFleet ?? '—'}</td>
                   <td className="num mono">{delta > 0 ? `+${delta}` : '—'}</td>
-                  <td className="num mono wf-mid">{g ? (g.fleetWithCharging * (1 + bufferPct)).toFixed(2) : '—'}</td>
+                  <td className="num mono wf-mid">{g ? ((g.charging.availability != null ? g.groupRaw / g.charging.availability : g.groupRaw) * (1 + bufferPct)).toFixed(2) : '—'}</td>
                   <td className="num mono wf-sold">{g?.fleetSold ?? '—'}</td>
                   <td className="pl-math-cell">
                     {g && (
