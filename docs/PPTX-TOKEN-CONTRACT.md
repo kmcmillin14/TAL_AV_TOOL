@@ -118,9 +118,9 @@ throughput requirement") or fallback "Material flow". Proof: the flow table — 
 inputs → outputs per flow: # · Route · Distance · Moves/hr · Layout · Lift · Vehicle ·
 Raw · + Chg · Vehicles (all three outputs fractional, unrounded: Raw from the cycle
 math; + Chg = the chassis charging delta allocated by the flow's share of raw demand;
-Vehicles = (Raw + Chg) × (1 + buffer); up to 6 rows + an overflow line) — followed by
-the compact fleet build-up strip `RAW + CHARGING × BUFFER = FLEET` (chassis-level
-rounded totals, same as S21). The former canvas
+Vehicles = (Raw + Chg) × (1 + buffer); up to 6 rows + an overflow line) — closed by a
+red TOTAL row in the same table: Σ moves/hr · Σ raw · Σ charging · fleet sold
+(chassis-level rounding; no separate tile strip). The former canvas
 flow-network PNG was dropped (2026-07-10): it duplicated the table, clipped
 labels/nodes with real data, and was the deck's last non-native, non-editable graphic.
 The flow diagram remains a web-app (Step 3/4) feature; per-flow cycle math stays in

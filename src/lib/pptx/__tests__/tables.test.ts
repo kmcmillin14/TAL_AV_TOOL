@@ -155,9 +155,10 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(xml).toContain('Mixed')                         // input: route layout label
     expect(xml).toMatch(/<a:t>\d+\.\d\d<\/a:t>/)           // output: fractional raw demand
     expect(xml).toMatch(/<a:t>\+\d+\.\d\d<\/a:t>/)         // output: per-flow charging share
-    // fleet build-up strip next to the table (same totals as S21)
-    for (const l of ['RAW FLEET', '+ CHARGING', '× BUFFER', '= FLEET']) expect(xml).toContain(l)
-    expect((xml.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(4)
+    // TOTAL row in the table (Σ moves/hr · Σ raw · Σ charging · fleet sold) — no tile strip
+    expect(xml).toContain('<a:t>TOTAL</a:t>')
+    expect(xml).toContain('<a:t>35</a:t>')                 // Σ moves/hr for the fixture's 2 flows
+    expect(xml).not.toContain('KPI Tile')
     expect(xml).not.toContain('<p:pic>')                   // no diagram image
     expect(xml).not.toMatch(/<a:t>STEP \d+<\/a:t>/)        // template STEP label stripped
     expect(xml).toContain('cycle math in the appendix')

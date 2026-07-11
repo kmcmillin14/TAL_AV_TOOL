@@ -32,8 +32,8 @@
   web-app (Step 3/4) feature.
 - The S24 flow table becomes the proof and shows the full inputs → output per
   flow: # · Route · Distance · Moves/hr · Layout · Lift · Vehicle · Raw
-  (fractional vehicle demand), with the compact `RAW + CHARGING × BUFFER = FLEET`
-  build-up strip beneath it (same totals as S21).
+  (fractional vehicle demand), closed by a red TOTAL row in the same table
+  (Σ moves/hr · Σ raw · Σ charging · fleet sold).
 - Cover (S1): `[Customer and Location]` now fills with the customer name only —
   the facility field printed street addresses on the title page.
 - The shared frame now strips the template's static "STEP NN" label placeholder

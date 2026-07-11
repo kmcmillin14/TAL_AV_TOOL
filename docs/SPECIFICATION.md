@@ -522,8 +522,8 @@ derivation tables (Raw / Charging / Buffer) are relocated to the appendix.
 **S24 Material Flow** — proof: the flow table — full inputs → outputs per flow:
 # · Route · Distance · Moves/hr · Layout · Lift · Vehicle · Raw · + Chg · Vehicles
 (outputs fractional and unrounded — charging/buffer allocated per flow by share of raw
-demand; up to 6 rows + an overflow line), followed by the compact fleet build-up strip
-`RAW + CHARGING × BUFFER = FLEET` (chassis-level rounded totals, same as S21). The canvas flow-network PNG was
+demand; up to 6 rows + an overflow line), closed by a red TOTAL row in the same table:
+Σ moves/hr · Σ raw · Σ charging · fleet sold (chassis-level rounding; no tile strip). The canvas flow-network PNG was
 dropped (2026-07-10): it duplicated the table and was the deck's last non-native
 graphic; the flow diagram remains a web-app feature. Per-flow cycle math stays in the
 appendix.

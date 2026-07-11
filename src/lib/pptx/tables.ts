@@ -393,16 +393,24 @@ export function fillMaterialFlow(
   if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(8).fill({ t: '' })])
   if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(8).fill({ t: '' })])
 
-  f.table([430000, 2100400, 950000, 900000, 900000, 750000, 1560000, 830000, 830000, 1570000], rows, { rowH: 320000 })
+  // TOTAL row — the fleet build-up sits in the table, next to the per-flow
+  // outputs it sums: Σ moves/hr · Σ raw · Σ charging · fleet sold (rounded
+  // once per chassis).
+  if (flows.length > 0) {
+    const redCell = (t: string, align: TableCell['align'] = 'r'): TableCell => ({ t, align, fill: TAL_RED, color: 'FFFFFF', bold: true })
+    const totThru = Math.round(flows.reduce((s, fl) => s + (fl.thruPerHr || 0), 0))
+    const totRaw = fleet.groups.reduce((s, g) => s + g.groupRaw, 0)
+    const chgTot = fleet.totalChargingDelta
+    rows.push([
+      redCell('', 'ctr'), redCell('TOTAL', 'l'), redCell(''), redCell(String(totThru)),
+      redCell('', 'ctr'), redCell(''), redCell(''),
+      redCell(totRaw > 0 ? totRaw.toFixed(2) : '—'),
+      redCell(chgTot > 0 ? `+${chgTot}` : '+0'),
+      redCell(String(fleet.totalFleetSold)),
+    ])
+  }
 
-  // The fleet build-up next to the per-flow outputs — same totals as S21.
-  const chg = fleet.totalChargingDelta
-  f.tiles([
-    { value: String(fleet.totalBaseFleet), label: 'RAW FLEET', compact: true },
-    { value: chg > 0 ? `+${chg}` : '+0', label: '+ CHARGING', compact: true },
-    { value: `×${(1 + settings.bufferPct).toFixed(2)}`, label: '× BUFFER', compact: true },
-    { value: String(fleet.totalFleetSold), label: '= FLEET', accent: true, compact: true },
-  ], { h: 750000 })
+  f.table([430000, 2100400, 950000, 900000, 900000, 750000, 1560000, 830000, 830000, 1570000], rows, { rowH: 320000 })
 
   f.caption('Per-flow figures are unrounded; charging and buffer are allocated by share of raw demand · chassis totals round up · full cycle math in the appendix')
 }
