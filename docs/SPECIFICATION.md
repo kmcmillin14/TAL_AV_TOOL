@@ -40,6 +40,25 @@ envelope (legacy unwrapped accepted); every import mints a fresh project id and 
 on Step 01. Import failures show an inline error note. The only difference between
 modes 2 and 3 is the accepted file types and framing — there is no separate parser.
 
+### Persistent header — Save Revision / Export to Customer
+
+The persistent header's action cluster (`PersistentHeader`) presents two labeled
+affordances plus an always-visible autosave chip:
+
+- **`Save Revision ▾`** (ghost button + dropdown) — the internal/re-importable
+  artifacts: **Working PDF (re-importable)** (`.pdf` with embedded JSON — the file
+  Step 00's *Import Previous Revision* reads), **JSON** (`.json` project file), and
+  **XLSX** (`.xlsx` workbook). No auto-bump of Rev — the engineer edits Rev in the
+  header meta line; the export filename already carries it.
+- **`Export to Customer`** (red primary button) — opens the branded-PPTX section
+  picker (`PptxSectionPicker`) directly. One customer artifact, one click, no dropdown.
+- **Autosave chip** — next to the buttons, driven by the existing `saveStatus`
+  state: **`✓ Saved`** (green) · **`● Saving…`** (warn) · **`⚠ Save failed`** (bad),
+  always visible on desktop.
+
+Undo, theme, help, and clear-all remain quiet icon buttons. The prior unlabeled
+export icon (single dropdown) is replaced by the two labeled buttons above.
+
 ---
 
 ## Customer Questionnaire
@@ -250,7 +269,8 @@ Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, St
 - `routeLayout` — `'low' | 'medium' | 'high'`. The vehicle's **route-average** speed as a fraction of its rated cruise. This is an *average over the whole route*, not an instantaneous cap: a vehicle accelerates, decelerates, and rounds corners, so it never sustains rated cruise end-to-end. **70% (High/Open) is the realistic ceiling** — open lanes, low traffic, few turns. Medium/Mixed (50%): typical warehouse mix of straightaways and turns. Low/Congested (30%): heavy traffic, lots of turns, tight corners, blind intersections, frequent slowdowns. Defaults to `'medium'`. Surfaced in the UI as **Route Average Speed** — a tiered dropdown listing each tier's % and condition (highest first).
 - `liftHeightFt` — total vertical travel of the load per cycle, feet, ≥ 0. 0 when transfer method does not lift. Engineer enters the per-cycle total (e.g., 4 ft for a single Floor→Height delivery; 8 ft for Height-Height = 4 up + 4 down).
 - `vehicleId` — id of a vehicle from `src/content/vehicles/*.json`
-- `transferMethodIdx` — index into `vehicle.transferMethods[]`; defaults to 0. Surfaced in the UI as a dedicated **Transfer Method** column whose options are scoped to the selected vehicle.
+- `transferMethodIdx` — index into `vehicle.transferMethods[]`; defaults to 0. Surfaced in the UI as a dedicated **Transfer** column whose options are scoped to the selected vehicle.
+- `transferSecOverride` — optional, ≥ 0. Engineer override for the **total** transfer time (load + unload seconds) of this flow. Absent → the vehicle method's `loadTimeSec + unloadTimeSec` is used. When set (and > 0), `cycleBreakdown` uses it as the total transfer time, split 50/50 into `loadSec`/`unloadSec` for the breakdown display, and marks `transferOverridden: true`. No migration — legacy flows simply omit it.
 
 ### Vehicle JSON additions for Step 3
 
@@ -327,9 +347,9 @@ Step 3 imposes **no** per-flow hard gates. Step 2 already qualifies the vehicle 
 
 - Table is fully inline-editable. Every keystroke writes to storage (using the same `watch()` save pattern from Step 1).
 - The table is centered on the page (`margin-inline: auto`).
-- Columns are organized into three visual bands: **Vehicle** (`# · Vehicle · Transfer Type`), **Route Input** (`Route Average Speed · Origin · Destination · Distance (Round Trip) · Throughput (Moves per Hour)`), and **Output** (`Cycle Time · Vehicle Count`). The Output band is visually distinct.
-- The leading **`#`** column and the trailing **action** column are **borderless gutters that sit outside the bordered data grid** — no cell borders, no shading. The grid (Vehicle … Vehicle Count) keeps its dividers; the two flanks read as clean gutters.
-- Top-right action cluster: **`+Group`** (creates a new group) and **`+Flow`** (appends an ungrouped row). Each flow row has a trailing **fleet-math** (Σ), **duplicate**, and **delete** control (aligned, borderless icon buttons).
+- Columns are organized into three visual bands: **Vehicle** (`# · Vehicle · Transfer`), **Route Input** (`Layout · Origin · Destination · Distance (Round Trip) · Throughput (Moves per Hour)`), and **Output** (`Cycle · Demand`). The Output band is visually distinct. One control species per input cell — every select (Vehicle / Transfer / Layout) is a single-line trigger of consistent height.
+- The leading **`#`** column and the trailing **action** column are **borderless gutters that sit outside the bordered data grid** — no cell borders, no shading. The grid (Vehicle … Demand) keeps its dividers; the two flanks read as clean gutters.
+- Top-right action cluster: **`+Group`** only (creates a new group). Flows are added via the single full-width **`+ Add flow`** ghost row beneath the table (and per-group via the group-header add). Each flow row has a trailing **fleet-math** (Σ), **duplicate**, and **delete** control (aligned, borderless icon buttons) that stay **hidden until the row is hovered or focused** (CSS visibility only — the controls remain keyboard-reachable).
 - **Fleet-math derivation panels (all three tiers).** A "show the math" button opens a
   `DerivationPanel` (anchored popover) rendering a pure `Derivation` from `src/lib/derivation.ts`
   — each step as *label · symbolic form (what it means) · substituted form → result*. The model is
@@ -343,9 +363,9 @@ Step 3 imposes **no** per-flow hard gates. Step 2 already qualifies the vehicle 
   Triggers live in each tier's table (Flows / Charging / Buffer) via the shared `DerivTrigger`;
   values come from the engine outputs so they stay live. Disabled when the figure is undefined.
 - **Drag to reorder.** A grip handle in the `#` gutter drags a flow to a new position (insertion line shows where it lands). Dropping onto another group's rows — or onto a group header — moves the flow into that group, so drag doubles as the regroup gesture.
-- **Route Average Speed** is a tier picker: the trigger shows **High / Medium / Low** (highest-first); a click-through panel explains each tier (`High — Open lanes, few turns · 70%`, `Medium — Mixed warehouse traffic · 50%`, `Low — Congested, many turns · 30%`). Beneath the trigger the cell shows the resulting **Avg** speed and the vehicle's **Max** (rated) speed, loaded / empty, in the active unit — **ft/s** (imperial) or **m/s** (metric). Backed by the unchanged `routeLayout` enum.
-- **Transfer Type** is a single, constant-height cell that reads uniformly as `Method +Ns` (the time the transfer adds = load + unload, plus height-derived lift time for lifting methods) — like any fixed accessory. For **lifting** methods the `+Ns` badge is a button that opens a small **popover** to set the lift height (an accent dot hints when height is still 0); the height is never an always-visible field. Fixed methods show a static badge.
-- **Cycle Time** renders as whole seconds (e.g. `234s`) with the inline anatomy bar and click-through breakdown popover. **Vehicle Count** renders fractional `rawVehicles` to 2 dp (e.g. `2.34 vehicles`); the integer `⌈baseFleet⌉` appears only in the summary box.
+- **Layout** (column header; the explanatory tooltip on route-average speed is kept) is a one-line tier picker: the closed trigger shows the layout name only — **High / Medium / Low** (highest-first). The avg/max ft·s⁻¹ detail moves **into the dropdown option rows** (small secondary text) and the header tooltip; there is no second line in the grid. A click-through panel explains each tier (`High — Open lanes, few turns · 70%`, `Medium — Mixed warehouse traffic · 50%`, `Low — Congested, many turns · 30%`), each row showing the resulting **Avg** and the vehicle's **Max** (rated) speed, loaded / empty, in the active unit (**ft/s** imperial · **m/s** metric). Backed by the unchanged `routeLayout` enum.
+- **Transfer** is a one-line select whose closed trigger reads `Method · Ns` — the method name and the effective transfer seconds (`transferSecOverride` if set, else the method's `load + unload`). The dropdown carries the method chooser, the lift-height field for lifting methods (an accent dot hints when height is still 0), and a **`Transfer time (s)`** numeric field prefilled with the effective value. **Custom transfer override:** committing a number ≠ the vehicle-method default sets `Flow.transferSecOverride` (total load+unload seconds); the closed trigger then renders in accent color with a trailing `*`; clearing the field removes the override and reverts to the method default.
+- **Cycle** renders as whole seconds (e.g. `234s`, mono) — a button that opens the click-through breakdown popover. The popover leads with a **full-width labeled composition bar** (travel / transfer / lift, each segment proportional to its seconds with a small label + seconds); when the transfer time is engineer-overridden the transfer segment is marked (`*` + "engineer override" note). The 4-px in-cell anatomy bar is removed. **Demand** renders fractional `rawVehicles` to 2 dp (e.g. `2.34 vehicles`); the integer `⌈baseFleet⌉` appears only in the summary box.
 - Distance shown in m when the unit toggle is metric, ft in imperial. **Storage always imperial** per ARCHITECTURE.md §3.
 - The Vehicle cell renders the vehicle's `heroImage` thumbnail, falling back to a deterministic per-vehicle color dot (hash → palette) on image error.
 

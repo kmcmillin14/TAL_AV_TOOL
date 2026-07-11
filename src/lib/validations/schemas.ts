@@ -21,6 +21,7 @@ export const flowSchema = z.object({
   liftHeightFt: z.number().min(0).default(0),
   vehicleId: z.string().optional(),
   transferMethodIdx: z.number().int().min(0).optional(),
+  transferSecOverride: z.number().min(0).optional(),
   sectionName: z.string().optional(),
 })
 

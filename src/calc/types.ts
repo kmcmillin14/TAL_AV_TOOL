@@ -120,6 +120,9 @@ export interface Flow {
   liftHeightFt: number         // ft, ≥ 0; total vertical travel per cycle
   vehicleId?: string
   transferMethodIdx?: number   // defaults to 0
+  /** Engineer override for the TOTAL transfer time (load + unload seconds) of
+   *  this flow. Absent → the vehicle method's loadTimeSec + unloadTimeSec. */
+  transferSecOverride?: number
   sectionName?: string         // optional engineer-named section for visual grouping
 }
 
@@ -130,6 +133,9 @@ export interface CycleBreakdown {
   unloadSec: number
   liftTimeSec: number
   totalSec: number
+  /** True when loadSec/unloadSec came from Flow.transferSecOverride rather than
+   *  the vehicle method's declared load/unload times. Display-only. */
+  transferOverridden?: boolean
   // Display-only context (not used in any sum)
   methodName: string
   liftHeightFt: number

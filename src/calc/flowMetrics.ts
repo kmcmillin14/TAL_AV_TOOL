@@ -32,6 +32,7 @@ export function cycleBreakdown(
   routeLayout: RouteLayout,
   liftHeightFt: number,
   transferMethodIdx: number = 0,
+  transferSecOverride?: number,
 ): CycleBreakdown | null {
   if (distanceFt < 0) return null
   if (liftHeightFt < 0) return null
@@ -49,8 +50,11 @@ export function cycleBreakdown(
   const effectiveEmpty = sEmpty * factor
   const travelLoadedSec = distanceFt / effectiveLoaded
   const travelEmptySec = distanceFt / effectiveEmpty
-  const loadSec = transfer.loadTimeSec
-  const unloadSec = transfer.unloadTimeSec
+  // Engineer override replaces the method's total load+unload; split 50/50 for
+  // the breakdown display so load and unload rows still render.
+  const overridden = transferSecOverride != null && transferSecOverride > 0
+  const loadSec = overridden ? transferSecOverride / 2 : transfer.loadTimeSec
+  const unloadSec = overridden ? transferSecOverride / 2 : transfer.unloadTimeSec
   const liftSpeed = vehicle.calc.liftSpeedFps
   const liftTimeSec = transfer.lifts && liftSpeed && liftSpeed > 0
     ? liftHeightFt / liftSpeed
@@ -67,6 +71,7 @@ export function cycleBreakdown(
     unloadSec,
     liftTimeSec,
     totalSec,
+    transferOverridden: overridden,
     methodName: transfer.method,
     liftHeightFt,
     routeLayout,
@@ -90,8 +95,9 @@ export function cycleSeconds(
   routeLayout: RouteLayout,
   liftHeightFt: number,
   transferMethodIdx: number = 0,
+  transferSecOverride?: number,
 ): number | null {
-  return cycleBreakdown(distanceFt, vehicle, routeLayout, liftHeightFt, transferMethodIdx)?.totalSec ?? null
+  return cycleBreakdown(distanceFt, vehicle, routeLayout, liftHeightFt, transferMethodIdx, transferSecOverride)?.totalSec ?? null
 }
 
 /**
@@ -128,6 +134,7 @@ export function flowDerived(
     flow.routeLayout ?? 'medium',
     flow.liftHeightFt ?? 0,
     flow.transferMethodIdx ?? 0,
+    flow.transferSecOverride,
   )
   const cycle = breakdown?.totalSec ?? null
   return {

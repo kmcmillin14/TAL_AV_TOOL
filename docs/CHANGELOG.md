@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-07-11 — Fleet Engine flows table + header actions
+
+- **Flows table normalized.** One control species per input cell: `Vehicle`,
+  `Transfer` (`Method · Ns`), and `Layout` (renamed from "Route Average Speed")
+  are all one-line selects of consistent height. `Vehicle Count` header renamed
+  to **Demand**; `Cycle Time` header to **Cycle**. The avg/max speed detail moved
+  from the grid into the Layout dropdown option rows. Row actions (Σ / duplicate /
+  delete) are hover/focus-only (CSS visibility, still keyboard-reachable).
+- **`transferSecOverride` (calc + schema).** New optional nonnegative
+  `Flow.transferSecOverride` — the engineer's total load+unload seconds for a
+  flow. `cycleBreakdown` uses it when set (> 0), split 50/50 into load/unload for
+  display, and sets `CycleBreakdown.transferOverridden`. Set via a `Transfer time
+  (s)` field in the Transfer dropdown; the closed trigger shows the overridden
+  value in accent + `*`. Flows through the shared breakdown to the cycle popover,
+  derivation, and PPTX cycle math. No migration (absent = vehicle default).
+- **Single add-flow.** Header `+ Flow` button removed (header keeps `+ Group`);
+  the single bottom `+ Add flow` ghost row and per-group add remain.
+- **Cycle popover composition bar.** The 4-px in-cell `CycleAnatomyBar` is deleted;
+  the cycle cell shows seconds only. The click popover leads with a full-width
+  labeled travel/transfer/lift bar, marking the transfer segment when overridden.
+- **Header — Save Revision / Export to Customer.** The unlabeled export icon is
+  replaced by a ghost **Save Revision ▾** menu (Working PDF · JSON · XLSX), a red
+  **Export to Customer** button (opens the branded-PPTX section picker), and an
+  always-visible autosave chip (`✓ Saved / ● Saving… / ⚠ Save failed`).
+
 ## 2026-07-11 — Qualification: INCOMPLETE status + single temperature gate
 
 - New traffic-light status **INCOMPLETE** ("In Progress", gray clock): no hard

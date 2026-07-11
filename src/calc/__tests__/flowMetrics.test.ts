@@ -97,6 +97,11 @@ describe('cycleSeconds', () => {
     expect(cycleSeconds(100, noLiftSpeed as Vehicle, 'medium', 10, 0)).toBeCloseTo(53.72, 1)
   })
 
+  it('applies transferSecOverride as the total transfer time', () => {
+    // distance 0, no lift: cycle == the override total (30s), not Fork's 10s.
+    expect(cycleSeconds(0, cb18 as Vehicle, 'medium', 0, 0, 30)).toBeCloseTo(30, 5)
+  })
+
   it('returns null when distance is negative', () => {
     expect(cycleSeconds(-1, cb18 as Vehicle, 'medium', 0, 0)).toBeNull()
   })
@@ -182,6 +187,17 @@ describe('flowDerived (orchestrator)', () => {
     expect(d.cycleSeconds).toBeCloseTo(47.72, 1)
     // raw = 30 × 47.72 / 3600 ≈ 0.398
     expect(d.rawVehicles).toBeCloseTo(0.398, 3)
+  })
+
+  it('threads transferSecOverride through to the breakdown', () => {
+    const flow: Flow = {
+      id: 'f1', origin: 'A', destination: 'B',
+      distanceFt: 0, thruPerHr: 30, routeLayout: 'medium', liftHeightFt: 0,
+      vehicleId: 'cb18', transferMethodIdx: 0, transferSecOverride: 30,
+    }
+    const d = flowDerived(flow, cb18Veh)
+    expect(d.cycleSeconds).toBeCloseTo(30, 5)
+    expect(d.breakdown?.transferOverridden).toBe(true)
   })
 
   it('threads liftHeightFt through to cycleSeconds (Lift Platform)', () => {
@@ -375,6 +391,36 @@ describe('cycleBreakdown', () => {
     if (!b) return
     expect(b.liftTimeSec).toBe(20)
     expect(b.totalSec).toBeCloseTo(8 + 8 + 20, 5)
+  })
+
+  it('respects transferSecOverride as the total load+unload, split 50/50', () => {
+    // Fork default load+unload = 10s. Override to 30s total → 15/15 split.
+    const b = cycleBreakdown(0, cb18 as Vehicle, 'medium', 0, 0, 30)
+    expect(b).not.toBeNull()
+    if (!b) return
+    expect(b.loadSec).toBe(15)
+    expect(b.unloadSec).toBe(15)
+    expect(b.transferOverridden).toBe(true)
+    // distance 0 → travel 0, no lift → total is just the override
+    expect(b.totalSec).toBeCloseTo(30, 5)
+  })
+
+  it('uses the vehicle method times when no override (flag absent/false)', () => {
+    const b = cycleBreakdown(0, cb18 as Vehicle, 'medium', 0, 0)
+    expect(b).not.toBeNull()
+    if (!b) return
+    expect(b.loadSec).toBe(5)
+    expect(b.unloadSec).toBe(5)
+    expect(b.transferOverridden).toBe(false)
+  })
+
+  it('ignores a zero or negative override (falls back to method default)', () => {
+    const zero = cycleBreakdown(0, cb18 as Vehicle, 'medium', 0, 0, 0)!
+    expect(zero.loadSec).toBe(5)
+    expect(zero.transferOverridden).toBe(false)
+    const neg = cycleBreakdown(0, cb18 as Vehicle, 'medium', 0, 0, -10)!
+    expect(neg.loadSec).toBe(5)
+    expect(neg.transferOverridden).toBe(false)
   })
 
   it('returns null for the same edge cases as cycleSeconds', () => {
