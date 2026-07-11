@@ -20,12 +20,17 @@
 - **Cycle popover composition bar.** The 4-px in-cell `CycleAnatomyBar` is deleted;
   the cycle cell shows seconds only. The click popover leads with a full-width
   labeled travel/transfer/lift bar, marking the transfer segment when overridden.
-- **Header — Save Revision / Export to Customer, last step only.** On the ROM
-  Dashboard the header shows a ghost **Save Revision ▾** menu (Working PDF ·
+- **Header — Save Revision / Export to Customer on Fleet Engine + ROM
+  Dashboard.** Steps 03–04 show a ghost **Save Revision ▾** menu (Working PDF ·
   JSON · XLSX), a red **Export to Customer** button (branded-PPTX section
-  picker), and an always-visible autosave chip. Steps 0–3 keep the compact
+  picker), and an always-visible autosave chip. Steps 0–2 keep the compact
   icon menu (now also carrying the re-importable Working PDF, which previously
   had no UI trigger) and the quiet transient save text.
+- **'Custom' transfer starts at 0s.** The Custom method is engineer-defined:
+  it contributes 0s to the cycle until a transfer time is entered (accent
+  `+0s` badge flags the missing input); vehicle-JSON times are ignored for
+  Custom. Single-method cells share the select's box metrics so all Transfer
+  cells align.
 
 ## 2026-07-11 — Qualification: INCOMPLETE status + single temperature gate
 

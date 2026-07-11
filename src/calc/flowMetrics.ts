@@ -51,10 +51,13 @@ export function cycleBreakdown(
   const travelLoadedSec = distanceFt / effectiveLoaded
   const travelEmptySec = distanceFt / effectiveEmpty
   // Engineer override replaces the method's total load+unload; split 50/50 for
-  // the breakdown display so load and unload rows still render.
+  // the breakdown display so load and unload rows still render. The 'Custom'
+  // method is engineer-defined by design: it contributes 0s until the engineer
+  // supplies the time (the UI flags the missing input).
+  const isCustom = transfer.method === 'Custom'
   const overridden = transferSecOverride != null && transferSecOverride > 0
-  const loadSec = overridden ? transferSecOverride / 2 : transfer.loadTimeSec
-  const unloadSec = overridden ? transferSecOverride / 2 : transfer.unloadTimeSec
+  const loadSec = overridden ? transferSecOverride / 2 : isCustom ? 0 : transfer.loadTimeSec
+  const unloadSec = overridden ? transferSecOverride / 2 : isCustom ? 0 : transfer.unloadTimeSec
   const liftSpeed = vehicle.calc.liftSpeedFps
   const liftTimeSec = transfer.lifts && liftSpeed && liftSpeed > 0
     ? liftHeightFt / liftSpeed

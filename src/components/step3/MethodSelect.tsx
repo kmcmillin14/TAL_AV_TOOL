@@ -17,8 +17,10 @@ interface Props {
   onOverrideChange: (sec: number | undefined) => void
 }
 
-/** The method's declared transfer total (load + unload), before any override. */
+/** The method's declared transfer total (load + unload), before any override.
+ *  'Custom' is engineer-defined: it starts at 0s and demands an input. */
 function defaultSec(m: TransferMethod): number {
+  if (m.method === 'Custom') return 0
   return (m.loadTimeSec ?? 0) + (m.unloadTimeSec ?? 0)
 }
 
@@ -58,6 +60,8 @@ export default function MethodSelect({
   const isLifting = active?.lifts === true
   const metric = unitSystem === 'metric'
   const overridden = transferSecOverride != null && transferSecOverride > 0
+  const isCustom = active?.method === 'Custom'
+  const needsInput = isCustom && !overridden
   const transferSec = overridden ? transferSecOverride! : defaultSec(active)
   const total = Math.round(transferSec + (isLifting ? liftTimeSec : 0))
 
@@ -99,11 +103,11 @@ export default function MethodSelect({
       <button
         ref={triggerRef}
         type="button"
-        className={`flow-method-time flow-method-time-btn mono${isLifting && liftHeightFt === 0 ? ' needs-height' : ''}${overridden ? ' overridden' : ''}`}
+        className={`flow-method-time flow-method-time-btn mono${isLifting && liftHeightFt === 0 ? ' needs-height' : ''}${needsInput ? ' needs-input' : ''}${overridden ? ' overridden' : ''}`}
         onClick={() => setOpen(o => !o)}
         aria-haspopup="dialog"
         aria-expanded={open}
-        title={overridden ? 'Transfer time overridden — click to edit' : 'Set transfer time / lift height'}
+        title={needsInput ? 'Custom transfer — enter the transfer time' : overridden ? 'Transfer time overridden — click to edit' : 'Set transfer time / lift height'}
       >
         +{total}s{overridden ? '*' : ''}
       </button>
@@ -131,7 +135,9 @@ export default function MethodSelect({
         </div>
         <div className="lift-panel-note mono">
           {overridden
-            ? `Engineer override · vehicle default ${defaultSec(active)}s`
+            ? (isCustom ? 'Engineer-defined custom transfer' : `Engineer override · vehicle default ${defaultSec(active)}s`)
+            : isCustom
+            ? 'Custom transfer — enter the total load + unload time'
             : `Vehicle default: load ${active.loadTimeSec}s + unload ${active.unloadTimeSec}s`}
         </div>
         {isLifting && (

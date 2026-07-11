@@ -102,6 +102,17 @@ describe('cycleSeconds', () => {
     expect(cycleSeconds(0, cb18 as Vehicle, 'medium', 0, 0, 30)).toBeCloseTo(30, 5)
   })
 
+  it("the 'Custom' method contributes 0s until the engineer supplies the time", () => {
+    const custom: Pick<Vehicle, 'calc' | 'transferMethods'> = {
+      ...cb18,
+      transferMethods: [{ method: 'Custom', loadTimeSec: 10, unloadTimeSec: 10 }],
+    }
+    // No override → the JSON times are IGNORED for Custom: transfer is 0s.
+    expect(cycleSeconds(0, custom as Vehicle, 'medium', 0, 0)).toBeCloseTo(0, 5)
+    // Engineer override supplies the time.
+    expect(cycleSeconds(0, custom as Vehicle, 'medium', 0, 0, 24)).toBeCloseTo(24, 5)
+  })
+
   it('returns null when distance is negative', () => {
     expect(cycleSeconds(-1, cb18 as Vehicle, 'medium', 0, 0)).toBeNull()
   })

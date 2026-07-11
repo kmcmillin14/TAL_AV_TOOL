@@ -303,9 +303,10 @@ export default function PersistentHeader({
     )
   }
 
-  // Steps 0–3: quiet transient text (as before). Last step: an always-visible
-  // chip — that's where the engineer decides the work is a revision worth filing.
-  const isLastStep = currentStep === 4
+  // Steps 0–2: quiet transient text (as before). Fleet Engine + ROM Dashboard:
+  // an always-visible chip + labeled actions — that's where the engineer
+  // finishes the work and files a revision / builds the customer deck.
+  const isLastStep = currentStep >= 3
   const statusText = isLastStep
     ? (saveStatus === 'saving' ? '● Saving…' : saveStatus === 'error' ? '⚠ Save failed' : '✓ Saved')
     : (saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved ✓' : saveStatus === 'error' ? 'Save failed' : '')

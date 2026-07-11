@@ -2469,6 +2469,10 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   font-size: 12px;
   color: var(--text-primary);
   text-align: left;
+  /* Same box metrics as .flow-method-select so single- and multi-method rows align. */
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 4px;
 }
 .flow-method-line .flow-method-select { flex: 1 1 auto; min-width: 0; }
 /* All +Ns badges share one right-aligned column (static span and lift button
@@ -2495,6 +2499,7 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .flow-method-time-btn:hover { border-color: var(--border); color: var(--text-primary); }
 .flow-method-time-btn:focus-visible { outline: none; border-color: var(--border-strong); box-shadow: 0 0 0 2px var(--accent-soft); }
 .flow-method-time-btn.needs-height { color: var(--accent); }
+.flow-method-time-btn.needs-input { color: var(--accent); font-weight: 700; }
 
 /* ---- Step 3 — Per-row section indicator pill + popover ---- */
 .flow-row-num {
