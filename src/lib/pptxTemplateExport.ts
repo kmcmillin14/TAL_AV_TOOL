@@ -18,7 +18,6 @@ import {
   fillMaterialFlow, fillInvestment, fillRoi, fillMethodology, fillFlowMath,
   assignedVehicleIds,
 } from '@/src/lib/pptx/tables'
-import { renderFlowDiagramPng } from '@/src/lib/pptx/flowDiagram'
 import { renderPaybackChartPng } from '@/src/lib/pptx/romChart'
 import {
   PPTX_SECTIONS, VEHICLE_SLIDE, ROM_SLIDE, slidesToRemove, type PptxSelection,
@@ -130,9 +129,7 @@ export async function exportBrandedRomPptx(
   fillFinancials(zip, model)                           // S25
   fillInvestment(zip, model, names)                    // S27
 
-  // S24 Material Flow — diagram image (browser canvas) on top, table beneath.
-  const flowPng = removed.has(ROM_SLIDE.materialFlow) ? null : renderFlowDiagramPng(model.flows, names)
-  fillMaterialFlow(zip, model, names, flowPng)
+  fillMaterialFlow(zip, model, names)                  // S24 (table is the proof)
 
   // S28 ROI — payback-curve chart (browser canvas) on top, metrics table beneath.
   const paybackPng = removed.has(ROM_SLIDE.roi) ? null : renderPaybackChartPng(model.rom)

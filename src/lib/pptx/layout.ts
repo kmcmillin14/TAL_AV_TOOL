@@ -5,7 +5,8 @@
 // zip/XML edits.
 import type PizZip from 'pizzip'
 import {
-  appendShapesToSlide, removeBodyPlaceholder, nextShapeId, metricTile, textBox,
+  appendShapesToSlide, removeBodyPlaceholder, removeStepLabel, nextShapeId,
+  metricTile, textBox,
   table as tableShape, addImage, containRect, pngSize, TAL_RED,
   rect, setSlideTitle,
   type TableCell, type TableBand,
@@ -60,6 +61,7 @@ export interface Frame {
  *  removed by the section picker (the append helpers already guard). */
 export function frame(zip: PizZip, slide: number): Frame {
   removeBodyPlaceholder(zip, slide)
+  removeStepLabel(zip, slide)
   let y = BODY.y
   const advance = (h: number): void => {
     y += h + GAP

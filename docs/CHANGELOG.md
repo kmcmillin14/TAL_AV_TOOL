@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-10 — PPTX S24: drop the flow diagram; table carries the macro view
+
+- The canvas flow-network PNG is removed from the export (owner decision after
+  visual acceptance): it duplicated the table beneath it, clipped labels/nodes
+  with real project data, and was the deck's last non-native, non-editable
+  graphic. `src/lib/pptx/flowDiagram.ts` deleted; the flow diagram remains a
+  web-app (Step 3/4) feature.
+- The S24 flow table becomes the single proof and regains the macro columns:
+  # · Route · Distance · Moves/hr · Lift · Vehicle.
+- The shared frame now strips the template's static "STEP NN" label placeholder
+  on every filled slide (body + cloned appendix) — the numbered eyebrow already
+  carries section numbering, and appendix clones all read "STEP 01".
+
 ## 2026-07-10 — PPTX export: customer-deck redesign (one idea per slide)
 
 - Every data slide now leads with an auto-generated claim in the native title

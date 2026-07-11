@@ -518,11 +518,11 @@ screening matrix remains in the appendix regardless.
 result and a one-line human explanation (no formulas), plus a fleet-mix caption. Worked
 derivation tables (Raw / Charging / Buffer) are relocated to the appendix.
 
-**S24 Material Flow** — proof: flow-network diagram PNG as hero + flow table trimmed to
-four columns: # · Route · Moves/hr · Vehicle. Parallel flows between the same two locations
-are merged on the diagram (summed moves/hr + distinct vehicles); the table still lists each
-flow. Canvas image placed at native aspect ratio via `containRect`/`pngSize`; falls back to
-table-only in non-DOM contexts.
+**S24 Material Flow** — proof: the flow table alone — the macro view of each flow:
+# · Route · Distance · Moves/hr · Lift · Vehicle (up to 9 rows + an overflow line). The
+canvas flow-network PNG was dropped (2026-07-10): it duplicated the table and was the
+deck's last non-native graphic; the flow diagram remains a web-app feature. Per-flow
+cycle math stays in the appendix.
 
 **S25 Financials** — proof: three large-number tiles: ROM investment range · labor offset/yr ·
 simple payback. Figures recomputed from the shared `FleetModel`. TCO, cost/move, and annual

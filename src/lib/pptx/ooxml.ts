@@ -175,6 +175,28 @@ export function removeBodyPlaceholder(zip: PizZip, slideNum: number): boolean {
   return true
 }
 
+/**
+ * Remove the template's static "STEP NN" label shape — the numbered eyebrow
+ * carries section numbering on filled slides, so the template label duplicates
+ * it (and appendix clones of S18 would all read "STEP 01"). Matched by the
+ * shape's combined text, since the placeholder idx varies per slide. No-op if
+ * absent.
+ */
+export function removeStepLabel(zip: PizZip, slideNum: number): boolean {
+  const path = `ppt/slides/slide${slideNum}.xml`
+  const f = zip.file(path)
+  if (!f) return false
+  const xml = f.asText()
+  for (const sp of xml.match(/<p:sp>[\s\S]*?<\/p:sp>/g) ?? []) {
+    const text = [...sp.matchAll(/<a:t>([^<]*)<\/a:t>/g)].map(m => m[1]).join('').trim()
+    if (/^STEP \d+$/i.test(text)) {
+      zip.file(path, xml.replace(sp, ''))
+      return true
+    }
+  }
+  return false
+}
+
 /** A plain solid-fill rectangle shape (e.g. the short red title rule). EMU units. */
 export function rect(opts: {
   id: number; x: number; y: number; cx: number; cy: number; color: string; name?: string

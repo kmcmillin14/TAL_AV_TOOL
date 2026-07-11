@@ -45,6 +45,9 @@ the title) **→ proof** (at most one of: tile strip / table ≤ 6–8 rows / im
 **→ gray footnote caption** (source / assumption / appendix pointer line). Claims come
 from `src/lib/pptx/takeaways.ts` title builders (second-person, confident, ≈ ≤ 60 chars);
 `null` → the per-slide descriptive `FALLBACK_TITLE`, never a blank or formula string.
+The frame also strips the template's static `STEP NN` placeholder alongside the empty
+body placeholder — the numbered eyebrow carries section numbering now, so the template
+label would duplicate it (and cloned appendix shells would all read "STEP 01").
 
 Eyebrow strings: S18 `01 — APPLICATION` · S19 `02 — VEHICLE SELECTION` ·
 S21 `03 — FLEET SIZING` · S24 `04 — MATERIAL FLOW` · S25 `05 — FINANCIALS` ·
@@ -109,12 +112,13 @@ appendix — detail is preserved, not deleted.
 
 ### S24 Material Flow
 
-`src/lib/pptx/tables.ts` + `src/lib/pptx/flowDiagram.ts`. Slide title: takeaway
-(e.g. "Five flows drive your throughput requirement") or fallback "Material flow".
-Proof: flow-network PNG (hero) + flow table trimmed to four columns: # · Route ·
-Moves/hr · Vehicle. Parallel flows between the same two locations are merged on the
-diagram (summed moves/hr + distinct vehicles); the table still lists each flow.
-Falls back to table-only in non-DOM contexts.
+`src/lib/pptx/tables.ts`. Slide title: takeaway (e.g. "Five flows drive your
+throughput requirement") or fallback "Material flow". Proof: the flow table alone —
+the macro view of each flow: # · Route · Distance · Moves/hr · Lift · Vehicle
+(up to 9 rows + an overflow line). The former canvas flow-network PNG was dropped
+(2026-07-10): it duplicated the table, clipped labels/nodes with real data, and was
+the deck's last non-native, non-editable graphic. The flow diagram remains a web-app
+(Step 3/4) feature; per-flow cycle math stays in the appendix.
 
 ### S25 Financials — three big numbers
 

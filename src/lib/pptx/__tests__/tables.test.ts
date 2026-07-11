@@ -132,35 +132,22 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     expect(xml).toContain('What it means')
   })
 
-  // ── S24 — trimmed material flow table ──────────────────────────────────────
+  // ── S24 — flow table is the single proof (diagram dropped 2026-07-10) ──────
 
-  it('S24 flow table trims to # · Route · Moves/hr · Vehicle', () => {
+  it('S24 flow table carries the macro view: # · Route · Distance · Moves/hr · Lift · Vehicle', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
-    fillMaterialFlow(zip, model, names, null)
+    fillMaterialFlow(zip, model, names)
     const xml = reopen(zip).file('ppt/slides/slide24.xml')!.asText()
     expect(xml).toContain('04 — MATERIAL FLOW')
     expect(xml).toMatch(/2 flows move 35 loads every hour/)
-    for (const l of ['Route', 'Moves/hr', 'Vehicle']) expect(xml).toContain(l)
-    for (const l of ['Distance', 'Layout', 'Lift']) expect(xml).not.toContain(`<a:t>${l}</a:t>`)
+    for (const l of ['Route', 'Distance', 'Moves/hr', 'Lift', 'Vehicle']) {
+      expect(xml).toContain(`<a:t>${l}</a:t>`)
+    }
+    expect(xml).toContain('300 ft')                        // flow 1 distance rendered
+    expect(xml).not.toContain('<p:pic>')                   // no diagram image
+    expect(xml).not.toMatch(/<a:t>STEP \d+<\/a:t>/)        // template STEP label stripped
     expect(xml).toContain('cycle-math appendix')
-  })
-
-  it('S24 embeds the diagram image (media part + picture) when a PNG is supplied', () => {
-    const zip = load()
-    const model = computeFleetModel(PROJECT, vehicles)
-    const png = new Uint8Array(Buffer.from(
-      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==',
-      'base64'))
-    fillMaterialFlow(zip, model, names, png)
-    const out = reopen(zip)
-    const s24 = out.file('ppt/slides/slide24.xml')!.asText()
-    expect(s24).toContain('<p:pic>')
-    expect(s24).toMatch(/r:embed="rId\d+"/)
-    // media part written and referenced by the slide rels
-    const media = Object.keys(out.files).filter(n => /^ppt\/media\/image\d+\.png$/.test(n))
-    expect(media.length).toBeGreaterThan(0)
-    expect(out.file('ppt/slides/_rels/slide24.xml.rels')!.asText()).toMatch(/media\/image\d+\.png/)
   })
 
   // ── S27/S28 — title claims wired ───────────────────────────────────────────

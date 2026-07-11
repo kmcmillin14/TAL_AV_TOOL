@@ -30,7 +30,6 @@ import {
   investmentTitle, roiTitle, FALLBACK_TITLE,
 } from './takeaways'
 
-const FLOW_IMG_H = 2100000   // height reserved for the S24 diagram image
 const ROI_IMG_H = 1900000    // height reserved for the S28 payback chart
 
 // Verdict palette — shared by the S19 verdict-cell fills and the gate grid glyphs
@@ -343,35 +342,38 @@ function qualifyAll(project: StoredProject, vehicles: Vehicle[]) {
   return ordered.map(v => ({ vehicle: v, q: qualifyVehicle(v, app) }))
 }
 
-/** S24 — Material flows. Title claim + rule. When a rendered diagram PNG is
- *  supplied it goes on top and a compact 4-column table sits beneath it;
- *  otherwise the table fills the body. Columns: # · Route · Moves/hr · Vehicle
- *  (Distance, Layout, Lift moved to the cycle-math appendix). */
+/** S24 — Material flows. Title claim + rule + the flow table as the single
+ *  proof — the macro view of each flow: # · Route · Distance · Moves/hr ·
+ *  Lift · Vehicle. (The canvas flow-network diagram was dropped 2026-07-10:
+ *  it duplicated this table and clipped with real data; the diagram remains
+ *  a web-app feature. Cycle-level math stays in the appendix.) */
 export function fillMaterialFlow(
-  zip: PizZip, model: FleetModel, names: Record<string, string>, diagramPng?: Uint8Array | null,
+  zip: PizZip, model: FleetModel, names: Record<string, string>,
 ): void {
   const { flows } = model
   setTitle(zip, ROM_SLIDE.materialFlow, flowTitle(model), FALLBACK_TITLE.flow)
   const f = frame(zip, ROM_SLIDE.materialFlow)
   f.eyebrow('04 — MATERIAL FLOW')
   f.rule()
-  if (diagramPng) f.image(diagramPng, FLOW_IMG_H)
-  const MAX = diagramPng ? 3 : 9
+  const MAX = 9
 
   const rows: TableCell[][] = [[
-    { t: '#', align: 'ctr' }, { t: 'Route' }, { t: 'Moves/hr', align: 'r' }, { t: 'Vehicle' },
+    { t: '#', align: 'ctr' }, { t: 'Route' }, { t: 'Distance', align: 'r' },
+    { t: 'Moves/hr', align: 'r' }, { t: 'Lift', align: 'r' }, { t: 'Vehicle' },
   ]]
   flows.slice(0, MAX).forEach((flow, i) => rows.push([
     { t: String(i + 1), align: 'ctr' },
     { t: `${flow.origin || '—'} → ${flow.destination || '—'}` },
+    { t: ft(flow.distanceFt), align: 'r' },
     { t: String(flow.thruPerHr ?? 0), align: 'r' },
+    { t: ft(flow.liftHeightFt), align: 'r' },
     { t: flow.vehicleId ? (names[flow.vehicleId] ?? flow.vehicleId) : 'Unassigned' },
   ]))
-  if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, { t: '' }, { t: '' }])
-  if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, { t: '' }, { t: '' }])
+  if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(4).fill({ t: '' })])
+  if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(4).fill({ t: '' })])
 
-  f.table([560000, 5800400, 1580000, 2880000], rows, { rowH: 320000 })
-  f.caption('Per-flow distances, layouts, and lift heights are in the cycle-math appendix')
+  f.table([560000, 4260400, 1400000, 1300000, 1100000, 2200000], rows, { rowH: 320000 })
+  f.caption('Cycle times and per-flow vehicle counts are in the cycle-math appendix')
 }
 
 /** S27 Investment Summary — dynamic per-line CAPEX pricing table with a TOTAL row.
