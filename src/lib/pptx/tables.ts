@@ -134,15 +134,18 @@ export function fillVehicleCards(
       addImage(zip, ROM_SLIDE.vehicles, png, containRect(nw, nh, { x, y: yTop, cx: w, cy: CARD_IMG_H }))
     }
     const q = qualifyVehicle(v, app)
-    const verdict = q.status === 'GREEN' ? 'QUALIFIED'
-      : q.status === 'YELLOW' ? 'QUALIFIED — REVIEW'
-      : q.status === 'INCOMPLETE' ? 'SCREENING IN PROGRESS'
+    // `status` widened to string so the INCOMPLETE branch compiles whether or
+    // not the qualification engine's union includes it yet.
+    const status: string = q.status
+    const verdict = status === 'GREEN' ? 'QUALIFIED'
+      : status === 'YELLOW' ? 'QUALIFIED — REVIEW'
+      : status === 'INCOMPLETE' ? 'SCREENING IN PROGRESS'
       : 'REVIEW REQUIRED'
     const hardFails = dedupe(q.hardGates.filter(g => !g.skipped && !g.passed).map(g => g.name))
     const softFails = dedupe(q.softPreferences.filter(g => !g.skipped && !g.passed).map(g => g.name))
-    const why = q.status === 'GREEN' ? 'Meets every requirement screened'
-      : q.status === 'YELLOW' ? `Review on site: ${softFails.join(', ')}`
-      : q.status === 'INCOMPLETE' ? 'Screening incomplete — capture the remaining requirements in Step 1'
+    const why = status === 'GREEN' ? 'Meets every requirement screened'
+      : status === 'YELLOW' ? `Review on site: ${softFails.join(', ')}`
+      : status === 'INCOMPLETE' ? 'Screening incomplete — capture the remaining requirements in Step 1'
       : `Screening flags: ${hardFails.join(', ')}`
     const served = (project.flows ?? []).filter(fl => fl.vehicleId === id).length
     const paras: TextRun[][] = [
@@ -174,9 +177,10 @@ export function fillVerdictAppendix(
   for (const { vehicle, q } of results) {
     const hardFails = q.hardGates.filter(g => !g.skipped && !g.passed).map(g => g.name)
     const softFails = q.softPreferences.filter(g => !g.skipped && !g.passed).map(g => g.name)
-    const notes = q.status === 'RED' ? `Fails: ${dedupe(hardFails).join(', ')}`
-      : q.status === 'YELLOW' ? `Review: ${dedupe([...softFails, ...partialLoadNote(q)]).join(', ')}`
-      : q.status === 'INCOMPLETE' ? 'Screening incomplete — some requirements not yet captured'
+    const status: string = q.status   // widened; see fillVehicleCards
+    const notes = status === 'RED' ? `Fails: ${dedupe(hardFails).join(', ')}`
+      : status === 'YELLOW' ? `Review: ${dedupe([...softFails, ...partialLoadNote(q)]).join(', ')}`
+      : status === 'INCOMPLETE' ? 'Screening incomplete — some requirements not yet captured'
       : 'All gates pass'
     rows.push([
       { t: vehicle.name, bold: true },
