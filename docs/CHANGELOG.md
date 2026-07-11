@@ -20,10 +20,12 @@
 - **Cycle popover composition bar.** The 4-px in-cell `CycleAnatomyBar` is deleted;
   the cycle cell shows seconds only. The click popover leads with a full-width
   labeled travel/transfer/lift bar, marking the transfer segment when overridden.
-- **Header — Save Revision / Export to Customer.** The unlabeled export icon is
-  replaced by a ghost **Save Revision ▾** menu (Working PDF · JSON · XLSX), a red
-  **Export to Customer** button (opens the branded-PPTX section picker), and an
-  always-visible autosave chip (`✓ Saved / ● Saving… / ⚠ Save failed`).
+- **Header — Save Revision / Export to Customer, last step only.** On the ROM
+  Dashboard the header shows a ghost **Save Revision ▾** menu (Working PDF ·
+  JSON · XLSX), a red **Export to Customer** button (branded-PPTX section
+  picker), and an always-visible autosave chip. Steps 0–3 keep the compact
+  icon menu (now also carrying the re-importable Working PDF, which previously
+  had no UI trigger) and the quiet transient save text.
 
 ## 2026-07-11 — Qualification: INCOMPLETE status + single temperature gate
 

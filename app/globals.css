@@ -3885,7 +3885,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   gap: 6px;
   white-space: nowrap;
 }
-.save-status {
+.save-status.chip {
   font-size: 11px;
   font-weight: 600;
   padding: 3px 10px;
@@ -3893,7 +3893,11 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   border: 1px solid var(--border);
   color: var(--text-tertiary);
   white-space: nowrap;
+  min-width: 0;
 }
-.save-status.saved { color: var(--good); border-color: var(--good-soft); }
-.save-status.saving { color: var(--warn); border-color: var(--warn-soft); }
-.save-status.error { color: var(--bad); border-color: var(--bad-soft); }
+.save-status.chip.saved { color: var(--good); border-color: var(--good-soft); }
+.save-status.chip.saving { color: var(--warn); border-color: var(--warn-soft); }
+.save-status.chip.error { color: var(--bad); border-color: var(--bad-soft); }
+/* The labeled buttons only render on the last step; never let them squeeze
+   the meta line into overlap. */
+.hero-actions { flex-shrink: 0; }

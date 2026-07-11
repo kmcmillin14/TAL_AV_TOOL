@@ -303,11 +303,12 @@ export default function PersistentHeader({
     )
   }
 
-  // Autosave is always on — the chip makes it visible. Idle = last write landed.
-  const statusText =
-    saveStatus === 'saving' ? '● Saving…' :
-    saveStatus === 'error'  ? '⚠ Save failed' :
-    '✓ Saved'
+  // Steps 0–3: quiet transient text (as before). Last step: an always-visible
+  // chip — that's where the engineer decides the work is a revision worth filing.
+  const isLastStep = currentStep === 4
+  const statusText = isLastStep
+    ? (saveStatus === 'saving' ? '● Saving…' : saveStatus === 'error' ? '⚠ Save failed' : '✓ Saved')
+    : (saveStatus === 'saving' ? 'Saving…' : saveStatus === 'saved' ? 'Saved ✓' : saveStatus === 'error' ? 'Save failed' : '')
 
   return (
     <>
@@ -392,7 +393,7 @@ export default function PersistentHeader({
         </div>
 
         <div className="hero-actions">
-          <span className={`save-status ${saveStatus}`}>{statusText}</span>
+          <span className={`save-status ${isLastStep ? 'chip ' : ''}${saveStatus}`}>{statusText}</span>
 
           <div className="unit-pill" role="radiogroup" aria-label="Units">
             <button
@@ -441,44 +442,85 @@ export default function PersistentHeader({
             <Icon name="help" />
           </button>
 
-          <div className="header-menu-wrap" ref={exportRef}>
-            <button
-              type="button"
-              className="btn ghost hero-btn"
-              aria-haspopup="menu"
-              aria-expanded={exportOpen}
-              title="Save a re-importable revision file (PDF · JSON · XLSX)"
-              onClick={() => setExportOpen(o => !o)}
-            >
-              Save Revision <Icon name="chevronD" size={12} />
-            </button>
-            {exportOpen && (
-              <div className="header-menu-popover" role="menu">
-                <div className="header-menu-cap">Save this revision</div>
-                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPdf}>
-                  <span>Working PDF (re-importable)</span>
-                  <span className="hint">.pdf</span>
+          {isLastStep ? (
+            <>
+              <div className="header-menu-wrap" ref={exportRef}>
+                <button
+                  type="button"
+                  className="btn ghost hero-btn"
+                  aria-haspopup="menu"
+                  aria-expanded={exportOpen}
+                  title="Save a re-importable revision file (PDF · JSON · XLSX)"
+                  onClick={() => setExportOpen(o => !o)}
+                >
+                  Save Revision <Icon name="chevronD" size={12} />
                 </button>
-                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
-                  <span>Project file</span>
-                  <span className="hint">.json</span>
-                </button>
-                <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportXlsx}>
-                  <span>Excel workbook</span>
-                  <span className="hint">.xlsx</span>
-                </button>
+                {exportOpen && (
+                  <div className="header-menu-popover" role="menu">
+                    <div className="header-menu-cap">Save this revision</div>
+                    <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPdf}>
+                      <span>Working PDF (re-importable)</span>
+                      <span className="hint">.pdf</span>
+                    </button>
+                    <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
+                      <span>Project file</span>
+                      <span className="hint">.json</span>
+                    </button>
+                    <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportXlsx}>
+                      <span>Excel workbook</span>
+                      <span className="hint">.xlsx</span>
+                    </button>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          <button
-            type="button"
-            className="btn primary hero-btn"
-            title="Build the branded customer deck (.pptx)"
-            onClick={handleExportPptx}
-          >
-            Export to Customer
-          </button>
+              <button
+                type="button"
+                className="btn primary hero-btn"
+                title="Build the branded customer deck (.pptx)"
+                onClick={handleExportPptx}
+              >
+                Export to Customer
+              </button>
+            </>
+          ) : (
+            <div className="header-menu-wrap" ref={exportRef}>
+              <button
+                type="button"
+                className="tbtn-icon tbtn-export"
+                aria-label="Export"
+                aria-haspopup="menu"
+                aria-expanded={exportOpen}
+                title="Export proposal, workbook, or save file"
+                onClick={() => setExportOpen(o => !o)}
+              >
+                <Icon name="export" size={15} />
+              </button>
+              {exportOpen && (
+                <div className="header-menu-popover" role="menu">
+                  <div className="header-menu-cap">Share &amp; export</div>
+                  <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPptx}>
+                    <span>PowerPoint proposal</span>
+                    <span className="hint">.pptx</span>
+                  </button>
+                  <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportXlsx}>
+                    <span>Excel workbook</span>
+                    <span className="hint">.xlsx</span>
+                  </button>
+                  <div className="header-menu-sep" aria-hidden />
+                  <div className="header-menu-cap">Save for later</div>
+                  <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportPdf}>
+                    <span>Working PDF (re-importable)</span>
+                    <span className="hint">.pdf</span>
+                  </button>
+                  <button type="button" className="header-menu-item" role="menuitem" onClick={handleExportJson}>
+                    <span>Project file</span>
+                    <span className="hint">.json</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           <button
             type="button"

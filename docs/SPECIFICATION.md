@@ -42,8 +42,10 @@ modes 2 and 3 is the accepted file types and framing — there is no separate pa
 
 ### Persistent header — Save Revision / Export to Customer
 
-The persistent header's action cluster (`PersistentHeader`) presents two labeled
-affordances plus an always-visible autosave chip:
+On the **ROM Dashboard (last step) only**, the persistent header's action cluster
+(`PersistentHeader`) presents two labeled affordances plus an always-visible
+autosave chip; steps 0–3 keep the compact export icon menu (PPTX · XLSX ·
+Working PDF · JSON) and quiet transient save text:
 
 - **`Save Revision ▾`** (ghost button + dropdown) — the internal/re-importable
   artifacts: **Working PDF (re-importable)** (`.pdf` with embedded JSON — the file
