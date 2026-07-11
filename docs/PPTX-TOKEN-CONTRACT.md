@@ -89,10 +89,11 @@ omitted. Footnote carries any ROM caveats.
 
 `src/lib/pptx/tables.ts` → `fillVehicleCards`. Slide title: takeaway (e.g. "Two vehicles
 fit your application") or fallback "Vehicle selection". Proof: one card per distinct
-chassis in the engineer's flow→vehicle assignments — vehicle photo, verdict pill (GREEN /
-YELLOW / RED), and a plain-English "why it fits" line derived from `qualifyVehicle`
-results + which flows it serves. A REVIEW verdict names its review item ("viable if the
-ramp survives the site walk"). Footnote: "Selected from N chassis screened · screening
+chassis in the engineer's flow→vehicle assignments — vehicle photo, name, category, and
+a short spec block (Capacity · Transfer · Lift · Battery) plus "Serves N of M flows".
+**No qualification verdicts on this slide** (2026-07-10: the engineer already selected
+these vehicles — showing QUALIFIED/REVIEW pills second-guessed the selection; screening
+verdicts live in the appendix). Footnote: "Selected from N chassis screened · screening
 matrix in appendix."
 
 **Data rule:** the card set is exactly the distinct chassis the engineer assigned to
@@ -114,10 +115,12 @@ appendix — detail is preserved, not deleted.
 
 `src/lib/pptx/tables.ts`. Slide title: takeaway (e.g. "Five flows drive your
 throughput requirement") or fallback "Material flow". Proof: the flow table — full
-inputs → output per flow: # · Route · Distance · Moves/hr · Layout · Lift · Vehicle ·
-Raw (fractional vehicle demand from the cycle math; up to 6 rows + an overflow line) —
-followed by the compact fleet build-up strip `RAW + CHARGING × BUFFER = FLEET`
-(same totals as S21's waterfall, compact tiles, no descriptions). The former canvas
+inputs → outputs per flow: # · Route · Distance · Moves/hr · Layout · Lift · Vehicle ·
+Raw · + Chg · Vehicles (all three outputs fractional, unrounded: Raw from the cycle
+math; + Chg = the chassis charging delta allocated by the flow's share of raw demand;
+Vehicles = (Raw + Chg) × (1 + buffer); up to 6 rows + an overflow line) — followed by
+the compact fleet build-up strip `RAW + CHARGING × BUFFER = FLEET` (chassis-level
+rounded totals, same as S21). The former canvas
 flow-network PNG was dropped (2026-07-10): it duplicated the table, clipped
 labels/nodes with real data, and was the deck's last non-native, non-editable graphic.
 The flow diagram remains a web-app (Step 3/4) feature; per-flow cycle math stays in

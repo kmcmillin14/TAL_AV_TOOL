@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-10 — PPTX S24 per-flow outputs · S19 spec cards · cover name-only (cont.)
+
+- S24 flow table gains the full output chain per flow: Raw · + Chg · Vehicles —
+  all fractional and unrounded (charging/buffer allocated to each flow by its
+  share of the chassis raw demand); integers appear only in the build-up strip's
+  chassis-level totals. Rounding audit: per-flow and charging math is unrounded;
+  ceilings apply per chassis (base, and once after buffer) — intentional
+  conservatism so a chassis is never undersized.
+- S19 fit cards drop the qualification verdict/why-line (the engineer already
+  selected these vehicles) in favor of quick specs: Capacity · Transfer · Lift ·
+  Battery + serves-N-flows. Screening verdicts stay in the appendix.
+
 ## 2026-07-10 — PPTX S24: drop the flow diagram; table carries the macro view
 
 - The canvas flow-network PNG is removed from the export (owner decision after

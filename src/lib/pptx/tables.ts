@@ -103,9 +103,12 @@ export function assignedVehicleIds(project: StoredProject): string[] {
   return ids
 }
 
-/** S19 — one fit card per ASSIGNED chassis (photo · name · verdict · why-line).
- *  The tool never picks a vehicle: no assignments → the slide is left untouched
- *  (the exporter drops it). Photos are optional (text-only cards in non-DOM). */
+/** S19 — one card per ASSIGNED chassis: photo · name · category · quick specs
+ *  (Capacity · Transfer · Lift · Battery) · serves-N-flows. No qualification
+ *  verdicts here — the engineer already selected these vehicles; screening
+ *  verdicts live in the appendix. The tool never picks a vehicle: no
+ *  assignments → the slide is left untouched (the exporter drops it).
+ *  Photos are optional (text-only cards in non-DOM). */
 export function fillVehicleCards(
   zip: PizZip, project: StoredProject, vehicles: Vehicle[],
   photos: Record<string, Uint8Array | null>,
@@ -113,7 +116,6 @@ export function fillVehicleCards(
   const vById = new Map(vehicles.map(v => [v.id, v]))
   const assigned = assignedVehicleIds(project).filter(id => vById.has(id))
   if (assigned.length === 0) return
-  const app = appRequirementsFromProject(project)
   const flowsTotal = (project.flows ?? []).length
 
   setTitle(zip, ROM_SLIDE.vehicles, vehiclesTitle(assigned.length), FALLBACK_TITLE.vehicles)
@@ -133,26 +135,23 @@ export function fillVehicleCards(
       const { w: nw, h: nh } = pngSize(png)
       addImage(zip, ROM_SLIDE.vehicles, png, containRect(nw, nh, { x, y: yTop, cx: w, cy: CARD_IMG_H }))
     }
-    const q = qualifyVehicle(v, app)
-    // `status` widened to string so the INCOMPLETE branch compiles whether or
-    // not the qualification engine's union includes it yet.
-    const status: string = q.status
-    const verdict = status === 'GREEN' ? 'QUALIFIED'
-      : status === 'YELLOW' ? 'QUALIFIED — REVIEW'
-      : status === 'INCOMPLETE' ? 'SCREENING IN PROGRESS'
-      : 'REVIEW REQUIRED'
-    const hardFails = dedupe(q.hardGates.filter(g => !g.skipped && !g.passed).map(g => g.name))
-    const softFails = dedupe(q.softPreferences.filter(g => !g.skipped && !g.passed).map(g => g.name))
-    const why = status === 'GREEN' ? 'Meets every requirement screened'
-      : status === 'YELLOW' ? `Review on site: ${softFails.join(', ')}`
-      : status === 'INCOMPLETE' ? 'Screening incomplete — capture the remaining requirements in Step 1'
-      : `Screening flags: ${hardFails.join(', ')}`
+    const lift = v.calc.liftClass === 'floor' || v.calc.maxLiftHeightFt == null
+      ? 'Floor-to-floor' : `To ${v.calc.maxLiftHeightFt} ft`
+    const methods = v.transferMethods.map(m => m.method).join(', ')
     const served = (project.flows ?? []).filter(fl => fl.vehicleId === id).length
+    const spec = (label: string, value: string): TextRun[] => [
+      { t: `${label}   `, sz: 1000, color: GRAY },
+      { t: value, sz: 1000 },
+    ]
     const paras: TextRun[][] = [
       [{ t: v.name, bold: true, sz: 1400 }],
-      [{ t: verdict, bold: true, sz: 1000, color: STATUS_COLOR[q.status] }],
+      [{ t: v.display.category, sz: 950, color: GRAY }],
       [],
-      [{ t: why, sz: 1000 }],
+      spec('Capacity', `${v.calc.maxWeightLbs.toLocaleString()} lbs`),
+      spec('Transfer', methods),
+      spec('Lift', lift),
+      spec('Battery', `${v.calc.voltageV} V · ${v.calc.ratedAh} Ah`),
+      [],
       [{ t: `Serves ${served} of ${flowsTotal} flow${flowsTotal === 1 ? '' : 's'}`, sz: 950, color: GRAY }],
     ]
     appendShapesToSlide(zip, ROM_SLIDE.vehicles, textBox({
@@ -361,13 +360,23 @@ export function fillMaterialFlow(
   f.rule()
   const MAX = 6
 
+  // Per-flow output chain, unrounded: Raw from the cycle math; the chassis
+  // charging delta allocated by this flow's share of raw demand; then buffer.
+  // Integers only appear in the chassis-level totals (the strip below).
+  const groupByVeh = new Map(fleet.groups.map(g => [g.vehicleId, g]))
+  const n2 = (x: number | null) => (x == null ? '—' : x.toFixed(2))
+
   const rows: TableCell[][] = [[
     { t: '#', align: 'ctr' }, { t: 'Route' }, { t: 'Distance', align: 'r' },
     { t: 'Moves/hr', align: 'r' }, { t: 'Layout', align: 'ctr' }, { t: 'Lift', align: 'r' },
-    { t: 'Vehicle' }, { t: 'Raw', align: 'r' },
+    { t: 'Vehicle' }, { t: 'Raw', align: 'r' }, { t: '+ Chg', align: 'r' }, { t: 'Vehicles', align: 'r' },
   ]]
   flows.slice(0, MAX).forEach((flow, i) => {
-    const raw = derivedByFlowId.get(flow.id)?.rawVehicles
+    const raw = derivedByFlowId.get(flow.id)?.rawVehicles ?? null
+    const grp = flow.vehicleId ? groupByVeh.get(flow.vehicleId) : undefined
+    const chg = raw != null && grp && grp.groupRaw > 0
+      ? grp.charging.chargingDelta * (raw / grp.groupRaw) : null
+    const buffered = raw != null ? (raw + (chg ?? 0)) * (1 + settings.bufferPct) : null
     rows.push([
       { t: String(i + 1), align: 'ctr' },
       { t: `${flow.origin || '—'} → ${flow.destination || '—'}` },
@@ -376,13 +385,15 @@ export function fillMaterialFlow(
       { t: ROUTE_LABEL[flow.routeLayout] ?? flow.routeLayout, align: 'ctr' },
       { t: ft(flow.liftHeightFt), align: 'r' },
       { t: flow.vehicleId ? (names[flow.vehicleId] ?? flow.vehicleId) : 'Unassigned' },
-      { t: raw == null ? '—' : raw.toFixed(2), align: 'r', bold: true },
+      { t: n2(raw), align: 'r' },
+      { t: chg == null ? '—' : `+${chg.toFixed(2)}`, align: 'r' },
+      { t: n2(buffered), align: 'r', bold: true },
     ])
   })
-  if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(6).fill({ t: '' })])
-  if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(6).fill({ t: '' })])
+  if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(8).fill({ t: '' })])
+  if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(8).fill({ t: '' })])
 
-  f.table([500000, 2900400, 1150000, 1050000, 1000000, 950000, 2000000, 1270000], rows, { rowH: 320000 })
+  f.table([430000, 2100400, 950000, 900000, 900000, 750000, 1560000, 830000, 830000, 1570000], rows, { rowH: 320000 })
 
   // The fleet build-up next to the per-flow outputs — same totals as S21.
   const chg = fleet.totalChargingDelta
@@ -393,7 +404,7 @@ export function fillMaterialFlow(
     { value: String(fleet.totalFleetSold), label: '= FLEET', accent: true, compact: true },
   ], { h: 750000 })
 
-  f.caption('Raw = vehicle demand from each flow’s cycle time · full cycle math in the appendix')
+  f.caption('Per-flow figures are unrounded; charging and buffer are allocated by share of raw demand · chassis totals round up · full cycle math in the appendix')
 }
 
 /** S27 Investment Summary — dynamic per-line CAPEX pricing table with a TOTAL row.

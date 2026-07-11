@@ -69,7 +69,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
 
   // ── S19 — fit cards + screening appendix ───────────────────────────────────
 
-  it('S19 = one card per assigned chassis with verdict + why-line', () => {
+  it('S19 = one card per assigned chassis with quick specs, no verdicts', () => {
     const zip = load()
     fillVehicleCards(zip, PROJECT, vehicles, {})       // PROJECT assigns cb18 + ml2
     const xml = reopen(zip).file('ppt/slides/slide19.xml')!.asText()
@@ -80,6 +80,13 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     const cb18 = vehicles.find(v => v.id === 'cb18')!, m10 = vehicles.find(v => v.id === 'm10')!
     expect(xml).toContain(cb18.name)
     expect(xml).not.toContain(m10.name)
+    // spec block, not qualification verdicts
+    for (const l of ['Capacity', 'Transfer', 'Lift', 'Battery']) expect(xml).toContain(l)
+    expect(xml).toContain(`${cb18.calc.maxWeightLbs.toLocaleString()} lbs`)
+    expect(xml).toContain('Serves 1 of 2 flows')
+    for (const s of ['QUALIFIED', 'REVIEW REQUIRED', 'Screening flags', 'Meets every requirement']) {
+      expect(xml).not.toContain(s)
+    }
   })
 
   it('S19 no-ops when no vehicle is assigned', () => {
@@ -141,12 +148,13 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     const xml = reopen(zip).file('ppt/slides/slide24.xml')!.asText()
     expect(xml).toContain('04 — MATERIAL FLOW')
     expect(xml).toMatch(/2 flows move 35 loads every hour/)
-    for (const l of ['Route', 'Distance', 'Moves/hr', 'Layout', 'Lift', 'Vehicle', 'Raw']) {
+    for (const l of ['Route', 'Distance', 'Moves/hr', 'Layout', 'Lift', 'Vehicle', 'Raw', '+ Chg', 'Vehicles']) {
       expect(xml).toContain(`<a:t>${l}</a:t>`)
     }
     expect(xml).toContain('300 ft')                        // input: flow 1 distance
     expect(xml).toContain('Mixed')                         // input: route layout label
     expect(xml).toMatch(/<a:t>\d+\.\d\d<\/a:t>/)           // output: fractional raw demand
+    expect(xml).toMatch(/<a:t>\+\d+\.\d\d<\/a:t>/)         // output: per-flow charging share
     // fleet build-up strip next to the table (same totals as S21)
     for (const l of ['RAW FLEET', '+ CHARGING', '× BUFFER', '= FLEET']) expect(xml).toContain(l)
     expect((xml.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(4)

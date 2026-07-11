@@ -506,9 +506,10 @@ S27 `06 — INVESTMENT` · S28 `06 — RETURN ON INVESTMENT`.
 throughput, distance/shifts, environment); rows with no captured value are omitted.
 
 **S19 Vehicle Selection fit cards** — proof: one card per distinct chassis the engineer
-assigned to flows: vehicle photo, verdict pill (GREEN / YELLOW / RED), and a plain-English
-"why it fits" line from `qualifyVehicle` results + which flows it serves. A REVIEW verdict
-names its review item. Footnote: "Selected from N chassis screened · screening matrix in
+assigned to flows: vehicle photo, name, category, and a short spec block (Capacity ·
+Transfer · Lift · Battery) plus "Serves N of M flows". No qualification verdicts on this
+slide (2026-07-10: the engineer already selected these vehicles; screening verdicts live
+in the appendix). Footnote: "Selected from N chassis screened · screening matrix in
 appendix." **The tool never auto-selects a vehicle** (the engineer always assigns);
 if no flows have an assigned vehicle, S19 is **dropped from the export entirely** — the
 screening matrix remains in the appendix regardless.
@@ -518,10 +519,11 @@ screening matrix remains in the appendix regardless.
 result and a one-line human explanation (no formulas), plus a fleet-mix caption. Worked
 derivation tables (Raw / Charging / Buffer) are relocated to the appendix.
 
-**S24 Material Flow** — proof: the flow table — full inputs → output per flow:
-# · Route · Distance · Moves/hr · Layout · Lift · Vehicle · Raw (fractional vehicle
+**S24 Material Flow** — proof: the flow table — full inputs → outputs per flow:
+# · Route · Distance · Moves/hr · Layout · Lift · Vehicle · Raw · + Chg · Vehicles
+(outputs fractional and unrounded — charging/buffer allocated per flow by share of raw
 demand; up to 6 rows + an overflow line), followed by the compact fleet build-up strip
-`RAW + CHARGING × BUFFER = FLEET` (same totals as S21). The canvas flow-network PNG was
+`RAW + CHARGING × BUFFER = FLEET` (chassis-level rounded totals, same as S21). The canvas flow-network PNG was
 dropped (2026-07-10): it duplicated the table and was the deck's last non-native
 graphic; the flow diagram remains a web-app feature. Per-flow cycle math stays in the
 appendix.
