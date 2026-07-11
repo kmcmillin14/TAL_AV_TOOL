@@ -40,10 +40,10 @@ function fmtSpeed(fps: number | undefined, metric: boolean): string {
 }
 
 /**
- * Route Average Speed picker. The trigger shows the tier (High / Medium / Low);
- * underneath, the cell shows the resulting Avg and the vehicle's Max speeds
- * (loaded / empty) in the active unit. Clicking opens a panel that explains
- * each tier. Backed by the unchanged `routeLayout` enum.
+ * Route layout picker — one line in the grid. The trigger shows only the tier
+ * (High / Medium / Low); the resulting Avg speed per tier and the vehicle's Max
+ * speeds live in the dropdown, so the cell keeps the table's single-line rhythm.
+ * Backed by the unchanged `routeLayout` enum.
  */
 export default function SpeedsUsedSelect({ value, vehicle, unitSystem, onChange }: Props) {
   const metric = unitSystem === 'metric'
@@ -53,9 +53,6 @@ export default function SpeedsUsedSelect({ value, vehicle, unitSystem, onChange 
 
   const sLoaded = vehicle?.calc.speedLoadedFps
   const sEmpty = vehicle?.calc.speedUnloadedFps
-  const f = ROUTE_LAYOUT_FACTORS[value]
-  const avgL = sLoaded != null ? sLoaded * f : undefined
-  const avgE = sEmpty != null ? sEmpty * f : undefined
 
   const pick = (v: RouteLayout) => {
     onChange(v)
@@ -77,35 +74,41 @@ export default function SpeedsUsedSelect({ value, vehicle, unitSystem, onChange 
         <Icon name="chevronD" size={12} />
       </button>
 
-      {vehicle ? (
-        <div className="route-speed-figures mono">
-          <span className="route-speed-avg">Avg {fmtSpeed(avgL, metric)} / {fmtSpeed(avgE, metric)} {unit}</span>
-          <span className="route-speed-max">Max {fmtSpeed(sLoaded, metric)} / {fmtSpeed(sEmpty, metric)} {unit}</span>
-        </div>
-      ) : (
-        <span className="route-speed-empty">pick a vehicle</span>
-      )}
-
       <FloatingPanel
         anchorRef={triggerRef}
         open={open}
         onClose={() => setOpen(false)}
         className="route-speed-panel"
       >
-        {TIERS.map(t => (
-          <button
-            key={t.value}
-            type="button"
-            className={`rs-opt${t.value === value ? ' active' : ''}`}
-            onClick={() => pick(t.value)}
-          >
-            <span className="rs-opt-row">
-              <span className="rs-opt-title">{t.title}</span>
-              <span className="rs-opt-pct mono">{pct(t.value)}%</span>
-            </span>
-            <span className="rs-opt-desc">{t.desc}</span>
-          </button>
-        ))}
+        {TIERS.map(t => {
+          const f = ROUTE_LAYOUT_FACTORS[t.value]
+          return (
+            <button
+              key={t.value}
+              type="button"
+              className={`rs-opt${t.value === value ? ' active' : ''}`}
+              onClick={() => pick(t.value)}
+            >
+              <span className="rs-opt-row">
+                <span className="rs-opt-title">{t.title}</span>
+                <span className="rs-opt-pct mono">{pct(t.value)}%</span>
+              </span>
+              <span className="rs-opt-desc">
+                {t.desc}
+                {sLoaded != null && (
+                  <span className="rs-opt-speed mono"> · avg {fmtSpeed(sLoaded * f, metric)} / {fmtSpeed((sEmpty ?? sLoaded) * f, metric)} {unit}</span>
+                )}
+              </span>
+            </button>
+          )
+        })}
+        {vehicle ? (
+          <div className="rs-panel-foot mono">
+            Rated max {fmtSpeed(sLoaded, metric)} / {fmtSpeed(sEmpty, metric)} {unit} (loaded / empty)
+          </div>
+        ) : (
+          <div className="rs-panel-foot">Pick a vehicle to see speeds</div>
+        )}
       </FloatingPanel>
     </div>
   )

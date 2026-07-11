@@ -272,16 +272,16 @@ export default function FlowsTable({
           <button type="button" className="btn ghost" onClick={addGroup}>
             <Icon name="plus" size={13} /> Group
           </button>
-          <button type="button" className="btn primary" onClick={() => add()}>
-            <Icon name="plus" size={13} /> Flow
-          </button>
         </div>
       </div>
 
       {flows.length === 0 && !hasGroups ? (
         <div className="flows-empty">
           <h3>No flows yet</h3>
-          <p>Click <strong>+ Flow</strong> to model an origin → destination route, or <strong>+ Group</strong> to set up a zone first — or add flows in Step 1&apos;s Throughput &amp; distance section; they appear here. Cycle time and demand recompute as you type.</p>
+          <p>Click <strong>+ Add flow</strong> below to model an origin → destination route, or <strong>+ Group</strong> to set up a zone first — or add flows in Step 1&apos;s Throughput &amp; distance section; they appear here. Cycle time and demand recompute as you type.</p>
+          <button type="button" className="flows-add-bottom" onClick={() => add()}>
+            <Icon name="plus" size={12} /> Add flow
+          </button>
         </div>
       ) : (
         <div className="flows-scroll" ref={fitRef}>
@@ -318,9 +318,9 @@ export default function FlowsTable({
               <tr>
                 <th className="flow-th-num flow-th-meta">#</th>
                 <th>Vehicle</th>
-                <th>Transfer Type</th>
-                <th title="Route-average speed as a fraction of rated cruise. 70% is the realistic ceiling — no route sustains full cruise once accel/decel/turns are averaged in.">
-                  Route Average Speed
+                <th>Transfer</th>
+                <th title="Route layout sets the route-average speed as a fraction of rated cruise. 70% is the realistic ceiling — no route sustains full cruise once accel/decel/turns are averaged in.">
+                  Layout
                 </th>
                 <th>Origin</th>
                 <th>Destination</th>
@@ -338,15 +338,15 @@ export default function FlowsTable({
                 </th>
                 <th
                   className="flow-th-num flow-th-output"
-                  title="Cycle Time — seconds to complete one full route (load + travel out + unload + travel back + lift)."
+                  title="Cycle — seconds to complete one full route (load + travel out + unload + travel back + lift). Click a value for the breakdown."
                 >
-                  Cycle Time
+                  Cycle
                 </th>
                 <th
                   className="flow-th-num flow-th-output"
-                  title="Vehicle Count — fractional demand: throughput × cycle / 3600. Per-vehicle base fleet = ⌈Σ demand⌉ (see summary)."
+                  title="Demand — fractional vehicles: throughput × cycle / 3600. Per-vehicle base fleet = ⌈Σ demand⌉ (see summary)."
                 >
-                  Vehicle Count
+                  Demand
                 </th>
                 <th className="flow-th-act"></th>
               </tr>
@@ -385,7 +385,7 @@ export default function FlowsTable({
           </table>
 
           <button type="button" className="flows-add-bottom" onClick={() => add()}>
-            <Icon name="plus" size={12} /> Add another flow
+            <Icon name="plus" size={12} /> Add flow
           </button>
         </div>
       )}

@@ -10,36 +10,42 @@ interface Props {
   methodIdx: number
   liftHeightFt: number
   liftTimeSec: number
+  transferSecOverride?: number
   unitSystem: 'imperial' | 'metric'
   onMethodChange: (idx: number) => void
   onLiftChange: (ft: number) => void
+  onOverrideChange: (sec: number | undefined) => void
 }
 
-/** Total seconds this transfer adds to the cycle: load + unload, plus the
- *  height-derived lift time for lifting methods. */
-function addedSec(m: TransferMethod, liftTimeSec: number): number {
-  return (m.loadTimeSec ?? 0) + (m.unloadTimeSec ?? 0) + (m.lifts ? liftTimeSec : 0)
+/** The method's declared transfer total (load + unload), before any override. */
+function defaultSec(m: TransferMethod): number {
+  return (m.loadTimeSec ?? 0) + (m.unloadTimeSec ?? 0)
 }
 
-function methodTooltip(m: TransferMethod, liftTimeSec: number): string {
-  const base = `${m.method} — load ${m.loadTimeSec}s + unload ${m.unloadTimeSec}s`
+function methodTooltip(m: TransferMethod, liftTimeSec: number, override?: number): string {
+  const base = override != null && override > 0
+    ? `${m.method} — transfer ${override}s (engineer override; vehicle default ${defaultSec(m)}s)`
+    : `${m.method} — load ${m.loadTimeSec}s + unload ${m.unloadTimeSec}s`
   return m.lifts ? `${base} + lift ${liftTimeSec.toFixed(1)}s` : base
 }
 
 /**
- * Transfer-method cell. Every method reads uniformly as `Method +Ns` (the time
- * it adds). For lifting methods the `+Ns` badge is a button: clicking it opens a
- * popover with the lift-height input, so the height is never an always-visible
- * field cluttering the row. Non-lifting methods show a static badge.
+ * Transfer-method cell. Reads uniformly as `Method +Ns` (the time it adds).
+ * The `+Ns` badge is a button on every method: it opens a panel with the
+ * per-flow transfer-time override (prefilled with the vehicle default) and,
+ * for lifting methods, the lift-height input. An engineer override renders
+ * the badge in accent with a trailing `*`.
  */
 export default function MethodSelect({
   vehicle,
   methodIdx,
   liftHeightFt,
   liftTimeSec,
+  transferSecOverride,
   unitSystem,
   onMethodChange,
   onLiftChange,
+  onOverrideChange,
 }: Props) {
   const triggerRef = useRef<HTMLButtonElement>(null)
   const [open, setOpen] = useState(false)
@@ -51,7 +57,9 @@ export default function MethodSelect({
   const active = methods[methodIdx] ?? methods[0]
   const isLifting = active?.lifts === true
   const metric = unitSystem === 'metric'
-  const total = Math.round(addedSec(active, liftTimeSec))
+  const overridden = transferSecOverride != null && transferSecOverride > 0
+  const transferSec = overridden ? transferSecOverride! : defaultSec(active)
+  const total = Math.round(transferSec + (isLifting ? liftTimeSec : 0))
 
   const heightValue = metric
     ? Number(units.distance.toMetric(liftHeightFt).toFixed(1))
@@ -61,11 +69,17 @@ export default function MethodSelect({
     const safe = !Number.isFinite(n) || n < 0 ? 0 : n
     onLiftChange(metric ? units.distance.toImperial(safe) : safe)
   }
+  const onOverride = (input: string) => {
+    if (input.trim() === '') return onOverrideChange(undefined)   // cleared → vehicle default
+    const n = Number(input)
+    if (!Number.isFinite(n) || n < 0) return onOverrideChange(undefined)
+    onOverrideChange(n)
+  }
 
   return (
     <div className="flow-method-line">
       {methods.length === 1 ? (
-        <span className="flow-method-name" title={methodTooltip(active, liftTimeSec)}>
+        <span className="flow-method-name" title={methodTooltip(active, liftTimeSec, transferSecOverride)}>
           {active.method}
         </span>
       ) : (
@@ -74,7 +88,7 @@ export default function MethodSelect({
           value={methodIdx}
           onChange={e => onMethodChange(Number(e.target.value))}
           aria-label="Transfer method"
-          title={methodTooltip(active, liftTimeSec)}
+          title={methodTooltip(active, liftTimeSec, transferSecOverride)}
         >
           {methods.map((m, i) => (
             <option key={`${m.method}-${i}`} value={i}>{m.method}</option>
@@ -82,27 +96,47 @@ export default function MethodSelect({
         </select>
       )}
 
-      {isLifting ? (
-        <>
-          <button
-            ref={triggerRef}
-            type="button"
-            className={`flow-method-time flow-method-time-btn mono${liftHeightFt === 0 ? ' needs-height' : ''}`}
-            onClick={() => setOpen(o => !o)}
-            aria-haspopup="dialog"
-            aria-expanded={open}
-            title="Set lift height"
-          >
-            +{total}s
-          </button>
-          <FloatingPanel
-            anchorRef={triggerRef}
-            open={open}
-            onClose={() => setOpen(false)}
-            align="right"
-            className="lift-panel"
-          >
-            <div className="lift-panel-head">Lift height</div>
+      <button
+        ref={triggerRef}
+        type="button"
+        className={`flow-method-time flow-method-time-btn mono${isLifting && liftHeightFt === 0 ? ' needs-height' : ''}${overridden ? ' overridden' : ''}`}
+        onClick={() => setOpen(o => !o)}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        title={overridden ? 'Transfer time overridden — click to edit' : 'Set transfer time / lift height'}
+      >
+        +{total}s{overridden ? '*' : ''}
+      </button>
+      <FloatingPanel
+        anchorRef={triggerRef}
+        open={open}
+        onClose={() => setOpen(false)}
+        align="right"
+        className="lift-panel"
+      >
+        <div className="lift-panel-head">Transfer time</div>
+        <div className="lift-panel-field">
+          <input
+            className="lift-panel-input mono"
+            type="number"
+            min="0"
+            inputMode="decimal"
+            placeholder={String(defaultSec(active))}
+            value={transferSecOverride ?? ''}
+            onChange={e => onOverride(e.target.value)}
+            aria-label="Transfer time override (seconds)"
+            autoFocus={!isLifting}
+          />
+          <span className="lift-panel-unit">s</span>
+        </div>
+        <div className="lift-panel-note mono">
+          {overridden
+            ? `Engineer override · vehicle default ${defaultSec(active)}s`
+            : `Vehicle default: load ${active.loadTimeSec}s + unload ${active.unloadTimeSec}s`}
+        </div>
+        {isLifting && (
+          <>
+            <div className="lift-panel-head lift-panel-head-2">Lift height</div>
             <div className="lift-panel-field">
               <input
                 className="lift-panel-input mono"
@@ -112,16 +146,13 @@ export default function MethodSelect({
                 value={heightValue}
                 onChange={e => onHeight(e.target.value)}
                 aria-label="Lift height"
-                autoFocus
               />
               <span className="lift-panel-unit">{metric ? 'm' : 'ft'}</span>
             </div>
             <div className="lift-panel-note mono">Adds {liftTimeSec.toFixed(1)}s to the cycle</div>
-          </FloatingPanel>
-        </>
-      ) : (
-        <span className="flow-method-time mono">+{total}s</span>
-      )}
+          </>
+        )}
+      </FloatingPanel>
     </div>
   )
 }

@@ -47,6 +47,15 @@ export default function CyclePopover({ breakdown, onClose, triggerRef }: Props) 
       ? `${method} — lift (${breakdown.liftHeightFt.toFixed(1)} ft)`
       : `${method} — lift`
 
+  // Composition bar — the share of the cycle each phase takes, labeled.
+  const travelSec = breakdown.travelLoadedSec + breakdown.travelEmptySec
+  const transferSec = breakdown.loadSec + breakdown.unloadSec
+  const segments = [
+    { label: 'Travel', sec: travelSec, cls: 'cab-travel' },
+    { label: breakdown.transferOverridden ? 'Transfer*' : 'Transfer', sec: transferSec, cls: 'cab-transfer' },
+    { label: 'Lift', sec: breakdown.liftTimeSec, cls: 'cab-lift' },
+  ].filter(s => s.sec > 0)
+
   return (
     <div ref={popoverRef} className="cycle-popover" role="dialog" aria-label="Cycle breakdown">
       <div className="cycle-popover-head">
@@ -55,6 +64,23 @@ export default function CyclePopover({ breakdown, onClose, triggerRef }: Props) 
           Route layout: {layoutLabel(breakdown.routeLayout)} (×{breakdown.routeLayoutFactor})
         </span>
       </div>
+      {breakdown.totalSec > 0 && (
+        <div className="cycle-popover-comp">
+          <div className="cycle-comp-bar">
+            {segments.map(s => (
+              <span key={s.label} className={`cab-seg ${s.cls}`} style={{ flexGrow: s.sec / breakdown.totalSec }} />
+            ))}
+          </div>
+          <div className="cycle-comp-legend mono">
+            {segments.map(s => (
+              <span key={s.label} className={`cycle-comp-key ${s.cls}`}>{s.label} {fmt(s.sec)}</span>
+            ))}
+          </div>
+          {breakdown.transferOverridden && (
+            <div className="cycle-comp-note">* transfer time is an engineer override</div>
+          )}
+        </div>
+      )}
       <dl className="cycle-popover-list">
         <div className="cycle-popover-subhead">Round-trip travel</div>
         <div className="cycle-popover-row cycle-popover-row-indent">

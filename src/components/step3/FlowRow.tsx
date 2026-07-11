@@ -9,7 +9,6 @@ import VehicleSelect, { VehicleDot } from './VehicleSelect'
 import MethodSelect from './MethodSelect'
 import SpeedsUsedSelect from './SpeedsUsedSelect'
 import CyclePopover from './CyclePopover'
-import CycleAnatomyBar from './CycleAnatomyBar'
 import DerivTrigger from './DerivTrigger'
 import { cycleDerivation } from '@/src/lib/derivation'
 
@@ -149,9 +148,11 @@ export default function FlowRow({
           methodIdx={methodIdx}
           liftHeightFt={flow.liftHeightFt}
           liftTimeSec={derived.breakdown?.liftTimeSec ?? 0}
+          transferSecOverride={flow.transferSecOverride}
           unitSystem={unitSystem}
-          onMethodChange={idx => onChange({ ...flow, transferMethodIdx: idx })}
+          onMethodChange={idx => onChange({ ...flow, transferMethodIdx: idx, transferSecOverride: undefined })}
           onLiftChange={ft => onChange({ ...flow, liftHeightFt: ft })}
+          onOverrideChange={sec => onChange({ ...flow, transferSecOverride: sec })}
         />
       </td>
 
@@ -216,7 +217,6 @@ export default function FlowRow({
             aria-expanded={cycleOpen}
             title={cycleDisabled ? undefined : 'Click for cycle breakdown'}
           >
-            {derived.breakdown && <CycleAnatomyBar breakdown={derived.breakdown} />}
             <span className="flow-calc-value">{fmtCycle(derived.cycleSeconds)}</span>
           </button>
           {cycleOpen && derived.breakdown && (
