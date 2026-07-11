@@ -11,6 +11,7 @@ import type PizZip from 'pizzip'
 import type { StoredProject } from '@/src/lib/storage'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { FleetModel } from '@/src/lib/fleetModel'
+import type { RouteLayout } from '@/src/calc/types'
 import { qualifyVehicle } from '@/src/calc/trafficLight'
 import { GATES } from '@/src/calc/gates'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
@@ -342,38 +343,57 @@ function qualifyAll(project: StoredProject, vehicles: Vehicle[]) {
   return ordered.map(v => ({ vehicle: v, q: qualifyVehicle(v, app) }))
 }
 
-/** S24 — Material flows. Title claim + rule + the flow table as the single
- *  proof — the macro view of each flow: # · Route · Distance · Moves/hr ·
- *  Lift · Vehicle. (The canvas flow-network diagram was dropped 2026-07-10:
- *  it duplicated this table and clipped with real data; the diagram remains
- *  a web-app feature. Cycle-level math stays in the appendix.) */
+const ROUTE_LABEL: Record<RouteLayout, string> = { low: 'Congested', medium: 'Mixed', high: 'Open' }
+
+/** S24 — Material flows. Title claim + rule + the flow table showing the full
+ *  inputs → output per flow (# · Route · Distance · Moves/hr · Layout · Lift ·
+ *  Vehicle · Raw), then the compact RAW + CHARGING × BUFFER = FLEET build-up
+ *  strip (same totals as S21). The canvas flow-network diagram was dropped
+ *  2026-07-10: it duplicated this table and clipped with real data; the
+ *  diagram remains a web-app feature. Cycle-level math stays in the appendix. */
 export function fillMaterialFlow(
   zip: PizZip, model: FleetModel, names: Record<string, string>,
 ): void {
-  const { flows } = model
+  const { flows, fleet, settings, derivedByFlowId } = model
   setTitle(zip, ROM_SLIDE.materialFlow, flowTitle(model), FALLBACK_TITLE.flow)
   const f = frame(zip, ROM_SLIDE.materialFlow)
   f.eyebrow('04 — MATERIAL FLOW')
   f.rule()
-  const MAX = 9
+  const MAX = 6
 
   const rows: TableCell[][] = [[
     { t: '#', align: 'ctr' }, { t: 'Route' }, { t: 'Distance', align: 'r' },
-    { t: 'Moves/hr', align: 'r' }, { t: 'Lift', align: 'r' }, { t: 'Vehicle' },
+    { t: 'Moves/hr', align: 'r' }, { t: 'Layout', align: 'ctr' }, { t: 'Lift', align: 'r' },
+    { t: 'Vehicle' }, { t: 'Raw', align: 'r' },
   ]]
-  flows.slice(0, MAX).forEach((flow, i) => rows.push([
-    { t: String(i + 1), align: 'ctr' },
-    { t: `${flow.origin || '—'} → ${flow.destination || '—'}` },
-    { t: ft(flow.distanceFt), align: 'r' },
-    { t: String(flow.thruPerHr ?? 0), align: 'r' },
-    { t: ft(flow.liftHeightFt), align: 'r' },
-    { t: flow.vehicleId ? (names[flow.vehicleId] ?? flow.vehicleId) : 'Unassigned' },
-  ]))
-  if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(4).fill({ t: '' })])
-  if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(4).fill({ t: '' })])
+  flows.slice(0, MAX).forEach((flow, i) => {
+    const raw = derivedByFlowId.get(flow.id)?.rawVehicles
+    rows.push([
+      { t: String(i + 1), align: 'ctr' },
+      { t: `${flow.origin || '—'} → ${flow.destination || '—'}` },
+      { t: ft(flow.distanceFt), align: 'r' },
+      { t: String(flow.thruPerHr ?? 0), align: 'r' },
+      { t: ROUTE_LABEL[flow.routeLayout] ?? flow.routeLayout, align: 'ctr' },
+      { t: ft(flow.liftHeightFt), align: 'r' },
+      { t: flow.vehicleId ? (names[flow.vehicleId] ?? flow.vehicleId) : 'Unassigned' },
+      { t: raw == null ? '—' : raw.toFixed(2), align: 'r', bold: true },
+    ])
+  })
+  if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(6).fill({ t: '' })])
+  if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(6).fill({ t: '' })])
 
-  f.table([560000, 4260400, 1400000, 1300000, 1100000, 2200000], rows, { rowH: 320000 })
-  f.caption('Cycle times and per-flow vehicle counts are in the cycle-math appendix')
+  f.table([500000, 2900400, 1150000, 1050000, 1000000, 950000, 2000000, 1270000], rows, { rowH: 320000 })
+
+  // The fleet build-up next to the per-flow outputs — same totals as S21.
+  const chg = fleet.totalChargingDelta
+  f.tiles([
+    { value: String(fleet.totalBaseFleet), label: 'RAW FLEET', compact: true },
+    { value: chg > 0 ? `+${chg}` : '+0', label: '+ CHARGING', compact: true },
+    { value: `×${(1 + settings.bufferPct).toFixed(2)}`, label: '× BUFFER', compact: true },
+    { value: String(fleet.totalFleetSold), label: '= FLEET', accent: true, compact: true },
+  ], { h: 750000 })
+
+  f.caption('Raw = vehicle demand from each flow’s cycle time · full cycle math in the appendix')
 }
 
 /** S27 Investment Summary — dynamic per-line CAPEX pricing table with a TOTAL row.

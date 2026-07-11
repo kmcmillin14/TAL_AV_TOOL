@@ -7,8 +7,12 @@
   with real project data, and was the deck's last non-native, non-editable
   graphic. `src/lib/pptx/flowDiagram.ts` deleted; the flow diagram remains a
   web-app (Step 3/4) feature.
-- The S24 flow table becomes the single proof and regains the macro columns:
-  # · Route · Distance · Moves/hr · Lift · Vehicle.
+- The S24 flow table becomes the proof and shows the full inputs → output per
+  flow: # · Route · Distance · Moves/hr · Layout · Lift · Vehicle · Raw
+  (fractional vehicle demand), with the compact `RAW + CHARGING × BUFFER = FLEET`
+  build-up strip beneath it (same totals as S21).
+- Cover (S1): `[Customer and Location]` now fills with the customer name only —
+  the facility field printed street addresses on the title page.
 - The shared frame now strips the template's static "STEP NN" label placeholder
   on every filled slide (body + cloned appendix) — the numbered eyebrow already
   carries section numbering, and appendix clones all read "STEP 01".

@@ -518,11 +518,13 @@ screening matrix remains in the appendix regardless.
 result and a one-line human explanation (no formulas), plus a fleet-mix caption. Worked
 derivation tables (Raw / Charging / Buffer) are relocated to the appendix.
 
-**S24 Material Flow** — proof: the flow table alone — the macro view of each flow:
-# · Route · Distance · Moves/hr · Lift · Vehicle (up to 9 rows + an overflow line). The
-canvas flow-network PNG was dropped (2026-07-10): it duplicated the table and was the
-deck's last non-native graphic; the flow diagram remains a web-app feature. Per-flow
-cycle math stays in the appendix.
+**S24 Material Flow** — proof: the flow table — full inputs → output per flow:
+# · Route · Distance · Moves/hr · Layout · Lift · Vehicle · Raw (fractional vehicle
+demand; up to 6 rows + an overflow line), followed by the compact fleet build-up strip
+`RAW + CHARGING × BUFFER = FLEET` (same totals as S21). The canvas flow-network PNG was
+dropped (2026-07-10): it duplicated the table and was the deck's last non-native
+graphic; the flow diagram remains a web-app feature. Per-flow cycle math stays in the
+appendix.
 
 **S25 Financials** — proof: three large-number tiles: ROM investment range · labor offset/yr ·
 simple payback. Figures recomputed from the shared `FleetModel`. TCO, cost/move, and annual

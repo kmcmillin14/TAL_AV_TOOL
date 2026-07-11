@@ -19,7 +19,7 @@ the **code** (`src/lib/pptx/tokenMap.ts`). Keep them in sync.
 | 21 | `fleetEngine` | Fleet Sizing waterfall — single merged slide (replaces S21–23) |
 | 22 | *(retired)* | Charging tier math — **always removed; content in appendix** |
 | 23 | *(retired)* | Buffer tier math — **always removed; content in appendix** |
-| 24 | `materialFlow` | Material Flow — diagram image (P3) + trimmed table (P2) |
+| 24 | `materialFlow` | Material Flow — inputs→output flow table + fleet build-up strip (diagram dropped 2026-07-10) |
 | 25 | `kpis` | Financials — three big numbers: ROM investment · labor offset/yr · simple payback |
 | 26 | *(retired)* | Fleet & flow dashboard tiles — **always removed; content in appendix** |
 | 27 | `investment` | Investment Summary / CAPEX pricing table (P1) |
@@ -68,7 +68,7 @@ in `ooxml.ts`); explicit per-cell `fill`/`color` (verdicts, TOTAL row) still win
 | `[TAL Representative]` | `bastianRep` |
 | `[TAL Representative Name]` | `bastianRep` |
 | `[Project Name + Rev + OPP #]` | `projectName · Rev {versionNumber} · {OPP|LEAD} {opportunityNumber}` |
-| `[Customer and Location]` | `customerName — facilityLocation` |
+| `[Customer and Location]` | `customerName` only (2026-07-10: facility address dropped from the cover — it printed street addresses on the title page; location still appears on S18 when captured) |
 
 A placeholder with no value is left as-is (editable bracket), never blanked.
 `[Title]` / `[Email]` / `[Phone Number]` on S34 have no app field → left as brackets.
@@ -113,12 +113,15 @@ appendix — detail is preserved, not deleted.
 ### S24 Material Flow
 
 `src/lib/pptx/tables.ts`. Slide title: takeaway (e.g. "Five flows drive your
-throughput requirement") or fallback "Material flow". Proof: the flow table alone —
-the macro view of each flow: # · Route · Distance · Moves/hr · Lift · Vehicle
-(up to 9 rows + an overflow line). The former canvas flow-network PNG was dropped
-(2026-07-10): it duplicated the table, clipped labels/nodes with real data, and was
-the deck's last non-native, non-editable graphic. The flow diagram remains a web-app
-(Step 3/4) feature; per-flow cycle math stays in the appendix.
+throughput requirement") or fallback "Material flow". Proof: the flow table — full
+inputs → output per flow: # · Route · Distance · Moves/hr · Layout · Lift · Vehicle ·
+Raw (fractional vehicle demand from the cycle math; up to 6 rows + an overflow line) —
+followed by the compact fleet build-up strip `RAW + CHARGING × BUFFER = FLEET`
+(same totals as S21's waterfall, compact tiles, no descriptions). The former canvas
+flow-network PNG was dropped (2026-07-10): it duplicated the table, clipped
+labels/nodes with real data, and was the deck's last non-native, non-editable graphic.
+The flow diagram remains a web-app (Step 3/4) feature; per-flow cycle math stays in
+the appendix.
 
 ### S25 Financials — three big numbers
 

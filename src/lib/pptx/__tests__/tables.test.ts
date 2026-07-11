@@ -134,20 +134,25 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
 
   // ── S24 — flow table is the single proof (diagram dropped 2026-07-10) ──────
 
-  it('S24 flow table carries the macro view: # · Route · Distance · Moves/hr · Lift · Vehicle', () => {
+  it('S24 shows full inputs → output per flow + the fleet build-up strip', () => {
     const zip = load()
     const model = computeFleetModel(PROJECT, vehicles)
     fillMaterialFlow(zip, model, names)
     const xml = reopen(zip).file('ppt/slides/slide24.xml')!.asText()
     expect(xml).toContain('04 — MATERIAL FLOW')
     expect(xml).toMatch(/2 flows move 35 loads every hour/)
-    for (const l of ['Route', 'Distance', 'Moves/hr', 'Lift', 'Vehicle']) {
+    for (const l of ['Route', 'Distance', 'Moves/hr', 'Layout', 'Lift', 'Vehicle', 'Raw']) {
       expect(xml).toContain(`<a:t>${l}</a:t>`)
     }
-    expect(xml).toContain('300 ft')                        // flow 1 distance rendered
+    expect(xml).toContain('300 ft')                        // input: flow 1 distance
+    expect(xml).toContain('Mixed')                         // input: route layout label
+    expect(xml).toMatch(/<a:t>\d+\.\d\d<\/a:t>/)           // output: fractional raw demand
+    // fleet build-up strip next to the table (same totals as S21)
+    for (const l of ['RAW FLEET', '+ CHARGING', '× BUFFER', '= FLEET']) expect(xml).toContain(l)
+    expect((xml.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(4)
     expect(xml).not.toContain('<p:pic>')                   // no diagram image
     expect(xml).not.toMatch(/<a:t>STEP \d+<\/a:t>/)        // template STEP label stripped
-    expect(xml).toContain('cycle-math appendix')
+    expect(xml).toContain('cycle math in the appendix')
   })
 
   // ── S27/S28 — title claims wired ───────────────────────────────────────────

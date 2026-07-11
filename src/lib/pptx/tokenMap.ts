@@ -15,8 +15,9 @@ export function buildCoverTokens(p: StoredProject): Replacement[] {
     p.versionNumber?.trim() && `Rev ${p.versionNumber.trim()}`,
     p.opportunityNumber?.trim() && `${oppPrefix} ${p.opportunityNumber.trim()}`,
   ].filter(Boolean).join('  ·  ')
-  const customerLine = [p.customerName?.trim(), p.facilityLocation?.trim()]
-    .filter(Boolean).join(' — ')
+  // Customer name only — the facility field often holds a full street address,
+  // which doesn't belong on a title page (location still shows on S18).
+  const customerLine = p.customerName?.trim() ?? ''
   const rep = p.bastianRep?.trim()
 
   const out: Replacement[] = []
