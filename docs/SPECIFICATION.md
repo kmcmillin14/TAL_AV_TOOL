@@ -44,9 +44,9 @@ modes 2 and 3 is the accepted file types and framing — there is no separate pa
 
 The hero bar stays compact and identical on every step (icon export menu:
 PPTX · XLSX · Working PDF · JSON; quiet transient save text; meta line exactly
-page-centered). On **Fleet Engine and ROM Dashboard (steps 03–04)** the labeled
-actions render in the PAGE header's blank space, right of the title
-(`src/components/ExportActions.tsx`):
+page-centered). On the **ROM Dashboard (step 04) only**, the labeled actions
+render in the page header's blank space, pinned to the page's right edge, each
+with its icon (`src/components/ExportActions.tsx`):
 
 - **`Save Revision ▾`** (ghost button + dropdown) — the internal/re-importable
   artifacts: **Working PDF (re-importable)** (`.pdf` with embedded JSON — the file

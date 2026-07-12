@@ -20,8 +20,9 @@
 - **Cycle popover composition bar.** The 4-px in-cell `CycleAnatomyBar` is deleted;
   the cycle cell shows seconds only. The click popover leads with a full-width
   labeled travel/transfer/lift bar, marking the transfer segment when overridden.
-- **Save Revision / Export to Customer live in the PAGE headers of Fleet
-  Engine + ROM Dashboard** (`ExportActions`, right of the step title) — the
+- **Save Revision / Export to Customer live in the ROM Dashboard page header
+  only** (`ExportActions`, pinned right of the step title, with save/export
+  icons; removed from Fleet Engine per owner direction) — the
   hero bar stays compact and identical on every step (icon export menu, now
   also carrying the re-importable Working PDF which previously had no UI
   trigger; quiet transient save text; meta line exactly page-centered). The

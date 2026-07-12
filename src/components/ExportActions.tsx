@@ -78,7 +78,7 @@ export default function ExportActions({ projectId }: { projectId: string }) {
           title="Save a re-importable revision file (PDF · JSON · XLSX)"
           onClick={() => setMenuOpen(o => !o)}
         >
-          Save Revision <Icon name="chevronD" size={12} />
+          <Icon name="save" size={14} /> Save Revision <Icon name="chevronD" size={12} />
         </button>
         {menuOpen && (
           <div className="header-menu-popover" role="menu">
@@ -105,7 +105,7 @@ export default function ExportActions({ projectId }: { projectId: string }) {
         title="Build the branded customer deck (.pptx)"
         onClick={exportPptx}
       >
-        Export to Customer
+        <Icon name="export" size={14} /> Export to Customer
       </button>
 
       {pptxProject && <PptxSectionPicker project={pptxProject} onClose={() => setPptxProject(null)} />}

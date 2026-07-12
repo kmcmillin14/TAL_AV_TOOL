@@ -117,7 +117,7 @@ export default function RomDashboardPage() {
       />
 
       <div className="workspace">
-        <div className="engine-head">
+        <div className="engine-head with-actions">
           <div className="eh-text">
             <span className="eh-eyebrow mono">Step 04 / 04</span>
             <h1 className="eh-title">ROM Dashboard</h1>

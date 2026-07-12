@@ -2876,14 +2876,16 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 /* ===== Fleet Engine — one cohesive iOS-grade surface ===== */
 
 /* Left-aligned large title (replaces the centered header on this page only). */
-.engine-head {
-  margin-bottom: 24px;
+.engine-head { margin-bottom: 24px; }
+/* Variant with page-header actions (ROM Dashboard): title block left, actions
+   pinned right. Plain .engine-head (Fleet Engine etc.) stays block flow. */
+.engine-head.with-actions {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
 }
-.engine-head .eh-text { flex: 1 1 auto; min-width: 0; }
+.engine-head.with-actions .eh-text { flex: 1 1 auto; min-width: 0; }
 /* Page-header actions (Save Revision · Export to Customer) — steps 03/04. */
 .eh-actions {
   display: flex;
@@ -2891,6 +2893,7 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   gap: 10px;
   flex-shrink: 0;
   padding-top: 6px;
+  margin-left: auto;   /* pin to the page's right edge */
 }
 .eh-actions .btn { height: 34px; padding: 0 14px; font-size: 12.5px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .eh-eyebrow {
