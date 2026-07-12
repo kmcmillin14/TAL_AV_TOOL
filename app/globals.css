@@ -171,11 +171,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .hero-top {
   position: relative;
   display: grid;
-  /* Equal 1fr side columns → the middle (meta) column lands on the exact PAGE
-     center, regardless of brand vs actions widths, so it aligns with the centered
-     page title below. minmax(0,auto) lets the meta wrap instead of overflowing when
-     the window is narrow. */
-  grid-template-columns: 1fr minmax(0, auto) 1fr;
+  /* Brand and actions take their natural width; the meta line owns whatever is
+     left (minmax(0,1fr)) and centers within it, wrapping to a second row when
+     tight. The former equal-1fr side columns pinned the meta to the exact page
+     center — but 1fr tracks never shrink below content, so when the actions
+     cluster grew (Save Revision / Export to Customer) the middle column was
+     crushed to 0 and the meta text painted UNDER the actions (2026-07-12). */
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: stretch;
   padding: 0 32px;
   border-bottom: 1px solid var(--border);
@@ -252,6 +254,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   justify-content: center;
   align-self: center;
   min-width: 0;
+  overflow: hidden;   /* pathological narrow: clip inside the column, never overlap neighbors */
   padding: 8px 12px;
   row-gap: 4px; column-gap: 0;
   pointer-events: auto;
