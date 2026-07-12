@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import PersistentHeader from '@/src/components/PersistentHeader'
+import ExportActions from '@/src/components/ExportActions'
 import Icon from '@/src/design-system/components/Icon'
 import { getProject, updateProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
@@ -145,12 +146,15 @@ export default function FleetEnginePage() {
 
       <div className="workspace">
         <div className="engine-head">
-          <span className="eh-eyebrow mono">Step 03 / 04</span>
-          <h1 className="eh-title">Fleet Engine</h1>
-          <p className="eh-sub">
-            Define material flows, then layer charging and a buffer to reach the total fleet —
-            base is engineering, charging is physics, buffer is policy.
-          </p>
+          <div className="eh-text">
+            <span className="eh-eyebrow mono">Step 03 / 04</span>
+            <h1 className="eh-title">Fleet Engine</h1>
+            <p className="eh-sub">
+              Define material flows, then layer charging and a buffer to reach the total fleet —
+              base is engineering, charging is physics, buffer is policy.
+            </p>
+          </div>
+          <ExportActions projectId={project.id} />
         </div>
 
         <div className="form-with-nav engine-layout">

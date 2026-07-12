@@ -171,13 +171,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .hero-top {
   position: relative;
   display: grid;
-  /* Brand and actions take their natural width; the meta line owns whatever is
-     left (minmax(0,1fr)) and centers within it, wrapping to a second row when
-     tight. The former equal-1fr side columns pinned the meta to the exact page
-     center — but 1fr tracks never shrink below content, so when the actions
-     cluster grew (Save Revision / Export to Customer) the middle column was
-     crushed to 0 and the meta text painted UNDER the actions (2026-07-12). */
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  /* Equal 1fr side columns → the middle (meta) column lands on the exact PAGE
+     center, regardless of brand vs actions widths, so it aligns with the centered
+     page title below. This only works while the actions cluster stays compact
+     (icons) — labeled buttons crushed the middle column to 0 and the meta painted
+     under them (2026-07-12), which is why Save Revision / Export to Customer live
+     in the step-3/4 PAGE headers (ExportActions), not this bar. */
+  grid-template-columns: 1fr minmax(0, auto) 1fr;
   align-items: stretch;
   padding: 0 32px;
   border-bottom: 1px solid var(--border);
@@ -2876,7 +2876,23 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 /* ===== Fleet Engine — one cohesive iOS-grade surface ===== */
 
 /* Left-aligned large title (replaces the centered header on this page only). */
-.engine-head { margin-bottom: 24px; }
+.engine-head {
+  margin-bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+.engine-head .eh-text { flex: 1 1 auto; min-width: 0; }
+/* Page-header actions (Save Revision · Export to Customer) — steps 03/04. */
+.eh-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+  padding-top: 6px;
+}
+.eh-actions .btn { height: 34px; padding: 0 14px; font-size: 12.5px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
 .eh-eyebrow {
   display: block;
   font-family: var(--tal-font-numeric);

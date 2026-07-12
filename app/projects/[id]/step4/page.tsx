@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
+import ExportActions from '@/src/components/ExportActions'
 import { useFleetData } from '@/src/lib/useFleetData'
 import { updateProject } from '@/src/lib/storage'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
@@ -117,12 +118,15 @@ export default function RomDashboardPage() {
 
       <div className="workspace">
         <div className="engine-head">
-          <span className="eh-eyebrow mono">Step 04 / 04</span>
-          <h1 className="eh-title">ROM Dashboard</h1>
-          <p className="eh-sub">
-            Rough-order fleet economics. Adjust the drivers on the left to run a what-if
-            scenario — every KPI and chart recomputes live; toggle Baseline / Scenario to compare.
-          </p>
+          <div className="eh-text">
+            <span className="eh-eyebrow mono">Step 04 / 04</span>
+            <h1 className="eh-title">ROM Dashboard</h1>
+            <p className="eh-sub">
+              Rough-order fleet economics. Adjust the drivers on the left to run a what-if
+              scenario — every KPI and chart recomputes live; toggle Baseline / Scenario to compare.
+            </p>
+          </div>
+          <ExportActions projectId={project.id} />
         </div>
 
         <div className="rom2-shell">
