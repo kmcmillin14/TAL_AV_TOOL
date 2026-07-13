@@ -6,9 +6,23 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import Icon from '@/src/design-system/components/Icon'
 import FlowRow from './FlowRow'
+import FlowCard from './FlowCard'
 import GroupHeader from './GroupHeader'
 import { sectionColor } from './sectionColor'
 import { effectiveGroups as computeEffectiveGroups } from '@/src/calc/flowMetrics'
+
+/** Track a media query without a dependency. Drives the ≤700px card layout. */
+function useIsNarrow(px = 700): boolean {
+  const [narrow, setNarrow] = useState(false)
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${px}px)`)
+    const update = () => setNarrow(mq.matches)
+    update()
+    mq.addEventListener('change', update)
+    return () => mq.removeEventListener('change', update)
+  }, [px])
+  return narrow
+}
 
 /** Patch the parent can apply atomically — flows and/or group list together. */
 export interface FlowsPatch {
@@ -82,6 +96,7 @@ export default function FlowsTable({
   onPatch,
 }: Props) {
   const metric = unitSystem === 'metric'
+  const narrow = useIsNarrow()
   const [focusGroup, setFocusGroup] = useState<string | null>(null)
 
   // ---- Fit-to-width: scale the fixed-width table down so the whole thing
@@ -179,6 +194,16 @@ export default function FlowsTable({
     next.splice(i + 1, 0, copy)
     onPatch({ flows: next })
   }
+  // Mobile reorder (no drag on touch): swap adjacent in the flows array.
+  // sectionName is preserved, so a swap never moves a flow out of its group.
+  const move = (id: string, dir: -1 | 1) => {
+    const i = flows.findIndex(f => f.id === id)
+    const j = i + dir
+    if (i === -1 || j < 0 || j >= flows.length) return
+    const next = [...flows]
+    ;[next[i], next[j]] = [next[j], next[i]]
+    onPatch({ flows: next })
+  }
 
   // ---- Group ops (no prompts — naming is inline in the header) ----
   const addGroup = () => {
@@ -256,6 +281,29 @@ export default function FlowsTable({
     />
   )
 
+  // Card layout (≤ 700px). Reorder via up/down buttons; enable/disable at the
+  // flows-array boundaries. GroupHeader is a <tr> (table-only), so groups get a
+  // lightweight mobile title + add-into-group button here.
+  let cardNum = 0
+  const renderFlowCard = (f: Flow) => {
+    const ai = flows.findIndex(x => x.id === f.id)
+    return (
+      <FlowCard
+        key={f.id}
+        index={cardNum++}
+        flow={f}
+        vehicles={vehicles}
+        derived={derivedByFlowId.get(f.id) ?? { cycleSeconds: null, rawVehicles: null, breakdown: null }}
+        unitSystem={unitSystem}
+        onChange={next => update(f.id, next)}
+        onDelete={() => remove(f.id)}
+        onDuplicate={() => duplicate(f.id)}
+        onMoveUp={ai > 0 ? () => move(f.id, -1) : undefined}
+        onMoveDown={ai < flows.length - 1 ? () => move(f.id, 1) : undefined}
+      />
+    )
+  }
+
   return (
     <div className="flows-table-wrap">
       <div className="flows-table-head">
@@ -279,6 +327,30 @@ export default function FlowsTable({
         <div className="flows-empty">
           <h3>No flows yet</h3>
           <p>Click <strong>+ Add flow</strong> below to model an origin → destination route, or <strong>+ Group</strong> to set up a zone first — or add flows in Step 1&apos;s Throughput &amp; distance section; they appear here. Cycle time and demand recompute as you type.</p>
+          <button type="button" className="flows-add-bottom" onClick={() => add()}>
+            <Icon name="plus" size={12} /> Add flow
+          </button>
+        </div>
+      ) : narrow ? (
+        <div className="flows-cards">
+          {effGroups.map(g => {
+            const groupFlows = flows.filter(f => f.sectionName === g)
+            const groupDemand = groupFlows.reduce((s, f) => s + (derivedByFlowId.get(f.id)?.rawVehicles ?? 0), 0)
+            return (
+              <div key={`gc-${g}`} className="fc-group">
+                <div className="fc-group-title">
+                  <span className="fc-group-dot" style={{ background: flowGroupColors[g] ?? sectionColor(g) }} />
+                  <span className="fc-group-name">{g}</span>
+                  <span className="fc-group-meta mono">{groupFlows.length} · {groupDemand.toFixed(2)} veh</span>
+                  <button type="button" className="btn ghost fc-group-add" onClick={() => add(g)}>
+                    <Icon name="plus" size={12} /> Flow
+                  </button>
+                </div>
+                {groupFlows.map(renderFlowCard)}
+              </div>
+            )
+          })}
+          {ungrouped.map(renderFlowCard)}
           <button type="button" className="flows-add-bottom" onClick={() => add()}>
             <Icon name="plus" size={12} /> Add flow
           </button>
