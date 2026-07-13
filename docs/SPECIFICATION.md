@@ -609,10 +609,15 @@ with three structural JS changes where CSS can't carry the layout.
   line and the step tabs scroll horizontally (swipe) instead of cramming.
 - **Steps 0/1.** Entry cards go single column (already at 880px); every `fld-grid-*` field
   grid collapses to one column at ≤ 600px.
-- **Fleet Engine flows ≤ 700px.** The fixed-width table (illegible under zoom-fit on a
-  phone) is replaced by **stacked flow cards** (`FlowCard.tsx`, gated by a `matchMedia`
-  hook in `FlowsTable.tsx`); HTML5 drag (dead on touch) becomes up/down reorder buttons.
-  Groups render as lightweight titles; full group rename/color/delete stays desktop.
+- **Fleet Engine flows ≤ 700px — phone-native list → sheet.** The table gives way to a
+  scannable summary list (`FlowListMobile`): read-only group headers (name · count ·
+  Σ demand · add-into-group), flow rows (index · route · vehicle · moves/hr · live demand
+  · chevron), and a sticky raw-demand footer. Tapping a row (or "+ Flow") opens a
+  full-screen editor (`FlowSheet`) with Cycle/Demand pinned live at the top and fields
+  grouped Route / Vehicle & transfer; every select (vehicle, transfer, avg. speed) opens a
+  bottom-sheet picker (`BottomSheet`/`SheetSelect` in `src/components/mobile/`). Delete is
+  in the sheet header. Reorder, duplicate, and group rename/color/delete stay desktop-only.
+  Autosave is live, so the sheet just closes on Done.
 - **ROM Dashboard ≤ 700px.** The drivers rail becomes a collapsible `<details>` (summary
   toggles on phone; forced open on desktop). KPI/gauge grids stack (existing 900/560
   rules); the page-header export actions wrap under the title.

@@ -70,7 +70,7 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
 
 - **Price is a range** (`minUsd` / `maxUsd`), never a single value. *Why:* real quotes vary by dealer, configuration, and contract terms; a single number would be false precision.
 
-- **Steps are independent and modular.** Each step's page lives at `app/projects/[id]/stepN/page.tsx`; step-specific subcomponents live at `src/components/stepN/`. A step page may import its **own** step's subcomponents plus any shared module (`src/components/PersistentHeader.tsx`, `src/lib/*`, `src/calc/*`); it must **not** import another step's internals. *Exception (2026-06-04):* the **Fleet Engine** (step 3) deliberately unifies the former Flows + Charging + Buffer steps into one page with internal **sub-tabs** (`src/components/engine/`), because the sizing waterfall (`base → +charging → ×buffer → total`) must flow through a single recompute. Nav steps are now `0 Start · 1 Application · 2 Vehicles · 3 Fleet Engine · 4 ROM Dashboard`. The Engine's Flows sub-tab reuses `src/components/step3/*`; new charging/buffer UI lives in `src/components/engine/*`.
+- **Steps are independent and modular.** Each step's page lives at `app/projects/[id]/stepN/page.tsx`; step-specific subcomponents live at `src/components/stepN/`. A step page may import its **own** step's subcomponents plus any shared module (`src/components/PersistentHeader.tsx`, `src/lib/*`, `src/calc/*`); it must **not** import another step's internals. *Exception (2026-06-04):* the **Fleet Engine** (step 3) deliberately unifies the former Flows + Charging + Buffer steps into one page with internal **sub-tabs** (`src/components/engine/`), because the sizing waterfall (`base → +charging → ×buffer → total`) must flow through a single recompute. Nav steps are now `0 Start · 1 Application · 2 Vehicles · 3 Fleet Engine · 4 ROM Dashboard`. The Engine's Flows sub-tab reuses `src/components/step3/*`; new charging/buffer UI lives in `src/components/engine/*`. Shared **mobile primitives** live in `src/components/mobile/` (peer to `PersistentHeader.tsx`) and may be imported by any step's page or subcomponents.
 
 - **Typography: Toyota Type is the only intentional font.** Body/heading uses `var(--tal-font-family)`, numerics use `var(--tal-font-numeric)`. The CSS variable definitions include a system-font fallback chain (`-apple-system`, `sans-serif`, etc.) for graceful degradation if the bundled font fails to load — that fallback chain is **not** a license to reference system fonts elsewhere. Never use Inter, Roboto, Arial, etc. as primary `font-family` values in components or new CSS.
 
@@ -82,6 +82,7 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
 | `src/lib/vehicleLibrary.ts` | `fs`, `path` (server only) | React, `localStorage` |
 | `src/lib/storage.ts` | `localStorage`, Zod schemas | `fs`, React |
 | `src/components/*` | calc, lib, design-system | direct `fs` or `localStorage` (always go through `storage.ts`) |
+| `src/components/mobile/*` | React, calc, lib, design-system | direct `fs`/`localStorage` (go through `storage.ts`) |
 | `app/**/page.tsx` | components, lib, calc | new inline calculation code (push to `src/calc/`) |
 
 ## 5. Folder map
@@ -96,6 +97,7 @@ tal-fleet-calculator/
 ├── src/
 │   ├── calc/                     # pure calculation engine
 │   ├── components/               # shared UI + per-step subcomponents (stepN/)
+│   │   ├── mobile/               # shared phone-native primitives (BottomSheet, SheetSelect, MobileHeader)
 │   ├── content/vehicles/*.json   # canonical vehicle library (6 records today)
 │   ├── design-system/            # design tokens, Icon component
 │   └── lib/                      # storage, vehicleLibrary, utils, validations

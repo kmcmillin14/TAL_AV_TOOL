@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-12 — Mobile-native foundation + Step 3 flows list/sheet
+
+- New shared mobile primitives in `src/components/mobile/`: `BottomSheet`
+  (portal slide-up overlay), `SheetSelect` (bottom-sheet option picker),
+  `MobileHeader`. First reuse target for every step's phone UI.
+- Fleet Engine flows ≤ 700px become a summary list → full-screen edit sheet
+  (`FlowListMobile` / `FlowSheet`) with live Cycle/Demand at the top and
+  bottom-sheet pickers — replacing the stacked `FlowCard` (deleted). Desktop
+  table unchanged; no calc/schema change. First of a per-step mobile rollout
+  (spec: docs/superpowers/specs/2026-07-12-mobile-native-foundation-step3-design.md).
+
 ## 2026-07-12 — Mobile-friendly across every step
 
 - Touch foundation: `@media (hover: none)` keeps flow-row actions visible on
