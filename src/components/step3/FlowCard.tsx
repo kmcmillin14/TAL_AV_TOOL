@@ -106,7 +106,7 @@ export default function FlowCard({
             onOverrideChange={sec => onChange({ ...flow, transferSecOverride: sec })}
           />
         ))}
-        {field('Layout', (
+        {field('Avg. Speed', (
           <SpeedsUsedSelect
             value={flow.routeLayout}
             vehicle={v}

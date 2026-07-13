@@ -392,7 +392,7 @@ export default function FlowsTable({
                 <th>Vehicle</th>
                 <th>Transfer</th>
                 <th title="Route layout sets the route-average speed as a fraction of rated cruise. 70% is the realistic ceiling — no route sustains full cruise once accel/decel/turns are averaged in.">
-                  Layout
+                  Avg. Speed
                 </th>
                 <th>Origin</th>
                 <th>Destination</th>
