@@ -321,8 +321,37 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 @media (max-width: 700px) {
-  .hero-top { padding: 0 16px; }
+  /* Stack the three-column hero into decks: brand, then meta, then actions —
+     the equal-1fr centering can't survive at phone width. */
+  .hero-top {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: 6px 12px;
+    row-gap: 2px;
+  }
+  .hero-top > .hero-brand { padding: 6px 0 2px; justify-self: start; }
+  .hero-top > .hero-actions {
+    padding: 0 0 6px;
+    justify-self: start;
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+  .hero-brand .logo { height: 24px; }
+  .hero-meta-line {
+    justify-content: flex-start;
+    padding: 2px 0 6px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    flex-wrap: nowrap;
+  }
+  .hero-meta-line::-webkit-scrollbar { display: none; }
+  .hero-meta-item { padding: 4px 6px; flex-shrink: 0; }
   .hero-meta-sep { display: none; }
+  /* Step tabs swipe horizontally instead of cramming five into 390px. */
+  .step-dots { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  .step-dots::-webkit-scrollbar { display: none; }
+  .step-dot { flex: 0 0 auto; min-width: 130px; }
 }
 
 /* OPP / LEAD dropdown disguised as a label */
@@ -732,6 +761,17 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .span-3 { grid-column: span 3; }
 .span-4 { grid-column: span 4; }
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+/* Phone: every Step-1 field grid collapses to a single column, spans reset,
+   and inputs render ≥16px so iOS Safari doesn't auto-zoom the page on focus. */
+@media (max-width: 600px) {
+  .fld-grid-4, .fld-grid-3, .fld-grid-2, .fld-row-3, .form-row-2 {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+  .span-2, .span-3, .span-4 { grid-column: span 1; }
+  input, select, textarea { font-size: 16px; }
+}
 
 .fld { display: flex; flex-direction: column; gap: 6px; }
 /* Currency field — "$" prefix inside the input. */
@@ -2220,6 +2260,11 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .flow-row:hover .flow-act-inner,
 .flow-row:focus-within .flow-act-inner { opacity: 1; }
+/* Touch devices have no hover — the row actions must always be visible there,
+   or duplicate/delete/derivation become unreachable on a phone or tablet. */
+@media (hover: none) {
+  .flow-act-inner { opacity: 1; }
+}
 .flow-act-btn {
   display: inline-flex;
   align-items: center;
@@ -2236,6 +2281,13 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .flow-duplicate:hover { color: var(--accent); }
 .flow-delete:hover { color: var(--bad); }
 .flow-act-btn:disabled { opacity: 0.3; cursor: default; }
+
+/* Coarse pointers (touch) need ≥40px tap targets — the desktop 24–30px icons
+   are too small to hit reliably on a phone. */
+@media (pointer: coarse) {
+  .tbtn-icon, .flow-act-btn { min-width: 40px; min-height: 40px; }
+  .header-menu-item { padding-top: 12px; padding-bottom: 12px; }
+}
 
 /* ===== Step 3 — fleet derivation panel (worksheet: formula → result) ===== */
 .deriv-panel { width: 340px; max-width: 92vw; padding: 14px 16px; text-align: left; }
