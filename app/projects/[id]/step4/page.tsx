@@ -130,15 +130,20 @@ export default function RomDashboardPage() {
         </div>
 
         <div className="rom2-shell">
-          <RomDrivers
-            baseline={baselineDrivers}
-            drivers={drivers}
-            onChange={setDrivers}
-            onApply={applyToBaseline}
-            hasOverrides={hasOverrides}
-            mode={mode}
-            onMode={setMode}
-          />
+          {/* Collapsible on phones (summary shows ≤ 700px); always open on
+              desktop via CSS (summary hidden, content forced visible). */}
+          <details className="rom-drivers-collapse" open>
+            <summary>Drivers &amp; scenario</summary>
+            <RomDrivers
+              baseline={baselineDrivers}
+              drivers={drivers}
+              onChange={setDrivers}
+              onApply={applyToBaseline}
+              hasOverrides={hasOverrides}
+              mode={mode}
+              onMode={setMode}
+            />
+          </details>
 
           <div className="rom2-main">
             <div className={`rom2-kpiband ${showScenario ? 'is-scenario' : ''}`}>

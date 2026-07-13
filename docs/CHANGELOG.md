@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-12 — Mobile-friendly across every step
+
+- Touch foundation: `@media (hover: none)` keeps flow-row actions visible on
+  touch (were hover-only, unreachable); `@media (pointer: coarse)` gives ≥ 40px
+  tap targets; ≤ 600px inputs are 16px so iOS Safari doesn't auto-zoom on focus.
+- Hero bar ≤ 700px stacks into decks; meta line + step tabs swipe horizontally.
+- Step-1 field grids (`fld-grid-*`) collapse to one column ≤ 600px.
+- Fleet Engine flows ≤ 700px render as stacked cards (`FlowCard`, matchMedia
+  hook in `FlowsTable`) with up/down reorder buttons replacing HTML5 drag.
+- ROM Dashboard ≤ 700px: collapsible `<details>` drivers rail (open on desktop);
+  export actions wrap under the title.
+- Overlays: `FloatingPanel` width-clamped to the viewport; cycle popover
+  `max-width: calc(100vw − 24px)`; Step-2 compare modal full-screen ≤ 700px.
+- Plan: docs/superpowers/plans/2026-07-12-mobile-friendly.md.
+
 ## 2026-07-11 — Fleet Engine flows table + header actions
 
 - **Flows table normalized.** One control species per input cell: `Vehicle`,

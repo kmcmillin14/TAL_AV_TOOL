@@ -1275,7 +1275,12 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   padding: 12px 24px; border-top: 1px solid var(--border); flex-shrink: 0;
 }
 .cmp-foot-note { font-size: 11px; color: var(--text-tertiary); }
-@media (max-width: 700px) { .cmp-overlay { padding: 12px; } }
+/* Phone: the vehicle-comparison modal goes full-screen so its wide table is
+   scrollable instead of crushed. */
+@media (max-width: 700px) {
+  .cmp-overlay { padding: 0; }
+  .cmp-modal { border-radius: 0; max-width: 100%; height: 100%; max-height: 100%; }
+}
 
 /* ── Branded-PPTX section picker (reuses .cmp-* modal shell + .chk checkboxes) ── */
 .pptx-pick-modal { max-width: 560px; }
@@ -2719,6 +2724,7 @@ button.fc-out-cell:disabled { cursor: default; }
   right: 0;
   z-index: 20;
   min-width: 220px;
+  max-width: calc(100vw - 24px);   /* stay on-screen on a phone */
   padding: 12px 14px;
   background: var(--bg-surface-2);
   border: 1px solid var(--border-strong);
@@ -3322,6 +3328,31 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 @media (max-width: 560px) {
   .rom2-hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* Drivers rail as a native <details>. Desktop: no summary, content always shown
+   (the min-width guard forces content visible even if collapsed on a phone then
+   widened). Phone: summary toggles the panel. */
+.rom-drivers-collapse { min-width: 0; }
+.rom-drivers-collapse > summary { display: none; }
+@media (min-width: 701px) {
+  .rom-drivers-collapse:not([open]) > :not(summary) { display: block; }
+}
+@media (max-width: 700px) {
+  .rom-drivers-collapse > summary {
+    display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+    padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px;
+    font-weight: 700; font-size: 13px; color: var(--text-primary); list-style: none;
+  }
+  .rom-drivers-collapse > summary::-webkit-details-marker { display: none; }
+  .rom-drivers-collapse > summary::after { content: '⌄'; color: var(--text-tertiary); font-size: 14px; }
+  .rom-drivers-collapse[open] > summary { margin-bottom: 12px; }
+  .rom-drivers-collapse[open] > summary::after { content: '⌃'; }
+  /* Export buttons wrap beneath the title on a phone instead of overflowing. */
+  .engine-head.with-actions { flex-wrap: wrap; }
+  .engine-head.with-actions .eh-actions { margin-left: 0; padding-top: 2px; }
+  /* Operation map (flow diagram) scrolls horizontally rather than shrinking. */
+  .rom2-opmap-scroll, .rom-opmap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
 
 /* ============================================ STEP 4 — DASHBOARD REBUILD (.rom2-*) ============================================ */

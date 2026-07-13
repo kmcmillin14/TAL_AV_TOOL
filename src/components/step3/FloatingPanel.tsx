@@ -75,6 +75,9 @@ export default function FloatingPanel({ anchorRef, open, onClose, align = 'left'
     position: 'fixed',
     zIndex: 200,
     overflowY: 'auto',
+    // Never exceed the viewport width — on a phone a fixed panel anchored near
+    // an edge would otherwise run off-screen even with the position clamp.
+    maxWidth: window.innerWidth - 2 * MARGIN,
     ...vertical,
     ...horizontal,
   }

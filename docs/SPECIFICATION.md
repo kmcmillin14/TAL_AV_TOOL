@@ -595,6 +595,33 @@ the density the team prefers, equivalent to setting the browser to 80% zoom whil
 browser itself stays at 100%. `zoom` is used (not a transform) so viewport units and
 the full-height layouts stay correct.
 
+## Responsive behavior (mobile, added 2026-07-12)
+
+Full review and light editing on a phone (390px); heavy data entry stays comfortable on
+desktop. CSS-first via the `globals.css` `@media` ladder (480/560/600/700/900/1000/1200),
+with three structural JS changes where CSS can't carry the layout.
+
+- **Touch foundation.** `@media (hover: none)` keeps the flow-row action buttons visible
+  (they're hover-revealed on desktop, else unreachable on touch); `@media (pointer: coarse)`
+  enforces ≥ 40px tap targets. Inputs render ≥ 16px at ≤ 600px so iOS Safari doesn't
+  auto-zoom the page on focus.
+- **Hero bar ≤ 700px.** The three-column bar stacks (brand → meta → actions); the meta
+  line and the step tabs scroll horizontally (swipe) instead of cramming.
+- **Steps 0/1.** Entry cards go single column (already at 880px); every `fld-grid-*` field
+  grid collapses to one column at ≤ 600px.
+- **Fleet Engine flows ≤ 700px.** The fixed-width table (illegible under zoom-fit on a
+  phone) is replaced by **stacked flow cards** (`FlowCard.tsx`, gated by a `matchMedia`
+  hook in `FlowsTable.tsx`); HTML5 drag (dead on touch) becomes up/down reorder buttons.
+  Groups render as lightweight titles; full group rename/color/delete stays desktop.
+- **ROM Dashboard ≤ 700px.** The drivers rail becomes a collapsible `<details>` (summary
+  toggles on phone; forced open on desktop). KPI/gauge grids stack (existing 900/560
+  rules); the page-header export actions wrap under the title.
+- **Overlays.** `FloatingPanel` caps its width to the viewport; the cycle popover gets a
+  `max-width: calc(100vw − 24px)`; the Step-2 comparison modal goes full-screen ≤ 700px.
+
+Known limitation: iOS Safari may open blob downloads (PDF/PPTX) in a viewer rather than
+saving directly — the file is still retrievable via the viewer's share sheet.
+
 ## App-wide help
 
 A single **`?` button** in the persistent header opens a **full-screen Help guide**
