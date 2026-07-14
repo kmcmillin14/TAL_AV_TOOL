@@ -8,6 +8,18 @@
   exporters' wrap/measure chokepoint and the direct name/value draws — maps the
   app's non-Win1252 glyphs (→ ⌈⌉ ✓ ✗ ≥ ≤ …) to ASCII, keeps Win1252 chars
   (× ÷ · — …), and replaces anything else with "?" so drawing never crashes.
+- **Charging shown per flow** — the Fleet Engine Charging sub-tab rendered one
+  row per flow, repeating each vehicle pool's (correct, per-pool) charging on
+  every flow. Now one row per vehicle pool (`ChargingPipeline`).
+- **Flows table crushed to unreadable lines** — the fit-to-width `zoom`
+  re-derived the natural width every resize as `offsetWidth / appliedScale`, a
+  browser-inconsistent feedback loop that spiralled the scale toward 0. Natural
+  width is now captured once (columns are fixed), so the scale is stable.
+- **Unit toggle drift** — Step-1 unit inputs are uncontrolled, so a unit switch
+  left the old-unit number under the new-unit label and the next edit mis-parsed
+  it (kg read as lbs), inflating stored values with growing decimals. The form
+  now remounts on toggle (re-reading storage so edits survive), and the imperial
+  display is rounded so metric-origin floats don't show long tails.
 
 ## 2026-07-12 — Mobile-native foundation + Step 3 flows list/sheet
 
