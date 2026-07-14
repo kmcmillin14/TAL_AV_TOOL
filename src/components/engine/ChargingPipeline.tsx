@@ -1,6 +1,6 @@
 'use client'
 
-import type { FleetGroup, Flow, FlowDerived } from '@/src/calc/types'
+import type { FleetGroup, Flow } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import DerivTrigger from '@/src/components/step3/DerivTrigger'
@@ -14,7 +14,6 @@ interface Props {
   flows: Flow[]
   vehicleById: Map<string, Vehicle>
   groupByVehicle: Map<string, FleetGroup>
-  derivedByFlowId: Map<string, FlowDerived>
   dailyOpHr: number
   breakHrs: number
   consecutiveOpDays: number
@@ -26,19 +25,21 @@ interface Props {
 
 const fmtH = (h: number | null | undefined) => (h == null ? '—' : `${h.toFixed(1)} h`)
 const fmtPct = (a: number | null | undefined) => (a == null ? '—' : `${Math.round(a * 100)}%`)
-const fmtCycle = (s: number | null | undefined) => (s == null ? '—' : `${Math.round(s)}s`)
 
 /**
- * Charging stage of the pipeline — the SAME per-flow rows as Flows, inputs
- * collapsed, now showing each flow's vehicle battery profile + the extra
- * vehicles charging pools in for that vehicle type. Schedule (shifts/hours) and the
- * operating-days pattern are editable here; everything else is computed (read-only).
+ * Charging stage of the pipeline — ONE row per vehicle POOL (not per flow):
+ * charging is a pool property (battery profile + extra vehicles to cover
+ * recharge downtime), computed once per vehicle type, so it must render once
+ * per type — not repeated on every flow. Schedule (shifts/hours) and the
+ * operating-days pattern are editable here; everything else is read-only.
  */
 export default function ChargingPipeline({
-  flows, vehicleById, groupByVehicle, derivedByFlowId,
+  flows, vehicleById, groupByVehicle,
   dailyOpHr, breakHrs, consecutiveOpDays, shiftsPerDay, hoursPerShift, daysPerWeek, onPatch,
 }: Props) {
-  const rows = flows.filter(f => f.vehicleId)
+  // Distinct vehicle pools in first-assignment order (one charging row each).
+  const poolIds = [...new Set(flows.filter(f => f.vehicleId).map(f => f.vehicleId!))]
+  const flowCountFor = (vid: string) => flows.filter(f => f.vehicleId === vid).length
 
   return (
     <div className="engine-panel pipeline-wrap">
@@ -91,15 +92,14 @@ export default function ChargingPipeline({
         </div>
       </div>
 
-      {rows.length === 0 ? (
+      {poolIds.length === 0 ? (
         <div className="fs-empty">Assign vehicles to flows to model charging.</div>
       ) : (
         <table className="charge-table">
           <thead>
             <tr>
-              <th>Flow</th>
-              <th className="num">Cycle</th>
-              <th className="num">Vehicles</th>
+              <th>Vehicle pool</th>
+              <th className="num">Demand</th>
               <th className="num">Runtime</th>
               <th className="num">Recharge</th>
               <th className="num">Availability</th>
@@ -108,23 +108,22 @@ export default function ChargingPipeline({
             </tr>
           </thead>
           <tbody>
-            {rows.map(f => {
-              const g = groupByVehicle.get(f.vehicleId!)
+            {poolIds.map(vid => {
+              const g = groupByVehicle.get(vid)
               const c = g?.charging
-              const d = derivedByFlowId.get(f.id)
-              const veh = vehicleById.get(f.vehicleId!)
+              const veh = vehicleById.get(vid)
               const delta = c?.chargingDelta ?? 0
+              const n = flowCountFor(vid)
               return (
-                <tr key={f.id}>
+                <tr key={vid}>
                   <td>
                     <span className="ct-veh">
                       <VehicleDot vehicle={veh} size="sm" />
-                      {veh?.name ?? f.vehicleId}
-                      <span className="pl-route mono">{f.origin || '—'} → {f.destination || '—'}</span>
+                      {veh?.name ?? vid}
+                      <span className="pl-route mono">{n} flow{n === 1 ? '' : 's'}</span>
                     </span>
                   </td>
-                  <td className="num mono">{fmtCycle(d?.cycleSeconds)}</td>
-                  <td className="num mono">{d?.rawVehicles == null ? '—' : d.rawVehicles.toFixed(2)}</td>
+                  <td className="num mono">{g == null ? '—' : g.groupRaw.toFixed(2)}</td>
                   <td className="num mono">{fmtH(c?.runHr)}</td>
                   <td className="num mono">{fmtH(c?.chargeHr)}</td>
                   <td className="num mono">{fmtPct(c?.availability)}</td>
@@ -137,7 +136,7 @@ export default function ChargingPipeline({
                     {g && veh && (
                       <DerivTrigger
                         derivation={() => chargingDerivation(g, veh, { dailyOpHr, breakHrs, consecutiveOpDays })}
-                        route={`${f.origin || '—'} → ${f.destination || '—'}`}
+                        route={veh.name}
                         disabled={!c?.sustainable}
                       />
                     )}

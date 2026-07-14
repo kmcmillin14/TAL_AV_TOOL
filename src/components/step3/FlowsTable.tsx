@@ -100,11 +100,17 @@ export default function FlowsTable({
   const [focusGroup, setFocusGroup] = useState<string | null>(null)
 
   // ---- Fit-to-width: scale the fixed-width table down so the whole thing
-  // (incl. full AGV names) fits any screen, instead of horizontal scroll.
-  // `zoom` keeps it crisp and reflows correctly; never scales above 1.
+  // (incl. full AGV names) fits, instead of horizontal scroll. `zoom` keeps it
+  // crisp and reflows correctly; never scales above 1.
+  //
+  // The natural (unzoomed) width is captured ONCE — the columns are fixed via
+  // the colgroup, so it never changes. The previous code re-derived it every
+  // resize as `offsetWidth / appliedScale`, a feedback loop: `offsetWidth`
+  // reflecting `zoom` is browser-inconsistent, so the scale spiralled toward 0
+  // and crushed the rows into unreadable lines (worse the narrower you started).
   const fitRef = useRef<HTMLDivElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
-  const appliedScale = useRef(1)
+  const naturalWidth = useRef(0)
   const [tableScale, setTableScale] = useState(1)
   useEffect(() => {
     const wrap = fitRef.current
@@ -114,13 +120,13 @@ export default function FlowsTable({
     const fit = () => {
       cancelAnimationFrame(raf)
       raf = requestAnimationFrame(() => {
-        // offsetWidth reflects the currently-applied zoom, so divide it back out
-        // to recover the table's natural (unscaled) width.
-        const natural = table.offsetWidth / (appliedScale.current || 1)
+        // Capture natural width on the first laid-out measure. Zoom is still 1
+        // here: it starts at 1 and we never call setTableScale until this is
+        // captured (we return early while width is 0), so the measure is clean.
+        if (!naturalWidth.current) naturalWidth.current = table.offsetWidth
+        const natural = naturalWidth.current
         if (!natural) return
-        const next = Math.min(1, wrap.clientWidth / natural)
-        appliedScale.current = next
-        setTableScale(next)
+        setTableScale(Math.min(1, wrap.clientWidth / natural))
       })
     }
     fit()
