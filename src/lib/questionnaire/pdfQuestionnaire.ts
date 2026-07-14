@@ -2,6 +2,7 @@
 // envelope builder (split-ready: no storage, no calc, no step internals).
 import { type PartialProjectFormData } from '@/src/lib/validations/schemas'
 import { buildQuestionnaireEnvelope } from './questionnaireExport'
+import { winAnsiSafe } from '@/src/lib/utils/winAnsi'
 
 const TAL_RED_RGB = [235 / 255, 10 / 255, 30 / 255] as const
 
@@ -29,8 +30,9 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   const W = 612, H = 792, MX = 56
 
   type PDFFont = Awaited<ReturnType<typeof pdfDoc.embedFont>>
-  const wrap = (text: string, useFont: PDFFont, size: number, maxW: number): string[] => {
-    if (!text) return ['']
+  const wrap = (raw: string, useFont: PDFFont, size: number, maxW: number): string[] => {
+    if (!raw) return ['']
+    const text = winAnsiSafe(raw)   // WinAnsi font can't measure/draw e.g. "→"
     const out: string[] = []
     for (const para of text.split(/\n+/)) {
       const words = para.split(/\s+/).filter(Boolean)
@@ -94,7 +96,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   const submitted = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
   page.drawText('AV QUESTIONNAIRE', { x: MX, y: H - 110, size: 10, font: bold, color: TAL_RED })
   page.drawLine({ start: { x: MX, y: H - 120 }, end: { x: W - MX, y: H - 120 }, thickness: 0.5, color: RULE })
-  page.drawText(p.customerName || p.projectName || 'Untitled Opportunity', { x: MX, y: H - 156, size: 24, font: bold, color: TEXT })
+  page.drawText(winAnsiSafe(p.customerName || p.projectName || 'Untitled Opportunity'), { x: MX, y: H - 156, size: 24, font: bold, color: TEXT })
   page.drawText(`Submitted ${submitted}`, { x: MX, y: H - 178, size: 13, font, color: MUTED })
   y = H - 220
 

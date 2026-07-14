@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-13 — Bug fixes: PDF encoding, charging display, table fit, unit toggle
+
+- **PDF export crash** — the questionnaire/proposal PDFs use a WinAnsi
+  (Windows-1252) standard font that threw on the route arrow "→" (U+2192).
+  New `winAnsiSafe()` (src/lib/utils/winAnsi.ts) sanitizes text at both PDF
+  exporters' wrap/measure chokepoint and the direct name/value draws — maps the
+  app's non-Win1252 glyphs (→ ⌈⌉ ✓ ✗ ≥ ≤ …) to ASCII, keeps Win1252 chars
+  (× ÷ · — …), and replaces anything else with "?" so drawing never crashes.
+
 ## 2026-07-12 — Mobile-native foundation + Step 3 flows list/sheet
 
 - New shared mobile primitives in `src/components/mobile/`: `BottomSheet`

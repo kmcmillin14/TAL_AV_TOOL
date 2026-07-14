@@ -1,4 +1,5 @@
 import { SCHEMA_VERSION, type StoredProject } from './storage'
+import { winAnsiSafe } from './utils/winAnsi'
 import { qualifyVehicle } from '../calc/trafficLight'
 import { appRequirementsFromProject } from './appRequirements'
 import type { Vehicle } from './vehicleLibrary'
@@ -76,8 +77,9 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
 
   // ─────────── text-wrapping helper ───────────
   type PDFFont = Awaited<ReturnType<typeof pdfDoc.embedFont>>
-  const wrapText = (text: string, useFont: PDFFont, size: number, maxWidth: number): string[] => {
-    if (!text) return ['']
+  const wrapText = (raw: string, useFont: PDFFont, size: number, maxWidth: number): string[] => {
+    if (!raw) return ['']
+    const text = winAnsiSafe(raw)   // WinAnsi font can't measure/draw e.g. "→"
     const paragraphs = text.split(/\n+/)
     const out: string[] = []
     for (const para of paragraphs) {
@@ -142,7 +144,7 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
       page.drawText(line, { x: MX, y: titleY, size: 28, font: bold, color: TEXT })
       titleY -= 34
     }
-    page.drawText(project.customerName || 'Customer —', {
+    page.drawText(winAnsiSafe(project.customerName || 'Customer —'), {
       x: MX, y: titleY + 4, size: 14, font, color: MUTED,
     })
 
@@ -157,7 +159,7 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
     let y = titleY - 50
     for (const [k, v] of rows) {
       page.drawText(k.toUpperCase(), { x: MX, y, size: 8, font: bold, color: MUTED })
-      page.drawText(v, { x: MX + 110, y, size: 11, font, color: TEXT })
+      page.drawText(winAnsiSafe(v), { x: MX + 110, y, size: 11, font, color: TEXT })
       y -= 22
     }
 
