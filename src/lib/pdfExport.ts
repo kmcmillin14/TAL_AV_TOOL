@@ -346,8 +346,8 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
         rgb(0.85, 0.20, 0.20)
 
       page.drawCircle({ x: MX + 5, y: y + 4, size: 4, color: statusColor })
-      page.drawText(vehicle.name, { x: MX + 18, y, size: 11, font: bold, color: TEXT })
-      page.drawText(vehicle.display.manufacturer, { x: MX + 18, y: y - 12, size: 8, font, color: MUTED })
+      page.drawText(winAnsiSafe(vehicle.name), { x: MX + 18, y, size: 11, font: bold, color: TEXT })
+      page.drawText(winAnsiSafe(vehicle.display.manufacturer), { x: MX + 18, y: y - 12, size: 8, font, color: MUTED })
       page.drawText(result.status, { x: W - MX - 60, y, size: 9, font: bold, color: statusColor })
       y -= 16
 
