@@ -62,7 +62,19 @@ export function formatImperialForDisplay(
 ): string {
   if (value == null || isNaN(value)) return ''
 
-  if (displaySystem === 'imperial') return String(value)
+  // Round the imperial display too — a value that originated from a metric
+  // entry is a long float (e.g. 2000.0176 lbs from kg ÷ 0.453592). Showing the
+  // raw float made numbers look like they "gained decimals" on every unit
+  // switch; round to a sane precision (weights/temps whole, lengths 1 decimal).
+  if (displaySystem === 'imperial') {
+    switch (storedUnit) {
+      case 'lbs': return String(Math.round(value))
+      case 'in':  return String(Math.round(value * 10) / 10)
+      case 'ft':  return String(Math.round(value * 10) / 10)
+      case 'F':   return String(Math.round(value))
+      default:    return String(value)
+    }
+  }
 
   switch (storedUnit) {
     case 'lbs': return String(Math.round(value * 0.453592 * 10) / 10)

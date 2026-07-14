@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import ApplicationForm from '@/src/components/step1/ApplicationForm'
@@ -31,6 +31,19 @@ export default function Step1Page() {
     window.addEventListener('tal:undo', onUndo)
     return () => window.removeEventListener('tal:undo', onUndo)
   }, [id])
+
+  // Remount the form on a unit toggle. The inputs are uncontrolled
+  // (defaultValue), so a changed unit alone doesn't refresh them — without a
+  // remount they show the old-unit number under the new-unit label and the next
+  // edit mis-parses (kg read as lbs), inflating the stored value. Re-read from
+  // storage first so autosaved edits survive the remount. Skip the first run
+  // (initial mount / localStorage hydration).
+  const firstUnitRun = useRef(true)
+  useEffect(() => {
+    if (firstUnitRun.current) { firstUnitRun.current = false; return }
+    const p = getProject(id)
+    if (p) { setProject(p); setFormKey(k => k + 1) }
+  }, [unitSystem, id])
 
   if (loading) return (
     <div className="app-shell">
