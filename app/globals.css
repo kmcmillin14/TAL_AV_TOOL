@@ -1632,6 +1632,11 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   .entry-card-cta { margin-top: 24px; }
 }
 
+/* Phone: 16px setup-detail inputs so iOS Safari doesn't zoom on focus. */
+@media (max-width: 700px) {
+  .setup-meta-item input, .setup-opp-prefix { font-size: 16px; }
+}
+
 /* ============================================ HEADER — UNIT TOGGLE + OVERFLOW MENU ============================================ */
 
 .unit-pill {
