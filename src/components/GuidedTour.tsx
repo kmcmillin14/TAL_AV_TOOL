@@ -20,7 +20,7 @@ interface Step {
 // engineering discipline the tool is built around.
 const STEPS: Step[] = [
   {
-    target: '.hero-nav',
+    target: '.hero-nav .step-dots',
     title: 'Four steps, one flow',
     body: 'This tool sizes an AGV/AMR fleet in four steps. The engineering discipline behind it: Cut waste → Connect the moves → Add the economics. Here is where each step lives.',
   },
@@ -123,7 +123,7 @@ export default function GuidedTour() {
 
   if (!open || typeof document === 'undefined') return null
 
-  const PAD = 8
+  const PAD = 3
   const spot = rect
     ? { top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2 }
     : null

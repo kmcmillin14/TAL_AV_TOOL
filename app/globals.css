@@ -321,33 +321,45 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   box-shadow: 0 0 0 2px var(--accent-soft);
 }
 @media (max-width: 700px) {
-  /* Stack the three-column hero into decks: brand, then meta, then actions —
-     the equal-1fr centering can't survive at phone width. */
+  /* Stack the three-column hero into centered decks: brand, then meta, then
+     actions — the equal-1fr centering can't survive at phone width, so each row
+     is centered on its own for a tidy, symmetric header. */
   .hero-top {
     grid-template-columns: 1fr;
     min-height: 0;
-    padding: 6px 12px;
-    row-gap: 2px;
+    padding: 8px 12px;
+    row-gap: 4px;
+    justify-items: center;
   }
-  .hero-top > .hero-brand { padding: 6px 0 2px; justify-self: start; }
+  .hero-top > .hero-brand { padding: 2px 0; justify-self: center; }
+  .hero-brand { justify-content: center; }
   .hero-top > .hero-actions {
-    padding: 0 0 6px;
-    justify-self: start;
+    padding: 2px 0;
+    justify-self: center;
+    justify-content: center;
     flex-wrap: wrap;
     row-gap: 6px;
   }
   .hero-brand .logo { height: 24px; }
   .hero-meta-line {
-    justify-content: flex-start;
-    padding: 2px 0 6px;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-    flex-wrap: nowrap;
+    justify-content: center;
+    padding: 2px 0;
+    flex-wrap: wrap;
+    row-gap: 4px;
+    text-align: center;
   }
-  .hero-meta-line::-webkit-scrollbar { display: none; }
-  .hero-meta-item { padding: 4px 6px; flex-shrink: 0; }
+  .hero-meta-item { padding: 4px 8px; flex-shrink: 0; justify-content: center; }
   .hero-meta-sep { display: none; }
+  /* Page titles read centered on a phone (Vehicle Compatibility, ROM Dashboard…). */
+  .page-header { align-items: center; text-align: center; }
+  .page-title { align-items: center; text-align: center; }
+  .page-title h1, .page-title .desc, .page-title .step-num { text-align: center; }
+  .engine-head, .eh-text { text-align: center; }
+  .page-title .desc, .eh-sub { margin-left: auto; margin-right: auto; }
+  .status-pills, .req-summary { justify-content: center; }
+  /* The page-header's absolutely-pinned action row (save/units chip) returns to
+     normal flow, centered under the title, so it doesn't overlap on a phone. */
+  .page-header > .row { position: static; justify-content: center; }
   /* Step tabs swipe horizontally instead of cramming five into 390px. The
      current tab is auto-scrolled into view (PersistentHeader) and tinted so the
      user can see where they are in the flow. The nav clips to its own width and a
