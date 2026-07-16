@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-15 — Ribbon fits at every width (tablet/laptop spill fixed)
+
+- **Root cause of the step-ribbon spill:** the tabs are flex items whose default
+  `min-width:auto` = their label's intrinsic width, so between ~700–1050px the 5
+  tabs' combined min-width exceeded the viewport and the last tab (ROM) ran off
+  the right edge — the `≤700px` scroll rule didn't cover that band. Fixed by
+  letting each tab shrink (`min-width:0`, `white-space:nowrap`, name ellipsis) and
+  tightening the label (padding/tracking) so all five always fit cleanly on
+  desktop/tablet; phones keep the swipeable scroll strip.
+
 ## 2026-07-15 — Ribbon overflow, tour alignment, simplified ROM actions
 
 - **Step ribbon overflow** — on a phone the nav now clips to its own width with a
