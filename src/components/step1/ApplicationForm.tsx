@@ -192,10 +192,19 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     onBlurSave()
   }
 
-  const duplicateFlowRow = (i: number) => {
-    const src = getValues(`flows.${i}`)
-    insertFlow(i + 1, { ...src, id: newFlowId() })
+  // Save, then remount the form from storage so unit-converted inputs re-render
+  // through their `defaultValue` transform. Programmatic injection (insert/setValue)
+  // otherwise leaves the raw imperial number in a metric-labelled field, which then
+  // re-parses (÷ factor) into a corrupted value on the next edit.
+  const saveAndReload = () => {
     onBlurSave()
+    window.dispatchEvent(new Event('tal:form-reload'))
+  }
+
+  const duplicateFlowRow = (i: number) => {
+    const src = getValues(`flows.${i}`)   // form state is imperial — a faithful copy
+    insertFlow(i + 1, { ...src, id: newFlowId() })
+    saveAndReload()
   }
 
   const { fields: loadFields, append: appendLoad, remove: removeLoad } =
@@ -226,15 +235,22 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     return { sectionNum: m.num, title: m.label, id: m.id, status: sectionStatus(m, formValues), defaultOpen: !m.startCollapsed, notMatched: m.notMatched }
   }
 
-  // Pallet subtype auto-fill — writes into the load row it was picked on.
+  // Pallet subtype auto-fill — the dimensions are imperial (inches). The registered
+  // inputs parse their value as the CURRENT unit, so injecting via `setValue` would
+  // re-parse the raw inches as mm (48 → 48/25.4). Instead we persist the current form,
+  // write the exact imperial dims straight to storage (storage is imperial-first), and
+  // remount — the inputs then re-render through their unit-aware `defaultValue`.
   const handlePalletSubtype = (i: number, subtype: string) => {
+    onBlurSave()   // persist the subtype pick (+ any pending edits) first
     const key = subtype.split(' ')[0] as keyof typeof PALLET_AUTOFILL
-    if (PALLET_AUTOFILL[key]) {
-      const d = PALLET_AUTOFILL[key]
-      setValue(`loads.${i}.lengthIn`, d.l, { shouldDirty: true })
-      setValue(`loads.${i}.widthIn`, d.w, { shouldDirty: true })
-      setValue(`loads.${i}.heightIn`, d.h, { shouldDirty: true })
-    }
+    const d = PALLET_AUTOFILL[key]
+    if (!d || !projectId) return   // e.g. "Custom" — no dimensions to fill
+    const proj = getProject(projectId)
+    const loads = [...(proj?.loads ?? [])]
+    if (!loads[i]) return
+    loads[i] = { ...loads[i], lengthIn: d.l, widthIn: d.w, heightIn: d.h }
+    updateProject(projectId, { loads })
+    window.dispatchEvent(new Event('tal:form-reload'))
   }
 
   // Save synchronously on blur. The previous 2-second debounce raced router
@@ -433,7 +449,6 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                         onChange={e => {
                           setValue(`loads.${i}.palletSubtype`, e.target.value, { shouldDirty: true })
                           handlePalletSubtype(i, e.target.value)
-                          onBlurSave()
                         }}
                       >
                         <option value="" disabled>Select subtype…</option>

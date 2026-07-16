@@ -22,14 +22,20 @@ export default function Step1Page() {
     setLoading(false)
   }, [id])
 
-  // Undo writes to storage in place (no page reload); re-read and remount the form.
+  // Undo and programmatic value injections (pallet auto-fill, flow duplicate) write
+  // to storage in place; re-read and remount the form so uncontrolled inputs pick
+  // up the corrected values through their unit-aware `defaultValue`.
   useEffect(() => {
-    const onUndo = () => {
+    const reload = () => {
       const p = getProject(id)
       if (p) { setProject(p); setFormKey(k => k + 1) }
     }
-    window.addEventListener('tal:undo', onUndo)
-    return () => window.removeEventListener('tal:undo', onUndo)
+    window.addEventListener('tal:undo', reload)
+    window.addEventListener('tal:form-reload', reload)
+    return () => {
+      window.removeEventListener('tal:undo', reload)
+      window.removeEventListener('tal:form-reload', reload)
+    }
   }, [id])
 
   // Remount the form on a unit toggle. The inputs are uncontrolled

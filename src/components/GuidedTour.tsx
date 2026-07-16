@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import Icon from '@/src/design-system/components/Icon'
 
@@ -72,34 +72,30 @@ export default function GuidedTour() {
     return () => window.removeEventListener(TOUR_EVENT, start)
   }, [])
 
-  // Measure the current target; re-measure on resize/scroll so the spotlight tracks.
-  const measure = useCallback(() => {
-    if (!step?.target) { setRect(null); return }
-    const el = document.querySelector(step.target)
-    if (!el) { setRect(null); return }
-    const r = el.getBoundingClientRect()
-    setRect({ top: r.top, left: r.left, width: r.width, height: r.height })
-  }, [step])
-
-  useLayoutEffect(() => {
+  // Track the target with a continuous rAF loop while the tour is open. Polling
+  // each frame (and only committing a changed rect) keeps the spotlight glued to
+  // the element through late layout shifts — the async Toyota Type font swap
+  // reflows the header AFTER first paint, a one-shot measure would land stale/high.
+  useEffect(() => {
     if (!open) return
-    // Bring the target into view first — on a phone the step ribbon scrolls, so a
-    // highlighted tab may be off-screen. (Only here, on step change, never inside
-    // measure — that would feedback-loop with the scroll listener.)
-    if (step?.target) {
-      document.querySelector<HTMLElement>(step.target)?.scrollIntoView({ inline: 'center', block: 'nearest' })
+    const target = step?.target ? document.querySelector<HTMLElement>(step.target) : null
+    // Bring an off-screen tab into view (the phone ribbon scrolls horizontally).
+    target?.scrollIntoView({ inline: 'center', block: 'nearest' })
+    let raf = 0
+    let prev = ''
+    const tick = () => {
+      if (target) {
+        const r = target.getBoundingClientRect()
+        const key = `${r.top}|${r.left}|${r.width}|${r.height}`
+        if (key !== prev) { prev = key; setRect({ top: r.top, left: r.left, width: r.width, height: r.height }) }
+      } else if (prev !== 'null') {
+        prev = 'null'; setRect(null)
+      }
+      raf = requestAnimationFrame(tick)
     }
-    // Defer the first measure a frame so we don't setState synchronously in the
-    // effect body (and so the spotlighted element has painted).
-    const raf = requestAnimationFrame(measure)
-    window.addEventListener('resize', measure)
-    window.addEventListener('scroll', measure, true)
-    return () => {
-      cancelAnimationFrame(raf)
-      window.removeEventListener('resize', measure)
-      window.removeEventListener('scroll', measure, true)
-    }
-  }, [open, step?.target, measure])
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [open, step?.target])
 
   // Escape closes; body scroll locked while the tour is up.
   useEffect(() => {

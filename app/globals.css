@@ -4267,15 +4267,17 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 /* ============================================ GUIDED TOUR (first-run coach marks) ============================================ */
 .tour-root { position: fixed; inset: 0; z-index: 400; }
 .tour-scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.6); }
-/* Spotlight: a transparent window with a huge shadow that dims everything else. */
+/* Spotlight: a transparent window with a huge shadow that dims everything else.
+   Positioned in viewport coordinates (position: fixed) to exactly match the
+   target's getBoundingClientRect; a rAF loop keeps it glued through reflows, so
+   no CSS transition (which would visibly lag/land the box mid-shift). */
 .tour-spot {
-  position: absolute; border-radius: 10px; pointer-events: none;
+  position: fixed; border-radius: 10px; pointer-events: none;
   box-shadow: 0 0 0 9999px rgba(0,0,0,0.62);
   outline: 2px solid var(--accent); outline-offset: 0;
-  transition: top 0.25s ease, left 0.25s ease, width 0.25s ease, height 0.25s ease;
 }
 .tour-card {
-  position: absolute; left: 50%; transform: translateX(-50%);
+  position: fixed; left: 50%; transform: translateX(-50%);
   width: min(360px, calc(100vw - 32px));
   background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 14px;
   box-shadow: 0 24px 60px rgba(0,0,0,0.34); padding: 18px 20px 16px;
@@ -4298,5 +4300,3 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .help-panel-head-actions { display: flex; align-items: center; gap: 10px; }
 .help-tour-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); font-family: var(--tal-font-family); font-size: 13px; font-weight: 600; cursor: pointer; }
 .help-tour-btn:hover { background: var(--accent); color: #fff; }
-
-@media (prefers-reduced-motion: reduce) { .tour-spot { transition: none; } }

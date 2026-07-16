@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-16 — Unit-conversion corruption on inject + tour spotlight tracking
+
+- **Duplicating a flow / auto-filling a pallet corrupted metric values** (e.g. a
+  2300 m flow copied to 7545.9 m; GMA 48 in → 1.8897…). Root cause: the Step-1
+  inputs are uncontrolled and convert units only through `defaultValue` at mount,
+  but `insert`/`setValue` inject the raw imperial number into a metric-labelled
+  field, which then re-parses (÷ factor) on the next edit. Fix: `duplicateFlowRow`
+  and `handlePalletSubtype` now persist to storage (imperial-first — pallet dims
+  written straight as inches) and remount the form via a new `tal:form-reload`
+  event, so every input re-renders through its unit-aware `defaultValue`.
+- **Guided-tour spotlight landed too high** on the ribbon. The one-shot measure
+  ran before the async Toyota Type font swap reflowed the header. Now a continuous
+  `requestAnimationFrame` loop tracks the target in viewport coordinates
+  (`position: fixed`), so the spotlight stays glued through late layout shifts.
+
 ## 2026-07-16 — Exports reworked: two-part PDF + live-formula Excel
 
 - **Excel is now a single editable "Fleet Model" sheet** (`xlsxExport.ts`, fully
