@@ -7,6 +7,7 @@ import type { UnitSystem } from '@/src/lib/utils/units'
 import { updateProject, downloadProject, getProject, canUndo, undoLastChange, clearProject, subscribeProjects, subscribeStorageError, type StoredProject } from '@/src/lib/storage'
 import { useTheme } from '@/src/lib/uiPrefs'
 import HelpDrawer from './HelpDrawer'
+import GuidedTour from './GuidedTour'
 import AppVersionLog from './AppVersionLog'
 import { APP_VERSION } from '@/src/content/appVersions'
 import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
@@ -514,6 +515,7 @@ export default function PersistentHeader({
       </nav>
     </header>
     <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} currentStep={currentStep} />
+    <GuidedTour />
     {pptxProject && <PptxSectionPicker project={pptxProject} onClose={() => setPptxProject(null)} />}
     {versionLogOpen && <AppVersionLog onClose={() => setVersionLogOpen(false)} />}
     </>

@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Icon from '@/src/design-system/components/Icon'
 import { HELP } from '@/src/content/help'
 import HelpMock from './HelpMock'
+import { TOUR_EVENT } from './GuidedTour'
 
 interface Props {
   open: boolean
@@ -47,9 +48,18 @@ export default function HelpDrawer({ open, onClose, currentStep }: Props) {
       >
         <header className="help-panel-head">
           <span className="help-panel-title">Help · how to use this tool</span>
-          <button type="button" className="help-close" onClick={onClose} aria-label="Close help">
-            <Icon name="x" size={18} />
-          </button>
+          <div className="help-panel-head-actions">
+            <button
+              type="button"
+              className="help-tour-btn"
+              onClick={() => { onClose(); window.dispatchEvent(new Event(TOUR_EVENT)) }}
+            >
+              <Icon name="help" size={13} /> Take the tour
+            </button>
+            <button type="button" className="help-close" onClick={onClose} aria-label="Close help">
+              <Icon name="x" size={18} />
+            </button>
+          </div>
         </header>
 
         <div className="help-panel-body">
