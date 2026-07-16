@@ -6,8 +6,10 @@ import Link from 'next/link'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import VehicleFilters, { type StatusFilter } from '@/src/components/step2/VehicleFilters'
 import VehicleCard from '@/src/components/step2/VehicleCard'
+import VehicleListMobile from '@/src/components/step2/VehicleListMobile'
 import ComparisonModal from '@/src/components/step2/ComparisonModal'
 import Icon from '@/src/design-system/components/Icon'
+import { useIsNarrow } from '@/src/lib/useIsNarrow'
 import { qualifyVehicle } from '@/src/calc/trafficLight'
 import type { ApplicationRequirements } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
@@ -32,6 +34,7 @@ export default function Step2Page() {
   const [manufacturerFilter, setManufacturerFilter] = useState('')
   const [compareIds, setCompareIds] = useState<string[]>([])
   const [compareOpen, setCompareOpen] = useState(false)
+  const narrow = useIsNarrow()
 
   const MAX_COMPARE = 4
   const toggleCompare = (id: string) => setCompareIds(prev =>
@@ -249,45 +252,70 @@ export default function Step2Page() {
           )}
         </div>
 
-        {/* Filters */}
-        <VehicleFilters
-          search={search}
-          onSearchChange={setSearch}
-          statusFilter={statusFilter}
-          onStatusFilterChange={setStatusFilter}
-          categoryFilter={categoryFilter}
-          onCategoryFilterChange={setCategoryFilter}
-          categories={categories}
-          manufacturers={manufacturers}
-          manufacturerFilter={manufacturerFilter}
-          onManufacturerFilterChange={setManufacturerFilter}
-          counts={counts}
-          compareOptions={vehicles.map(v => ({ id: v.id, name: v.name }))}
-          compareIds={compareIds}
-          maxCompare={MAX_COMPARE}
-          onToggleCompare={toggleCompare}
-          onClearCompare={() => setCompareIds([])}
-          onOpenCompare={() => setCompareOpen(true)}
-        />
-
-        {/* Grid */}
-        {filtered.length === 0 ? (
-          <div className="empty-state">
-            <h3>No vehicles match your filters</h3>
-            <p>Try changing the status filter or clearing search terms.</p>
-          </div>
+        {narrow ? (
+          <VehicleListMobile
+            entries={filtered}
+            unitSystem={unitSystem}
+            counts={counts}
+            categories={categories}
+            manufacturers={manufacturers}
+            search={search}
+            onSearch={setSearch}
+            statusFilter={statusFilter}
+            onStatusFilter={setStatusFilter}
+            categoryFilter={categoryFilter}
+            onCategoryFilter={setCategoryFilter}
+            manufacturerFilter={manufacturerFilter}
+            onManufacturerFilter={setManufacturerFilter}
+            compareIds={compareIds}
+            maxCompare={MAX_COMPARE}
+            onToggleCompare={toggleCompare}
+            onOpenCompare={() => setCompareOpen(true)}
+            onClearCompare={() => setCompareIds([])}
+          />
         ) : (
-          <div className="veh-grid">
-            {filtered.map(({ vehicle, result }) => (
-              <VehicleCard
-                key={vehicle.id}
-                vehicle={vehicle}
-                result={result}
-                unitSystem={unitSystem}
-                filterKey={filterKey}
-              />
-            ))}
-          </div>
+          <>
+            {/* Filters */}
+            <VehicleFilters
+              search={search}
+              onSearchChange={setSearch}
+              statusFilter={statusFilter}
+              onStatusFilterChange={setStatusFilter}
+              categoryFilter={categoryFilter}
+              onCategoryFilterChange={setCategoryFilter}
+              categories={categories}
+              manufacturers={manufacturers}
+              manufacturerFilter={manufacturerFilter}
+              onManufacturerFilterChange={setManufacturerFilter}
+              counts={counts}
+              compareOptions={vehicles.map(v => ({ id: v.id, name: v.name }))}
+              compareIds={compareIds}
+              maxCompare={MAX_COMPARE}
+              onToggleCompare={toggleCompare}
+              onClearCompare={() => setCompareIds([])}
+              onOpenCompare={() => setCompareOpen(true)}
+            />
+
+            {/* Grid */}
+            {filtered.length === 0 ? (
+              <div className="empty-state">
+                <h3>No vehicles match your filters</h3>
+                <p>Try changing the status filter or clearing search terms.</p>
+              </div>
+            ) : (
+              <div className="veh-grid">
+                {filtered.map(({ vehicle, result }) => (
+                  <VehicleCard
+                    key={vehicle.id}
+                    vehicle={vehicle}
+                    result={result}
+                    unitSystem={unitSystem}
+                    filterKey={filterKey}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         )}
 
         {/* Bottom nav */}

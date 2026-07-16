@@ -10,19 +10,7 @@ import FlowListMobile from './FlowListMobile'
 import GroupHeader from './GroupHeader'
 import { sectionColor } from './sectionColor'
 import { effectiveGroups as computeEffectiveGroups } from '@/src/calc/flowMetrics'
-
-/** Track a media query without a dependency. Drives the ≤700px card layout. */
-function useIsNarrow(px = 700): boolean {
-  const [narrow, setNarrow] = useState(false)
-  useEffect(() => {
-    const mq = window.matchMedia(`(max-width: ${px}px)`)
-    const update = () => setNarrow(mq.matches)
-    update()
-    mq.addEventListener('change', update)
-    return () => mq.removeEventListener('change', update)
-  }, [px])
-  return narrow
-}
+import { useIsNarrow } from '@/src/lib/useIsNarrow'
 
 /** Patch the parent can apply atomically — flows and/or group list together. */
 export interface FlowsPatch {
