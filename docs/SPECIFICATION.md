@@ -633,6 +633,15 @@ with three structural JS changes where CSS can't carry the layout.
   `useIsNarrow()` hook (`src/lib/useIsNarrow.ts`).
 - **Step 1 section rail ≤ 700px.** The wrapped chip block becomes a compact, swipeable
   horizontal strip (tier dividers hidden); progress stays above it.
+- **Step ribbon + bottom nav ≤ 700px** (added 2026-07-15). The header step tabs scroll
+  horizontally; PersistentHeader auto-centers the current tab on step change and tints it.
+  The sticky `.step-nav` puts Back | Continue on one row (bigger targets, safe-area padding)
+  and hides its redundant status hint.
+- **Step 3 · Charging (02) + Buffer (03) ≤ 700px** (added 2026-07-15). The wide pipeline
+  tables (`charge-table` 7-col, `waterfall-table` 6-col) become stacked labeled cards:
+  `<thead>` hides, each `<tr>` is a card, the vehicle/flow cell is the header, and every
+  metric cell shows its column name via `data-label`. The "Total fleet" summary unsticks
+  on mobile so it scrolls with content.
 - **Overlays.** `FloatingPanel` caps its width to the viewport; the cycle popover gets a
   `max-width: calc(100vw − 24px)`; the Step-2 comparison modal goes full-screen ≤ 700px.
 

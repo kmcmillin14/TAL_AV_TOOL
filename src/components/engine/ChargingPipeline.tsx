@@ -123,16 +123,16 @@ export default function ChargingPipeline({
                       <span className="pl-route mono">{n} flow{n === 1 ? '' : 's'}</span>
                     </span>
                   </td>
-                  <td className="num mono">{g == null ? '—' : g.groupRaw.toFixed(2)}</td>
-                  <td className="num mono">{fmtH(c?.runHr)}</td>
-                  <td className="num mono">{fmtH(c?.chargeHr)}</td>
-                  <td className="num mono">{fmtPct(c?.availability)}</td>
-                  <td className="num">
+                  <td className="num mono" data-label="Demand">{g == null ? '—' : g.groupRaw.toFixed(2)}</td>
+                  <td className="num mono" data-label="Runtime">{fmtH(c?.runHr)}</td>
+                  <td className="num mono" data-label="Recharge">{fmtH(c?.chargeHr)}</td>
+                  <td className="num mono" data-label="Availability">{fmtPct(c?.availability)}</td>
+                  <td className="num" data-label="Charging">
                     <span className={`ct-delta ct-delta-${delta > 0 ? 'warn' : 'good'}`} title={c?.reason}>
                       {delta > 0 ? `+${delta}` : '+0'}
                     </span>
                   </td>
-                  <td className="pl-math-cell">
+                  <td className="pl-math-cell" data-label="Fleet math">
                     {g && veh && (
                       <DerivTrigger
                         derivation={() => chargingDerivation(g, veh, { dailyOpHr, breakHrs, consecutiveOpDays })}

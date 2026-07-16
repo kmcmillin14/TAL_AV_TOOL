@@ -77,6 +77,7 @@ export default function PersistentHeader({
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const exportRef = useRef<HTMLDivElement>(null)
+  const stepDotsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (editing && inputRef.current) {
@@ -217,6 +218,18 @@ export default function PersistentHeader({
     }
     prefetchVehicles()
   }, [project.id, currentStep, router])
+
+  // On a phone the step ribbon scrolls horizontally; bring the current step into
+  // view so the user sees where they are instead of landing mid-scroll.
+  useEffect(() => {
+    const wrap = stepDotsRef.current
+    if (!wrap) return
+    const dot = wrap.querySelector<HTMLElement>('.step-dot.current')
+    if (dot && wrap.scrollWidth > wrap.clientWidth) {
+      const target = dot.offsetLeft - (wrap.clientWidth - dot.offsetWidth) / 2
+      wrap.scrollTo({ left: Math.max(0, target), behavior: 'smooth' })
+    }
+  }, [currentStep])
 
   const handleUndo = () => {
     const restored = undoLastChange(project.id)
@@ -496,7 +509,7 @@ export default function PersistentHeader({
       </div>
 
       <nav className="hero-nav">
-        <div className="step-dots">
+        <div className="step-dots" ref={stepDotsRef}>
           {STEPS.map(s => (
             <button
               key={s.id}

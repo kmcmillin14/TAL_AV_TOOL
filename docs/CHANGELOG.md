@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-15 — Mobile: nav chrome + Step 3 charging/buffer
+
+- **Step ribbon** — the current step tab now auto-scrolls into view on a phone
+  (PersistentHeader measures the horizontally-scrolling `.step-dots` and centers
+  `.current`), and the current tab is tinted so you can see where you are.
+- **Bottom nav buttons** — the sticky `.step-nav` gains a ≤700px layout: Back |
+  Continue on one comfortable row (bigger tap targets, safe-area padding), the
+  redundant status hint hidden.
+- **Step 3 · sections 02 Charging + 03 Buffer** — the 6–7 column pipeline tables
+  become stacked, labeled cards on a phone (vehicle/flow name as the card header,
+  each metric shows its column label via `data-label`). The "Total fleet" summary
+  unsticks on mobile (a fixed 126px sticky couldn't align with the taller stacked
+  header), the engine panel tightens, and the charging schedule math gets room to
+  wrap.
+
 ## 2026-07-15 — Mobile rollout complete (all steps) + first-run guided tour
 
 - **Step 2 vehicles — phone-native list→sheet.** ≤ 700px the vehicle grid

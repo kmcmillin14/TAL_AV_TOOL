@@ -348,10 +348,14 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   .hero-meta-line::-webkit-scrollbar { display: none; }
   .hero-meta-item { padding: 4px 6px; flex-shrink: 0; }
   .hero-meta-sep { display: none; }
-  /* Step tabs swipe horizontally instead of cramming five into 390px. */
-  .step-dots { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+  /* Step tabs swipe horizontally instead of cramming five into 390px. The
+     current tab is auto-scrolled into view (PersistentHeader) and tinted so the
+     user can see where they are in the flow. */
+  .step-dots { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-padding-inline: 16px; }
   .step-dots::-webkit-scrollbar { display: none; }
-  .step-dot { flex: 0 0 auto; min-width: 130px; }
+  .step-dot { flex: 0 0 auto; min-width: 124px; }
+  .step-dot.current { background: var(--bg-surface); }
+  .step-dot .label { padding: 12px 16px; }
 }
 
 /* OPP / LEAD dropdown disguised as a label */
@@ -864,6 +868,16 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .row { display: flex; align-items: center; gap: 12px; }
 .hint { font-size: 13px; color: var(--text-tertiary); }
+
+/* Phone: the sticky bottom nav keeps Back | Continue on one comfortable row.
+   The status hint is redundant with the on-page outputs, so it's dropped and the
+   two buttons grow to easy tap targets. */
+@media (max-width: 700px) {
+  .step-nav { padding: 10px 14px max(10px, env(safe-area-inset-bottom)); gap: 10px; }
+  .step-nav > .row { flex: 1; justify-content: flex-end; gap: 0; }
+  .step-nav .hint { display: none; }
+  .step-nav .btn { padding: 12px 16px; font-size: 14px; }
+}
 
 /* ============================================ BUTTONS ============================================ */
 
@@ -3202,6 +3216,49 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   font-weight: 700;
 }
 .waterfall-table .wf-total .wf-sold { color: var(--accent); font-size: 16px; }
+
+/* Phone: the 6–7 column Charging / Buffer tables (Step 3 · 02 / 03) can't fit a
+   390px screen, so each row becomes a labeled card — the vehicle/flow name is the
+   card header and every metric shows its column label beside its value. */
+@media (max-width: 700px) {
+  .charge-table, .waterfall-table,
+  .charge-table tbody, .waterfall-table tbody { display: block; }
+  .charge-table thead, .waterfall-table thead { display: none; }
+  .charge-table tr, .waterfall-table tr {
+    display: block; border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 10px; overflow: hidden;
+  }
+  .charge-table td, .waterfall-table td {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 8px 12px; border: none;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 55%, transparent);
+  }
+  .charge-table td:last-child, .waterfall-table td:last-child { border-bottom: none; }
+  .charge-table td::before, .waterfall-table td::before {
+    content: attr(data-label);
+    font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
+    flex-shrink: 0;
+  }
+  /* First cell = card header (vehicle/flow), full-width, no label. */
+  .charge-table td:first-child, .waterfall-table td:first-child {
+    background: var(--bg-surface-2); font-weight: 700;
+  }
+  .charge-table td:first-child::before, .waterfall-table td:first-child::before { display: none; }
+  .charge-table .num, .waterfall-table .num { text-align: right; }
+  .pl-math-cell { justify-content: space-between; }
+  /* The name cell wraps its route/flow sub-label under the name on a phone. */
+  .charge-table .ct-veh, .waterfall-table .ct-veh { flex-wrap: wrap; }
+  .charge-table .pl-route, .waterfall-table .pl-route { margin-left: 0; flex-basis: 100%; }
+  /* Tighter panel + roomier schedule math (its inline inputs wrap on a phone). */
+  .engine-panel { padding: 16px; }
+  .engine-context { font-size: 13px; line-height: 2.1; }
+  .engine-inline-num { width: 56px; }
+  /* The "Total fleet" summary scrolls with content on a phone — a fixed 126px
+     sticky top can't align with the taller stacked header and would swallow the
+     small viewport. */
+  .engine-result-sticky { position: static; }
+}
 
 /* ─── ROM Dashboard (Step 4) ─── */
 .rom-kpi {

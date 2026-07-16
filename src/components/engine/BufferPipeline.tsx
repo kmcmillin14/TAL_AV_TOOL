@@ -114,11 +114,11 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
                       <span className="pl-route mono">{f.origin || '—'} → {f.destination || '—'}</span>
                     </span>
                   </td>
-                  <td className="num mono">{g?.baseFleet ?? '—'}</td>
-                  <td className="num mono">{delta > 0 ? `+${delta}` : '—'}</td>
-                  <td className="num mono wf-mid">{g ? ((g.charging.availability != null ? g.groupRaw / g.charging.availability : g.groupRaw) * (1 + bufferPct)).toFixed(2) : '—'}</td>
-                  <td className="num mono wf-sold">{g?.fleetSold ?? '—'}</td>
-                  <td className="pl-math-cell">
+                  <td className="num mono" data-label="Base">{g?.baseFleet ?? '—'}</td>
+                  <td className="num mono" data-label="+ Charging">{delta > 0 ? `+${delta}` : '—'}</td>
+                  <td className="num mono wf-mid" data-label={`× ${(1 + bufferPct).toFixed(2)}`}>{g ? ((g.charging.availability != null ? g.groupRaw / g.charging.availability : g.groupRaw) * (1 + bufferPct)).toFixed(2) : '—'}</td>
+                  <td className="num mono wf-sold" data-label="Fleet">{g?.fleetSold ?? '—'}</td>
+                  <td className="pl-math-cell" data-label="Fleet math">
                     {g && (
                       <DerivTrigger
                         derivation={() => bufferDerivation(g, bufferPct)}
