@@ -192,14 +192,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     onBlurSave()
   }
 
-  // Save, then remount the form from storage so unit-converted inputs re-render
-  // through their `defaultValue` transform. Programmatic injection (insert/setValue)
-  // otherwise leaves the raw imperial number in a metric-labelled field, which then
-  // re-parses (÷ factor) into a corrupted value on the next edit.
-  const saveAndReload = () => {
-    onBlurSave()
-    window.dispatchEvent(new Event('tal:form-reload'))
-  }
+  // Remount the form from storage so unit-converted inputs re-render through their
+  // `defaultValue` transform. Programmatic injection (insert/setValue) otherwise
+  // leaves the raw imperial number in a metric-labelled field, which then re-parses
+  // (÷ factor) into a corrupted value on the next edit. The Step-1 page listens.
+  const reloadForm = () => window.dispatchEvent(new Event('tal:form-reload'))
+  const saveAndReload = () => { onBlurSave(); reloadForm() }
 
   const duplicateFlowRow = (i: number) => {
     const src = getValues(`flows.${i}`)   // form state is imperial — a faithful copy
@@ -250,7 +248,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     if (!loads[i]) return
     loads[i] = { ...loads[i], lengthIn: d.l, widthIn: d.w, heightIn: d.h }
     updateProject(projectId, { loads })
-    window.dispatchEvent(new Event('tal:form-reload'))
+    reloadForm()
   }
 
   // Save synchronously on blur. The previous 2-second debounce raced router
