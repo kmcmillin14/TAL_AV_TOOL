@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-07-15 — Mobile rollout complete (all steps) + first-run guided tour
+
+- **Step 2 vehicles — phone-native list→sheet.** ≤ 700px the vehicle grid
+  becomes a scannable list (thumb · name · traffic light · N/M checks) that opens
+  a full-screen `VehicleSheet` (verdict pinned, gate-by-gate breakdown, quick
+  specs, full spec sheet, cutsheet). Search + status segments inline; category /
+  manufacturer in a `BottomSheet`; compare bar reuses the full-screen modal.
+  New `VehicleListMobile` / `VehicleSheet`; desktop flip-cards unchanged.
+- **Shared `useIsNarrow` hook** (`src/lib/useIsNarrow.ts`) — the single
+  desktop/phone switch; extracted from the local copy in `FlowsTable`.
+- **Step 4 dashboard** — driver inputs go 16px (no iOS focus-zoom) and the
+  full-screen chart tile goes edge-to-edge on a phone. (Bento 4→2→1, drivers
+  collapse, and single-column shell were already in place.)
+- **Step 1 form** — the section rail becomes a compact, swipeable horizontal
+  strip on phones instead of a tall wrapped block (tier dividers hidden).
+- **Step 0 setup** inputs go 16px (no iOS focus-zoom); the questionnaire inherits
+  every shared mobile rule (field grids, section strip, 16px inputs).
+- **First-run guided tour** (`GuidedTour`) — a coach-mark spotlight over the
+  4-step nav, framed by the Cut → Connect → Add discipline. Auto-opens once
+  (localStorage `tal:tourSeen`), tracks scroll/resize, and re-opens from the
+  Help drawer's "Take the tour" button (`tal:start-tour` event).
+
 ## 2026-07-13 — Bug fixes: PDF encoding, charging display, table fit, unit toggle
 
 - **PDF export crash** — the questionnaire/proposal PDFs use a WinAnsi

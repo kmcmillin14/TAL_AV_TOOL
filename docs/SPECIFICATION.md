@@ -620,9 +620,31 @@ with three structural JS changes where CSS can't carry the layout.
   Autosave is live, so the sheet just closes on Done.
 - **ROM Dashboard ≤ 700px.** The drivers rail becomes a collapsible `<details>` (summary
   toggles on phone; forced open on desktop). KPI/gauge grids stack (existing 900/560
-  rules); the page-header export actions wrap under the title.
+  rules); the page-header export actions wrap under the title. Driver inputs render 16px
+  (no iOS zoom) and a full-screened chart tile goes edge-to-edge.
+- **Step 2 vehicles ≤ 700px — phone-native list → sheet** (added 2026-07-15). The
+  flip-card grid gives way to a scannable list (`VehicleListMobile`): thumbnail · name ·
+  manufacturer · N/M checks · traffic light. Search + status segments (All / Fit / Best)
+  sit inline; category & manufacturer live in a `BottomSheet`. Tapping a row opens a
+  full-screen `VehicleSheet` — verdict pinned at top, then the gate-by-gate requirement
+  breakdown (the desktop hover tooltip made tappable), quick specs, the full spec sheet,
+  and a cutsheet link. Compare toggles from the sheet header; a sticky compare bar opens
+  the (already full-screen) comparison modal. The `narrow` switch is the shared
+  `useIsNarrow()` hook (`src/lib/useIsNarrow.ts`).
+- **Step 1 section rail ≤ 700px.** The wrapped chip block becomes a compact, swipeable
+  horizontal strip (tier dividers hidden); progress stays above it.
 - **Overlays.** `FloatingPanel` caps its width to the viewport; the cycle popover gets a
   `max-width: calc(100vw − 24px)`; the Step-2 comparison modal goes full-screen ≤ 700px.
+
+### First-run guided tour (added 2026-07-15)
+
+`src/components/GuidedTour.tsx` mounts inside the persistent header. On a project's first
+visit (localStorage `tal:tourSeen`) it auto-opens a coach-mark sequence: a spotlight over
+the 4-step nav bar and each step tab in turn, framed by the Cut → Connect → Add discipline.
+The spotlight is a transparent window with a large box-shadow scrim that re-measures on
+scroll/resize; the card offers Back / Next / Skip and a step-dot progress row. It re-opens
+any time from the Help drawer's **"Take the tour"** button, which dispatches the
+`tal:start-tour` window event (exported as `TOUR_EVENT`).
 
 Known limitation: iOS Safari may open blob downloads (PDF/PPTX) in a viewer rather than
 saving directly — the file is still retrievable via the viewer's share sheet.
