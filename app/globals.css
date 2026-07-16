@@ -3306,6 +3306,11 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   .engine-head.with-actions .eh-actions { margin-left: 0; padding-top: 2px; }
   /* Operation map (flow diagram) scrolls horizontally rather than shrinking. */
   .rom2-opmap-scroll, .rom-opmap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  /* 16px inputs so iOS doesn't zoom the viewport on focus (matches .m-input). */
+  .rom2-driver-input { font-size: 16px; }
+  /* Full-screen chart tile goes edge-to-edge on a phone (no wasted margin). */
+  .rom2-fs-overlay { padding: 0; }
+  .rom2-fs-panel { width: 100%; height: 100%; border-radius: 0; padding: 14px 14px max(14px, env(safe-area-inset-bottom)); }
 }
 
 /* ============================================ STEP 4 — DASHBOARD REBUILD (.rom2-*) ============================================ */
