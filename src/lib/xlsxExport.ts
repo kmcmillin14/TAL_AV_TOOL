@@ -1,105 +1,125 @@
 // Excel workbook export — client-side via SheetJS (no backend, per
-// ARCHITECTURE.md). The library is dynamically imported so it never weighs on
-// the initial bundle. All figures imperial / USD, matching storage.
+// ARCHITECTURE.md). A single, fully-formula-driven "Fleet Model" sheet: every
+// input cell (distance, moves/hr, speeds, transfer times, availability, buffer)
+// is editable and the downstream cells (cycle, raw demand, base, +charging,
+// fleet sold, totals) are live Excel formulas — so the model recomputes offline
+// exactly as the app does. All figures imperial, matching storage.
 import type { StoredProject } from './storage'
 import type { Vehicle } from './vehicleLibrary'
+import type { WorkSheet, CellObject, ColInfo } from 'xlsx'
 import { computeFleetModel } from './fleetModel'
+import { cycleBreakdown, routeLayoutFactor } from '../calc/flowMetrics'
 import { projectFilename } from './projectFilename'
 
-type Row = Array<string | number>
+// Minimal cell helpers over SheetJS's CellObject.
+const S = (v: string): CellObject => ({ t: 's', v })
+const N = (v: number, z?: string): CellObject => ({ t: 'n', v, z })
+const F = (f: string, z?: string): CellObject => ({ t: 'n', f, z })
+
+type XlsxUtils = { encode_cell: (a: { c: number; r: number }) => string; encode_range: (r: { s: { c: number; r: number }; e: { c: number; r: number } }) => string }
+
+/** Build the editable Fleet Model worksheet (pure — takes SheetJS utils so it's
+ *  unit-testable without touching the DOM/download path). */
+export function buildFleetModelSheet(utils: XlsxUtils, project: StoredProject, vehicles: Vehicle[]): WorkSheet {
+  const vehicleById = new Map(vehicles.map(v => [v.id, v]))
+  const { flows, settings, fleet } = computeFleetModel(project, vehicles)
+
+  const ws: WorkSheet = {}
+  const put = (c: number, r: number, cell: CellObject) => { ws[utils.encode_cell({ c, r })] = cell }
+  let maxR = 0
+  const MAXC = 13 // N
+
+  // ── Title + global input ────────────────────────────────────────────────
+  put(0, 0, S('TAL Fleet Calculator — Editable Fleet Model'))
+  put(0, 1, S(`${project.projectName ?? 'Untitled'}${project.customerName ? ` · ${project.customerName}` : ''}`))
+  put(0, 2, S('Buffer'))
+  put(1, 2, N(settings.bufferPct, '0%'))            // $B$3 — referenced by every "Fleet sold"
+  const BUFFER = '$B$3'
+  maxR = 2
+
+  // ── FLOWS block (inputs → cycle → raw) ──────────────────────────────────
+  const FLOW_NOTE_R = 4
+  put(0, FLOW_NOTE_R, S('FLOWS — edit any value; Cycle (s) and Raw veh are live formulas'))
+  const FH = 5 // header row (0-based) → Excel row 6
+  const flowHeaders = ['#', 'Origin', 'Destination', 'Vehicle', 'Dist (ft)', 'Moves/hr',
+    'Spd loaded (fps)', 'Spd empty (fps)', 'Route factor', 'Load (s)', 'Unload (s)', 'Lift (s)', 'Cycle (s)', 'Raw veh']
+  flowHeaders.forEach((h, c) => put(c, FH, S(h)))
+
+  const firstFlowR = FH + 1              // 0-based
+  flows.forEach((f, i) => {
+    const r = firstFlowR + i
+    const er = r + 1                     // Excel (1-based) row for formulas
+    const veh = f.vehicleId ? vehicleById.get(f.vehicleId) : undefined
+    put(0, r, N(i + 1))
+    put(1, r, S(f.origin || ''))
+    put(2, r, S(f.destination || ''))
+    put(3, r, S(veh?.name ?? ''))
+    put(4, r, N(f.distanceFt ?? 0))
+    put(5, r, N(f.thruPerHr ?? 0))
+    if (veh) {
+      const bd = cycleBreakdown(f.distanceFt ?? 0, veh, f.routeLayout ?? 'medium',
+        f.liftHeightFt ?? 0, f.transferMethodIdx ?? 0, f.transferSecOverride)
+      put(6, r, N(veh.calc.speedLoadedFps ?? 0))
+      put(7, r, N(veh.calc.speedUnloadedFps ?? veh.calc.speedLoadedFps ?? 0))
+      put(8, r, N(routeLayoutFactor(f.routeLayout ?? 'medium'), '0.00'))
+      put(9, r, N(Number((bd?.loadSec ?? 0).toFixed(1))))
+      put(10, r, N(Number((bd?.unloadSec ?? 0).toFixed(1))))
+      put(11, r, N(Number((bd?.liftTimeSec ?? 0).toFixed(1))))
+      // Cycle = dist/(loaded·factor) + dist/(empty·factor) + load + unload + lift
+      put(12, r, F(`IF(AND(G${er}>0,H${er}>0,I${er}>0),E${er}/(G${er}*I${er})+E${er}/(H${er}*I${er})+J${er}+K${er}+L${er},"")`, '0.0'))
+      // Raw vehicles = moves/hr × cycle ÷ 3600
+      put(13, r, F(`IF(M${er}="","",F${er}*M${er}/3600)`, '0.000'))
+    }
+  })
+  const lastFlowER = firstFlowR + Math.max(flows.length, 1) // Excel row of last flow (≥ header+1)
+  maxR = firstFlowR + flows.length + 1
+
+  // ── FLEET block (raw → base → +charging → sold) ─────────────────────────
+  const fleetNoteR = maxR + 1
+  put(0, fleetNoteR, S('FLEET — by vehicle pool; Availability is editable, the rest recompute'))
+  const fleetHR = fleetNoteR + 1
+  const fleetHeaders = ['Vehicle', 'Raw demand', 'Base fleet', 'Availability', '+ Charging', 'Fleet sold']
+  fleetHeaders.forEach((h, c) => put(c, fleetHR, S(h)))
+
+  const firstPoolR = fleetHR + 1
+  fleet.groups.forEach((g, i) => {
+    const r = firstPoolR + i
+    const er = r + 1
+    const name = vehicleById.get(g.vehicleId)?.name ?? g.vehicleId
+    const avail = g.charging.availability != null && g.charging.availability > 0 ? g.charging.availability : 1
+    put(0, r, S(name))
+    // Raw demand pulled from the flows' Raw column by vehicle name.
+    put(1, r, F(`SUMIF($D$${firstFlowR + 1}:$D$${lastFlowER},A${er},$N$${firstFlowR + 1}:$N$${lastFlowER})`, '0.000'))
+    put(2, r, F(`IF(B${er}>0,ROUNDUP(B${er},0),0)`))
+    put(3, r, N(avail, '0%'))
+    put(4, r, F(`MAX(0,ROUNDUP(B${er}/D${er},0)-C${er})`))
+    put(5, r, F(`MAX(C${er},ROUNDUP((B${er}/D${er})*(1+${BUFFER}),0))`))
+  })
+  const nPools = fleet.groups.length
+  const totalR = firstPoolR + nPools
+  if (nPools > 0) {
+    const firstER = firstPoolR + 1
+    const lastER = firstPoolR + nPools
+    put(0, totalR, S('TOTAL'))
+    put(2, totalR, F(`SUM(C${firstER}:C${lastER})`))
+    put(4, totalR, F(`SUM(E${firstER}:E${lastER})`))
+    put(5, totalR, F(`SUM(F${firstER}:F${lastER})`))
+  }
+  maxR = totalR + 1
+
+  ws['!ref'] = utils.encode_range({ s: { c: 0, r: 0 }, e: { c: MAXC, r: maxR } })
+  ws['!cols'] = [
+    { wch: 5 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 9 }, { wch: 9 },
+    { wch: 14 }, { wch: 14 }, { wch: 11 }, { wch: 9 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 10 },
+  ] as ColInfo[]
+
+  return ws
+}
 
 export async function downloadProjectXlsx(project: StoredProject, vehicles: Vehicle[]): Promise<void> {
   const XLSX = await import('xlsx')
-  const vehicleById = new Map(vehicles.map(v => [v.id, v]))
-  const { flows, derivedByFlowId, settings, fleet, rom, costs } = computeFleetModel(project, vehicles)
-
+  const ws = buildFleetModelSheet(XLSX.utils, project, vehicles)
   const wb = XLSX.utils.book_new()
-  const sheet = (name: string, rows: Row[]) =>
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), name)
-
-  // ── Summary ────────────────────────────────────────────────────────────────
-  sheet('Summary', [
-    ['TAL Fleet Calculator — Project Summary'],
-    [],
-    ['Project', project.projectName ?? ''],
-    ['Customer', project.customerName ?? ''],
-    ['Facility', project.facilityLocation ?? ''],
-    ['TAL engineer', project.bastianRep ?? ''],
-    ['Revision', project.versionNumber ?? ''],
-    ['Date', new Date().toISOString().slice(0, 10)],
-    [],
-    ['Total fleet (sold)', fleet.totalFleetSold],
-    ['Raw fleet (base)', fleet.totalBaseFleet],
-    ['Charging adder', fleet.totalChargingDelta],
-    ['Buffer', `${Math.round(settings.bufferPct * 100)}%`],
-    ['CAPEX range (USD)', `${rom.pricing.totalMin.toLocaleString()} – ${rom.pricing.totalMax.toLocaleString()}`],
-    ['Payback (years)', rom.payback.paybackYears == null ? '—' : Number(rom.payback.paybackYears.toFixed(2))],
-  ])
-
-  // ── Requirements (loads + environment) ────────────────────────────────────
-  const loads = project.loads?.length
-    ? project.loads
-    : [{ id: 'legacy', unitType: project.typicalUnitType ?? '', lengthIn: project.loadLengthIn, widthIn: project.loadWidthIn, heightIn: project.loadHeightIn, weightLbs: project.maxLoadWeightLbs }]
-  sheet('Requirements', [
-    ['Load', 'Unit type', 'Length (in)', 'Width (in)', 'Height (in)', 'Weight (lbs)'],
-    ...loads.map((l, i): Row => [`Load ${i + 1}`, l.unitType ?? '', l.lengthIn ?? '', l.widthIn ?? '', l.heightIn ?? '', l.weightLbs ?? '']),
-    [],
-    ['Transfer method', project.transferMethod ?? ''],
-    ['Delivery pattern', project.deliveryPattern ?? ''],
-    ['Pick height (ft)', project.pickHeightFt ?? ''],
-    ['Drop height (ft)', project.dropHeightFt ?? ''],
-    ['Min aisle width (ft)', project.minAisleWidthFt ?? ''],
-    ['Temp range (°F)', `${project.tempMinF ?? '—'} to ${project.tempMaxF ?? '—'}`],
-    ['Outdoor required', project.outdoorRequired ? 'Yes' : 'No'],
-    ['Freezer capable', project.freezerCapable ? 'Yes' : 'No'],
-    ['Schedule', `${project.shiftsPerDay ?? 1} × ${project.hoursPerShift ?? 8} h (${settings.dailyOpHr} h/day)`],
-  ])
-
-  // ── Flows ──────────────────────────────────────────────────────────────────
-  sheet('Flows', [
-    ['#', 'Origin', 'Destination', 'Vehicle', 'Distance one-way (ft)', 'Moves/hr', 'Cycle (s)', 'Raw vehicles'],
-    ...flows.map((f, i): Row => {
-      const d = derivedByFlowId.get(f.id)
-      return [
-        i + 1, f.origin || '', f.destination || '',
-        f.vehicleId ? (vehicleById.get(f.vehicleId)?.name ?? f.vehicleId) : '',
-        f.distanceFt, f.thruPerHr,
-        d?.cycleSeconds == null ? '' : Number(d.cycleSeconds.toFixed(1)),
-        d?.rawVehicles == null ? '' : Number(d.rawVehicles.toFixed(3)),
-      ]
-    }),
-  ])
-
-  // ── Fleet waterfall ────────────────────────────────────────────────────────
-  sheet('Fleet', [
-    ['Vehicle', 'Raw demand', 'Base fleet', '+ Charging', `× Buffer (${Math.round(settings.bufferPct * 100)}%)`, 'Fleet sold'],
-    ...fleet.groups.map((g): Row => [
-      vehicleById.get(g.vehicleId)?.name ?? g.vehicleId,
-      Number(g.groupRaw.toFixed(3)), g.baseFleet,
-      g.charging.chargingDelta, Number((1 + settings.bufferPct).toFixed(2)), g.fleetSold,
-    ]),
-    [],
-    ['TOTAL', '', fleet.totalBaseFleet, fleet.totalChargingDelta, '', fleet.totalFleetSold],
-  ])
-
-  // ── ROM ────────────────────────────────────────────────────────────────────
-  sheet('ROM', [
-    ['Vehicle', 'Qty', 'Unit min (USD)', 'Unit max (USD)', 'Line min (USD)', 'Line max (USD)'],
-    ...rom.pricing.lines.map((l): Row => [
-      vehicleById.get(l.vehicleId)?.name ?? l.vehicleId,
-      l.fleetSold, l.unitMin, l.unitMax, l.lineMin, l.lineMax,
-    ]),
-    ['TOTAL', '', '', '', rom.pricing.totalMin, rom.pricing.totalMax],
-    [],
-    ['Operators displaced', costs.numberOfOperators],
-    ['Fully-burdened cost (USD/yr each)', costs.fullyBurdenedRateUsdPerYear],
-    ['Annual labor offset (USD/yr)', rom.payback.annualLaborOffset],
-    ['Payback (years) = CAPEX mid ÷ labor offset', rom.payback.paybackYears == null ? '—' : Number(rom.payback.paybackYears.toFixed(2))],
-    [],
-    ['Informational OPEX — energy (USD/yr)', Math.round(rom.opex.annualEnergyCost)],
-    ['Informational OPEX — maintenance (USD/yr)', Math.round(rom.opex.annualMaintenance)],
-    ['Operating days / year', costs.operatingDaysPerYear],
-  ])
-
+  XLSX.utils.book_append_sheet(wb, ws, 'Fleet Model')
   XLSX.writeFile(wb, projectFilename(project, 'xlsx'))
 }

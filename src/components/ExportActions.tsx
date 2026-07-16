@@ -97,11 +97,11 @@ export default function ExportActions({ projectId }: { projectId: string }) {
               <span className="hint">.pptx</span>
             </button>
             <button type="button" className="header-menu-item" role="menuitem" onClick={savePdf}>
-              <span>Proposal PDF</span>
+              <span>Proposal (customer + appendix)</span>
               <span className="hint">.pdf</span>
             </button>
             <button type="button" className="header-menu-item" role="menuitem" onClick={saveXlsx}>
-              <span>Excel workbook</span>
+              <span>Fleet model (live formulas)</span>
               <span className="hint">.xlsx</span>
             </button>
           </div>

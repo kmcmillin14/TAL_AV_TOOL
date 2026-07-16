@@ -104,6 +104,85 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
     return out
   }
 
+  // ─────────── money + reusable section/table renderer ───────────
+  const money = (n: number) =>
+    n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
+    : n >= 1_000 ? `$${Math.round(n / 1_000)}K`
+    : `$${Math.round(n)}`
+  const usdRange = (a: number, b: number) => (a === b ? money(a) : `${money(a)} - ${money(b)}`)
+
+  interface TableCol { header: string; w: number; align?: 'left' | 'right' }
+  interface SectionApi {
+    sec: (t: string) => void
+    row: (label: string, value: string) => void
+    para: (t: string) => void
+    table: (cols: TableCol[], rows: string[][]) => void
+    gap: (n?: number) => void
+  }
+  /** Add a titled, auto-paginating section and draw into it. Shared by the
+   *  customer summary and the internal appendix so both use one layout. */
+  const renderSection = (title: string, subtitle: string | null, draw: (api: SectionApi) => void) => {
+    let page = pdfDoc.addPage([W, H])
+    const lineH = 15
+    const bottomMargin = 64
+    let y = 0
+    const header = () => {
+      page.drawText(winAnsiSafe(title), { x: MX, y: H - 60, size: 10, font: bold, color: TAL_RED })
+      page.drawLine({ start: { x: MX, y: H - 70 }, end: { x: W - MX, y: H - 70 }, thickness: 0.5, color: RULE })
+      y = H - 90
+    }
+    const ensureRoom = (needed: number) => {
+      if (y - needed < bottomMargin) {
+        page = pdfDoc.addPage([W, H]); header()
+        page.drawText('(continued)', { x: W - MX - 60, y: H - 60, size: 8, font, color: MUTED })
+      }
+    }
+    const sec = (t: string) => {
+      ensureRoom(lineH + 14); y -= 10
+      page.drawText(winAnsiSafe(t), { x: MX, y, size: 10, font: bold, color: TEXT })
+      y -= lineH + 4
+    }
+    const VALUE_X = MX + 190
+    const row = (label: string, value: string) => {
+      const lines = wrapText(value || '—', font, 10, W - VALUE_X - MX)
+      const rowH = Math.max(lineH, lines.length * (lineH - 2))
+      ensureRoom(rowH)
+      page.drawText(winAnsiSafe(label), { x: MX, y, size: 9, font, color: MUTED })
+      let ly = y
+      for (const ln of lines) { page.drawText(ln, { x: VALUE_X, y: ly, size: 10, font, color: TEXT }); ly -= lineH - 2 }
+      y -= rowH
+    }
+    const para = (t: string) => {
+      for (const ln of wrapText(t, font, 9, W - 2 * MX)) { ensureRoom(lineH); page.drawText(ln, { x: MX, y, size: 9, font, color: MUTED }); y -= lineH - 2 }
+    }
+    const table = (cols: TableCol[], rows: string[][]) => {
+      let x = MX
+      const xs = cols.map(c => { const cx = x; x += c.w; return cx })
+      ensureRoom(lineH + 6)
+      cols.forEach((c, i) => {
+        const tx = c.align === 'right' ? xs[i] + c.w - bold.widthOfTextAtSize(c.header, 8) : xs[i]
+        page.drawText(winAnsiSafe(c.header), { x: tx, y, size: 8, font: bold, color: MUTED })
+      })
+      y -= 4
+      page.drawLine({ start: { x: MX, y }, end: { x: W - MX, y }, thickness: 0.5, color: RULE })
+      y -= lineH - 3
+      for (const r of rows) {
+        ensureRoom(lineH)
+        cols.forEach((c, i) => {
+          const cell = winAnsiSafe(r[i] ?? '')
+          const useFont = c.align === 'right' ? mono : font
+          const tx = c.align === 'right' ? xs[i] + c.w - useFont.widthOfTextAtSize(cell, 9) : xs[i]
+          page.drawText(cell, { x: tx, y, size: 9, font: useFont, color: TEXT })
+        })
+        y -= lineH
+      }
+    }
+    const gap = (n = 8) => { y -= n }
+    header()
+    if (subtitle) { page.drawText(winAnsiSafe(subtitle), { x: MX, y, size: 9, font, color: MUTED }); y -= 18 }
+    draw({ sec, row, para, table, gap })
+  }
+
   let logoImg: Awaited<ReturnType<typeof pdfDoc.embedPng>> | null = null
   try {
     const logoRes = await fetch('/assets/TAL-Logo-Black.png')
@@ -171,6 +250,42 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
       x: MX, y: 48, size: 8, font, color: MUTED,
     })
   }
+
+  // ─────────── fleet/ROM model (drives customer summary + appendix) ───────────
+  const vehicles = await fetchVehiclesSafe()
+  const vehicleById = new Map(vehicles.map(v => [v.id, v]))
+  const vName = (id: string) => vehicleById.get(id)?.name ?? id
+  const { computeFleetModel } = await import('./fleetModel')
+  const model = computeFleetModel(project, vehicles)
+
+  // ─────────── CUSTOMER: RECOMMENDED FLEET ───────────
+  renderSection('RECOMMENDED FLEET', 'Sized from your material flows, charging, and buffer policy.', ({ sec, row, table }) => {
+    const f = model.fleet
+    if (f.groups.length === 0) {
+      row('Fleet', 'Not yet sized — assign vehicles to flows in the Fleet Engine.')
+      return
+    }
+    row('Total fleet', `${f.totalFleetSold} vehicle${f.totalFleetSold === 1 ? '' : 's'}`)
+    row('Vehicle types', String(f.groups.length))
+    row('Total throughput', `${Math.round(model.flows.reduce((s, fl) => s + (fl.thruPerHr || 0), 0))} moves / hr`)
+    sec('Fleet mix')
+    table(
+      [{ header: 'Vehicle', w: 250 }, { header: 'Raw demand', w: 110, align: 'right' }, { header: 'Fleet', w: 80, align: 'right' }],
+      f.groups.map(g => [vName(g.vehicleId), g.groupRaw.toFixed(2), String(g.fleetSold)]),
+    )
+  })
+
+  // ─────────── CUSTOMER: INVESTMENT & RETURN ───────────
+  renderSection('INVESTMENT & RETURN', 'Rough-order magnitude — not a quote.', ({ row, para, gap }) => {
+    const rom = model.rom
+    row('ROM CAPEX', usdRange(rom.pricing.totalMin, rom.pricing.totalMax))
+    row('Annual labor offset', `${money(rom.payback.annualLaborOffset)} / yr`)
+    row('Annual OPEX (energy + maint.)', `${money(rom.opex.annualOpex)} / yr`)
+    row('Net benefit', `${money(rom.payback.annualLaborOffset - rom.opex.annualOpex)} / yr`)
+    row('Payback', rom.payback.paybackYears == null ? '—' : `${rom.payback.paybackYears.toFixed(1)} years`)
+    gap(10)
+    para('CAPEX is a list-price range across the fleet mix. Payback = CAPEX midpoint ÷ annual labor offset. OPEX (energy + maintenance) is informational and not included in the payback.')
+  })
 
   // ─────────── APPLICATION REQUIREMENTS (auto-paginates) ───────────
   {
@@ -319,8 +434,7 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
     row('Notes', project.projectNotes)
   }
 
-  // ─────────── PAGE 3: VEHICLE COMPATIBILITY ───────────
-  const vehicles = await fetchVehiclesSafe()
+  // ─────────── VEHICLE COMPATIBILITY ───────────
   if (vehicles.length > 0) {
     const page = pdfDoc.addPage([W, H])
     page.drawText('VEHICLE COMPATIBILITY', {
@@ -360,6 +474,78 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
       }
       y -= 8
     }
+  }
+
+  // ─────────── INTERNAL APPENDIX (divider + full detail) ───────────
+  {
+    const page = pdfDoc.addPage([W, H])
+    page.drawText('INTERNAL APPENDIX', { x: MX, y: H / 2 + 6, size: 22, font: bold, color: TAL_RED })
+    page.drawText(winAnsiSafe('Full flows, fleet build-up, and ROM detail. Not for customer distribution.'), {
+      x: MX, y: H / 2 - 18, size: 10, font, color: MUTED,
+    })
+  }
+
+  if (model.flows.length > 0) {
+    renderSection('APPENDIX — MATERIAL FLOWS', 'Every flow with its derived cycle time and raw demand.', ({ table }) => {
+      table(
+        [
+          { header: '#', w: 22 }, { header: 'Route', w: 172 }, { header: 'Vehicle', w: 108 },
+          { header: 'Dist ft', w: 52, align: 'right' }, { header: 'Mv/hr', w: 48, align: 'right' },
+          { header: 'Cycle s', w: 52, align: 'right' }, { header: 'Raw', w: 46, align: 'right' },
+        ],
+        model.flows.map((fl, i) => {
+          const d = model.derivedByFlowId.get(fl.id)
+          return [
+            String(i + 1),
+            `${fl.origin || '—'} -> ${fl.destination || '—'}`,
+            fl.vehicleId ? vName(fl.vehicleId) : '—',
+            String(Math.round(fl.distanceFt || 0)), String(fl.thruPerHr || 0),
+            d?.cycleSeconds == null ? '—' : d.cycleSeconds.toFixed(0),
+            d?.rawVehicles == null ? '—' : d.rawVehicles.toFixed(2),
+          ]
+        }),
+      )
+    })
+  }
+
+  if (model.fleet.groups.length > 0) {
+    renderSection('APPENDIX — FLEET BUILD-UP', `Buffer x${(1 + model.settings.bufferPct).toFixed(2)} — rounds once per vehicle pool.`, ({ table }) => {
+      table(
+        [
+          { header: 'Vehicle', w: 150 }, { header: 'Raw', w: 60, align: 'right' }, { header: 'Base', w: 50, align: 'right' },
+          { header: '+Chg', w: 50, align: 'right' }, { header: 'Avail', w: 56, align: 'right' }, { header: 'Sold', w: 50, align: 'right' },
+        ],
+        model.fleet.groups.map(g => [
+          vName(g.vehicleId), g.groupRaw.toFixed(2), String(g.baseFleet),
+          g.charging.chargingDelta > 0 ? `+${g.charging.chargingDelta}` : '0',
+          g.charging.availability == null ? '—' : `${Math.round(g.charging.availability * 100)}%`,
+          String(g.fleetSold),
+        ]),
+      )
+    })
+
+    renderSection('APPENDIX — ROM DETAIL', null, ({ sec, row, table }) => {
+      const rom = model.rom
+      sec('Pricing by vehicle')
+      table(
+        [
+          { header: 'Vehicle', w: 150 }, { header: 'Qty', w: 40, align: 'right' },
+          { header: 'Unit (min-max)', w: 150, align: 'right' }, { header: 'Line (min-max)', w: 150, align: 'right' },
+        ],
+        rom.pricing.lines.map(l => [
+          vName(l.vehicleId), String(l.fleetSold),
+          `${money(l.unitMin)}-${money(l.unitMax)}`, `${money(l.lineMin)}-${money(l.lineMax)}`,
+        ]),
+      )
+      sec('Economics')
+      row('CAPEX range', usdRange(rom.pricing.totalMin, rom.pricing.totalMax))
+      row('Operators displaced', String(model.costs.numberOfOperators))
+      row('Fully-burdened rate', `${money(model.costs.fullyBurdenedRateUsdPerYear)} / yr`)
+      row('Annual labor offset', `${money(rom.payback.annualLaborOffset)} / yr`)
+      row('Annual energy', `${money(rom.opex.annualEnergyCost)} / yr`)
+      row('Annual maintenance', `${money(rom.opex.annualMaintenance)} / yr`)
+      row('Payback', rom.payback.paybackYears == null ? '—' : `${rom.payback.paybackYears.toFixed(1)} years`)
+    })
   }
 
   // ─────────── EMBED JSON ───────────

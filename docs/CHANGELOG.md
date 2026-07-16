@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-16 — Exports reworked: two-part PDF + live-formula Excel
+
+- **Excel is now a single editable "Fleet Model" sheet** (`xlsxExport.ts`, fully
+  rewritten). Every input (distance, moves/hr, speeds, transfer/lift times,
+  availability, buffer) is a real cell and everything downstream is a **live Excel
+  formula**: `Cycle = dist/(spdL·f)+dist/(spdE·f)+load+unload+lift`,
+  `Raw = moves·cycle/3600`, `Base = ROUNDUP(SUMIF raw)`, `+Charging`, and
+  `Fleet sold = MAX(base, ROUNDUP((raw/avail)·(1+buffer)))` referencing the buffer
+  cell `$B$3`. Change any input offline and the fleet recomputes exactly as the app
+  does. (Dropped the old Summary/Requirements/ROM sheets — "just the fleet table.")
+- **PDF is now a two-part document** (`pdfExport.ts`). Customer-facing first —
+  cover, **Recommended Fleet** (total + mix), **Investment & Return** (CAPEX range,
+  payback, labor offset, net benefit), requirements, vehicle compatibility — then an
+  **Internal Appendix**: full Material Flows (cycle/raw), Fleet Build-Up waterfall,
+  and ROM Detail (pricing lines + OPEX + payback), plus the embedded re-importable
+  JSON. New reusable auto-paginating section/table renderer.
+- Tests: `xlsxExport.test.ts` (formulas match the calc engine) and
+  `pdfExportFleet.test.ts` (both parts render for a sized fleet).
+
 ## 2026-07-15 — Ribbon fits at every width (tablet/laptop spill fixed)
 
 - **Root cause of the step-ribbon spill:** the tabs are flex items whose default

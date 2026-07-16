@@ -498,10 +498,23 @@ first stage open) leading the section, above the live `FleetMath` worked numbers
 matrix, Resilience, and the Assumptions value-list. The same content is appended to the **branded
 PPTX** as a Methodology appendix slide (cloned + filled — see below).
 
-**Export:** proposal PDF (embedded-JSON pattern, with a fleet/ROM page) · project
-JSON · **Branded PowerPoint** (see below) · **Excel workbook** (`.xlsx`, client-side via
-SheetJS — Summary, Requirements, Flows, Fleet waterfall, ROM sheets). Excel builds on
-`src/lib/fleetModel.ts` (`computeFleetModel`) and is dynamically imported.
+**Export:** two-part proposal PDF · project JSON · **Branded PowerPoint** (see below) ·
+**editable Excel fleet model**. All build on `src/lib/fleetModel.ts` (`computeFleetModel`).
+
+- **Proposal PDF** (`src/lib/pdfExport.ts`, pdf-lib) — a two-part document.
+  *Customer-facing first:* cover, **Recommended Fleet** (total + mix), **Investment &
+  Return** (CAPEX range, payback, labor offset, net benefit), Application Requirements,
+  Vehicle Compatibility. *Internal Appendix:* Material Flows (per-flow cycle/raw), Fleet
+  Build-Up waterfall, ROM Detail (pricing lines + OPEX + payback) — then the embedded
+  re-importable `project.json` (embedded-JSON import pattern). A shared auto-paginating
+  section/table renderer draws both parts.
+- **Excel fleet model** (`src/lib/xlsxExport.ts`, SheetJS, dynamically imported) — one
+  editable `Fleet Model` sheet, no other tabs. Every input is a real cell and the whole
+  chain is **live Excel formulas**: `Cycle = dist/(spdL·f)+dist/(spdE·f)+load+unload+lift`,
+  `Raw = moves·cycle/3600`, `Base = ROUNDUP(SUMIF)`, `+Charging`,
+  `Fleet sold = MAX(base, ROUNDUP((raw/avail)·(1+buffer)))` referencing the buffer cell
+  `$B$3`. Editing any input recomputes the fleet offline exactly as the app does.
+  `buildFleetModelSheet(utils, project, vehicles)` is pure/unit-tested.
 
 **Branded PowerPoint (template-fill).** The `.pptx` export fills the official 35-slide TAL
 deck (`public/templates/tal-rom-template.pptx`) rather than building slides from scratch —
