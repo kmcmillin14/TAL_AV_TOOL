@@ -350,12 +350,19 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   .hero-meta-sep { display: none; }
   /* Step tabs swipe horizontally instead of cramming five into 390px. The
      current tab is auto-scrolled into view (PersistentHeader) and tinted so the
-     user can see where they are in the flow. */
-  .step-dots { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-padding-inline: 16px; }
+     user can see where they are in the flow. The nav clips to its own width and a
+     right-edge fade signals that the strip scrolls. */
+  .hero-nav { position: relative; max-width: 100%; overflow: hidden; }
+  .hero-nav::after {
+    content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 28px;
+    pointer-events: none; background: linear-gradient(90deg, transparent, var(--bg-base));
+  }
+  .step-dots { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-padding-inline: 16px; }
   .step-dots::-webkit-scrollbar { display: none; }
-  .step-dot { flex: 0 0 auto; min-width: 124px; }
+  .step-dot { flex: 0 0 auto; min-width: 104px; }
   .step-dot.current { background: var(--bg-surface); }
-  .step-dot .label { padding: 12px 16px; }
+  .step-dot .label { padding: 11px 14px; gap: 7px; }
+  .step-dot .num, .step-dot .name { font-size: 10.5px; }
 }
 
 /* OPP / LEAD dropdown disguised as a label */
@@ -2992,6 +2999,10 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   margin-left: auto;   /* pin to the page's right edge */
 }
 .eh-actions .btn { height: 34px; padding: 0 14px; font-size: 12.5px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+/* Compact, low-key page actions (ROM Save / Export) — smaller + lighter than the
+   old full-width Save Revision / Export to Customer pair. */
+.eh-actions-compact { gap: 8px; }
+.btn.btn-sm, .eh-actions-compact .btn { height: 30px; padding: 0 11px; font-size: 12px; gap: 5px; }
 .eh-eyebrow {
   display: block;
   font-family: var(--tal-font-numeric);

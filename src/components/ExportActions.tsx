@@ -7,9 +7,9 @@ import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import PptxSectionPicker from './rom/PptxSectionPicker'
 
 /**
- * Save Revision (Working PDF · JSON · XLSX) + Export to Customer (branded PPTX
- * section picker), rendered inside a page header's blank space (Fleet Engine /
- * ROM Dashboard). The hero bar keeps its compact icon menu on every step.
+ * Compact Save (project .json) + Export menu (PPTX customer deck · PDF proposal ·
+ * XLSX workbook), rendered in the ROM Dashboard page header. The hero bar keeps
+ * its own compact icon menu on every step; these are the low-key page actions.
  */
 export default function ExportActions({ projectId }: { projectId: string }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -68,28 +68,37 @@ export default function ExportActions({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="eh-actions">
+    <div className="eh-actions eh-actions-compact">
+      <button
+        type="button"
+        className="btn ghost btn-sm"
+        title="Save the re-importable project file (.json)"
+        onClick={saveJson}
+      >
+        <Icon name="save" size={13} /> Save
+      </button>
+
       <div className="header-menu-wrap" ref={wrapRef}>
         <button
           type="button"
-          className="btn ghost"
+          className="btn primary btn-sm"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-          title="Save a re-importable revision file (PDF · JSON · XLSX)"
+          title="Export a deliverable (PPTX · PDF · XLSX)"
           onClick={() => setMenuOpen(o => !o)}
         >
-          <Icon name="save" size={14} /> Save Revision <Icon name="chevronD" size={12} />
+          <Icon name="export" size={13} /> Export <Icon name="chevronD" size={11} />
         </button>
         {menuOpen && (
           <div className="header-menu-popover" role="menu">
-            <div className="header-menu-cap">Save this revision</div>
-            <button type="button" className="header-menu-item" role="menuitem" onClick={savePdf}>
-              <span>Working PDF (re-importable)</span>
-              <span className="hint">.pdf</span>
+            <div className="header-menu-cap">Export</div>
+            <button type="button" className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); exportPptx() }}>
+              <span>Customer deck</span>
+              <span className="hint">.pptx</span>
             </button>
-            <button type="button" className="header-menu-item" role="menuitem" onClick={saveJson}>
-              <span>Project file</span>
-              <span className="hint">.json</span>
+            <button type="button" className="header-menu-item" role="menuitem" onClick={savePdf}>
+              <span>Proposal PDF</span>
+              <span className="hint">.pdf</span>
             </button>
             <button type="button" className="header-menu-item" role="menuitem" onClick={saveXlsx}>
               <span>Excel workbook</span>
@@ -98,15 +107,6 @@ export default function ExportActions({ projectId }: { projectId: string }) {
           </div>
         )}
       </div>
-
-      <button
-        type="button"
-        className="btn primary"
-        title="Build the branded customer deck (.pptx)"
-        onClick={exportPptx}
-      >
-        <Icon name="export" size={14} /> Export to Customer
-      </button>
 
       {pptxProject && <PptxSectionPicker project={pptxProject} onClose={() => setPptxProject(null)} />}
     </div>

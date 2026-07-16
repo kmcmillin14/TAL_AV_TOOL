@@ -25,22 +25,24 @@ const STEPS: Step[] = [
     body: 'This tool sizes an AGV/AMR fleet in four steps. The engineering discipline behind it: Cut waste → Connect the moves → Add the economics. Here is where each step lives.',
   },
   {
-    target: '.hero-nav .step-dot:nth-child(1)',
+    // Tabs are 0-indexed steps (Start · Application · Vehicles · Fleet Engine ·
+    // ROM), so Requirements is the 2nd tab, and so on.
+    target: '.hero-nav .step-dot:nth-child(2)',
     title: '① Requirements',
     body: 'Capture what you move, how it transfers, and the environment. These answers qualify vehicles — nothing here is required to move on.',
   },
   {
-    target: '.hero-nav .step-dot:nth-child(2)',
+    target: '.hero-nav .step-dot:nth-child(3)',
     title: '② Vehicles',
     body: 'See which vehicles pass your requirements (green / yellow / red). Informational — you never pick a vehicle here; you just learn the candidates.',
   },
   {
-    target: '.hero-nav .step-dot:nth-child(3)',
+    target: '.hero-nav .step-dot:nth-child(4)',
     title: '③ Fleet Engine',
     body: 'Define your material flows and assign a vehicle to each. This is the heart of the tool — cycle times and raw demand compute live as you go.',
   },
   {
-    target: '.hero-nav .step-dot:nth-child(4)',
+    target: '.hero-nav .step-dot:nth-child(5)',
     title: '④ ROM Dashboard',
     body: 'Fleet size, CAPEX, payback, and cost-per-move — then export the customer deck. Adjust the drivers to run what-if scenarios.',
   },
@@ -81,6 +83,12 @@ export default function GuidedTour() {
 
   useLayoutEffect(() => {
     if (!open) return
+    // Bring the target into view first — on a phone the step ribbon scrolls, so a
+    // highlighted tab may be off-screen. (Only here, on step change, never inside
+    // measure — that would feedback-loop with the scroll listener.)
+    if (step?.target) {
+      document.querySelector<HTMLElement>(step.target)?.scrollIntoView({ inline: 'center', block: 'nearest' })
+    }
     // Defer the first measure a frame so we don't setState synchronously in the
     // effect body (and so the spotlighted element has painted).
     const raf = requestAnimationFrame(measure)
@@ -91,7 +99,7 @@ export default function GuidedTour() {
       window.removeEventListener('resize', measure)
       window.removeEventListener('scroll', measure, true)
     }
-  }, [open, measure])
+  }, [open, step?.target, measure])
 
   // Escape closes; body scroll locked while the tour is up.
   useEffect(() => {

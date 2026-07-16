@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-15 — Ribbon overflow, tour alignment, simplified ROM actions
+
+- **Step ribbon overflow** — on a phone the nav now clips to its own width with a
+  right-edge fade signaling the strip scrolls; tabs are smaller (104px) and the
+  current tab centers into view. No more page-level sideways spill.
+- **Guided-tour highlight was off by one** — the step tabs are 0-indexed (Start
+  is the 1st tab), so the tour highlighted the wrong tab. Fixed to `nth-child(2…5)`
+  and the tour now scrolls an off-screen tab into view before spotlighting it.
+- **ROM Save / Export simplified** — the big "Save Revision ▾ / Export to Customer"
+  pair becomes two compact buttons: **Save** (project `.json`) and an **Export**
+  menu (Customer deck `.pptx` · Proposal `.pdf` · Excel `.xlsx`).
+
 ## 2026-07-15 — Mobile: nav chrome + Step 3 charging/buffer
 
 - **Step ribbon** — the current step tab now auto-scrolls into view on a phone
