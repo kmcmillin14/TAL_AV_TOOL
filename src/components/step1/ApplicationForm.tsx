@@ -23,6 +23,20 @@ const PALLET_AUTOFILL: Record<string, { l: number; w: number; h: number }> = {
   CHEP: { l: 45.9, w: 45.9, h: 5.9 },
 }
 
+/** Patch a load's dimensions from a pallet subtype, in raw IMPERIAL inches
+ *  (storage is imperial-first — never convert here, or metric round-trips corrupt
+ *  the value, e.g. 48 → 48/25.4). Returns a new array, or null when the subtype
+ *  has no standard dims ("Custom") or the row is missing. Pure — unit-tested. */
+export function palletLoadPatch<L extends { lengthIn?: number | null; widthIn?: number | null; heightIn?: number | null }>(
+  loads: L[], i: number, subtype: string,
+): L[] | null {
+  const d = PALLET_AUTOFILL[subtype.split(' ')[0]]
+  if (!d || !loads[i]) return null
+  const next = loads.slice()
+  next[i] = { ...next[i], lengthIn: d.l, widthIn: d.w, heightIn: d.h }
+  return next
+}
+
 const PALLET_SUBTYPES = ['GMA (48×40)', 'Euro (47.2×31.5)', 'CHEP (45.9×45.9)', 'Custom']
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
 const INTERLOCKS = ['High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems', 'Other']
@@ -240,14 +254,10 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   // remount — the inputs then re-render through their unit-aware `defaultValue`.
   const handlePalletSubtype = (i: number, subtype: string) => {
     onBlurSave()   // persist the subtype pick (+ any pending edits) first
-    const key = subtype.split(' ')[0] as keyof typeof PALLET_AUTOFILL
-    const d = PALLET_AUTOFILL[key]
-    if (!d || !projectId) return   // e.g. "Custom" — no dimensions to fill
-    const proj = getProject(projectId)
-    const loads = [...(proj?.loads ?? [])]
-    if (!loads[i]) return
-    loads[i] = { ...loads[i], lengthIn: d.l, widthIn: d.w, heightIn: d.h }
-    updateProject(projectId, { loads })
+    if (!projectId) return
+    const patched = palletLoadPatch(getProject(projectId)?.loads ?? [], i, subtype)
+    if (!patched) return   // "Custom" (no standard dims) or missing row
+    updateProject(projectId, { loads: patched })
     reloadForm()
   }
 
