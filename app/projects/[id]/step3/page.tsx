@@ -134,6 +134,13 @@ export default function FleetEnginePage() {
   const flowCount = flows.length
   const totalThruPerHr = Math.round(flows.reduce((sum, f) => sum + (f.thruPerHr || 0), 0))
 
+  // The "bogey": ideal raw demand vs the fleet actually provisioned. Effective
+  // utilization (raw ÷ sold) and the overhead multiple make the total headroom
+  // — charging + utilization + rounding — a visible, defensible number.
+  const totalRaw = fleet.groups.reduce((s, g) => s + g.groupRaw, 0)
+  const effUtilPct = fleet.totalFleetSold > 0 ? Math.round((totalRaw / fleet.totalFleetSold) * 100) : 0
+  const overheadX = totalRaw > 0 ? fleet.totalFleetSold / totalRaw : 0
+
   return (
     <div className="app-shell">
       <PersistentHeader
@@ -202,6 +209,13 @@ export default function FleetEnginePage() {
                     <span className="ep-label">Total</span>
                     <span className="ep-val mono">{fleet.totalFleetSold}</span>
                   </div>
+                </div>
+                <div className="er-bogey" title="Ideal raw demand vs the fleet provisioned — the overhead is charging + utilization headroom + rounding">
+                  <span className="mono">{totalRaw.toFixed(1)}</span> raw
+                  <span className="er-bogey-arrow" aria-hidden="true"> → </span>
+                  <span className="mono">{fleet.totalFleetSold}</span> sold ·
+                  <span className="mono"> {effUtilPct}%</span> utilization ·
+                  <span className="mono"> ×{overheadX.toFixed(2)}</span> overhead
                 </div>
               </div>
               <div className="er-kpis">

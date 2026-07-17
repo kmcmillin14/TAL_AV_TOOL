@@ -3121,6 +3121,13 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .ep-total .ep-label { color: var(--accent); }
 .ep-total.on .ep-val { color: var(--accent); }
 @media (prefers-reduced-motion: reduce) { .ep-seg { transition: none; } }
+/* The bogey line — raw vs provisioned, effective utilization, overhead multiple. */
+.er-bogey {
+  margin-top: 8px; font-family: var(--tal-font-family); font-size: 11.5px;
+  color: var(--text-tertiary); line-height: 1.5;
+}
+.er-bogey .mono { color: var(--text-secondary); font-weight: 700; }
+.er-bogey-arrow { color: var(--text-tertiary); }
 .er-mix {
   flex: 1 1 240px;
   border-left: 1px solid var(--border);
