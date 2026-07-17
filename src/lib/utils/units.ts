@@ -5,10 +5,6 @@ export const units = {
     toMetric: (lbs: number) => lbs * 0.453592,
     toImperial: (kg: number) => kg / 0.453592,
     label: (s: UnitSystem) => s === 'metric' ? 'kg' : 'lbs',
-    display: (lbs: number, s: UnitSystem) =>
-      s === 'metric'
-        ? `${(lbs * 0.453592).toFixed(1)} kg`
-        : `${lbs.toFixed(1)} lbs`,
   },
   dimension: {
     toMetric: (inches: number) => inches * 25.4,

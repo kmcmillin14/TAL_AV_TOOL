@@ -74,7 +74,9 @@ export default function FlowRow({
   const roundTripFt = flow.distanceFt * 2
   const distDisplay = metric
     ? units.distance.toMetric(roundTripFt).toFixed(0)
-    : roundTripFt.toString()
+    // Round imperial too — a metric-origin value is a long float (÷0.3048); the
+    // raw string would show a decimal tail like 7545.931758…
+    : String(Math.round(roundTripFt * 10) / 10)
 
   const setDistance = (input: string) => {
     const n = clampNum(input)

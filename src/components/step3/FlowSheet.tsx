@@ -45,7 +45,8 @@ export default function FlowSheet({ flow, index, vehicles, derived, unitSystem, 
   const [transferOpen, setTransferOpen] = useState(false)
 
   const roundTripFt = flow.distanceFt * 2
-  const distDisplay = metric ? units.distance.toMetric(roundTripFt).toFixed(0) : roundTripFt.toString()
+  // Round both units — a metric-origin imperial value is a long float (÷0.3048).
+  const distDisplay = metric ? units.distance.toMetric(roundTripFt).toFixed(0) : String(Math.round(roundTripFt * 10) / 10)
   const setDistance = (input: string) => {
     const n = clampNum(input)
     const oneWay = (metric ? units.distance.toImperial(n) : n) / 2
@@ -69,7 +70,7 @@ export default function FlowSheet({ flow, index, vehicles, derived, unitSystem, 
   const cycleTxt = derived.cycleSeconds == null ? '—' : `${Math.round(derived.cycleSeconds)}s`
   const demandTxt = derived.rawVehicles == null ? '—' : derived.rawVehicles.toFixed(2)
 
-  const heightValue = metric ? Number(units.distance.toMetric(flow.liftHeightFt).toFixed(1)) : flow.liftHeightFt
+  const heightValue = metric ? Number(units.distance.toMetric(flow.liftHeightFt).toFixed(1)) : Math.round(flow.liftHeightFt * 10) / 10
   const onHeight = (input: string) => {
     const n = clampNum(input)
     onChange({ ...flow, liftHeightFt: metric ? units.distance.toImperial(n) : n })

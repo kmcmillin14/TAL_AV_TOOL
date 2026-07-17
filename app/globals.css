@@ -360,21 +360,21 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   /* The page-header's absolutely-pinned action row (save/units chip) returns to
      normal flow, centered under the title, so it doesn't overlap on a phone. */
   .page-header > .row { position: static; justify-content: center; }
-  /* Step tabs swipe horizontally instead of cramming five into 390px. The
-     current tab is auto-scrolled into view (PersistentHeader) and tinted so the
-     user can see where they are in the flow. The nav clips to its own width and a
-     right-edge fade signals that the strip scrolls. */
-  .hero-nav { position: relative; max-width: 100%; overflow: hidden; }
-  .hero-nav::after {
-    content: ''; position: absolute; top: 0; right: 0; bottom: 0; width: 28px;
-    pointer-events: none; background: linear-gradient(90deg, transparent, var(--bg-base));
-  }
-  .step-dots { overflow-x: auto; max-width: 100%; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-padding-inline: 16px; }
-  .step-dots::-webkit-scrollbar { display: none; }
-  .step-dot { flex: 0 0 auto; min-width: 104px; }
+  /* The five tabs stay equal-width (flex: 1) so the ribbon is always symmetric —
+     they shrink to fit rather than scrolling (which read lop-sided). The current
+     tab is tinted. Labels ellipsize as they narrow. */
+  .hero-nav { max-width: 100%; overflow: hidden; }
+  .step-dots { max-width: 100%; }
   .step-dot.current { background: var(--bg-surface); }
-  .step-dot .label { padding: 11px 14px; gap: 7px; }
-  .step-dot .num, .step-dot .name { font-size: 10.5px; }
+  .step-dot .label { padding: 11px 6px; gap: 6px; }
+  .step-dot .num, .step-dot .name { font-size: 10px; }
+}
+/* Very narrow: the word labels no longer fit five-across — show just the step
+   number, still equal-width and centered (symmetric), not a cramped ellipsis. */
+@media (max-width: 520px) {
+  .step-dot .name { display: none; }
+  .step-dot .label { padding: 12px 4px; justify-content: center; }
+  .step-dot .num { font-size: 12px; }
 }
 
 /* OPP / LEAD dropdown disguised as a label */

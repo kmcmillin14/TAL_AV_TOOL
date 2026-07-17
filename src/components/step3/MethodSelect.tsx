@@ -67,7 +67,7 @@ export default function MethodSelect({
 
   const heightValue = metric
     ? Number(units.distance.toMetric(liftHeightFt).toFixed(1))
-    : liftHeightFt
+    : Math.round(liftHeightFt * 10) / 10   // round imperial too (metric-origin float)
   const onHeight = (input: string) => {
     const n = Number(input)
     const safe = !Number.isFinite(n) || n < 0 ? 0 : n
