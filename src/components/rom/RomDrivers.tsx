@@ -1,6 +1,7 @@
 'use client'
 
 import type { ScenarioDrivers } from '@/src/lib/scenario'
+import { bufferFromUtilization, utilizationFromBuffer } from '@/src/calc/types'
 
 /** One editable driver. `format`/`parse` map between the stored number and the
  *  input string so e.g. percent fields show 10 for 0.10. */
@@ -25,8 +26,8 @@ const DRIVERS: DriverDef[] = [
   { key: 'fullyBurdenedRateUsdPerYear', label: 'Fully-burdened labor', suffix: '$/yr', step: 1000, min: 0 },
   { key: 'annualMaintenancePctOfCapex', label: 'Maintenance', suffix: '% of CAPEX', step: 1, min: 0,
     toInput: n => Math.round(n * 100), fromInput: n => n / 100 },
-  { key: 'bufferPct', label: 'Buffer', suffix: '%', step: 1, min: 0, max: 100,
-    toInput: n => Math.round(n * 100), fromInput: n => n / 100 },
+  { key: 'bufferPct', label: 'Target utilization', suffix: '%', step: 1, min: 50, max: 100,
+    toInput: n => Math.round(utilizationFromBuffer(n) * 100), fromInput: n => bufferFromUtilization(n / 100) },
   { key: 'serviceLifeYears', label: 'Service life', suffix: 'yr', step: 1, min: 1, max: 20 },
 ]
 

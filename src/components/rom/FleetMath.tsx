@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetSummary, Flow, FlowDerived } from '@/src/calc/types'
-import { DEFAULT_DOD } from '@/src/calc/types'
+import { DEFAULT_DOD, DEFAULT_BUFFER_PCT } from '@/src/calc/types'
 
 interface Props {
   project: StoredProject
@@ -27,7 +27,7 @@ const route = (f: Flow) => `${f.origin || '—'} → ${f.destination || '—'}`
  * (FlowDerived / FleetGroup); this only narrates them.
  */
 export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehicleById }: Props) {
-  const buffer = project.bufferPct ?? 0.10
+  const buffer = project.bufferPct ?? DEFAULT_BUFFER_PCT
   const assigned = flows.filter(f => f.vehicleId && derivedByFlowId.get(f.id)?.rawVehicles != null)
   const [scope, setScope] = useState<string>('system') // 'system' | flowId
 

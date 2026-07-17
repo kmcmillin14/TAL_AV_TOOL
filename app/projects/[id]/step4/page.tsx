@@ -10,6 +10,7 @@ import { useUnitSystem } from '@/src/lib/uiPrefs'
 import { computeFleetModel } from '@/src/lib/fleetModel'
 import { applyDrivers, scenarioKpis, diffKpis, type ScenarioDrivers } from '@/src/lib/scenario'
 import { effDailyOpHr, defaultOperatingDaysPerYear, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
+import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
 import RomKpis from '@/src/components/rom/RomKpis'
 import RomDrivers from '@/src/components/rom/RomDrivers'
 import RomBento from '@/src/components/rom/RomBento'
@@ -52,7 +53,7 @@ export default function RomDashboardPage() {
     fullyBurdenedRateUsdPerYear: project?.fullyBurdenedRateUsdPerYear ?? 65000,
     energyCostUsdPerKwh: project?.energyCostUsdPerKwh ?? 0.12,
     annualMaintenancePctOfCapex: project?.annualMaintenancePctOfCapex ?? 0.08,
-    bufferPct: project?.bufferPct ?? 0.10,
+    bufferPct: project?.bufferPct ?? DEFAULT_BUFFER_PCT,
     serviceLifeYears: project?.serviceLifeYears ?? 10,
   }), [project])
 

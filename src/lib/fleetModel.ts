@@ -2,7 +2,7 @@
 // same derivation chain useFleetData runs in React, as one pure call.
 import type { StoredProject } from './storage'
 import type { Vehicle } from './vehicleLibrary'
-import type { FleetSettings, Flow, FlowDerived, FleetSummary } from '../calc/types'
+import { DEFAULT_BUFFER_PCT, type FleetSettings, type Flow, type FlowDerived, type FleetSummary } from '../calc/types'
 import { flowDerived, groupSummary } from '../calc/flowMetrics'
 import { fleetSummary, defaultChargeRegime } from '../calc/fleet'
 import { romSummary, type RomSummary, type RomCostInputs } from '../calc/rom'
@@ -36,7 +36,7 @@ export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): 
   const breakHrs = (project.breaksPerShift ?? 0) * ((project.breakDurationMin ?? 0) / 60) * shiftsPerDay
   const settings: FleetSettings = {
     regime: project.chargeRegime ?? defaultChargeRegime(dailyOpHr),
-    bufferPct: project.bufferPct ?? 0.10,
+    bufferPct: project.bufferPct ?? DEFAULT_BUFFER_PCT,
     dailyOpHr,
     breakHrs,
     consecutiveOpDays: consecutiveOperatingDays(project.operatingDaysPattern, project.operatingDaysCustom),

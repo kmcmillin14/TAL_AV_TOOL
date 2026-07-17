@@ -160,7 +160,7 @@ export default function FleetEnginePage() {
             sections={[
               { id: 'engine-raw', num: '01', label: 'Raw Fleet' },
               { id: 'engine-charging', num: '02', label: 'Charging' },
-              { id: 'engine-buffer', num: '03', label: 'Buffer' },
+              { id: 'engine-buffer', num: '03', label: 'Utilization' },
             ]}
             topSlot={
               <div className="section-nav-progress">
@@ -194,7 +194,7 @@ export default function FleetEnginePage() {
                   </div>
                   <span className="ep-op" aria-hidden="true">×</span>
                   <div className="ep-seg on">
-                    <span className="ep-label">Buffer</span>
+                    <span className="ep-label">Headroom</span>
                     <span className="ep-val mono">{(1 + settings.bufferPct).toFixed(2)}</span>
                   </div>
                   <span className="ep-op" aria-hidden="true">=</span>
@@ -278,8 +278,8 @@ export default function FleetEnginePage() {
             <ScrollSection
               id="engine-buffer"
               num="03"
-              title="Buffer"
-              sub="Policy — margin for maintenance, training, and demand spikes"
+              title="Target Utilization"
+              sub="Policy — size to a target utilization (80% standard) for demand & maintenance headroom"
             >
               <BufferPipeline
                 flows={flows}

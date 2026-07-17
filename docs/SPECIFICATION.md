@@ -237,13 +237,20 @@ charger access) — a documented safety margin like the 80% DOD. Days off rechar
 reset, not banking), so the binding case is surviving the consecutive operating days. See
 `docs/superpowers/specs/2026-06-25-charging-model-v2-design.md`.
 
-### Section 03 — Buffer (buffer + total)
-A single project **buffer %** (`bufferPct`, default `0.10`) — the only multiplier in the pipeline —
-applied after charging: `fleetSold = ⌈(baseFleet + chargingDelta) × (1 + bufferPct)⌉`. The section
-shows a **buffer preset dropdown** — `Standard (10%) · Medium (20%) · Conservative (25%) · Custom…`
-(Custom reveals a % input; a stored value that matches no preset displays as Custom automatically;
-`bufferPct` stays a plain number in the schema) — and the per-flow waterfall
-(`base → +charging → ×buffer → fleet`); the binding TOTAL is the hero number.
+### Section 03 — Target Utilization (headroom + total)
+The engineer sets a **target utilization** — the fraction of available time the fleet should run at.
+AMR/AGV fleets are sized to ~**80% peak utilization** (the default): capacity behaves like an M/M/c
+queue, so past ~85% blocking/wait time climbs non-linearly (70% conservative, 85% aggressive). It is
+stored as the equivalent **buffer multiplier** `bufferPct` — the two are inverses,
+`utilization = 1 / (1 + bufferPct)` (`bufferFromUtilization` / `utilizationFromBuffer` in
+`src/calc/types.ts`; `DEFAULT_TARGET_UTILIZATION = 0.80` ⇒ `DEFAULT_BUFFER_PCT = 0.25`). The calc is
+unchanged: `fleetSold = ⌈(groupRaw ÷ availability) × (1 + bufferPct)⌉`. The section shows a
+**utilization preset dropdown** — `Conservative (70%) · Standard (80%) · Aggressive (85%) · Custom…`
+(Custom reveals a % input, clamped 50–100% so the buffer stays ≤ 1.0; a stored value matching no
+preset displays as Custom) — and the per-flow waterfall (`base → +charging → ×headroom → fleet`);
+the binding TOTAL is the hero number. The math/formula and export views keep the mechanical
+`×(1 + buffer)` multiplier label. *(Default changed from a 10% buffer / 91% utilization to 80%
+utilization on 2026-07-16 — the old default was aggressive by AMR standards.)*
 
 ---
 

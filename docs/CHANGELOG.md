@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-07-16 — Fleet sizing reframed as Target Utilization (default 80%)
+
+- **Step-3 section 03 "Buffer" → "Target Utilization".** The engineer now sets the
+  fraction of available time the fleet runs at, instead of a "buffer %". Presets:
+  Conservative 70% · Standard 80% · Aggressive 85% · Custom (clamped 50–100%). It's
+  the number AMR engineers actually reason about and can defend to a customer.
+- **Same math, stored the same.** Utilization is stored as the equivalent buffer
+  multiplier (`bufferPct`), the two are inverses `utilization = 1/(1+buffer)`
+  (`bufferFromUtilization`/`utilizationFromBuffer` + `DEFAULT_TARGET_UTILIZATION`
+  in `src/calc/types.ts`). `fleetSold = ⌈(raw ÷ availability)(1 + buffer)⌉` is
+  unchanged; the waterfall/formula/export views keep the mechanical `×(1+buffer)`.
+- **Default changed: 80% utilization** (`DEFAULT_BUFFER_PCT` 0.10 → 0.25). The old
+  10%-buffer default implied ~91% utilization — aggressive by AMR standards (queue
+  wait climbs non-linearly past ~85%); 80% is the industry sizing target. New/
+  default projects size ~13% larger; existing projects keep their stored value.
+- ROM what-if driver relabelled "Buffer" → "Target utilization" (same conversion).
+  5 new tests lock the inverse mapping and the 80%⇒0.25 default.
+
 ## 2026-07-16 — Unit-conversion audit, symmetric ribbon, security review
 
 - **Unit conversion audited end-to-end.** New 17-test suite (`unitsConversion.test.ts`)

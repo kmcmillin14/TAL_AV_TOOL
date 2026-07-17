@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
 
 /** Bumped when the persisted project shape changes incompatibly. Lives here (not
  *  storage.ts) so the standalone questionnaire can read it without importing storage. */
@@ -129,8 +130,9 @@ export const projectSchema = z.object({
    *  regime then derives from shift coverage (useFleetData: 24 h/day schedules
    *  default to 'continuous'). An explicit choice always wins. */
   chargeRegime: z.enum(['overnight', 'continuous']).optional(),
-  /** Final safety buffer fraction applied after base + charging. */
-  bufferPct: z.number().min(0).max(1).default(0.10),
+  /** Fleet headroom, stored as the buffer multiplier; set in the UI as a target
+   *  utilization (default 80% ⇒ 0.25). See DEFAULT_TARGET_UTILIZATION. */
+  bufferPct: z.number().min(0).max(1).default(DEFAULT_BUFFER_PCT),
   /** Per-vehicleId charge-method override ('opportunity' | 'plugged'). Absent →
    *  derived from the vehicle's chargerType. */
   chargeMethods: z.record(z.string(), z.enum(['opportunity', 'plugged'])).default({}),

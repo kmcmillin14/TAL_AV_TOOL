@@ -228,9 +228,25 @@ export const ROUTE_LAYOUT_FACTORS: Record<RouteLayout, number> = {
   high: 0.7,
 }
 
-/** Default project-level buffer fraction applied by the Fleet Engine after
- *  base + charging. */
-export const DEFAULT_BUFFER_PCT = 0.10
+/**
+ * Fleet headroom is set as a TARGET UTILIZATION and stored internally as the
+ * equivalent buffer multiplier — two views of the same sizing policy:
+ *
+ *   fleetSold ≈ demand × (1 + buffer)   ⇒   utilization = 1 / (1 + buffer)
+ *
+ * Industry practice sizes AMR/AGV fleets to ~80% peak utilization: fleet capacity
+ * behaves like an M/M/c queue, so past ~85% the blocking/wait time climbs
+ * non-linearly. 70% is conservative, 85% aggressive. The UI presents utilization;
+ * the calc keeps the buffer multiplier.
+ */
+export const DEFAULT_TARGET_UTILIZATION = 0.80
+/** utilization → buffer multiplier (u must be in (0, 1]). */
+export const bufferFromUtilization = (u: number) => 1 / u - 1
+/** buffer multiplier → utilization. */
+export const utilizationFromBuffer = (b: number) => 1 / (1 + b)
+
+/** Default project-level buffer, i.e. the 80% target utilization above (= 0.25). */
+export const DEFAULT_BUFFER_PCT = bufferFromUtilization(DEFAULT_TARGET_UTILIZATION)
 
 /** Usable depth-of-discharge fraction for battery runtime/charge math. */
 export const DEFAULT_DOD = 0.80
