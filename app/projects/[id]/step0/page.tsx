@@ -268,32 +268,15 @@ export default function Step0Page() {
               <span className="entry-card-index" aria-hidden>02</span>
               <span className="entry-card-icon" aria-hidden>
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                  <polyline points="14 2 14 8 20 8" />
-                  <path d="M9 13h6" /><path d="M9 17h6" /><path d="M9 9h1" />
-                </svg>
-              </span>
-              <h3>Import Customer Questionnaire</h3>
-              <p>Upload a completed customer questionnaire (.pdf or .json) to auto-fill Step 01.</p>
-              <span className="entry-card-cta">
-                From a customer
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6" /></svg>
-              </span>
-            </button>
-
-            <button type="button" className="entry-card" onClick={() => openPicker()}>
-              <span className="entry-card-index" aria-hidden>03</span>
-              <span className="entry-card-icon" aria-hidden>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                   <polyline points="7 10 12 15 17 10" />
                   <line x1="12" y1="15" x2="12" y2="3" />
                 </svg>
               </span>
-              <h3>Import Previous Revision</h3>
-              <p>Upload a prior proposal (.pdf) or data file (.json) from this app to make a new revision.</p>
+              <h3>Import a File</h3>
+              <p>Upload a completed customer questionnaire or a previous proposal / revision (.pdf or .json) — the tool detects which and loads it.</p>
               <span className="entry-card-cta">
-                Continue / re-spec
+                Import &amp; continue
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6" /></svg>
               </span>
             </button>

@@ -6,7 +6,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import Icon from '@/src/design-system/components/Icon'
 import { effectiveGroups as computeEffectiveGroups } from '@/src/calc/flowMetrics'
-import { sectionColor } from './sectionColor'
+import { groupColorMap } from './sectionColor'
 import { vehicleColor } from './vehicleColor'
 import FlowSheet from './FlowSheet'
 
@@ -28,6 +28,7 @@ const EMPTY: FlowDerived = { cycleSeconds: null, rawVehicles: null, breakdown: n
 export default function FlowListMobile({ flows, flowGroups, flowGroupColors, vehicles, derivedByFlowId, unitSystem, onUpdate, onDelete, onAdd }: Props) {
   const [editId, setEditId] = useState<string | null>(null)
   const effGroups = computeEffectiveGroups(flowGroups, flows)
+  const groupColors = groupColorMap(effGroups, flowGroupColors)
   const ungrouped = flows.filter(f => !f.sectionName || !effGroups.includes(f.sectionName))
   const vName = (id?: string) => (id ? vehicles.find(v => v.id === id)?.name ?? id : 'No vehicle')
   const totalDemand = flows.reduce((s, f) => s + (derivedByFlowId.get(f.id)?.rawVehicles ?? 0), 0)
@@ -64,7 +65,7 @@ export default function FlowListMobile({ flows, flowGroups, flowGroupColors, veh
         return (
           <div key={`g-${g}`} className="m-listgroup">
             <div className="m-listgroup-head">
-              <span className="m-dot" style={{ background: flowGroupColors[g] ?? sectionColor(g) }} />
+              <span className="m-dot" style={{ background: groupColors[g] }} />
               <span className="m-listgroup-name">{g}</span>
               <span className="m-listgroup-meta mono">{gf.length} · {gd.toFixed(2)} veh</span>
               <button type="button" className="btn ghost m-listgroup-add" onClick={() => setEditId(onAdd(g).id)}>
@@ -91,6 +92,7 @@ export default function FlowListMobile({ flows, flowGroups, flowGroupColors, veh
           flow={editing}
           index={indexOf(editing.id)}
           vehicles={vehicles}
+          groups={effGroups}
           derived={derivedByFlowId.get(editing.id) ?? EMPTY}
           unitSystem={unitSystem}
           onChange={next => onUpdate(editing.id, next)}

@@ -17,6 +17,7 @@ interface Props {
   flow: Flow
   index: number
   vehicles: Vehicle[]
+  groups: string[]
   derived: FlowDerived
   unitSystem: UnitSystem
   onChange: (next: Flow) => void
@@ -30,6 +31,15 @@ function clampNum(input: string, min = 0): number {
   return Math.max(min, n)
 }
 
+const NEW_GROUP = '__new_group__'
+/** Next free "Group N" name given the current groups. */
+function nextGroupName(groups: string[]): string {
+  let n = groups.length + 1
+  let name = `Group ${n}`
+  while (groups.includes(name)) name = `Group ${++n}`
+  return name
+}
+
 const LAYOUT_LABEL: Record<RouteLayout, string> = { low: 'Low — congested', medium: 'Medium — mixed', high: 'High — open' }
 
 /**
@@ -38,7 +48,7 @@ const LAYOUT_LABEL: Record<RouteLayout, string> = { low: 'Low — congested', me
  * SheetSelect pickers, transfer is a bespoke BottomSheet (method + transfer
  * time + lift height). Reads/writes the same Flow via onChange (autosave live).
  */
-export default function FlowSheet({ flow, index, vehicles, derived, unitSystem, onChange, onDelete, onClose }: Props) {
+export default function FlowSheet({ flow, index, vehicles, groups, derived, unitSystem, onChange, onDelete, onClose }: Props) {
   const metric = unitSystem === 'metric'
   const v = flow.vehicleId ? vehicles.find(x => x.id === flow.vehicleId) : undefined
   const methodIdx = flow.transferMethodIdx ?? 0
@@ -142,6 +152,20 @@ export default function FlowSheet({ flow, index, vehicles, derived, unitSystem, 
         <SheetSelect label="Avg. Speed" sheetTitle="Route average speed"
           value={flow.routeLayout} options={layoutOptions}
           onChange={id => onChange({ ...flow, routeLayout: id as RouteLayout })}
+        />
+
+        <div className="m-group">Grouping</div>
+        <SheetSelect label="Group" sheetTitle="Assign to a group" placeholder="No group"
+          value={flow.sectionName ?? ''}
+          options={[
+            { id: '', label: 'No group' },
+            ...groups.map(g => ({ id: g, label: g })),
+            { id: NEW_GROUP, label: '+ New group' },
+          ]}
+          onChange={id => onChange({
+            ...flow,
+            sectionName: id === '' ? undefined : id === NEW_GROUP ? nextGroupName(groups) : id,
+          })}
         />
       </div>
 

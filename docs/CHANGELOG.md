@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-17 — Flow grouping fixes + combined import card
+
+- **Assign a flow to a group without dragging.** The only way to group an existing
+  flow was drag (desktop) — impossible on mobile, so grouping "didn't work" if you
+  made the group after the flow. The mobile flow editor (`FlowSheet`) now has a
+  **Group** picker (existing groups · No group · + New group); picking sets the
+  flow's `sectionName` (a new name auto-creates the group via `effectiveGroups`).
+- **Group colours are now distinct.** They were hashed from the group *name*, so
+  "Group 1/2/3" could collide onto the same colour. New `groupColorMap` assigns by
+  the group's **position** in the ordered list (explicit override still wins);
+  `FlowsTable` + `FlowListMobile` use it. 4 tests.
+- **Step 0: combined the two import cards.** "Import Customer Questionnaire" and
+  "Import Previous Revision" both opened the same picker and the importer already
+  auto-detects the file — merged into one **"Import a File"** card (grid now 2-up).
+
 ## 2026-07-16 — Fleet sizing reframed as Target Utilization (default 80%)
 
 - **Step-3 section 03 "Buffer" → "Target Utilization".** The engineer now sets the

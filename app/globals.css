@@ -1577,7 +1577,7 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .entry-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);   /* Start New · Import */
   gap: 24px;
   margin-top: 24px;
 }

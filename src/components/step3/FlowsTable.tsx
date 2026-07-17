@@ -8,7 +8,7 @@ import Icon from '@/src/design-system/components/Icon'
 import FlowRow from './FlowRow'
 import FlowListMobile from './FlowListMobile'
 import GroupHeader from './GroupHeader'
-import { sectionColor } from './sectionColor'
+import { groupColorMap } from './sectionColor'
 import { effectiveGroups as computeEffectiveGroups } from '@/src/calc/flowMetrics'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
 
@@ -234,6 +234,7 @@ export default function FlowsTable({
   // by a flow but not declared (legacy projects carrying only sectionName).
   // Shared with the zone summary (src/calc/flowMetrics) so they never drift.
   const effGroups = computeEffectiveGroups(flowGroups, flows)
+  const groupColors = groupColorMap(effGroups, flowGroupColors)
   const hasGroups = effGroups.length > 0
 
   const ungrouped = flows.filter(f => !f.sectionName || !effGroups.includes(f.sectionName))
@@ -388,7 +389,7 @@ export default function FlowsTable({
                   <Fragment key={`g-${g}`}>
                     <GroupHeader
                       name={g}
-                      color={flowGroupColors[g] ?? sectionColor(g)}
+                      color={groupColors[g]}
                       count={groupFlows.length}
                       vehicleDemand={groupDemand}
                       colSpan={COLS}

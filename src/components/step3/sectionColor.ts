@@ -22,3 +22,19 @@ export function sectionColor(name: string): string {
   }
   return ASSIGNABLE[Math.abs(hash) % ASSIGNABLE.length]
 }
+
+/**
+ * Resolve every group's colour by its POSITION in the ordered group list, so
+ * adjacent groups are always distinct (name-hashing collided — "Group 1/2/3"
+ * could all land on the same colour). An explicit user override always wins.
+ */
+export function groupColorMap(
+  orderedGroups: readonly string[],
+  overrides: Record<string, string> = {},
+): Record<string, string> {
+  const map: Record<string, string> = {}
+  orderedGroups.forEach((g, i) => {
+    map[g] = overrides[g] ?? ASSIGNABLE[i % ASSIGNABLE.length]
+  })
+  return map
+}
