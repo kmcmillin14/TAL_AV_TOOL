@@ -3228,7 +3228,16 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 .buffer-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .buffer-custom { width: 142px; }
-.buffer-custom input { width: 100%; min-width: 0; }
+/* Give the number field a visible outline (the base input has none) so it reads
+   as an editable box joined to the "% util" suffix — not floating text. */
+.buffer-custom input {
+  width: 100%; min-width: 0; min-height: 38px; padding: 8px 10px;
+  border: 1px solid var(--border-strong); border-right: none;
+  background: var(--bg-input); color: var(--text-primary);
+  font-size: 14px; box-sizing: border-box;
+}
+.buffer-custom input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); position: relative; z-index: 1; }
+.buffer-custom .unit { min-height: 38px; border-color: var(--border-strong); }
 .bc-label {
   font-family: var(--tal-font-numeric);
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
