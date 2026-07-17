@@ -274,7 +274,7 @@ export default function Step0Page() {
                 </svg>
               </span>
               <h3>Import a File</h3>
-              <p>Upload a completed customer questionnaire or a previous proposal / revision (.pdf or .json) — the tool detects which and loads it.</p>
+              <p>Open a customer questionnaire or a prior revision — .pdf or .json.</p>
               <span className="entry-card-cta">
                 Import &amp; continue
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6" /></svg>

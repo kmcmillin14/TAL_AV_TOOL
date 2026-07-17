@@ -2320,8 +2320,8 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   align-items: center;
   justify-content: center;
   gap: 8px;
-  /* Quiet until the row is engaged — keyboard focus keeps them reachable. */
-  opacity: 0;
+  /* Visible at rest (discoverable) but quieter than an engaged row. */
+  opacity: 0.75;
   transition: opacity 0.12s ease;
 }
 .flow-row:hover .flow-act-inner,
@@ -2336,13 +2336,15 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   align-items: center;
   justify-content: center;
   background: transparent;
-  color: var(--text-tertiary);
-  border: none;
-  width: 24px; height: 24px;
+  color: var(--text-secondary);
+  border: 1px solid transparent;
+  border-radius: 6px;
+  width: 26px; height: 26px;
   line-height: 0;
   cursor: pointer;
-  transition: color 0.1s ease;
+  transition: color 0.1s ease, background 0.1s ease, border-color 0.1s ease;
 }
+.flow-act-btn:hover { background: var(--bg-surface-2); border-color: var(--border); }
 .flow-formula:hover { color: var(--accent); }
 .flow-duplicate:hover { color: var(--accent); }
 .flow-delete:hover { color: var(--bad); }
