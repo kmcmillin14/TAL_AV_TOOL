@@ -13,9 +13,13 @@ const readXml = (zip: PizZip, path: string): string => {
   return f.asText()
 }
 
-/** XML-escape a value destined for element text (`<a:t>…</a:t>`). */
+/** XML-escape a user-supplied value. Escapes text metacharacters AND quotes so
+ *  it is safe in element text (`<a:t>…</a:t>`) and in attributes alike — user
+ *  strings (project/customer/vehicle names) must never break out of the OOXML. */
 function escapeXml(v: string): string {
-  return v.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  return v
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;').replace(/'/g, '&apos;')
 }
 
 /** Names of the slide XML parts still present, e.g. `ppt/slides/slide12.xml`. */
