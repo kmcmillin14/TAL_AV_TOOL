@@ -84,11 +84,13 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
               }}
               aria-label="Custom target utilization percentage"
             />
-            <span className="unit">%</span>
+            <span className="unit">% util</span>
           </span>
         )}
-        <span className="bc-value mono">×{(1 + bufferPct).toFixed(2)}</span>
-        <span className="bc-hint">headroom for variability, maintenance &amp; demand spikes</span>
+        <span className="bc-readout">
+          <span className="bc-value mono">= ×{(1 + bufferPct).toFixed(2)} fleet</span>
+          <span className="bc-hint">the sizing multiplier — 80% is the AMR standard</span>
+        </span>
       </div>
 
       {rows.length === 0 ? (

@@ -3227,13 +3227,16 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   border: 1px solid var(--border-strong); cursor: pointer;
 }
 .buffer-select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
-.buffer-custom { width: 110px; }
-.buffer-custom input { width: 100%; }
+.buffer-custom { width: 142px; }
+.buffer-custom input { width: 100%; min-width: 0; }
 .bc-label {
   font-family: var(--tal-font-numeric);
   font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
 }
-.bc-value { font-size: 16px; font-weight: 800; color: var(--accent); min-width: 44px; }
+/* Derived readout: the ×multiplier is an OUTPUT of the chosen utilization, so it
+   reads as a quiet secondary column (divider + muted), not a competing red value. */
+.bc-readout { display: flex; flex-direction: column; gap: 1px; padding-left: 14px; margin-left: 2px; border-left: 1px solid var(--border); }
+.bc-value { font-family: var(--tal-font-numeric); font-size: 14px; font-weight: 700; color: var(--text-secondary); }
 .bc-hint { font-family: var(--tal-font-family); font-size: 11px; color: var(--text-tertiary); }
 .waterfall-table .wf-mid { color: var(--text-tertiary); }
 .waterfall-table .wf-sold { font-weight: 800; color: var(--text-primary); }
