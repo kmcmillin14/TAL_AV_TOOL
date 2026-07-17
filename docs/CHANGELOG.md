@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-07-16 — Unit-conversion audit, symmetric ribbon, security review
+
+- **Unit conversion audited end-to-end.** New 17-test suite (`unitsConversion.test.ts`)
+  locks direction (imperial→metric multiplies, parse divides), inverse relationships,
+  the 32° temperature offset, round-trip stability for all four quantities, and the
+  vehicle-display formatters. Standard/default unit is imperial. **Fix:** Step-3 flow
+  editors (`FlowRow`/`FlowSheet` distance, `MethodSelect`/`FlowSheet` lift height) now
+  round the *imperial* display too, so metric-origin values (÷0.3048) no longer show
+  long decimal tails — the last place that still leaked the "decimals going crazy"
+  symptom. Removed dead `units.*.display`.
+- **Ribbon is symmetric at every width.** The five step tabs stay equal-width
+  (`flex: 1`, shrink-to-fit) instead of switching to a lop-sided left-aligned scroll
+  strip; below 520px they collapse to just the step number, still centered.
+- **Security & edge-case review** (no holes found; posture solid): no XSS sinks
+  (no `dangerouslySetInnerHTML`/`eval`); PPTX user strings XML-escaped (now
+  attribute-safe too — quotes escaped, defense-in-depth); imports size-limited
+  (JSON 8M chars, PDF/25MB); localStorage reads and keystroke saves are crash-safe
+  (`readDisk` try/catch, `salvageParse` per-field); `/api/vehicles` takes no user
+  input (no path traversal); calc divisions all null-guarded (payback, availability,
+  resilience); scenario drivers reject NaN.
+
 ## 2026-07-16 — Unit-conversion corruption on inject + tour spotlight tracking
 
 - **Duplicating a flow / auto-filling a pallet corrupted metric values** (e.g. a
