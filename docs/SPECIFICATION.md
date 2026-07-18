@@ -489,7 +489,7 @@ the sample formulas (cycle-time breakdown → base → charging → buffer), wit
   schema-optional and cleared by the ROI card on edit (the derived product is always
   authoritative).
 
-**Annual OPEX:** energy = Σ over groups of `(dischargeA × voltageV / 1000) kW ×
+**Annual OPEX:** energy = Σ over groups of `voltageV × ratedAh × DOD / 1000 ÷ runTimeHr (usable battery energy ÷ runtime) kW ×
 dailyOpHr × operatingDaysPerYear × fleetSold × energyCostUsdPerKwh`; maintenance =
 `totalMid × annualMaintenancePctOfCapex`.
 

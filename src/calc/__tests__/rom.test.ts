@@ -5,10 +5,10 @@ import type { FleetSummary } from '../types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
 // Minimal Vehicle stub — only the fields rom.ts reads.
-function veh(id: string, minUsd: number, maxUsd: number, dischargeA = 100, voltageV = 48): Vehicle {
+function veh(id: string, minUsd: number, maxUsd: number, runTimeHr = 4, voltageV = 48): Vehicle {
   return {
     id,
-    calc: { dischargeA, voltageV, ratedAh: 500, chargeA: 100, priceRange: { minUsd, maxUsd } },
+    calc: { runTimeHr, voltageV, ratedAh: 500, priceRange: { minUsd, maxUsd } },
   } as unknown as Vehicle
 }
 
@@ -17,7 +17,7 @@ function fleet(groups: Array<{ vehicleId: string; fleetSold: number }>): FleetSu
     groups: groups.map(g => ({
       vehicleId: g.vehicleId, groupRaw: 1, baseFleet: 1,
       charging: { method: 'plugged', runHr: 5, chargeHr: 5, availability: 0.5, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: true, reason: '' },
-      fleetWithCharging: g.fleetSold, fleetSold: g.fleetSold,
+      fleetWithCharging: g.fleetSold, fleetSold: g.fleetSold, binding: 'utilization' as const,
     })),
     totalBaseFleet: 0, totalChargingDelta: 0,
     totalFleetSold: groups.reduce((s, g) => s + g.fleetSold, 0), bufferPct: 0.1,
@@ -47,7 +47,7 @@ describe('romOpex', () => {
   const schedule = { dailyOpHr: 10 }
 
   it('sums operating-draw energy across groups and adds maintenance', () => {
-    const vById = new Map([['a', veh('a', 0, 0, 100, 48)]]) // 100A × 48V = 4.8 kW
+    const vById = new Map([['a', veh('a', 0, 0, 4, 48)]]) // 48V × 500Ah × 0.8 / 1000 / 4h = 4.8 kW
     const f = fleet([{ vehicleId: 'a', fleetSold: 2 }])
     // energyKwh = 4.8 kW × 10 h × 100 d × 2 veh = 9600 ; cost = 960
     // maintenance = capexMid(100000) × 0.08 = 8000
@@ -84,7 +84,7 @@ describe('romPayback', () => {
 
 describe('romSummary', () => {
   it('wires pricing → opex → payback together', () => {
-    const vById = new Map([['a', veh('a', 100000, 100000, 100, 48)]])
+    const vById = new Map([['a', veh('a', 100000, 100000, 4, 48)]])
     const f = fleet([{ vehicleId: 'a', fleetSold: 1 }])
     const costs = { numberOfOperators: 2, fullyBurdenedRateUsdPerYear: 30000, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
     const schedule = { dailyOpHr: 16 }

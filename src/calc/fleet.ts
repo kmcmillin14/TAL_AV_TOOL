@@ -1,12 +1,12 @@
-// Fleet Engine — charging delta + buffer → fleet sold. PURE.
+// Fleet Engine — charging availability + buffer composition → fleet sold. PURE.
 // No React, no fetch, no localStorage, no fs. (Type-only imports of Vehicle, as
 // in flowMetrics.ts, carry no runtime dependency.)
 
-import { DEFAULT_DOD, CHARGE_EFFICIENCY } from './types'
 import type {
   ChargeMethod,
   ChargeRegime,
   ChargingResult,
+  FleetBinding,
   FleetGroup,
   FleetSettings,
   FleetSummary,
@@ -15,7 +15,8 @@ import type {
 import type { ChargerType, Vehicle } from '@/src/lib/vehicleLibrary'
 
 /** Map a vehicle's spec'd charger type to the two-value engine model.
- *  Opportunity charges during idle; everything else is treated as plug-in. */
+ *  Display-only: the v3 math treats every vehicle identically ("charges
+ *  whenever it is not working"). */
 export function defaultChargeMethod(chargerType?: ChargerType): ChargeMethod {
   return chargerType === 'opportunity' ? 'opportunity' : 'plugged'
 }
@@ -30,10 +31,8 @@ export function defaultChargeRegime(dailyOpHr: number): ChargeRegime {
 export interface ChargingInput {
   groupRaw: number
   baseFleet: number
-  ratedAh: number
-  dischargeA: number
-  chargeA: number
-  chargeTimeMin?: number
+  runTimeHr: number           // hours of operation per full charge (cutsheet)
+  chargeTimeMin?: number      // minutes to a full recharge (cutsheet)
   method: ChargeMethod        // display only (carried onto ChargingResult)
   hProd: number               // productive hrs/day = min(24, shifts×hours) − breakHrs
   breakHrs: number            // total break hours/day
@@ -41,42 +40,36 @@ export interface ChargingInput {
 }
 
 /**
- * Extra vehicles to cover battery charging downtime for one vehicle type, via an
- * availability ratio A = min(A_energy, A_cap) (see the 2026-06-25 charging-model-v2 spec).
+ * Charging availability for one vehicle type, in cutsheet hours (see the
+ * 2026-07-18 charging-model-v3 spec — the v2 amp form cancels to this):
  *
- *   usableAh   = ratedAh × DOD ;  runHr = usableAh/dischargeA ;  chargeHr = usableAh/chargeRate
- *   A_energy   = min(1, ((C finite ? usableAh/C : 0) + 24·chargeRate) / (H·(dischargeA + chargeRate)))
- *                — credits nightly off-shift + the day-off reset
- *   A_cap      = runHrEff ≥ H ? 1 : runHrEff/(runHrEff + chargeHr)   — within-window capacity
- *   delta      = max(0, ⌈groupRaw / min(A_energy, A_cap)⌉ − baseFleet)
+ *   chargeHr  = chargeTimeMin/60
+ *   runHrEff  = runTimeHr + breaks·(runTimeHr/chargeHr)          breaks credit
+ *   A_cap     = runHrEff ≥ H ? 1 : runHrEff/(runHrEff+chargeHr)  rotation ratio
+ *   A_energy  = min(1, (24 + chargeHr/C) / (H·(1 + chargeHr/runTimeHr)))
+ *               — off-shift (24 vs H) + day-off reset (chargeHr/C) credits
+ *
+ * No DOD or charge-efficiency derates: measured cutsheet hours already contain
+ * them. A vehicle charges whenever it is not working (uniform for opportunity
+ * and plugged — method is display-only).
  */
 export function chargingForGroup(i: ChargingInput): ChargingResult {
   const invalid = (reason: string): ChargingResult => ({
     method: i.method, runHr: null, chargeHr: null, availability: null,
     aEnergy: null, aCap: null, chargingDelta: 0, sustainable: false, reason,
   })
-  if (!(i.ratedAh > 0) || !(i.dischargeA > 0)) return invalid('Missing battery / discharge data')
-
-  const usableAh = i.ratedAh * DEFAULT_DOD
-  // Nameplate charge rate, derated for real-world efficiency (round-trip loss, CV
-  // taper near full, charger-access overhead). A safety margin, like DOD.
-  const nameplateChargeRate = i.chargeTimeMin && i.chargeTimeMin > 0
-    ? usableAh / (i.chargeTimeMin / 60)
-    : i.chargeA
-  if (!(nameplateChargeRate > 0)) return invalid('Missing charge data')
-  const chargeRate = nameplateChargeRate * CHARGE_EFFICIENCY
+  if (!(i.runTimeHr > 0)) return invalid('Missing battery runtime data')
+  const chargeHr = i.chargeTimeMin != null && i.chargeTimeMin > 0 ? i.chargeTimeMin / 60 : 0
+  if (!(chargeHr > 0)) return invalid('Missing charge time data')
   const H = i.hProd
   if (!(H > 0)) return invalid('No production hours')
 
-  const runHr = usableAh / i.dischargeA
-  const chargeHr = usableAh / chargeRate
-  const breakAh = chargeRate * Math.max(0, i.breakHrs)
-  const runHrEff = (usableAh + breakAh) / i.dischargeA
-
+  const runHr = i.runTimeHr
+  const runHrEff = runHr + Math.max(0, i.breakHrs) * (runHr / chargeHr)
   const weekendTerm = Number.isFinite(i.consecutiveOpDays) && i.consecutiveOpDays > 0
-    ? usableAh / i.consecutiveOpDays
+    ? chargeHr / i.consecutiveOpDays
     : 0
-  const aEnergy = Math.min(1, (weekendTerm + 24 * chargeRate) / (H * (i.dischargeA + chargeRate)))
+  const aEnergy = Math.min(1, (24 + weekendTerm) / (H * (1 + chargeHr / runHr)))
   const aCap = runHrEff >= H ? 1 : runHrEff / (runHrEff + chargeHr)
 
   const A = Math.min(aEnergy, aCap)
@@ -94,13 +87,15 @@ export function chargingForGroup(i: ChargingInput): ChargingResult {
 }
 
 /**
- * Compose the whole waterfall per vehicle group. Base and charging remain the
- * reported stages; the SOLD count rounds ONCE per group, at the end:
- * `fleetSold = ⌈(groupRaw ÷ availability) × (1 + buffer)⌉` (owner decision
- * 2026-07-10 — per-stage ceilings let the buffer multiply already-purchased
- * rounding slack, silently adding 0–1 vehicles per chassis). Groups with no
- * base fleet are skipped. `dailyOpHr` is provided by the caller (Step 1
- * schedule) so this stays pure.
+ * Compose the waterfall per vehicle group. Base and charging remain the
+ * reported stages; the SOLD count pays the LARGER of the two constraints,
+ * with one ceil at the end (2026-07-18 v3 — energy scales with average work,
+ * so the buffer must not multiply it; rotation is instantaneous, so it must):
+ *
+ *   fleetSold = max(baseFleet, ⌈max(groupRaw/A_energy, groupRaw·(1+buffer)/A_cap)⌉)
+ *
+ * Groups with no base fleet are skipped. `dailyOpHr` is provided by the caller
+ * (Step 1 schedule) so this stays pure.
  */
 export function fleetSummary(
   groups: GroupSummary[],
@@ -116,9 +111,7 @@ export function fleetSummary(
       ? chargingForGroup({
           groupRaw: g.groupRaw,
           baseFleet: g.baseFleet,
-          ratedAh: veh.calc.ratedAh,
-          dischargeA: veh.calc.dischargeA,
-          chargeA: veh.calc.chargeA,
+          runTimeHr: veh.calc.runTimeHr,
           chargeTimeMin: veh.calc.chargeTimeMin,
           method,
           hProd: Math.max(0, settings.dailyOpHr - settings.breakHrs),
@@ -128,12 +121,21 @@ export function fleetSummary(
       : { method, runHr: null, chargeHr: null, availability: null, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: false, reason: 'Vehicle not found' }
 
     const fleetWithCharging = g.baseFleet + charging.chargingDelta
-    // Buffer multiplies the UNROUNDED availability-adjusted demand — one ceil,
-    // at the end. baseFleet stays as the physical floor (availability ≤ 1 makes
-    // the max a no-op today; kept as an explicit invariant).
-    const demand = charging.availability != null ? g.groupRaw / charging.availability : g.groupRaw
-    const fleetSold = Math.max(g.baseFleet, Math.ceil(demand * (1 + settings.bufferPct)))
-    out.push({ vehicleId: g.vehicleId, groupRaw: g.groupRaw, baseFleet: g.baseFleet, charging, fleetWithCharging, fleetSold })
+    let fleetSold: number
+    let binding: FleetBinding
+    if (charging.aEnergy != null && charging.aCap != null) {
+      const demandEnergy = g.groupRaw / charging.aEnergy
+      const demandRotation = (g.groupRaw * (1 + settings.bufferPct)) / charging.aCap
+      fleetSold = Math.max(g.baseFleet, Math.ceil(Math.max(demandEnergy, demandRotation)))
+      binding = demandRotation >= demandEnergy
+        ? (charging.aCap < 1 ? 'rotation' : 'utilization')
+        : 'energy'
+    } else {
+      // No battery data — utilization headroom is the only sizing constraint.
+      fleetSold = Math.max(g.baseFleet, Math.ceil(g.groupRaw * (1 + settings.bufferPct)))
+      binding = 'utilization'
+    }
+    out.push({ vehicleId: g.vehicleId, groupRaw: g.groupRaw, baseFleet: g.baseFleet, charging, fleetWithCharging, fleetSold, binding })
   }
   return {
     groups: out,

@@ -43,8 +43,7 @@
     "speedUnloadedFps": 2.72,
     "ratedAh": 28,
     "voltageV": 48,
-    "dischargeA": 1.9,
-    "chargeA": 17.9,
+    "runTimeHr": 11.8,
     "chargeTimeMin": 75,
     "chargerType": "opportunity",
     "priceRange": {

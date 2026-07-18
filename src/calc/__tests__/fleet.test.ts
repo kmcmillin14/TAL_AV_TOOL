@@ -12,119 +12,130 @@ describe('defaultChargeMethod', () => {
   })
 })
 
-describe('chargingForGroup (v2 availability)', () => {
-  // 100 Ah × 0.8 = 80 usableAh; dischargeA 10 → runHr 8; chargeA 10 → chargeHr 8.
+describe('chargingForGroup (v3 hours-based availability)', () => {
+  // runTimeHr 8, chargeTimeMin 480 → chargeHr 8 (run:charge 1:1 for easy math).
   const base = {
     groupRaw: 4, baseFleet: 4,
-    ratedAh: 100, dischargeA: 10, chargeA: 10, chargeTimeMin: undefined as number | undefined,
+    runTimeHr: 8, chargeTimeMin: 480 as number | undefined,
     method: 'plugged' as const, breakHrs: 0,
   }
 
   it('1 shift Mon–Fri, battery lasts the shift → A=1, no extra vehicles', () => {
     const r = chargingForGroup({ ...base, hProd: 8, consecutiveOpDays: 5 })
-    expect(r.aEnergy).toBe(1)               // (80/5 + 240)/(8·20)=1.6→1
+    expect(r.aEnergy).toBe(1)               // (24 + 8/5)/(8·2) = 1.6 → capped 1
     expect(r.aCap).toBe(1)                  // runHr 8 ≥ 8
     expect(r.availability).toBe(1)
     expect(r.chargingDelta).toBe(0)
   })
 
-  it('2 shifts Mon–Fri, small battery → capacity binds → adds vehicles', () => {
-    // chargeRate = 10 × 0.85 = 8.5 → chargeHr = 80/8.5 = 9.412.
+  it('2 shifts Mon–Fri, small battery → rotation binds', () => {
     const r = chargingForGroup({ ...base, hProd: 16, consecutiveOpDays: 5 })
-    expect(r.aEnergy).toBeCloseTo(0.7432, 4)   // (80/5 + 24·8.5)/(16·18.5)
-    expect(r.aCap).toBeCloseTo(0.4595, 4)      // 8/(8+9.412)
-    expect(r.availability).toBeCloseTo(0.4595, 4)
-    expect(r.chargingDelta).toBe(5)            // ⌈4/0.4595⌉ − 4
+    expect(r.aEnergy).toBeCloseTo(0.8, 6)      // (24 + 1.6)/(16·2)
+    expect(r.aCap).toBeCloseTo(0.5, 6)         // 8/(8+8)
+    expect(r.availability).toBeCloseTo(0.5, 6)
+    expect(r.chargingDelta).toBe(4)            // ⌈4/0.5⌉ − 4
   })
 
-  it('24/7 (no rest day) → no weekend credit → duty ratio', () => {
+  it('24/7 (no rest day) → no off-shift or weekend credit → run:charge ratio', () => {
     const r = chargingForGroup({ ...base, hProd: 24, consecutiveOpDays: Infinity })
-    expect(r.aEnergy).toBeCloseTo(0.4595, 4)   // (0 + 24·8.5)/(24·18.5)
-    expect(r.availability).toBeCloseTo(0.4595, 4)
+    expect(r.aEnergy).toBeCloseTo(0.5, 6)      // 24/(24·2)
+    expect(r.availability).toBeCloseTo(0.5, 6)
   })
 
-  it('weekend reset lowers fleet vs running 7 days (big battery, A_cap=1)', () => {
-    const friday = chargingForGroup({ ...base, ratedAh: 225, hProd: 16, consecutiveOpDays: 5 }) // usableAh 180, runHr 18
-    const everyday = chargingForGroup({ ...base, ratedAh: 225, hProd: 16, consecutiveOpDays: Infinity })
-    expect(friday.aCap).toBe(1)             // runHr 18 ≥ 16
-    expect(friday.availability).toBeCloseTo(0.8108, 4)  // (180/5 + 204)/296
-    expect(everyday.availability).toBeCloseTo(0.6892, 4) // (0 + 204)/296
+  it('weekend reset lowers fleet vs running 7 days (big battery, slow charger, A_cap=1)', () => {
+    // runTimeHr 18 covers the 16 h window; chargeHr 24 makes energy bind.
+    const friday = chargingForGroup({ ...base, runTimeHr: 18, chargeTimeMin: 1440, hProd: 16, consecutiveOpDays: 5 })
+    const everyday = chargingForGroup({ ...base, runTimeHr: 18, chargeTimeMin: 1440, hProd: 16, consecutiveOpDays: Infinity })
+    expect(friday.aCap).toBe(1)                            // 18 ≥ 16
+    expect(friday.availability).toBeCloseTo(0.7714, 4)     // (24 + 24/5)/(16·(1+24/18))
+    expect(everyday.availability).toBeCloseTo(0.6429, 4)   // 24/(16·(1+24/18))
     expect(friday.availability!).toBeGreaterThan(everyday.availability!)
   })
 
   it('faster charger raises availability', () => {
-    // chargeA 40 × 0.85 = 34 → chargeHr 80/34 = 2.353.
-    const r = chargingForGroup({ ...base, chargeA: 40, hProd: 16, consecutiveOpDays: 5 })
-    expect(r.aCap).toBeCloseTo(0.7727, 4)   // 8/(8+2.353)
-    expect(r.availability).toBeCloseTo(0.7727, 4)
+    const r = chargingForGroup({ ...base, chargeTimeMin: 120, hProd: 16, consecutiveOpDays: 5 })
+    expect(r.chargeHr).toBeCloseTo(2, 6)
+    expect(r.aCap).toBeCloseTo(0.8, 6)         // 8/(8+2)
+    expect(r.availability).toBeCloseTo(0.8, 6)
   })
 
-  it('chargeTimeMin overrides chargeA for the charge rate', () => {
-    // 80 usableAh in 120 min = 40 A nameplate → ×0.85 = 34 (same as chargeA 40 case).
-    const r = chargingForGroup({ ...base, chargeA: 10, chargeTimeMin: 120, hProd: 16, consecutiveOpDays: 5 })
-    expect(r.aCap).toBeCloseTo(0.7727, 4)
-  })
-
-  it('credits breaks as extra Ah (raises runHrEff)', () => {
-    const noBreak = chargingForGroup({ ...base, hProd: 8, breakHrs: 0, consecutiveOpDays: 5 })
-    const withBreak = chargingForGroup({ ...base, dischargeA: 16, hProd: 7, breakHrs: 1, consecutiveOpDays: 5 })
-    expect(withBreak.runHr).not.toBeNull()  // break credit applied; no NaN
-    expect(noBreak.availability).toBe(1)
+  it('credits breaks as top-up time (raises runHrEff to cover the window)', () => {
+    // runHrEff = 8 + 1·(8/2) = 12 ≥ 7 → A_cap = 1.
+    const r = chargingForGroup({ ...base, chargeTimeMin: 120, hProd: 7, breakHrs: 1, consecutiveOpDays: 5 })
+    expect(r.aCap).toBe(1)
+    expect(r.availability).toBe(1)
   })
 
   it('missing / invalid data → not sustainable, no NaN, delta 0', () => {
-    expect(chargingForGroup({ ...base, ratedAh: 0, hProd: 8, consecutiveOpDays: 5 }).sustainable).toBe(false)
-    expect(chargingForGroup({ ...base, dischargeA: 0, hProd: 8, consecutiveOpDays: 5 }).chargingDelta).toBe(0)
-    expect(chargingForGroup({ ...base, chargeA: 0, chargeTimeMin: undefined, hProd: 8, consecutiveOpDays: 5 }).sustainable).toBe(false)
+    expect(chargingForGroup({ ...base, runTimeHr: 0, hProd: 8, consecutiveOpDays: 5 }).sustainable).toBe(false)
+    expect(chargingForGroup({ ...base, chargeTimeMin: undefined, hProd: 8, consecutiveOpDays: 5 }).sustainable).toBe(false)
+    expect(chargingForGroup({ ...base, chargeTimeMin: 0, hProd: 8, consecutiveOpDays: 5 }).chargingDelta).toBe(0)
     expect(chargingForGroup({ ...base, hProd: 0, consecutiveOpDays: 5 }).sustainable).toBe(false)
   })
 })
 
-describe('fleetSummary', () => {
+describe('fleetSummary (v3 max-of-constraints composition)', () => {
   const grp = (vehicleId: string, groupRaw: number, baseFleet: number): GroupSummary => ({
     vehicleId, flowsCount: 1, baseThru: 0, avgCycleSec: null, groupRaw, baseFleet, headroom: null,
   })
-  const veh = (id: string, calc: Partial<Vehicle['calc']>, chargerType: string): Vehicle =>
-    ({ id, calc: { ratedAh: 100, dischargeA: 10, chargeA: 40, chargeTimeMin: 120, chargerType, ...calc } } as unknown as Vehicle)
+  const veh = (id: string, runTimeHr: number, chargeTimeMin: number, chargerType = 'opportunity'): Vehicle =>
+    ({ id, calc: { runTimeHr, chargeTimeMin, chargerType } } as unknown as Vehicle)
 
   const settings = (over: Partial<FleetSettings> = {}): FleetSettings => ({
-    regime: 'continuous', bufferPct: 0.10, dailyOpHr: 24, breakHrs: 0,
+    regime: 'continuous', bufferPct: 0.25, dailyOpHr: 24, breakHrs: 0,
     consecutiveOpDays: Infinity, chargeMethods: {}, ...over,
   })
 
-  it('runs base → +charging → ×buffer → ⌈⌉ and totals', () => {
-    const groups = [grp('a', 4, 4)]
-    // 24/7 default; chargeA 10 × 0.85 = 8.5, dischargeA 10 → A ≈ 0.4595 → fleetWithCharging 9.
-    const byId = new Map([['a', veh('a', { chargeA: 10, chargeTimeMin: undefined }, 'opportunity')]])
-    const s = fleetSummary(groups, byId, settings())
+  it('rotation binds on 24/7: buffer stacks on the rotation constraint', () => {
+    const byId = new Map([['a', veh('a', 8, 480)]])
+    const s = fleetSummary([grp('a', 4, 4)], byId, settings({ bufferPct: 0.10 }))
     const g = s.groups[0]
-    expect(g.charging.chargingDelta).toBe(5)        // ⌈4/0.4595⌉ − 4
-    expect(g.fleetWithCharging).toBe(9)
-    expect(g.fleetSold).toBe(10)                    // ⌈(4 ÷ 0.4595) × 1.10⌉ = ⌈9.58⌉
-    expect(s.totalChargingDelta).toBe(5)
-    expect(s.totalFleetSold).toBe(10)
+    expect(g.charging.availability).toBeCloseTo(0.5, 6)
+    expect(g.charging.chargingDelta).toBe(4)   // ⌈4/0.5⌉ − 4 (reported stage)
+    expect(g.fleetWithCharging).toBe(8)
+    expect(g.fleetSold).toBe(9)                // max(8/0.5=8, 4·1.10/0.5=8.8) → ⌈8.8⌉
+    expect(g.binding).toBe('rotation')
+    expect(s.totalChargingDelta).toBe(4)
+    expect(s.totalFleetSold).toBe(9)
   })
 
-  it('rounds ONCE at the end — buffer multiplies unrounded demand, not the ceiled base', () => {
-    // A = 1 (ample battery): demand 4.05 → ⌈4.05 × 1.15⌉ = ⌈4.66⌉ = 5.
-    // The old per-stage ceiling gave ⌈⌈4.05⌉ × 1.15⌉ = ⌈5.75⌉ = 6.
+  it('energy binds: buffer does NOT multiply the energy constraint (the overlap fix)', () => {
+    // runTimeHr 18 covers H=16 → A_cap=1; chargeHr 24, C=∞ → A_energy=0.6429.
+    const byId = new Map([['a', veh('a', 18, 1440)]])
+    const s = fleetSummary([grp('a', 8, 8)], byId, settings({ dailyOpHr: 16 }))
+    const g = s.groups[0]
+    expect(g.charging.aCap).toBe(1)
+    expect(g.charging.aEnergy).toBeCloseTo(0.6429, 4)
+    // max(8/0.6429 = 12.44, 8·1.25/1 = 10) → ⌈12.44⌉ = 13. Old product formula sold 16.
+    expect(g.fleetSold).toBe(13)
+    expect(g.binding).toBe('energy')
+  })
+
+  it('utilization binds when charging is free (single shift, fast charger)', () => {
+    const byId = new Map([['a', veh('a', 8, 120)]])
+    const s = fleetSummary([grp('a', 8, 8)], byId, settings({ dailyOpHr: 8, consecutiveOpDays: 5 }))
+    const g = s.groups[0]
+    expect(g.charging.availability).toBe(1)
+    expect(g.charging.chargingDelta).toBe(0)
+    expect(g.fleetSold).toBe(10)               // max(8, 8·1.25) = 10
+    expect(g.binding).toBe('utilization')
+  })
+
+  it('rounds ONCE at the end and baseFleet stays the physical floor', () => {
+    const byId = new Map([['a', veh('a', 8, 120)]])
     const groups = [grp('a', 4.05, 5)]
-    const byId = new Map([['a', veh('a', { chargeA: 40, chargeTimeMin: undefined }, 'plugged')]])
     const s = fleetSummary(groups, byId, settings({ bufferPct: 0.15, dailyOpHr: 8, consecutiveOpDays: 5 }))
-    expect(s.groups[0].charging.availability).toBe(1)
-    expect(s.groups[0].fleetSold).toBe(5)
-    // baseFleet stays the physical floor: buffer 0 can never sell below it.
+    expect(s.groups[0].fleetSold).toBe(5)      // ⌈4.05 × 1.15⌉ = ⌈4.66⌉ = 5
     const s0 = fleetSummary(groups, byId, settings({ bufferPct: 0, dailyOpHr: 8, consecutiveOpDays: 5 }))
-    expect(s0.groups[0].fleetSold).toBe(5)          // max(baseFleet 5, ⌈4.05⌉)
+    expect(s0.groups[0].fleetSold).toBe(5)     // max(baseFleet 5, ⌈4.05⌉)
   })
 
-  it('bufferPct 0 is a no-op; ample coverage → no charging adder', () => {
-    const groups = [grp('a', 4, 4)]
-    // 1-shift Mon–Fri, ample battery → A = 1 → no adder.
-    const byId = new Map([['a', veh('a', { chargeA: 40, chargeTimeMin: undefined }, 'plugged')]])
-    const s = fleetSummary(groups, byId, settings({ bufferPct: 0, dailyOpHr: 8, consecutiveOpDays: 5 }))
-    expect(s.groups[0].charging.chargingDelta).toBe(0)
-    expect(s.groups[0].fleetSold).toBe(4)
+  it('vehicle not found → unsustainable → utilization-only sizing', () => {
+    const s = fleetSummary([grp('a', 4, 4)], new Map(), settings())
+    const g = s.groups[0]
+    expect(g.charging.sustainable).toBe(false)
+    expect(g.fleetSold).toBe(5)                // max(4, ⌈4 × 1.25⌉)
+    expect(g.binding).toBe('utilization')
   })
 
   it('skips groups with no base fleet', () => {
@@ -136,8 +147,8 @@ describe('fleetSummary', () => {
 
 describe('defaultChargeRegime', () => {
   it('derives continuous for full-day coverage, overnight otherwise', () => {
-    expect(defaultChargeRegime(24)).toBe('continuous')   // 3 × 8 h
-    expect(defaultChargeRegime(16)).toBe('overnight')    // 2 × 8 h
+    expect(defaultChargeRegime(24)).toBe('continuous')
+    expect(defaultChargeRegime(16)).toBe('overnight')
     expect(defaultChargeRegime(8)).toBe('overnight')
   })
 })

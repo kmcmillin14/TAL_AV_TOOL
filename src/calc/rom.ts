@@ -1,5 +1,6 @@
 // src/calc/rom.ts — ROM economics: CAPEX range, annual OPEX, simple payback. PURE.
 // No React, no fetch, no localStorage, no fs. (Type-only Vehicle import, as in fleet.ts.)
+import { DEFAULT_DOD } from './types'
 import type { FleetSummary } from './types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
@@ -58,7 +59,7 @@ export interface RomOpex {
 }
 
 /** Annual OPEX = operating-draw energy (Σ groups) + maintenance (% of CAPEX mid).
- *  Operating power per vehicle = dischargeA × voltageV / 1000 (kW). */
+ *  Operating power per vehicle = usable battery energy ÷ runtime: kW = voltageV × ratedAh × DOD / 1000 / runTimeHr. */
 export function romOpex(
   fleet: FleetSummary,
   vehiclesById: Map<string, Vehicle>,
@@ -70,7 +71,9 @@ export function romOpex(
   for (const g of fleet.groups) {
     const veh = vehiclesById.get(g.vehicleId)
     if (!veh) continue
-    const kw = (veh.calc.dischargeA * veh.calc.voltageV) / 1000
+    const rt = veh.calc.runTimeHr
+    if (!rt || rt <= 0) continue
+    const kw = (veh.calc.voltageV * veh.calc.ratedAh * DEFAULT_DOD) / 1000 / rt
     annualEnergyKwh += kw * schedule.dailyOpHr * costs.operatingDaysPerYear * g.fleetSold
   }
   const annualEnergyCost = annualEnergyKwh * costs.energyCostUsdPerKwh

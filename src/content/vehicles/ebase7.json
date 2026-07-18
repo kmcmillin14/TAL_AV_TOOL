@@ -45,8 +45,7 @@
     "liftSpeedFps": 0.5,
     "ratedAh": 100,
     "voltageV": 24,
-    "dischargeA": 13.3,
-    "chargeA": 32,
+    "runTimeHr": 6.0,
     "chargeTimeMin": 150,
     "chargerType": "opportunity",
     "priceRange": {

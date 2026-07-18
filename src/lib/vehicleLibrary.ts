@@ -60,10 +60,9 @@ export interface VehicleCalc {
   /** Battery rated capacity (amp-hours) and nominal voltage. Energy kWh = voltageV × ratedAh / 1000. */
   ratedAh: number
   voltageV: number
-  /** Average operating current draw (A). Runtime per charge = ratedAh × DoD / dischargeA. */
-  dischargeA: number
-  /** Charge current (A). Opportunity-charging availability uses this directly. */
-  chargeA: number
+  /** Hours of operation per full charge (cutsheet). The v3 charging calc and
+   *  ROM energy both derive from this — no amp fields. */
+  runTimeHr: number
   /** Time to a full charge (min). When present, the authoritative recharge time. */
   chargeTimeMin?: number
   chargerType?: ChargerType

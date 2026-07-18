@@ -7,7 +7,7 @@ function fleet(rows: Array<{ vehicleId: string; groupRaw: number; fleetSold: num
     groups: rows.map(r => ({
       vehicleId: r.vehicleId, groupRaw: r.groupRaw, baseFleet: Math.ceil(r.groupRaw),
       charging: { method: 'plugged', runHr: 5, chargeHr: 5, availability: 1, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: true, reason: '' },
-      fleetWithCharging: r.fleetSold, fleetSold: r.fleetSold,
+      fleetWithCharging: r.fleetSold, fleetSold: r.fleetSold, binding: 'utilization' as const,
     })),
     totalBaseFleet: 0, totalChargingDelta: 0,
     totalFleetSold: rows.reduce((s, r) => s + r.fleetSold, 0), bufferPct: 0.1,

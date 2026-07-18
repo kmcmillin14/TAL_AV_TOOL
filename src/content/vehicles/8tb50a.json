@@ -48,8 +48,7 @@
     "speedUnloadedFps": 5.87,
     "ratedAh": 750,
     "voltageV": 24,
-    "dischargeA": 75,
-    "chargeA": 400,
+    "runTimeHr": 8.0,
     "chargeTimeMin": 90,
     "chargerType": "shift_swap",
     "priceRange": {

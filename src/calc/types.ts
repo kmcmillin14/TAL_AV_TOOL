@@ -186,13 +186,17 @@ export interface ChargingResult {
   reason: string              // human explanation
 }
 
+/** Which constraint set `fleetSold` (v3 max-of-constraints composition). */
+export type FleetBinding = 'energy' | 'rotation' | 'utilization'
+
 export interface FleetGroup {
   vehicleId: string
   groupRaw: number
   baseFleet: number
   charging: ChargingResult
-  fleetWithCharging: number   // baseFleet + chargingDelta
-  fleetSold: number           // ⌈ fleetWithCharging × (1 + bufferPct) ⌉
+  fleetWithCharging: number   // baseFleet + chargingDelta (reported stage)
+  fleetSold: number           // max(baseFleet, ⌈max(raw/A_energy, raw·(1+buffer)/A_cap)⌉)
+  binding: FleetBinding       // which constraint bound fleetSold
 }
 
 export interface FleetSummary {
@@ -248,10 +252,7 @@ export const utilizationFromBuffer = (b: number) => 1 / (1 + b)
 /** Default project-level buffer, i.e. the 80% target utilization above (= 0.25). */
 export const DEFAULT_BUFFER_PCT = bufferFromUtilization(DEFAULT_TARGET_UTILIZATION)
 
-/** Usable depth-of-discharge fraction for battery runtime/charge math. */
+/** Usable depth-of-discharge fraction — display/ROM only (SoC chart floor, energy
+ *  OPEX kW, battery-energy figures). The v3 charging calc uses cutsheet hours
+ *  (`runTimeHr`/`chargeTimeMin`) directly and needs no DOD. */
 export const DEFAULT_DOD = 0.80
-
-/** Charge derate applied to the nameplate charge rate in the charging model — folds
- *  round-trip loss, the near-full CV taper, and real charger-access overhead into one
- *  honest factor, so effective recharge is ~15% slower than ideal (a safety margin). */
-export const CHARGE_EFFICIENCY = 0.85

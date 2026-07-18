@@ -40,8 +40,7 @@
     "liftSpeedFps": 0.6,
     "ratedAh": 750,
     "voltageV": 24,
-    "dischargeA": 100,
-    "chargeA": 400,
+    "runTimeHr": 6.0,
     "chargeTimeMin": 90,
     "chargerType": "shift_swap",
     "priceRange": {
