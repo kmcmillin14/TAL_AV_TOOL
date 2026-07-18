@@ -216,26 +216,28 @@ form sections. Both pieces are the shared `src/components/ScrollSpyNav.tsx` /
 Right side: per-vehicle **raw → rounded base** mix with thumbnails.
 
 **Waterfall (per vehicle group `g`, one per `vehicleId`):**
-`baseFleet → + chargingDelta` (reported stages) · `fleetSold = ⌈(groupRaw ÷ availability) × (1 + bufferPct)⌉` — each chassis rounds up exactly ONCE, at the end (2026-07-10; baseFleet remains the physical floor); project **TOTAL** = `Σ fleetSold`.
+`baseFleet → + chargingDelta` (reported stages) · `fleetSold = max(baseFleet, ⌈max(groupRaw ÷ A_energy, groupRaw × (1 + bufferPct) ÷ A_cap)⌉)` — the fleet pays the LARGER of the two constraints, rounded up exactly ONCE (2026-07-18 v3; energy scales with average work so the buffer does not multiply it; rotation is instantaneous so it does). The binding constraint (Energy / Rotation / Utilization) is surfaced next to the total. Project **TOTAL** = `Σ fleetSold`.
 
 ### Section 01 — Raw Fleet
 The material-flow table that produces the **base fleet** (`groupRaw`, `baseFleet = ⌈groupRaw⌉`) —
 pure engineering, no multipliers. Fully specified in **Step 3 — Material Flows** below.
 
-### Section 02 — Charging (Ah/A battery model)
-Pure calc in `src/calc/fleet.ts`. Battery specs are amp-hours / amps (`ratedAh`, `voltageV`,
-`dischargeA`, `chargeA`, optional `chargeTimeMin`). `DEFAULT_DOD = 0.80`.
+### Section 02 — Charging (hours-based model, v3)
+Pure calc in `src/calc/fleet.ts`. Battery facts are the two cutsheet hours per vehicle —
+`calc.runTimeHr` (hours of operation per full charge) and `calc.chargeTimeMin` — taken at
+face value: no DOD or charge-efficiency derates (a measured runtime and charge time already
+contain them). One uniform assumption for all vehicles: *a vehicle charges whenever it is
+not working* (charge method is display-only).
 
-Charging adder per vehicle type uses an availability ratio `A = min(A_energy, A_cap)`:
-`A_energy = min(1, (usableAh/C + 24·chargeRate) / (H·(dischargeA + chargeRate)))` credits the
-nightly off-shift (`24·chargeRate`) and the day-off reset (`usableAh/C`, where `C` = consecutive
-operating days before a rest day, ∞ for 24/7); `A_cap = runHrEff/(runHrEff+chargeHr)` (or 1 when
-the battery covers the production window `H = shifts×hours − breaks`). Then
-`fleetWithCharging = ⌈groupRaw/A⌉`. Like vehicles pool (per type); the buffer is applied after.
-The charge rate is derated by `CHARGE_EFFICIENCY = 0.85` (round-trip loss + near-full taper +
-charger access) — a documented safety margin like the 80% DOD. Days off recharge to 100% (a
-reset, not banking), so the binding case is surviving the consecutive operating days. See
-`docs/superpowers/specs/2026-06-25-charging-model-v2-design.md`.
+Charging availability per vehicle type is `A = min(A_energy, A_cap)`:
+`A_cap = runHrEff/(runHrEff + chargeHr)` (or 1 when the battery covers the production
+window `H = shifts×hours − breaks`; `runHrEff` credits breaks as top-up time) — the
+run:charge **rotation ratio**; `A_energy = min(1, (24 + chargeHr/C) / (H·(1 + chargeHr/runTimeHr)))`
+credits the nightly off-shift (the 24-vs-H gap) and the day-off reset (`chargeHr/C` — one
+free full battery amortized over `C` consecutive operating days; ∞ for 24/7 drops it to 0).
+Then `fleetWithCharging = ⌈groupRaw/A⌉` (reported stage). Like vehicles pool (per type).
+A day off recharges to 100% (a reset, not banking), so the binding case is surviving the
+consecutive operating days. See `docs/superpowers/specs/2026-07-18-charging-hours-model-v3-design.md`.
 
 ### Section 03 — Target Utilization (headroom + total)
 The engineer sets a **target utilization** — the fraction of available time the fleet should run at.
@@ -243,8 +245,11 @@ AMR/AGV fleets are sized to ~**80% peak utilization** (the default): capacity be
 queue, so past ~85% blocking/wait time climbs non-linearly (70% conservative, 85% aggressive). It is
 stored as the equivalent **buffer multiplier** `bufferPct` — the two are inverses,
 `utilization = 1 / (1 + bufferPct)` (`bufferFromUtilization` / `utilizationFromBuffer` in
-`src/calc/types.ts`; `DEFAULT_TARGET_UTILIZATION = 0.80` ⇒ `DEFAULT_BUFFER_PCT = 0.25`). The calc is
-unchanged: `fleetSold = ⌈(groupRaw ÷ availability) × (1 + bufferPct)⌉`. The section shows a
+`src/calc/types.ts`; `DEFAULT_TARGET_UTILIZATION = 0.80` ⇒ `DEFAULT_BUFFER_PCT = 0.25`). The calc composes overlap-aware (2026-07-18 v3): `fleetSold = max(baseFleet,
+⌈max(groupRaw ÷ A_energy, groupRaw × (1 + bufferPct) ÷ A_cap)⌉)` — utilization headroom
+and energy recovery overlap (idle robots charge), so the buffer multiplies only the
+instantaneous rotation constraint. The section names the **binding constraint**
+(Energy / Rotation / Utilization) next to the total. The section shows a
 **utilization preset dropdown** — `Conservative (70%) · Standard (80%) · Aggressive (85%) · Custom…`
 (Custom reveals a % input, clamped 50–100% so the buffer stays ≤ 1.0; a stored value matching no
 preset displays as Custom) — and the per-flow waterfall (`base → +charging → ×headroom → fleet`);
@@ -264,11 +269,11 @@ Step 3 decomposes the facility's material movement into discrete **flows** (orig
 
 ```
 Step 3:  per-flow cycle → per-flow rawVehicles → per-group baseFleet (ceil of sum)
-Step 4:  baseFleet → chargingDelta (additive, from battery physics)
-Step 5:  (baseFleet + chargingDelta) × (1 + bufferPct) → ⌈ceil⌉ → fleetSold
+Step 4:  baseFleet → chargingDelta (additive, from cutsheet battery hours)
+Step 5:  fleetSold = max(base, ⌈max(raw ÷ A_energy, raw × (1+buffer) ÷ A_cap)⌉)
 ```
 
-Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, Step 5 is policy. There is no productivity factor η and no congestion multiplier — those conflate causes and create double-counting risk against Step 5.
+Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, Step 5 is policy. There is no productivity factor η and no congestion multiplier, and the buffer never multiplies the energy constraint — each cause is paid exactly once.
 
 ### Per-flow inputs
 
@@ -295,7 +300,7 @@ In the current library, the lifting transfer methods are the `Lift` appliances o
 
 - `ROUTE_LAYOUT_FACTORS = { low: 0.3, medium: 0.5, high: 0.7 }` — route-average speed multipliers applied to rated cruise. The scale tops out at `0.7`: even the best-case open-lane *average* is ~70% of rated, because no route sustains full cruise (accel/decel/turns).
 - `T_hr = 3600` — seconds per hour.
-- `DEFAULT_BUFFER_PCT = 0.10` — used in Step 5, declared in `src/calc/types.ts` for cross-step visibility.
+- `DEFAULT_BUFFER_PCT = 0.25` (= 80% target utilization) — used in Step 5, declared in `src/calc/types.ts` for cross-step visibility.
 
 ### Per-flow derived
 
@@ -347,7 +352,7 @@ totalBaseFleet = Σ baseFleet across groups
 ### Charging & buffer
 
 Built as the Charging and Fleet sub-tabs of the Fleet Engine — see the **Fleet Engine (Step 3)**
-section above for the Ah/A charging model (`chargingDelta`) and the buffer waterfall.
+section above for the hours-based charging model (`chargingDelta`) and the buffer waterfall.
 
 ### Hard gates per flow
 
@@ -519,8 +524,8 @@ PPTX** as a Methodology appendix slide (cloned + filled — see below).
   editable `Fleet Model` sheet, no other tabs. Every input is a real cell and the whole
   chain is **live Excel formulas**: `Cycle = dist/(spdL·f)+dist/(spdE·f)+load+unload+lift`,
   `Raw = moves·cycle/3600`, `Base = ROUNDUP(SUMIF)`, `+Charging`,
-  `Fleet sold = MAX(base, ROUNDUP((raw/avail)·(1+buffer)))` referencing the buffer cell
-  `$B$3`. Editing any input recomputes the fleet offline exactly as the app does.
+  `Fleet sold = MAX(base, ROUNDUP(MAX(raw/availEnergy, raw·(1+buffer)/availRotation)))` with both availability cells editable.
+  Editing any input recomputes the fleet offline exactly as the app does.
   `buildFleetModelSheet(utils, project, vehicles)` is pure/unit-tested.
 
 **Branded PowerPoint (template-fill).** The `.pptx` export fills the official 35-slide TAL

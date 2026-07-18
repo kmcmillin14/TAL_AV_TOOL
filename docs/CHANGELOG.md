@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-18 — Charging model v3: hours-based availability + overlap-aware buffer
+
+- `src/calc/fleet.ts` re-parameterized on cutsheet hours (`calc.runTimeHr` + `calc.chargeTimeMin`);
+  the amp fields (`dischargeA`, `chargeA`) and the `DEFAULT_DOD`/`CHARGE_EFFICIENCY` derates are
+  removed from the charging calc (measured hours already contain them — taper was double-counted).
+- Buffer composition is now max-of-constraints: `fleetSold = max(base, ⌈max(raw/A_energy,
+  raw·(1+buffer)/A_cap)⌉)` — the buffer no longer multiplies the energy constraint (buffer
+  vehicles don't add work). `FleetGroup.binding` names the binding constraint; Step 3 §03,
+  Fleet Math, PPTX, and XLSX narrate it.
+- Vehicle JSONs: added `calc.runTimeHr` (CB18 8.0 · 8TB50A 8.0 · 8HBC40A 6.0 · E7 6.0 ·
+  ML2 10.0 · M10 11.8); deleted invented `dischargeA`/`chargeA`. ROM energy now derives kW
+  from usable battery energy ÷ runtime. Spec: `docs/superpowers/specs/2026-07-18-charging-hours-model-v3-design.md`.
+
 ## 2026-07-17 — Flow grouping fixes + combined import card
 
 - **Assign a flow to a group without dragging.** The only way to group an existing
