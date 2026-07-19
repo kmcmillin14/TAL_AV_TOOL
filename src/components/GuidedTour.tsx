@@ -97,37 +97,37 @@ const SAMPLE_RFQ_GUIDE: Guide = {
     },
     {
       route: '/step1',
-      target: '#section-01',
+      target: '#section-01 .form-section-header',
       title: '1,800 lb auto pallets',
       body: '48×45 automotive pallets at 1,800 lbs. Weight + dimensions drive vehicle qualification — get these right first.',
     },
     {
       route: '/step1',
-      target: '#section-02',
+      target: '#section-02 .form-section-header',
       title: 'Forklift to 15 ft',
       body: 'Pallets go INTO rack at 15 ft, so the transfer type is forklift with a 15 ft height — this is what disqualifies non-lifting vehicles.',
     },
     {
       route: '/step1',
-      target: '#section-05',
+      target: '#section-05 .form-section-header',
       title: '2 shifts, Mon–Fri',
       body: '16 staffed hours leaves 8 overnight — batteries recharge for free, so charging adds zero robots here.',
     },
     {
       route: '/step2',
-      target: '.veh-grid',
+      target: '.page-header',
       title: 'Who qualifies, and why',
       body: 'Green passes every hard gate: CB18 lifts 1,800 lbs to 15 ft. Click any card\'s details to see the exact gate math.',
     },
     {
       route: '/step3',
-      target: '#engine-raw',
+      target: '#engine-raw .form-section-header',
       title: 'The RFQ\'s moves, as flows',
       body: 'Six flows in three zones: CB18 does the rack work, the M10 pin-tugger runs the long lineside milk-runs, the 8HBC40A shuttles finished goods floor-to-floor.',
     },
     {
       route: '/step3',
-      target: '#engine-charging',
+      target: '#engine-charging .form-section-header',
       title: 'Charging: +0 — here\'s why',
       body: 'Runtime covers a shift and nights are free charge time. On a 24/7 site this line is where robots get added.',
     },
@@ -166,7 +166,7 @@ function applyHighlight(selector: string | null): boolean {
   const el = document.querySelector<HTMLElement>(selector)
   if (!el) return false
   el.classList.add(HIGHLIGHT_CLASS)
-  el.scrollIntoView({ inline: 'center', block: 'nearest' })
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' })
   return true
 }
 
@@ -195,17 +195,14 @@ export default function GuidedTour() {
     return () => clearHighlight()
   }, [open, step?.target])
 
-  // ── Body scroll lock + Escape key ──────────────────────────────────────────
+  // ── Escape key (no scroll lock — walkthrough must let the user scroll) ────
 
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') finish() }
     document.addEventListener('keydown', onKey)
-    const prev = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = prev
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
@@ -313,12 +310,12 @@ export default function GuidedTour() {
   const hasHighlight = !!step?.target
 
   return createPortal(
-    <div className="tour-root" role="dialog" aria-modal="true" aria-label="Guided tour">
-      {/* Scrim: a light, non-blocking dim. The ring on the element itself provides the
-          visual focus. pointer-events: all prevents editing mid-tour. */}
+    <div className="tour-root">
+      {/* Scrim: a light dim. pointer-events: none lets the user scroll and interact
+          with the page freely while the guide card floats above. */}
       <div className="tour-scrim" />
 
-      <div className={`tour-card${hasHighlight ? '' : ' is-centered'}`}>
+      <div className={`tour-card${hasHighlight ? '' : ' is-centered'}`} role="dialog" aria-label="Guided tour">
         <div className="tour-card-head">
           <span className="tour-step-count mono">{i + 1} / {steps.length}</span>
           <button type="button" className="tour-skip" onClick={finish}>Skip<Icon name="x" size={13} /></button>

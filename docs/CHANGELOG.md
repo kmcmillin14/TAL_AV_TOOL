@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-07-19 — fix(tour): scrollable non-blocking walkthrough, compact header targets, sample pill sizing
+
+- **Defect 1 — scroll lock removed:** `GuidedTour.tsx` no longer sets `document.body.style.overflow = 'hidden'`; the walkthrough is fully scrollable while the guide card floats.
+- **Defect 1 — scrim non-blocking:** `.tour-scrim` changed from `pointer-events: all` to `pointer-events: none` — the user can scroll and click the page during the tour. The card itself keeps pointer events.
+- **Defect 1 — no aria-modal:** `aria-modal="true"` removed from the root div; `role="dialog"` + `aria-label` moved to the card element only (it is no longer a modal).
+- **Defect 1 — smooth center scroll:** `applyHighlight` now calls `scrollIntoView({ block: 'center', behavior: 'smooth' })` so highlighted targets land mid-viewport.
+- **Defect 2 — sample pill sizing:** `.entry-sample-link` gains `align-self: center; width: fit-content` — fixes stretch caused by the entry-grid's implicit `align-items: stretch` on the third grid row.
+- **Defect 3 — compact highlight targets:** `sample-rfq` guide steps retargeted from full section wrappers to `#section-01 .form-section-header`, `#section-02 .form-section-header`, `#section-05 .form-section-header`, `#engine-raw .form-section-header`, `#engine-charging .form-section-header`, and `.page-header` (Step 2 title bar). Step 4 `.rom2-kpiband` unchanged.
+- SPECIFICATION.md tour section updated to reflect scroll-free, non-blocking, compact-target behavior.
+
 ## 2026-07-19 — feat(sample): Toyota Motors worked-RFQ sample + guided walkthrough; visible entry
 
 - Replaced Michelin Greenville sample with a fully-populated **Toyota Motor Mfg, Georgetown KY**

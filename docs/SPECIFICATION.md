@@ -677,7 +677,7 @@ with three structural JS changes where CSS can't carry the layout.
 - **Overlays.** `FloatingPanel` caps its width to the viewport; the cycle popover gets a
   `max-width: calc(100vw − 24px)`; the Step-2 comparison modal goes full-screen ≤ 700px.
 
-### First-run guided tour (added 2026-07-15; engine rework 2026-07-19)
+### First-run guided tour (added 2026-07-15; engine rework 2026-07-19; UX fixes 2026-07-19)
 
 `src/components/GuidedTour.tsx` mounts inside the persistent header. On a project's first
 visit (localStorage `tal:tourSeen`) it auto-opens a coach-mark sequence over the 4-step nav
@@ -688,9 +688,17 @@ directly on the target DOM element (via `querySelector`). The class draws a ring
 element itself (`outline: 3px solid var(--accent); outline-offset: 3px; box-shadow: 0 0 0 6px
 var(--accent-soft)`) — because the ring is part of the element, it cannot drift or misalign
 due to font-swap reflows, zoom, or layout shifts. There is no rAF coordinate-measurement loop
-and no absolutely-positioned spotlight div. The scrim is a plain `rgba(0,0,0,0.35)` overlay.
-The tour card is always fixed bottom-center (not target-relative). Cleanup defensively removes
-any stale `.tour-highlight` elements on step change, close, or unmount.
+and no absolutely-positioned spotlight div. The scrim is a plain `rgba(0,0,0,0.35)` overlay
+with `pointer-events: none` so the user can scroll and interact with the page freely while the
+guide card floats above (no scroll lock). The tour card is always fixed bottom-center (not
+target-relative) and carries `role="dialog"` (not `aria-modal`) on the card element itself.
+Cleanup defensively removes any stale `.tour-highlight` elements on step change, close, or unmount.
+`scrollIntoView` uses `{ block: 'center', behavior: 'smooth' }` so the target lands mid-viewport.
+
+**Guide step targets (sample-rfq walkthrough):** step targets are retargeted to compact section
+headers (`.form-section-header` inside the section ID) rather than entire sections, so the
+highlight ring is a narrow strip rather than a full page-height box. Step 2 targets `.page-header`
+(the compact title bar); Step 4 `.rom2-kpiband` (a band, not a page) is unchanged.
 
 **Multi-guide engine:** the component exports `GUIDES: Record<string, Guide>` (a registry) and
 `GUIDE_EVENT = 'tal:start-guide'`. Dispatching

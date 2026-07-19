@@ -1665,6 +1665,8 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .entry-sample-link {
   grid-column: 1 / -1;
   justify-self: center;
+  align-self: center;
+  width: fit-content;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -4334,7 +4336,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .tour-root { position: fixed; inset: 0; z-index: 400; }
 /* Light, non-blocking dim. The highlight ring ON the element itself provides focus.
    pointer-events: all keeps the page non-editable mid-tour. */
-.tour-scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.35); pointer-events: all; }
+.tour-scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.35); pointer-events: none; }
 /* Highlight ring: toggled directly on the target element — cannot drift because it IS the element.
    outline renders above siblings without needing a z-index change. */
 .tour-highlight {
