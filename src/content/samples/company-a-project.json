@@ -8,7 +8,11 @@
     "customerContactRole": "Operations Engineering Manager",
     "customerContactEmail": "a.rivera@example.com",
     "customerContactPhone": "555-555-0100",
-    "vehiclesOfInterest": ["cb18", "m10", "8hbc40a"],
+    "vehiclesOfInterest": [
+      "cb18",
+      "m10",
+      "8hbc40a"
+    ],
     "typicalUnitType": "Standard Pallet",
     "maxLoadWeightLbs": 1800,
     "loadLengthIn": 48,
@@ -28,8 +32,12 @@
     "pickContext": "Rack",
     "dropContext": "Pack Line",
     "transferType": "forklift",
-    "transferHeightFt": 8,
-    "specialtyApplications": ["High reach racking", "Milk-run replenishment", "Outbound shuttling"],
+    "transferHeightFt": 12,
+    "specialtyApplications": [
+      "High reach racking",
+      "Milk-run replenishment",
+      "Outbound shuttling"
+    ],
     "minAisleWidthFt": 12,
     "floorCondition": "Smooth",
     "outdoorRequired": false,
@@ -50,7 +58,11 @@
     "peakThroughputPerHour": 130,
     "avgDistanceFt": 450,
     "distanceType": "one_way",
-    "flowGroups": ["Receiving & Putaway", "Replenishment", "Outbound"],
+    "flowGroups": [
+      "Receiving & Putaway",
+      "Replenishment",
+      "Outbound"
+    ],
     "flows": [
       {
         "id": "f_ca1",
@@ -60,7 +72,7 @@
         "distanceFt": 400,
         "thruPerHr": 30,
         "routeLayout": "medium",
-        "liftHeightFt": 8,
+        "liftHeightFt": 12,
         "vehicleId": "cb18"
       },
       {
@@ -71,7 +83,7 @@
         "distanceFt": 250,
         "thruPerHr": 18,
         "routeLayout": "medium",
-        "liftHeightFt": 8,
+        "liftHeightFt": 12,
         "vehicleId": "cb18"
       },
       {
@@ -121,22 +133,33 @@
         "vehicleId": "8hbc40a"
       }
     ],
-    "certifications": ["ANSI B56.5", "ISO 3691-4"],
-    "interlocks": ["High-Speed Doors", "Pick Module Fencing"],
+    "certifications": [
+      "ANSI B56.5",
+      "ISO 3691-4"
+    ],
+    "interlocks": [
+      "High-Speed Doors",
+      "Pick Module Fencing"
+    ],
     "wmsRequired": true,
     "wmsVendor": "Blue Yonder WMS",
     "projectStage": "budgeting",
     "budgetRange": "$2M–$4M",
     "decisionDate": "2026-12-01",
     "targetGoLiveDate": "2027-09-01",
-    "projectDrivers": ["Labor availability", "Throughput / capacity", "Safety", "Order accuracy"],
+    "projectDrivers": [
+      "Labor availability",
+      "Throughput / capacity",
+      "Safety",
+      "Order accuracy"
+    ],
     "currentProcess": "Sit-down counterbalance forklifts handle all receiving-to-rack and rack-to-forward-pick moves. Manual push carts for pack-line replenishment. Walkie-rider pallet trucks move outbound pallets from pack-out to staging.",
     "existingAutomation": "No AGVs on the floor. Conveyor sorter in pack area is a separate system not in scope.",
     "volumeGrowthNote": "~12%/yr driven by e-commerce growth; two new pick modules planned for 2028.",
     "seasonalityNote": "Q4 peak (Oct–Dec) runs approximately 30% above baseline; staffing is the primary constraint.",
     "operatorsPerShift": 10,
     "chargeRegime": "overnight",
-    "projectNotes": "Why these choices — CB18 counterbalance for the 8 ft reserve-rack work (1,800 lb GMA 48×40 pallet + 8 ft lift height, well within the CB18's 14.7 ft max reach; two flows cover receiving-to-reserve and reserve-to-forward-pick replenishment); M10 tunnel-type tugger with Pin-hitch carts for the pack-line replenishment runs (600–750 ft high-speed aisle, no lift needed, cart train multiplies throughput per vehicle); 8HBC40A walkie-rider pallet truck for short outbound shuttles between pack-out staging and shipping dock (floor-level transfer, tight cycle time, low-lift class is the right fit); 2×8 h Mon–Fri means the overnight window is always available — charging adder stays 0 and all three vehicle types can fully recharge off-shift.",
+    "projectNotes": "Why these choices — CB18 counterbalance for the 12 ft reserve-rack work (1,800 lb GMA 48×40 pallet + 12 ft lift height, well within the CB18's 14.7 ft max reach; two flows cover receiving-to-reserve and reserve-to-forward-pick replenishment); M10 tunnel-type tugger with Pin-hitch carts for the pack-line replenishment runs (600–750 ft high-speed aisle, no lift needed, cart train multiplies throughput per vehicle); 8HBC40A walkie-rider pallet truck for short outbound shuttles between pack-out staging and shipping dock (floor-level transfer, tight cycle time, low-lift class is the right fit); 2×8 h Mon–Fri means the overnight window is always available — charging adder stays 0 and all three vehicle types can fully recharge off-shift.",
     "cadAvailable": true,
     "cadNotes": "AutoCAD layout available; includes rack positions, aisle dimensions, and dock layout.",
     "isRfq": false,

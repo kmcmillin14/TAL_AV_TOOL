@@ -117,8 +117,8 @@ const SAMPLE_RFQ_GUIDE: Guide = {
     {
       route: '/step1',
       target: '#section-02 .form-section-header',
-      title: 'Forklift to 8 ft',
-      body: 'Pallets go into racking at 8 ft, so the transfer type is forklift with an 8 ft height — inside the CB18\'s 14.7 ft reach; this is what disqualifies non-lifting vehicles.',
+      title: 'Forklift to 12 ft',
+      body: 'Pallets go into racking at 12 ft, so the transfer type is forklift with a 12 ft height — inside the CB18\'s 14.7 ft reach; this is what disqualifies non-lifting vehicles.',
     },
     {
       route: '/step1',
