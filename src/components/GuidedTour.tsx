@@ -146,13 +146,17 @@ const SAMPLE_RFQ_GUIDE: Guide = {
     },
     {
       route: '/step4',
-      target: '.rom2-kpiband',
+      // The Financials hero card — a single bounded surface; ringing the whole
+      // multi-card kpiband drew broken fragments across the card gaps.
+      target: '.rom2-hero',
       title: 'The ROM you\'d send back',
       body: 'Fleet, CAPEX range, payback. Adjust drivers for what-ifs, then Export builds the customer deck.',
     },
     {
       route: '/step4',
-      target: '.rom-drivers-collapse > summary',
+      // Desktop drivers render as aside.rom2-rail; the <summary> only exists in
+      // the collapsed (narrow) layout and is hidden on desktop — no ring showed.
+      target: '.rom2-rail-head',
       title: 'Drivers & scenario panel',
       body: 'Run what-ifs here — throughput boost, labor rate, shifts. Every KPI recomputes live; toggle Baseline / Scenario to compare.',
     },
