@@ -4345,7 +4345,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   outline: 2px solid var(--accent) !important;
   outline-offset: 2px !important;
   border-radius: 8px !important;
-  background: color-mix(in srgb, var(--accent) 6%, transparent) !important;
+  background: var(--accent-soft) !important;
   transition: background .2s !important;
 }
 /* Card: fixed bottom-RIGHT on all screens so it never covers centered page content.
