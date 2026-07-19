@@ -1,6 +1,6 @@
 'use client'
 
-import { Fragment, useState, useRef, useEffect } from 'react'
+import { Fragment, useState, useRef, useEffect, useCallback } from 'react'
 import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
@@ -175,10 +175,30 @@ export default function FlowsTable({
     endDrag()
   }
 
+  // ---- Undo-delete: stash the last deleted flow for 5 s (spec F3). New deletion replaces it. ----
+  const [deleted, setDeleted] = useState<{ flow: Flow; index: number } | null>(null)
+  const deleteTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  useEffect(() => () => { if (deleteTimer.current) clearTimeout(deleteTimer.current) }, [])
+
   // ---- Flow CRUD ----
   const update = (id: string, next: Flow) =>
     onPatch({ flows: flows.map(f => (f.id === id ? next : f)) })
-  const remove = (id: string) => onPatch({ flows: flows.filter(f => f.id !== id) })
+  const remove = useCallback((id: string) => {
+    const index = flows.findIndex(f => f.id === id)
+    if (index === -1) return
+    setDeleted({ flow: flows[index], index })
+    if (deleteTimer.current) clearTimeout(deleteTimer.current)
+    deleteTimer.current = setTimeout(() => setDeleted(null), 5000)
+    onPatch({ flows: flows.filter(f => f.id !== id) })
+  }, [flows, onPatch])
+  const undoDelete = useCallback(() => {
+    if (!deleted) return
+    if (deleteTimer.current) clearTimeout(deleteTimer.current)
+    const next = [...flows]
+    next.splice(Math.min(deleted.index, next.length), 0, deleted.flow)
+    onPatch({ flows: next })
+    setDeleted(null)
+  }, [deleted, flows, onPatch])
   const addImported = (rows: import('@/src/lib/flowImport').ParsedFlowRow[]) =>
     onPatch({
       flows: [
@@ -431,6 +451,13 @@ export default function FlowsTable({
           <button type="button" className="flows-add-bottom" onClick={() => add()}>
             <Icon name="plus" size={12} /> Add flow
           </button>
+        </div>
+      )}
+
+      {deleted && (
+        <div className="flow-undo-toast" role="status" aria-live="polite">
+          Flow deleted
+          <button type="button" className="flow-undo-btn" onClick={undoDelete}>Undo</button>
         </div>
       )}
     </div>
