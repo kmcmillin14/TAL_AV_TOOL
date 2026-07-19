@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-18 — Workflow friction fixes (6): flow import, save-drop warnings, undo toast, keyboard, select ordering, sample project
+
+- Step 3: inline paste-import panel for flows (pure parser `src/lib/flowImport.ts`, TSV/CSV,
+  header auto-detect, meters→feet); undo-delete toast; ArrowUp/Down reorder on the focusable
+  drag handle; vehicle select sorted by qualification (GREEN first, RED labeled — never auto-selects).
+- Step 1: `subscribeSaveDrops` storage event surfaces salvage-parse drops as inline field
+  warnings (silent-drop fix).
+- Header: Cmd/Ctrl+Z app undo (guarded — native text undo wins inside fields).
+- Step 0: "Load sample project" creates a new project from
+  `src/content/samples/michelin-project.json` (Michelin Greenville scenario incl. flow +
+  CB18 assignment) through the normal import path.
+
 ## 2026-07-18 — Charging model v3: hours-based availability + overlap-aware buffer
 
 - `src/calc/fleet.ts` re-parameterized on cutsheet hours (`calc.runTimeHr` + `calc.chargeTimeMin`);

@@ -35,6 +35,8 @@ project metadata; the rest as form fields. The header meta line is page-centered
    embedded JSON, or `.json`) to make a new revision. Parsed via `parseProjectPdf`
    (PDF) or `importProjectFromJson` (JSON).
 
+**Load sample project** — a tertiary action under the Import card creates a NEW project from the bundled Michelin sample (`src/content/samples/michelin-project.json`, same `{schemaVersion, project}` envelope as JSON import) via the normal Zod/storage path and opens its Step 1. Never touches the current project.
+
 Both import modes reuse the same parsers and the wrapped `{schemaVersion, project}`
 envelope (legacy unwrapped accepted); every import mints a fresh project id and lands
 on Step 01. Import failures show an inline error note. The only difference between
@@ -59,7 +61,7 @@ with its icon (`src/components/ExportActions.tsx`):
   state: **`✓ Saved`** (green) · **`● Saving…`** (warn) · **`⚠ Save failed`** (bad),
   always visible on desktop.
 
-Undo, theme, help, and clear-all remain quiet icon buttons. The prior unlabeled
+Undo, theme, help, and clear-all remain quiet icon buttons. Cmd/Ctrl+Z triggers app Undo when focus is NOT in a text input/textarea/select/contentEditable (native text undo wins inside fields). The prior unlabeled
 export icon (single dropdown) is replaced by the two labeled buttons above.
 
 ---
@@ -151,6 +153,8 @@ asserted against the vehicle JSONs by `src/lib/__tests__/enumAlignment.test.ts`)
   offer extra types — Roll, Coil, Other — for which "no vehicle applies" is the
   correct matrix answer).
 - Every vehicle certification token appears in `CERTIFICATIONS`.
+
+**Save-drop warnings** — when the keystroke autosave's salvage parse drops an out-of-range field (e.g. `shiftsPerDay` 4 > max 3), storage emits a save-drop event and the form shows "Not saved — \<zod message\>" inline under that field (via the form's existing error slot); the warning clears when the field next changes.
 
 ### Multiple loads (matrix-only)
 
@@ -378,6 +382,10 @@ Step 3 imposes **no** per-flow hard gates. Step 2 already qualifies the vehicle 
   Triggers live in each tier's table (Flows / Charging / Buffer) via the shared `DerivTrigger`;
   values come from the engine outputs so they stay live. Disabled when the figure is undefined.
 - **Drag to reorder.** A grip handle in the `#` gutter drags a flow to a new position (insertion line shows where it lands). Dropping onto another group's rows — or onto a group header — moves the flow into that group, so drag doubles as the regroup gesture.
+- **Import flows** — an inline paste panel (no modal) next to "+ Add flow": paste spreadsheet rows (TSV/CSV, header auto-detect: `origin`/`from` · `destination`/`to` · `distance` [(m) converts to ft] · `moves`/`thru`/`rate` · `lift`/`height`; headerless input assumes origin, destination, distance, thru[, lift] order) → preview + skipped-row reasons → "Add N flows". Parser is pure (`src/lib/flowImport.ts`).
+- **Undo delete** — deleting a flow shows a 5 s "Flow deleted — Undo" toast (`aria-live polite`) that restores it at its original index.
+- **Keyboard reorder** — the drag handle is a focusable button; ArrowUp/ArrowDown moves the flow (crossing a boundary adopts the neighbor's group).
+- **Vehicle select ordering** — options sort GREEN · YELLOW · INCOMPLETE · RED from the shared qualification calc, RED suffixed "— not qualified"; all options remain selectable (engineer always assigns — ordering only).
 - **Layout** (column header; the explanatory tooltip on route-average speed is kept) is a one-line tier picker: the closed trigger shows the layout name only — **High / Medium / Low** (highest-first). The avg/max ft·s⁻¹ detail moves **into the dropdown option rows** (small secondary text) and the header tooltip; there is no second line in the grid. A click-through panel explains each tier (`High — Open lanes, few turns · 70%`, `Medium — Mixed warehouse traffic · 50%`, `Low — Congested, many turns · 30%`), each row showing the resulting **Avg** and the vehicle's **Max** (rated) speed, loaded / empty, in the active unit (**ft/s** imperial · **m/s** metric). Backed by the unchanged `routeLayout` enum.
 - **Transfer** is a one-line select whose closed trigger reads `Method · Ns` — the method name and the effective transfer seconds (`transferSecOverride` if set, else the method's `load + unload`). The dropdown carries the method chooser, the lift-height field for lifting methods (an accent dot hints when height is still 0), and a **`Transfer time (s)`** numeric field prefilled with the effective value. **Custom transfer override:** committing a number ≠ the vehicle-method default sets `Flow.transferSecOverride` (total load+unload seconds); the closed trigger then renders in accent color with a trailing `*`; clearing the field removes the override and reverts to the method default.
 - **Cycle** renders as whole seconds (e.g. `234s`, mono) — a button that opens the click-through breakdown popover. The popover leads with a **full-width labeled composition bar** (travel / transfer / lift, each segment proportional to its seconds with a small label + seconds); when the transfer time is engineer-overridden the transfer segment is marked (`*` + "engineer override" note). The 4-px in-cell anatomy bar is removed. **Demand** renders fractional `rawVehicles` to 2 dp (e.g. `2.34 vehicles`); the integer `⌈baseFleet⌉` appears only in the summary box.
