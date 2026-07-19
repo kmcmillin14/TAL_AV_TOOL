@@ -1490,6 +1490,11 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 /* Card row absorbs leftover viewport height (1fr, floored at 280px); the sample
    pill row stays compact (auto) — no dead space below, still no scrolling. */
 .step0-fill .entry-grid { flex: 1; grid-template-rows: minmax(280px, 1fr) auto; grid-auto-rows: auto; }
+/* Belt-and-braces: the flex chain above proved fragile across browsers, so the
+   cards ALSO claim viewport height directly — 100vh minus the fixed chrome
+   (header + page title + details bar + pill + tip + paddings ≈ 640px), never
+   below the compact 280px floor. Viewport units bypass the ancestor chain. */
+.step0-fill .entry-card { min-height: max(280px, calc(100vh - 640px)); }
 
 /* Project details — inline-editable header fields, fillable on the setup page. */
 .setup-details {
