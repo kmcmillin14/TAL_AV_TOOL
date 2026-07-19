@@ -11,13 +11,15 @@ replaced. Corrected 2026-05-27 from the cutsheets.
 - `ratedAh` / `voltageV`: CB18 533 Ah @ 48 V · ML2 63 Ah @ 48 V · M10 28 Ah @ 48 V · E7 100 Ah @ 24 V ·
   8TB50A 750 Ah @ 24 V · 8HBC40A 750 Ah @ 24 V. (kWh ≈ V×Ah/1000; these correct the earlier suspect
   M10/ML2 kWh figures.)
-- `chargeA = ratedAh × 0.80 / (chargeTimeMin/60)` (consistent with the listed recharge time).
-- `dischargeA = ratedAh × 0.80 / targetRunHr`, with an assumed runtime per charge of ~6–12 operating
-  hours per class (CB18 8, ML2 10, M10 12, E7 6, 8TB50A 8, 8HBC40A 6). **To be cutsheet-verified.**
+- `calc.runTimeHr` (v3, 2026-07-18) — hours of operation per full charge. Replaces the derived
+  `dischargeA`/`chargeA` amps (deleted). Current values are [estimate] back-derivations of the
+  same assumed runtimes the amps encoded (`ratedAh × 0.80 ÷ dischargeA`): CB18 8.0 · 8TB50A 8.0 ·
+  8HBC40A 6.0 · E7 6.0 · ML2 10.0 · M10 11.8. Replace each with the [cutsheet] runtime as
+  verified — a JSON edit, no model change. `chargeTimeMin` remains [cutsheet] where noted below.
 
 ## ESTIMATES for every vehicle (not on any cutsheet)
 - `calc.priceRange` (minUsd / maxUsd)
-- `calc.dischargeA`, `calc.chargeA`, `calc.chargerType` (see Ah migration note above)
+- `calc.runTimeHr`, `calc.chargerType` (see Ah/runtime migration note above; `dischargeA`/`chargeA` deleted)
 - `transferMethods[].loadTimeSec` / `unloadTimeSec` — accessory **handling times**
   (Conveyor 3/3, Lift 8/8 [CB18 5/5, 8HBC40A 6/6], Pin 5/5, Custom 8–10, Powered
   Conveyor Cart 5/5). All placeholders.
