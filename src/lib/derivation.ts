@@ -1,9 +1,9 @@
 // Worked, step-by-step derivations of the fleet-sizing math — one pure model
 // rendered two ways: the web "Fleet math" panel (DerivationPanel) and the PPTX
-// deck. Each tier (Raw cycle→demand, Charging, Buffer) explains HOW its number
-// is reached: the symbolic formula, the value-substituted form, and the result.
-// Pure: composes calc outputs + vehicle specs into display strings. Imperial.
-import { DEFAULT_DOD } from '@/src/calc/types'
+// deck. Each tier (Raw cycle→demand, Charging, Utilization) explains HOW its
+// number is reached: the symbolic formula, the value-substituted form, and the
+// result. Pure: composes calc outputs + vehicle specs into display strings. Imperial.
+import { utilizationFromBuffer } from '@/src/calc/types'
 import type { CycleBreakdown, FleetGroup, FleetSettings } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
@@ -88,57 +88,63 @@ export function cycleDerivation(b: CycleBreakdown, p: CycleDerivInputs): Derivat
 
 // ── Tier 2: Charging — battery runtime → availability → extra vehicles ────────
 
-/** Charging tier: usable capacity → runtime & recharge → availability →
- *  ⌈demand ÷ availability⌉ → extra vehicles. Mirrors `chargingForGroup`. */
+/** Charging tier: cutsheet runtime & recharge hours → rotation + weekly-energy
+ *  availability → ⌈demand ÷ availability⌉ → extra vehicles. Mirrors `chargingForGroup`. */
 export function chargingDerivation(
   group: FleetGroup, vehicle: Vehicle,
   settings: Pick<FleetSettings, 'dailyOpHr' | 'breakHrs' | 'consecutiveOpDays'>,
 ): Derivation {
   const c = group.charging
-  const cal = vehicle.calc
-  const usableAh = cal.ratedAh * DEFAULT_DOD
   const H = Math.max(0, settings.dailyOpHr - settings.breakHrs)
   const cDays = settings.consecutiveOpDays
   const tag = `${c.method === 'opportunity' ? 'Opportunity' : 'Plugged'} · ${Number.isFinite(cDays) ? `${cDays} days on` : '24/7'}`
 
   const steps: DerivStep[] = [
-    sec('Battery'),
-    { label: 'Usable capacity', expr: 'rated Ah × usable depth', sub: `${n1(cal.ratedAh)} × ${DEFAULT_DOD}`, result: `${n1(usableAh)} Ah` },
-    { label: 'Runtime per charge', expr: 'usable Ah ÷ draw', sub: `${n1(usableAh)} ÷ ${n1(cal.dischargeA)}`, result: c.runHr == null ? '—' : `${n1(c.runHr)} h` },
-    { label: 'Recharge time', expr: cal.chargeTimeMin ? 'rated charge time' : 'usable Ah ÷ charge rate', sub: cal.chargeTimeMin ? undefined : `${n1(usableAh)} ÷ ${n1(cal.chargeA)}`, result: c.chargeHr == null ? '—' : `${n1(c.chargeHr)} h` },
+    sec('Battery (cutsheet hours — no derates)'),
+    { label: 'Runtime per charge', expr: 'hours of work per full charge', result: c.runHr == null ? '—' : `${n1(c.runHr)} h` },
+    { label: 'Recharge time', expr: 'time to a full charge', sub: vehicle.calc.chargeTimeMin ? `${vehicle.calc.chargeTimeMin} min` : undefined, result: c.chargeHr == null ? '—' : `${n1(c.chargeHr)} h` },
     sec('Availability'),
-    { label: 'Energy (off-shift + days-off reset)', expr: '(usable/C + 24·charge) ÷ (H·(draw+charge))', result: c.aEnergy == null ? '—' : `${Math.round(c.aEnergy * 100)}%` },
-    { label: 'Capacity (battery vs window)', expr: `runtime vs ${n1(H)} h production`, result: c.aCap == null ? '—' : `${Math.round(c.aCap * 100)}%` },
+    { label: 'Rotation (run : charge)', expr: 'runtime ÷ (runtime + recharge), or 100% if the battery covers the window', result: c.aCap == null ? '—' : `${Math.round(c.aCap * 100)}%` },
+    { label: 'Weekly energy (off-shift + day-off reset)', expr: `charges 24 h/day vs works ${n1(H)} h/day; a day off is a free full battery`, result: c.aEnergy == null ? '—' : `${Math.round(c.aEnergy * 100)}%` },
     { label: 'Availability', expr: 'min of the two', result: c.availability == null ? '—' : `${Math.round(c.availability * 100)}%`, emphasis: true },
   ]
 
   if (c.chargingDelta === 0) {
     steps.push({ label: 'Extra vehicles', expr: 'charging fits the fleet', result: '+0', emphasis: true })
-    return { title: 'Charging — battery → availability', tag, steps, note: 'Off-shift and days-off charging keep the battery up, so charging steals no operating time.' }
+    return { title: 'Charging — battery hours → availability', tag, steps, note: 'Off-shift and days-off charging keep the battery up, so charging steals no operating time.' }
   }
   steps.push(
     { label: 'Fleet with charging', expr: 'demand ÷ availability, rounded up', sub: c.availability == null ? undefined : `⌈ ${n2(group.groupRaw)} ÷ ${n2(c.availability)} ⌉`, result: String(group.baseFleet + c.chargingDelta) },
     { label: 'Extra vehicles', expr: 'fleet with charging − base', sub: `${group.baseFleet + c.chargingDelta} − ${group.baseFleet}`, result: `+${c.chargingDelta}`, emphasis: true },
   )
-  return { title: 'Charging — battery → availability → +N', tag, steps, note: 'Availability is the share of the day a vehicle can work; the rest is charging. Dividing demand by it covers the downtime.' }
+  return { title: 'Charging — battery hours → availability → +N', tag, steps, note: 'Availability is the share of the day a vehicle can work; the rest is charging. Dividing demand by it covers the downtime.' }
 }
 
-// ── Tier 3: Buffer — spare capacity → fleet sold ─────────────────────────────
+// ── Tier 3: Utilization — headroom → fleet sold ──────────────────────────────
 
-/** Buffer tier: (raw ÷ availability) × (1 + buffer), rounded up ONCE = fleet. */
+const BINDING_LABEL: Record<FleetGroup['binding'], string> = {
+  energy: 'Weekly energy', rotation: 'Charging rotation', utilization: 'Target utilization',
+}
+
+/** Utilization tier: the fleet pays the LARGER of the rotation and energy
+ *  constraints (v3 overlap-aware composition), rounded up ONCE = fleet. */
 export function bufferDerivation(group: FleetGroup, bufferPct: number): Derivation {
   const mult = (1 + bufferPct).toFixed(2)
-  const a = group.charging.availability
-  const demand = a != null ? group.groupRaw / a : group.groupRaw
+  const { aEnergy, aCap } = group.charging
+  const demandRotation = (group.groupRaw * (1 + bufferPct)) / (aCap ?? 1)
+  const demandEnergy = aEnergy != null ? group.groupRaw / aEnergy : null
   return {
-    title: 'Buffer — spare capacity → fleet',
-    tag: `Buffer ${Math.round(bufferPct * 100)}%`,
+    title: 'Utilization — headroom → fleet',
+    tag: `Utilization ${Math.round(utilizationFromBuffer(bufferPct) * 100)}%`,
     steps: [
-      sec('Waterfall'),
-      { label: 'Demand with charging', expr: a != null ? 'raw ÷ availability (unrounded)' : 'raw demand', sub: a != null ? `${n2(group.groupRaw)} ÷ ${n2(a)}` : n2(group.groupRaw), result: n2(demand) },
-      { label: 'Buffer multiplier', expr: '1 + buffer %', sub: `1 + ${(bufferPct).toFixed(2)}`, result: `×${mult}` },
-      { label: 'Fleet (sold)', expr: 'buffered demand, rounded up once', sub: `⌈ ${n2(demand)} × ${mult} ⌉`, result: String(group.fleetSold), emphasis: true },
+      sec('Constraints — the fleet pays the larger'),
+      { label: 'Peak need with headroom', expr: aCap != null && aCap < 1 ? 'raw × (1 + buffer) ÷ rotation availability' : 'raw × (1 + buffer)', sub: `${n2(group.groupRaw)} × ${mult}${aCap != null && aCap < 1 ? ` ÷ ${n2(aCap)}` : ''}`, result: n2(demandRotation) },
+      demandEnergy != null
+        ? { label: 'Weekly energy sustain', expr: 'raw ÷ energy availability — no buffer here: idle robots charge', sub: `${n2(group.groupRaw)} ÷ ${n2(aEnergy!)}`, result: n2(demandEnergy) }
+        : { label: 'Weekly energy sustain', expr: 'battery data unavailable', result: '—', muted: true },
+      { label: 'Fleet (sold)', expr: 'larger constraint, rounded up once', sub: `⌈ ${n2(Math.max(demandRotation, demandEnergy ?? 0))} ⌉`, result: String(group.fleetSold), emphasis: true },
+      { label: 'Binding constraint', result: BINDING_LABEL[group.binding] },
     ],
-    note: 'Buffer covers maintenance, training, and demand spikes. Each chassis rounds up exactly once — at the end — so rounding slack is never buffered twice.',
+    note: 'Headroom covers demand spikes, maintenance, and queueing; energy is average-work-driven, so buffer vehicles never multiply it. Each chassis rounds up exactly once — at the end.',
   }
 }
