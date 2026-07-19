@@ -6,6 +6,7 @@ import PersistentHeader from '@/src/components/PersistentHeader'
 import Icon from '@/src/design-system/components/Icon'
 import { getProject, importProjectFromJson, updateProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
+import sampleProject from '@/src/content/samples/michelin-project.json'
 
 export default function Step0Page() {
   const params = useParams()
@@ -279,6 +280,21 @@ export default function Step0Page() {
                 Import &amp; continue
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden><polyline points="9 18 15 12 9 6" /></svg>
               </span>
+            </button>
+
+            <button
+              type="button"
+              className="entry-sample-link"
+              onClick={() => {
+                try {
+                  const imported = importProjectFromJson(JSON.stringify(sampleProject))
+                  router.push(`/projects/${imported.id}/step1`)
+                } catch {
+                  setImportError('Could not load the sample project.')
+                }
+              }}
+            >
+              …or load the sample project (Michelin Greenville DC)
             </button>
           </div>
 
