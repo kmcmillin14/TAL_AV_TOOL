@@ -52,6 +52,13 @@ describe('chargingForGroup (v3 hours-based availability)', () => {
     expect(friday.availability!).toBeGreaterThan(everyday.availability!)
   })
 
+  it('C=1 (rest day after every operating day) maximizes the weekend credit', () => {
+    const daily = chargingForGroup({ ...base, hProd: 20, consecutiveOpDays: 1 })
+    const never = chargingForGroup({ ...base, hProd: 20, consecutiveOpDays: Infinity })
+    expect(daily.aEnergy).toBeCloseTo(0.8, 6)    // (24 + 8/1)/(20·2)
+    expect(never.aEnergy).toBeCloseTo(0.6, 6)    // 24/(20·2)
+  })
+
   it('faster charger raises availability', () => {
     const r = chargingForGroup({ ...base, chargeTimeMin: 120, hProd: 16, consecutiveOpDays: 5 })
     expect(r.chargeHr).toBeCloseTo(2, 6)

@@ -47,7 +47,7 @@ export interface ChargingInput {
  *   runHrEff  = runTimeHr + breaks·(runTimeHr/chargeHr)          breaks credit
  *   A_cap     = runHrEff ≥ H ? 1 : runHrEff/(runHrEff+chargeHr)  rotation ratio
  *   A_energy  = min(1, (24 + chargeHr/C) / (H·(1 + chargeHr/runTimeHr)))
- *               — off-shift (24 vs H) + day-off reset (chargeHr/C) credits
+ *               — daily charge capacity ÷ daily charge demand in hours form (credits every non-working hour, incl. off-shift; day-off reset = chargeHr/C)
  *
  * No DOD or charge-efficiency derates: measured cutsheet hours already contain
  * them. A vehicle charges whenever it is not working (uniform for opportunity

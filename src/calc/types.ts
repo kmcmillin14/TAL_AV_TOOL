@@ -194,7 +194,7 @@ export interface FleetGroup {
   groupRaw: number
   baseFleet: number
   charging: ChargingResult
-  fleetWithCharging: number   // baseFleet + chargingDelta (reported stage)
+  fleetWithCharging: number   // charging-only intermediate (baseFleet + chargingDelta); can sit BELOW fleetSold when the buffer/utilization constraint binds
   fleetSold: number           // max(baseFleet, ⌈max(raw/A_energy, raw·(1+buffer)/A_cap)⌉)
   binding: FleetBinding       // which constraint bound fleetSold
 }
