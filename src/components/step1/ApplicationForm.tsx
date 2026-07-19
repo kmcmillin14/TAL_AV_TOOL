@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useForm, useFieldArray, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
@@ -287,6 +287,11 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     }
   }, [projectId])
 
+  // errors changes identity on every setError/clearErrors — read it through a ref
+  // so the autosave watch subscription is NOT torn down/resubscribed on each one.
+  const errorsRef = useRef(errors)
+  useEffect(() => { errorsRef.current = errors })
+
   // Persist on every form change, not just on blur. macOS doesn't shift focus
   // (and so doesn't fire blur) when the user clicks a <button> like a step
   // dot in PersistentHeader — so a blur-only save would leak stale data into
@@ -298,14 +303,14 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
       // correcting it; let the next autosave verdict speak.
       if (info?.name) {
         const fieldName = info.name as keyof typeof errors
-        if (errors[fieldName]?.type === 'saveDrop') {
+        if (errorsRef.current[fieldName]?.type === 'saveDrop') {
           clearErrors(info.name as never)
         }
       }
       autoSave(values as Partial<ProjectFormData>)
     })
     return () => subscription.unsubscribe()
-  }, [watch, autoSave, projectId, errors, clearErrors])
+  }, [watch, autoSave, projectId, clearErrors])
 
   // Surface salvage-parse drops (silently discarded out-of-range fields) inline,
   // via RHF's error slot — the form already renders errors under fields.
