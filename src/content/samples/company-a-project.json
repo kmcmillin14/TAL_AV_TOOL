@@ -28,7 +28,7 @@
     "pickContext": "Rack",
     "dropContext": "Pack Line",
     "transferType": "forklift",
-    "transferHeightFt": 15,
+    "transferHeightFt": 8,
     "specialtyApplications": ["High reach racking", "Milk-run replenishment", "Outbound shuttling"],
     "minAisleWidthFt": 12,
     "floorCondition": "Smooth",
@@ -60,7 +60,7 @@
         "distanceFt": 400,
         "thruPerHr": 30,
         "routeLayout": "medium",
-        "liftHeightFt": 15,
+        "liftHeightFt": 8,
         "vehicleId": "cb18"
       },
       {
@@ -71,7 +71,7 @@
         "distanceFt": 250,
         "thruPerHr": 18,
         "routeLayout": "medium",
-        "liftHeightFt": 15,
+        "liftHeightFt": 8,
         "vehicleId": "cb18"
       },
       {
@@ -136,7 +136,7 @@
     "seasonalityNote": "Q4 peak (Oct–Dec) runs approximately 30% above baseline; staffing is the primary constraint.",
     "operatorsPerShift": 10,
     "chargeRegime": "overnight",
-    "projectNotes": "Why these choices — CB18 counterbalance for the 15 ft reserve-rack work (1,800 lb GMA 48×40 pallet + 15 ft lift class qualify; two flows cover receiving-to-reserve and reserve-to-forward-pick replenishment); M10 tunnel-type tugger with Pin-hitch carts for the pack-line replenishment runs (600–750 ft high-speed aisle, no lift needed, cart train multiplies throughput per vehicle); 8HBC40A walkie-rider pallet truck for short outbound shuttles between pack-out staging and shipping dock (floor-level transfer, tight cycle time, low-lift class is the right fit); 2×8 h Mon–Fri means the overnight window is always available — charging adder stays 0 and all three vehicle types can fully recharge off-shift.",
+    "projectNotes": "Why these choices — CB18 counterbalance for the 8 ft reserve-rack work (1,800 lb GMA 48×40 pallet + 8 ft lift height, well within the CB18's 14.7 ft max reach; two flows cover receiving-to-reserve and reserve-to-forward-pick replenishment); M10 tunnel-type tugger with Pin-hitch carts for the pack-line replenishment runs (600–750 ft high-speed aisle, no lift needed, cart train multiplies throughput per vehicle); 8HBC40A walkie-rider pallet truck for short outbound shuttles between pack-out staging and shipping dock (floor-level transfer, tight cycle time, low-lift class is the right fit); 2×8 h Mon–Fri means the overnight window is always available — charging adder stays 0 and all three vehicle types can fully recharge off-shift.",
     "cadAvailable": true,
     "cadNotes": "AutoCAD layout available; includes rack positions, aisle dimensions, and dock layout.",
     "isRfq": false,

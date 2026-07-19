@@ -47,12 +47,12 @@ describe('company-a sample project', () => {
     }
   })
 
-  it('flows 1-2 use cb18 with 15 ft lift height', () => {
+  it('flows 1-2 use cb18 with 8 ft lift height (within CB18 14.7 ft max reach)', () => {
     const flows = sample.project.flows as Array<{ vehicleId?: string; liftHeightFt?: number }>
     expect(flows[0].vehicleId).toBe('cb18')
-    expect(flows[0].liftHeightFt).toBe(15)
+    expect(flows[0].liftHeightFt).toBe(8)
     expect(flows[1].vehicleId).toBe('cb18')
-    expect(flows[1].liftHeightFt).toBe(15)
+    expect(flows[1].liftHeightFt).toBe(8)
   })
 
   it('flows 5-6 use 8hbc40a for outbound (floor-level)', () => {

@@ -117,8 +117,8 @@ const SAMPLE_RFQ_GUIDE: Guide = {
     {
       route: '/step1',
       target: '#section-02 .form-section-header',
-      title: 'Forklift to 15 ft',
-      body: 'Pallets go INTO reserve racking at 15 ft, so the transfer type is forklift with a 15 ft height — this is what disqualifies non-lifting vehicles.',
+      title: 'Forklift to 8 ft',
+      body: 'Pallets go into racking at 8 ft, so the transfer type is forklift with an 8 ft height — inside the CB18\'s 14.7 ft reach; this is what disqualifies non-lifting vehicles.',
     },
     {
       route: '/step1',
@@ -149,6 +149,30 @@ const SAMPLE_RFQ_GUIDE: Guide = {
       target: '.rom2-kpiband',
       title: 'The ROM you\'d send back',
       body: 'Fleet, CAPEX range, payback. Adjust drivers for what-ifs, then Export builds the customer deck.',
+    },
+    {
+      route: '/step4',
+      target: '.rom-drivers-collapse > summary',
+      title: 'Drivers & scenario panel',
+      body: 'Run what-ifs here — throughput boost, labor rate, shifts. Every KPI recomputes live; toggle Baseline / Scenario to compare.',
+    },
+    {
+      route: '/step4',
+      target: '#rom-fleet-math .rom2-cell-head',
+      title: 'Fleet & flow math',
+      body: 'The full sizing math — every stage from cycle time to the binding constraint, with this project\'s numbers substituted in.',
+    },
+    {
+      route: '/step4',
+      target: '#rom-assumptions .rom2-cell-head',
+      title: 'Assumptions',
+      body: 'Every assumption is listed and defensible — DoD, availability, headroom. This is what you stand behind in the customer meeting.',
+    },
+    {
+      route: '/step4',
+      target: '.rom-card-export',
+      title: 'Export',
+      body: 'Done? Export builds the customer deck (PPTX), the editable Excel model, and the PDF.',
     },
     {
       route: '/step4',

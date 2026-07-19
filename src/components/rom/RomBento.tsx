@@ -39,8 +39,9 @@ interface Props {
 
 /** Bento cell — `span` is the column count (1–4 in the 4-col grid). Any cell can
  *  be expanded to a full-screen overlay (its content re-renders larger; charts use
- *  responsive containers so they fill the space). Esc or the close button collapses it. */
-function Cell({ title, span = 1, children }: { title: string; span?: 1 | 2 | 4; children: ReactNode }) {
+ *  responsive containers so they fill the space). Esc or the close button collapses it.
+ *  `cellId` sets a stable HTML id on the section element for tour targeting. */
+function Cell({ title, span = 1, cellId, children }: { title: string; span?: 1 | 2 | 4; cellId?: string; children: ReactNode }) {
   const [expanded, setExpanded] = useState(false)
 
   useEffect(() => {
@@ -70,7 +71,7 @@ function Cell({ title, span = 1, children }: { title: string; span?: 1 | 2 | 4; 
   )
 
   return (
-    <section className={`rom2-cell rom2-span-${span}`}>
+    <section id={cellId} className={`rom2-cell rom2-span-${span}`}>
       {head(false)}
       {!expanded && children}
       {expanded && createPortal(
@@ -143,13 +144,13 @@ export default function RomBento(p: Props) {
       <Cell title="Requirements met" span={2}><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Cell>
       <Cell title="Redundancy — one vehicle down" span={2}><SensitivityPanel fleet={p.fleet} /></Cell>
 
-      <Cell title="How the fleet is calculated" span={4}>
+      <Cell title="How the fleet is calculated" span={4} cellId="rom-fleet-math">
         <FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} />
         <CollapsibleSection title="Formulas &amp; variables" defaultOpen={false}>
           <MethodologyPanel />
         </CollapsibleSection>
       </Cell>
-      <Cell title="Assumptions" span={4}><AssumptionsPanel project={p.project} /></Cell>
+      <Cell title="Assumptions" span={4} cellId="rom-assumptions"><AssumptionsPanel project={p.project} /></Cell>
     </div>
   )
 }

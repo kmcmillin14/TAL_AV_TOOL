@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-07-19 — fix(tour+sample): inset unclippable highlight, 8 ft transfer (CB18-safe), walkthrough covers ROM operational sections
+
+- **Fix 1 — inset highlight ring:** `.tour-highlight` in `app/globals.css` replaced `outline`/`outline-offset`/`border-radius` with `box-shadow: inset 0 0 0 2px var(--accent)`. The inset shadow renders fully inside the element on all four sides regardless of any ancestor `overflow: hidden` (`.form-section` clips outlines; the inset ring is unclippable).
+- **Fix 2 — sample heights 15 ft → 8 ft:** `src/content/samples/company-a-project.json` `transferHeightFt` changed from 15 to 8; both CB18 flows (`f_ca1`, `f_ca2`) `liftHeightFt` changed from 15 to 8. 8 ft is well inside the CB18's 14.67 ft max reach so the vehicle now correctly qualifies GREEN. `projectNotes` updated to reflect the 8 ft rationale. Walkthrough copy in `GuidedTour.tsx` step updated: title "Forklift to 8 ft", body explains the 14.7 ft clearance. `sampleProject.test.ts` assertion updated to expect 8.
+- **Fix 3 — walkthrough covers ROM operational sections:** `SAMPLE_RFQ_GUIDE` in `GuidedTour.tsx` gains 4 new steps between the KPI band and the "Your turn" finale (guide total: 13 steps). Selectors: `.rom-drivers-collapse > summary` (Drivers & scenario panel), `#rom-fleet-math .rom2-cell-head` (fleet math), `#rom-assumptions .rom2-cell-head` (assumptions), `.rom-card-export` (export bar). Two stable IDs added to `RomBento.tsx`: `cellId="rom-fleet-math"` on the "How the fleet is calculated" Cell, `cellId="rom-assumptions"` on the Assumptions Cell; `Cell` component extended with optional `cellId?: string` prop forwarded as `id` on the `<section>`.
+
 ## 2026-07-19 — fix(sample+tour): Company A generic sample, scrimless active-section highlight, fits-in-window entry, wipe-sample finish
 
 - **Fix A — entry fits in viewport:** `.step0-fill .entry-grid` no longer uses `grid-auto-rows: minmax(380px,1fr)` that pushed the sample pill below the fold at 1440×800. Cards reduced to `min-height: 280px` and `padding: 32px 32px 28px`; icon shrunk to 56px with 16px margin; CTA margin trimmed to 20px. PROJECT DETAILS bar + both cards + sample pill now visible without scrolling at 800px viewport height.

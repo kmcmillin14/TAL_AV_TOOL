@@ -4342,9 +4342,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
    because it IS the element. outline renders above siblings without z-index hacks.
    Background tint provides a gentle "active section" feel without obscuring content. */
 .tour-highlight {
-  outline: 2px solid var(--accent) !important;
-  outline-offset: 2px !important;
-  border-radius: 8px !important;
+  box-shadow: inset 0 0 0 2px var(--accent) !important;
   background: var(--accent-soft) !important;
   transition: background .2s !important;
 }
