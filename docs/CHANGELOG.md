@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-19 — feat(sample): Toyota Motors worked-RFQ sample + guided walkthrough; visible entry
+
+- Replaced Michelin Greenville sample with a fully-populated **Toyota Motor Mfg, Georgetown KY**
+  scenario (`src/content/samples/toyota-project.json`). 6 flows, 3 flowGroups, 3 vehicle types
+  (cb18 · m10 · 8hbc40a), all schema fields set. `michelin-project.json` deleted.
+- Added `'sample-rfq'` guide to `GUIDES` registry in `GuidedTour.tsx` — 8 steps spanning
+  Steps 1→4, explaining WHY each RFQ decision was made (load, transfer height, schedule,
+  qualification, flows, charging, ROM). Auto-starts when the sample is loaded.
+- Step 0 sample-load handler now writes `sessionStorage['tal:guideState']` before navigating;
+  the guide engine resumes on mount of Step 1.
+- Upgraded `.entry-sample-link` from bare underlined text to a bordered ghost-pill with eye icon
+  and label "Load the sample project — Toyota Motor Mfg (guided)". Clearly secondary to the two
+  main cards but no longer missable.
+- Test file renamed to `sampleProject.test.ts` (Toyota); assertions added for 6 flows, 3 groups,
+  vehicle set, and M10 `transferMethodIdx === 0` (Pin method index).
+
 ## 2026-07-19 — feat(tour): class-based highlight guide engine — no coordinate math, multi-guide, cross-page steps
 
 - `GuidedTour.tsx` rebuilt: highlight ring toggled via `.tour-highlight` CSS class on the target

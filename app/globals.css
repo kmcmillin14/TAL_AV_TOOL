@@ -1665,15 +1665,26 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 .entry-sample-link {
   grid-column: 1 / -1;
   justify-self: center;
-  background: none;
-  border: 0;
-  padding: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 16px;
   font-size: 13px;
-  color: var(--text-tertiary);
-  text-decoration: underline;
+  color: var(--text-secondary);
+  text-decoration: none;
   cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.12s;
 }
-.entry-sample-link:hover { color: var(--text-secondary); }
+.entry-sample-link:hover {
+  background: var(--surface-3);
+  border-color: var(--border-strong);
+  box-shadow: 0 2px 8px rgba(0,0,0,.08);
+  transform: translateY(-1px);
+  color: var(--text-primary);
+}
 
 @media (max-width: 880px) {
   .entry-grid { grid-template-columns: 1fr; gap: 16px; }

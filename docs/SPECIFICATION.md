@@ -35,7 +35,7 @@ project metadata; the rest as form fields. The header meta line is page-centered
    embedded JSON, or `.json`) to make a new revision. Parsed via `parseProjectPdf`
    (PDF) or `importProjectFromJson` (JSON).
 
-**Load sample project** — a tertiary action centered below the entry cards creates a NEW project from the bundled Michelin sample (`src/content/samples/michelin-project.json`, same `{schemaVersion, project}` envelope as JSON import) via the normal Zod/storage path and opens its Step 1. Never touches the current project.
+**Load sample project** — a ghost-pill button (bordered, icon-prefixed, clearly secondary to the two main cards but no longer bare underlined text) centered below the entry grid creates a NEW project from the bundled Toyota Motor Mfg sample (`src/content/samples/toyota-project.json`, same `{schemaVersion, project}` envelope as JSON import) via the normal Zod/storage path, writes `sessionStorage['tal:guideState'] = {guideId:'sample-rfq',step:0}`, then navigates to Step 1. The `sample-rfq` guided walkthrough auto-starts on mount of Step 1 and walks the user through Steps 1–4 explaining the WHY behind each decision. The guide can be relaunched at any time via `window.dispatchEvent(new CustomEvent('tal:start-guide', { detail: { guideId: 'sample-rfq' } }))`. Never touches the current project.
 
 Both import modes reuse the same parsers and the wrapped `{schemaVersion, project}`
 envelope (legacy unwrapped accepted); every import mints a fresh project id and lands
@@ -698,8 +698,9 @@ any stale `.tour-highlight` elements on step change, close, or unmount.
 Cross-page guides use `GuideStep.route` (a pathname suffix): on `next()`, if the step's route
 doesn't match the current pathname, the engine persists `{ guideId, step }` to
 `sessionStorage['tal:guideState']`, calls `router.push`, and resumes on mount of the target
-page. Currently only the `'intro'` guide is registered; a `'sample-rfq'` walkthrough guide
-spanning Steps 1–4 is planned for a follow-up task.
+page. Two guides are currently registered: `'intro'` (the four-step nav tour) and `'sample-rfq'`
+(an 8-step Toyota RFQ walkthrough spanning Steps 1–4 that auto-starts when the sample project
+is loaded and explains the WHY behind each field and vehicle assignment).
 
 The tour re-opens any time from the Help drawer's **"Take the tour"** button, which dispatches
 the `tal:start-tour` window event (exported as `TOUR_EVENT`). The card offers Back / Next /

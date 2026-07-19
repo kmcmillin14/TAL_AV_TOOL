@@ -84,12 +84,68 @@ const INTRO_GUIDE: Guide = {
   ],
 }
 
+/** Sample RFQ walkthrough — cross-page, Steps 1→4. Starts automatically when the
+ *  Toyota sample project is loaded from Step 0. Explains WHY each decision was made. */
+const SAMPLE_RFQ_GUIDE: Guide = {
+  id: 'sample-rfq',
+  steps: [
+    {
+      route: '/step1',
+      target: null,
+      title: 'A worked RFQ',
+      body: 'This sample is Toyota Motor Mfg\'s RFQ, already filled in. Walk with me — each stop explains WHY it was answered this way.',
+    },
+    {
+      route: '/step1',
+      target: '#section-01',
+      title: '1,800 lb auto pallets',
+      body: '48×45 automotive pallets at 1,800 lbs. Weight + dimensions drive vehicle qualification — get these right first.',
+    },
+    {
+      route: '/step1',
+      target: '#section-02',
+      title: 'Forklift to 15 ft',
+      body: 'Pallets go INTO rack at 15 ft, so the transfer type is forklift with a 15 ft height — this is what disqualifies non-lifting vehicles.',
+    },
+    {
+      route: '/step1',
+      target: '#section-05',
+      title: '2 shifts, Mon–Fri',
+      body: '16 staffed hours leaves 8 overnight — batteries recharge for free, so charging adds zero robots here.',
+    },
+    {
+      route: '/step2',
+      target: '.veh-grid',
+      title: 'Who qualifies, and why',
+      body: 'Green passes every hard gate: CB18 lifts 1,800 lbs to 15 ft. Click any card\'s details to see the exact gate math.',
+    },
+    {
+      route: '/step3',
+      target: '#engine-raw',
+      title: 'The RFQ\'s moves, as flows',
+      body: 'Six flows in three zones: CB18 does the rack work, the M10 pin-tugger runs the long lineside milk-runs, the 8HBC40A shuttles finished goods floor-to-floor.',
+    },
+    {
+      route: '/step3',
+      target: '#engine-charging',
+      title: 'Charging: +0 — here\'s why',
+      body: 'Runtime covers a shift and nights are free charge time. On a 24/7 site this line is where robots get added.',
+    },
+    {
+      route: '/step4',
+      target: '.rom2-kpiband',
+      title: 'The ROM you\'d send back',
+      body: 'Fleet, CAPEX range, payback. Adjust drivers for what-ifs, then Export builds the customer deck.',
+    },
+  ],
+}
+
 /**
  * Guide registry. Add new guides here to make them startable via GUIDE_EVENT.
- * TODO: add 'sample-rfq' walkthrough guide (cross-page, Steps 1→4) in a follow-up task.
  */
 export const GUIDES: Record<string, Guide> = {
   intro: INTRO_GUIDE,
+  'sample-rfq': SAMPLE_RFQ_GUIDE,
 }
 
 // ─── Highlight helpers ────────────────────────────────────────────────────────
