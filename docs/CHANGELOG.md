@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-07-19 — feat(tour): class-based highlight guide engine — no coordinate math, multi-guide, cross-page steps
+
+- `GuidedTour.tsx` rebuilt: highlight ring toggled via `.tour-highlight` CSS class on the target
+  element; no rAF loop, no `getBoundingClientRect`, no absolutely-positioned spotlight div —
+  misalignment from font-swap reflows or zoom is structurally impossible.
+- Scrim is now a plain `rgba(0,0,0,0.35)` overlay (was a 9999px box-shadow hole); tour card is
+  always fixed bottom-center (was target-relative with `cardTop` math).
+- Multi-guide engine: exports `GUIDES` registry, `GUIDE_EVENT` (`tal:start-guide` CustomEvent),
+  and `GuideStep.route` for cross-page steps (persisted via `sessionStorage['tal:guideState']`,
+  resumed on mount of the target page via `useRouter`/`usePathname`).
+- Existing `TOUR_EVENT` / first-run auto-open / SEEN_KEY / HelpDrawer integration unchanged.
+- Spec and CSS updated to match.
+
 ## 2026-07-19 — Removed qualification-ordered vehicle select (owner direction; select is plain again)
 
 - Step 3: vehicle select reverted to plain alphabetical list — removed `statusById` prop drill,

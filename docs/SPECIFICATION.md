@@ -677,15 +677,33 @@ with three structural JS changes where CSS can't carry the layout.
 - **Overlays.** `FloatingPanel` caps its width to the viewport; the cycle popover gets a
   `max-width: calc(100vw − 24px)`; the Step-2 comparison modal goes full-screen ≤ 700px.
 
-### First-run guided tour (added 2026-07-15)
+### First-run guided tour (added 2026-07-15; engine rework 2026-07-19)
 
 `src/components/GuidedTour.tsx` mounts inside the persistent header. On a project's first
-visit (localStorage `tal:tourSeen`) it auto-opens a coach-mark sequence: a spotlight over
-the 4-step nav bar and each step tab in turn, framed by the Cut → Connect → Add discipline.
-The spotlight is a transparent window with a large box-shadow scrim that re-measures on
-scroll/resize; the card offers Back / Next / Skip and a step-dot progress row. It re-opens
-any time from the Help drawer's **"Take the tour"** button, which dispatches the
-`tal:start-tour` window event (exported as `TOUR_EVENT`).
+visit (localStorage `tal:tourSeen`) it auto-opens a coach-mark sequence over the 4-step nav
+bar and each step tab in turn, framed by the Cut → Connect → Add discipline.
+
+**Highlight mechanism (rework 2026-07-19):** the engine toggles a CSS class `tour-highlight`
+directly on the target DOM element (via `querySelector`). The class draws a ring on the
+element itself (`outline: 3px solid var(--accent); outline-offset: 3px; box-shadow: 0 0 0 6px
+var(--accent-soft)`) — because the ring is part of the element, it cannot drift or misalign
+due to font-swap reflows, zoom, or layout shifts. There is no rAF coordinate-measurement loop
+and no absolutely-positioned spotlight div. The scrim is a plain `rgba(0,0,0,0.35)` overlay.
+The tour card is always fixed bottom-center (not target-relative). Cleanup defensively removes
+any stale `.tour-highlight` elements on step change, close, or unmount.
+
+**Multi-guide engine:** the component exports `GUIDES: Record<string, Guide>` (a registry) and
+`GUIDE_EVENT = 'tal:start-guide'`. Dispatching
+`new CustomEvent('tal:start-guide', { detail: { guideId } })` starts any registered guide.
+Cross-page guides use `GuideStep.route` (a pathname suffix): on `next()`, if the step's route
+doesn't match the current pathname, the engine persists `{ guideId, step }` to
+`sessionStorage['tal:guideState']`, calls `router.push`, and resumes on mount of the target
+page. Currently only the `'intro'` guide is registered; a `'sample-rfq'` walkthrough guide
+spanning Steps 1–4 is planned for a follow-up task.
+
+The tour re-opens any time from the Help drawer's **"Take the tour"** button, which dispatches
+the `tal:start-tour` window event (exported as `TOUR_EVENT`). The card offers Back / Next /
+Skip and a step-dot progress row.
 
 Known limitation: iOS Safari may open blob downloads (PDF/PPTX) in a viewer rather than
 saving directly — the file is still retrievable via the viewer's share sheet.

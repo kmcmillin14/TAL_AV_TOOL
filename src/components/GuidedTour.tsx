@@ -1,103 +1,146 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
+import { useRouter, usePathname } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
 
+// ─── Event API ────────────────────────────────────────────────────────────────
+
 const SEEN_KEY = 'tal:tourSeen'
-/** Fire `window.dispatchEvent(new Event(TOUR_EVENT))` to (re)open the tour. */
+const GUIDE_STATE_KEY = 'tal:guideState'
+
+/** Fire `window.dispatchEvent(new Event(TOUR_EVENT))` to (re)open the intro tour. */
 export const TOUR_EVENT = 'tal:start-tour'
 
-interface Step {
-  /** CSS selector for the element to spotlight; null = centered card, no spotlight. */
+/**
+ * Fire `window.dispatchEvent(new CustomEvent(GUIDE_EVENT, { detail: { guideId } }))` to
+ * start any registered guide by id.
+ */
+export const GUIDE_EVENT = 'tal:start-guide'
+
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+export interface GuideStep {
+  /**
+   * Pathname SUFFIX the step lives on, e.g. '/step1' — relative to the current project
+   * (e.g. /projects/[id]/step1). When present and the current URL doesn't end with this
+   * suffix, the engine persists guide state to sessionStorage and navigates there.
+   * Omit for steps that live on every page (e.g. the header nav).
+   */
+  route?: string
+  /**
+   * CSS selector for the element to highlight with `.tour-highlight`.
+   * null = no highlight (centered card, plain scrim).
+   */
   target: string | null
   title: string
   body: string
 }
 
+export interface Guide {
+  id: string
+  steps: GuideStep[]
+}
+
+interface GuideState {
+  guideId: string
+  step: number
+}
+
+// ─── Guide registry ───────────────────────────────────────────────────────────
+
 // Anchored to the always-present header step bar. The intro spotlights the whole
 // nav; each following step highlights one tab. Framed by the Cut → Connect → Add
 // engineering discipline the tool is built around.
-const STEPS: Step[] = [
-  {
-    target: '.hero-nav .step-dots',
-    title: 'Four steps, one flow',
-    body: 'This tool sizes an AGV/AMR fleet in four steps. The engineering discipline behind it: Cut waste → Connect the moves → Add the economics. Here is where each step lives.',
-  },
-  {
-    // Tabs are 0-indexed steps (Start · Application · Vehicles · Fleet Engine ·
-    // ROM), so Requirements is the 2nd tab, and so on.
-    target: '.hero-nav .step-dot:nth-child(2)',
-    title: '① Requirements',
-    body: 'Capture what you move, how it transfers, and the environment. These answers qualify vehicles — nothing here is required to move on.',
-  },
-  {
-    target: '.hero-nav .step-dot:nth-child(3)',
-    title: '② Vehicles',
-    body: 'See which vehicles pass your requirements (green / yellow / red). Informational — you never pick a vehicle here; you just learn the candidates.',
-  },
-  {
-    target: '.hero-nav .step-dot:nth-child(4)',
-    title: '③ Fleet Engine',
-    body: 'Define your material flows and assign a vehicle to each. This is the heart of the tool — cycle times and raw demand compute live as you go.',
-  },
-  {
-    target: '.hero-nav .step-dot:nth-child(5)',
-    title: '④ ROM Dashboard',
-    body: 'Fleet size, CAPEX, payback, and cost-per-move — then export the customer deck. Adjust the drivers to run what-if scenarios.',
-  },
-]
+const INTRO_GUIDE: Guide = {
+  id: 'intro',
+  steps: [
+    {
+      target: '.hero-nav .step-dots',
+      title: 'Four steps, one flow',
+      body: 'This tool sizes an AGV/AMR fleet in four steps. The engineering discipline behind it: Cut waste → Connect the moves → Add the economics. Here is where each step lives.',
+    },
+    {
+      target: '.hero-nav .step-dot:nth-child(2)',
+      title: '① Requirements',
+      body: 'Capture what you move, how it transfers, and the environment. These answers qualify vehicles — nothing here is required to move on.',
+    },
+    {
+      target: '.hero-nav .step-dot:nth-child(3)',
+      title: '② Vehicles',
+      body: 'See which vehicles pass your requirements (green / yellow / red). Informational — you never pick a vehicle here; you just learn the candidates.',
+    },
+    {
+      target: '.hero-nav .step-dot:nth-child(4)',
+      title: '③ Fleet Engine',
+      body: 'Define your material flows and assign a vehicle to each. This is the heart of the tool — cycle times and raw demand compute live as you go.',
+    },
+    {
+      target: '.hero-nav .step-dot:nth-child(5)',
+      title: '④ ROM Dashboard',
+      body: 'Fleet size, CAPEX, payback, and cost-per-move — then export the customer deck. Adjust the drivers to run what-if scenarios.',
+    },
+  ],
+}
 
-interface Rect { top: number; left: number; width: number; height: number }
+/**
+ * Guide registry. Add new guides here to make them startable via GUIDE_EVENT.
+ * TODO: add 'sample-rfq' walkthrough guide (cross-page, Steps 1→4) in a follow-up task.
+ */
+export const GUIDES: Record<string, Guide> = {
+  intro: INTRO_GUIDE,
+}
+
+// ─── Highlight helpers ────────────────────────────────────────────────────────
+
+const HIGHLIGHT_CLASS = 'tour-highlight'
+
+/** Remove the highlight ring from any currently-highlighted elements. */
+function clearHighlight(): void {
+  document.querySelectorAll<HTMLElement>(`.${HIGHLIGHT_CLASS}`).forEach(el => {
+    el.classList.remove(HIGHLIGHT_CLASS)
+  })
+}
+
+/** Apply the highlight ring to the target selector; returns whether it found a target. */
+function applyHighlight(selector: string | null): boolean {
+  clearHighlight()
+  if (!selector) return false
+  const el = document.querySelector<HTMLElement>(selector)
+  if (!el) return false
+  el.classList.add(HIGHLIGHT_CLASS)
+  el.scrollIntoView({ inline: 'center', block: 'nearest' })
+  return true
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 
 export default function GuidedTour() {
+  const router = useRouter()
+  const pathname = usePathname()
+
   const [open, setOpen] = useState(false)
+  const [guide, setGuide] = useState<Guide>(INTRO_GUIDE)
   const [i, setI] = useState(0)
-  const [rect, setRect] = useState<Rect | null>(null)
 
-  const step = STEPS[i]
+  const steps = guide.steps
+  const step = steps[i]
+  const last = i === steps.length - 1
 
-  // First-run auto-open + listen for a manual (re)open request from the help drawer.
+  // ── Highlight management: apply class on step change, clean up on close/unmount ──
+
   useEffect(() => {
-    const start = () => { setI(0); setOpen(true) }
-    let seen = true
-    try { seen = localStorage.getItem(SEEN_KEY) === '1' } catch { /* private mode */ }
-    if (!seen) {
-      // Let the header paint before spotlighting it.
-      const t = setTimeout(start, 500)
-      window.addEventListener(TOUR_EVENT, start)
-      return () => { clearTimeout(t); window.removeEventListener(TOUR_EVENT, start) }
+    if (!open) {
+      clearHighlight()
+      return
     }
-    window.addEventListener(TOUR_EVENT, start)
-    return () => window.removeEventListener(TOUR_EVENT, start)
-  }, [])
-
-  // Track the target with a continuous rAF loop while the tour is open. Polling
-  // each frame (and only committing a changed rect) keeps the spotlight glued to
-  // the element through late layout shifts — the async Toyota Type font swap
-  // reflows the header AFTER first paint, a one-shot measure would land stale/high.
-  useEffect(() => {
-    if (!open) return
-    const target = step?.target ? document.querySelector<HTMLElement>(step.target) : null
-    // Bring an off-screen tab into view (the phone ribbon scrolls horizontally).
-    target?.scrollIntoView({ inline: 'center', block: 'nearest' })
-    let raf = 0
-    let prev = ''
-    const tick = () => {
-      if (target) {
-        const r = target.getBoundingClientRect()
-        const key = `${r.top}|${r.left}|${r.width}|${r.height}`
-        if (key !== prev) { prev = key; setRect({ top: r.top, left: r.left, width: r.width, height: r.height }) }
-      } else if (prev !== 'null') {
-        prev = 'null'; setRect(null)
-      }
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
+    applyHighlight(step?.target ?? null)
+    return () => clearHighlight()
   }, [open, step?.target])
 
-  // Escape closes; body scroll locked while the tour is up.
+  // ── Body scroll lock + Escape key ──────────────────────────────────────────
+
   useEffect(() => {
     if (!open) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') finish() }
@@ -108,45 +151,126 @@ export default function GuidedTour() {
       document.removeEventListener('keydown', onKey)
       document.body.style.overflow = prev
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
 
-  function finish() {
+  // ── First-run auto-open + TOUR_EVENT + GUIDE_EVENT ────────────────────────
+
+  useEffect(() => {
+    const startGuide = (g: Guide, stepIndex = 0) => {
+      setGuide(g)
+      setI(stepIndex)
+      setOpen(true)
+    }
+
+    const handleTourEvent = () => startGuide(INTRO_GUIDE, 0)
+
+    const handleGuideEvent = (e: Event) => {
+      const guideId = (e as CustomEvent<{ guideId: string }>).detail?.guideId
+      const g = guideId ? GUIDES[guideId] : undefined
+      if (g) startGuide(g, 0)
+    }
+
+    // Resume a cross-page guide if sessionStorage has a pending state.
+    try {
+      const raw = sessionStorage.getItem(GUIDE_STATE_KEY)
+      if (raw) {
+        const state: GuideState = JSON.parse(raw)
+        const g = GUIDES[state.guideId]
+        if (g && state.step < g.steps.length) {
+          sessionStorage.removeItem(GUIDE_STATE_KEY)
+          // Small delay lets the new page paint before we highlight.
+          setTimeout(() => startGuide(g, state.step), 300)
+        } else {
+          sessionStorage.removeItem(GUIDE_STATE_KEY)
+        }
+      }
+    } catch { /* ignore */ }
+
+    // Auto-open intro on first visit (no sessionStorage resume already started it).
+    let seen = true
+    try { seen = localStorage.getItem(SEEN_KEY) === '1' } catch { /* private mode */ }
+    if (!seen) {
+      const t = setTimeout(() => startGuide(INTRO_GUIDE, 0), 500)
+      window.addEventListener(TOUR_EVENT, handleTourEvent)
+      window.addEventListener(GUIDE_EVENT, handleGuideEvent)
+      return () => {
+        clearTimeout(t)
+        window.removeEventListener(TOUR_EVENT, handleTourEvent)
+        window.removeEventListener(GUIDE_EVENT, handleGuideEvent)
+      }
+    }
+
+    window.addEventListener(TOUR_EVENT, handleTourEvent)
+    window.addEventListener(GUIDE_EVENT, handleGuideEvent)
+    return () => {
+      window.removeEventListener(TOUR_EVENT, handleTourEvent)
+      window.removeEventListener(GUIDE_EVENT, handleGuideEvent)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // ── Navigation helpers ─────────────────────────────────────────────────────
+
+  const finish = useCallback(() => {
     try { localStorage.setItem(SEEN_KEY, '1') } catch { /* ignore */ }
+    clearHighlight()
     setOpen(false)
-  }
-  const next = () => { if (i < STEPS.length - 1) setI(i + 1); else finish() }
-  const back = () => setI(n => Math.max(0, n - 1))
+  }, [])
+
+  const back = useCallback(() => {
+    setI(n => Math.max(0, n - 1))
+  }, [])
+
+  const next = useCallback(() => {
+    if (last) {
+      finish()
+      return
+    }
+    const nextIndex = i + 1
+    const nextStep = steps[nextIndex]
+
+    // Cross-page navigation: if the next step lives on a different route, persist
+    // guide state and navigate. The engine resumes on mount of the target page.
+    if (nextStep.route && !pathname?.endsWith(nextStep.route)) {
+      // Derive the /projects/[id] prefix from the current pathname.
+      // Current pathname example: /projects/abc123/step1
+      // We need: /projects/abc123 + nextStep.route
+      const projectBase = pathname?.replace(/\/step\d+$/, '').replace(/\/step0$/, '') ?? ''
+      try {
+        const state: GuideState = { guideId: guide.id, step: nextIndex }
+        sessionStorage.setItem(GUIDE_STATE_KEY, JSON.stringify(state))
+      } catch { /* ignore */ }
+      clearHighlight()
+      setOpen(false)
+      router.push(projectBase + nextStep.route)
+      return
+    }
+
+    setI(nextIndex)
+  }, [last, i, steps, pathname, guide.id, router, finish])
+
+  // ── Render ─────────────────────────────────────────────────────────────────
 
   if (!open || typeof document === 'undefined') return null
 
-  const PAD = 3
-  const spot = rect
-    ? { top: rect.top - PAD, left: rect.left - PAD, width: rect.width + PAD * 2, height: rect.height + PAD * 2 }
-    : null
-
-  // Card sits under the spotlight when there's room, else centered.
-  const cardTop = spot ? spot.top + spot.height + 14 : undefined
-  const last = i === STEPS.length - 1
+  const hasHighlight = !!step?.target
 
   return createPortal(
     <div className="tour-root" role="dialog" aria-modal="true" aria-label="Guided tour">
-      {/* Scrim: a spotlight hole via a giant box-shadow, or a plain dim when unanchored. */}
-      {spot
-        ? <div className="tour-spot" style={{ top: spot.top, left: spot.left, width: spot.width, height: spot.height }} />
-        : <div className="tour-scrim" />}
+      {/* Scrim: a light, non-blocking dim. The ring on the element itself provides the
+          visual focus. pointer-events: all prevents editing mid-tour. */}
+      <div className="tour-scrim" />
 
-      <div
-        className={`tour-card${spot ? '' : ' is-centered'}`}
-        style={spot ? { top: cardTop } : undefined}
-      >
+      <div className={`tour-card${hasHighlight ? '' : ' is-centered'}`}>
         <div className="tour-card-head">
-          <span className="tour-step-count mono">{i + 1} / {STEPS.length}</span>
+          <span className="tour-step-count mono">{i + 1} / {steps.length}</span>
           <button type="button" className="tour-skip" onClick={finish}>Skip<Icon name="x" size={13} /></button>
         </div>
         <h3 className="tour-title">{step.title}</h3>
         <p className="tour-body">{step.body}</p>
         <div className="tour-dots" aria-hidden>
-          {STEPS.map((_, n) => <span key={n} className={`tour-dot${n === i ? ' is-on' : ''}`} />)}
+          {steps.map((_, n) => <span key={n} className={`tour-dot${n === i ? ' is-on' : ''}`} />)}
         </div>
         <div className="tour-actions">
           {i > 0

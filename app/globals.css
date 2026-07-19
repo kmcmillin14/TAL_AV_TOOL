@@ -4321,23 +4321,28 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 
 /* ============================================ GUIDED TOUR (first-run coach marks) ============================================ */
 .tour-root { position: fixed; inset: 0; z-index: 400; }
-.tour-scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.6); }
-/* Spotlight: a transparent window with a huge shadow that dims everything else.
-   Positioned in viewport coordinates (position: fixed) to exactly match the
-   target's getBoundingClientRect; a rAF loop keeps it glued through reflows, so
-   no CSS transition (which would visibly lag/land the box mid-shift). */
-.tour-spot {
-  position: fixed; border-radius: 10px; pointer-events: none;
-  box-shadow: 0 0 0 9999px rgba(0,0,0,0.62);
-  outline: 2px solid var(--accent); outline-offset: 0;
+/* Light, non-blocking dim. The highlight ring ON the element itself provides focus.
+   pointer-events: all keeps the page non-editable mid-tour. */
+.tour-scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.35); pointer-events: all; }
+/* Highlight ring: toggled directly on the target element — cannot drift because it IS the element.
+   outline renders above siblings without needing a z-index change. */
+.tour-highlight {
+  outline: 3px solid var(--accent) !important;
+  outline-offset: 3px !important;
+  border-radius: 6px !important;
+  box-shadow: 0 0 0 6px var(--accent-soft) !important;
+  position: relative; z-index: 401;
 }
+/* Card: fixed bottom-center on desktop; scales down on mobile. */
 .tour-card {
-  position: fixed; left: 50%; transform: translateX(-50%);
+  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
   width: min(360px, calc(100vw - 32px));
   background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 14px;
   box-shadow: 0 24px 60px rgba(0,0,0,0.34); padding: 18px 20px 16px;
+  z-index: 402;
 }
-.tour-card.is-centered { top: 50%; transform: translate(-50%, -50%); }
+/* is-centered: vertically center only when there is no highlighted element. */
+.tour-card.is-centered { top: 50%; bottom: auto; transform: translate(-50%, -50%); }
 .tour-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .tour-step-count { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.06em; }
 .tour-skip { display: inline-flex; align-items: center; gap: 3px; background: none; border: none; color: var(--text-tertiary); font-family: var(--tal-font-family); font-size: 12px; cursor: pointer; }
