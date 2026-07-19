@@ -256,8 +256,8 @@ export function fillFleetSizing(zip: PizZip, model: FleetModel, names: Record<st
       desc: `vehicles to carry ${thru} moves/hr across ${flows.length} flow${flows.length === 1 ? '' : 's'}` },
     { value: chg > 0 ? `+${chg}` : '+0', label: '+ CHARGING', compact: true,
       desc: 'keeps the fleet moving while batteries recover' },
-    { value: `×${(1 + settings.bufferPct).toFixed(2)}`, label: '× BUFFER', compact: true,
-      desc: 'absorbs peaks and maintenance windows' },
+    { value: `×${(1 + settings.bufferPct).toFixed(2)}`, label: '× HEADROOM', compact: true,
+      desc: 'target-utilization headroom for peaks and maintenance' },
     { value: String(fleet.totalFleetSold), label: '= FLEET', accent: true, compact: true,
       desc: 'recommended fleet size' },
   ], { h: WATERFALL_H })
@@ -294,10 +294,10 @@ export function buildTierDerivations(
       meaning: 'Each flow’s cycle time → vehicles needed (throughput \xd7 cycle \xf7 3600), summed per chassis and rounded up = raw base fleet.',
       example: rawFlow ? `Example: ${rawVeh?.name ?? rawFlow.vehicleId} \xb7 ${rawFlow.origin || '—'} → ${rawFlow.destination || '—'}` : '' },
     { name: 'CHARGING', deriv: grp && grpVeh ? chargingDerivation(grp, grpVeh, settings) : null,
-      meaning: 'Battery runtime vs recharge sets availability; dividing demand by availability adds the vehicles needed to cover charging downtime.',
+      meaning: 'Cutsheet runtime vs recharge hours set availability; off-shift and day-off charging are credited. Dividing demand by availability adds the vehicles that cover charging downtime.',
       example: grpExample },
     { name: 'BUFFER', deriv: grp ? bufferDerivation(grp, settings.bufferPct) : null,
-      meaning: '(raw ÷ availability) × (1 + buffer), rounded up once per chassis — spare capacity for maintenance, training, and demand spikes = fleet sold.',
+      meaning: 'The fleet pays the larger of two constraints — peak need with utilization headroom ÷ rotation availability, or weekly energy sustain (never buffered) — rounded up once per chassis = fleet sold.',
       example: grpExample },
   ]
 }

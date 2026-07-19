@@ -119,7 +119,7 @@ describe('P2 table fillers (end-to-end on the real template)', () => {
     const xml = reopen(zip).file('ppt/slides/slide21.xml')!.asText()
     expect(xml).toContain('03 — FLEET SIZING')
     expect(xml).toMatch(/Your operation needs a fleet of \d+/)
-    for (const l of ['WORKLOAD', '+ CHARGING', '× BUFFER', '= FLEET']) expect(xml).toContain(l)
+    for (const l of ['WORKLOAD', '+ CHARGING', '× HEADROOM', '= FLEET']) expect(xml).toContain(l)
     expect((xml.match(/name="KPI Tile \d+"/g) ?? []).length).toBe(4)
     expect(xml).toContain('batteries recover')                 // human desc, not formula
     expect(xml).toContain('Fleet mix —')
