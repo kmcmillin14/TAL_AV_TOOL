@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetSummary, Flow, FlowDerived } from '@/src/calc/types'
-import { DEFAULT_DOD, DEFAULT_BUFFER_PCT } from '@/src/calc/types'
+import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
 
 interface Props {
   project: StoredProject
@@ -59,13 +59,12 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
 
   function chargingLine(vehicleId: string) {
     const g = groupFor(vehicleId)
-    const veh = vehicleById.get(vehicleId)
-    if (!g || !veh) return null
+    if (!g) return null
     const c = g.charging
     if (c.runHr == null) return <div className="fm-eq mono">Battery data unavailable — charging not modeled.</div>
     return (
       <div className="fm-eq mono">
-        runtime = {veh.calc.ratedAh}Ah × {DEFAULT_DOD} ÷ {veh.calc.dischargeA}A = <strong>{f1(c.runHr)} h</strong> per charge ·
+        runtime <strong>{f1(c.runHr)} h</strong> per charge (cutsheet) ·
         recharge {f1(c.chargeHr ?? 0)} h → availability <strong>{pct(c.availability)}</strong> →
         <strong> +{c.chargingDelta}</strong> vehicle{c.chargingDelta === 1 ? '' : 's'}
       </div>
@@ -75,9 +74,12 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
   function bufferLine(vehicleId: string) {
     const g = groupFor(vehicleId)
     if (!g) return null
+    const { aEnergy, aCap } = g.charging
+    const rot = (g.groupRaw * (1 + buffer)) / (aCap ?? 1)
+    const en = aEnergy != null ? g.groupRaw / aEnergy : null
     return (
       <div className="fm-eq mono">
-        ({f2(g.groupRaw)} raw{g.charging.availability != null ? ` ÷ ${f2(g.charging.availability)} avail` : ''}) × {f2(1 + buffer)} = {f2((g.charging.availability != null ? g.groupRaw / g.charging.availability : g.groupRaw) * (1 + buffer))} → ⌈⌉ = <strong>{g.fleetSold} sold</strong>
+        max({f2(rot)} rotation{en != null ? `, ${f2(en)} energy` : ''}) → ⌈⌉ = <strong>{g.fleetSold} sold</strong> · binding: {g.binding}
       </div>
     )
   }
@@ -108,7 +110,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
         })}
       </Step>
 
-      <Step n={2} tag="physics" title="Charging" formula="runtime = Ah × DoD ÷ draw  ·  +vehicles to cover recharge gap" why="Batteries deplete in service and need time to recharge, so a vehicle isn't available 100% of the day. We add enough vehicles so the charging rotation never starves the operation.">
+      <Step n={2} tag="physics" title="Charging" formula="availability = min(run ÷ (run + charge), weekly energy)  ·  +vehicles to cover the gap" why="Batteries deplete in service and need time to recharge, so a vehicle isn't available 100% of the day. We add enough vehicles so the charging rotation never starves the operation.">
         {fleet.groups.map(g => (
           <div key={g.vehicleId} className="fm-group">
             <div className="fm-group-name">{vehName(g.vehicleId)}</div>
@@ -117,7 +119,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
         ))}
       </Step>
 
-      <Step n={3} tag="policy" title="Buffer" formula="sold = ⌈(raw ÷ availability) × (1 + buffer)⌉" why="A safety margin on the availability-adjusted demand absorbs variability, maintenance downtime, and ramp-up — rounded up to whole vehicles exactly once, so rounding slack is never buffered twice.">
+      <Step n={3} tag="policy" title="Buffer" formula="sold = max(base, ⌈max(raw ÷ A_energy, raw × (1+buffer) ÷ A_cap)⌉)" why="The fleet pays the larger of two constraints: peak need with utilization headroom (÷ rotation availability) or weekly energy sustain. Energy never gets buffered — idle robots charge — and each chassis rounds up exactly once.">
         {fleet.groups.map(g => (
           <div key={g.vehicleId} className="fm-group">
             <div className="fm-group-name">{vehName(g.vehicleId)}</div>
@@ -127,7 +129,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
       </Step>
 
       <div className="fm-total mono">
-        Total: <strong>{fleet.totalBaseFleet}</strong> base + <strong>{fleet.totalChargingDelta}</strong> charging · buffer ×{f2(1 + buffer)} on unrounded demand → <strong className="fm-total-sold">{fleet.totalFleetSold} vehicles sold</strong>
+        Total: <strong>{fleet.totalBaseFleet}</strong> base + <strong>{fleet.totalChargingDelta}</strong> charging · headroom ×{f2(1 + buffer)} on the binding constraint → <strong className="fm-total-sold">{fleet.totalFleetSold} vehicles sold</strong>
       </div>
     </>
   )
@@ -165,11 +167,11 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
           )}
         </Step>
 
-        <Step n={3} tag="physics" title="Charging" formula="runtime = Ah × DoD ÷ draw  ·  +vehicles to cover recharge gap" why="Charging is modeled on the pooled vehicle type, not the single flow — the whole battery rotation shares chargers.">
+        <Step n={3} tag="physics" title="Charging" formula="availability = min(run ÷ (run + charge), weekly energy)  ·  +vehicles to cover the gap" why="Charging is modeled on the pooled vehicle type, not the single flow — the whole battery rotation shares chargers.">
           {chargingLine(f.vehicleId)}
         </Step>
 
-        <Step n={4} tag="policy" title="Buffer" formula="sold = ⌈(raw ÷ availability) × (1 + buffer)⌉" why="The safety buffer applies to the pooled unrounded demand of the vehicle fleet this flow belongs to — rounded up once per chassis.">
+        <Step n={4} tag="policy" title="Buffer" formula="sold = max(base, ⌈max(raw ÷ A_energy, raw × (1+buffer) ÷ A_cap)⌉)" why="The fleet pays the larger of two constraints: peak need with utilization headroom (÷ rotation availability) or weekly energy sustain. Energy never gets buffered — idle robots charge — and each chassis rounds up exactly once.">
           {bufferLine(f.vehicleId)}
         </Step>
       </>
