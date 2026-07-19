@@ -51,6 +51,9 @@ replaced. Corrected 2026-05-27 from the cutsheets.
   plus `towsCarts: true` and `cartPayloads: ["Tote", "Cart"]`. Owner confirmed
   E7 pin-tow capability; all three additions are `[estimate]` pending E7 cutsheet
   (capability confirmed, exact handling times and cart payload set TBD).
+- **ML2 + E7 payloadTypes** — added `"Cart"` to both (ML2: Tote → Tote, Cart; E7: Standard
+  Pallet, Rack → + Cart). Owner direction 2026-07-19: the pin is an accessory to these
+  vehicles, so a towed cart is itself a payload (as on the M10). `[estimate]`.
 - **M10** — unchanged; `towsCarts: true`, `cartPayloads: ["Standard Pallet", "Tote", "Cart"]`,
   and Pin method (loadTimeSec 5 / unloadTimeSec 5) are `[cutsheet]` (30 mm retractable
   pin, 2,200 lb towing capacity — per M10 Cutsheet 3).

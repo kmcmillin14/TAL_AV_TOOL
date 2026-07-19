@@ -9,6 +9,10 @@
   `ebase7.json` gains a Pin transfer method (5/5 s placeholder times) + `towsCarts: true` +
   `cartPayloads: ["Tote","Cart"]`. M10 unchanged ([cutsheet]: 30 mm retractable pin, 2,200 lb).
   All ML2/E7 additions marked `[estimate]` in VEHICLE-DATA-PROVENANCE.md pending cutsheets.
+- **Follow-up (same day):** `"Cart"` added to ML2 and E7 `payloadTypes` — the pin is an
+  accessory to these vehicles, so a towed cart is itself a payload (owner direction).
+  Cart loads now qualify directly as well as via the tow path. Snapshot re-baselined
+  (payload display strings only; no verdict changes).
 - **New `src/calc/__tests__/transferTypeAlignment.test.ts`** locks the correlation: (a) every
   Step 1 transfer type is satisfiable by ≥1 vehicle, (b) any vehicle with a Pin / Powered
   Conveyor Cart method must declare `towsCarts` (the exact ML2 drift), (c) `towsCarts` vehicles

@@ -33,7 +33,8 @@
   ],
   "payloadTypes": [
     "Standard Pallet",
-    "Rack"
+    "Rack",
+    "Cart"
   ],
   "towsCarts": true,
   "cartPayloads": [

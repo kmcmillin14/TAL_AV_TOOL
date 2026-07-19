@@ -1862,7 +1862,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Standard Pallet, Rack",
+        "vehicleValue": "Standard Pallet, Rack, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -1961,7 +1961,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Standard Pallet, Rack",
+        "vehicleValue": "Standard Pallet, Rack, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -2064,7 +2064,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Standard Pallet, Rack",
+        "vehicleValue": "Standard Pallet, Rack, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -2163,7 +2163,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "requiredValue": "Standard Pallet",
         "severity": "hard",
         "skipped": false,
-        "vehicleValue": "Standard Pallet, Rack",
+        "vehicleValue": "Standard Pallet, Rack, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -2264,7 +2264,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Standard Pallet, Rack",
+        "vehicleValue": "Standard Pallet, Rack, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -2371,7 +2371,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Standard Pallet, Rack",
+        "vehicleValue": "Standard Pallet, Rack, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -3086,7 +3086,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Tote",
+        "vehicleValue": "Tote, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -3185,7 +3185,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Tote",
+        "vehicleValue": "Tote, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -3288,7 +3288,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Tote",
+        "vehicleValue": "Tote, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -3383,11 +3383,11 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "gateId": "payload_type",
         "name": "Payload Type",
         "passed": false,
-        "reason": "Does not carry Standard Pallet. Carries: Tote",
+        "reason": "Does not carry Standard Pallet. Carries: Tote, Cart",
         "requiredValue": "Standard Pallet",
         "severity": "hard",
         "skipped": false,
-        "vehicleValue": "Tote",
+        "vehicleValue": "Tote, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -3488,7 +3488,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Tote",
+        "vehicleValue": "Tote, Cart",
       },
       {
         "gateId": "transfer_method",
@@ -3595,7 +3595,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Tote",
+        "vehicleValue": "Tote, Cart",
       },
       {
         "gateId": "transfer_method",

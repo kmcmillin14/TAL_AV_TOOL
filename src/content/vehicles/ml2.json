@@ -37,7 +37,8 @@
     }
   ],
   "payloadTypes": [
-    "Tote"
+    "Tote",
+    "Cart"
   ],
   "towsCarts": true,
   "cartPayloads": [
