@@ -118,6 +118,19 @@ function notify(): void {
   for (const cb of listeners) cb()
 }
 
+/** A field the salvage parse dropped from a save (out-of-range etc.). */
+export interface SaveDrop { key: string; message: string }
+const dropListeners = new Set<(drops: SaveDrop[]) => void>()
+/** Subscribe to salvage-parse drops — fired when a save silently discarded ≥1
+ *  field, so forms can warn inline instead of losing data invisibly. */
+export function subscribeSaveDrops(cb: (drops: SaveDrop[]) => void): () => void {
+  dropListeners.add(cb)
+  return () => { dropListeners.delete(cb) }
+}
+function notifyDrops(drops: SaveDrop[]): void {
+  if (drops.length) for (const cb of dropListeners) cb(drops)
+}
+
 /** Parse the persisted array straight from localStorage (no cache). One corrupt
  *  blob falls back to [] rather than throwing. */
 function readDisk(): StoredProject[] {
@@ -250,23 +263,28 @@ export function findOrCreateEntryProject(): StoredProject {
  *  sitting outside its Zod range (e.g. shiftsPerDay 4, capped at 3) must not
  *  abort the save of every other field. Full parse first (fast path); on
  *  failure, each provided key is validated independently and invalid keys are
- *  dropped from the patch. */
-function salvageParse(input: PartialProjectFormData): Record<string, unknown> {
+ *  dropped from the patch. Returns the validated fields plus any dropped keys
+ *  with their Zod messages (so callers can surface warnings). */
+function salvageParse(input: PartialProjectFormData): { valid: Record<string, unknown>; drops: SaveDrop[] } {
   const full = partialProjectSchema.safeParse(input)
-  if (full.success) return full.data as Record<string, unknown>
+  if (full.success) return { valid: full.data as Record<string, unknown>, drops: [] }
   const valid: Record<string, unknown> = {}
+  const drops: SaveDrop[] = []
   const raw = input as Record<string, unknown>
   for (const key of Object.keys(input)) {
     const single = partialProjectSchema.safeParse({ [key]: raw[key] })
     if (single.success && key in (single.data as Record<string, unknown>)) {
       valid[key] = (single.data as Record<string, unknown>)[key]
+    } else if (!single.success) {
+      drops.push({ key, message: single.error.issues[0]?.message ?? 'Invalid value' })
     }
   }
-  return valid
+  return { valid, drops }
 }
 
 export function createProject(input: PartialProjectFormData): StoredProject {
-  const data = salvageParse(input) as PartialProjectFormData
+  const { valid } = salvageParse(input)
+  const data = valid as PartialProjectFormData
   const now = new Date().toISOString()
   const project: StoredProject = {
     ...defaultFields(),
@@ -292,7 +310,7 @@ export function updateProject(
   input: PartialProjectFormData,
   meta?: MetaOverrides,
 ): StoredProject | null {
-  const validated = salvageParse(input)
+  const { valid: validated, drops } = salvageParse(input)
   const all = readAll()
   const idx = all.findIndex(p => p.id === id)
   if (idx === -1) return null
@@ -327,6 +345,7 @@ export function updateProject(
   updated.versionNumber = meta?.versionNumber ?? existing.versionNumber
   all[idx] = updated
   writeAll(all)
+  notifyDrops(drops)
   return updated
 }
 

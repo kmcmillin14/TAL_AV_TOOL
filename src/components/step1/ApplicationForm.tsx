@@ -8,7 +8,7 @@ import FormSection from './FormSection'
 import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
-import { createProject, updateProject, getProject } from '@/src/lib/storage'
+import { createProject, updateProject, getProject, subscribeSaveDrops } from '@/src/lib/storage'
 import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
 import SectionNav from './SectionNav'
@@ -168,7 +168,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   const isNew = !projectId
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { register, handleSubmit, watch, setValue, control, getValues, formState: { errors } } = useForm<ProjectFormData, any, ProjectFormData>({
+  const { register, handleSubmit, watch, setValue, control, getValues, setError, clearErrors, formState: { errors } } = useForm<ProjectFormData, any, ProjectFormData>({
     resolver: zodResolver(projectSchema) as any,
     mode: 'onBlur',
     defaultValues: {
@@ -293,11 +293,27 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   // Step 2 on step-dot navigation. Saving on every change keeps storage live.
   useEffect(() => {
     if (!projectId) return
-    const subscription = watch(values => {
+    const subscription = watch((values, info) => {
+      // Clear any saveDrop error for the field that just changed — the user is
+      // correcting it; let the next autosave verdict speak.
+      if (info?.name) {
+        const fieldName = info.name as keyof typeof errors
+        if (errors[fieldName]?.type === 'saveDrop') {
+          clearErrors(info.name as never)
+        }
+      }
       autoSave(values as Partial<ProjectFormData>)
     })
     return () => subscription.unsubscribe()
-  }, [watch, autoSave, projectId])
+  }, [watch, autoSave, projectId, errors, clearErrors])
+
+  // Surface salvage-parse drops (silently discarded out-of-range fields) inline,
+  // via RHF's error slot — the form already renders errors under fields.
+  useEffect(() => subscribeSaveDrops(drops => {
+    for (const d of drops) {
+      setError(d.key as Parameters<typeof setError>[0], { type: 'saveDrop', message: `Not saved — ${d.message}` })
+    }
+  }), [setError])
 
   const onBlurSave = () => {
     if (!projectId) return
@@ -819,6 +835,9 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 {...register('hoursPerShift', { valueAsNumber: true, onBlur: onBlurSave })}
               />
               <div className="help">4–12, decimal OK (e.g. 8.5)</div>
+              {errors.hoursPerShift && (
+                <div className="help" style={{ color: 'var(--bad)' }}>{errors.hoursPerShift.message}</div>
+              )}
             </div>
 
             <div className="fld">
@@ -886,6 +905,9 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 placeholder="1"
                 {...register('breaksPerShift', { valueAsNumber: true, onBlur: onBlurSave })}
               />
+              {errors.breaksPerShift && (
+                <div className="help" style={{ color: 'var(--bad)' }}>{errors.breaksPerShift.message}</div>
+              )}
             </div>
 
             <div className="fld">
@@ -901,6 +923,9 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 />
                 <div className="unit">min</div>
               </div>
+              {errors.breakDurationMin && (
+                <div className="help" style={{ color: 'var(--bad)' }}>{errors.breakDurationMin.message}</div>
+              )}
             </div>
           </div>
         </FormSection>
