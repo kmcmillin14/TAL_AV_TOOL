@@ -11,6 +11,7 @@ import GroupHeader from './GroupHeader'
 import { groupColorMap } from './sectionColor'
 import { effectiveGroups as computeEffectiveGroups } from '@/src/calc/flowMetrics'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
+import FlowImportPanel from './FlowImportPanel'
 
 /** Patch the parent can apply atomically — flows and/or group list together. */
 export interface FlowsPatch {
@@ -178,6 +179,21 @@ export default function FlowsTable({
   const update = (id: string, next: Flow) =>
     onPatch({ flows: flows.map(f => (f.id === id ? next : f)) })
   const remove = (id: string) => onPatch({ flows: flows.filter(f => f.id !== id) })
+  const addImported = (rows: import('@/src/lib/flowImport').ParsedFlowRow[]) =>
+    onPatch({
+      flows: [
+        ...flows,
+        ...rows.map(r => ({
+          id: genId(),
+          origin: r.origin,
+          destination: r.destination,
+          distanceFt: r.distanceFt,
+          thruPerHr: r.thruPerHr,
+          routeLayout: 'medium' as const,
+          liftHeightFt: r.liftHeightFt,
+        })),
+      ],
+    })
   // Returns the created flow so the mobile list can open its edit sheet.
   const add = (sectionName?: string): Flow => {
     const f = emptyFlow(sectionName)
@@ -289,10 +305,12 @@ export default function FlowsTable({
         </div>
       </div>
 
+      <FlowImportPanel onAdd={addImported} />
+
       {flows.length === 0 && !hasGroups ? (
         <div className="flows-empty">
           <h3>No flows yet</h3>
-          <p>Click <strong>+ Add flow</strong> below to model an origin → destination route, or <strong>+ Group</strong> to set up a zone first — or add flows in Step 1&apos;s Throughput &amp; distance section; they appear here. Cycle time and demand recompute as you type.</p>
+          <p>Click <strong>+ Add flow</strong> below to model an origin → destination route, or <strong>+ Group</strong> to set up a zone first — or add flows in Step 1&apos;s Throughput &amp; distance section; they appear here. Cycle time and demand recompute as you type. — or paste rows from a spreadsheet with <strong>Import flows</strong> above.</p>
           <button type="button" className="flows-add-bottom" onClick={() => add()}>
             <Icon name="plus" size={12} /> Add flow
           </button>
