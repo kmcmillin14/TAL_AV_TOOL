@@ -85,6 +85,15 @@ describe('bufferDerivation', () => {
     expect(d.note).toContain('exactly once')
   })
 
+  it('shows the base-fleet floor when it binds', () => {
+    // constraints: rotation 0.5×1.10÷0.625 = 0.88, energy 0.5÷0.8 = 0.625 → ⌈0.88⌉ = 1 < base 3
+    const g = group({ groupRaw: 0.5, fleetSold: 3 })
+    const d = bufferDerivation(g, 0.1)
+    const fleet = d.steps.find(s => s.label === 'Fleet (sold)')!
+    expect(fleet.sub).toBe('max(3 base, ⌈ 0.88 ⌉)')
+    expect(fleet.result).toBe('3')
+  })
+
   it('falls back to utilization-only sizing when availability is unknown', () => {
     const g = group({ charging: { ...group().charging, availability: null, aEnergy: null, aCap: null }, binding: 'utilization' })
     const d = bufferDerivation(g, 0.1)

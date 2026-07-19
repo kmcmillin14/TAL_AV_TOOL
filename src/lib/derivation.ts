@@ -142,8 +142,12 @@ export function bufferDerivation(group: FleetGroup, bufferPct: number): Derivati
       demandEnergy != null
         ? { label: 'Weekly energy sustain', expr: 'raw ÷ energy availability — no buffer here: idle robots charge', sub: `${n2(group.groupRaw)} ÷ ${n2(aEnergy!)}`, result: n2(demandEnergy) }
         : { label: 'Weekly energy sustain', expr: 'battery data unavailable', result: '—', muted: true },
-      { label: 'Fleet (sold)', expr: 'larger constraint, rounded up once', sub: `⌈ ${n2(Math.max(demandRotation, demandEnergy ?? 0))} ⌉`, result: String(group.fleetSold), emphasis: true },
-      { label: 'Binding constraint', result: BINDING_LABEL[group.binding] },
+      (() => {
+        const larger = Math.max(demandRotation, demandEnergy ?? 0)
+        const floored = group.baseFleet >= Math.ceil(larger)
+        return { label: 'Fleet (sold)', expr: floored ? 'base fleet is the physical floor' : 'larger constraint, rounded up once', sub: floored ? `max(${group.baseFleet} base, ⌈ ${n2(larger)} ⌉)` : `⌈ ${n2(larger)} ⌉`, result: String(group.fleetSold), emphasis: true }
+      })(),
+      { label: 'Binding constraint', expr: 'which constraint set the fleet', result: BINDING_LABEL[group.binding] },
     ],
     note: 'Headroom covers demand spikes, maintenance, and queueing; energy is average-work-driven, so buffer vehicles never multiply it. Each chassis rounds up exactly once — at the end.',
   }
