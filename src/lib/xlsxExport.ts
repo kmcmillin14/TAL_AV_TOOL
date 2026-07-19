@@ -1,6 +1,6 @@
 // Excel workbook export — client-side via SheetJS (no backend, per
 // ARCHITECTURE.md). A single, fully-formula-driven "Fleet Model" sheet: every
-// input cell (distance, moves/hr, speeds, transfer times, availability, buffer)
+// input cell (distance, moves/hr, speeds, transfer times, availability (energy + rotation), buffer)
 // is editable and the downstream cells (cycle, raw demand, base, +charging,
 // fleet sold, totals) are live Excel formulas — so the model recomputes offline
 // exactly as the app does. All figures imperial, matching storage.
@@ -74,11 +74,11 @@ export function buildFleetModelSheet(utils: XlsxUtils, project: StoredProject, v
   const lastFlowER = firstFlowR + Math.max(flows.length, 1) // Excel row of last flow (≥ header+1)
   maxR = firstFlowR + flows.length + 1
 
-  // ── FLEET block (raw → base → +charging → sold) ─────────────────────────
+  // ── FLEET block (raw → base → availabilities → +charging → sold) ────────
   const fleetNoteR = maxR + 1
-  put(0, fleetNoteR, S('FLEET — by vehicle pool; Availability is editable, the rest recompute'))
+  put(0, fleetNoteR, S('FLEET — by vehicle pool; both Availability cells are editable, the rest recompute'))
   const fleetHR = fleetNoteR + 1
-  const fleetHeaders = ['Vehicle', 'Raw demand', 'Base fleet', 'Availability', '+ Charging', 'Fleet sold']
+  const fleetHeaders = ['Vehicle', 'Raw demand', 'Base fleet', 'Avail energy', 'Avail rotation', '+ Charging', 'Fleet sold']
   fleetHeaders.forEach((h, c) => put(c, fleetHR, S(h)))
 
   const firstPoolR = fleetHR + 1
@@ -86,14 +86,17 @@ export function buildFleetModelSheet(utils: XlsxUtils, project: StoredProject, v
     const r = firstPoolR + i
     const er = r + 1
     const name = vehicleById.get(g.vehicleId)?.name ?? g.vehicleId
-    const avail = g.charging.availability != null && g.charging.availability > 0 ? g.charging.availability : 1
+    const aEnergy = g.charging.aEnergy != null && g.charging.aEnergy > 0 ? g.charging.aEnergy : 1
+    const aCap = g.charging.aCap != null && g.charging.aCap > 0 ? g.charging.aCap : 1
     put(0, r, S(name))
     // Raw demand pulled from the flows' Raw column by vehicle name.
     put(1, r, F(`SUMIF($D$${firstFlowR + 1}:$D$${lastFlowER},A${er},$N$${firstFlowR + 1}:$N$${lastFlowER})`, '0.000'))
     put(2, r, F(`IF(B${er}>0,ROUNDUP(B${er},0),0)`))
-    put(3, r, N(avail, '0%'))
-    put(4, r, F(`MAX(0,ROUNDUP(B${er}/D${er},0)-C${er})`))
-    put(5, r, F(`MAX(C${er},ROUNDUP((B${er}/D${er})*(1+${BUFFER}),0))`))
+    put(3, r, N(aEnergy, '0%'))
+    put(4, r, N(aCap, '0%'))
+    put(5, r, F(`MAX(0,ROUNDUP(B${er}/MIN(D${er},E${er}),0)-C${er})`))
+    // v3 composition: larger of energy (unbuffered) and rotation (buffered), floored at base.
+    put(6, r, F(`MAX(C${er},ROUNDUP(MAX(B${er}/D${er},B${er}*(1+${BUFFER})/E${er}),0))`))
   })
   const nPools = fleet.groups.length
   const totalR = firstPoolR + nPools
@@ -102,14 +105,14 @@ export function buildFleetModelSheet(utils: XlsxUtils, project: StoredProject, v
     const lastER = firstPoolR + nPools
     put(0, totalR, S('TOTAL'))
     put(2, totalR, F(`SUM(C${firstER}:C${lastER})`))
-    put(4, totalR, F(`SUM(E${firstER}:E${lastER})`))
     put(5, totalR, F(`SUM(F${firstER}:F${lastER})`))
+    put(6, totalR, F(`SUM(G${firstER}:G${lastER})`))
   }
   maxR = totalR + 1
 
   ws['!ref'] = utils.encode_range({ s: { c: 0, r: 0 }, e: { c: MAXC, r: maxR } })
   ws['!cols'] = [
-    { wch: 5 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 9 }, { wch: 9 },
+    { wch: 5 }, { wch: 16 }, { wch: 16 }, { wch: 18 }, { wch: 12 }, { wch: 13 },
     { wch: 14 }, { wch: 14 }, { wch: 11 }, { wch: 9 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 10 },
   ] as ColInfo[]
 
