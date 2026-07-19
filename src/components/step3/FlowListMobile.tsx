@@ -7,8 +7,8 @@ import type { UnitSystem } from '@/src/lib/utils/units'
 import Icon from '@/src/design-system/components/Icon'
 import { effectiveGroups as computeEffectiveGroups } from '@/src/calc/flowMetrics'
 import { groupColorMap } from './sectionColor'
-import { vehicleColor } from './vehicleColor'
 import FlowSheet from './FlowSheet'
+import { VehicleDot } from './VehicleSelect'
 
 interface Props {
   flows: Flow[]
@@ -30,7 +30,8 @@ export default function FlowListMobile({ flows, flowGroups, flowGroupColors, veh
   const effGroups = computeEffectiveGroups(flowGroups, flows)
   const groupColors = groupColorMap(effGroups, flowGroupColors)
   const ungrouped = flows.filter(f => !f.sectionName || !effGroups.includes(f.sectionName))
-  const vName = (id?: string) => (id ? vehicles.find(v => v.id === id)?.name ?? id : 'No vehicle')
+  const vehById = (id?: string) => (id ? vehicles.find(v => v.id === id) : undefined)
+  const vName = (id?: string) => (id ? vehById(id)?.name ?? id : 'No vehicle')
   const totalDemand = flows.reduce((s, f) => s + (derivedByFlowId.get(f.id)?.rawVehicles ?? 0), 0)
 
   // Sequential index across every rendered flow (groups first, then ungrouped).
@@ -47,7 +48,7 @@ export default function FlowListMobile({ flows, flowGroups, flowGroupColors, veh
         <span className="m-row-main">
           <span className="m-row-route">{f.origin || '—'} → {f.destination || '—'}</span>
           <span className="m-row-sub">
-            <span className="m-dot" style={{ background: vehicleColor(f.vehicleId ?? '') }} />
+            <VehicleDot vehicle={vehById(f.vehicleId)} size="sm" />
             {vName(f.vehicleId)} · {f.thruPerHr}/hr
           </span>
         </span>

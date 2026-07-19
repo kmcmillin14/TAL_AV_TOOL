@@ -1494,7 +1494,9 @@ thead .cmp-rowhead { background: var(--bg-surface); }
    cards ALSO claim viewport height directly — 100vh minus the fixed chrome
    (header + page title + details bar + pill + tip + paddings ≈ 640px), never
    below the compact 280px floor. Viewport units bypass the ancestor chain. */
-.step0-fill .entry-card { min-height: max(280px, calc(100vh - 640px)); }
+.step0-fill .entry-card { min-height: max(280px, calc(100dvh - 580px)); }
+/* The workspace's default 80px bottom padding is pure void on this screen. */
+.workspace.step0-fill { padding-bottom: 24px; }
 
 /* Project details — inline-editable header fields, fillable on the setup page. */
 .setup-details {
