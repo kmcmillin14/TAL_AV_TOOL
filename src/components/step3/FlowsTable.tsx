@@ -199,6 +199,19 @@ export default function FlowsTable({
     onPatch({ flows: next })
     setDeleted(null)
   }, [deleted, flows, onPatch])
+
+  // Keyboard reorder: swap within the flows array; crossing a boundary adopts the
+  // neighbor's group so the visual grouping follows the move.
+  const move = useCallback((id: string, dir: -1 | 1) => {
+    const idx = flows.findIndex(f => f.id === id)
+    const j = idx + dir
+    if (idx === -1 || j < 0 || j >= flows.length) return
+    const next = [...flows]
+    const [f] = next.splice(idx, 1)
+    const neighbor = next[Math.min(j, next.length - 1)]
+    next.splice(j, 0, { ...f, sectionName: neighbor ? neighbor.sectionName : f.sectionName })
+    onPatch({ flows: next })
+  }, [flows, onPatch])
   const addImported = (rows: import('@/src/lib/flowImport').ParsedFlowRow[]) =>
     onPatch({
       flows: [
@@ -299,6 +312,7 @@ export default function FlowsTable({
       onChange={next => update(f.id, next)}
       onDelete={() => remove(f.id)}
       onDuplicate={() => duplicate(f.id)}
+      onMove={dir => move(f.id, dir)}
       onDragStartFlow={() => setDragId(f.id)}
       onDragOverFlow={after => overFlow(f.id, after)}
       onDropFlow={after => dropOnFlow(f.id, f.sectionName, after)}

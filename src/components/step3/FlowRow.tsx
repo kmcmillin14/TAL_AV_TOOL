@@ -24,6 +24,7 @@ interface Props {
   onChange: (next: Flow) => void
   onDelete: () => void
   onDuplicate: () => void
+  onMove: (dir: -1 | 1) => void
   onDragStartFlow: () => void
   onDragOverFlow: (after: boolean) => void
   onDropFlow: (after: boolean) => void
@@ -53,6 +54,7 @@ export default function FlowRow({
   onChange,
   onDelete,
   onDuplicate,
+  onMove,
   onDragStartFlow,
   onDragOverFlow,
   onDropFlow,
@@ -110,7 +112,8 @@ export default function FlowRow({
       onDrop={e => { e.preventDefault(); onDropFlow(overFromEvent(e)) }}
     >
       <td className="flow-meta-cell">
-        <span
+        <button
+          type="button"
           className="flow-drag-handle"
           draggable
           onDragStart={e => {
@@ -119,11 +122,15 @@ export default function FlowRow({
             onDragStartFlow()
           }}
           onDragEnd={onDragEndFlow}
-          aria-label="Drag to reorder flow"
+          onKeyDown={e => {
+            if (e.key === 'ArrowUp') { e.preventDefault(); onMove(-1) }
+            if (e.key === 'ArrowDown') { e.preventDefault(); onMove(1) }
+          }}
+          aria-label="Reorder flow — drag, or focus and use arrow keys"
           title="Drag to reorder"
         >
           <Icon name="grip" size={14} />
-        </span>
+        </button>
         <span className="flow-row-index mono">{String(index + 1).padStart(2, '0')}</span>
       </td>
 

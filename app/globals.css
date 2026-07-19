@@ -1963,6 +1963,8 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .flow-drag-handle:hover { color: var(--text-secondary); }
 .flow-drag-handle:active { cursor: grabbing; }
+button.flow-drag-handle { background: none; border: 0; padding: 0; color: inherit; font: inherit; }
+button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
 
 /* ===== Step 3 — drag-to-reorder feedback ===== */
 .flow-row.dragging { opacity: 0.4; }

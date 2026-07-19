@@ -231,13 +231,27 @@ export default function PersistentHeader({
     }
   }, [currentStep])
 
-  const handleUndo = () => {
+  const handleUndo = useCallback(() => {
     const restored = undoLastChange(project.id)
     // undoLastChange writes + notify()s, so any step subscribed to
     // subscribeProjects (steps 2–4) re-reads live. Step 1's form holds its own
     // RHF state, so signal it to remount with the restored values — no full reload.
     if (restored) window.dispatchEvent(new CustomEvent('tal:undo', { detail: restored.id }))
-  }
+  }, [project.id])
+
+  // Cmd/Ctrl+Z → app undo, EXCEPT inside text fields where native text undo wins.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.key.toLowerCase() !== 'z') return
+      const t = e.target as HTMLElement | null
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
+      if (!canUndo(project.id)) return
+      e.preventDefault()
+      handleUndo()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [project.id, handleUndo])
 
   const handleClearAll = () => {
     const ok = window.confirm(
