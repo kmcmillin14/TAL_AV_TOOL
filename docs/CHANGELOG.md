@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-07-19 — fix(vehicles): ML2 + E7 pin-tow reachable via tow-cart; transfer-type alignment test
+
+- **Owner-confirmed: ML2, M10, and E7 all pin-tow carts.** The `tow_cart` transfer gate reads
+  only `vehicle.towsCarts` (never the method list), so ML2 — which declared a "Pin" method but
+  no `towsCarts` flag — was silently unreachable as a tugger, and E7 lacked pin-tow entirely.
+  Fixed in data: `ml2.json` gains `towsCarts: true` + `cartPayloads: ["Tote","Cart"]`;
+  `ebase7.json` gains a Pin transfer method (5/5 s placeholder times) + `towsCarts: true` +
+  `cartPayloads: ["Tote","Cart"]`. M10 unchanged ([cutsheet]: 30 mm retractable pin, 2,200 lb).
+  All ML2/E7 additions marked `[estimate]` in VEHICLE-DATA-PROVENANCE.md pending cutsheets.
+- **New `src/calc/__tests__/transferTypeAlignment.test.ts`** locks the correlation: (a) every
+  Step 1 transfer type is satisfiable by ≥1 vehicle, (b) any vehicle with a Pin / Powered
+  Conveyor Cart method must declare `towsCarts` (the exact ML2 drift), (c) `towsCarts` vehicles
+  must declare `cartPayloads`, (d) functional: ml2/m10/ebase7 pass the transfer + payload gates
+  for a tow-cart Tote application. Traffic-light snapshot re-baselined (display strings only —
+  E7's method list now shows "Lift, Conveyor, Pin"; no verdict changes in snapshot coverage).
+
 ## 2026-07-19 — fix(tour+sample): inset unclippable highlight, 8 ft transfer (CB18-safe), walkthrough covers ROM operational sections
 
 - **Fix 1 — inset highlight ring:** `.tour-highlight` in `app/globals.css` replaced `outline`/`outline-offset`/`border-radius` with `box-shadow: inset 0 0 0 2px var(--accent)`. The inset shadow renders fully inside the element on all four sides regardless of any ancestor `overflow: hidden` (`.form-section` clips outlines; the inset ring is unclippable).

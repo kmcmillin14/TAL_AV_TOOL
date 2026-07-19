@@ -40,11 +40,26 @@ replaced. Corrected 2026-05-27 from the cutsheets.
 - **8HBC40A** (Toyota, TAL 3rd Party) — `liftSpeedFps`, `tempMin/Max`, `maxLoad*In`. `batteryKwh` =
   [derived] 18. `maxWeightLbs` 8000 = [cutsheet] rated (automated max ~7054 lb).
 
+## 2026-07-19 — ML2 + E7 pin-tow additions (owner-confirmed; data [estimate])
+
+- **ML2** — added `towsCarts: true` and `cartPayloads: ["Tote", "Cart"]`.
+  Owner confirmed ML2 can pin-tow carts carrying totes or carts. Cart payload types and
+  tow handling times are `[estimate]` pending cutsheet confirmation. Transfer method
+  "Pin" already present (unchanged).
+- **E7 / Ebase7** — added `transferMethods[].Pin` (loadTimeSec 5 / unloadTimeSec 5,
+  NO `lifts` flag — matches M10 Pin placeholder times per project estimate baseline),
+  plus `towsCarts: true` and `cartPayloads: ["Tote", "Cart"]`. Owner confirmed
+  E7 pin-tow capability; all three additions are `[estimate]` pending E7 cutsheet
+  (capability confirmed, exact handling times and cart payload set TBD).
+- **M10** — unchanged; `towsCarts: true`, `cartPayloads: ["Standard Pallet", "Tote", "Cart"]`,
+  and Pin method (loadTimeSec 5 / unloadTimeSec 5) are `[cutsheet]` (30 mm retractable
+  pin, 2,200 lb towing capacity — per M10 Cutsheet 3).
+
 ## Accessories (transfer methods) — per the engineer, handling times estimated
 - **CB18:** Lift (lifts)
 - **ML2:** Conveyor · Lift (lifts) · Pin · Custom
 - **M10:** Pin
-- **E7:** Lift (lifts) · Pin
+- **E7:** Lift (lifts) · Conveyor · Pin  ← Pin added 2026-07-19 [estimate]
 - **8TB50A:** Custom · Powered Conveyor Cart
 - **8HBC40A:** Lift (lifts; 6-in stroke → `maxLiftHeightFt` 0.5 ft)
 

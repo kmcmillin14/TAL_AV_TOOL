@@ -1872,7 +1872,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "requiredValue": "Conveyor",
         "severity": "hard",
         "skipped": false,
-        "vehicleValue": "Lift, Conveyor",
+        "vehicleValue": "Lift, Conveyor, Pin",
       },
       {
         "gateId": "lift_height",
@@ -1973,7 +1973,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Lift, Conveyor",
+        "vehicleValue": "Lift, Conveyor, Pin",
       },
       {
         "gateId": "lift_height",
@@ -2076,7 +2076,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Lift, Conveyor",
+        "vehicleValue": "Lift, Conveyor, Pin",
       },
       {
         "gateId": "lift_height",
@@ -2169,11 +2169,11 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "gateId": "transfer_method",
         "name": "Transfer Method",
         "passed": false,
-        "reason": "Does not support Fork. Supports: Lift, Conveyor",
+        "reason": "Does not support Fork. Supports: Lift, Conveyor, Pin",
         "requiredValue": "Fork",
         "severity": "hard",
         "skipped": false,
-        "vehicleValue": "Lift, Conveyor",
+        "vehicleValue": "Lift, Conveyor, Pin",
       },
       {
         "gateId": "lift_height",
@@ -2276,7 +2276,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Lift, Conveyor",
+        "vehicleValue": "Lift, Conveyor, Pin",
       },
       {
         "delta": 0,
@@ -2383,7 +2383,7 @@ exports[`qualifyVehicle characterization > matches snapshot for every vehicle ×
         "skipReason": "No requirement provided",
         "skipped": true,
         "unit": undefined,
-        "vehicleValue": "Lift, Conveyor",
+        "vehicleValue": "Lift, Conveyor, Pin",
       },
       {
         "gateId": "lift_height",
