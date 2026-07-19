@@ -3258,7 +3258,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .bc-hint { font-family: var(--tal-font-family); font-size: 11px; color: var(--text-tertiary); }
 .waterfall-table .wf-mid { color: var(--text-tertiary); }
 .waterfall-table .wf-sold { font-weight: 800; color: var(--text-primary); }
-.wf-binding {
+.waterfall-table .wf-binding {
   display: block;
   font-size: 10px;
   letter-spacing: 0.04em;
