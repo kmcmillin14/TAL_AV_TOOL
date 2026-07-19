@@ -1482,12 +1482,14 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   padding: 8px 0 0;
 }
 
-/* The entry grid fits in the viewport without scrolling — do not let it grow to fill
-   the full remaining height, which pushed the sample pill below the fold at 1440×800.
-   Cards get a compact fixed min-height; grid-auto-rows is not set so they size to content. */
+/* The entry grid fits in the viewport without scrolling AND without dead space:
+   the card row flexes into leftover height (never below 280px), the sample-pill
+   row stays compact. */
 .step0-fill { display: flex; flex-direction: column; }
-.step0-fill .entry-wrap { display: flex; flex-direction: column; }
-.step0-fill .entry-grid { grid-auto-rows: unset; }
+.step0-fill .entry-wrap { display: flex; flex-direction: column; flex: 1; }
+/* Card row absorbs leftover viewport height (1fr, floored at 280px); the sample
+   pill row stays compact (auto) — no dead space below, still no scrolling. */
+.step0-fill .entry-grid { flex: 1; grid-template-rows: minmax(280px, 1fr) auto; grid-auto-rows: auto; }
 
 /* Project details — inline-editable header fields, fillable on the setup page. */
 .setup-details {
@@ -1671,19 +1673,20 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: transparent;
+  border: 1px solid var(--accent);
   border-radius: 8px;
   padding: 10px 16px;
   font-size: 13px;
-  color: var(--text-secondary);
+  font-weight: 600;
+  color: var(--accent);
   text-decoration: none;
   cursor: pointer;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s, transform 0.12s;
 }
 .entry-sample-link:hover {
-  background: var(--surface-3);
-  border-color: var(--border-strong);
+  background: var(--accent-soft);
+  border-color: var(--accent);
   box-shadow: 0 2px 8px rgba(0,0,0,.08);
   transform: translateY(-1px);
   color: var(--text-primary);
@@ -1691,7 +1694,7 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 
 @media (max-width: 880px) {
   .entry-grid { grid-template-columns: 1fr; gap: 16px; }
-  .step0-fill .entry-grid { flex: 0 0 auto; grid-auto-rows: auto; }
+  .step0-fill .entry-grid { flex: 0 0 auto; grid-template-rows: none; grid-auto-rows: auto; }
   .entry-card { min-height: 0; padding: 36px 28px; }
   .entry-card-cta { margin-top: 24px; }
 }

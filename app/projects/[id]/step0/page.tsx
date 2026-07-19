@@ -296,7 +296,7 @@ export default function Step0Page() {
               }}
             >
               <Icon name="eye" size={14} />
-              Load the sample project — Company A (guided)
+              Example Project
             </button>
           </div>
 
