@@ -44,4 +44,11 @@ describe('parseFlowImport', () => {
     expect(parseFlowImport('A,B,,').rows[0]).toEqual({ origin: 'A', destination: 'B', distanceFt: 0, thruPerHr: 0, liftHeightFt: 0 })
     expect(parseFlowImport('  \n \n').rows).toEqual([])
   })
+
+  it('does NOT treat a data row with From/To location names as a header', () => {
+    const r = parseFlowImport('From Dock A,To Rack 1,300,55\nReceiving,Storage Bay,120,20')
+    expect(r.headerDetected).toBe(false)
+    expect(r.rows).toHaveLength(2)
+    expect(r.rows[0]).toEqual({ origin: 'From Dock A', destination: 'To Rack 1', distanceFt: 300, thruPerHr: 55, liftHeightFt: 0 })
+  })
 })

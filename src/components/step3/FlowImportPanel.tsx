@@ -45,7 +45,7 @@ export default function FlowImportPanel({ onAdd }: Props) {
               or choose a .csv
             </button>
             <input ref={fileRef} type="file" accept=".csv,.tsv,.txt" hidden
-              onChange={e => readFile(e.target.files?.[0])} />
+              onChange={e => { readFile(e.target.files?.[0]); e.target.value = '' }} />
             {parsed && parsed.skipped.length > 0 && (
               <span className="flow-import-skips" title={parsed.skipped.map(s => `line ${s.line}: ${s.reason}`).join('\n')}>
                 {parsed.skipped.length} row{parsed.skipped.length === 1 ? '' : 's'} skipped

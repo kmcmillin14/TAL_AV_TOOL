@@ -53,7 +53,9 @@ export function parseFlowImport(text: string): FlowImportResult {
   const allLines = text.split(/\r?\n/)
   const delim = text.includes('\t') ? '\t' : ','
 
-  // Header detect on the first non-empty line: ≥2 synonym hits → header row.
+  // Header detect on the first non-empty line: ≥2 synonym hits AND no
+  // identified numeric column (distance or thru) parses as a number — else
+  // it is a data row that happens to start with From/To location names.
   let colMap: Partial<Record<Col, number>> = {}
   let headerDetected = false
   let metersConverted = false
@@ -67,11 +69,25 @@ export function parseFlowImport(text: string): FlowImportResult {
       if (idx !== -1 && found[col] === undefined) found[col] = idx
     }
     if (Object.keys(found).length >= 2) {
-      headerDetected = true
-      colMap = found
-      headerLineIdx = i
-      const distCell = found.distance !== undefined ? cells[found.distance] : ''
-      metersConverted = /\(m\)|meter/i.test(distCell)
+      // Guard: a true header must have ≥1 synonym hit in a numeric column
+      // (distance, thru, or lift). If only origin/destination matched, the
+      // row could be a data row whose location names start with "From"/"To".
+      // Additionally, if a numeric column was identified but its cell parses
+      // as an actual number, that also means it is a data row — not a header.
+      const hasNumericCol = (['distance', 'thru', 'lift'] as const).some(c => found[c] !== undefined)
+      const looksLikeData = (['distance', 'thru', 'lift'] as const).some(c => {
+        const idx = found[c]
+        if (idx === undefined) return false
+        const cell = cells[idx] ?? ''
+        return cell !== '' && toNum(cell) !== null
+      })
+      if (hasNumericCol && !looksLikeData) {
+        headerDetected = true
+        colMap = found
+        headerLineIdx = i
+        const distCell = found.distance !== undefined ? cells[found.distance] : ''
+        metersConverted = /\(m\)|meter/i.test(distCell)
+      }
     }
     break // only the first non-empty line is a header candidate
   }

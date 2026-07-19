@@ -310,7 +310,7 @@ export default function FlowsTable({
       {flows.length === 0 && !hasGroups ? (
         <div className="flows-empty">
           <h3>No flows yet</h3>
-          <p>Click <strong>+ Add flow</strong> below to model an origin → destination route, or <strong>+ Group</strong> to set up a zone first — or add flows in Step 1&apos;s Throughput &amp; distance section; they appear here. Cycle time and demand recompute as you type. — or paste rows from a spreadsheet with <strong>Import flows</strong> above.</p>
+          <p>Click <strong>+ Add flow</strong> below to model an origin → destination route, or <strong>+ Group</strong> to set up a zone first — or add flows in Step 1&apos;s Throughput &amp; distance section; they appear here. Cycle time and demand recompute as you type. You can also paste rows from a spreadsheet with <strong>Import flows</strong> above.</p>
           <button type="button" className="flows-add-bottom" onClick={() => add()}>
             <Icon name="plus" size={12} /> Add flow
           </button>
