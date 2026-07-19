@@ -1482,11 +1482,12 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   padding: 8px 0 0;
 }
 
-/* Fill the viewport: the entry grid grows to consume leftover vertical space so
-   the three cards span the full page rather than floating in the top third. */
+/* The entry grid fits in the viewport without scrolling — do not let it grow to fill
+   the full remaining height, which pushed the sample pill below the fold at 1440×800.
+   Cards get a compact fixed min-height; grid-auto-rows is not set so they size to content. */
 .step0-fill { display: flex; flex-direction: column; }
-.step0-fill .entry-wrap { flex: 1; display: flex; flex-direction: column; min-height: 0; }
-.step0-fill .entry-grid { flex: 1; grid-auto-rows: minmax(380px, 1fr); }
+.step0-fill .entry-wrap { display: flex; flex-direction: column; }
+.step0-fill .entry-grid { grid-auto-rows: unset; }
 
 /* Project details — inline-editable header fields, fillable on the setup page. */
 .setup-details {
@@ -1589,8 +1590,8 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   justify-content: center;
   text-align: center;
   width: 100%;
-  min-height: 380px;
-  padding: 48px 40px 40px;
+  min-height: 280px;
+  padding: 32px 32px 28px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: 16px;
@@ -1621,11 +1622,11 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .entry-card-icon {
   display: flex; align-items: center; justify-content: center;
-  width: 68px; height: 68px;
-  border-radius: 16px;
+  width: 56px; height: 56px;
+  border-radius: 14px;
   background: var(--accent-soft);
   color: var(--accent);
-  margin-bottom: 24px;
+  margin-bottom: 16px;
   transition: background 0.18s ease, color 0.18s ease, transform 0.18s ease;
 }
 .entry-card-icon svg { width: 32px; height: 32px; }
@@ -1647,7 +1648,7 @@ thead .cmp-rowhead { background: var(--bg-surface); }
 }
 .entry-card-cta {
   display: inline-flex; align-items: center; gap: 8px;
-  margin-top: 30px;
+  margin-top: 20px;
   padding: 11px 20px;
   border-radius: 9px;
   background: var(--accent);
@@ -4333,29 +4334,32 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .m-fs-cutsheet { display: flex; align-items: center; justify-content: center; gap: 7px; padding: 12px; margin-top: 4px; border: 1px solid var(--border); border-radius: 9px; color: var(--accent); font-size: 13px; font-weight: 600; text-decoration: none; }
 
 /* ============================================ GUIDED TOUR (first-run coach marks) ============================================ */
-.tour-root { position: fixed; inset: 0; z-index: 400; }
-/* Light, non-blocking dim. The highlight ring ON the element itself provides focus.
-   pointer-events: all keeps the page non-editable mid-tour. */
-.tour-scrim { position: absolute; inset: 0; background: rgba(0,0,0,0.35); pointer-events: none; }
-/* Highlight ring: toggled directly on the target element — cannot drift because it IS the element.
-   outline renders above siblings without needing a z-index change. */
+/* No scrim — the page is fully visible and interactive during the tour.
+   tour-root is pointer-events:none so clicks pass through to the page; only
+   the card itself captures events (pointer-events:auto on .tour-card). */
+.tour-root { position: fixed; inset: 0; z-index: 400; pointer-events: none; }
+/* Active-section treatment: toggled directly on the target element — cannot drift
+   because it IS the element. outline renders above siblings without z-index hacks.
+   Background tint provides a gentle "active section" feel without obscuring content. */
 .tour-highlight {
-  outline: 3px solid var(--accent) !important;
-  outline-offset: 3px !important;
-  border-radius: 6px !important;
-  box-shadow: 0 0 0 6px var(--accent-soft) !important;
-  position: relative; z-index: 401;
+  outline: 2px solid var(--accent) !important;
+  outline-offset: 2px !important;
+  border-radius: 8px !important;
+  background: color-mix(in srgb, var(--accent) 6%, transparent) !important;
+  transition: background .2s !important;
 }
-/* Card: fixed bottom-center on desktop; scales down on mobile. */
+/* Card: fixed bottom-RIGHT on all screens so it never covers centered page content.
+   pointer-events: auto restores click capture on the card itself. */
 .tour-card {
-  position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%);
-  width: min(360px, calc(100vw - 32px));
+  position: fixed; right: 24px; bottom: 24px;
+  max-width: 380px; width: calc(100vw - 48px);
   background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 14px;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.34); padding: 18px 20px 16px;
-  z-index: 402;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.22); padding: 18px 20px 16px;
+  z-index: 402; pointer-events: auto;
 }
-/* is-centered: vertically center only when there is no highlighted element. */
-.tour-card.is-centered { top: 50%; bottom: auto; transform: translate(-50%, -50%); }
+/* is-centered kept for null-target steps (no target element) — still bottom-right,
+   no special transform needed; the name is kept for clarity but has no style delta. */
+.tour-card.is-centered { /* same position, intentionally no override */ }
 .tour-card-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .tour-step-count { font-size: 11px; color: var(--text-tertiary); letter-spacing: 0.06em; }
 .tour-skip { display: inline-flex; align-items: center; gap: 3px; background: none; border: none; color: var(--text-tertiary); font-family: var(--tal-font-family); font-size: 12px; cursor: pointer; }

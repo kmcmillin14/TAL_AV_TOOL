@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest'
-import sample from '../../content/samples/toyota-project.json'
+import sample from '../../content/samples/company-a-project.json'
 import { partialProjectSchema } from '../validations/schemas'
 
 // The Pin transfer method index for the M10 (first and only entry in m10.transferMethods).
 const M10_PIN_IDX = 0
 
-describe('toyota sample project', () => {
+describe('company-a sample project', () => {
   it('parses cleanly — every field survives the schema (no silent drops)', () => {
     const r = partialProjectSchema.safeParse(sample.project)
     expect(r.success).toBe(true)
@@ -23,8 +23,8 @@ describe('toyota sample project', () => {
     expect(sample.project.flowGroups).toHaveLength(3)
     expect(sample.project.flowGroups).toEqual([
       'Receiving & Putaway',
-      'Lineside Delivery',
-      'Finished Goods',
+      'Replenishment',
+      'Outbound',
     ])
   })
 
@@ -55,11 +55,19 @@ describe('toyota sample project', () => {
     expect(flows[1].liftHeightFt).toBe(15)
   })
 
-  it('flows 5-6 use 8hbc40a for finished goods (floor-level)', () => {
+  it('flows 5-6 use 8hbc40a for outbound (floor-level)', () => {
     const flows = sample.project.flows as Array<{ vehicleId?: string; liftHeightFt?: number }>
     expect(flows[4].vehicleId).toBe('8hbc40a')
     expect(flows[4].liftHeightFt).toBe(0)
     expect(flows[5].vehicleId).toBe('8hbc40a')
     expect(flows[5].liftHeightFt).toBe(0)
+  })
+
+  it('uses GMA 48×40 pallet at 1800 lbs', () => {
+    expect(sample.project.loadLengthIn).toBe(48)
+    expect(sample.project.loadWidthIn).toBe(40)
+    expect(sample.project.maxLoadWeightLbs).toBe(1800)
+    const loads = sample.project.loads as Array<{ palletSubtype?: string }>
+    expect(loads[0].palletSubtype).toBe('GMA (48×40)')
   })
 })

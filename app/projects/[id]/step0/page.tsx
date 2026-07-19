@@ -6,7 +6,7 @@ import PersistentHeader from '@/src/components/PersistentHeader'
 import Icon from '@/src/design-system/components/Icon'
 import { getProject, importProjectFromJson, updateProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
-import sampleProject from '@/src/content/samples/toyota-project.json'
+import sampleProject from '@/src/content/samples/company-a-project.json'
 
 export default function Step0Page() {
   const params = useParams()
@@ -288,7 +288,7 @@ export default function Step0Page() {
               onClick={() => {
                 try {
                   const imported = importProjectFromJson(JSON.stringify(sampleProject))
-                  sessionStorage.setItem('tal:guideState', JSON.stringify({ guideId: 'sample-rfq', step: 0 }))
+                  sessionStorage.setItem('tal:guideState', JSON.stringify({ guideId: 'sample-rfq', step: 0, projectId: imported.id }))
                   router.push(`/projects/${imported.id}/step1`)
                 } catch {
                   setImportError('Could not load the sample project.')
@@ -296,7 +296,7 @@ export default function Step0Page() {
               }}
             >
               <Icon name="eye" size={14} />
-              Load the sample project — Toyota Motor Mfg (guided)
+              Load the sample project — Company A (guided)
             </button>
           </div>
 

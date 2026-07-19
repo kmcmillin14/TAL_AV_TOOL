@@ -35,7 +35,9 @@ project metadata; the rest as form fields. The header meta line is page-centered
    embedded JSON, or `.json`) to make a new revision. Parsed via `parseProjectPdf`
    (PDF) or `importProjectFromJson` (JSON).
 
-**Load sample project** — a ghost-pill button (bordered, icon-prefixed, clearly secondary to the two main cards but no longer bare underlined text) centered below the entry grid creates a NEW project from the bundled Toyota Motor Mfg sample (`src/content/samples/toyota-project.json`, same `{schemaVersion, project}` envelope as JSON import) via the normal Zod/storage path, writes `sessionStorage['tal:guideState'] = {guideId:'sample-rfq',step:0}`, then navigates to Step 1. The `sample-rfq` guided walkthrough auto-starts on mount of Step 1 and walks the user through Steps 1–4 explaining the WHY behind each decision. The guide can be relaunched at any time via `window.dispatchEvent(new CustomEvent('tal:start-guide', { detail: { guideId: 'sample-rfq' } }))`. Never touches the current project.
+**Load sample project** — a ghost-pill button (bordered, icon-prefixed, clearly secondary to the two main cards) centered below the entry grid ("Load the sample project — Company A (guided)") creates a NEW project from the bundled Company A DC sample (`src/content/samples/company-a-project.json`, same `{schemaVersion, project}` envelope as JSON import) via the normal Zod/storage path, writes `sessionStorage['tal:guideState'] = {guideId:'sample-rfq',step:0,projectId:<id>}`, then navigates to Step 1. The `sample-rfq` guided walkthrough auto-starts on mount of Step 1 and walks the user through Steps 1–4 explaining the WHY behind each decision. The guide can be relaunched at any time via `window.dispatchEvent(new CustomEvent('tal:start-guide', { detail: { guideId: 'sample-rfq' } }))`. Never touches the current project.
+
+**Entry screen fits in a normal window** — the layout does not use `grid-auto-rows: minmax(380px,1fr)` (which pushed the sample pill below the fold at 1440×800). Cards have a `min-height: 280px` and reduced padding so the PROJECT DETAILS bar + both cards + the sample pill all fit in an 800 px-tall viewport without scrolling.
 
 Both import modes reuse the same parsers and the wrapped `{schemaVersion, project}`
 envelope (legacy unwrapped accepted); every import mints a fresh project id and lands
@@ -677,21 +679,19 @@ with three structural JS changes where CSS can't carry the layout.
 - **Overlays.** `FloatingPanel` caps its width to the viewport; the cycle popover gets a
   `max-width: calc(100vw − 24px)`; the Step-2 comparison modal goes full-screen ≤ 700px.
 
-### First-run guided tour (added 2026-07-15; engine rework 2026-07-19; UX fixes 2026-07-19)
+### First-run guided tour (added 2026-07-15; engine rework 2026-07-19; UX fixes 2026-07-19; Company A + scrimless 2026-07-19)
 
 `src/components/GuidedTour.tsx` mounts inside the persistent header. On a project's first
 visit (localStorage `tal:tourSeen`) it auto-opens a coach-mark sequence over the 4-step nav
 bar and each step tab in turn, framed by the Cut → Connect → Add discipline.
 
-**Highlight mechanism (rework 2026-07-19):** the engine toggles a CSS class `tour-highlight`
-directly on the target DOM element (via `querySelector`). The class draws a ring on the
-element itself (`outline: 3px solid var(--accent); outline-offset: 3px; box-shadow: 0 0 0 6px
-var(--accent-soft)`) — because the ring is part of the element, it cannot drift or misalign
-due to font-swap reflows, zoom, or layout shifts. There is no rAF coordinate-measurement loop
-and no absolutely-positioned spotlight div. The scrim is a plain `rgba(0,0,0,0.35)` overlay
-with `pointer-events: none` so the user can scroll and interact with the page freely while the
-guide card floats above (no scroll lock). The tour card is always fixed bottom-center (not
-target-relative) and carries `role="dialog"` (not `aria-modal`) on the card element itself.
+**Highlight mechanism (scrimless active-section design):** the engine toggles a CSS class `tour-highlight`
+directly on the target DOM element (via `querySelector`). There is **no scrim** — the page is fully
+visible and interactive during the tour (`.tour-root` is `pointer-events: none`; the card restores
+`pointer-events: auto`). The highlight is an "active section" treatment on the target element:
+`outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 8px; background: color-mix(in srgb, var(--accent) 6%, transparent)` — same philosophy as the app's scroll-spy. No z-index hacks on
+`.tour-highlight` (no scrim means none are needed). The tour card is fixed **bottom-right**
+(`right: 24px; bottom: 24px`) on all screens so it does not cover bottom-center content.
 Cleanup defensively removes any stale `.tour-highlight` elements on step change, close, or unmount.
 `scrollIntoView` uses `{ block: 'center', behavior: 'smooth' }` so the target lands mid-viewport.
 
@@ -700,15 +700,22 @@ headers (`.form-section-header` inside the section ID) rather than entire sectio
 highlight ring is a narrow strip rather than a full page-height box. Step 2 targets `.page-header`
 (the compact title bar); Step 4 `.rom2-kpiband` (a band, not a page) is unchanged.
 
+**Walkthrough finish action:** `Guide` accepts optional `finishLabel` (primary button text on last
+step, defaults to `'Get started'`) and `finishAction: 'discardSampleAndStart'`. When the last step
+is confirmed with this action, the engine calls `deleteProject(sampleProjectId)`, then
+`findOrCreateEntryProject()`, and navigates to that project's `/step0`. The `sample-rfq` guide uses
+this: its 9th (final) step ("Your turn") warns the user, then the `'Start your application'` button
+wipes the sample and begins a fresh project.
+
 **Multi-guide engine:** the component exports `GUIDES: Record<string, Guide>` (a registry) and
 `GUIDE_EVENT = 'tal:start-guide'`. Dispatching
 `new CustomEvent('tal:start-guide', { detail: { guideId } })` starts any registered guide.
 Cross-page guides use `GuideStep.route` (a pathname suffix): on `next()`, if the step's route
-doesn't match the current pathname, the engine persists `{ guideId, step }` to
+doesn't match the current pathname, the engine persists `{ guideId, step, projectId }` to
 `sessionStorage['tal:guideState']`, calls `router.push`, and resumes on mount of the target
 page. Two guides are currently registered: `'intro'` (the four-step nav tour) and `'sample-rfq'`
-(an 8-step Toyota RFQ walkthrough spanning Steps 1–4 that auto-starts when the sample project
-is loaded and explains the WHY behind each field and vehicle assignment).
+(a 9-step Company A DC walkthrough spanning Steps 1–4 that auto-starts when the sample project
+is loaded and explains the WHY behind each field and vehicle assignment; ends with a wipe-and-start action).
 
 The tour re-opens any time from the Help drawer's **"Take the tour"** button, which dispatches
 the `tal:start-tour` window event (exported as `TOUR_EVENT`). The card offers Back / Next /

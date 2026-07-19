@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, usePathname } from 'next/navigation'
 import Icon from '@/src/design-system/components/Icon'
+import { deleteProject, findOrCreateEntryProject } from '@/src/lib/storage'
 
 // ─── Event API ────────────────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ export interface GuideStep {
   route?: string
   /**
    * CSS selector for the element to highlight with `.tour-highlight`.
-   * null = no highlight (centered card, plain scrim).
+   * null = no highlight (card positioned bottom-right, no target element).
    */
   target: string | null
   title: string
@@ -41,11 +42,21 @@ export interface GuideStep {
 export interface Guide {
   id: string
   steps: GuideStep[]
+  /** Label for the primary button on the last step. Defaults to 'Get started'. */
+  finishLabel?: string
+  /**
+   * Action fired when the user clicks the primary button on the last step.
+   * 'discardSampleAndStart' — deletes the current project (the sample), creates/finds
+   * a fresh entry project, and navigates to its /step0.
+   */
+  finishAction?: 'discardSampleAndStart'
 }
 
 interface GuideState {
   guideId: string
   step: number
+  /** Project id at the time the guide started — used by discardSampleAndStart. */
+  projectId?: string
 }
 
 // ─── Guide registry ───────────────────────────────────────────────────────────
@@ -84,28 +95,30 @@ const INTRO_GUIDE: Guide = {
   ],
 }
 
-/** Sample RFQ walkthrough — cross-page, Steps 1→4. Starts automatically when the
- *  Toyota sample project is loaded from Step 0. Explains WHY each decision was made. */
+/** Sample DC walkthrough — cross-page, Steps 1→4. Starts automatically when the
+ *  Company A sample project is loaded from Step 0. Explains WHY each decision was made. */
 const SAMPLE_RFQ_GUIDE: Guide = {
   id: 'sample-rfq',
+  finishLabel: 'Start your application',
+  finishAction: 'discardSampleAndStart',
   steps: [
     {
       route: '/step1',
       target: null,
-      title: 'A worked RFQ',
-      body: 'This sample is Toyota Motor Mfg\'s RFQ, already filled in. Walk with me — each stop explains WHY it was answered this way.',
+      title: 'A worked DC example',
+      body: 'This sample is Company A\'s distribution center, already filled in. Walk with me — each stop explains WHY it was answered this way.',
     },
     {
       route: '/step1',
       target: '#section-01 .form-section-header',
-      title: '1,800 lb auto pallets',
-      body: '48×45 automotive pallets at 1,800 lbs. Weight + dimensions drive vehicle qualification — get these right first.',
+      title: '1,800 lb GMA pallets',
+      body: '48×40 GMA pallets at 1,800 lbs. Weight + dimensions drive vehicle qualification — get these right first.',
     },
     {
       route: '/step1',
       target: '#section-02 .form-section-header',
       title: 'Forklift to 15 ft',
-      body: 'Pallets go INTO rack at 15 ft, so the transfer type is forklift with a 15 ft height — this is what disqualifies non-lifting vehicles.',
+      body: 'Pallets go INTO reserve racking at 15 ft, so the transfer type is forklift with a 15 ft height — this is what disqualifies non-lifting vehicles.',
     },
     {
       route: '/step1',
@@ -122,8 +135,8 @@ const SAMPLE_RFQ_GUIDE: Guide = {
     {
       route: '/step3',
       target: '#engine-raw .form-section-header',
-      title: 'The RFQ\'s moves, as flows',
-      body: 'Six flows in three zones: CB18 does the rack work, the M10 pin-tugger runs the long lineside milk-runs, the 8HBC40A shuttles finished goods floor-to-floor.',
+      title: 'The DC moves, as flows',
+      body: 'Six flows in three zones: CB18 does the rack work, the M10 pin-tugger runs the long replenishment milk-runs, the 8HBC40A shuttles finished pallets outbound.',
     },
     {
       route: '/step3',
@@ -136,6 +149,12 @@ const SAMPLE_RFQ_GUIDE: Guide = {
       target: '.rom2-kpiband',
       title: 'The ROM you\'d send back',
       body: 'Fleet, CAPEX range, payback. Adjust drivers for what-ifs, then Export builds the customer deck.',
+    },
+    {
+      route: '/step4',
+      target: null,
+      title: 'Your turn',
+      body: 'That\'s the whole flow — RFQ in, defensible ROM out. Ready? This wipes the sample and starts your own application.',
     },
   ],
 }
@@ -179,6 +198,8 @@ export default function GuidedTour() {
   const [open, setOpen] = useState(false)
   const [guide, setGuide] = useState<Guide>(INTRO_GUIDE)
   const [i, setI] = useState(0)
+  // The project id at the time the sample guide was triggered — used for discardSampleAndStart.
+  const [sampleProjectId, setSampleProjectId] = useState<string | null>(null)
 
   const steps = guide.steps
   const step = steps[i]
@@ -210,18 +231,20 @@ export default function GuidedTour() {
   // ── First-run auto-open + TOUR_EVENT + GUIDE_EVENT ────────────────────────
 
   useEffect(() => {
-    const startGuide = (g: Guide, stepIndex = 0) => {
+    const startGuide = (g: Guide, stepIndex = 0, projectId?: string) => {
       setGuide(g)
       setI(stepIndex)
+      setSampleProjectId(projectId ?? null)
       setOpen(true)
     }
 
     const handleTourEvent = () => startGuide(INTRO_GUIDE, 0)
 
     const handleGuideEvent = (e: Event) => {
-      const guideId = (e as CustomEvent<{ guideId: string }>).detail?.guideId
+      const detail = (e as CustomEvent<{ guideId: string; projectId?: string }>).detail
+      const guideId = detail?.guideId
       const g = guideId ? GUIDES[guideId] : undefined
-      if (g) startGuide(g, 0)
+      if (g) startGuide(g, 0, detail?.projectId)
     }
 
     // Resume a cross-page guide if sessionStorage has a pending state.
@@ -233,7 +256,7 @@ export default function GuidedTour() {
         if (g && state.step < g.steps.length) {
           sessionStorage.removeItem(GUIDE_STATE_KEY)
           // Small delay lets the new page paint before we highlight.
-          setTimeout(() => startGuide(g, state.step), 300)
+          setTimeout(() => startGuide(g, state.step, state.projectId), 300)
         } else {
           sessionStorage.removeItem(GUIDE_STATE_KEY)
         }
@@ -271,13 +294,29 @@ export default function GuidedTour() {
     setOpen(false)
   }, [])
 
+  const finishWithAction = useCallback(() => {
+    try { localStorage.setItem(SEEN_KEY, '1') } catch { /* ignore */ }
+    clearHighlight()
+    setOpen(false)
+
+    if (guide.finishAction === 'discardSampleAndStart' && sampleProjectId) {
+      deleteProject(sampleProjectId)
+      const entry = findOrCreateEntryProject()
+      router.push(`/projects/${entry.id}/step0`)
+    }
+  }, [guide.finishAction, sampleProjectId, router])
+
   const back = useCallback(() => {
     setI(n => Math.max(0, n - 1))
   }, [])
 
   const next = useCallback(() => {
     if (last) {
-      finish()
+      if (guide.finishAction) {
+        finishWithAction()
+      } else {
+        finish()
+      }
       return
     }
     const nextIndex = i + 1
@@ -291,7 +330,7 @@ export default function GuidedTour() {
       // We need: /projects/abc123 + nextStep.route
       const projectBase = pathname?.replace(/\/step\d+$/, '').replace(/\/step0$/, '') ?? ''
       try {
-        const state: GuideState = { guideId: guide.id, step: nextIndex }
+        const state: GuideState = { guideId: guide.id, step: nextIndex, projectId: sampleProjectId ?? undefined }
         sessionStorage.setItem(GUIDE_STATE_KEY, JSON.stringify(state))
       } catch { /* ignore */ }
       clearHighlight()
@@ -301,21 +340,22 @@ export default function GuidedTour() {
     }
 
     setI(nextIndex)
-  }, [last, i, steps, pathname, guide.id, router, finish])
+  }, [last, i, steps, pathname, guide.id, guide.finishAction, sampleProjectId, router, finish, finishWithAction])
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
   if (!open || typeof document === 'undefined') return null
 
-  const hasHighlight = !!step?.target
+  const primaryLabel = last
+    ? (guide.finishLabel ?? 'Get started')
+    : 'Next'
 
   return createPortal(
     <div className="tour-root">
-      {/* Scrim: a light dim. pointer-events: none lets the user scroll and interact
-          with the page freely while the guide card floats above. */}
-      <div className="tour-scrim" />
+      {/* No scrim — page remains fully visible and interactive. The .tour-highlight
+          class on the target element provides the active-section treatment. */}
 
-      <div className={`tour-card${hasHighlight ? '' : ' is-centered'}`} role="dialog" aria-label="Guided tour">
+      <div className="tour-card" role="dialog" aria-label="Guided tour">
         <div className="tour-card-head">
           <span className="tour-step-count mono">{i + 1} / {steps.length}</span>
           <button type="button" className="tour-skip" onClick={finish}>Skip<Icon name="x" size={13} /></button>
@@ -330,7 +370,7 @@ export default function GuidedTour() {
             ? <button type="button" className="btn ghost" onClick={back}>Back</button>
             : <span />}
           <button type="button" className="btn primary" onClick={next}>
-            {last ? 'Get started' : 'Next'}
+            {primaryLabel}
           </button>
         </div>
       </div>
