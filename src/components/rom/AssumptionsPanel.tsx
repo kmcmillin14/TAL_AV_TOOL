@@ -19,7 +19,7 @@ export default function AssumptionsPanel({ project: p }: Props) {
       rows: [
         { label: 'Usable depth of discharge', value: '80%', why: 'Battery sized to 80% DoD for cycle life.', isDefault: true },
         { label: 'Route speed factors', value: 'Low 30% · Med 50% · High 70%', why: 'Route-average speed as a fraction of rated cruise.', isDefault: true },
-        { label: 'Charging', value: 'Availability = min(energy, capacity)', why: 'Per vehicle type: energy availability credits breaks, the nightly off-shift, and the day-off reset (a day off recharges to 100%); capacity availability is whether the battery covers a production window. Fleet = demand ÷ availability. 80% usable depth; charge derated to 85% (round-trip loss + taper + charger access); buffer applied after.', isDefault: true },
+        { label: 'Charging', value: 'Availability = min(energy, capacity)', why: 'Per vehicle type: energy availability credits breaks, the nightly off-shift, and the day-off reset (a day off recharges to 100%); capacity availability is whether the battery covers a production window. Availability = min(rotation run:charge ratio, weekly energy balance) from cutsheet runtime and charge hours — no derates (measured hours already contain them). The fleet pays the larger of the energy and buffered-rotation constraints.', isDefault: true },
         { label: 'Operating days / year', value: p.operatingDaysPattern && p.operatingDaysPerYear == null ? `${days} (from ${p.operatingDaysPattern})` : String(days), why: 'Annualizes energy and labor.', isDefault: p.operatingDaysPerYear == null },
       ],
     },
@@ -35,7 +35,7 @@ export default function AssumptionsPanel({ project: p }: Props) {
         { label: 'Operators displaced', value: String(p.numberOfOperators || ((p.operatorsPerShift ?? 0) * (p.shiftsPerDay ?? 1))), why: 'Operators × shifts the fleet replaces.', isDefault: !p.numberOfOperators && !p.operatorsPerShift },
         { label: 'Fully-burdened operator', value: `$${(p.fullyBurdenedRateUsdPerYear ?? 65000).toLocaleString()}/yr`, why: 'All-in annual cost (wage + benefits + overhead).', isDefault: p.fullyBurdenedRateUsdPerYear == null },
         { label: 'Maintenance', value: `${Math.round((p.annualMaintenancePctOfCapex ?? 0.08) * 100)}%/yr of CAPEX`, why: 'Annual upkeep as a share of CAPEX.', isDefault: p.annualMaintenancePctOfCapex == null },
-        { label: 'Safety buffer', value: `${Math.round((p.bufferPct ?? 0.10) * 100)}%`, why: 'Margin on the availability-adjusted demand; rounded up once per chassis.', isDefault: p.bufferPct == null },
+        { label: 'Safety buffer', value: `${Math.round((p.bufferPct ?? 0.10) * 100)}%`, why: 'Margin applied to the rotation constraint only; energy is never buffered (idle robots charge). Rounded up once per chassis.', isDefault: p.bufferPct == null },
         { label: 'Service life', value: `${p.serviceLifeYears ?? 10} yr`, why: 'Equipment lifetime for TCO / payback.', isDefault: p.serviceLifeYears == null },
       ],
     },
