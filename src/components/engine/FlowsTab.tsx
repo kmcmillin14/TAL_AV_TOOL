@@ -1,6 +1,6 @@
 'use client'
 
-import type { Flow, FlowDerived, TrafficLightStatus } from '@/src/calc/types'
+import type { Flow, FlowDerived } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import FlowsTable from '@/src/components/step3/FlowsTable'
@@ -13,7 +13,6 @@ interface Props {
   vehicles: Vehicle[]
   derivedByFlowId: Map<string, FlowDerived>
   unitSystem: UnitSystem
-  statusById?: Map<string, TrafficLightStatus>
   onPatch: (patch: EnginePatch) => void
   /** Optional: prefill a first flow from Step 1's distance + throughput (no vehicle). */
 }
@@ -30,7 +29,6 @@ export default function FlowsTab(p: Props) {
       vehicles={p.vehicles}
       derivedByFlowId={p.derivedByFlowId}
       unitSystem={p.unitSystem}
-      statusById={p.statusById}
       onPatch={p.onPatch}
     />
   )

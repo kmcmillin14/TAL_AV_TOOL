@@ -9,12 +9,10 @@ import { getProject, updateProject, type StoredProject } from '@/src/lib/storage
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { FleetSettings, Flow, FlowDerived, TrafficLightStatus } from '@/src/calc/types'
+import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
 import { fleetSummary, defaultChargeRegime } from '@/src/calc/fleet'
 import { consecutiveOperatingDays, defaultOperatingDaysPerYear } from '@/src/calc/romAnalytics'
-import { qualifyVehicle } from '@/src/calc/trafficLight'
-import { appRequirementsFromProject } from '@/src/lib/appRequirements'
 import type { EnginePatch } from '@/src/components/engine/types'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import ScrollSpyNav from '@/src/components/ScrollSpyNav'
@@ -57,12 +55,6 @@ export default function FleetEnginePage() {
   }, [id])
 
   const vehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
-
-  const statusById = useMemo<Map<string, TrafficLightStatus>>(() => {
-    if (!project) return new Map()
-    const req = appRequirementsFromProject(project)
-    return new Map(vehicles.map(v => [v.id, qualifyVehicle(v, req).status]))
-  }, [project, vehicles])
 
   const flows: Flow[] = useMemo(() => project?.flows ?? [], [project])
   const flowGroups: string[] = useMemo(() => project?.flowGroups ?? [], [project])
@@ -273,7 +265,6 @@ export default function FleetEnginePage() {
                 vehicles={vehicles}
                 derivedByFlowId={derivedByFlowId}
                 unitSystem={unitSystem}
-                statusById={statusById}
                 onPatch={persistPatch}
               />
             </ScrollSection>

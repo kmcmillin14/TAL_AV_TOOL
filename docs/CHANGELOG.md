@@ -1,10 +1,17 @@
 # Changelog
 
-## 2026-07-18 — Workflow friction fixes (6): flow import, save-drop warnings, undo toast, keyboard, select ordering, sample project
+## 2026-07-19 — Removed qualification-ordered vehicle select (owner direction; select is plain again)
+
+- Step 3: vehicle select reverted to plain alphabetical list — removed `statusById` prop drill,
+  `sortByQualification`, and the '— not qualified'/'— review' option suffixes. Deleted
+  `src/lib/vehicleOrder.ts` and `src/lib/__tests__/vehicleOrder.test.ts`.
+
+## 2026-07-18 — Workflow friction fixes (5): flow import, save-drop warnings, undo toast, keyboard, sample project
 
 - Step 3: inline paste-import panel for flows (pure parser `src/lib/flowImport.ts`, TSV/CSV,
   header auto-detect, meters→feet); undo-delete toast; ArrowUp/Down reorder on the focusable
-  drag handle; vehicle select sorted by qualification (GREEN first, RED labeled — never auto-selects).
+  drag handle. (Vehicle select ordering shipped in this batch but was removed 2026-07-19 at
+  owner direction — see entry above.)
 - Step 1: `subscribeSaveDrops` storage event surfaces salvage-parse drops as inline field
   warnings (silent-drop fix).
 - Header: Cmd/Ctrl+Z app undo (guarded — native text undo wins inside fields).
