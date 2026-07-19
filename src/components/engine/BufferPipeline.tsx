@@ -102,7 +102,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
               <th>Flow</th>
               <th className="num">Base</th>
               <th className="num">+ Charging</th>
-              <th className="num">× {(1 + bufferPct).toFixed(2)}</th>
+              <th className="num">Sized demand</th>
               <th className="num">Fleet</th>
               <th className="pl-math-col" aria-label="Fleet math"></th>
             </tr>
@@ -123,8 +123,15 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
                   </td>
                   <td className="num mono" data-label="Base">{g?.baseFleet ?? '—'}</td>
                   <td className="num mono" data-label="+ Charging">{delta > 0 ? `+${delta}` : '—'}</td>
-                  <td className="num mono wf-mid" data-label={`× ${(1 + bufferPct).toFixed(2)}`}>{g ? ((g.charging.availability != null ? g.groupRaw / g.charging.availability : g.groupRaw) * (1 + bufferPct)).toFixed(2) : '—'}</td>
-                  <td className="num mono wf-sold" data-label="Fleet">{g?.fleetSold ?? '—'}</td>
+                  <td className="num mono wf-mid" data-label="Sized demand">{g ? (() => {
+                    const rot = (g.groupRaw * (1 + bufferPct)) / (g.charging.aCap ?? 1)
+                    const en = g.charging.aEnergy != null ? g.groupRaw / g.charging.aEnergy : 0
+                    return Math.max(rot, en).toFixed(2)
+                  })() : '—'}</td>
+                  <td className="num mono wf-sold" data-label="Fleet">
+                    {g?.fleetSold ?? '—'}
+                    {g && <span className="wf-binding mono">{g.binding}</span>}
+                  </td>
                   <td className="pl-math-cell" data-label="Fleet math">
                     {g && (
                       <DerivTrigger
@@ -142,8 +149,9 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
       <div className="engine-note">
         Sizing to a target utilization leaves headroom for demand variability, maintenance, and
         ramp-up — 80% is the AMR industry standard (past ~85% queueing and blocking wait climbs
-        non-linearly). It applies as the ×{(1 + bufferPct).toFixed(2)} multiplier on availability-adjusted
-        demand. Per-flow figures are the vehicle group&apos;s; the fleet pools per vehicle type.
+        non-linearly). The fleet pays the <strong>larger</strong> of two constraints: peak need with
+        headroom ÷ rotation availability, or weekly energy sustain (never buffered — idle robots
+        charge). The tag on each Fleet figure names the binding constraint.
       </div>
     </div>
   )

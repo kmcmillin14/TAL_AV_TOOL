@@ -77,9 +77,10 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
     const { aEnergy, aCap } = g.charging
     const rot = (g.groupRaw * (1 + buffer)) / (aCap ?? 1)
     const en = aEnergy != null ? g.groupRaw / aEnergy : null
+    const floored = g.baseFleet >= Math.ceil(Math.max(rot, en ?? 0))
     return (
       <div className="fm-eq mono">
-        max({f2(rot)} rotation{en != null ? `, ${f2(en)} energy` : ''}) → ⌈⌉ = <strong>{g.fleetSold} sold</strong> · binding: {g.binding}
+        max({f2(rot)} rotation{en != null ? `, ${f2(en)} energy` : ''}) → {floored ? `max(${g.baseFleet} base, ⌈⌉)` : '⌈⌉'} = <strong>{g.fleetSold} sold</strong> · binding: {g.binding}
       </div>
     )
   }

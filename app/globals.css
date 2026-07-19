@@ -3258,6 +3258,13 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .bc-hint { font-family: var(--tal-font-family); font-size: 11px; color: var(--text-tertiary); }
 .waterfall-table .wf-mid { color: var(--text-tertiary); }
 .waterfall-table .wf-sold { font-weight: 800; color: var(--text-primary); }
+.wf-binding {
+  display: block;
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+}
 .waterfall-table .wf-total td {
   border-bottom: none;
   border-top: 2px solid var(--border);
