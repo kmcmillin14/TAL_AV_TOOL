@@ -200,18 +200,25 @@ export default function FlowsTable({
     setDeleted(null)
   }, [deleted, flows, onPatch])
 
-  // Keyboard reorder: swap within the flows array; crossing a boundary adopts the
-  // neighbor's group so the visual grouping follows the move.
+  // Keyboard reorder operates on the RENDERED order (groups in effGroups order,
+  // then ungrouped) — the raw array can interleave groups, where an array-index
+  // swap is a visual no-op. The swapped visual order covers every flow, so it
+  // becomes the new flows array (normalizing storage order to match display).
   const move = useCallback((id: string, dir: -1 | 1) => {
-    const idx = flows.findIndex(f => f.id === id)
-    const j = idx + dir
-    if (idx === -1 || j < 0 || j >= flows.length) return
-    const next = [...flows]
-    const [f] = next.splice(idx, 1)
-    const neighbor = next[Math.min(j, next.length - 1)]
-    next.splice(j, 0, { ...f, sectionName: neighbor ? neighbor.sectionName : f.sectionName })
-    onPatch({ flows: next })
-  }, [flows, onPatch])
+    const groups = computeEffectiveGroups(flowGroups, flows)
+    const visualOrder = [
+      ...groups.flatMap(g => flows.filter(f => f.sectionName === g)),
+      ...flows.filter(f => !f.sectionName || !groups.includes(f.sectionName)),
+    ]
+    const vIdx = visualOrder.findIndex(f => f.id === id)
+    const vJ = vIdx + dir
+    if (vIdx === -1 || vJ < 0 || vJ >= visualOrder.length) return
+    const neighbor = visualOrder[vJ]
+    const swapped = [...visualOrder]
+    const [f] = swapped.splice(vIdx, 1)
+    swapped.splice(vJ, 0, { ...f, sectionName: neighbor.sectionName })
+    onPatch({ flows: swapped })
+  }, [flows, flowGroups, onPatch])
   const addImported = (rows: import('@/src/lib/flowImport').ParsedFlowRow[]) =>
     onPatch({
       flows: [
