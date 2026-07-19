@@ -1,7 +1,7 @@
 'use client'
 
 import { Fragment, useState, useRef, useEffect, useCallback } from 'react'
-import type { Flow, FlowDerived } from '@/src/calc/types'
+import type { Flow, FlowDerived, TrafficLightStatus } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import Icon from '@/src/design-system/components/Icon'
@@ -27,6 +27,7 @@ interface Props {
   vehicles: Vehicle[]
   derivedByFlowId: Map<string, FlowDerived>
   unitSystem: UnitSystem
+  statusById?: Map<string, TrafficLightStatus>
   onPatch: (patch: FlowsPatch) => void
 }
 
@@ -82,6 +83,7 @@ export default function FlowsTable({
   vehicles,
   derivedByFlowId,
   unitSystem,
+  statusById,
   onPatch,
 }: Props) {
   const metric = unitSystem === 'metric'
@@ -305,6 +307,7 @@ export default function FlowsTable({
       index={rowNum++}
       flow={f}
       vehicles={vehicles}
+      statusById={statusById}
       derived={
         derivedByFlowId.get(f.id) ?? {
           cycleSeconds: null,

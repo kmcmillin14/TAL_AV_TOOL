@@ -1,7 +1,7 @@
 'use client'
 
 import { useRef, useState, type DragEvent } from 'react'
-import type { Flow, FlowDerived } from '@/src/calc/types'
+import type { Flow, FlowDerived, TrafficLightStatus } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { units, type UnitSystem } from '@/src/lib/utils/units'
 import Icon from '@/src/design-system/components/Icon'
@@ -16,6 +16,7 @@ interface Props {
   index: number
   flow: Flow
   vehicles: Vehicle[]
+  statusById?: Map<string, TrafficLightStatus>
   derived: FlowDerived
   unitSystem: UnitSystem
   isDragging: boolean
@@ -46,6 +47,7 @@ export default function FlowRow({
   index,
   flow,
   vehicles,
+  statusById,
   derived,
   unitSystem,
   isDragging,
@@ -139,6 +141,7 @@ export default function FlowRow({
           <VehicleDot vehicle={selectedVehicle} />
           <VehicleSelect
             vehicles={vehicles}
+            statusById={statusById}
             value={flow.vehicleId}
             onChange={vid =>
               onChange({

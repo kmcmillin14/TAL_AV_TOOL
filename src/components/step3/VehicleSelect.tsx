@@ -1,16 +1,20 @@
 'use client'
 
 import { useState } from 'react'
+import type { TrafficLightStatus } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
+import { sortByQualification } from '@/src/lib/vehicleOrder'
 import { vehicleColor } from './vehicleColor'
 
 interface Props {
   vehicles: Vehicle[]
   value?: string
   onChange: (vehicleId: string | undefined) => void
+  statusById?: Map<string, TrafficLightStatus>
 }
 
-export default function VehicleSelect({ vehicles, value, onChange }: Props) {
+export default function VehicleSelect({ vehicles, value, onChange, statusById }: Props) {
+  const ordered = statusById ? sortByQualification(vehicles, statusById) : vehicles
   return (
     <select
       className="flow-veh-select"
@@ -18,9 +22,14 @@ export default function VehicleSelect({ vehicles, value, onChange }: Props) {
       onChange={e => onChange(e.target.value || undefined)}
     >
       <option value="">— pick vehicle —</option>
-      {vehicles.map(v => (
-        <option key={v.id} value={v.id}>{v.name}</option>
-      ))}
+      {ordered.map(v => {
+        const s = statusById?.get(v.id)
+        return (
+          <option key={v.id} value={v.id}>
+            {v.name}{s === 'RED' ? ' — not qualified' : s === 'YELLOW' ? ' — review' : ''}
+          </option>
+        )
+      })}
     </select>
   )
 }
