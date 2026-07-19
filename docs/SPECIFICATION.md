@@ -35,7 +35,7 @@ project metadata; the rest as form fields. The header meta line is page-centered
    embedded JSON, or `.json`) to make a new revision. Parsed via `parseProjectPdf`
    (PDF) or `importProjectFromJson` (JSON).
 
-**Load sample project** — a tertiary action under the Import card creates a NEW project from the bundled Michelin sample (`src/content/samples/michelin-project.json`, same `{schemaVersion, project}` envelope as JSON import) via the normal Zod/storage path and opens its Step 1. Never touches the current project.
+**Load sample project** — a tertiary action centered below the entry cards creates a NEW project from the bundled Michelin sample (`src/content/samples/michelin-project.json`, same `{schemaVersion, project}` envelope as JSON import) via the normal Zod/storage path and opens its Step 1. Never touches the current project.
 
 Both import modes reuse the same parsers and the wrapped `{schemaVersion, project}`
 envelope (legacy unwrapped accepted); every import mints a fresh project id and lands
@@ -382,7 +382,7 @@ Step 3 imposes **no** per-flow hard gates. Step 2 already qualifies the vehicle 
   Triggers live in each tier's table (Flows / Charging / Buffer) via the shared `DerivTrigger`;
   values come from the engine outputs so they stay live. Disabled when the figure is undefined.
 - **Drag to reorder.** A grip handle in the `#` gutter drags a flow to a new position (insertion line shows where it lands). Dropping onto another group's rows — or onto a group header — moves the flow into that group, so drag doubles as the regroup gesture.
-- **Import flows** — an inline paste panel (no modal) next to "+ Add flow": paste spreadsheet rows (TSV/CSV, header auto-detect: `origin`/`from` · `destination`/`to` · `distance` [(m) converts to ft] · `moves`/`thru`/`rate` · `lift`/`height`; headerless input assumes origin, destination, distance, thru[, lift] order) → preview + skipped-row reasons → "Add N flows". Parser is pure (`src/lib/flowImport.ts`).
+- **Import flows** — an inline paste panel (no modal) above the flow table, under the flow toolbar: paste spreadsheet rows (TSV/CSV, header auto-detect: `origin`/`from` · `destination`/`to` · `distance` [(m) converts to ft] · `moves`/`thru`/`rate` · `lift`/`height`; headerless input assumes origin, destination, distance, thru[, lift] order) → preview + skipped-row reasons → "Add N flows". Parser is pure (`src/lib/flowImport.ts`).
 - **Undo delete** — deleting a flow shows a 5 s "Flow deleted — Undo" toast (`aria-live polite`) that restores it at its original index.
 - **Keyboard reorder** — the drag handle is a focusable button; ArrowUp/ArrowDown moves the flow (crossing a boundary adopts the neighbor's group).
 - **Vehicle select ordering** — options sort GREEN · YELLOW · INCOMPLETE · RED from the shared qualification calc, RED suffixed "— not qualified"; all options remain selectable (engineer always assigns — ordering only).
