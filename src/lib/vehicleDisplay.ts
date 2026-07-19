@@ -5,7 +5,6 @@
  */
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { units, type UnitSystem } from '@/src/lib/utils/units'
-import { DEFAULT_DOD } from '@/src/calc/types'
 import { LIFT_CLASS_LABEL } from '@/src/calc/gates'
 
 /** Max weight capacity — `4,000 lbs` imperial / `1,814 kg` metric. */
@@ -43,19 +42,10 @@ export function batteryDisplay(v: Vehicle): string {
   return `${v.calc.ratedAh} Ah`
 }
 
-/**
- * Estimated battery life (runtime) per charge as a range, in hours.
- * `runtime_h = ratedAh × DoD / dischargeA` (per VehicleCalc docs). Low end uses
- * the conservative usable DoD (`DEFAULT_DOD`, shared with the calc layer), high
- * end uses full charge — e.g. `8.5–10.7 hrs`.
- */
+/** Battery life per charge — the cutsheet runtime, verbatim. */
 export function batteryLifeDisplay(v: Vehicle): string {
-  const { ratedAh, dischargeA } = v.calc
-  if (!dischargeA || dischargeA <= 0) return '—'
-  const low = (ratedAh * DEFAULT_DOD) / dischargeA
-  const high = ratedAh / dischargeA
-  const fmt = (h: number) => (h >= 10 ? h.toFixed(0) : h.toFixed(1))
-  return `${fmt(low)}–${fmt(high)} hrs`
+  const rt = v.calc.runTimeHr
+  return rt && rt > 0 ? `${rt.toFixed(1)} h` : '—'
 }
 
 /** Transfer methods joined — `Conveyor / Lift / Pin`. */
@@ -149,9 +139,7 @@ export function vehicleSpecSections(v: Vehicle, unit: UnitSystem): SpecSection[]
       title: 'Power & Charging',
       rows: [
         { label: 'Battery', value: `${calc.ratedAh} Ah @ ${calc.voltageV} V (${((calc.voltageV * calc.ratedAh) / 1000).toFixed(1)} kWh)` },
-        { label: 'Battery life', value: batteryLifeDisplay(v), compare: cmp(calc.dischargeA > 0 ? calc.ratedAh / calc.dischargeA : null, 'higher') },
-        { label: 'Discharge (operating)', value: `${calc.dischargeA} A` },
-        { label: 'Charge current', value: `${calc.chargeA} A` },
+        { label: 'Battery life', value: batteryLifeDisplay(v), compare: cmp(calc.runTimeHr ?? null, 'higher') },
         { label: 'Charge time', value: calc.chargeTimeMin == null ? DASH : `${calc.chargeTimeMin} min`, compare: cmp(calc.chargeTimeMin, 'lower') },
         { label: 'Charging strategy', value: orDash(calc.chargerType) },
       ],

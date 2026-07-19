@@ -738,9 +738,8 @@ Traffic-light dots are 14 px with an 8 px glow ring and 700-weight label.
    - *Max Speed* — `speedLoadedFps` in dual-unit format: `ft/s (mph)` imperial /
      `m/s (km/h)` metric. Shown on every vehicle.
    - *Battery* — `ratedAh Ah` (amp-hours only).
-   - *Battery Life* — estimated runtime per charge as a range, `8.5–10.7 hrs`.
-     `runtime_h = ratedAh × DoD / dischargeA`; low end uses conservative usable
-     depth-of-discharge (80%), high end uses full discharge (100%).
+   - *Battery Life* — cutsheet runtime per charge, shown verbatim as `X.X h`
+     (from `VehicleCalc.runTimeHr`). Displays `—` when the value is absent.
    - *Payloads* — `payloadTypes.join(', ')`.
    - *Transfer* — all `transferMethods[].method` joined.
 
@@ -782,7 +781,7 @@ vehicles are emphasized (neutral shade — identical rows are dimmed so the eye 
 differences; red is reserved for "Not Compatible"). For rows with a clear better direction,
 the winning vehicle's cell is marked with a green **★** ("best in row"): Max payload, Max
 lift height, Speed (loaded/unloaded), Max ramp grade (higher = better); Battery life
-(`ratedAh/dischargeA`, higher); Charge time, Turning radius, Price midpoint (lower = better).
+(`runTimeHr`, higher = better); Charge time, Turning radius, Price midpoint (lower = better).
 A winner is only shown when ≥ 2 vehicles have a value and they aren't all equal. Direction
 metadata lives on `SpecRow.compare` in `vehicleSpecSections()`. The modal closes on Escape,
 the ✕ button, backdrop click, or when the selection drops below 2.
