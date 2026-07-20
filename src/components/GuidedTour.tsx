@@ -130,7 +130,7 @@ const SAMPLE_RFQ_GUIDE: Guide = {
       route: '/step2',
       target: '.page-header',
       title: 'Who qualifies, and why',
-      body: 'Green passes every hard gate: CB18 lifts 1,800 lbs to 15 ft. Click any card\'s details to see the exact gate math.',
+      body: 'Green passes every hard gate: CB18 lifts 1,800 lbs to 12 ft. Click any card\'s details to see the exact gate math.',
     },
     {
       route: '/step3',
