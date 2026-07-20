@@ -72,7 +72,9 @@
     "freezerCapable": false,
     "maxRampGrade": 3,
     "certifications": [
-      "ISO 3691-4"
+      "ANSI B56.5",
+      "ISO 3691-4",
+      "VDA 5050"
     ]
   }
 }

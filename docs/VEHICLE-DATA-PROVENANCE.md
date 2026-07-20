@@ -58,6 +58,13 @@ replaced. Corrected 2026-05-27 from the cutsheets.
   and Pin method (loadTimeSec 5 / unloadTimeSec 5) are `[cutsheet]` (30 mm retractable
   pin, 2,200 lb towing capacity — per M10 Cutsheet 3).
 
+## 2026-07-20 — Certifications corrected (owner-confirmed)
+
+- ALL six vehicles: `ANSI B56.5` + `VDA 5050` `[owner]`. Only the Oppent E7 additionally
+  holds `ISO 3691-4` `[owner]`. No vehicle holds RIA R15.08 / Cleanroom / Food Grade /
+  ATEX / IECEx (those remain SELECTABLE customer requirements — requiring one correctly
+  YELLOW-flags every vehicle for review).
+
 ## Accessories (transfer methods) — per the engineer, handling times estimated
 - **CB18:** Lift (lifts)
 - **ML2:** Conveyor · Lift (lifts) · Pin · Custom

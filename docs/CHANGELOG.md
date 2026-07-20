@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-07-20 — Vehicle certifications corrected (owner-confirmed)
+
+- All six vehicles now declare `ANSI B56.5` + `VDA 5050`; only the Oppent E7 additionally
+  holds `ISO 3691-4`. Previous data over-claimed ISO on every vehicle (and RIA on ML2).
+- Company A sample now requires `ANSI B56.5` + `VDA 5050` (its old ISO requirement would
+  have YELLOW-flagged every non-Oppent vehicle under the corrected data).
+- Traffic-light snapshot re-baselined: 5 verdict flips, all on the `certifications` soft
+  gate in scenarios requiring ISO 3691-4 — correct under the new truth.
+
 ## 2026-07-20 — Whole-app review + simplify pass (correctness, dedup, structure)
 
 - **Qualification bug fixed:** `appRequirementsFromProject` forced unanswered Operating
