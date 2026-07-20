@@ -122,7 +122,10 @@ export default function FlowsTable({
     const ro = new ResizeObserver(fit)
     ro.observe(wrap)
     return () => { ro.disconnect(); cancelAnimationFrame(raf) }
-  }, [])
+  // `narrow` dep: on a narrow mount the table refs are null (mobile list renders
+  // instead) — the effect must re-run when the viewport widens or the observer
+  // never attaches and fit-to-width silently stays off after a rotation.
+  }, [narrow])
 
   // ---- Drag-to-reorder state ----
   const [dragId, setDragId] = useState<string | null>(null)

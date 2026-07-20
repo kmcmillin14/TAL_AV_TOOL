@@ -37,7 +37,9 @@ export function appRequirementsFromProject(p: StoredProject): ApplicationRequire
     tempMaxF: p.tempMaxF,
     rampRequired: p.rampRequired,
     maxRampGrade: p.maxRampGrade ?? 0,
-    outdoorRequired: p.outdoorRequired ?? false,
+    // Tri-state: undefined = unanswered → the outdoor gate SKIPS (ARCHITECTURE §3).
+    // `?? false` here silently answered "Indoor" for the user, suppressing INCOMPLETE.
+    outdoorRequired: p.outdoorRequired,
     freezerCapable: p.freezerCapable ?? false,
     temperatureEnvironment: p.temperatureEnvironment,
     loadLengthIn: p.loadLengthIn,

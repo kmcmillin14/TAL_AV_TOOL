@@ -54,9 +54,9 @@ export function kpiDetails(
 
   return {
     fleet: {
-      formula: `base ${fleet.totalBaseFleet}   +charging ${fleet.totalChargingDelta}   ×buffer ${mult}   →   ${fleet.totalFleetSold}`,
+      formula: `base ${fleet.totalBaseFleet}   +charging ${fleet.totalChargingDelta}   ×headroom ${mult}   →   ${fleet.totalFleetSold}`,
       bars: bars(fleet.groups.map(g => ({ label: nm(g.vehicleId), weight: g.fleetSold, display: `${g.fleetSold}` }))),
-      note: 'Fleet = ⌈(base + charging) × buffer⌉ per chassis.',
+      note: 'Fleet = max(base, ⌈max(raw ÷ A_energy, raw × (1+headroom) ÷ A_rotation)⌉) per chassis — the larger constraint wins; energy is never buffered.',
     },
     types: {
       rows: fleet.groups.map(g => ({ label: nm(g.vehicleId), value: `${g.fleetSold} veh` })),

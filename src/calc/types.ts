@@ -195,7 +195,13 @@ export interface FleetGroup {
   baseFleet: number
   charging: ChargingResult
   fleetWithCharging: number   // charging-only intermediate (baseFleet + chargingDelta); can sit BELOW fleetSold when the buffer/utilization constraint binds
-  fleetSold: number           // max(baseFleet, ⌈max(raw/A_energy, raw·(1+buffer)/A_cap)⌉)
+  /** Weekly-energy constraint demand = groupRaw / A_energy (null when no battery data). */
+  demandEnergy: number | null
+  /** Rotation/utilization constraint demand = groupRaw × (1 + buffer) / A_cap (÷1 when no data).
+   *  The SINGLE source for the pre-ceil demand — display layers must read these
+   *  two fields, never re-derive the arithmetic. */
+  demandRotation: number
+  fleetSold: number           // max(baseFleet, ⌈max(demandEnergy, demandRotation)⌉)
   binding: FleetBinding       // which constraint bound fleetSold
 }
 

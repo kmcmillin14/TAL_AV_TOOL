@@ -76,4 +76,4 @@ trailer → rack phase.
 ---
 
 *Facilitator note: a filled reference version of this scenario is saved at
-`samples/michelin-questionnaire.json` — keep it as an answer key; don't hand it out with the RFQ.*
+`src/content/samples/michelin-questionnaire.json` — keep it as an answer key; don't hand it out with the RFQ.*

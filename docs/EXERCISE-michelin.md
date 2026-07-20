@@ -50,7 +50,7 @@ as you answer (e.g. RFQ, CAD, WMS).
 Then click **Export** (top-right toolbar). A TAL-branded **PDF downloads** (the project data is
 embedded inside it). That PDF is what a real customer would email back.
 
-> **Shortcut / answer key:** `samples/michelin-questionnaire.json` is the same scenario. You can
+> **Shortcut / answer key:** `src/content/samples/michelin-questionnaire.json` is the same scenario. You can
 > import it directly in Part 2 instead of exporting your own, or compare it against what you filled in.
 
 ## Part 2 — Import & size the fleet (play the engineer)

@@ -13,7 +13,7 @@ const vehicle = { calc: { runTimeHr: 4, chargeTimeMin: 192 } } as unknown as Veh
 const group = (over: Partial<FleetGroup> = {}): FleetGroup => ({
   vehicleId: 'x', groupRaw: 2.4, baseFleet: 3,
   charging: { method: 'plugged', runHr: 4, chargeHr: 3.2, availability: 0.625, aEnergy: 0.8, aCap: 0.625, chargingDelta: 2, sustainable: true, reason: '' },
-  fleetWithCharging: 5, fleetSold: 6, binding: 'rotation', ...over,
+  fleetWithCharging: 5, demandEnergy: 3, demandRotation: 4.224, fleetSold: 6, binding: 'rotation', ...over,
 })
 
 describe('cycleDerivation', () => {
@@ -87,7 +87,7 @@ describe('bufferDerivation', () => {
 
   it('shows the base-fleet floor when it binds', () => {
     // constraints: rotation 0.5×1.10÷0.625 = 0.88, energy 0.5÷0.8 = 0.625 → ⌈0.88⌉ = 1 < base 3
-    const g = group({ groupRaw: 0.5, fleetSold: 3 })
+    const g = group({ groupRaw: 0.5, fleetSold: 3, demandRotation: 0.88, demandEnergy: 0.625 })
     const d = bufferDerivation(g, 0.1)
     const fleet = d.steps.find(s => s.label === 'Fleet (sold)')!
     expect(fleet.sub).toBe('max(3 base, ⌈ 0.88 ⌉)')
@@ -95,7 +95,7 @@ describe('bufferDerivation', () => {
   })
 
   it('falls back to utilization-only sizing when availability is unknown', () => {
-    const g = group({ charging: { ...group().charging, availability: null, aEnergy: null, aCap: null }, binding: 'utilization' })
+    const g = group({ charging: { ...group().charging, availability: null, aEnergy: null, aCap: null }, demandRotation: 2.64, demandEnergy: null, binding: 'utilization' })
     const d = bufferDerivation(g, 0.1)
     const rot = d.steps.find(s => s.label === 'Peak need with headroom')!
     expect(rot.result).toBe('2.64')           // 2.4 × 1.10 (no availability divisor)

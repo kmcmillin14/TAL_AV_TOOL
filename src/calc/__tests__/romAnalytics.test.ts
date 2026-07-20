@@ -31,7 +31,8 @@ describe('appRequirementsFromProject', () => {
     expect(r.minAisleWidthFt).toBe(10)
     expect(r.certifications).toEqual(['UL'])
     expect(r.typicalUnitType).toBe('')
-    expect(r.outdoorRequired).toBe(false)
+    // Tri-state: unanswered stays undefined so the outdoor gate SKIPS (never a silent 'Indoor').
+    expect(r.outdoorRequired).toBeUndefined()
   })
 })
 

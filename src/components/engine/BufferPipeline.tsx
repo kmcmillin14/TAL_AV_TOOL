@@ -124,9 +124,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
                   <td className="num mono" data-label="Base">{g?.baseFleet ?? '—'}</td>
                   <td className="num mono" data-label="+ Charging">{delta > 0 ? `+${delta}` : '—'}</td>
                   <td className="num mono wf-mid" data-label="Sized demand">{g ? (() => {
-                    const rot = (g.groupRaw * (1 + bufferPct)) / (g.charging.aCap ?? 1)
-                    const en = g.charging.aEnergy != null ? g.groupRaw / g.charging.aEnergy : 0
-                    return Math.max(rot, en).toFixed(2)
+                    return Math.max(g.demandRotation, g.demandEnergy ?? 0).toFixed(2)
                   })() : '—'}</td>
                   <td className="num mono wf-sold" data-label="Fleet">
                     {g?.fleetSold ?? '—'}

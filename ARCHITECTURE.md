@@ -90,19 +90,23 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
 ```
 tal-fleet-calculator/
 ├── app/                          # Next.js App Router
-│   ├── page.tsx                  # decision screen (Import / Fill Form)
-│   ├── projects/[id]/stepN/      # six step pages (1..6)
+│   ├── page.tsx                  # entry redirect → the entry project's step0
+│   ├── projects/[id]/step0..4/   # five step pages (Start · Application · Vehicles · Fleet Engine · ROM)
+│   ├── questionnaire/            # standalone customer-facing questionnaire route
 │   ├── api/vehicles/route.ts     # only API route; reads bundled JSON
 │   └── globals.css               # all design-system CSS lives here
+├── proxy.ts                      # Next 16 middleware: QUESTIONNAIRE_ONLY deployment gate (LIVE — not dead code)
 ├── src/
 │   ├── calc/                     # pure calculation engine
-│   ├── components/               # shared UI + per-step subcomponents (stepN/)
-│   │   ├── mobile/               # shared phone-native primitives (BottomSheet, SheetSelect, MobileHeader)
+│   ├── components/               # shared UI + per-step subcomponents (stepN/, engine/, rom/, questionnaire/)
+│   │   └── mobile/               # shared phone-native primitives (BottomSheet, SheetSelect, MobileHeader)
 │   ├── content/vehicles/*.json   # canonical vehicle library (6 records today)
+│   ├── content/samples/*.json    # bundled sample data (Company A project, Michelin questionnaire)
 │   ├── design-system/            # design tokens, Icon component
-│   └── lib/                      # storage, vehicleLibrary, utils, validations
+│   └── lib/                      # storage, vehicleLibrary, utils, validations; pptx/ deck builder subtree
+├── scripts/                      # check-architecture gate, pdf-worker copy, help screenshots
 ├── public/                       # fonts, vehicle images, TAL logos
-├── docs/                         # CHANGELOG, SPECIFICATION (TBD), SKILLS, WORKFLOWS
+├── docs/                         # CHANGELOG, SPECIFICATION, SKILLS, WORKFLOWS; superpowers/{specs,plans} (executed plans → plans/archive/)
 ├── ARCHITECTURE.md               # this file
 └── CLAUDE.md                     # Claude Code instructions; defers to this doc
 ```

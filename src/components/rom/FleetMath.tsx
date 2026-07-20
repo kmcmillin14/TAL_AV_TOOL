@@ -74,9 +74,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
   function bufferLine(vehicleId: string) {
     const g = groupFor(vehicleId)
     if (!g) return null
-    const { aEnergy, aCap } = g.charging
-    const rot = (g.groupRaw * (1 + buffer)) / (aCap ?? 1)
-    const en = aEnergy != null ? g.groupRaw / aEnergy : null
+    const { demandRotation: rot, demandEnergy: en } = g
     const floored = g.baseFleet >= Math.ceil(Math.max(rot, en ?? 0))
     return (
       <div className="fm-eq mono">

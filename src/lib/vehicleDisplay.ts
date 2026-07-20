@@ -83,7 +83,7 @@ const fpsToMps = (fps: number) => +units.distance.toMetric(fps).toFixed(1)
 export const money = (n: number) =>
   n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
   : n >= 1_000 ? `$${Math.round(n / 1_000)}K`
-  : `$${n.toLocaleString()}`
+  : `$${Math.round(n).toLocaleString()}`
 
 const DASH = '—'
 const orDash = (s: string | null | undefined) => (s == null || s === '' ? DASH : s)

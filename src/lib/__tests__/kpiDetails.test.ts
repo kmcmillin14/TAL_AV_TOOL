@@ -28,7 +28,7 @@ describe('kpiDetails', () => {
     expect(d.opex.formula).toContain('=')
     expect(d.resilience.rows!.some(r => r.label === 'Throughput retained')).toBe(true)
     // Fleet: build-up formula with buffer multiplier.
-    expect(d.fleet.formula).toContain('buffer')
+    expect(d.fleet.formula).toContain('headroom')
     expect(d.fleet.bars!.length).toBe(model.fleet.groups.length)
     // CAPEX: a range formula + one bar per pricing line, fractions within 0–1.
     expect(d.capex.formula).toMatch(/\$.*–.*\$/)

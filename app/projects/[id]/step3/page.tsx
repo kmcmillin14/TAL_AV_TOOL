@@ -5,7 +5,7 @@ import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import Icon from '@/src/design-system/components/Icon'
-import { getProject, updateProject, type StoredProject } from '@/src/lib/storage'
+import { subscribeProjects, getProject, updateProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
@@ -46,9 +46,13 @@ export default function FleetEnginePage() {
 
   useEffect(() => {
     const refresh = () => { const proj = getProject(id); if (proj) setProject(proj) }
+    // subscribeProjects covers SAME-TAB mutations (header Undo/Cmd+Z, meta edits) —
+    // without it, Undo on this page looked like a no-op until a tab switch.
+    const unsub = subscribeProjects(refresh)
     window.addEventListener('storage', refresh)
     window.addEventListener('focus', refresh)
     return () => {
+      unsub()
       window.removeEventListener('storage', refresh)
       window.removeEventListener('focus', refresh)
     }

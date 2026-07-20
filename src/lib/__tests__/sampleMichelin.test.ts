@@ -22,7 +22,7 @@ beforeEach(() => {
 })
 afterAll(() => { slot.window = originalWindow })
 
-const SAMPLE = readFileSync(resolve(__dirname, '../../../samples/michelin-questionnaire.json'), 'utf8')
+const SAMPLE = readFileSync(resolve(__dirname, '../../content/samples/michelin-questionnaire.json'), 'utf8')
 
 describe('Michelin exercise sample', () => {
   it('imports cleanly via importProjectFromJson with key fields intact', () => {

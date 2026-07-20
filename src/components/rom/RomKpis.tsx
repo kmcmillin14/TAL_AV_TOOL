@@ -10,10 +10,10 @@ import type { ScenarioDiff } from '@/src/lib/scenario'
 import KpiTile from './KpiTile'
 import RomGauge from './RomGauge'
 
-export const usd = (n: number) =>
-  n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
-  : n >= 1_000 ? `$${Math.round(n / 1_000)}K`
-  : `$${Math.round(n)}`
+// Canonical compact-USD formatter lives in vehicleDisplay; re-exported here so
+// ROM components keep their existing import path.
+import { money } from '@/src/lib/vehicleDisplay'
+export const usd = money
 
 export const usdRange = (min: number, max: number) =>
   min === max ? usd(min) : `${usd(min)} – ${usd(max)}`

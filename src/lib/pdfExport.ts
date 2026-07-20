@@ -1,5 +1,6 @@
 import { SCHEMA_VERSION, type StoredProject } from './storage'
 import { winAnsiSafe } from './utils/winAnsi'
+import { money } from './vehicleDisplay'
 import { qualifyVehicle } from '../calc/trafficLight'
 import { appRequirementsFromProject } from './appRequirements'
 import type { Vehicle } from './vehicleLibrary'
@@ -105,10 +106,6 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
   }
 
   // ─────────── money + reusable section/table renderer ───────────
-  const money = (n: number) =>
-    n >= 1_000_000 ? `$${(n / 1_000_000).toFixed(2)}M`
-    : n >= 1_000 ? `$${Math.round(n / 1_000)}K`
-    : `$${Math.round(n)}`
   const usdRange = (a: number, b: number) => (a === b ? money(a) : `${money(a)} - ${money(b)}`)
 
   interface TableCol { header: string; w: number; align?: 'left' | 'right' }

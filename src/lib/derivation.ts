@@ -130,9 +130,9 @@ const BINDING_LABEL: Record<FleetGroup['binding'], string> = {
  *  constraints (v3 overlap-aware composition), rounded up ONCE = fleet. */
 export function bufferDerivation(group: FleetGroup, bufferPct: number): Derivation {
   const mult = (1 + bufferPct).toFixed(2)
+  // Demands are computed ONCE in fleetSummary and carried on the group.
+  const { demandRotation, demandEnergy } = group
   const { aEnergy, aCap } = group.charging
-  const demandRotation = (group.groupRaw * (1 + bufferPct)) / (aCap ?? 1)
-  const demandEnergy = aEnergy != null ? group.groupRaw / aEnergy : null
   return {
     title: 'Utilization — headroom → fleet',
     tag: `Utilization ${Math.round(utilizationFromBuffer(bufferPct) * 100)}%`,

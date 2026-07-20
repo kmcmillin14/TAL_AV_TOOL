@@ -121,21 +121,16 @@ export function fleetSummary(
       : { method, runHr: null, chargeHr: null, availability: null, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: false, reason: 'Vehicle not found' }
 
     const fleetWithCharging = g.baseFleet + charging.chargingDelta
-    let fleetSold: number
-    let binding: FleetBinding
-    if (charging.aEnergy != null && charging.aCap != null) {
-      const demandEnergy = g.groupRaw / charging.aEnergy
-      const demandRotation = (g.groupRaw * (1 + settings.bufferPct)) / charging.aCap
-      fleetSold = Math.max(g.baseFleet, Math.ceil(Math.max(demandEnergy, demandRotation)))
-      binding = demandRotation >= demandEnergy
-        ? (charging.aCap < 1 ? 'rotation' : 'utilization')
-        : 'energy'
-    } else {
-      // No battery data — utilization headroom is the only sizing constraint.
-      fleetSold = Math.max(g.baseFleet, Math.ceil(g.groupRaw * (1 + settings.bufferPct)))
-      binding = 'utilization'
-    }
-    out.push({ vehicleId: g.vehicleId, groupRaw: g.groupRaw, baseFleet: g.baseFleet, charging, fleetWithCharging, fleetSold, binding })
+    // The pre-ceil constraint demands live on the group so every display layer
+    // (derivation, BufferPipeline, FleetMath) reads them instead of re-deriving.
+    // No battery data → demandEnergy null; rotation degrades to raw×(1+buffer).
+    const demandEnergy = charging.aEnergy != null ? g.groupRaw / charging.aEnergy : null
+    const demandRotation = (g.groupRaw * (1 + settings.bufferPct)) / (charging.aCap ?? 1)
+    const fleetSold = Math.max(g.baseFleet, Math.ceil(Math.max(demandEnergy ?? 0, demandRotation)))
+    const binding: FleetBinding = demandEnergy == null || demandRotation >= demandEnergy
+      ? (charging.aCap != null && charging.aCap < 1 ? 'rotation' : 'utilization')
+      : 'energy'
+    out.push({ vehicleId: g.vehicleId, groupRaw: g.groupRaw, baseFleet: g.baseFleet, charging, fleetWithCharging, demandEnergy, demandRotation, fleetSold, binding })
   }
   return {
     groups: out,

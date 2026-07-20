@@ -264,6 +264,7 @@ export default function GuidedTour() {
     }
 
     // Resume a cross-page guide if sessionStorage has a pending state.
+    let resumeTimer: ReturnType<typeof setTimeout> | undefined
     try {
       const raw = sessionStorage.getItem(GUIDE_STATE_KEY)
       if (raw) {
@@ -272,7 +273,7 @@ export default function GuidedTour() {
         if (g && state.step < g.steps.length) {
           sessionStorage.removeItem(GUIDE_STATE_KEY)
           // Small delay lets the new page paint before we highlight.
-          setTimeout(() => startGuide(g, state.step, state.projectId), 300)
+          resumeTimer = setTimeout(() => startGuide(g, state.step, state.projectId), 300)
         } else {
           sessionStorage.removeItem(GUIDE_STATE_KEY)
         }
@@ -288,6 +289,7 @@ export default function GuidedTour() {
       window.addEventListener(GUIDE_EVENT, handleGuideEvent)
       return () => {
         clearTimeout(t)
+        if (resumeTimer) clearTimeout(resumeTimer)
         window.removeEventListener(TOUR_EVENT, handleTourEvent)
         window.removeEventListener(GUIDE_EVENT, handleGuideEvent)
       }
@@ -296,6 +298,7 @@ export default function GuidedTour() {
     window.addEventListener(TOUR_EVENT, handleTourEvent)
     window.addEventListener(GUIDE_EVENT, handleGuideEvent)
     return () => {
+      if (resumeTimer) clearTimeout(resumeTimer)
       window.removeEventListener(TOUR_EVENT, handleTourEvent)
       window.removeEventListener(GUIDE_EVENT, handleGuideEvent)
     }

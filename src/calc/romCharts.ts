@@ -65,8 +65,17 @@ export function dutyCycleSeries(
     wLift += w * b.liftTimeSec
     wTotal += w * b.totalSec
   }
-  const avails = fleet.groups.map(g => g.charging.availability).filter((a): a is number => a != null)
-  const availability = avails.length ? avails.reduce((s, a) => s + a, 0) / avails.length : 1
+  // Weight each type's availability by its fleet count — a 10-vehicle type at
+  // 70% must outweigh a 1-vehicle type at 90% in the aggregate duty picture.
+  let availWeighted = 0
+  let availCount = 0
+  for (const g of fleet.groups) {
+    const a = g.charging.availability
+    if (a == null) continue
+    availWeighted += a * g.fleetSold
+    availCount += g.fleetSold
+  }
+  const availability = availCount > 0 ? availWeighted / availCount : 1
   const chargingFrac = Math.max(0, 1 - availability)
 
   if (wTotal <= 0) {

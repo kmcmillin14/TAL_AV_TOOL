@@ -1,5 +1,33 @@
 # Changelog
 
+## 2026-07-20 — Whole-app review + simplify pass (correctness, dedup, structure)
+
+- **Qualification bug fixed:** `appRequirementsFromProject` forced unanswered Operating
+  Environment to `false` ("Indoor — compatible"), so the outdoor gate never SKIPPED and
+  INCOMPLETE was suppressed for new projects. Tri-state restored (ARCHITECTURE §3);
+  `romAnalytics.test.ts` expectation corrected with it.
+- **Demand math single-sourced:** `FleetGroup` gains `demandEnergy` / `demandRotation`
+  (computed once in `fleetSummary`); `derivation.ts`, `BufferPipeline`, and `FleetMath`
+  now read the fields instead of re-deriving the arithmetic (was 4 sites).
+- **ROM duty chart:** aggregate availability is now fleet-weighted (`Σ a·fleetSold / Σ
+  fleetSold`) instead of a per-type simple average.
+- **Stale v2 copy:** Step 4 fleet-KPI popover formula/note updated to the v3
+  max-of-constraints story ("×headroom", energy never buffered).
+- **UI robustness:** Step 3 page now subscribes to same-tab storage mutations (header
+  Undo/Cmd+Z previously looked like a no-op on that page); FlowsTable fit-to-width
+  re-attaches when the viewport widens from narrow (rotation left it unscaled);
+  GuidedTour's cross-page resume timer is cleared on unmount.
+- **Reuse:** compact-USD formatter consolidated into `vehicleDisplay.money` (canonical,
+  whole-dollar tail); `RomKpis.usd` delegates, `pdfExport`'s local copy removed.
+- **Structure:** executed implementation plans moved to `docs/superpowers/plans/archive/`
+  (the two active 2026-07-18 plans stay); `samples/michelin-questionnaire.json` moved to
+  `src/content/samples/` (single sample home; test + docs paths updated); ARCHITECTURE §5
+  folder map corrected (five step pages 0–4, `proxy.ts` documented as the LIVE Next-16
+  questionnaire-only middleware, mobile/pptx/scripts/samples added).
+- Reviewed-and-left: `consecutiveOperatingDays` circular wrap (correct for weekly
+  schedules), derivation Tier-2 `⌈raw÷A⌉` (the spec'd reported stage), Escape-key overlap
+  between the guide and popovers (niche; sample is one click to recreate).
+
 ## 2026-07-19 — fix(vehicles): ML2 + E7 pin-tow reachable via tow-cart; transfer-type alignment test
 
 - **Owner-confirmed: ML2, M10, and E7 all pin-tow carts.** The `tow_cart` transfer gate reads
