@@ -246,7 +246,7 @@ export default function Step0Page() {
           <div className="entry-grid">
             <button
               type="button"
-              className="entry-card is-featured"
+              className="entry-card"
               onClick={() => router.push(`/projects/${project.id}/step1`)}
             >
               <span className="entry-card-index" aria-hidden>01</span>

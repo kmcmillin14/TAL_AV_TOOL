@@ -244,18 +244,6 @@ export default function GuidedTour() {
     return () => clearHighlight()
   }, [open, step?.target])
 
-  // ── Escape key (no scroll lock — walkthrough must let the user scroll) ────
-
-  useEffect(() => {
-    if (!open) return
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') finish() }
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('keydown', onKey)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open])
-
   // ── First-run auto-open + TOUR_EVENT + GUIDE_EVENT ────────────────────────
 
   useEffect(() => {
@@ -316,13 +304,11 @@ export default function GuidedTour() {
 
   // ── Navigation helpers ─────────────────────────────────────────────────────
 
+  // ANY exit from a discardSampleAndStart guide — finish, Skip, or Escape —
+  // wipes the sample project and returns to a fresh entry project. The sample
+  // is ephemeral by design: it must never linger in storage (owner direction
+  // 2026-07-19).
   const finish = useCallback(() => {
-    try { localStorage.setItem(SEEN_KEY, '1') } catch { /* ignore */ }
-    clearHighlight()
-    setOpen(false)
-  }, [])
-
-  const finishWithAction = useCallback(() => {
     try { localStorage.setItem(SEEN_KEY, '1') } catch { /* ignore */ }
     clearHighlight()
     setOpen(false)
@@ -334,17 +320,24 @@ export default function GuidedTour() {
     }
   }, [guide.finishAction, sampleProjectId, router])
 
+  // ── Escape key (no scroll lock — walkthrough must let the user scroll) ────
+  // Lives BELOW finish() — its deps reference the callback (TDZ otherwise).
+  useEffect(() => {
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') finish() }
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open, finish])
+
   const back = useCallback(() => {
     setI(n => Math.max(0, n - 1))
   }, [])
 
   const next = useCallback(() => {
     if (last) {
-      if (guide.finishAction) {
-        finishWithAction()
-      } else {
-        finish()
-      }
+      finish()
       return
     }
     const nextIndex = i + 1
@@ -368,7 +361,7 @@ export default function GuidedTour() {
     }
 
     setI(nextIndex)
-  }, [last, i, steps, pathname, guide.id, guide.finishAction, sampleProjectId, router, finish, finishWithAction])
+  }, [last, i, steps, pathname, guide.id, guide.finishAction, sampleProjectId, router, finish])
 
   // ── Render ─────────────────────────────────────────────────────────────────
 

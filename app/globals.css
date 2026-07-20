@@ -1619,7 +1619,6 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   outline: none;
 }
 
-.entry-card.is-featured { border-color: color-mix(in srgb, var(--accent) 30%, var(--border)); }
 
 .entry-card-index {
   position: absolute;
