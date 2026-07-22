@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-07-21 — Sizing regression harness (old Excel vs app v3)
+
+- `src/calc/legacySizing.ts` — codified legacy hand rule (÷0.75 flat charge adder, ×1.20
+  buffer, per-stage ceilings) as a pure module; unit-tested. Placeholder until the owner's
+  workbook replaces the body (interface stays).
+- `src/calc/__tests__/sizingRegression.manual.test.ts` — env-gated census (RUN_REGRESSION=1),
+  excluded from the normal suite. Generates 3,600 seeded small/medium/large systems (many
+  flows each) across 6 vehicles × 4 schedules, runs BOTH models on identical `groupRaw`,
+  writes `docs/analysis/sizing-regression.{csv,md}` (stratified stats + Wilcoxon + exemplars).
+- First run (hand-rule baseline): app quotes fewer in 76% of systems (mean Δ −2.0), most on
+  single-shift schedules and large fleets — the legacy flat 3:1 adder over-quotes where the
+  app credits free off-shift charging. E7 is the lone reverse case (slow charger). Report
+  committed; the 3,600-row CSV is gitignored (deterministic from the seed).
+
 ## 2026-07-21 — Export surface: one format per audience (PDF retired from main app)
 
 - Main-app exports reduced to three, labeled by audience: **Customer deck (.pptx)** ·

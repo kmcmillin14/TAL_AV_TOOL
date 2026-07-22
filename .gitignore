@@ -46,3 +46,6 @@ tmp/
 
 # local skill/agent scratch state
 .superpowers/
+
+# Generated regression census output (deterministic from the seeded harness)
+docs/analysis/sizing-regression.csv
