@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-22 — Sizing regression: authoritative legacy workbook codified (supersedes hand-rule)
+
+- `src/calc/legacySizing.ts` REWRITTEN as a faithful port of the real "Example Fleet
+  Calcs.xlsx" (reverse-engineered): ft→m, the >100 m ×1.2 speed bump, +20% travel allowance,
+  per-vehicle transfer (CB18 75 s / ML2 13.25 s workbook-default config, M10 30 / 8TB 40 /
+  8HB 25), per-mission ceilings, the schedule-keyed charging table (1×8=0, 2×8=+15%, 3×=+30%),
+  20% buffer, single final ceiling. Unit-verified against the workbook's own cells (example
+  row = 1.073 veh). 8TB50A→"Tugger (4540kg)", 8HBC40A→"Pallet Truck (2725kg)" (owner-confirmed).
+- Census harness rewritten to END-TO-END: each model computes its own demand from the same
+  physical scenario (app one-way = ½ legacy roundtrip); app route layout SWEPT (low/med/high)
+  vs the route-agnostic legacy point. 5 vehicles × 4 schedules × 50 systems × 3 layouts = 3,000
+  comparisons → docs/analysis/sizing-regression.md.
+- **Headline finding: route-layout (effective-speed) choice DOMINATES the divergence**, not
+  sizing policy. Legacy avg speed sits between the app's low and medium layouts → app @ high
+  quotes ~10 fewer (median), app @ low ~21 more, app @ medium ≈ parity (median Δ −1). Slow
+  vehicles (M10) swing hardest. Actionable: calibrate route-layout guidance to the legacy's
+  implied average speed. Supersedes the 2026-07-21 hand-rule baseline (that placeholder's
+  charging model was materially wrong vs the real schedule-keyed table).
+
 ## 2026-07-22 — Security + resilience hardening (pre-enterprise)
 
 - **`xlsx` moved off the CVE-carrying npm build (0.18.5 → SheetJS-supported 0.20.3).** npm's
