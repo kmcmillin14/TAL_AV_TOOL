@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { reportError } from '@/src/lib/notify'
 import { useForm, useFieldArray, Controller, type SubmitHandler } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useRouter } from 'next/navigation'
@@ -345,7 +346,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         router.push(`/projects/${created.id}/step2`)
       } catch (err) {
         setSaveStatus('idle')
-        alert(`Could not save project: ${err instanceof Error ? err.message : 'Unknown error'}`)
+        reportError('project:create', err, 'Could not save the project. Please retry; your entries remain on screen.')
       }
     } else if (projectId) {
       autoSave(values)

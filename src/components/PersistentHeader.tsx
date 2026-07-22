@@ -8,6 +8,7 @@ import { updateProject, downloadProject, getProject, canUndo, undoLastChange, cl
 import { useTheme } from '@/src/lib/uiPrefs'
 import HelpDrawer from './HelpDrawer'
 import GuidedTour from './GuidedTour'
+import { reportError } from '@/src/lib/notify'
 import AppVersionLog from './AppVersionLog'
 import { APP_VERSION } from '@/src/content/appVersions'
 import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
@@ -180,7 +181,7 @@ export default function PersistentHeader({
       ])
       await downloadProjectXlsx(current, vehicles)
     } catch (err) {
-      alert(`Could not generate workbook: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      reportError('export:xlsx', err, 'Could not generate the workbook. Please retry; if it persists, export a JSON backup.')
     }
   }
 

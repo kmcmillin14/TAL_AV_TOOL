@@ -5,6 +5,7 @@ import { downloadProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import Icon from '@/src/design-system/components/Icon'
 import PptxSectionPicker from './PptxSectionPicker'
+import { reportError } from '@/src/lib/notify'
 
 interface Props { project: StoredProject }
 
@@ -21,7 +22,7 @@ export default function RomExportBar({ project }: Props) {
       ])
       await downloadProjectXlsx(project, vehicles)
     } catch (err) {
-      alert(`Could not generate workbook: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      reportError('export:xlsx', err, 'Could not generate the workbook. Please retry; if it persists, export a JSON backup.')
     }
   }
 

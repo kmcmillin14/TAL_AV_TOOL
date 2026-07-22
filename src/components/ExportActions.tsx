@@ -5,11 +5,12 @@ import Icon from '@/src/design-system/components/Icon'
 import { downloadProject, getProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import PptxSectionPicker from './rom/PptxSectionPicker'
+import { reportError } from '@/src/lib/notify'
 
 /**
- * Compact Save (project .json) + Export menu (PPTX customer deck · PDF proposal ·
- * XLSX workbook), rendered in the ROM Dashboard page header. The hero bar keeps
- * its own compact icon menu on every step; these are the low-key page actions.
+ * Compact Save (project .json) + Export menu (PPTX customer deck · XLSX internal
+ * model), rendered in the ROM Dashboard page header. The hero bar keeps its own
+ * compact icon menu on every step; these are the low-key page actions.
  */
 export default function ExportActions({ projectId }: { projectId: string }) {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -46,7 +47,7 @@ export default function ExportActions({ projectId }: { projectId: string }) {
       ])
       await downloadProjectXlsx(current, vehicles)
     } catch (err) {
-      alert(`Could not generate workbook: ${err instanceof Error ? err.message : 'Unknown error'}`)
+      reportError('export:xlsx', err, 'Could not generate the workbook. Please retry; if it persists, export a JSON backup.')
     }
   }
 
