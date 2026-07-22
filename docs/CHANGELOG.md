@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-07-22 — Security + resilience hardening (pre-enterprise)
+
+- **`xlsx` moved off the CVE-carrying npm build (0.18.5 → SheetJS-supported 0.20.3).** npm's
+  `xlsx@0.18.5` is frozen/unmaintained and carries CVE-2023-30533 (prototype pollution) +
+  CVE-2024-22363 (ReDoS); both are cleared in 0.20.3. Practical exposure here was low (the
+  app only WRITES xlsx — no untrusted-workbook parsing), but SCA scanners flag it and would
+  block an enterprise launch. **Reproducibility note:** the package now resolves from
+  `https://cdn.sheetjs.com/...` (SheetJS no longer publishes to npm). Enterprise CI/registries
+  must allow that CDN OR mirror the tarball into the internal registry.
+- **Global error boundary** (`app/global-error.tsx`) — branded recovery UI on any uncaught
+  error; explains autosave-is-local; never renders `error.message`.
+- **Centralized client error reporting** (`src/lib/notify.ts`) — `captureError` (private:
+  console + telemetry sink) + `reportError` (adds a SAFE user message). Four `alert(err.message)`
+  leak sites (exports, project-create) routed through it. App Insights plugs into the
+  `setErrorReporter` seam later (no hosting decision required now).
+- **`engines: node >=20`** pinned so a wrong Azure App Service Node runtime fails fast.
+- Reviewed-not-actioned: 7 `sharp`/`libvips` transitive advisories (Next image optimizer) —
+  Next-managed, `audit fix --force` would bump Next major; left for a Next upgrade.
+
 ## 2026-07-21 — Azure/Entra enterprise risk register
 
 - `docs/DEPLOYMENT-AZURE.md` — hosting/SSO/durability/scale risk register + ranked hardening
