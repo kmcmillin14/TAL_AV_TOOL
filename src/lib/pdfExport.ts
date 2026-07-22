@@ -565,25 +565,9 @@ export function projectJsonBlob(project: StoredProject): Blob {
   return new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
 }
 
-function filename(project: StoredProject, ext: string): string {
-  const base = (project.projectName || 'project').replace(/[^a-z0-9-_]+/gi, '_')
-  const rev = project.versionNumber ? `_${project.versionNumber}` : ''
-  return `${base}${rev}.${ext}`
-}
-
-function triggerDownload(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement('a')
-  a.href = url
-  a.download = name
-  document.body.appendChild(a)
-  a.click()
-  document.body.removeChild(a)
-  URL.revokeObjectURL(url)
-}
-
-/** Download the project as a single PDF with embedded JSON attachment. */
-export async function downloadProjectPdf(project: StoredProject): Promise<void> {
-  const pdfBlob = await exportProjectPdf(project)
-  triggerDownload(pdfBlob, filename(project, 'pdf'))
-}
+// NOTE (2026-07-21): the main-app PDF export was retired — the app exports one
+// format per audience (PPTX customer deck · XLSX internal model · JSON revision).
+// `exportProjectPdf` / `projectJsonBlob` remain as the pure builders behind the
+// Step-0 PDF-IMPORT round-trip (and its regression tests); the DOM download
+// wrapper was the only main-app-only helper and was deleted with its filename/
+// trigger utilities.

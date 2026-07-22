@@ -46,19 +46,21 @@ modes 2 and 3 is the accepted file types and framing — there is no separate pa
 
 ### Persistent header — Save Revision / Export to Customer
 
-The hero bar stays compact and identical on every step (icon export menu:
-PPTX · XLSX · Working PDF · JSON; quiet transient save text; meta line exactly
-page-centered). On the **ROM Dashboard (step 04) only**, the labeled actions
-render in the page header's blank space, pinned to the page's right edge, each
-with its icon (`src/components/ExportActions.tsx`):
+The hero bar stays compact and identical on every step. **Exports are one format
+per audience** (2026-07-21) — the icon export menu shows exactly three:
+**Customer deck** (`.pptx`), **Internal model** (`.xlsx`), **Save revision**
+(`.json`). The main-app PDF export was retired; the `.pdf` **import** path on
+Step 00 is unchanged (it reads the questionnaire's branded PDF), and
+`exportProjectPdf` survives as the pure builder behind that round-trip's tests.
+On the **ROM Dashboard (step 04) only**, the labeled actions render in the page
+header's blank space (`src/components/ExportActions.tsx`, plus the page's
+`RomExportBar`):
 
-- **`Save Revision ▾`** (ghost button + dropdown) — the internal/re-importable
-  artifacts: **Working PDF (re-importable)** (`.pdf` with embedded JSON — the file
-  Step 00's *Import Previous Revision* reads), **JSON** (`.json` project file), and
-  **XLSX** (`.xlsx` workbook). No auto-bump of Rev — the engineer edits Rev in the
-  header meta line; the export filename already carries it.
-- **`Export to Customer`** (red primary button) — opens the branded-PPTX section
-  picker (`PptxSectionPicker`) directly. One customer artifact, one click, no dropdown.
+- **`Save Revision`** (ghost button) — the `.json` project file Step 00's
+  *Import Previous Revision* reads. No auto-bump of Rev — the engineer edits Rev
+  in the header meta line; the export filename already carries it.
+- **`Export ▾`** — **Customer deck** (`.pptx`, the branded `PptxSectionPicker`)
+  and **Internal model** (`.xlsx` live-formula workbook).
 - **Autosave chip** — next to the buttons, driven by the existing `saveStatus`
   state: **`✓ Saved`** (green) · **`● Saving…`** (warn) · **`⚠ Save failed`** (bad),
   always visible on desktop.

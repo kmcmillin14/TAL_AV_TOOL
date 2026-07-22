@@ -2,23 +2,46 @@
 
 import { useState } from 'react'
 import { downloadProject, type StoredProject } from '@/src/lib/storage'
+import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import Icon from '@/src/design-system/components/Icon'
 import PptxSectionPicker from './PptxSectionPicker'
 
 interface Props { project: StoredProject }
 
-/** Proposal export — branded PowerPoint deck, plus a re-importable save file. */
+/** ROM export — one format per audience: customer deck (PPTX), internal model
+ *  (XLSX), save revision (JSON). Mirrors the PersistentHeader export menu. */
 export default function RomExportBar({ project }: Props) {
   const [pptxOpen, setPptxOpen] = useState(false)
+
+  const handleXlsx = async () => {
+    try {
+      const [{ downloadProjectXlsx }, vehicles] = await Promise.all([
+        import('@/src/lib/xlsxExport'),
+        fetchVehiclesCached(),
+      ])
+      await downloadProjectXlsx(project, vehicles)
+    } catch (err) {
+      alert(`Could not generate workbook: ${err instanceof Error ? err.message : 'Unknown error'}`)
+    }
+  }
 
   return (
     <div className="rom-export">
       <button
         type="button" className="rom-export-btn rom-export-primary"
         onClick={() => setPptxOpen(true)}
+        title="Customer-facing ROM proposal deck"
       >
         <Icon name="export" size={18} />
-        Export proposal (PowerPoint)
+        Customer deck (PowerPoint)
+      </button>
+      <button
+        type="button" className="rom-export-btn rom-export-secondary"
+        onClick={handleXlsx}
+        title="Live-formula workbook for internal review"
+      >
+        <Icon name="export" size={16} />
+        Internal model (Excel)
       </button>
       <button
         type="button" className="rom-export-btn rom-export-secondary"
@@ -26,7 +49,7 @@ export default function RomExportBar({ project }: Props) {
         title="Download a .json you can re-import later (Step 00 → Import previous revision)"
       >
         <Icon name="save" size={16} />
-        Save project file (.json)
+        Save revision (.json)
       </button>
       {pptxOpen && <PptxSectionPicker project={project} onClose={() => setPptxOpen(false)} />}
     </div>

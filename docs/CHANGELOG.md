@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-21 — Export surface: one format per audience (PDF retired from main app)
+
+- Main-app exports reduced to three, labeled by audience: **Customer deck (.pptx)** ·
+  **Internal model (.xlsx)** · **Save revision (.json)**. Applied consistently across all
+  three surfaces (`PersistentHeader` menu, `ExportActions`, `RomExportBar` — the latter
+  gained the missing XLSX for parity).
+- Main-app **PDF export removed**; the dead DOM wrapper `downloadProjectPdf` (+ its
+  `filename`/`triggerDownload` helpers) deleted. `exportProjectPdf`/`projectJsonBlob`
+  kept as the pure builders behind the Step-00 **PDF import** round-trip and its tests.
+  Questionnaire PDF export (separate `pdfQuestionnaire.ts`) and Step-00 PDF import both
+  untouched.
+- Walkthrough Export-stop copy updated to the audience framing.
+- NOTE: `ExportActions` and `RomExportBar` both render on Step 4 (pre-existing redundancy)
+  — flagged for a future consolidation, not changed here.
+
 ## 2026-07-20 — Vehicle certifications corrected (owner-confirmed)
 
 - All six vehicles now declare `ANSI B56.5` + `VDA 5050`; only the Oppent E7 additionally

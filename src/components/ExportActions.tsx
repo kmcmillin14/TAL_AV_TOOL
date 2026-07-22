@@ -30,18 +30,6 @@ export default function ExportActions({ projectId }: { projectId: string }) {
     }
   }, [menuOpen])
 
-  const savePdf = async () => {
-    setMenuOpen(false)
-    const current = getProject(projectId)
-    if (!current) return
-    try {
-      const { downloadProjectPdf } = await import('@/src/lib/pdfExport')
-      await downloadProjectPdf(current)
-    } catch (err) {
-      alert(`Could not generate PDF: ${err instanceof Error ? err.message : 'Unknown error'}`)
-    }
-  }
-
   const saveJson = () => {
     setMenuOpen(false)
     downloadProject(projectId)
@@ -84,24 +72,20 @@ export default function ExportActions({ projectId }: { projectId: string }) {
           className="btn primary btn-sm"
           aria-haspopup="menu"
           aria-expanded={menuOpen}
-          title="Export a deliverable (PPTX · PDF · XLSX)"
+          title="Export a deliverable (PPTX customer deck · XLSX internal model)"
           onClick={() => setMenuOpen(o => !o)}
         >
           <Icon name="export" size={13} /> Export <Icon name="chevronD" size={11} />
         </button>
         {menuOpen && (
           <div className="header-menu-popover" role="menu">
-            <div className="header-menu-cap">Export</div>
+            <div className="header-menu-cap">One format per audience</div>
             <button type="button" className="header-menu-item" role="menuitem" onClick={() => { setMenuOpen(false); exportPptx() }}>
               <span>Customer deck</span>
               <span className="hint">.pptx</span>
             </button>
-            <button type="button" className="header-menu-item" role="menuitem" onClick={savePdf}>
-              <span>Proposal (customer + appendix)</span>
-              <span className="hint">.pdf</span>
-            </button>
             <button type="button" className="header-menu-item" role="menuitem" onClick={saveXlsx}>
-              <span>Fleet model (live formulas)</span>
+              <span>Internal model</span>
               <span className="hint">.xlsx</span>
             </button>
           </div>

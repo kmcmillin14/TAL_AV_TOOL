@@ -176,7 +176,7 @@ const SAMPLE_RFQ_GUIDE: Guide = {
       route: '/step4',
       target: '.rom-card-export',
       title: 'Export',
-      body: 'Done? Export builds the customer deck (PPTX), the editable Excel model, and the PDF.',
+      body: 'Done? One format per audience — the customer deck (PPTX), the internal model (Excel), and a JSON revision to reopen later.',
     },
     {
       route: '/step4',
