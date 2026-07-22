@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-07-21 — Azure/Entra enterprise risk register
+
+- `docs/DEPLOYMENT-AZURE.md` — hosting/SSO/durability/scale risk register + ranked hardening
+  backlog, grounded in the app's actual architecture. Headline findings: recommend
+  App Service + Easy Auth (not SWA — middleware gap); **VDI/non-persistent profiles wiping
+  localStorage is the top launch blocker** (elevates the parked backup feature); scale is a
+  non-issue (client-side app); add App Insights + key Google Places for the questionnaire.
+
 ## 2026-07-21 — Sizing regression harness (old Excel vs app v3)
 
 - `src/calc/legacySizing.ts` — codified legacy hand rule (÷0.75 flat charge adder, ×1.20
