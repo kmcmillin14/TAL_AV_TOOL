@@ -959,7 +959,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                     />
                   </div>
                   <div className="fld">
-                    <label>Distance ({dLabel})</label>
+                    <label>Distance ({dLabel}, one-way)</label>
                     <div className="input-with-unit">
                       <input
                         type="number"

@@ -73,16 +73,18 @@ export default function FlowRow({
     return e.clientY > rect.top + rect.height / 2
   }
 
-  const roundTripFt = flow.distanceFt * 2
+  // One-way distance everywhere (2026-07-22): the engineer enters the A→B leg;
+  // the calc doubles it for the loaded-out/empty-back cycle. Display = stored
+  // one-way directly (no ×2), so Step 1, Step 3, and paste import all agree.
   const distDisplay = metric
-    ? units.distance.toMetric(roundTripFt).toFixed(0)
+    ? units.distance.toMetric(flow.distanceFt).toFixed(0)
     // Round imperial too — a metric-origin value is a long float (÷0.3048); the
     // raw string would show a decimal tail like 7545.931758…
-    : String(Math.round(roundTripFt * 10) / 10)
+    : String(Math.round(flow.distanceFt * 10) / 10)
 
   const setDistance = (input: string) => {
     const n = clampNum(input)
-    const oneWay = (metric ? units.distance.toImperial(n) : n) / 2
+    const oneWay = metric ? units.distance.toImperial(n) : n
     onChange({ ...flow, distanceFt: oneWay })
   }
 

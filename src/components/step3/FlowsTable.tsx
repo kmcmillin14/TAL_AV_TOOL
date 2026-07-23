@@ -34,7 +34,7 @@ interface Props {
 const COLS = 11
 
 /** Header label that drops any "(parenthetical)" onto its own line at a smaller
- *  size, so columns stay narrow (e.g. "Distance" / "(Round Trip)"). */
+ *  size, so columns stay narrow (e.g. "Distance" / "(one-way)"). */
 function HeaderLabel({ text }: { text: string }) {
   const i = text.indexOf('(')
   if (i === -1) return <>{text}</>
@@ -298,7 +298,7 @@ export default function FlowsTable({
 
   const ungrouped = flows.filter(f => !f.sectionName || !effGroups.includes(f.sectionName))
 
-  const distLabel = metric ? 'Distance (Round Trip, m)' : 'Distance (Round Trip)'
+  const distLabel = metric ? 'Distance (one-way, m)' : 'Distance (one-way)'
 
   // Sequential row number across every rendered flow (groups first, then loose).
   let rowNum = 0
@@ -414,7 +414,7 @@ export default function FlowsTable({
                 <th>Destination</th>
                 <th
                   className="flow-th-num"
-                  title="Round-trip distance — total feet traveled per cycle (out loaded, back empty)."
+                  title="One-way distance (origin → destination). The cycle doubles it automatically — loaded out, empty back."
                 >
                   <HeaderLabel text={distLabel} />
                 </th>

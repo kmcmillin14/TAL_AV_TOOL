@@ -9,7 +9,7 @@ interface Props {
 }
 
 const PLACEHOLDER =
-  'Paste rows from Excel/Sheets — columns: Origin, Destination, Distance (ft), Moves/hr, Lift height (optional).\nA header row is detected automatically.'
+  'Paste rows from Excel/Sheets — columns: Origin, Destination, Distance (ft, one-way), Moves/hr, Lift height (optional).\nA header row is detected automatically.'
 
 /** Inline paste-import panel (no modal — app convention is inline editing).
  *  Pure parsing lives in src/lib/flowImport.ts; this only previews + confirms. */

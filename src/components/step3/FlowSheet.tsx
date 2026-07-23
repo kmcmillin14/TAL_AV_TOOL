@@ -54,12 +54,11 @@ export default function FlowSheet({ flow, index, vehicles, groups, derived, unit
   const methodIdx = flow.transferMethodIdx ?? 0
   const [transferOpen, setTransferOpen] = useState(false)
 
-  const roundTripFt = flow.distanceFt * 2
-  // Round both units — a metric-origin imperial value is a long float (÷0.3048).
-  const distDisplay = metric ? units.distance.toMetric(roundTripFt).toFixed(0) : String(Math.round(roundTripFt * 10) / 10)
+  // One-way distance (2026-07-22) — display stored value directly; calc doubles it.
+  const distDisplay = metric ? units.distance.toMetric(flow.distanceFt).toFixed(0) : String(Math.round(flow.distanceFt * 10) / 10)
   const setDistance = (input: string) => {
     const n = clampNum(input)
-    const oneWay = (metric ? units.distance.toImperial(n) : n) / 2
+    const oneWay = metric ? units.distance.toImperial(n) : n
     onChange({ ...flow, distanceFt: oneWay })
   }
 
@@ -130,7 +129,7 @@ export default function FlowSheet({ flow, index, vehicles, groups, derived, unit
             <input className="m-input" value={flow.destination} placeholder="e.g. Storage 1" onChange={e => onChange({ ...flow, destination: e.target.value })} /></div>
         </div>
         <div className="m-two">
-          <div className="m-field"><label className="m-field-label">{metric ? 'Distance RT (m)' : 'Distance RT (ft)'}</label>
+          <div className="m-field"><label className="m-field-label">{metric ? 'Distance (m, one-way)' : 'Distance (ft, one-way)'}</label>
             <input className="m-input mono" type="number" min="0" inputMode="decimal" value={distDisplay} onChange={e => setDistance(e.target.value)} /></div>
           <div className="m-field"><label className="m-field-label">Moves / hr</label>
             <input className="m-input mono" type="number" min="0" inputMode="decimal" value={flow.thruPerHr} onChange={e => onChange({ ...flow, thruPerHr: clampNum(e.target.value) })} /></div>

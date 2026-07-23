@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-07-22 — Distance unified to one-way across all entry paths (right-sizing fix)
+
+- The Step 3 flow table/sheet displayed & accepted ROUND-TRIP distance (×2 in / ÷2 store) while
+  Step 1 flows and the paste importer used ONE-WAY — the same flow's distance meant different
+  things on different screens, and pasting a round-trip number silently oversized that flow.
+- Unified to **one-way everywhere** (owner decision): removed the ×2/÷2 from FlowRow + FlowSheet,
+  relabeled Step 3 column/tooltip + FlowSheet + paste panel + Step 1 §06 to "one-way". Storage
+  (already one-way) and the calc (doubles internally for loaded-out/empty-back) are UNCHANGED, so
+  **no existing quote's fleet number changes** — only Step 3's shown distance now equals the
+  one-way leg. The customer questionnaire keeps its one-way/round-trip toggle (normalizes to
+  one-way on import). `distanceType` legacy-import halving is untouched.
+
 ## 2026-07-22 — Sizing regression: authoritative legacy workbook codified (supersedes hand-rule)
 
 - `src/calc/legacySizing.ts` REWRITTEN as a faithful port of the real "Example Fleet
