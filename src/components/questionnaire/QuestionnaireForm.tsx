@@ -54,7 +54,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-04', num: '04', short: 'How it’s moved', tier: TIER_APP,
     fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'dwellTimeMin', 'chargingStrategyPreference', 'topOfRollerHeightFt', 'maxLiftHeightFt', 'specialtyApplications'] },
   { id: 'q-sec-05', num: '05', short: 'Where it runs', tier: TIER_APP,
-    fields: ['minAisleWidthFt', 'floorCondition', 'outdoorRequired', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
+    fields: ['driveAisleWidthFt', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
   { id: 'q-sec-06', num: '06', short: 'Site readiness', tier: TIER_APP,
     fields: ['facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable'] },
   { id: 'q-sec-07', num: '07', short: 'Throughput & flows', tier: TIER_APP,
@@ -149,12 +149,22 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const isForklift = transferType === 'forklift'
   const specialties = values.specialtyApplications ?? []
   const isVNA = specialties.includes('VNA')
+  const isOutdoor = values.outdoorRequired === true
+  const tempEnv = values.temperatureEnvironment
+  const showTempRange = tempEnv === 'refrigerated' || tempEnv === 'freezer'
 
   // Keep legacy singular typicalUnitType in sync with the multi-select's first
   // choice so the main app's calc/import (which reads the singular field) works.
   useEffect(() => {
     setValue('typicalUnitType', unitLoadTypes[0] ?? undefined)
   }, [setValue, unitLoadTypes])
+
+  // Keep legacy minAisleWidthFt (main-app informational) = narrower of the two.
+  useEffect(() => {
+    const d = values.driveAisleWidthFt, r = values.rackingAisleWidthFt
+    const nums = [d, r].filter((n): n is number => typeof n === 'number')
+    setValue('minAisleWidthFt', nums.length ? Math.min(...nums) : undefined)
+  }, [setValue, values.driveAisleWidthFt, values.rackingAisleWidthFt])
 
   const onSubmit: SubmitHandler<PartialProjectFormData> = useCallback(async (v) => {
     setInvalidMsg(null)
@@ -217,7 +227,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   )
 
   // Reusable No/Yes segmented toggle for a tri-state boolean.
-  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' }) => (
+  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="seg-toggle">
         <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(false)}>No</button>
@@ -404,11 +414,19 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <FormSection id="q-sec-05" sectionNum="05" title="Where it runs">
             <div className="fld-grid-3">
               <div className="fld">
-                <label>Narrowest aisle</label>
+                <label>Drive aisle width</label>
                 <div className="input-with-unit">
-                  <input type="number" step="0.1" min="0" className="mono" placeholder="8" {...register('minAisleWidthFt', { setValueAs: emptyToNum })} />
+                  <input type="number" step="0.1" min="0" className="mono" placeholder="8" {...register('driveAisleWidthFt', { setValueAs: emptyToNum })} />
                   <div className="unit">ft</div>
                 </div>
+              </div>
+              <div className="fld">
+                <label>Racking aisle width</label>
+                <div className="input-with-unit">
+                  <input type="number" step="0.1" min="0" className="mono" placeholder="6" {...register('rackingAisleWidthFt', { setValueAs: emptyToNum })} />
+                  <div className="unit">ft</div>
+                </div>
+                {isVNA && <div className="help" style={{ fontWeight: 600 }}>VNA selected — racking aisle width is critical for fit.</div>}
               </div>
               <div className="fld">
                 <label>Floor condition</label>
@@ -438,8 +456,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   </div>
                 )} />
               </div>
-              <div className="fld"><label>Min temperature (°F)</label><input type="number" className="mono" {...register('tempMinF', { setValueAs: emptyToNum })} /></div>
-              <div className="fld"><label>Max temperature (°F)</label><input type="number" className="mono" {...register('tempMaxF', { setValueAs: emptyToNum })} /></div>
+              {showTempRange && (<>
+                <div className="fld"><label>Min temperature (°F)</label><input type="number" className="mono" {...register('tempMinF', { setValueAs: emptyToNum })} /></div>
+                <div className="fld"><label>Max temperature (°F)</label><input type="number" className="mono" {...register('tempMaxF', { setValueAs: emptyToNum })} /></div>
+              </>)}
               <div className="fld">
                 <label>Dust / moisture</label>
                 <select {...register('dustMoisture', { setValueAs: emptyToUndef })} defaultValue="">
@@ -447,6 +467,34 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   {DUST_MOISTURE_OPTS.map(d => <option key={d}>{d}</option>)}
                 </select>
               </div>
+              <div className="fld span-3">
+                <label>Shared traffic in the area</label>
+                <Chips name="sharedTrafficTypes" options={SHARED_TRAFFIC_TYPES} />
+              </div>
+              {isVNA && (
+                <div className="fld">
+                  <label>VNA guidance type</label>
+                  <select {...register('guidanceType', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select&hellip;</option>
+                    {GUIDANCE_TYPES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              )}
+              {isOutdoor && (<>
+                <div className="fld">
+                  <label>Ramps / grades present?</label>
+                  <YesNo name="rampRequired" />
+                </div>
+                {values.rampRequired && (
+                  <div className="fld">
+                    <label>Max incline</label>
+                    <div className="input-with-unit">
+                      <input type="number" step="0.1" min="0" className="mono" {...register('maxRampGrade', { setValueAs: v => (v === '' || v == null ? 0 : Number(v)) })} />
+                      <div className="unit">%</div>
+                    </div>
+                  </div>
+                )}
+              </>)}
             </div>
           </FormSection>
 
