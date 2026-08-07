@@ -4268,12 +4268,27 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   .q-actions-btns { flex-direction: column; width: 100%; }
   .q-export-btn, .q-send-btn { width: 100%; justify-content: center; }
 }
-@media (max-width: 480px) {
+@media (max-width: 600px) {
   /* Very small phones: hide brand title text, keep logo + toolbar */
   .q-brandbar-title, .q-brandbar-divider { display: none; }
-  /* Seg-toggle wraps rather than overflows on 4-option rows */
-  .q-form .seg-toggle { flex-wrap: wrap; }
-  .q-form .seg-btn { flex: 1 1 calc(50% - 4px); justify-content: center; }
+  /* Seg-toggle: switch to a 2-column grid so buttons are roomy and tappable.
+     Drop the flex overflow trick; each button gets its own border so the
+     grid layout doesn't produce gap artifacts. */
+  .q-form .seg-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    overflow: visible;
+    border: none;
+    gap: 6px;
+    background: transparent;
+  }
+  .q-form .seg-btn {
+    min-height: 44px;
+    border: 1px solid var(--border) !important;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  .q-form .seg-btn.on { border-color: var(--accent) !important; }
 }
 
 
