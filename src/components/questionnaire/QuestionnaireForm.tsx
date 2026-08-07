@@ -46,8 +46,8 @@ const TIER_DETAILS = 'Project details'
 // Single source for the section list — drives the rail, the anchors, and the
 // per-section "started" progress meter.
 const SECTIONS: readonly QSection[] = [
-  { id: 'q-sec-01', num: '01', short: 'About you', tier: TIER_START,
-    fields: ['submissionType', 'customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail', 'dealershipName', 'dealerRep', 'partnerCompanyName', 'partnerRepContact', 'opportunityType', 'opportunityNumber'] },
+  { id: 'q-sec-01', num: '01', short: 'General Info', tier: TIER_START,
+    fields: ['submissionType', 'projectName', 'customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail', 'dealershipName', 'dealerRep', 'partnerCompanyName', 'partnerRepContact', 'opportunityType', 'opportunityNumber', 'roiTargetYears'] },
   { id: 'q-sec-02', num: '02', short: 'Vehicles', tier: TIER_START,
     fields: ['vehiclesOfInterest', 'vehicleInMind'] },
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
@@ -301,7 +301,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
         <div className="form-stack">
           {/* ── Getting started ── */}
-          <FormSection id="q-sec-01" sectionNum="01" title="About you">
+          <FormSection id="q-sec-01" sectionNum="01" title="General Info">
             <div className="fld-grid-3">
               <div className="fld span-3">
                 <label>How are you submitting this? <span className="req-star" aria-hidden>*</span></label>
@@ -314,8 +314,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 )} />
                 <div className="help">Required — tells us who to route this to.</div>
               </div>
+              <div className="fld"><label>Project name</label><input {...register('projectName')} placeholder="e.g. Acme DC Phase 2" /></div>
               <div className="fld"><label>Customer / company</label><input {...register('customerName')} /></div>
-              <div className="fld span-2">
+              <div className="fld"><label>ROI target (yrs)</label><input type="number" min="1" max="20" className="mono" {...register('roiTargetYears', { setValueAs: emptyToNum })} placeholder="e.g. 3" /></div>
+              <div className="fld span-3">
                 <label>Facility location</label>
                 <Controller control={control} name="facilityLocation" render={({ field }) => (
                   <AddressInput value={field.value ?? ''} onChange={field.onChange} placeholder="Start typing an address…" />

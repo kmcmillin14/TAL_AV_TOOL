@@ -1,5 +1,11 @@
 # Changelog
 
+### Questionnaire update (2026-08-07 — session 2)
+- `projectSchema`: added `roiTargetYears` (int 1–20, optional) — customer's target payback
+  period; informational for ROM framing, not used in fleet calc.
+- Questionnaire §01 renamed to "General Info"; added Project Name and ROI Target (yrs) inputs.
+- PDF export §03 Opportunity Overview: prints ROI target when set.
+
 ### Questionnaire change log (2026-08-07)
 - Added ~20 questionnaire intake fields to `projectSchema` (submitter routing, multi
   load types, aisle split, shared traffic, VNA guidance, WMS/hazard/barcode controls,

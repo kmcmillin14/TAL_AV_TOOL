@@ -158,6 +158,8 @@ export const projectSchema = z.object({
   operatingDaysPerYear: z.number().int().min(1).max(366).optional(),
   /** Equipment service life (yr) used for TCO and payback projections. */
   serviceLifeYears: z.number().int().min(1).max(20).optional(),
+  /** Customer's target payback period (yr) — informational for ROM framing. */
+  roiTargetYears: z.number().int().min(1).max(20).optional(),
 
   otherAGVs: z.boolean().default(false),
   otherAGVVendor: z.string().optional(),

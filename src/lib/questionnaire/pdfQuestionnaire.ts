@@ -167,6 +167,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Target go-live', fmt(p.targetGoLiveDate))
   row('RFQ', p.isRfq == null ? null : p.isRfq ? `Yes${p.rfqNumber ? ` — ${p.rfqNumber}` : ''}${p.rfqDueDate ? ` (due ${p.rfqDueDate})` : ''}` : 'No')
   row('CAD / drawings available', p.cadAvailable == null ? null : p.cadAvailable ? `Yes${p.cadNotes ? ` — ${p.cadNotes}` : ''}` : 'No')
+  row('ROI target', p.roiTargetYears != null ? `${p.roiTargetYears} yr${p.roiTargetYears !== 1 ? 's' : ''}` : null)
   row('Project drivers', fmt(p.projectDrivers))
   row('Current process', fmt(p.currentProcess))
   row('Volume growth', fmt(p.volumeGrowthNote))
