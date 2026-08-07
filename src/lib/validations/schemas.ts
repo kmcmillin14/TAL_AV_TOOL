@@ -218,7 +218,7 @@ export const projectSchema = z.object({
   partnerRepContact: z.string().optional(),
   internalAccountId: z.string().optional(),
   // §03 load types (multi). Legacy singular `typicalUnitType` mirrors [0] on save.
-  unitLoadTypes: z.array(z.string()).max(20).default([]),
+  unitLoadTypes: z.array(z.string()).max(50).default([]),
   // §04 handling detail
   dwellTimeMin: z.number().min(0).optional().nullable(),
   chargingStrategyPreference: z.enum(['opportunity', 'battery_swap', 'not_sure']).optional(),
@@ -234,7 +234,9 @@ export const projectSchema = z.object({
   barcodeScanningRequired: z.boolean().optional(),
   wmsInterfaceType: z.enum(['rest_api', 'file', 'middleware', 'other']).optional(),
   taggingScanMethod: z.enum(['barcode', 'qr', 'rfid', 'none']).optional(),
-  // §12 current-state
+  // §12 current-state. NOTE: the legacy free-text `existingAutomation` (brand/fleet)
+  // field above stays — `hasExistingAutomation` is its structured boolean gate and
+  // `existingAutomationInterop` the follow-up when true; keep all three.
   hasExistingAutomation: z.boolean().optional(),
   existingAutomationInterop: z.string().optional(),
   currentHeadcount: z.number().min(0).optional().nullable(),
