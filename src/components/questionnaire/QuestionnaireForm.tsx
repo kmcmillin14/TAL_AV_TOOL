@@ -105,7 +105,9 @@ function downloadJson(blob: Blob, name: string) {
   const a = document.createElement('a')
   a.href = url; a.download = name
   document.body.appendChild(a); a.click(); a.remove()
-  URL.revokeObjectURL(url)
+  // Defer revoke: some browsers dispatch the download async after click() returns,
+  // and revoking synchronously can cancel it (esp. with a second download in the same tick).
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => void }) {
