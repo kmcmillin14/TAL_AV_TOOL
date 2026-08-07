@@ -196,10 +196,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
     }
     setBusy(true)
     try {
-      await downloadQuestionnairePdf(v)
-      const stamp = new Date().toISOString().slice(0, 10)
-      const slug = (v.customerName || v.projectName || 'questionnaire').replace(/[^\w-]+/g, '_').slice(0, 40)
-      downloadJson(questionnaireJsonBlob(v), `${slug}_${stamp}.json`)
+      await downloadQuestionnairePdf(v)  // PDF has JSON embedded as attachment
       setSubmitted(true)
     } finally { setBusy(false) }
   }, [])
@@ -219,17 +216,16 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
     }
     setBusy(true)
     try {
-      const stamp = new Date().toISOString().slice(0, 10)
-      const slug = (v.customerName || v.projectName || 'questionnaire').replace(/[^\w-]+/g, '_').slice(0, 40)
-      downloadJson(questionnaireJsonBlob(v), `${slug}_${stamp}.json`)
+      await downloadQuestionnairePdf(v)  // PDF has JSON embedded — attach this to the email
       const subject = encodeURIComponent(`TAL AV Questionnaire — ${v.customerName || v.projectName || 'New Opportunity'}`)
       const body = encodeURIComponent(
-        `Hi,\n\nPlease find the attached AV questionnaire for ${v.customerName || 'the customer below'}.\n\n` +
+        `Hi,\n\nPlease find the attached AV questionnaire PDF for ${v.customerName || 'the customer below'}.\n\n` +
         `Customer: ${v.customerName || '—'}\n` +
         `Project: ${v.projectName || '—'}\n` +
         `Facility: ${v.facilityLocation || '—'}\n` +
         `Submitted by: ${v.talRepName || '—'}\n\n` +
-        `The JSON export has been downloaded — please attach it to this email.\n\nThank you`
+        `The PDF has been downloaded — please attach it to this email. ` +
+        `It contains embedded project data that can be imported directly into the TAL Fleet Calculator.\n\nThank you`
       )
       window.open(`mailto:AppsEngineering@bastiansolutions.com?subject=${subject}&body=${body}`, '_self')
       setSubmitted(true)
@@ -798,8 +794,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           </button>
         </div>
         <div className="q-actions-status">
-          {!submitted && !invalidMsg && <span className="q-actions-note">Export a PDF + JSON, or send directly to your TAL applications engineer.</span>}
-          {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Done — check your downloads and email client.</span>}
+          {!submitted && !invalidMsg && <span className="q-actions-note">Export a PDF (with embedded project data), or send directly to your TAL applications engineer.</span>}
+          {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> PDF downloaded — attach it to the email that just opened.</span>}
           {invalidMsg && <span className="q-status q-status-bad"><Icon name="warn" size={14} /> {invalidMsg}</span>}
         </div>
       </div>
