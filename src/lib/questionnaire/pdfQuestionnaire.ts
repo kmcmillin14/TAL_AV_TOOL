@@ -157,21 +157,20 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Current Toyota forklifts', fmt(p.currentToyotaForklifts))
   row('History with TAL / Toyota', fmt(p.talHistory))
 
-  // ── §03  Opportunity overview ───────────────────────────────────────────────
-  sec('Opportunity overview')
+  // ── §03  Opportunity ────────────────────────────────────────────────────────
+  sec('Opportunity')
   row('Facility location', fmt(p.facilityLocation))
+  row('CAD / drawings available', p.cadAvailable == null ? null : p.cadAvailable ? `Yes${p.cadNotes ? ` — ${p.cadNotes}` : ''}` : 'No')
+
+  // ── §04-C  Commercial ───────────────────────────────────────────────────────
+  sec('Commercial')
   row('Project stage', fmt(p.projectStage))
   row('Budget status', fmt(p.budgetStatus))
   row('Budget range', fmt(p.budgetRange))
+  row('ROI target', p.roiTargetYears != null ? `${p.roiTargetYears} yr${p.roiTargetYears !== 1 ? 's' : ''}` : null)
+  row('RFQ', p.isRfq == null ? null : p.isRfq ? `Yes${p.rfqNumber ? ` — ${p.rfqNumber}` : ''}${p.rfqDueDate ? ` (due ${p.rfqDueDate})` : ''}` : 'No')
   row('Decision date', fmt(p.decisionDate))
   row('Target go-live', fmt(p.targetGoLiveDate))
-  row('RFQ', p.isRfq == null ? null : p.isRfq ? `Yes${p.rfqNumber ? ` — ${p.rfqNumber}` : ''}${p.rfqDueDate ? ` (due ${p.rfqDueDate})` : ''}` : 'No')
-  row('CAD / drawings available', p.cadAvailable == null ? null : p.cadAvailable ? `Yes${p.cadNotes ? ` — ${p.cadNotes}` : ''}` : 'No')
-  row('ROI target', p.roiTargetYears != null ? `${p.roiTargetYears} yr${p.roiTargetYears !== 1 ? 's' : ''}` : null)
-  row('Project drivers', fmt(p.projectDrivers))
-  row('Current process', fmt(p.currentProcess))
-  row('Volume growth', fmt(p.volumeGrowthNote))
-  row('Seasonality', fmt(p.seasonalityNote))
 
   // ── §04  What you move ──────────────────────────────────────────────────────
   sec('What you move')
@@ -264,8 +263,8 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
     row(f.sectionName ? `Flow (${f.sectionName})` : 'Flow', parts)
   }
 
-  // ── §09  Commercial context ─────────────────────────────────────────────────
-  sec('Commercial context')
+  // ── §09  Vehicles & interests ───────────────────────────────────────────────
+  sec('Vehicles & interests')
   row('Vehicles of interest', fmt(p.vehiclesOfInterest?.length ? p.vehiclesOfInterest : null))
   row('Vehicle in mind', fmt(p.vehicleInMind))
   row('Specialty applications', fmt(p.specialtyApplications))
@@ -305,10 +304,13 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
     row('Automation (brand / fleet)', fmt(p.existingAutomation))
     row('Interoperability notes', fmt(p.existingAutomationInterop))
   }
+  row('Why automating', fmt(p.projectDrivers))
+  row('Current process', fmt(p.currentProcess))
   row('People / forklifts doing this today', p.currentHeadcount != null ? `${p.currentHeadcount}` : null)
   row('Operators doing task per shift', p.operatorsPerShift ? `${p.operatorsPerShift}` : null)
   row('Fully burdened rate', p.fullyBurdenedRateUsdPerYear != null ? `$${p.fullyBurdenedRateUsdPerYear.toLocaleString()}/yr per operator` : null)
-  row('Current process', fmt(p.currentProcess))
+  row('Volume growth', fmt(p.volumeGrowthNote))
+  row('Seasonality', fmt(p.seasonalityNote))
 
   // ── §13  Notes ──────────────────────────────────────────────────────────────
   if (p.projectNotes) {

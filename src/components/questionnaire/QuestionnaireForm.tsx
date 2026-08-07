@@ -47,7 +47,7 @@ const TIER_DETAILS = 'Project details'
 // per-section "started" progress meter.
 const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-01', num: '01', short: 'General Info', tier: TIER_START,
-    fields: ['submissionType', 'projectName', 'customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail', 'dealershipName', 'dealerRep', 'partnerCompanyName', 'partnerRepContact', 'opportunityType', 'opportunityNumber', 'roiTargetYears'] },
+    fields: ['submissionType', 'projectName', 'customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail', 'dealershipName', 'dealerRep', 'partnerCompanyName', 'partnerRepContact', 'opportunityType', 'opportunityNumber'] },
   { id: 'q-sec-02', num: '02', short: 'Vehicles', tier: TIER_START,
     fields: ['vehiclesOfInterest', 'vehicleInMind'] },
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
@@ -64,8 +64,8 @@ const SECTIONS: readonly QSection[] = [
     fields: ['shiftsPerDay', 'hoursPerShift', 'operatingDaysPattern', 'breaksPerShift', 'breakDurationMin'] },
   { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
     fields: ['certifications', 'interlocks', 'hazardZoneClassification', 'barcodeScanningRequired', 'wmsRequired', 'wmsVendor', 'wmsInterfaceType', 'taggingScanMethod', 'restApiAvailable'] },
-  { id: 'q-sec-10', num: '10', short: 'Opportunity', tier: TIER_DETAILS,
-    fields: ['projectName', 'projectStage', 'budgetRange', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'customerContactPhone'] },
+  { id: 'q-sec-10', num: '10', short: 'Commercial', tier: TIER_DETAILS,
+    fields: ['projectStage', 'budgetStatus', 'budgetRange', 'roiTargetYears', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'customerContactPhone'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
     fields: ['currentToyotaForklifts', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
@@ -316,7 +316,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               </div>
               <div className="fld"><label>Project name</label><input {...register('projectName')} placeholder="e.g. Acme DC Phase 2" /></div>
               <div className="fld"><label>Customer / company</label><input {...register('customerName')} /></div>
-              <div className="fld"><label>ROI target (yrs)</label><input type="number" min="1" max="20" className="mono" {...register('roiTargetYears', { setValueAs: emptyToNum })} placeholder="e.g. 3" /></div>
               <div className="fld span-3">
                 <label>Facility location</label>
                 <Controller control={control} name="facilityLocation" render={({ field }) => (
@@ -716,9 +715,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           </FormSection>
 
           {/* ── Project details (commercial / context) ── */}
-          <FormSection id="q-sec-10" sectionNum="10" title="Opportunity">
+          <FormSection id="q-sec-10" sectionNum="10" title="Commercial">
             <div className="fld-grid-3">
-              <div className="fld"><label>Project / opportunity name</label><input {...register('projectName')} /></div>
               <div className="fld">
                 <label>Project stage</label>
                 <select {...register('projectStage', { setValueAs: emptyToUndef })} defaultValue="">
@@ -729,7 +727,17 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <option value="committed">Committed</option>
                 </select>
               </div>
-              <div className="fld"><label>Budget range</label><input {...register('budgetRange')} placeholder="$1–2M" /></div>
+              <div className="fld">
+                <label>Budget status</label>
+                <select {...register('budgetStatus', { setValueAs: emptyToUndef })} defaultValue="">
+                  <option value="">Select…</option>
+                  <option value="budgetary">Budgetary</option>
+                  <option value="firm">Firm</option>
+                  <option value="allocated">Allocated</option>
+                </select>
+              </div>
+              <div className="fld"><label>Budget range</label><input {...register('budgetRange')} placeholder="e.g. $1–2M" /></div>
+              <div className="fld"><label>ROI target (yrs)</label><input type="number" min="1" max="20" className="mono" {...register('roiTargetYears', { setValueAs: emptyToNum })} placeholder="e.g. 3" /></div>
               <div className="fld"><label>Is there an RFQ?</label><YesNo name="isRfq" /></div>
               {isRfq && <div className="fld"><label>RFQ number</label><input {...register('rfqNumber')} /></div>}
               {isRfq && <div className="fld"><label>RFQ due date</label><input type="date" {...register('rfqDueDate')} /></div>}
