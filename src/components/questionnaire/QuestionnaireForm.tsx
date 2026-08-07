@@ -147,8 +147,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const onSubmit: SubmitHandler<PartialProjectFormData> = useCallback(async (v) => {
     setInvalidMsg(null)
     if (!v.submissionType) {
-      setSubmitted(false)
-      setInvalidMsg('Please choose how you’re submitting (Section 01) before exporting.')
+      setInvalidMsg("Please choose how you’re submitting (Section 01) before exporting.")
       document.getElementById('q-sec-01')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
