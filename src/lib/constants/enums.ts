@@ -66,5 +66,57 @@ export const PROJECT_DRIVERS = [
   'Other',
 ] as const
 
+/** Customer-questionnaire: who is submitting (§01). */
+export const SUBMISSION_TYPES = [
+  { value: 'customer', label: 'Customer (Direct)' },
+  { value: 'dealer', label: 'Dealer' },
+  { value: 'internal', label: 'Internal (TAL Regional Office)' },
+  { value: 'partner', label: '3rd Party Partner' },
+] as const
+
+/** §04 charging strategy preference (customer view — informational). */
+export const CHARGING_STRATEGIES = [
+  { value: 'opportunity', label: 'Opportunity charging' },
+  { value: 'battery_swap', label: 'Battery swap' },
+  { value: 'not_sure', label: 'Not sure' },
+] as const
+
+/** §05 shared traffic in the operating area (multi-select). */
+export const SHARED_TRAFFIC_TYPES = [
+  'Pedestrians', 'Manual forklifts', 'Other AGVs', 'None',
+] as const
+
+/** §05 VNA guidance type. */
+export const GUIDANCE_TYPES = [
+  { value: 'wire', label: 'Wire' },
+  { value: 'rail', label: 'Rail' },
+] as const
+
+/** §09 REST API availability tri-state. */
+export const REST_API_OPTIONS = [
+  { value: 'yes', label: 'Yes' },
+  { value: 'no', label: 'No' },
+  { value: 'not_sure', label: 'Not sure' },
+] as const
+
+/** §09 WMS interface type. */
+export const WMS_INTERFACE_TYPES = [
+  { value: 'rest_api', label: 'REST API' },
+  { value: 'file', label: 'File exchange (CSV/flat file)' },
+  { value: 'middleware', label: 'Middleware' },
+  { value: 'other', label: 'Other' },
+] as const
+
+/** §09 tagging / scan method. */
+export const TAGGING_SCAN_METHODS = [
+  { value: 'barcode', label: 'Barcode' },
+  { value: 'qr', label: 'QR' },
+  { value: 'rfid', label: 'RFID' },
+  { value: 'none', label: 'None' },
+] as const
+
+/** §03 unit/load type multi-select (same options as the singular list). */
+export const UNIT_LOAD_TYPE_OPTIONS = TYPICAL_UNIT_TYPES
+
 export type TransferMethod = typeof TRANSFER_METHODS[number]
 export type TypicalUnitType = typeof TYPICAL_UNIT_TYPES[number]

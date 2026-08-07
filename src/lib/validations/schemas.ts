@@ -24,6 +24,9 @@ export const flowSchema = z.object({
   transferMethodIdx: z.number().int().min(0).optional(),
   transferSecOverride: z.number().min(0).optional(),
   sectionName: z.string().optional(),
+  /** Per-flow distance semantics (questionnaire §07). Display/intake only —
+   *  Step 3 sizing continues to use the flow's distanceFt directly. */
+  distanceType: z.enum(['one_way', 'round_trip']).optional(),
 })
 
 /** One load the application moves — its own unit type, dims, and optional
@@ -207,6 +210,34 @@ export const projectSchema = z.object({
   talRepPhone: z.string().optional(),
   talHistory: z.string().optional(),
   currentToyotaForklifts: z.string().optional(),
+
+  // ---- Customer questionnaire change-log additions (2026-08-07) ----
+  // §01 submitter routing
+  submissionType: z.enum(['customer', 'dealer', 'internal', 'partner']).optional(),
+  partnerCompanyName: z.string().optional(),
+  partnerRepContact: z.string().optional(),
+  internalAccountId: z.string().optional(),
+  // §03 load types (multi). Legacy singular `typicalUnitType` mirrors [0] on save.
+  unitLoadTypes: z.array(z.string()).max(20).default([]),
+  // §04 handling detail
+  dwellTimeMin: z.number().min(0).optional().nullable(),
+  chargingStrategyPreference: z.enum(['opportunity', 'battery_swap', 'not_sure']).optional(),
+  topOfRollerHeightFt: z.number().min(0).optional().nullable(),
+  // §05 environment. driveAisle/rackingAisle mirror min()→minAisleWidthFt on save.
+  driveAisleWidthFt: z.number().min(0).optional().nullable(),
+  rackingAisleWidthFt: z.number().min(0).optional().nullable(),
+  sharedTrafficTypes: z.array(z.string()).max(10).default([]),
+  guidanceType: z.enum(['wire', 'rail']).optional(),
+  // §09 certs / controls
+  hazardZoneClassification: z.string().optional(),
+  restApiAvailable: z.enum(['yes', 'no', 'not_sure']).optional(),
+  barcodeScanningRequired: z.boolean().optional(),
+  wmsInterfaceType: z.enum(['rest_api', 'file', 'middleware', 'other']).optional(),
+  taggingScanMethod: z.enum(['barcode', 'qr', 'rfid', 'none']).optional(),
+  // §12 current-state
+  hasExistingAutomation: z.boolean().optional(),
+  existingAutomationInterop: z.string().optional(),
+  currentHeadcount: z.number().min(0).optional().nullable(),
 
   // Section 13
   projectNotes: z.string().optional(),
