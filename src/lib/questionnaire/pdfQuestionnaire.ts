@@ -304,8 +304,9 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
     row('Automation (brand / fleet)', fmt(p.existingAutomation))
     row('Interoperability notes', fmt(p.existingAutomationInterop))
   }
-  row('Current headcount', p.currentHeadcount != null ? `${p.currentHeadcount}` : null)
-  row('Operators per shift', p.operatorsPerShift ? `${p.operatorsPerShift}` : null)
+  row('People / forklifts doing this today', p.currentHeadcount != null ? `${p.currentHeadcount}` : null)
+  row('Operators doing task per shift', p.operatorsPerShift ? `${p.operatorsPerShift}` : null)
+  row('Fully burdened rate', p.fullyBurdenedRateUsdPerYear != null ? `$${p.fullyBurdenedRateUsdPerYear.toLocaleString()}/yr per operator` : null)
   row('Current process', fmt(p.currentProcess))
 
   // ── §13  Notes ──────────────────────────────────────────────────────────────

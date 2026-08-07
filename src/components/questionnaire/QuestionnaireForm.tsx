@@ -760,6 +760,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             <div className="fld-grid-2">
               <div className="fld"><label>How is this done today?</label><textarea {...register('currentProcess')} placeholder="Manual forklifts, hand carts, …" /></div>
               <div className="fld"><label>People / forklifts doing this today</label><input type="number" min="0" className="mono" {...register('currentHeadcount', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Operators doing this task per shift</label><input type="number" min="0" className="mono" {...register('operatorsPerShift', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Fully burdened rate ($/yr per operator)</label><input type="number" min="0" className="mono" {...register('fullyBurdenedRateUsdPerYear', { setValueAs: emptyToNum })} placeholder="e.g. 65000" /></div>
               <div className="fld"><label>Any existing automation on site?</label><YesNo name="hasExistingAutomation" /></div>
               {hasExistingAutomation && (<>
                 <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
