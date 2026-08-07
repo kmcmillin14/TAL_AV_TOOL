@@ -261,7 +261,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   )
 
   return (
-    <form className="workspace" onSubmit={handleSubmit(onSubmit, onInvalid)}>
+    <form className="workspace q-form" onSubmit={handleSubmit(onSubmit, onInvalid)}>
       <div className="page-header">
         <div className="page-title">
           <span className="step-num">AV Questionnaire · {today}</span>

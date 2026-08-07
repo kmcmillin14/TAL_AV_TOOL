@@ -4134,6 +4134,50 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
    (not Step 1's tall hero), so the sticky rail sits near the top. */
 .q-page-nav .section-nav { top: 24px; max-height: calc(100vh - 48px); }
 
+/* ============================================================
+   Questionnaire refinement — spacing & symmetry pass.
+   Scoped to `.q-form` (the standalone questionnaire root form)
+   so it NEVER touches Step 1's shared .fld / .fld-grid / control
+   styles. Goal: a precise, tabular, Toyota/Raymond/TAL business
+   form where every field in a row aligns to the pixel.
+   ============================================================ */
+
+/* One control height everywhere → inputs, selects, unit add-ons, and
+   segmented toggles all sit at exactly 40px, so mixed rows line up. */
+.q-form .fld input:not([type="checkbox"]),
+.q-form .fld select { min-height: 40px; }
+.q-form .seg-toggle { min-height: 40px; }
+.q-form .seg-btn {
+  display: flex; align-items: center; justify-content: center;
+  padding-top: 0; padding-bottom: 0;
+}
+
+/* Even, slightly more generous grid rhythm; labels top-aligned per row
+   so controls start on a shared baseline instead of stretching ragged. */
+.q-form .fld-grid-2,
+.q-form .fld-grid-3,
+.q-form .fld-grid-4,
+.q-form .fld-row-3 { column-gap: 20px; row-gap: 22px; align-items: start; }
+
+/* Reserve one line of label height so single-line labels keep their
+   controls on the same line as taller neighbours. */
+.q-form .fld label { min-height: 18px; line-height: 1.3; }
+
+/* Multi-select chips: unify height + tighten rhythm with the controls. */
+.q-form .cert-grid { gap: 8px; }
+.q-form .chk { min-height: 38px; padding: 8px 14px; }
+
+/* A touch more air between section cards for a calmer vertical rhythm. */
+.q-form .form-stack { gap: 16px; }
+
+/* Flow rows carry FIVE fields in the questionnaire (origin, destination,
+   distance, throughput, distance-type) vs Step 1's four — give the scoped
+   grid a fifth column so the distance-type toggle doesn't wrap. */
+.q-form .step1-flow-row { grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto; }
+@media (max-width: 900px) {
+  .q-form .step1-flow-row { grid-template-columns: 1fr 1fr; }
+}
+
 /* Vehicle-interest picker — image cards, multi-select (mirrors Step 2 cards). */
 .veh-pick-grid {
   display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 6px;
