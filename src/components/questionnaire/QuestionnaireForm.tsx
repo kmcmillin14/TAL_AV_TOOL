@@ -68,7 +68,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
     fields: ['currentToyotaForklifts', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
-    fields: ['projectDrivers', 'currentProcess', 'existingAutomation', 'volumeGrowthNote', 'seasonalityNote'] },
+    fields: ['projectDrivers', 'currentProcess', 'hasExistingAutomation', 'existingAutomation', 'existingAutomationInterop', 'currentHeadcount', 'volumeGrowthNote', 'seasonalityNote'] },
   { id: 'q-sec-13', num: '13', short: 'Notes', tier: TIER_DETAILS,
     fields: ['projectNotes'] },
 ]
@@ -155,6 +155,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const isOutdoor = values.outdoorRequired === true
   const tempEnv = values.temperatureEnvironment
   const showTempRange = tempEnv === 'refrigerated' || tempEnv === 'freezer'
+  const hasExistingAutomation = values.hasExistingAutomation === true
 
   // Keep legacy singular typicalUnitType in sync with the multi-select's first
   // choice so the main app's calc/import (which reads the singular field) works.
@@ -708,7 +709,12 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             </div>
             <div className="fld-grid-2">
               <div className="fld"><label>How is this done today?</label><textarea {...register('currentProcess')} placeholder="Manual forklifts, hand carts, …" /></div>
-              <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
+              <div className="fld"><label>People / forklifts doing this today</label><input type="number" min="0" className="mono" {...register('currentHeadcount', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Any existing automation on site?</label><YesNo name="hasExistingAutomation" /></div>
+              {hasExistingAutomation && (<>
+                <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
+                <div className="fld"><label>Must new fleet interoperate with it?</label><input {...register('existingAutomationInterop')} placeholder="Shared traffic, handoffs, controls…" /></div>
+              </>)}
               <div className="fld"><label>Volume growth</label><input {...register('volumeGrowthNote')} placeholder="e.g. +10%/yr" /></div>
               <div className="fld"><label>Seasonality</label><input {...register('seasonalityNote')} placeholder="e.g. Q4 peak" /></div>
             </div>
