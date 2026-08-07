@@ -4246,6 +4246,29 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   font-family: var(--tal-font-family); font-size: 13px; color: var(--text-secondary); line-height: 1.4;
 }
 .addr-finder-list button:hover { background: var(--bg-hover); color: var(--text-primary); }
+/* Touch: taller tap targets in the address dropdown */
+@media (pointer: coarse) {
+  .addr-finder-list button { min-height: 44px; padding: 10px 12px; }
+}
+
+/* ── Questionnaire mobile overrides ────────────────────────────────────────── */
+@media (max-width: 700px) {
+  /* Brand bar: tighten padding, hide date to save space */
+  .q-brandbar-inner { padding: 10px 16px; gap: 12px; }
+  .q-brandbar-date { display: none; }
+  /* Workspace: less horizontal padding on phones */
+  .q-brandbar + .workspace { padding: 16px 14px 60px; }
+  /* Export buttons: stack full-width */
+  .q-actions-btns { flex-direction: column; width: 100%; }
+  .q-export-btn, .q-send-btn { width: 100%; justify-content: center; }
+}
+@media (max-width: 480px) {
+  /* Very small phones: hide brand title text, keep logo + toolbar */
+  .q-brandbar-title, .q-brandbar-divider { display: none; }
+  /* Seg-toggle wraps rather than overflows on 4-option rows */
+  .q-form .seg-toggle { flex-wrap: wrap; }
+  .q-form .seg-btn { flex: 1 1 calc(50% - 4px); justify-content: center; }
+}
 
 
 /* ---- Header — Save Revision / Export to Customer + autosave chip ---- */
