@@ -51,7 +51,7 @@ const SECTIONS: readonly QSection[] = [
     fields: ['vehiclesOfInterest', 'vehicleInMind'] },
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
     fields: ['unitLoadTypes', 'typicalUnitType', 'otherUnitTypeDescription', 'maxLoadWeightLbs', 'loadLengthIn', 'loadWidthIn', 'loadHeightIn'] },
-  { id: 'q-sec-04', num: '04', short: 'How it’s moved', tier: TIER_APP,
+  { id: "q-sec-04", num: "04", short: "How it's moved", tier: TIER_APP,
     fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'dwellTimeMin', 'chargingStrategyPreference', 'topOfRollerHeightFt', 'maxLiftHeightFt', 'specialtyApplications'] },
   { id: 'q-sec-05', num: '05', short: 'Where it runs', tier: TIER_APP,
     fields: ['driveAisleWidthFt', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
@@ -62,7 +62,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-08', num: '08', short: 'Schedule', tier: TIER_APP,
     fields: ['shiftsPerDay', 'hoursPerShift', 'operatingDaysPattern', 'breaksPerShift', 'breakDurationMin'] },
   { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
-    fields: ['certifications', 'interlocks', 'wmsRequired', 'wmsVendor'] },
+    fields: ['certifications', 'interlocks', 'hazardZoneClassification', 'barcodeScanningRequired', 'wmsRequired', 'wmsVendor', 'wmsInterfaceType', 'taggingScanMethod', 'restApiAvailable'] },
   { id: 'q-sec-10', num: '10', short: 'Opportunity', tier: TIER_DETAILS,
     fields: ['projectName', 'projectStage', 'budgetRange', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactPhone'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
@@ -142,6 +142,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const cadAvailable = values.cadAvailable
   const transferType = values.transferType
   const wmsRequired = values.wmsRequired
+  const certs = values.certifications ?? []
+  const showHazardZone = certs.includes('ATEX') || certs.includes('IECEx')
   const unitLoadTypes = values.unitLoadTypes ?? []
   const showOtherUnit = unitLoadTypes.includes('Other')
   const submissionType = values.submissionType
@@ -170,8 +172,14 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const onSubmit: SubmitHandler<PartialProjectFormData> = useCallback(async (v) => {
     setInvalidMsg(null)
     if (!v.submissionType) {
-      setInvalidMsg("Please choose how you’re submitting (Section 01) before exporting.")
+      setInvalidMsg("Please choose how you're submitting (Section 01) before exporting.")
       document.getElementById('q-sec-01')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    const certList = v.certifications ?? []
+    if ((certList.includes('ATEX') || certList.includes('IECEx')) && !v.hazardZoneClassification?.trim()) {
+      setInvalidMsg('Hazard zone classification is required for ATEX / IECEx (Section 09).')
+      document.getElementById('q-sec-09')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
     setBusy(true)
@@ -245,7 +253,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <h1>{values.customerName?.trim() || 'Tell us about your application'}</h1>
           <div className="desc">
             A few quick details to start, then the specifics of what you move. Nothing is required —
-            fill in what you know. When you’re done, export the PDF and send it to your TAL engineer.
+            fill in what you know. When you're done, export the PDF and send it to your TAL engineer.
           </div>
         </div>
       </div>
@@ -295,20 +303,20 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             <div className="help" style={{ marginTop: 12 }}>More contact &amp; commercial details come at the end — start with the essentials.</div>
           </FormSection>
 
-          <FormSection id="q-sec-02" sectionNum="02" title="Vehicles you’re interested in">
+          <FormSection id="q-sec-02" sectionNum="02" title="Vehicles you're interested in">
             <div className="fld-grid-4">
               <div className="fld span-4">
                 <Controller control={control} name="vehiclesOfInterest" render={({ field }) => (
                   <VehiclePicker value={field.value ?? []} onChange={field.onChange} />
                 )} />
-                <div className="help">Optional — not sure? Leave blank and we’ll recommend the right fit.</div>
+                <div className="help">Optional — not sure? Leave blank and we'll recommend the right fit.</div>
               </div>
               <div className="fld span-2"><label>Other vehicle / not listed</label><input {...register('vehicleInMind')} placeholder="Anything specific in mind" /></div>
             </div>
           </FormSection>
 
           {/* ── Your application ── */}
-          <FormSection id="q-sec-03" sectionNum="03" title="What you’re moving">
+          <FormSection id="q-sec-03" sectionNum="03" title="What you're moving">
             <div className="fld-grid-4">
               <div className="fld span-4">
                 <label>Unit / load type(s)</label>
@@ -334,7 +342,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             </div>
           </FormSection>
 
-          <FormSection id="q-sec-04" sectionNum="04" title="How it’s moved">
+          <FormSection id="q-sec-04" sectionNum="04" title="How it's moved">
             <div className="fld-grid-2">
               <div className="fld">
                 <label>Pick loads up from</label>
@@ -619,11 +627,42 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <FormSection id="q-sec-09" sectionNum="09" title="Certifications & controls">
             <div className="fld-grid-4">
               <div className="fld span-4"><label>Required certifications</label><Chips name="certifications" options={CERTIFICATIONS} /></div>
+              {showHazardZone && (
+                <div className="fld span-4">
+                  <label>Hazard zone classification <span className="req-star" aria-hidden>*</span></label>
+                  <input {...register('hazardZoneClassification')} placeholder="e.g. Zone 1 / Class I Div 1" />
+                  <div className="help">Required for ATEX / IECEx applications.</div>
+                </div>
+              )}
               <div className="fld span-4"><label>Equipment interlocks</label><Chips name="interlocks" options={INTERLOCKS} /></div>
             </div>
             <div className="fld-grid-2">
+              <div className="fld"><label>Barcode scanning required?</label><YesNo name="barcodeScanningRequired" /></div>
               <div className="fld"><label>WMS integration required?</label><YesNo name="wmsRequired" /></div>
-              {wmsRequired && <div className="fld"><label>WMS vendor</label><input {...register('wmsVendor')} /></div>}
+              {wmsRequired && (<>
+                <div className="fld"><label>WMS vendor</label><input {...register('wmsVendor')} /></div>
+                <div className="fld">
+                  <label>WMS interface type</label>
+                  <select {...register('wmsInterfaceType', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select…</option>
+                    {WMS_INTERFACE_TYPES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+                <div className="fld">
+                  <label>REST API available?</label>
+                  <select {...register('restApiAvailable', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select…</option>
+                    {REST_API_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+                <div className="fld">
+                  <label>Tagging / scan method</label>
+                  <select {...register('taggingScanMethod', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select…</option>
+                    {TAGGING_SCAN_METHODS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              </>)}
             </div>
           </FormSection>
 
@@ -648,7 +687,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld"><label>Decision date</label><input type="date" {...register('decisionDate')} /></div>
               <div className="fld"><label>Target go-live</label><input type="date" {...register('targetGoLiveDate')} /></div>
               <div className="fld"><label>CAD / drawings available?</label><YesNo name="cadAvailable" /></div>
-              {cadAvailable && <div className="fld"><label>CAD notes</label><input {...register('cadNotes')} placeholder="Format, what’s included…" /></div>}
+              {cadAvailable && <div className="fld"><label>CAD notes</label><input {...register('cadNotes')} placeholder="Format, what's included…" /></div>}
               <div className="fld"><label>Your phone</label><input {...register('customerContactPhone')} /></div>
             </div>
           </FormSection>
@@ -666,7 +705,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             </div>
           </FormSection>
 
-          <FormSection id="q-sec-12" sectionNum="12" title="Why & how it’s done today">
+          <FormSection id="q-sec-12" sectionNum="12" title="Why & how it's done today">
             <div className="fld-grid-4">
               <div className="fld span-4">
                 <label>Why are you automating?</label>
