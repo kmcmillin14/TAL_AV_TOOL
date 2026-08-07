@@ -4,7 +4,7 @@ import { projectSchema, flowSchema } from '@/src/lib/validations/schemas'
 describe('questionnaire change-log schema additions', () => {
   const keys = new Set(Object.keys(projectSchema.shape))
   const expected = [
-    'submissionType', 'partnerCompanyName', 'partnerRepContact', 'internalAccountId',
+    'submissionType', 'partnerCompanyName', 'partnerRepContact',
     'unitLoadTypes', 'dwellTimeMin', 'chargingStrategyPreference', 'topOfRollerHeightFt',
     'driveAisleWidthFt', 'rackingAisleWidthFt', 'sharedTrafficTypes', 'guidanceType',
     'hazardZoneClassification', 'restApiAvailable', 'barcodeScanningRequired',

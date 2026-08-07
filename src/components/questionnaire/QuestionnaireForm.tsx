@@ -47,7 +47,7 @@ const TIER_DETAILS = 'Project details'
 // per-section "started" progress meter.
 const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-01', num: '01', short: 'About you', tier: TIER_START,
-    fields: ['submissionType', 'customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail', 'dealershipName', 'dealerRep', 'partnerCompanyName', 'partnerRepContact', 'internalAccountId'] },
+    fields: ['submissionType', 'customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail', 'dealershipName', 'dealerRep', 'partnerCompanyName', 'partnerRepContact', 'opportunityType', 'opportunityNumber'] },
   { id: 'q-sec-02', num: '02', short: 'Vehicles', tier: TIER_START,
     fields: ['vehiclesOfInterest', 'vehicleInMind'] },
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
@@ -312,9 +312,18 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="fld"><label>Partner company</label><input {...register('partnerCompanyName')} /></div>
                 <div className="fld"><label>Partner rep / contact</label><input {...register('partnerRepContact')} /></div>
               </>)}
-              {submissionType === 'internal' && (
-                <div className="fld"><label>Internal account ID</label><input {...register('internalAccountId')} /></div>
-              )}
+              {submissionType === 'internal' && (<>
+                <div className="fld">
+                  <label>Lead or opportunity?</label>
+                  <Controller control={control} name="opportunityType" render={({ field }) => (
+                    <div className="seg-toggle">
+                      <button type="button" className={`seg-btn${field.value === 'lead' ? ' on' : ''}`} onClick={() => field.onChange(field.value === 'lead' ? undefined : 'lead')}>Lead</button>
+                      <button type="button" className={`seg-btn${field.value === 'opp' ? ' on' : ''}`} onClick={() => field.onChange(field.value === 'opp' ? undefined : 'opp')}>Opp</button>
+                    </div>
+                  )} />
+                </div>
+                <div className="fld"><label>Lead / Opp number</label><input {...register('opportunityNumber')} placeholder="e.g. OPP-12345" /></div>
+              </>)}
             </div>
             <div className="help" style={{ marginTop: 12 }}>More contact &amp; commercial details come at the end — start with the essentials.</div>
           </FormSection>

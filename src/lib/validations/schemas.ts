@@ -216,7 +216,8 @@ export const projectSchema = z.object({
   submissionType: z.enum(['customer', 'dealer', 'internal', 'partner']).optional(),
   partnerCompanyName: z.string().optional(),
   partnerRepContact: z.string().optional(),
-  internalAccountId: z.string().optional(),
+  // Internal (TAL) submissions capture the CRM lead/opp via the existing
+  // opportunityType + opportunityNumber fields (see top of projectSchema).
   // §03 load types (multi). Legacy singular `typicalUnitType` mirrors [0] on save.
   unitLoadTypes: z.array(z.string()).max(50).default([]),
   // §04 handling detail
