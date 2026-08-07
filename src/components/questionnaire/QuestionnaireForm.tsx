@@ -18,6 +18,7 @@ import {
   REST_API_OPTIONS, WMS_INTERFACE_TYPES, TAGGING_SCAN_METHODS,
 } from '@/src/lib/constants/enums'
 import { downloadQuestionnairePdf } from '@/src/lib/questionnaire/pdfQuestionnaire'
+import { questionnaireJsonBlob } from '@/src/lib/questionnaire/questionnaireExport'
 
 const DRAFT_KEY = 'tal:questionnaire-draft'
 
@@ -97,6 +98,14 @@ const FIELD_LABELS: Record<string, string> = {
   peakThroughputPerHour: 'Peak throughput (whole moves/hr)',
   breaksPerShift: 'Breaks / shift',
   breakDurationMin: 'Break duration',
+}
+
+function downloadJson(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = name
+  document.body.appendChild(a); a.click(); a.remove()
+  URL.revokeObjectURL(url)
 }
 
 function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => void }) {
@@ -186,6 +195,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
     setBusy(true)
     try {
       await downloadQuestionnairePdf(v)
+      const stamp = new Date().toISOString().slice(0, 10)
+      const slug = (v.customerName || v.projectName || 'questionnaire').replace(/[^\w-]+/g, '_').slice(0, 40)
+      downloadJson(questionnaireJsonBlob(v), `${slug}_${stamp}.json`)
       setSubmitted(true)
     } finally { setBusy(false) }
   }, [])
@@ -733,7 +745,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <Icon name="export" />
         </button>
         <span className="q-actions-note">{busy ? 'Preparing…' : 'Export a single PDF to send to your TAL engineer.'}</span>
-        {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Downloaded — send the PDF to your TAL engineer.</span>}
+        {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Downloaded PDF + JSON — send both to your TAL engineer.</span>}
         {invalidMsg && <span className="q-status q-status-bad"><Icon name="warn" size={14} /> {invalidMsg}</span>}
       </div>
     </form>
