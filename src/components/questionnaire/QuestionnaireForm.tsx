@@ -64,9 +64,9 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
     fields: ['certifications', 'interlocks', 'hazardZoneClassification', 'barcodeScanningRequired', 'wmsRequired', 'wmsVendor', 'wmsInterfaceType', 'taggingScanMethod', 'restApiAvailable'] },
   { id: 'q-sec-10', num: '10', short: 'Opportunity', tier: TIER_DETAILS,
-    fields: ['projectName', 'projectStage', 'budgetRange', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactPhone'] },
+    fields: ['projectName', 'projectStage', 'budgetRange', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'customerContactPhone'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
-    fields: ['dealershipName', 'dealerRep', 'currentToyotaForklifts', 'talHistory'] },
+    fields: ['currentToyotaForklifts', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
     fields: ['projectDrivers', 'currentProcess', 'existingAutomation', 'volumeGrowthNote', 'seasonalityNote'] },
   { id: 'q-sec-13', num: '13', short: 'Notes', tier: TIER_DETAILS,
@@ -686,17 +686,11 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               {isRfq && <div className="fld"><label>RFQ due date</label><input type="date" {...register('rfqDueDate')} /></div>}
               <div className="fld"><label>Decision date</label><input type="date" {...register('decisionDate')} /></div>
               <div className="fld"><label>Target go-live</label><input type="date" {...register('targetGoLiveDate')} /></div>
-              <div className="fld"><label>CAD / drawings available?</label><YesNo name="cadAvailable" /></div>
-              {cadAvailable && <div className="fld"><label>CAD notes</label><input {...register('cadNotes')} placeholder="Format, what's included…" /></div>}
               <div className="fld"><label>Your phone</label><input {...register('customerContactPhone')} /></div>
             </div>
           </FormSection>
 
           <FormSection id="q-sec-11" sectionNum="11" title="TAL / Toyota">
-            <div className="fld-grid-3">
-              <div className="fld"><label>Dealership name</label><input {...register('dealershipName')} /></div>
-              <div className="fld"><label>Dealer rep</label><input {...register('dealerRep')} /></div>
-            </div>
             <div className="fld-grid-2">
               <div className="fld"><label>Current Toyota forklifts?</label><input {...register('currentToyotaForklifts')} placeholder="How many / which models, if any" /></div>
             </div>
