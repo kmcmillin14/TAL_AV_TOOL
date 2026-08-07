@@ -14,6 +14,8 @@ import {
 import {
   TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS,
   SPECIALTY_APPLICATIONS, PROJECT_DRIVERS,
+  SUBMISSION_TYPES, CHARGING_STRATEGIES, SHARED_TRAFFIC_TYPES, GUIDANCE_TYPES,
+  REST_API_OPTIONS, WMS_INTERFACE_TYPES, TAGGING_SCAN_METHODS,
 } from '@/src/lib/constants/enums'
 import { downloadQuestionnairePdf } from '@/src/lib/questionnaire/pdfQuestionnaire'
 
@@ -43,7 +45,7 @@ const TIER_DETAILS = 'Project details'
 // per-section "started" progress meter.
 const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-01', num: '01', short: 'About you', tier: TIER_START,
-    fields: ['customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail'] },
+    fields: ['submissionType', 'customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail', 'dealershipName', 'dealerRep', 'partnerCompanyName', 'partnerRepContact', 'internalAccountId'] },
   { id: 'q-sec-02', num: '02', short: 'Vehicles', tier: TIER_START,
     fields: ['vehiclesOfInterest', 'vehicleInMind'] },
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
@@ -139,10 +141,18 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const transferType = values.transferType
   const wmsRequired = values.wmsRequired
   const unitType = values.typicalUnitType
+  const submissionType = values.submissionType
   const showHeight = !!transferType && HEIGHT_TRANSFER.has(transferType)
 
   const onSubmit: SubmitHandler<PartialProjectFormData> = useCallback(async (v) => {
-    setInvalidMsg(null); setBusy(true)
+    setInvalidMsg(null)
+    if (!v.submissionType) {
+      setSubmitted(false)
+      setInvalidMsg('Please choose how you’re submitting (Section 01) before exporting.')
+      document.getElementById('q-sec-01')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    setBusy(true)
     try {
       await downloadQuestionnairePdf(v)
       setSubmitted(true)
@@ -225,6 +235,17 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           {/* ── Getting started ── */}
           <FormSection id="q-sec-01" sectionNum="01" title="About you">
             <div className="fld-grid-3">
+              <div className="fld span-3">
+                <label>How are you submitting this? <span className="req-star" aria-hidden>*</span></label>
+                <Controller control={control} name="submissionType" render={({ field }) => (
+                  <div className="seg-toggle">
+                    {SUBMISSION_TYPES.map(o => (
+                      <button key={o.value} type="button" className={`seg-btn${field.value === o.value ? ' on' : ''}`} onClick={() => field.onChange(o.value)}>{o.label}</button>
+                    ))}
+                  </div>
+                )} />
+                <div className="help">Required — tells us who to route this to.</div>
+              </div>
               <div className="fld"><label>Customer / company</label><input {...register('customerName')} /></div>
               <div className="fld span-2">
                 <label>Facility location</label>
@@ -237,6 +258,17 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld"><label>Your job title</label><input {...register('customerContactRole')} placeholder="e.g. Operations Manager" /></div>
               <div className="fld"><label>Your email</label><input type="email" {...register('customerContactEmail')} /></div>
               <div className="fld"><label>TAL representative</label><input {...register('talRepName')} /></div>
+              {submissionType === 'dealer' && (<>
+                <div className="fld"><label>Dealership name</label><input {...register('dealershipName')} /></div>
+                <div className="fld"><label>Dealer rep</label><input {...register('dealerRep')} /></div>
+              </>)}
+              {submissionType === 'partner' && (<>
+                <div className="fld"><label>Partner company</label><input {...register('partnerCompanyName')} /></div>
+                <div className="fld"><label>Partner rep / contact</label><input {...register('partnerRepContact')} /></div>
+              </>)}
+              {submissionType === 'internal' && (
+                <div className="fld"><label>Internal account ID</label><input {...register('internalAccountId')} /></div>
+              )}
             </div>
             <div className="help" style={{ marginTop: 12 }}>More contact &amp; commercial details come at the end — start with the essentials.</div>
           </FormSection>

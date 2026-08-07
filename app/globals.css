@@ -864,6 +864,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .seg-btn:not(:first-child) { border-left: 1px solid var(--border); }
 .seg-btn:hover:not(.on) { color: var(--text-secondary); background: var(--bg-hover); }
 .seg-btn.on { background: var(--accent); color: white; font-weight: 600; }
+.req-star { color: var(--tal-red, #c00); font-weight: 700; margin-left: 2px; }
 
 .cert-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 .chk {
