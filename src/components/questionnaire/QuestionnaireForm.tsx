@@ -114,6 +114,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const addFlow = () => appendFlow({
     id: 'f_' + Math.random().toString(36).slice(2, 10),
     origin: '', destination: '', distanceFt: 0, thruPerHr: 0, routeLayout: 'medium', liftHeightFt: 0,
+    distanceType: 'one_way',
   })
 
   // Restore a previously-saved draft (validated; corrupt/stale shapes dropped).
@@ -574,6 +575,15 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                           <input type="number" min="0" className="mono" placeholder="60" {...register(`flows.${i}.thruPerHr`, { setValueAs: v => (v === '' || v == null ? 0 : Number(v)) })} />
                           <div className="unit">/hr</div>
                         </div>
+                      </div>
+                      <div className="fld">
+                        <label>Distance type</label>
+                        <Controller control={control} name={`flows.${i}.distanceType`} render={({ field }) => (
+                          <div className="seg-toggle">
+                            <button type="button" className={`seg-btn${field.value === 'one_way' ? ' on' : ''}`} onClick={() => field.onChange('one_way')}>One-way</button>
+                            <button type="button" className={`seg-btn${field.value === 'round_trip' ? ' on' : ''}`} onClick={() => field.onChange('round_trip')}>Round-trip</button>
+                          </div>
+                        )} />
                       </div>
                       <div className="step1-flow-actions">
                         <button type="button" className="tbtn-icon" aria-label="Delete flow" title="Delete flow" onClick={() => removeFlow(i)}>
