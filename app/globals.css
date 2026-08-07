@@ -4170,6 +4170,15 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 /* A touch more air between section cards for a calmer vertical rhythm. */
 .q-form .form-stack { gap: 16px; }
 
+/* The questionnaire's content is capped at 1180px, so the wide-screen rule
+   that expands grids to 6 columns (meant for Step 1's full-width form) just
+   makes the columns too narrow and wraps long labels (e.g. "Average
+   throughput") — dropping that field below its row-mates. Keep 4/3 columns. */
+@media (min-width: 1400px) {
+  .q-form .fld-grid-4 { grid-template-columns: repeat(4, 1fr); }
+  .q-form .fld-grid-3 { grid-template-columns: repeat(3, 1fr); }
+}
+
 /* Flow rows carry FIVE fields in the questionnaire (origin, destination,
    distance, throughput, distance-type) vs Step 1's four — give the scoped
    grid a fifth column so the distance-type toggle doesn't wrap. */

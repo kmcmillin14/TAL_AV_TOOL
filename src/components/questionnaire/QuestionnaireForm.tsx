@@ -250,12 +250,13 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
     )} />
   )
 
-  // Reusable No/Yes segmented toggle for a tri-state boolean.
+  // Reusable No/Yes segmented toggle for a tri-state boolean. Clicking the
+  // already-selected option clears it back to unanswered (undefined).
   const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="seg-toggle">
-        <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(false)}>No</button>
-        <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => field.onChange(true)}>Yes</button>
+        <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(field.value === false ? undefined : false)}>No</button>
+        <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => field.onChange(field.value === true ? undefined : true)}>Yes</button>
       </div>
     )} />
   )
@@ -285,7 +286,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <Controller control={control} name="submissionType" render={({ field }) => (
                   <div className="seg-toggle">
                     {SUBMISSION_TYPES.map(o => (
-                      <button key={o.value} type="button" className={`seg-btn${field.value === o.value ? ' on' : ''}`} onClick={() => field.onChange(o.value)}>{o.label}</button>
+                      <button key={o.value} type="button" className={`seg-btn${field.value === o.value ? ' on' : ''}`} onClick={() => field.onChange(field.value === o.value ? undefined : o.value)}>{o.label}</button>
                     ))}
                   </div>
                 )} />
@@ -463,8 +464,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <label>Indoor / outdoor</label>
                 <Controller control={control} name="outdoorRequired" render={({ field }) => (
                   <div className="seg-toggle">
-                    <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(false)}>Indoor</button>
-                    <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => field.onChange(true)}>Outdoor</button>
+                    <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(field.value === false ? undefined : false)}>Indoor</button>
+                    <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => field.onChange(field.value === true ? undefined : true)}>Outdoor</button>
                   </div>
                 )} />
               </div>
@@ -473,7 +474,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <Controller control={control} name="temperatureEnvironment" render={({ field }) => (
                   <div className="seg-toggle">
                     {(['ambient', 'refrigerated', 'freezer'] as const).map(opt => (
-                      <button key={opt} type="button" className={`seg-btn${field.value === opt ? ' on' : ''}`} onClick={() => field.onChange(opt)}>
+                      <button key={opt} type="button" className={`seg-btn${field.value === opt ? ' on' : ''}`} onClick={() => field.onChange(field.value === opt ? undefined : opt)}>
                         {opt === 'ambient' ? 'Ambient' : opt === 'refrigerated' ? 'Refrigerated' : 'Freezer'}
                       </button>
                     ))}
@@ -570,8 +571,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <label>Distance type</label>
                 <Controller control={control} name="distanceType" render={({ field }) => (
                   <div className="seg-toggle">
-                    <button type="button" className={`seg-btn${field.value === 'one_way' ? ' on' : ''}`} onClick={() => field.onChange('one_way')}>One-way</button>
-                    <button type="button" className={`seg-btn${field.value === 'round_trip' ? ' on' : ''}`} onClick={() => field.onChange('round_trip')}>Round-trip</button>
+                    <button type="button" className={`seg-btn${field.value === 'one_way' ? ' on' : ''}`} onClick={() => field.onChange(field.value === 'one_way' ? undefined : 'one_way')}>One-way</button>
+                    <button type="button" className={`seg-btn${field.value === 'round_trip' ? ' on' : ''}`} onClick={() => field.onChange(field.value === 'round_trip' ? undefined : 'round_trip')}>Round-trip</button>
                   </div>
                 )} />
               </div>
@@ -603,8 +604,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                         <label>Distance type</label>
                         <Controller control={control} name={`flows.${i}.distanceType`} render={({ field }) => (
                           <div className="seg-toggle">
-                            <button type="button" className={`seg-btn${field.value === 'one_way' ? ' on' : ''}`} onClick={() => field.onChange('one_way')}>One-way</button>
-                            <button type="button" className={`seg-btn${field.value === 'round_trip' ? ' on' : ''}`} onClick={() => field.onChange('round_trip')}>Round-trip</button>
+                            <button type="button" className={`seg-btn${field.value === 'one_way' ? ' on' : ''}`} onClick={() => field.onChange(field.value === 'one_way' ? undefined : 'one_way')}>One-way</button>
+                            <button type="button" className={`seg-btn${field.value === 'round_trip' ? ' on' : ''}`} onClick={() => field.onChange(field.value === 'round_trip' ? undefined : 'round_trip')}>Round-trip</button>
                           </div>
                         )} />
                       </div>
