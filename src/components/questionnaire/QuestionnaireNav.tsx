@@ -16,6 +16,12 @@ interface Props {
   values: Partial<PartialProjectFormData>
 }
 
+/** True when a section carries the required `submissionType` field but it's unset.
+ *  Drives the status-bar "Required" marker (export is blocked until it's chosen). */
+export function isRequiredUnmet(s: QSection, values: Partial<PartialProjectFormData>): boolean {
+  return s.fields.includes('submissionType') && !values.submissionType
+}
+
 /** True when a section has any answer (non-empty / non-default). */
 function started(s: QSection, values: Partial<PartialProjectFormData>): boolean {
   return s.fields.some(f => {
@@ -74,7 +80,8 @@ export default function QuestionnaireNav({ sections, values }: Props) {
         {sections.map((s, i) => {
           const isActive = activeId === s.id
           const tierStart = i === 0 || sections[i - 1].tier !== s.tier
-          const dot = started(s, values) ? 'section-dot in-progress' : 'section-dot optional'
+          const requiredUnmet = isRequiredUnmet(s, values)
+          const dot = requiredUnmet ? 'section-dot required' : started(s, values) ? 'section-dot in-progress' : 'section-dot optional'
           return (
             <li key={s.id}>
               {tierStart && <div className="section-nav-tier">{s.tier}</div>}
@@ -82,10 +89,12 @@ export default function QuestionnaireNav({ sections, values }: Props) {
                 type="button"
                 className={`section-nav-item${isActive ? ' active' : ''}`}
                 onClick={() => handleClick(s.id)}
+                aria-label={requiredUnmet ? `${s.short} — required answer missing` : undefined}
               >
                 <span className={dot} aria-hidden />
                 <span className="section-nav-num">{s.num}</span>
                 <span className="section-nav-label">{s.short}</span>
+                {requiredUnmet && <span className="section-nav-req">Required</span>}
               </button>
             </li>
           )

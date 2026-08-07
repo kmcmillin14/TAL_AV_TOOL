@@ -120,6 +120,48 @@ are printed in the questionnaire PDF and round-trip through import into the main
 PDF export (Section 8 — Opportunity & Contact), but they do **not** affect gate evaluation,
 traffic-light status, or fleet sizing.
 
+### Change-log additions (2026-08-07)
+
+The 13-section questionnaire was extended with new fields across six sections:
+
+- **§01 — Submitter routing.** `submissionType` (`'partner' | 'internal' | 'dealer'`) is
+  **required** on the questionnaire form (the only required field). Selecting a type reveals
+  a cluster of follow-up fields: partner → `partnerCompanyName` + `partnerRepContact`;
+  internal → `internalAccountId`; dealer → `dealershipName` + `dealerRep`.
+- **§03 — Multi-select load types.** `unitLoadTypes` (string array) replaces the singular
+  radio; `typicalUnitType` is kept in sync as the first selection (legacy mirror for gates
+  and calc). Both round-trip through the envelope.
+- **§04 — Dwell / charging / lift.** New informational fields: `dwellTimeMin`,
+  `chargingStrategyPreference`, `topOfRollerHeightFt`, `maxLiftHeightFt`.
+- **§05 — Aisle split + environment.** Drive-aisle (`driveAisleWidthFt`) and racking-aisle
+  (`rackingAisleWidthFt`) replace the single aisle input; `minAisleWidthFt` is kept in sync
+  as `min()` of the two (legacy mirror). `sharedTrafficTypes` (multi-select),
+  `guidanceType`, VNA guidance note, ramp fields (`rampRequired` / `maxRampGrade` — now
+  collected from customers, conditional on Outdoor), and a temperature-range visibility gate
+  (temp fields hidden unless refrigerated/freezer environment is selected).
+- **§06 — CAD single home.** CAD availability (`cadAvailable`) consolidated to §06; the
+  earlier duplicate in §09 removed.
+- **§07 — Per-flow distance type.** `distanceType` (`'one_way' | 'round_trip'`) added to
+  `flowSchema`; intake only — the sizing engine always works in one-way feet.
+- **§09 — Hazard / barcode / WMS cluster.** `hazardZoneClassification` (required when
+  ATEX/IECEx is selected; gating enforced on the questionnaire form only, not in the app
+  calc), `restApiAvailable`, `barcodeScanningRequired`, `wmsInterfaceType`,
+  `taggingScanMethod`.
+- **§12 — Existing automation + headcount.** `hasExistingAutomation` toggle reveals
+  `existingAutomationInterop`; `currentHeadcount`.
+
+**Status-bar "Required" marker.** The questionnaire status bar marks `submissionType` as
+required and shows a validation hint until it is answered. All other fields remain optional.
+
+**Dual export.** The questionnaire offers two downloads: a TAL-branded PDF (project JSON
+embedded as attachment) and a plain `.json` file using the same `{ schemaVersion, exportedAt,
+project }` envelope. Both import identically via Step 00.
+
+All new fields are optional in the project schema and are **ignored by gates and calc** —
+they are informational intake only, printed in the questionnaire PDF and preserved through
+import/export round-trips. See `docs/questionnaire-interop.md` for the mirror rules and
+field inventory.
+
 ---
 
 ## Step 1 — Application Questionnaire

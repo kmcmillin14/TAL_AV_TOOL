@@ -578,6 +578,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .section-dot.in-progress { background: var(--warn); }
 .section-dot.untouched   { background: var(--text-disabled); }
 .section-dot.optional    { background: var(--border-strong); }
+.section-dot.required { background: var(--tal-red, #c00); box-shadow: 0 0 0 3px rgba(204,0,0,0.18); }
+.section-nav-req { margin-left: auto; font-size: 10px; font-weight: 700; color: var(--tal-red, #c00); text-transform: uppercase; letter-spacing: 0.04em; }
 
 /* Section header badge */
 .form-section-meta { display: flex; align-items: center; gap: 10px; }
@@ -864,6 +866,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .seg-btn:not(:first-child) { border-left: 1px solid var(--border); }
 .seg-btn:hover:not(.on) { color: var(--text-secondary); background: var(--bg-hover); }
 .seg-btn.on { background: var(--accent); color: white; font-weight: 600; }
+.req-star { color: var(--tal-red, #c00); font-weight: 700; margin-left: 2px; }
 
 .cert-grid { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 .chk {

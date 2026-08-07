@@ -12,10 +12,13 @@ import {
   partialProjectSchema, projectSchema, type PartialProjectFormData,
 } from '@/src/lib/validations/schemas'
 import {
-  TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS,
+  UNIT_LOAD_TYPE_OPTIONS, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS,
   SPECIALTY_APPLICATIONS, PROJECT_DRIVERS,
+  SUBMISSION_TYPES, CHARGING_STRATEGIES, SHARED_TRAFFIC_TYPES, GUIDANCE_TYPES,
+  REST_API_OPTIONS, WMS_INTERFACE_TYPES, TAGGING_SCAN_METHODS,
 } from '@/src/lib/constants/enums'
 import { downloadQuestionnairePdf } from '@/src/lib/questionnaire/pdfQuestionnaire'
+import { questionnaireJsonBlob } from '@/src/lib/questionnaire/questionnaireExport'
 
 const DRAFT_KEY = 'tal:questionnaire-draft'
 
@@ -31,6 +34,7 @@ const HEIGHT_TRANSFER = new Set(TRANSFER_TYPE_OPTIONS.filter(o => o.needsHeight)
 // Empty defaults — array fields seeded so chips/picker controllers start defined.
 const EMPTY_VALUES: PartialProjectFormData = {
   projectDrivers: [], specialtyApplications: [], certifications: [], interlocks: [], vehiclesOfInterest: [],
+  unitLoadTypes: [], sharedTrafficTypes: [],
 }
 
 // Three tiers: start light (who + what they're drawn to), then the application
@@ -43,29 +47,29 @@ const TIER_DETAILS = 'Project details'
 // per-section "started" progress meter.
 const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-01', num: '01', short: 'About you', tier: TIER_START,
-    fields: ['customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail'] },
+    fields: ['submissionType', 'customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail', 'dealershipName', 'dealerRep', 'partnerCompanyName', 'partnerRepContact', 'internalAccountId'] },
   { id: 'q-sec-02', num: '02', short: 'Vehicles', tier: TIER_START,
     fields: ['vehiclesOfInterest', 'vehicleInMind'] },
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
-    fields: ['typicalUnitType', 'otherUnitTypeDescription', 'maxLoadWeightLbs', 'loadLengthIn', 'loadWidthIn', 'loadHeightIn'] },
-  { id: 'q-sec-04', num: '04', short: 'How it’s moved', tier: TIER_APP,
-    fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'specialtyApplications'] },
+    fields: ['unitLoadTypes', 'typicalUnitType', 'otherUnitTypeDescription', 'maxLoadWeightLbs', 'loadLengthIn', 'loadWidthIn', 'loadHeightIn'] },
+  { id: "q-sec-04", num: "04", short: "How it's moved", tier: TIER_APP,
+    fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'dwellTimeMin', 'chargingStrategyPreference', 'topOfRollerHeightFt', 'maxLiftHeightFt', 'specialtyApplications'] },
   { id: 'q-sec-05', num: '05', short: 'Where it runs', tier: TIER_APP,
-    fields: ['minAisleWidthFt', 'floorCondition', 'outdoorRequired', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
+    fields: ['driveAisleWidthFt', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
   { id: 'q-sec-06', num: '06', short: 'Site readiness', tier: TIER_APP,
-    fields: ['facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable'] },
+    fields: ['facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable', 'cadAvailable', 'cadNotes'] },
   { id: 'q-sec-07', num: '07', short: 'Throughput & flows', tier: TIER_APP,
     fields: ['requiredThroughputPerHour', 'peakThroughputPerHour', 'avgDistanceFt', 'distanceType', 'flows'] },
   { id: 'q-sec-08', num: '08', short: 'Schedule', tier: TIER_APP,
     fields: ['shiftsPerDay', 'hoursPerShift', 'operatingDaysPattern', 'breaksPerShift', 'breakDurationMin'] },
   { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
-    fields: ['certifications', 'interlocks', 'wmsRequired', 'wmsVendor'] },
+    fields: ['certifications', 'interlocks', 'hazardZoneClassification', 'barcodeScanningRequired', 'wmsRequired', 'wmsVendor', 'wmsInterfaceType', 'taggingScanMethod', 'restApiAvailable'] },
   { id: 'q-sec-10', num: '10', short: 'Opportunity', tier: TIER_DETAILS,
-    fields: ['projectName', 'projectStage', 'budgetRange', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'cadAvailable', 'cadNotes', 'customerContactPhone'] },
+    fields: ['projectName', 'projectStage', 'budgetRange', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'customerContactPhone'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
-    fields: ['dealershipName', 'dealerRep', 'currentToyotaForklifts', 'talHistory'] },
+    fields: ['currentToyotaForklifts', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
-    fields: ['projectDrivers', 'currentProcess', 'existingAutomation', 'volumeGrowthNote', 'seasonalityNote'] },
+    fields: ['projectDrivers', 'currentProcess', 'hasExistingAutomation', 'existingAutomation', 'existingAutomationInterop', 'currentHeadcount', 'volumeGrowthNote', 'seasonalityNote'] },
   { id: 'q-sec-13', num: '13', short: 'Notes', tier: TIER_DETAILS,
     fields: ['projectNotes'] },
 ]
@@ -96,6 +100,16 @@ const FIELD_LABELS: Record<string, string> = {
   breakDurationMin: 'Break duration',
 }
 
+function downloadJson(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url; a.download = name
+  document.body.appendChild(a); a.click(); a.remove()
+  // Defer revoke: some browsers dispatch the download async after click() returns,
+  // and revoking synchronously can cancel it (esp. with a second download in the same tick).
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
 function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => void }) {
   const [submitted, setSubmitted] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -103,7 +117,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const [today] = useState(() => new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }))
   // Volume can be given as overall averages OR per-flow detail — they're redundant, so pick one.
   const [thruMode, setThruMode] = useState<'avg' | 'flows'>('avg')
-  const { register, handleSubmit, control, reset, watch } = useForm<PartialProjectFormData>({
+  const { register, handleSubmit, control, reset, watch, setValue } = useForm<PartialProjectFormData>({
     resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
     defaultValues: EMPTY_VALUES,
   })
@@ -111,6 +125,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const addFlow = () => appendFlow({
     id: 'f_' + Math.random().toString(36).slice(2, 10),
     origin: '', destination: '', distanceFt: 0, thruPerHr: 0, routeLayout: 'medium', liftHeightFt: 0,
+    distanceType: 'one_way',
   })
 
   // Restore a previously-saved draft (validated; corrupt/stale shapes dropped).
@@ -138,13 +153,53 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const cadAvailable = values.cadAvailable
   const transferType = values.transferType
   const wmsRequired = values.wmsRequired
-  const unitType = values.typicalUnitType
+  const certs = values.certifications ?? []
+  const showHazardZone = certs.includes('ATEX') || certs.includes('IECEx')
+  const unitLoadTypes = values.unitLoadTypes ?? []
+  const showOtherUnit = unitLoadTypes.includes('Other')
+  const submissionType = values.submissionType
   const showHeight = !!transferType && HEIGHT_TRANSFER.has(transferType)
+  const isLiftTable = transferType === 'lift_table'
+  const isForklift = transferType === 'forklift'
+  const specialties = values.specialtyApplications ?? []
+  const isVNA = specialties.includes('VNA')
+  const isOutdoor = values.outdoorRequired === true
+  const tempEnv = values.temperatureEnvironment
+  const showTempRange = tempEnv === 'refrigerated' || tempEnv === 'freezer'
+  const hasExistingAutomation = values.hasExistingAutomation === true
+
+  // Keep legacy singular typicalUnitType in sync with the multi-select's first
+  // choice so the main app's calc/import (which reads the singular field) works.
+  useEffect(() => {
+    setValue('typicalUnitType', unitLoadTypes[0] ?? undefined)
+  }, [setValue, unitLoadTypes])
+
+  // Keep legacy minAisleWidthFt (main-app informational) = narrower of the two.
+  useEffect(() => {
+    const d = values.driveAisleWidthFt, r = values.rackingAisleWidthFt
+    const nums = [d, r].filter((n): n is number => typeof n === 'number')
+    setValue('minAisleWidthFt', nums.length ? Math.min(...nums) : undefined)
+  }, [setValue, values.driveAisleWidthFt, values.rackingAisleWidthFt])
 
   const onSubmit: SubmitHandler<PartialProjectFormData> = useCallback(async (v) => {
-    setInvalidMsg(null); setBusy(true)
+    setInvalidMsg(null)
+    if (!v.submissionType) {
+      setInvalidMsg("Please choose how you're submitting (Section 01) before exporting.")
+      document.getElementById('q-sec-01')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    const certList = v.certifications ?? []
+    if ((certList.includes('ATEX') || certList.includes('IECEx')) && !v.hazardZoneClassification?.trim()) {
+      setInvalidMsg('Hazard zone classification is required for ATEX / IECEx (Section 09).')
+      document.getElementById('q-sec-09')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    setBusy(true)
     try {
       await downloadQuestionnairePdf(v)
+      const stamp = new Date().toISOString().slice(0, 10)
+      const slug = (v.customerName || v.projectName || 'questionnaire').replace(/[^\w-]+/g, '_').slice(0, 40)
+      downloadJson(questionnaireJsonBlob(v), `${slug}_${stamp}.json`)
       setSubmitted(true)
     } finally { setBusy(false) }
   }, [])
@@ -178,7 +233,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   }, [handleSubmit, onSubmit, onInvalid, clearAll])
 
   // Reusable chip multiselect (matches Step 1's .cert-grid / .chk).
-  const Chips = ({ name, options }: { name: 'projectDrivers' | 'specialtyApplications' | 'certifications' | 'interlocks'; options: readonly string[] }) => (
+  const Chips = ({ name, options }: { name: 'projectDrivers' | 'specialtyApplications' | 'certifications' | 'interlocks' | 'unitLoadTypes' | 'sharedTrafficTypes'; options: readonly string[] }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="cert-grid">
         {options.map(opt => {
@@ -196,7 +251,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   )
 
   // Reusable No/Yes segmented toggle for a tri-state boolean.
-  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' }) => (
+  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="seg-toggle">
         <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(false)}>No</button>
@@ -213,7 +268,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <h1>{values.customerName?.trim() || 'Tell us about your application'}</h1>
           <div className="desc">
             A few quick details to start, then the specifics of what you move. Nothing is required —
-            fill in what you know. When you’re done, export the PDF and send it to your TAL engineer.
+            fill in what you know. When you're done, export the PDF and send it to your TAL engineer.
           </div>
         </div>
       </div>
@@ -225,6 +280,17 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           {/* ── Getting started ── */}
           <FormSection id="q-sec-01" sectionNum="01" title="About you">
             <div className="fld-grid-3">
+              <div className="fld span-3">
+                <label>How are you submitting this? <span className="req-star" aria-hidden>*</span></label>
+                <Controller control={control} name="submissionType" render={({ field }) => (
+                  <div className="seg-toggle">
+                    {SUBMISSION_TYPES.map(o => (
+                      <button key={o.value} type="button" className={`seg-btn${field.value === o.value ? ' on' : ''}`} onClick={() => field.onChange(o.value)}>{o.label}</button>
+                    ))}
+                  </div>
+                )} />
+                <div className="help">Required — tells us who to route this to.</div>
+              </div>
               <div className="fld"><label>Customer / company</label><input {...register('customerName')} /></div>
               <div className="fld span-2">
                 <label>Facility location</label>
@@ -237,33 +303,42 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld"><label>Your job title</label><input {...register('customerContactRole')} placeholder="e.g. Operations Manager" /></div>
               <div className="fld"><label>Your email</label><input type="email" {...register('customerContactEmail')} /></div>
               <div className="fld"><label>TAL representative</label><input {...register('talRepName')} /></div>
+              {submissionType === 'dealer' && (<>
+                <div className="fld"><label>Dealership name</label><input {...register('dealershipName')} /></div>
+                <div className="fld"><label>Dealer rep</label><input {...register('dealerRep')} /></div>
+              </>)}
+              {submissionType === 'partner' && (<>
+                <div className="fld"><label>Partner company</label><input {...register('partnerCompanyName')} /></div>
+                <div className="fld"><label>Partner rep / contact</label><input {...register('partnerRepContact')} /></div>
+              </>)}
+              {submissionType === 'internal' && (
+                <div className="fld"><label>Internal account ID</label><input {...register('internalAccountId')} /></div>
+              )}
             </div>
             <div className="help" style={{ marginTop: 12 }}>More contact &amp; commercial details come at the end — start with the essentials.</div>
           </FormSection>
 
-          <FormSection id="q-sec-02" sectionNum="02" title="Vehicles you’re interested in">
+          <FormSection id="q-sec-02" sectionNum="02" title="Vehicles you're interested in">
             <div className="fld-grid-4">
               <div className="fld span-4">
                 <Controller control={control} name="vehiclesOfInterest" render={({ field }) => (
                   <VehiclePicker value={field.value ?? []} onChange={field.onChange} />
                 )} />
-                <div className="help">Optional — not sure? Leave blank and we’ll recommend the right fit.</div>
+                <div className="help">Optional — not sure? Leave blank and we'll recommend the right fit.</div>
               </div>
               <div className="fld span-2"><label>Other vehicle / not listed</label><input {...register('vehicleInMind')} placeholder="Anything specific in mind" /></div>
             </div>
           </FormSection>
 
           {/* ── Your application ── */}
-          <FormSection id="q-sec-03" sectionNum="03" title="What you’re moving">
+          <FormSection id="q-sec-03" sectionNum="03" title="What you're moving">
             <div className="fld-grid-4">
-              <div className="fld">
-                <label>Unit / load type</label>
-                <select {...register('typicalUnitType', { setValueAs: emptyToUndef })} defaultValue="">
-                  <option value="">Select type…</option>
-                  {TYPICAL_UNIT_TYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
+              <div className="fld span-4">
+                <label>Unit / load type(s)</label>
+                <Chips name="unitLoadTypes" options={UNIT_LOAD_TYPE_OPTIONS} />
+                <div className="help">Select all that apply.</div>
               </div>
-              {unitType === 'Other' && (
+              {showOtherUnit && (
                 <div className="fld"><label>Describe load type</label><input {...register('otherUnitTypeDescription')} /></div>
               )}
               <div className="fld">
@@ -282,7 +357,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             </div>
           </FormSection>
 
-          <FormSection id="q-sec-04" sectionNum="04" title="How it’s moved">
+          <FormSection id="q-sec-04" sectionNum="04" title="How it's moved">
             <div className="fld-grid-2">
               <div className="fld">
                 <label>Pick loads up from</label>
@@ -317,6 +392,39 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <div className="help">How high the load is raised to pick / place</div>
                 </div>
               )}
+              {isLiftTable && (
+                <div className="fld">
+                  <label>Top-of-roller height</label>
+                  <div className="input-with-unit">
+                    <input type="number" step="0.1" min="0" className="mono" {...register('topOfRollerHeightFt', { setValueAs: emptyToNum })} />
+                    <div className="unit">ft</div>
+                  </div>
+                </div>
+              )}
+              {(isForklift || isVNA) && (
+                <div className="fld">
+                  <label>Max lift height</label>
+                  <div className="input-with-unit">
+                    <input type="number" step="0.1" min="0" className="mono" {...register('maxLiftHeightFt', { setValueAs: emptyToNum })} />
+                    <div className="unit">ft</div>
+                  </div>
+                </div>
+              )}
+              <div className="fld">
+                <label>Dwell / queue time at pick &amp; drop</label>
+                <div className="input-with-unit">
+                  <input type="number" step="0.1" min="0" className="mono" {...register('dwellTimeMin', { setValueAs: emptyToNum })} />
+                  <div className="unit">min</div>
+                </div>
+                <div className="help">Estimated wait per pick/drop</div>
+              </div>
+              <div className="fld">
+                <label>Charging strategy</label>
+                <select {...register('chargingStrategyPreference', { setValueAs: emptyToUndef })} defaultValue="">
+                  <option value="">Select…</option>
+                  {CHARGING_STRATEGIES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
             </div>
             <div className="fld-grid-4">
               <div className="fld span-4">
@@ -330,11 +438,19 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <FormSection id="q-sec-05" sectionNum="05" title="Where it runs">
             <div className="fld-grid-3">
               <div className="fld">
-                <label>Narrowest aisle</label>
+                <label>Drive aisle width</label>
                 <div className="input-with-unit">
-                  <input type="number" step="0.1" min="0" className="mono" placeholder="8" {...register('minAisleWidthFt', { setValueAs: emptyToNum })} />
+                  <input type="number" step="0.1" min="0" className="mono" placeholder="8" {...register('driveAisleWidthFt', { setValueAs: emptyToNum })} />
                   <div className="unit">ft</div>
                 </div>
+              </div>
+              <div className="fld">
+                <label>Racking aisle width</label>
+                <div className="input-with-unit">
+                  <input type="number" step="0.1" min="0" className="mono" placeholder="6" {...register('rackingAisleWidthFt', { setValueAs: emptyToNum })} />
+                  <div className="unit">ft</div>
+                </div>
+                {isVNA && <div className="help" style={{ fontWeight: 600 }}>VNA selected — racking aisle width is critical for fit.</div>}
               </div>
               <div className="fld">
                 <label>Floor condition</label>
@@ -364,8 +480,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   </div>
                 )} />
               </div>
-              <div className="fld"><label>Min temperature (°F)</label><input type="number" className="mono" {...register('tempMinF', { setValueAs: emptyToNum })} /></div>
-              <div className="fld"><label>Max temperature (°F)</label><input type="number" className="mono" {...register('tempMaxF', { setValueAs: emptyToNum })} /></div>
+              {showTempRange && (<>
+                <div className="fld"><label>Min temperature (°F)</label><input type="number" className="mono" {...register('tempMinF', { setValueAs: emptyToNum })} /></div>
+                <div className="fld"><label>Max temperature (°F)</label><input type="number" className="mono" {...register('tempMaxF', { setValueAs: emptyToNum })} /></div>
+              </>)}
               <div className="fld">
                 <label>Dust / moisture</label>
                 <select {...register('dustMoisture', { setValueAs: emptyToUndef })} defaultValue="">
@@ -373,6 +491,34 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   {DUST_MOISTURE_OPTS.map(d => <option key={d}>{d}</option>)}
                 </select>
               </div>
+              <div className="fld span-3">
+                <label>Shared traffic in the area</label>
+                <Chips name="sharedTrafficTypes" options={SHARED_TRAFFIC_TYPES} />
+              </div>
+              {isVNA && (
+                <div className="fld">
+                  <label>VNA guidance type</label>
+                  <select {...register('guidanceType', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select&hellip;</option>
+                    {GUIDANCE_TYPES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              )}
+              {isOutdoor && (<>
+                <div className="fld">
+                  <label>Ramps / grades present?</label>
+                  <YesNo name="rampRequired" />
+                </div>
+                {values.rampRequired && (
+                  <div className="fld">
+                    <label>Max incline</label>
+                    <div className="input-with-unit">
+                      <input type="number" step="0.1" min="0" className="mono" {...register('maxRampGrade', { setValueAs: emptyToNum })} />
+                      <div className="unit">%</div>
+                    </div>
+                  </div>
+                )}
+              </>)}
             </div>
           </FormSection>
 
@@ -382,6 +528,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld"><label>Dock doors</label><input type="number" className="mono" {...register('dockDoors', { setValueAs: emptyToNum })} /></div>
               <div className="fld"><label>Network / WiFi ready?</label><YesNo name="networkReady" /></div>
               <div className="fld"><label>Site walkthrough available?</label><YesNo name="siteWalkthroughAvailable" /></div>
+              <div className="fld"><label>CAD / drawings available?</label><YesNo name="cadAvailable" /></div>
+              {cadAvailable && <div className="fld span-2"><label>CAD notes</label><input {...register('cadNotes')} placeholder="Format, what's included…" /></div>}
             </div>
           </FormSection>
 
@@ -451,6 +599,15 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                           <div className="unit">/hr</div>
                         </div>
                       </div>
+                      <div className="fld">
+                        <label>Distance type</label>
+                        <Controller control={control} name={`flows.${i}.distanceType`} render={({ field }) => (
+                          <div className="seg-toggle">
+                            <button type="button" className={`seg-btn${field.value === 'one_way' ? ' on' : ''}`} onClick={() => field.onChange('one_way')}>One-way</button>
+                            <button type="button" className={`seg-btn${field.value === 'round_trip' ? ' on' : ''}`} onClick={() => field.onChange('round_trip')}>Round-trip</button>
+                          </div>
+                        )} />
+                      </div>
                       <div className="step1-flow-actions">
                         <button type="button" className="tbtn-icon" aria-label="Delete flow" title="Delete flow" onClick={() => removeFlow(i)}>
                           <Icon name="x" size={13} />
@@ -485,11 +642,42 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <FormSection id="q-sec-09" sectionNum="09" title="Certifications & controls">
             <div className="fld-grid-4">
               <div className="fld span-4"><label>Required certifications</label><Chips name="certifications" options={CERTIFICATIONS} /></div>
+              {showHazardZone && (
+                <div className="fld span-4">
+                  <label>Hazard zone classification <span className="req-star" aria-hidden>*</span></label>
+                  <input {...register('hazardZoneClassification')} placeholder="e.g. Zone 1 / Class I Div 1" />
+                  <div className="help">Required for ATEX / IECEx applications.</div>
+                </div>
+              )}
               <div className="fld span-4"><label>Equipment interlocks</label><Chips name="interlocks" options={INTERLOCKS} /></div>
             </div>
             <div className="fld-grid-2">
+              <div className="fld"><label>Barcode scanning required?</label><YesNo name="barcodeScanningRequired" /></div>
               <div className="fld"><label>WMS integration required?</label><YesNo name="wmsRequired" /></div>
-              {wmsRequired && <div className="fld"><label>WMS vendor</label><input {...register('wmsVendor')} /></div>}
+              {wmsRequired && (<>
+                <div className="fld"><label>WMS vendor</label><input {...register('wmsVendor')} /></div>
+                <div className="fld">
+                  <label>WMS interface type</label>
+                  <select {...register('wmsInterfaceType', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select…</option>
+                    {WMS_INTERFACE_TYPES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+                <div className="fld">
+                  <label>REST API available?</label>
+                  <select {...register('restApiAvailable', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select…</option>
+                    {REST_API_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+                <div className="fld">
+                  <label>Tagging / scan method</label>
+                  <select {...register('taggingScanMethod', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select…</option>
+                    {TAGGING_SCAN_METHODS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              </>)}
             </div>
           </FormSection>
 
@@ -513,17 +701,11 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               {isRfq && <div className="fld"><label>RFQ due date</label><input type="date" {...register('rfqDueDate')} /></div>}
               <div className="fld"><label>Decision date</label><input type="date" {...register('decisionDate')} /></div>
               <div className="fld"><label>Target go-live</label><input type="date" {...register('targetGoLiveDate')} /></div>
-              <div className="fld"><label>CAD / drawings available?</label><YesNo name="cadAvailable" /></div>
-              {cadAvailable && <div className="fld"><label>CAD notes</label><input {...register('cadNotes')} placeholder="Format, what’s included…" /></div>}
               <div className="fld"><label>Your phone</label><input {...register('customerContactPhone')} /></div>
             </div>
           </FormSection>
 
           <FormSection id="q-sec-11" sectionNum="11" title="TAL / Toyota">
-            <div className="fld-grid-3">
-              <div className="fld"><label>Dealership name</label><input {...register('dealershipName')} /></div>
-              <div className="fld"><label>Dealer rep</label><input {...register('dealerRep')} /></div>
-            </div>
             <div className="fld-grid-2">
               <div className="fld"><label>Current Toyota forklifts?</label><input {...register('currentToyotaForklifts')} placeholder="How many / which models, if any" /></div>
             </div>
@@ -532,7 +714,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             </div>
           </FormSection>
 
-          <FormSection id="q-sec-12" sectionNum="12" title="Why & how it’s done today">
+          <FormSection id="q-sec-12" sectionNum="12" title="Why & how it's done today">
             <div className="fld-grid-4">
               <div className="fld span-4">
                 <label>Why are you automating?</label>
@@ -541,7 +723,12 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             </div>
             <div className="fld-grid-2">
               <div className="fld"><label>How is this done today?</label><textarea {...register('currentProcess')} placeholder="Manual forklifts, hand carts, …" /></div>
-              <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
+              <div className="fld"><label>People / forklifts doing this today</label><input type="number" min="0" className="mono" {...register('currentHeadcount', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Any existing automation on site?</label><YesNo name="hasExistingAutomation" /></div>
+              {hasExistingAutomation && (<>
+                <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
+                <div className="fld"><label>Must new fleet interoperate with it?</label><input {...register('existingAutomationInterop')} placeholder="Shared traffic, handoffs, controls…" /></div>
+              </>)}
               <div className="fld"><label>Volume growth</label><input {...register('volumeGrowthNote')} placeholder="e.g. +10%/yr" /></div>
               <div className="fld"><label>Seasonality</label><input {...register('seasonalityNote')} placeholder="e.g. Q4 peak" /></div>
             </div>
@@ -560,7 +747,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <Icon name="export" />
         </button>
         <span className="q-actions-note">{busy ? 'Preparing…' : 'Export a single PDF to send to your TAL engineer.'}</span>
-        {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Downloaded — send the PDF to your TAL engineer.</span>}
+        {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Downloaded PDF + JSON — send both to your TAL engineer.</span>}
         {invalidMsg && <span className="q-status q-status-bad"><Icon name="warn" size={14} /> {invalidMsg}</span>}
       </div>
     </form>

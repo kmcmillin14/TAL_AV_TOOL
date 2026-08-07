@@ -1,5 +1,17 @@
 # Changelog
 
+### Questionnaire change log (2026-08-07)
+- Added ~20 questionnaire intake fields to `projectSchema` (submitter routing, multi
+  load types, aisle split, shared traffic, VNA guidance, WMS/hazard/barcode controls,
+  current-state). All optional/informational — ignored by gates and calc. Added optional
+  per-flow `distanceType` to `flowSchema` (intake only; Step 3 sizing unchanged).
+- Questionnaire UI: §01 submitter routing (required), §03 multi-select load types, §04
+  dwell/charging/lift fields, §05 aisle split + shared traffic + VNA guidance + ramps +
+  temp-range gating, §06 CAD single home, §07 per-flow distance type, §09 hazard/barcode/
+  WMS cluster, §12 existing-automation toggle + headcount; status-bar "Required" marker;
+  dual PDF + JSON export. Backend items (file upload, auto-email, signed URLs) intentionally
+  deferred. See docs/questionnaire-interop.md.
+
 ## 2026-07-22 — Distance unified to one-way across all entry paths (right-sizing fix)
 
 - The Step 3 flow table/sheet displayed & accepted ROUND-TRIP distance (×2 in / ÷2 store) while
