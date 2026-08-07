@@ -12,7 +12,7 @@ import {
   partialProjectSchema, projectSchema, type PartialProjectFormData,
 } from '@/src/lib/validations/schemas'
 import {
-  TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS,
+  UNIT_LOAD_TYPE_OPTIONS, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS,
   SPECIALTY_APPLICATIONS, PROJECT_DRIVERS,
   SUBMISSION_TYPES, CHARGING_STRATEGIES, SHARED_TRAFFIC_TYPES, GUIDANCE_TYPES,
   REST_API_OPTIONS, WMS_INTERFACE_TYPES, TAGGING_SCAN_METHODS,
@@ -49,7 +49,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-02', num: '02', short: 'Vehicles', tier: TIER_START,
     fields: ['vehiclesOfInterest', 'vehicleInMind'] },
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
-    fields: ['typicalUnitType', 'otherUnitTypeDescription', 'maxLoadWeightLbs', 'loadLengthIn', 'loadWidthIn', 'loadHeightIn'] },
+    fields: ['unitLoadTypes', 'typicalUnitType', 'otherUnitTypeDescription', 'maxLoadWeightLbs', 'loadLengthIn', 'loadWidthIn', 'loadHeightIn'] },
   { id: 'q-sec-04', num: '04', short: 'How it’s moved', tier: TIER_APP,
     fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'specialtyApplications'] },
   { id: 'q-sec-05', num: '05', short: 'Where it runs', tier: TIER_APP,
@@ -105,7 +105,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const [today] = useState(() => new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }))
   // Volume can be given as overall averages OR per-flow detail — they're redundant, so pick one.
   const [thruMode, setThruMode] = useState<'avg' | 'flows'>('avg')
-  const { register, handleSubmit, control, reset, watch } = useForm<PartialProjectFormData>({
+  const { register, handleSubmit, control, reset, watch, setValue } = useForm<PartialProjectFormData>({
     resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
     defaultValues: EMPTY_VALUES,
   })
@@ -140,9 +140,16 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const cadAvailable = values.cadAvailable
   const transferType = values.transferType
   const wmsRequired = values.wmsRequired
-  const unitType = values.typicalUnitType
+  const unitLoadTypes = values.unitLoadTypes ?? []
+  const showOtherUnit = unitLoadTypes.includes('Other')
   const submissionType = values.submissionType
   const showHeight = !!transferType && HEIGHT_TRANSFER.has(transferType)
+
+  // Keep legacy singular typicalUnitType in sync with the multi-select's first
+  // choice so the main app's calc/import (which reads the singular field) works.
+  useEffect(() => {
+    setValue('typicalUnitType', unitLoadTypes[0] ?? undefined)
+  }, [setValue, unitLoadTypes])
 
   const onSubmit: SubmitHandler<PartialProjectFormData> = useCallback(async (v) => {
     setInvalidMsg(null)
@@ -187,7 +194,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   }, [handleSubmit, onSubmit, onInvalid, clearAll])
 
   // Reusable chip multiselect (matches Step 1's .cert-grid / .chk).
-  const Chips = ({ name, options }: { name: 'projectDrivers' | 'specialtyApplications' | 'certifications' | 'interlocks'; options: readonly string[] }) => (
+  const Chips = ({ name, options }: { name: 'projectDrivers' | 'specialtyApplications' | 'certifications' | 'interlocks' | 'unitLoadTypes' | 'sharedTrafficTypes'; options: readonly string[] }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="cert-grid">
         {options.map(opt => {
@@ -287,14 +294,12 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           {/* ── Your application ── */}
           <FormSection id="q-sec-03" sectionNum="03" title="What you’re moving">
             <div className="fld-grid-4">
-              <div className="fld">
-                <label>Unit / load type</label>
-                <select {...register('typicalUnitType', { setValueAs: emptyToUndef })} defaultValue="">
-                  <option value="">Select type…</option>
-                  {TYPICAL_UNIT_TYPES.map(t => <option key={t}>{t}</option>)}
-                </select>
+              <div className="fld span-4">
+                <label>Unit / load type(s)</label>
+                <Chips name="unitLoadTypes" options={UNIT_LOAD_TYPE_OPTIONS} />
+                <div className="help">Select all that apply.</div>
               </div>
-              {unitType === 'Other' && (
+              {showOtherUnit && (
                 <div className="fld"><label>Describe load type</label><input {...register('otherUnitTypeDescription')} /></div>
               )}
               <div className="fld">
