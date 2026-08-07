@@ -6,11 +6,18 @@ import { winAnsiSafe } from '@/src/lib/utils/winAnsi'
 
 const TAL_RED_RGB = [235 / 255, 10 / 255, 30 / 255] as const
 
-function fmt(v: unknown): string {
-  if (v == null || v === '') return '—'
-  if (Array.isArray(v)) return v.length ? v.join(' · ') : '—'
+// Returns null for empty/null values (row will be skipped); formatted string otherwise.
+function fmt(v: unknown): string | null {
+  if (v == null || v === '') return null
+  if (Array.isArray(v)) return v.length ? v.join(' · ') : null
   if (typeof v === 'boolean') return v ? 'Yes' : 'No'
   return String(v)
+}
+
+// fmt variants that never return null (used when caller already checks the condition)
+function fmtBool(v: boolean | undefined | null): string | null {
+  if (v == null) return null
+  return v ? 'Yes' : 'No'
 }
 
 export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise<Blob> {
@@ -32,7 +39,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   type PDFFont = Awaited<ReturnType<typeof pdfDoc.embedFont>>
   const wrap = (raw: string, useFont: PDFFont, size: number, maxW: number): string[] => {
     if (!raw) return ['']
-    const text = winAnsiSafe(raw)   // WinAnsi font can't measure/draw e.g. "→"
+    const text = winAnsiSafe(raw)
     const out: string[] = []
     for (const para of text.split(/\n+/)) {
       const words = para.split(/\s+/).filter(Boolean)
@@ -54,23 +61,23 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
     if (res.ok) logoImg = await pdfDoc.embedPng(new Uint8Array(await res.arrayBuffer()))
   } catch { /* logo optional */ }
 
-  // Every page: TAL logo top-right + footer contact line.
-  const decorate = (page: Awaited<ReturnType<typeof pdfDoc.addPage>>) => {
+  const decorate = (pg: Awaited<ReturnType<typeof pdfDoc.addPage>>) => {
     if (logoImg) {
       const d = logoImg.scaleToFit(110, 40)
-      page.drawImage(logoImg, { x: W - MX - d.width, y: H - 50, width: d.width, height: d.height })
+      pg.drawImage(logoImg, { x: W - MX - d.width, y: H - 50, width: d.width, height: d.height })
     } else {
-      page.drawText('TAL', { x: W - MX - 40, y: H - 44, size: 20, font: bold, color: TAL_RED })
+      pg.drawText('TAL', { x: W - MX - 40, y: H - 44, size: 20, font: bold, color: TAL_RED })
     }
-    const footer = fmt([p.talRepName, p.talRepEmail, p.talRepPhone].filter(Boolean).join('  ·  ') || 'Toyota Advanced Logistics')
-    page.drawText(footer, { x: MX, y: 36, size: 8, font, color: MUTED })
+    const repParts = [p.talRepName, p.talRepEmail, p.talRepPhone].filter(Boolean)
+    const footer = repParts.length ? repParts.join('  ·  ') : 'Toyota Advanced Logistics'
+    pg.drawText(winAnsiSafe(footer), { x: MX, y: 36, size: 8, font, color: MUTED })
   }
 
   let page = pdfDoc.addPage([W, H])
   decorate(page)
   let y = 0
   const lineH = 16, bottom = 64
-  const VALUE_X = MX + 200, VALUE_W = W - VALUE_X - MX
+  const VALUE_X = MX + 210, VALUE_W = W - VALUE_X - MX
 
   const newPage = (title: string) => {
     page = pdfDoc.addPage([W, H]); decorate(page)
@@ -80,97 +87,234 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   }
   const ensure = (need: number) => { if (y - need < bottom) newPage('CUSTOMER QUESTIONNAIRE (cont.)') }
   const sec = (title: string) => {
-    ensure(lineH + 14); y -= 10
-    page.drawText(title, { x: MX, y, size: 10, font: bold, color: TEXT }); y -= lineH + 4
+    ensure(lineH + 18); y -= 14
+    page.drawText(winAnsiSafe(title.toUpperCase()), { x: MX, y, size: 8, font: bold, color: TAL_RED })
+    y -= 4
+    page.drawLine({ start: { x: MX, y }, end: { x: W - MX, y }, thickness: 0.3, color: RULE })
+    y -= lineH - 2
   }
-  const row = (label: string, value: unknown) => {
-    const lines = wrap(fmt(value), font, 10, VALUE_W)
-    const rowH = Math.max(lineH, lines.length * (lineH - 2)); ensure(rowH)
-    page.drawText(label, { x: MX, y, size: 9, font, color: MUTED })
+
+  // Draws a label + value row. Skips the row if value is null (empty).
+  const row = (label: string, value: string | null) => {
+    if (value == null) return
+    const safe = winAnsiSafe(value)
+    const lines = wrap(safe, font, 10, VALUE_W)
+    const rowH = Math.max(lineH, lines.length * (lineH - 2) + 2); ensure(rowH)
+    page.drawText(winAnsiSafe(label), { x: MX, y, size: 9, font, color: MUTED })
     let ly = y
     for (const l of lines) { page.drawText(l, { x: VALUE_X, y: ly, size: 10, font, color: TEXT }); ly -= lineH - 2 }
     y -= rowH
   }
 
-  // ── Cover header ── title = company, dated by submission day.
+  // ── Cover header ────────────────────────────────────────────────────────────
   const submitted = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
   page.drawText('AV QUESTIONNAIRE', { x: MX, y: H - 110, size: 10, font: bold, color: TAL_RED })
   page.drawLine({ start: { x: MX, y: H - 120 }, end: { x: W - MX, y: H - 120 }, thickness: 0.5, color: RULE })
-  page.drawText(winAnsiSafe(p.customerName || p.projectName || 'Untitled Opportunity'), { x: MX, y: H - 156, size: 24, font: bold, color: TEXT })
-  page.drawText(`Submitted ${submitted}`, { x: MX, y: H - 178, size: 13, font, color: MUTED })
-  y = H - 220
-
-  sec('Contacts')
-  row('Customer contact', [p.customerContactName, p.customerContactRole].filter(Boolean).join(' — '))
-  row('Customer email / phone', [p.customerContactEmail, p.customerContactPhone].filter(Boolean).join('  ·  '))
-  row('TAL representative', p.talRepName)
-  row('Dealer', [p.oemDealer, p.dealershipName, p.dealerRep].filter(Boolean).join(' — '))
-  row('Current Toyota forklifts', p.currentToyotaForklifts)
-  row('History with TAL / Toyota', p.talHistory)
-
-  sec('Opportunity')
-  row('Vehicle in mind', p.vehicleInMind)
-  row('RFQ', p.isRfq ? `Yes${p.rfqNumber ? ` (${p.rfqNumber})` : ''}` : 'No')
-  row('RFQ due date', p.rfqDueDate)
-  row('CAD / drawings available', p.cadAvailable ? `Yes${p.cadNotes ? ` — ${p.cadNotes}` : ''}` : 'No')
-  row('Project stage', p.projectStage)
-  row('Budget status', p.budgetStatus)
-  row('Budget range', p.budgetRange)
-  row('Decision date', p.decisionDate)
-  row('Target go-live', p.targetGoLiveDate)
-
-  sec('Why & how today')
-  row('Drivers', p.projectDrivers)
-  row('Current process', p.currentProcess)
-  row('Volume growth', p.volumeGrowthNote)
-  row('Seasonality', p.seasonalityNote)
-  row('Existing automation', p.existingAutomation)
-
-  sec('What you’re interested in')
-  row('Specialty applications', p.specialtyApplications)
-  row('Vehicles of interest', (p.vehiclesOfInterest ?? []).length ? p.vehiclesOfInterest : null)
-  row('Other / not listed', p.vehicleInMind)
-
-  sec('What you move')
-  row('Unit / load type', p.typicalUnitType ?? (p.loads?.[0]?.unitType))
-  row('Max load weight', p.maxLoadWeightLbs ? `${p.maxLoadWeightLbs.toLocaleString()} lbs` : null)
-  row('Load L × W × H', [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].some(d => d != null)
-    ? [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].map(d => d != null ? `${d} in` : '—').join(' × ')
-    : null)
-
-  sec('How loads are handled')
-  row('Pick loads up from', p.pickContext)
-  row('Set loads down at', p.dropContext)
-  row('Transfer type', p.transferType)
-  row('Transfer height', p.transferHeightFt != null ? `${p.transferHeightFt} ft` : null)
-
-  sec('Environment & site')
-  row('Facility size', p.facilitySizeSqFt ? `${p.facilitySizeSqFt.toLocaleString()} sq ft` : null)
-  row('Dock doors', p.dockDoors)
-  row('Min aisle width', p.minAisleWidthFt != null ? `${p.minAisleWidthFt} ft` : null)
-  row('Network ready', p.networkReady)
-  row('Site walkthrough available', p.siteWalkthroughAvailable)
-  row('Min temperature', p.tempMinF != null ? `${p.tempMinF}°F` : null)
-  row('Max temperature', p.tempMaxF != null ? `${p.tempMaxF}°F` : null)
-
-  sec('Schedule')
-  row('Shifts / day', p.shiftsPerDay)
-  row('Hours / shift', p.hoursPerShift)
-  row('Operating days', p.operatingDaysPattern)
-
-  sec('Throughput')
-  row('Average throughput', p.requiredThroughputPerHour ? `${p.requiredThroughputPerHour} moves/hr` : null)
-  row('Peak throughput', p.peakThroughputPerHour ? `${p.peakThroughputPerHour} moves/hr` : null)
-  row('Average distance', p.avgDistanceFt ? `${p.avgDistanceFt} ft` : null)
-  for (const f of p.flows ?? []) {
-    if (!f.origin && !f.destination && !f.distanceFt && !f.thruPerHr) continue
-    row('Flow', `${f.origin || '—'} → ${f.destination || '—'}  ·  ${f.distanceFt || 0} ft  ·  ${f.thruPerHr || 0}/hr`)
+  const coverTitle = winAnsiSafe(p.customerName || p.projectName || 'Untitled Opportunity')
+  page.drawText(coverTitle, { x: MX, y: H - 156, size: 24, font: bold, color: TEXT })
+  if (p.projectName && p.customerName && p.projectName !== p.customerName) {
+    page.drawText(winAnsiSafe(p.projectName), { x: MX, y: H - 178, size: 14, font, color: MUTED })
+    page.drawText(`Submitted ${submitted}`, { x: MX, y: H - 196, size: 11, font, color: MUTED })
+    y = H - 232
+  } else {
+    page.drawText(`Submitted ${submitted}`, { x: MX, y: H - 178, size: 13, font, color: MUTED })
+    y = H - 220
   }
 
-  sec('Notes')
-  row('Notes', p.projectNotes)
+  // ── §01  Submission routing ─────────────────────────────────────────────────
+  sec('Submission routing')
+  const subTypeLabel: Record<string, string> = {
+    customer: 'Customer (direct)',
+    dealer: 'Dealer',
+    partner: 'Integration partner',
+    internal: 'TAL internal',
+  }
+  row('Submitted by', p.submissionType ? subTypeLabel[p.submissionType] ?? p.submissionType : null)
 
-  // ── Embed JSON envelope ──
+  if (p.submissionType === 'dealer') {
+    row('Dealer / OEM', fmt([p.oemDealer, p.dealershipName].filter(Boolean).join(' — ')))
+    row('Dealer rep', fmt(p.dealerRep))
+  }
+  if (p.submissionType === 'partner') {
+    row('Partner company', fmt(p.partnerCompanyName))
+    row('Partner contact', fmt(p.partnerRepContact))
+  }
+  if (p.submissionType === 'internal') {
+    const oppLabel = p.opportunityType === 'lead' ? 'Lead' : p.opportunityType === 'opp' ? 'Opportunity' : null
+    row('CRM record type', oppLabel)
+    row('Lead / Opp number', fmt(p.opportunityNumber))
+  }
+
+  // ── §02  Contacts ───────────────────────────────────────────────────────────
+  sec('Contacts')
+  const custContact = [p.customerContactName, p.customerContactRole].filter(Boolean).join(' — ')
+  row('Customer contact', fmt(custContact))
+  const custReach = [p.customerContactEmail, p.customerContactPhone].filter(Boolean).join('  ·  ')
+  row('Customer email / phone', fmt(custReach))
+  row('TAL representative', fmt(p.talRepName))
+  const repReach = [p.talRepEmail, p.talRepPhone].filter(Boolean).join('  ·  ')
+  row('TAL rep email / phone', fmt(repReach))
+  row('Current Toyota forklifts', fmt(p.currentToyotaForklifts))
+  row('History with TAL / Toyota', fmt(p.talHistory))
+
+  // ── §03  Opportunity overview ───────────────────────────────────────────────
+  sec('Opportunity overview')
+  row('Facility location', fmt(p.facilityLocation))
+  row('Project stage', fmt(p.projectStage))
+  row('Budget status', fmt(p.budgetStatus))
+  row('Budget range', fmt(p.budgetRange))
+  row('Decision date', fmt(p.decisionDate))
+  row('Target go-live', fmt(p.targetGoLiveDate))
+  row('RFQ', p.isRfq == null ? null : p.isRfq ? `Yes${p.rfqNumber ? ` — ${p.rfqNumber}` : ''}${p.rfqDueDate ? ` (due ${p.rfqDueDate})` : ''}` : 'No')
+  row('CAD / drawings available', p.cadAvailable == null ? null : p.cadAvailable ? `Yes${p.cadNotes ? ` — ${p.cadNotes}` : ''}` : 'No')
+  row('Project drivers', fmt(p.projectDrivers))
+  row('Current process', fmt(p.currentProcess))
+  row('Volume growth', fmt(p.volumeGrowthNote))
+  row('Seasonality', fmt(p.seasonalityNote))
+
+  // ── §04  What you move ──────────────────────────────────────────────────────
+  sec('What you move')
+  // Prefer multi-select unitLoadTypes; fall back to legacy singular typicalUnitType
+  const loadTypes = (p.unitLoadTypes ?? []).length
+    ? fmt(p.unitLoadTypes)
+    : fmt(p.typicalUnitType ?? p.loads?.[0]?.unitType)
+  row('Unit / load types', loadTypes)
+  // Print per-load detail rows when multiple loads are defined
+  if ((p.loads ?? []).length > 1) {
+    for (const ld of p.loads ?? []) {
+      const dims = [ld.lengthIn, ld.widthIn, ld.heightIn].some(d => d != null)
+        ? [ld.lengthIn, ld.widthIn, ld.heightIn].map(d => d != null ? `${d} in` : '—').join(' × ')
+        : null
+      const wt = ld.weightLbs != null ? `${ld.weightLbs.toLocaleString()} lbs` : null
+      const detail = [ld.unitType || ld.customDescription, dims, wt].filter(Boolean).join('  ·  ')
+      row('  Load', fmt(detail))
+    }
+  } else {
+    row('Max load weight', p.maxLoadWeightLbs ? `${p.maxLoadWeightLbs.toLocaleString()} lbs` : null)
+    const dims = [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].some(d => d != null)
+      ? [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].map(d => d != null ? `${d} in` : '—').join(' × ')
+      : null
+    row('Load L × W × H', dims)
+  }
+
+  // ── §05  How loads are handled ──────────────────────────────────────────────
+  sec('How loads are handled')
+  row('Pick loads up from', fmt(p.pickContext))
+  row('Set loads down at', fmt(p.dropContext))
+  row('Transfer type', fmt(p.transferType))
+  row('Transfer height', p.transferHeightFt != null ? `${p.transferHeightFt} ft` : null)
+  row('Lift type needed', fmt(p.liftTypeNeeded))
+  row('Max lift height', p.maxLiftHeightFt != null ? `${p.maxLiftHeightFt} ft` : null)
+  row('Top of roller height', p.topOfRollerHeightFt != null ? `${p.topOfRollerHeightFt} ft` : null)
+  row('Dwell time at station', p.dwellTimeMin != null ? `${p.dwellTimeMin} min` : null)
+  const chargingLabels: Record<string, string> = { opportunity: 'Opportunity charging', battery_swap: 'Battery swap', not_sure: 'Not sure' }
+  row('Charging preference', p.chargingStrategyPreference ? chargingLabels[p.chargingStrategyPreference] ?? p.chargingStrategyPreference : null)
+
+  // ── §06  Facility environment ───────────────────────────────────────────────
+  sec('Facility environment')
+  row('Facility size', p.facilitySizeSqFt ? `${p.facilitySizeSqFt.toLocaleString()} sq ft` : null)
+  row('Dock doors', fmt(p.dockDoors))
+  row('Indoor / outdoor', p.outdoorRequired == null ? null : p.outdoorRequired ? 'Outdoor' : 'Indoor')
+  const tempEnvLabels: Record<string, string> = { ambient: 'Ambient', refrigerated: 'Refrigerated', freezer: 'Freezer' }
+  row('Temperature environment', p.temperatureEnvironment ? tempEnvLabels[p.temperatureEnvironment] ?? p.temperatureEnvironment : null)
+  row('Min temperature', p.tempMinF != null ? `${p.tempMinF}°F` : null)
+  row('Max temperature', p.tempMaxF != null ? `${p.tempMaxF}°F` : null)
+  row('Dust / moisture', fmt(p.dustMoisture))
+  row('Floor condition', fmt(p.floorCondition))
+  row('Drive aisle width', p.driveAisleWidthFt != null ? `${p.driveAisleWidthFt} ft` : null)
+  row('Racking aisle width', p.rackingAisleWidthFt != null ? `${p.rackingAisleWidthFt} ft` : null)
+  row('Shared traffic', fmt(p.sharedTrafficTypes))
+  const guidanceLabels: Record<string, string> = { wire: 'Wire-guided', rail: 'Rail-guided' }
+  row('VNA guidance type', p.guidanceType ? guidanceLabels[p.guidanceType] ?? p.guidanceType : null)
+  if (p.rampRequired) {
+    row('Ramp required', 'Yes')
+    row('Ramp distance', p.rampDistanceFt ? `${p.rampDistanceFt} ft` : null)
+    row('Max ramp grade', p.maxRampGrade ? `${p.maxRampGrade}%` : null)
+  } else {
+    row('Ramp required', fmtBool(p.rampRequired))
+  }
+
+  // ── §07  Schedule ───────────────────────────────────────────────────────────
+  sec('Schedule')
+  row('Shifts / day', fmt(p.shiftsPerDay))
+  row('Hours / shift', fmt(p.hoursPerShift))
+  row('Operating days', fmt(p.operatingDaysPattern))
+  if ((p.operatingDaysCustom ?? []).length) row('Custom days', fmt(p.operatingDaysCustom))
+  row('Breaks / shift', p.breaksPerShift ? `${p.breaksPerShift}` : null)
+  row('Break duration', p.breakDurationMin ? `${p.breakDurationMin} min` : null)
+
+  // ── §08  Throughput & flows ─────────────────────────────────────────────────
+  sec('Throughput & flows')
+  row('Average throughput', p.requiredThroughputPerHour ? `${p.requiredThroughputPerHour} moves/hr` : null)
+  row('Peak throughput', p.peakThroughputPerHour ? `${p.peakThroughputPerHour} moves/hr` : null)
+  const distTypeLabelP: Record<string, string> = { one_way: 'one-way', round_trip: 'round trip' }
+  const avgDistLabel = p.avgDistanceFt
+    ? `${p.avgDistanceFt} ft${p.distanceType ? ` (${distTypeLabelP[p.distanceType] ?? p.distanceType})` : ''}`
+    : null
+  row('Average distance', avgDistLabel)
+  for (const f of p.flows ?? []) {
+    if (!f.origin && !f.destination && !f.distanceFt && !f.thruPerHr) continue
+    const distLabel = f.distanceFt ? `${f.distanceFt} ft${f.distanceType ? ` ${distTypeLabelP[f.distanceType] ?? f.distanceType}` : ''}` : null
+    const parts = [
+      `${f.origin || '?'} → ${f.destination || '?'}`,
+      distLabel,
+      f.thruPerHr ? `${f.thruPerHr}/hr` : null,
+    ].filter(Boolean).join('  ·  ')
+    row(f.sectionName ? `Flow (${f.sectionName})` : 'Flow', parts)
+  }
+
+  // ── §09  Commercial context ─────────────────────────────────────────────────
+  sec('Commercial context')
+  row('Vehicles of interest', fmt(p.vehiclesOfInterest?.length ? p.vehiclesOfInterest : null))
+  row('Vehicle in mind', fmt(p.vehicleInMind))
+  row('Specialty applications', fmt(p.specialtyApplications))
+  row('Install date', fmt(p.desiredInstallDate))
+
+  // ── §10  Certifications & controls ─────────────────────────────────────────
+  sec('Certifications & controls')
+  row('Certifications', fmt(p.certifications))
+  row('Interlocks', fmt(p.interlocks))
+  row('Hazard zone classification', fmt(p.hazardZoneClassification))
+  row('Barcode scanning required', fmtBool(p.barcodeScanningRequired))
+  row('WMS required', p.wmsRequired == null ? null : fmtBool(p.wmsRequired))
+  if (p.wmsRequired) {
+    row('WMS vendor', fmt(p.wmsVendor))
+    const ifaceLabels: Record<string, string> = {
+      rest_api: 'REST API', file: 'File-based', middleware: 'Middleware', other: 'Other',
+    }
+    row('WMS interface type', p.wmsInterfaceType ? ifaceLabels[p.wmsInterfaceType] ?? p.wmsInterfaceType : null)
+    const apiLabels: Record<string, string> = { yes: 'Yes', no: 'No', not_sure: 'Not sure' }
+    row('REST API available', p.restApiAvailable ? apiLabels[p.restApiAvailable] ?? p.restApiAvailable : null)
+    const scanLabels: Record<string, string> = {
+      barcode: 'Barcode', qr: 'QR code', rfid: 'RFID', none: 'None',
+    }
+    row('Tagging / scan method', p.taggingScanMethod ? scanLabels[p.taggingScanMethod] ?? p.taggingScanMethod : null)
+  }
+
+  // ── §11  Technology & network ───────────────────────────────────────────────
+  sec('Technology & network')
+  row('Network ready', fmtBool(p.networkReady))
+  row('IT contact', fmt(p.itContact))
+  row('Site walkthrough available', fmtBool(p.siteWalkthroughAvailable))
+
+  // ── §12  Current state ──────────────────────────────────────────────────────
+  sec('Current state')
+  row('Existing automation', fmtBool(p.hasExistingAutomation))
+  if (p.hasExistingAutomation) {
+    row('Automation (brand / fleet)', fmt(p.existingAutomation))
+    row('Interoperability notes', fmt(p.existingAutomationInterop))
+  }
+  row('Current headcount', p.currentHeadcount != null ? `${p.currentHeadcount}` : null)
+  row('Operators per shift', p.operatorsPerShift ? `${p.operatorsPerShift}` : null)
+  row('Current process', fmt(p.currentProcess))
+
+  // ── §13  Notes ──────────────────────────────────────────────────────────────
+  if (p.projectNotes) {
+    sec('Notes')
+    row('Notes', fmt(p.projectNotes))
+  }
+
+  // ── Embed JSON envelope ──────────────────────────────────────────────────────
   const env = buildQuestionnaireEnvelope(p)
   const bytes = new TextEncoder().encode(JSON.stringify(env, null, 2))
   await pdfDoc.attach(bytes, 'project.json', {
@@ -188,12 +332,12 @@ function triggerDownload(blob: Blob, name: string) {
   const a = document.createElement('a')
   a.href = url; a.download = name
   document.body.appendChild(a); a.click(); document.body.removeChild(a)
-  URL.revokeObjectURL(url)
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 function fileBase(p: PartialProjectFormData): string {
   const name = (p.customerName || p.projectName || 'questionnaire').replace(/[^a-z0-9-_]+/gi, '_')
-  const date = new Date().toISOString().slice(0, 10) // YYYY-MM-DD
+  const date = new Date().toISOString().slice(0, 10)
   return `${name}_AV-Questionnaire_${date}`
 }
 

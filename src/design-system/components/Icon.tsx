@@ -33,6 +33,7 @@ const paths = {
   x:        <><path d="M18 6L6 18M6 6l12 12"/></>,
   clock:    <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
   formula:  <path d="M16 5H8l5 7-5 7h8"/>,
+  mail:     <><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></>,
 } as const
 
 export default function Icon({ name, size = 14, className }: IconProps) {

@@ -210,6 +210,32 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
     setInvalidMsg(`Please check these fields: ${names.join(', ')}`)
   }, [])
 
+  const onSendToEngineer = useCallback(async (v: PartialProjectFormData) => {
+    setInvalidMsg(null)
+    if (!v.submissionType) {
+      setInvalidMsg("Please choose how you're submitting (Section 01) before sending.")
+      document.getElementById('q-sec-01')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      return
+    }
+    setBusy(true)
+    try {
+      const stamp = new Date().toISOString().slice(0, 10)
+      const slug = (v.customerName || v.projectName || 'questionnaire').replace(/[^\w-]+/g, '_').slice(0, 40)
+      downloadJson(questionnaireJsonBlob(v), `${slug}_${stamp}.json`)
+      const subject = encodeURIComponent(`TAL AV Questionnaire — ${v.customerName || v.projectName || 'New Opportunity'}`)
+      const body = encodeURIComponent(
+        `Hi,\n\nPlease find the attached AV questionnaire for ${v.customerName || 'the customer below'}.\n\n` +
+        `Customer: ${v.customerName || '—'}\n` +
+        `Project: ${v.projectName || '—'}\n` +
+        `Facility: ${v.facilityLocation || '—'}\n` +
+        `Submitted by: ${v.talRepName || '—'}\n\n` +
+        `The JSON export has been downloaded — please attach it to this email.\n\nThank you`
+      )
+      window.open(`mailto:AppsEngineering@bastiansolutions.com?subject=${subject}&body=${body}`, '_self')
+      setSubmitted(true)
+    } finally { setBusy(false) }
+  }, [])
+
   const clearAll = useCallback(() => {
     if (!window.confirm('Clear all answers? This cannot be undone.')) return
     try { localStorage.removeItem(DRAFT_KEY) } catch { /* ignore */ }
@@ -753,12 +779,27 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
       </div>
 
       <div className="q-actions">
-        <button type="submit" className="tbtn-icon" disabled={busy} aria-label="Export PDF" title="Export PDF">
-          <Icon name="export" />
-        </button>
-        <span className="q-actions-note">{busy ? 'Preparing…' : 'Export a single PDF to send to your TAL engineer.'}</span>
-        {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Downloaded PDF + JSON — send both to your TAL engineer.</span>}
-        {invalidMsg && <span className="q-status q-status-bad"><Icon name="warn" size={14} /> {invalidMsg}</span>}
+        <div className="q-actions-btns">
+          <button type="submit" className="btn primary q-export-btn" disabled={busy} aria-label="Export PDF + JSON">
+            <Icon name="export" size={16} />
+            {busy ? 'Preparing…' : 'Export PDF + JSON'}
+          </button>
+          <button
+            type="button"
+            className="btn q-send-btn"
+            disabled={busy}
+            aria-label="Send to TAL Engineer"
+            onClick={() => handleSubmit(onSendToEngineer, onInvalid)()}
+          >
+            <Icon name="mail" size={16} />
+            Send to TAL Engineer
+          </button>
+        </div>
+        <div className="q-actions-status">
+          {!submitted && !invalidMsg && <span className="q-actions-note">Export a PDF + JSON, or send directly to your TAL applications engineer.</span>}
+          {submitted && <span className="q-status q-status-ok"><Icon name="check" size={14} /> Done — check your downloads and email client.</span>}
+          {invalidMsg && <span className="q-status q-status-bad"><Icon name="warn" size={14} /> {invalidMsg}</span>}
+        </div>
       </div>
     </form>
   )
