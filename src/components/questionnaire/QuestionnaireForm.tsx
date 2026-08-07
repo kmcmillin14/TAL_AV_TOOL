@@ -489,7 +489,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <div className="fld">
                     <label>Max incline</label>
                     <div className="input-with-unit">
-                      <input type="number" step="0.1" min="0" className="mono" {...register('maxRampGrade', { setValueAs: v => (v === '' || v == null ? 0 : Number(v)) })} />
+                      <input type="number" step="0.1" min="0" className="mono" {...register('maxRampGrade', { setValueAs: emptyToNum })} />
                       <div className="unit">%</div>
                     </div>
                   </div>
