@@ -778,9 +778,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
       <div className="q-actions">
         <div className="q-actions-btns">
-          <button type="submit" className="btn primary q-export-btn" disabled={busy} aria-label="Export PDF + JSON">
+          <button type="submit" className="btn primary q-export-btn" disabled={busy} aria-label="Export PDF">
             <Icon name="export" size={16} />
-            {busy ? 'Preparing…' : 'Export PDF + JSON'}
+            {busy ? 'Preparing…' : 'Export PDF'}
           </button>
           <button
             type="button"
