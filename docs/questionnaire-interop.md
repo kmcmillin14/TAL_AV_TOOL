@@ -50,3 +50,29 @@ customer form. This is intentional, not a gap.
   mapping, and load fields surviving `importProjectFromJson`.
 - **Both directions** — the app's own PDF/JSON export uses the same envelope, so an app project
   re-imports the same way a questionnaire does.
+
+## Back-compat mirrors (multi-select / split fields → legacy singular)
+
+The questionnaire now uses multi-select / split inputs but keeps the legacy singular
+fields the main-app calc/import reads populated (mirrored in the form on change):
+
+| Questionnaire input | Legacy field kept in sync | Rule |
+|---|---|---|
+| `unitLoadTypes[]` | `typicalUnitType` | first selection |
+| `driveAisleWidthFt` + `rackingAisleWidthFt` | `minAisleWidthFt` | `min()` of the two |
+
+Ramps (`rampRequired` / `maxRampGrade`) are now collected on the customer form
+(conditional on Outdoor), superseding the earlier "engineer-only" note for those two
+fields.
+
+## Change-log intake fields (2026-08-07)
+
+New customer-questionnaire fields added (all optional/informational, ignored by gates
+and calc; they round-trip via the same envelope): `submissionType` (+ `partnerCompanyName`,
+`partnerRepContact`, `internalAccountId`, and dealer name/rep now under §01), `unitLoadTypes`,
+`dwellTimeMin`, `chargingStrategyPreference`, `topOfRollerHeightFt`, `driveAisleWidthFt`,
+`rackingAisleWidthFt`, `sharedTrafficTypes`, `guidanceType`, `hazardZoneClassification`,
+`restApiAvailable`, `barcodeScanningRequired`, `wmsInterfaceType`, `taggingScanMethod`,
+`hasExistingAutomation`, `existingAutomationInterop`, `currentHeadcount`, plus per-flow
+`distanceType`. `submissionType` is required on export (questionnaire-side only);
+`hazardZoneClassification` is required when ATEX/IECEx is selected.

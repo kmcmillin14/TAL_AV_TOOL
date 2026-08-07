@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { buildQuestionnaireEnvelope } from '@/src/lib/questionnaire/questionnaireExport'
 import { importProjectFromJson } from '@/src/lib/storage'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
-import { SCHEMA_VERSION } from '@/src/lib/validations/schemas'
+import { SCHEMA_VERSION, partialProjectSchema } from '@/src/lib/validations/schemas'
 
 describe('buildQuestionnaireEnvelope', () => {
   const answers = {
@@ -61,5 +61,26 @@ describe('buildQuestionnaireEnvelope', () => {
     const env = buildQuestionnaireEnvelope({ bastianRep: 'Existing', talRepName: 'Sam', desiredInstallDate: '2027-01-01', targetGoLiveDate: '2027-09-09' })
     expect(env.project.bastianRep).toBe('Existing')
     expect(env.project.desiredInstallDate).toBe('2027-01-01')
+  })
+})
+
+describe('change-log fields round-trip', () => {
+  it('carries new intake fields through the envelope + reparses', () => {
+    const answers = partialProjectSchema.parse({
+      submissionType: 'dealer', dealershipName: 'Acme Lift', dealerRep: 'Sam',
+      unitLoadTypes: ['Standard Pallet', 'Tote'], typicalUnitType: 'Standard Pallet',
+      driveAisleWidthFt: 10, rackingAisleWidthFt: 6, minAisleWidthFt: 6,
+      sharedTrafficTypes: ['Pedestrians'], guidanceType: 'wire',
+      hazardZoneClassification: 'Zone 1', restApiAvailable: 'yes',
+      barcodeScanningRequired: true, wmsInterfaceType: 'rest_api', taggingScanMethod: 'barcode',
+      hasExistingAutomation: true, existingAutomationInterop: 'shared aisles', currentHeadcount: 4,
+      dwellTimeMin: 2, chargingStrategyPreference: 'opportunity',
+    })
+    const env = buildQuestionnaireEnvelope(answers)
+    const reparsed = partialProjectSchema.safeParse(env.project)
+    expect(reparsed.success).toBe(true)
+    expect(env.project.submissionType).toBe('dealer')
+    expect(env.project.unitLoadTypes).toEqual(['Standard Pallet', 'Tote'])
+    expect(env.project.minAisleWidthFt).toBe(6)
   })
 })
