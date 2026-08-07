@@ -33,6 +33,7 @@ const HEIGHT_TRANSFER = new Set(TRANSFER_TYPE_OPTIONS.filter(o => o.needsHeight)
 // Empty defaults — array fields seeded so chips/picker controllers start defined.
 const EMPTY_VALUES: PartialProjectFormData = {
   projectDrivers: [], specialtyApplications: [], certifications: [], interlocks: [], vehiclesOfInterest: [],
+  unitLoadTypes: [], sharedTrafficTypes: [],
 }
 
 // Three tiers: start light (who + what they're drawn to), then the application
