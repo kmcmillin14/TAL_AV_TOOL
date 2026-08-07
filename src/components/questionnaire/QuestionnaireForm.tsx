@@ -52,7 +52,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
     fields: ['unitLoadTypes', 'typicalUnitType', 'otherUnitTypeDescription', 'maxLoadWeightLbs', 'loadLengthIn', 'loadWidthIn', 'loadHeightIn'] },
   { id: 'q-sec-04', num: '04', short: 'How it’s moved', tier: TIER_APP,
-    fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'specialtyApplications'] },
+    fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'dwellTimeMin', 'chargingStrategyPreference', 'topOfRollerHeightFt', 'maxLiftHeightFt', 'specialtyApplications'] },
   { id: 'q-sec-05', num: '05', short: 'Where it runs', tier: TIER_APP,
     fields: ['minAisleWidthFt', 'floorCondition', 'outdoorRequired', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
   { id: 'q-sec-06', num: '06', short: 'Site readiness', tier: TIER_APP,
@@ -145,6 +145,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const showOtherUnit = unitLoadTypes.includes('Other')
   const submissionType = values.submissionType
   const showHeight = !!transferType && HEIGHT_TRANSFER.has(transferType)
+  const isLiftTable = transferType === 'lift_table'
+  const isForklift = transferType === 'forklift'
+  const specialties = values.specialtyApplications ?? []
+  const isVNA = specialties.includes('VNA')
 
   // Keep legacy singular typicalUnitType in sync with the multi-select's first
   // choice so the main app's calc/import (which reads the singular field) works.
@@ -354,6 +358,39 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <div className="help">How high the load is raised to pick / place</div>
                 </div>
               )}
+              {isLiftTable && (
+                <div className="fld">
+                  <label>Top-of-roller height</label>
+                  <div className="input-with-unit">
+                    <input type="number" step="0.1" min="0" className="mono" {...register('topOfRollerHeightFt', { setValueAs: emptyToNum })} />
+                    <div className="unit">ft</div>
+                  </div>
+                </div>
+              )}
+              {(isForklift || isVNA) && (
+                <div className="fld">
+                  <label>Max lift height</label>
+                  <div className="input-with-unit">
+                    <input type="number" step="0.1" min="0" className="mono" {...register('maxLiftHeightFt', { setValueAs: emptyToNum })} />
+                    <div className="unit">ft</div>
+                  </div>
+                </div>
+              )}
+              <div className="fld">
+                <label>Dwell / queue time at pick &amp; drop</label>
+                <div className="input-with-unit">
+                  <input type="number" step="0.1" min="0" className="mono" {...register('dwellTimeMin', { setValueAs: emptyToNum })} />
+                  <div className="unit">min</div>
+                </div>
+                <div className="help">Estimated wait per pick/drop</div>
+              </div>
+              <div className="fld">
+                <label>Charging strategy</label>
+                <select {...register('chargingStrategyPreference', { setValueAs: emptyToUndef })} defaultValue="">
+                  <option value="">Select…</option>
+                  {CHARGING_STRATEGIES.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                </select>
+              </div>
             </div>
             <div className="fld-grid-4">
               <div className="fld span-4">
