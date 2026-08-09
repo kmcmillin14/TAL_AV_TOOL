@@ -65,7 +65,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
     fields: ['certifications', 'interlocks', 'hazardZoneClassification', 'barcodeScanningRequired', 'wmsRequired', 'wmsVendor', 'wmsInterfaceType', 'taggingScanMethod', 'restApiAvailable'] },
   { id: 'q-sec-10', num: '10', short: 'Commercial', tier: TIER_DETAILS,
-    fields: ['projectStage', 'budgetStatus', 'budgetRange', 'roiTargetYears', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate', 'customerContactPhone'] },
+    fields: ['projectStage', 'budgetStatus', 'budgetRange', 'roiTargetYears', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
     fields: ['currentToyotaForklifts', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
@@ -377,16 +377,16 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld">
                 <label>Max load weight</label>
                 <div className="input-with-unit">
-                  <input type="number" step="0.1" min="0" className="mono" placeholder="2000" {...register('maxLoadWeightLbs', { setValueAs: emptyToNum })} />
+                  <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" placeholder="2000" {...register('maxLoadWeightLbs', { setValueAs: emptyToNum })} />
                   <div className="unit">lbs</div>
                 </div>
                 <div className="help">Heaviest load the vehicle will carry</div>
               </div>
             </div>
             <div className="fld-row-3">
-              <div className="fld"><label>Load length (in)</label><input type="number" step="0.1" className="mono" placeholder="48" {...register('loadLengthIn', { setValueAs: emptyToNum })} /></div>
-              <div className="fld"><label>Load width (in)</label><input type="number" step="0.1" className="mono" placeholder="40" {...register('loadWidthIn', { setValueAs: emptyToNum })} /></div>
-              <div className="fld"><label>Load height (in)</label><input type="number" step="0.1" className="mono" placeholder="60" {...register('loadHeightIn', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Load length (in)</label><input type="number" step="0.1" inputMode="decimal" className="mono" placeholder="48" {...register('loadLengthIn', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Load width (in)</label><input type="number" step="0.1" inputMode="decimal" className="mono" placeholder="40" {...register('loadWidthIn', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Load height (in)</label><input type="number" step="0.1" inputMode="decimal" className="mono" placeholder="60" {...register('loadHeightIn', { setValueAs: emptyToNum })} /></div>
             </div>
           </FormSection>
 
@@ -419,7 +419,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="fld">
                   <label>Transfer height</label>
                   <div className="input-with-unit">
-                    <input type="number" step="0.1" min="0" className="mono" placeholder="0" {...register('transferHeightFt', { setValueAs: emptyToNum })} />
+                    <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" placeholder="0" {...register('transferHeightFt', { setValueAs: emptyToNum })} />
                     <div className="unit">ft</div>
                   </div>
                   <div className="help">How high the load is raised to pick / place</div>
@@ -429,7 +429,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="fld">
                   <label>Top-of-roller height</label>
                   <div className="input-with-unit">
-                    <input type="number" step="0.1" min="0" className="mono" {...register('topOfRollerHeightFt', { setValueAs: emptyToNum })} />
+                    <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" {...register('topOfRollerHeightFt', { setValueAs: emptyToNum })} />
                     <div className="unit">ft</div>
                   </div>
                 </div>
@@ -438,7 +438,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="fld">
                   <label>Max lift height</label>
                   <div className="input-with-unit">
-                    <input type="number" step="0.1" min="0" className="mono" {...register('maxLiftHeightFt', { setValueAs: emptyToNum })} />
+                    <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" {...register('maxLiftHeightFt', { setValueAs: emptyToNum })} />
                     <div className="unit">ft</div>
                   </div>
                 </div>
@@ -446,7 +446,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld">
                 <label>Dwell / queue time at pick &amp; drop</label>
                 <div className="input-with-unit">
-                  <input type="number" step="0.1" min="0" className="mono" {...register('dwellTimeMin', { setValueAs: emptyToNum })} />
+                  <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" {...register('dwellTimeMin', { setValueAs: emptyToNum })} />
                   <div className="unit">min</div>
                 </div>
                 <div className="help">Estimated wait per pick/drop</div>
@@ -473,14 +473,14 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld">
                 <label>Drive aisle width</label>
                 <div className="input-with-unit">
-                  <input type="number" step="0.1" min="0" className="mono" placeholder="8" {...register('driveAisleWidthFt', { setValueAs: emptyToNum })} />
+                  <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" placeholder="8" {...register('driveAisleWidthFt', { setValueAs: emptyToNum })} />
                   <div className="unit">ft</div>
                 </div>
               </div>
               <div className="fld">
                 <label>Racking aisle width</label>
                 <div className="input-with-unit">
-                  <input type="number" step="0.1" min="0" className="mono" placeholder="6" {...register('rackingAisleWidthFt', { setValueAs: emptyToNum })} />
+                  <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" placeholder="6" {...register('rackingAisleWidthFt', { setValueAs: emptyToNum })} />
                   <div className="unit">ft</div>
                 </div>
                 {isVNA && <div className="help" style={{ fontWeight: 600 }}>VNA selected — racking aisle width is critical for fit.</div>}
@@ -514,8 +514,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 )} />
               </div>
               {showTempRange && (<>
-                <div className="fld"><label>Min temperature (°F)</label><input type="number" className="mono" {...register('tempMinF', { setValueAs: emptyToNum })} /></div>
-                <div className="fld"><label>Max temperature (°F)</label><input type="number" className="mono" {...register('tempMaxF', { setValueAs: emptyToNum })} /></div>
+                <div className="fld"><label>Min temperature (°F)</label><input type="number" inputMode="numeric" className="mono" {...register('tempMinF', { setValueAs: emptyToNum })} /></div>
+                <div className="fld"><label>Max temperature (°F)</label><input type="number" inputMode="numeric" className="mono" {...register('tempMaxF', { setValueAs: emptyToNum })} /></div>
               </>)}
               <div className="fld">
                 <label>Dust / moisture</label>
@@ -546,7 +546,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <div className="fld">
                     <label>Max incline</label>
                     <div className="input-with-unit">
-                      <input type="number" step="0.1" min="0" className="mono" {...register('maxRampGrade', { setValueAs: emptyToNum })} />
+                      <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" {...register('maxRampGrade', { setValueAs: emptyToNum })} />
                       <div className="unit">%</div>
                     </div>
                   </div>
@@ -557,8 +557,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
           <FormSection id="q-sec-06" sectionNum="06" title="Site readiness">
             <div className="fld-grid-3">
-              <div className="fld"><label>Facility size (sq ft)</label><input type="number" className="mono" {...register('facilitySizeSqFt', { setValueAs: emptyToNum })} /></div>
-              <div className="fld"><label>Dock doors</label><input type="number" className="mono" {...register('dockDoors', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Facility size (sq ft)</label><input type="number" inputMode="numeric" className="mono" placeholder="e.g. 50000" {...register('facilitySizeSqFt', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Dock doors</label><input type="number" inputMode="numeric" className="mono" {...register('dockDoors', { setValueAs: emptyToNum })} /></div>
               <div className="fld"><label>Network / WiFi ready?</label><YesNo name="networkReady" /></div>
               <div className="fld"><label>Site walkthrough available?</label><YesNo name="siteWalkthroughAvailable" /></div>
               <div className="fld"><label>CAD / drawings available?</label><YesNo name="cadAvailable" /></div>
@@ -581,21 +581,21 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             <div className="fld-grid-4">
               <div className="fld"><label>Average throughput</label>
                 <div className="input-with-unit">
-                  <input type="number" min="0" className="mono" placeholder="60" {...register('requiredThroughputPerHour', { setValueAs: emptyToNum })} />
+                  <input type="number" min="0" inputMode="numeric" className="mono" placeholder="60" {...register('requiredThroughputPerHour', { setValueAs: emptyToNum })} />
                   <div className="unit">/hr</div>
                 </div>
                 <div className="help">Typical loads moved per hour</div>
               </div>
               <div className="fld"><label>Peak throughput</label>
                 <div className="input-with-unit">
-                  <input type="number" min="0" className="mono" placeholder="90" {...register('peakThroughputPerHour', { setValueAs: emptyToNum })} />
+                  <input type="number" min="0" inputMode="numeric" className="mono" placeholder="90" {...register('peakThroughputPerHour', { setValueAs: emptyToNum })} />
                   <div className="unit">/hr</div>
                 </div>
                 <div className="help">Busiest-hour rate</div>
               </div>
               <div className="fld"><label>Average distance</label>
                 <div className="input-with-unit">
-                  <input type="number" min="0" className="mono" placeholder="250" {...register('avgDistanceFt', { setValueAs: emptyToNum })} />
+                  <input type="number" min="0" inputMode="numeric" className="mono" placeholder="250" {...register('avgDistanceFt', { setValueAs: emptyToNum })} />
                   <div className="unit">ft</div>
                 </div>
               </div>
@@ -622,13 +622,13 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                       <div className="fld"><label>Destination</label><input type="text" placeholder="Storage 1" {...register(`flows.${i}.destination`)} /></div>
                       <div className="fld"><label>Distance (ft)</label>
                         <div className="input-with-unit">
-                          <input type="number" min="0" className="mono" placeholder="200" {...register(`flows.${i}.distanceFt`, { setValueAs: v => (v === '' || v == null ? 0 : Number(v)) })} />
+                          <input type="number" min="0" inputMode="numeric" className="mono" placeholder="200" {...register(`flows.${i}.distanceFt`, { setValueAs: v => (v === '' || v == null ? 0 : Number(v)) })} />
                           <div className="unit">ft</div>
                         </div>
                       </div>
                       <div className="fld"><label>Throughput</label>
                         <div className="input-with-unit">
-                          <input type="number" min="0" className="mono" placeholder="60" {...register(`flows.${i}.thruPerHr`, { setValueAs: v => (v === '' || v == null ? 0 : Number(v)) })} />
+                          <input type="number" min="0" inputMode="numeric" className="mono" placeholder="60" {...register(`flows.${i}.thruPerHr`, { setValueAs: v => (v === '' || v == null ? 0 : Number(v)) })} />
                           <div className="unit">/hr</div>
                         </div>
                       </div>
@@ -658,8 +658,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
           <FormSection id="q-sec-08" sectionNum="08" title="Operating schedule">
             <div className="fld-grid-3">
-              <div className="fld"><label>Shifts / day</label><input type="number" min="1" max="3" className="mono" {...register('shiftsPerDay', { setValueAs: emptyToNum })} /></div>
-              <div className="fld"><label>Hours / shift</label><input type="number" min="4" max="12" className="mono" {...register('hoursPerShift', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Shifts / day</label><input type="number" min="1" max="3" inputMode="numeric" className="mono" {...register('shiftsPerDay', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Hours / shift</label><input type="number" min="4" max="12" inputMode="numeric" className="mono" {...register('hoursPerShift', { setValueAs: emptyToNum })} /></div>
               <div className="fld">
                 <label>Operating days</label>
                 <select {...register('operatingDaysPattern', { setValueAs: emptyToUndef })} defaultValue="">
@@ -667,8 +667,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   {OPERATING_DAYS.map(d => <option key={d}>{d}</option>)}
                 </select>
               </div>
-              <div className="fld"><label>Breaks / shift</label><input type="number" min="0" className="mono" {...register('breaksPerShift', { setValueAs: emptyToNum })} /></div>
-              <div className="fld"><label>Break duration (min)</label><input type="number" min="0" className="mono" {...register('breakDurationMin', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Breaks / shift</label><input type="number" min="0" inputMode="numeric" className="mono" {...register('breaksPerShift', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Break duration (min)</label><input type="number" min="0" inputMode="numeric" className="mono" {...register('breakDurationMin', { setValueAs: emptyToNum })} /></div>
             </div>
           </FormSection>
 
@@ -737,13 +737,12 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 </select>
               </div>
               <div className="fld"><label>Budget range</label><input {...register('budgetRange')} placeholder="e.g. $1–2M" /></div>
-              <div className="fld"><label>ROI target (yrs)</label><input type="number" min="1" max="20" className="mono" {...register('roiTargetYears', { setValueAs: emptyToNum })} placeholder="e.g. 3" /></div>
+              <div className="fld"><label>ROI target (yrs)</label><input type="number" min="1" max="20" inputMode="numeric" className="mono" {...register('roiTargetYears', { setValueAs: emptyToNum })} placeholder="e.g. 3" /></div>
               <div className="fld"><label>Is there an RFQ?</label><YesNo name="isRfq" /></div>
               {isRfq && <div className="fld"><label>RFQ number</label><input {...register('rfqNumber')} /></div>}
               {isRfq && <div className="fld"><label>RFQ due date</label><input type="date" {...register('rfqDueDate')} /></div>}
               <div className="fld"><label>Decision date</label><input type="date" {...register('decisionDate')} /></div>
               <div className="fld"><label>Target go-live</label><input type="date" {...register('targetGoLiveDate')} /></div>
-              <div className="fld"><label>Your phone</label><input {...register('customerContactPhone')} /></div>
             </div>
           </FormSection>
 
@@ -765,9 +764,15 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             </div>
             <div className="fld-grid-2">
               <div className="fld"><label>How is this done today?</label><textarea {...register('currentProcess')} placeholder="Manual forklifts, hand carts, …" /></div>
-              <div className="fld"><label>People / forklifts doing this today</label><input type="number" min="0" className="mono" {...register('currentHeadcount', { setValueAs: emptyToNum })} /></div>
-              <div className="fld"><label>Operators doing this task per shift</label><input type="number" min="0" className="mono" {...register('operatorsPerShift', { setValueAs: emptyToNum })} /></div>
-              <div className="fld"><label>Fully burdened rate ($/yr per operator)</label><input type="number" min="0" className="mono" {...register('fullyBurdenedRateUsdPerYear', { setValueAs: emptyToNum })} placeholder="e.g. 65000" /></div>
+              <div className="fld"><label>People / forklifts doing this today</label><input type="number" min="0" inputMode="numeric" className="mono" {...register('currentHeadcount', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Operators doing this task per shift</label><input type="number" min="0" inputMode="numeric" className="mono" {...register('operatorsPerShift', { setValueAs: emptyToNum })} /></div>
+              <div className="fld">
+                <label>Fully burdened rate ($/yr per operator)</label>
+                <div className="fld-money">
+                  <span className="fld-money-sym">$</span>
+                  <input type="number" min="0" inputMode="numeric" className="mono" {...register('fullyBurdenedRateUsdPerYear', { setValueAs: emptyToNum })} placeholder="65000" />
+                </div>
+              </div>
               <div className="fld"><label>Any existing automation on site?</label><YesNo name="hasExistingAutomation" /></div>
               {hasExistingAutomation && (<>
                 <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
