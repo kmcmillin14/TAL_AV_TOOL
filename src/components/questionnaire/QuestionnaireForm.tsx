@@ -288,11 +288,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
       <div className="page-header">
         <div className="page-title">
           <span className="step-num">AV Questionnaire · {today}</span>
-          <h1>{values.customerName?.trim() || 'Tell us about your application'}</h1>
-          <div className="desc">
-            A few quick details to start, then the specifics of what you move. Nothing is required —
-            fill in what you know. When you're done, export the PDF and send it to your TAL engineer.
-          </div>
+          <h1>{values.customerName?.trim() || values.projectName?.trim() || 'New Questionnaire'}</h1>
         </div>
       </div>
 
@@ -312,7 +308,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                     ))}
                   </div>
                 )} />
-                <div className="help">Required — tells us who to route this to.</div>
               </div>
               <div className="fld"><label>Project name</label><input {...register('projectName')} placeholder="e.g. Acme DC Phase 2" /></div>
               <div className="fld"><label>Customer / company</label><input {...register('customerName')} /></div>
@@ -321,7 +316,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <Controller control={control} name="facilityLocation" render={({ field }) => (
                   <AddressInput value={field.value ?? ''} onChange={field.onChange} placeholder="Start typing an address…" />
                 )} />
-                <div className="help">Start typing — pick a suggestion to auto-fill</div>
               </div>
               <div className="fld"><label>Your name</label><input {...register('customerContactName')} /></div>
               <div className="fld"><label>Your job title</label><input {...register('customerContactRole')} placeholder="e.g. Operations Manager" /></div>
@@ -348,7 +342,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="fld"><label>Lead / Opp number</label><input {...register('opportunityNumber')} placeholder="e.g. OPP-12345" /></div>
               </>)}
             </div>
-            <div className="help" style={{ marginTop: 12 }}>More contact &amp; commercial details come at the end — start with the essentials.</div>
           </FormSection>
 
           <FormSection id="q-sec-02" sectionNum="02" title="Vehicles you're interested in">
@@ -357,7 +350,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <Controller control={control} name="vehiclesOfInterest" render={({ field }) => (
                   <VehiclePicker value={field.value ?? []} onChange={field.onChange} />
                 )} />
-                <div className="help">Optional — not sure? Leave blank and we'll recommend the right fit.</div>
               </div>
               <div className="fld span-2"><label>Other vehicle / not listed</label><input {...register('vehicleInMind')} placeholder="Anything specific in mind" /></div>
             </div>
@@ -380,7 +372,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" placeholder="2000" {...register('maxLoadWeightLbs', { setValueAs: emptyToNum })} />
                   <div className="unit">lbs</div>
                 </div>
-                <div className="help">Heaviest load the vehicle will carry</div>
               </div>
             </div>
             <div className="fld-row-3">
