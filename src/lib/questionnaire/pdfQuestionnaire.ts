@@ -6,17 +6,16 @@ import { winAnsiSafe } from '@/src/lib/utils/winAnsi'
 
 const TAL_RED_RGB = [235 / 255, 10 / 255, 30 / 255] as const
 
-// Returns null for empty/null values (row will be skipped); formatted string otherwise.
-function fmt(v: unknown): string | null {
-  if (v == null || v === '') return null
-  if (Array.isArray(v)) return v.length ? v.join(' · ') : null
+// Always returns a printable string; uses '—' for unanswered fields.
+function fmt(v: unknown): string {
+  if (v == null || v === '') return '—'
+  if (Array.isArray(v)) return v.length ? v.join(' · ') : '—'
   if (typeof v === 'boolean') return v ? 'Yes' : 'No'
   return String(v)
 }
 
-// fmt variants that never return null (used when caller already checks the condition)
-function fmtBool(v: boolean | undefined | null): string | null {
-  if (v == null) return null
+function fmtBool(v: boolean | undefined | null): string {
+  if (v == null) return '—'
   return v ? 'Yes' : 'No'
 }
 
@@ -94,9 +93,8 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
     y -= lineH - 2
   }
 
-  // Draws a label + value row. Skips the row if value is null (empty).
-  const row = (label: string, value: string | null) => {
-    if (value == null) return
+  // Draws a label + value row. Always prints; unanswered fields show '—'.
+  const row = (label: string, value: string) => {
     const safe = winAnsiSafe(value)
     const lines = wrap(safe, font, 10, VALUE_W)
     const rowH = Math.max(lineH, lines.length * (lineH - 2) + 2); ensure(rowH)
@@ -129,7 +127,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
     partner: 'Integration partner',
     internal: 'TAL internal',
   }
-  row('Submitted by', p.submissionType ? subTypeLabel[p.submissionType] ?? p.submissionType : null)
+  row('Submitted by', p.submissionType ? subTypeLabel[p.submissionType] ?? p.submissionType : '—')
 
   if (p.submissionType === 'dealer') {
     row('Dealer / OEM', fmt([p.oemDealer, p.dealershipName].filter(Boolean).join(' — ')))
@@ -140,7 +138,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
     row('Partner contact', fmt(p.partnerRepContact))
   }
   if (p.submissionType === 'internal') {
-    const oppLabel = p.opportunityType === 'lead' ? 'Lead' : p.opportunityType === 'opp' ? 'Opportunity' : null
+    const oppLabel = p.opportunityType === 'lead' ? 'Lead' : p.opportunityType === 'opp' ? 'Opportunity' : '—'
     row('CRM record type', oppLabel)
     row('Lead / Opp number', fmt(p.opportunityNumber))
   }
@@ -160,15 +158,18 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   // ── §03  Opportunity ────────────────────────────────────────────────────────
   sec('Opportunity')
   row('Facility location', fmt(p.facilityLocation))
-  row('CAD / drawings available', p.cadAvailable == null ? null : p.cadAvailable ? `Yes${p.cadNotes ? ` — ${p.cadNotes}` : ''}` : 'No')
+  row('CAD / drawings available', p.cadAvailable == null ? '—' : p.cadAvailable ? `Yes${p.cadNotes ? ` — ${p.cadNotes}` : ''}` : 'No')
 
   // ── §04-C  Commercial ───────────────────────────────────────────────────────
   sec('Commercial')
   row('Project stage', fmt(p.projectStage))
   row('Budget status', fmt(p.budgetStatus))
-  row('Budget range', fmt(p.budgetRange))
-  row('ROI target', p.roiTargetYears != null ? `${p.roiTargetYears} yr${p.roiTargetYears !== 1 ? 's' : ''}` : null)
-  row('RFQ', p.isRfq == null ? null : p.isRfq ? `Yes${p.rfqNumber ? ` — ${p.rfqNumber}` : ''}${p.rfqDueDate ? ` (due ${p.rfqDueDate})` : ''}` : 'No')
+  const budgetStr = p.budgetMin != null || p.budgetMax != null
+    ? [p.budgetMin != null ? `$${p.budgetMin.toLocaleString()}` : null, p.budgetMax != null ? `$${p.budgetMax.toLocaleString()}` : null].filter(Boolean).join(' – ')
+    : fmt(p.budgetRange)
+  row('Budget', budgetStr)
+  row('ROI target', p.roiTargetYears != null ? `${p.roiTargetYears} yr${p.roiTargetYears !== 1 ? 's' : ''}` : '—')
+  row('RFQ', p.isRfq == null ? '—' : p.isRfq ? `Yes${p.rfqNumber ? ` — ${p.rfqNumber}` : ''}${p.rfqDueDate ? ` (due ${p.rfqDueDate})` : ''}` : 'No')
   row('Decision date', fmt(p.decisionDate))
   row('Target go-live', fmt(p.targetGoLiveDate))
 
@@ -190,10 +191,10 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
       row('  Load', fmt(detail))
     }
   } else {
-    row('Max load weight', p.maxLoadWeightLbs ? `${p.maxLoadWeightLbs.toLocaleString()} lbs` : null)
+    row('Max load weight', p.maxLoadWeightLbs ? `${p.maxLoadWeightLbs.toLocaleString()} lbs` : '—')
     const dims = [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].some(d => d != null)
       ? [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].map(d => d != null ? `${d} in` : '—').join(' × ')
-      : null
+      : '—'
     row('Load L × W × H', dims)
   }
 
@@ -202,37 +203,34 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Pick loads up from', fmt(p.pickContext))
   row('Set loads down at', fmt(p.dropContext))
   row('Transfer type', fmt(p.transferType))
-  row('Transfer height', p.transferHeightFt != null ? `${p.transferHeightFt} ft` : null)
+  row('Transfer height', p.transferHeightFt != null ? `${p.transferHeightFt} ft` : '—')
   row('Lift type needed', fmt(p.liftTypeNeeded))
-  row('Max lift height', p.maxLiftHeightFt != null ? `${p.maxLiftHeightFt} ft` : null)
-  row('Top of roller height', p.topOfRollerHeightFt != null ? `${p.topOfRollerHeightFt} ft` : null)
-  row('Dwell time at station', p.dwellTimeMin != null ? `${p.dwellTimeMin} min` : null)
+  row('Max lift height', p.maxLiftHeightFt != null ? `${p.maxLiftHeightFt} ft` : '—')
+  row('Top of roller height', p.topOfRollerHeightFt != null ? `${p.topOfRollerHeightFt} ft` : '—')
+  row('Dwell time at station', p.dwellTimeMin != null ? `${p.dwellTimeMin} min` : '—')
   const chargingLabels: Record<string, string> = { opportunity: 'Opportunity charging', battery_swap: 'Battery swap', not_sure: 'Not sure' }
-  row('Charging preference', p.chargingStrategyPreference ? chargingLabels[p.chargingStrategyPreference] ?? p.chargingStrategyPreference : null)
+  row('Charging preference', p.chargingStrategyPreference ? chargingLabels[p.chargingStrategyPreference] ?? p.chargingStrategyPreference : '—')
 
   // ── §06  Facility environment ───────────────────────────────────────────────
   sec('Facility environment')
-  row('Facility size', p.facilitySizeSqFt ? `${p.facilitySizeSqFt.toLocaleString()} sq ft` : null)
+  row('Facility size', p.facilitySizeSqFt ? `${p.facilitySizeSqFt.toLocaleString()} sq ft` : '—')
   row('Dock doors', fmt(p.dockDoors))
-  row('Indoor / outdoor', p.outdoorRequired == null ? null : p.outdoorRequired ? 'Outdoor' : 'Indoor')
+  row('Indoor / outdoor', p.outdoorRequired == null ? '—' : p.outdoorRequired ? 'Outdoor' : 'Indoor')
   const tempEnvLabels: Record<string, string> = { ambient: 'Ambient', refrigerated: 'Refrigerated', freezer: 'Freezer' }
-  row('Temperature environment', p.temperatureEnvironment ? tempEnvLabels[p.temperatureEnvironment] ?? p.temperatureEnvironment : null)
-  row('Min temperature', p.tempMinF != null ? `${p.tempMinF}°F` : null)
-  row('Max temperature', p.tempMaxF != null ? `${p.tempMaxF}°F` : null)
+  row('Temperature environment', p.temperatureEnvironment ? tempEnvLabels[p.temperatureEnvironment] ?? p.temperatureEnvironment : '—')
+  row('Min temperature', p.tempMinF != null ? `${p.tempMinF}°F` : '—')
+  row('Max temperature', p.tempMaxF != null ? `${p.tempMaxF}°F` : '—')
   row('Dust / moisture', fmt(p.dustMoisture))
   row('Floor condition', fmt(p.floorCondition))
-  row('Drive aisle width', p.driveAisleWidthFt != null ? `${p.driveAisleWidthFt} ft` : null)
-  row('Racking aisle width', p.rackingAisleWidthFt != null ? `${p.rackingAisleWidthFt} ft` : null)
+  row('Drive aisle width', p.driveAisleWidthFt != null ? `${p.driveAisleWidthFt} ft` : '—')
+  row('Picking from racking', fmtBool(p.pickingFromRacking))
+  row('Racking aisle width', p.rackingAisleWidthFt != null ? `${p.rackingAisleWidthFt} ft` : '—')
   row('Shared traffic', fmt(p.sharedTrafficTypes))
   const guidanceLabels: Record<string, string> = { wire: 'Wire-guided', rail: 'Rail-guided' }
-  row('VNA guidance type', p.guidanceType ? guidanceLabels[p.guidanceType] ?? p.guidanceType : null)
-  if (p.rampRequired) {
-    row('Ramp required', 'Yes')
-    row('Ramp distance', p.rampDistanceFt ? `${p.rampDistanceFt} ft` : null)
-    row('Max ramp grade', p.maxRampGrade ? `${p.maxRampGrade}%` : null)
-  } else {
-    row('Ramp required', fmtBool(p.rampRequired))
-  }
+  row('VNA guidance type', p.guidanceType ? guidanceLabels[p.guidanceType] ?? p.guidanceType : '—')
+  row('Ramps / grades', fmtBool(p.rampRequired))
+  row('Max ramp grade', p.maxRampGrade ? `${p.maxRampGrade}%` : '—')
+  row('Ramp length', p.rampDistanceFt ? `${p.rampDistanceFt} ft` : '—')
 
   // ── §07  Schedule ───────────────────────────────────────────────────────────
   sec('Schedule')
@@ -240,17 +238,17 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Hours / shift', fmt(p.hoursPerShift))
   row('Operating days', fmt(p.operatingDaysPattern))
   if ((p.operatingDaysCustom ?? []).length) row('Custom days', fmt(p.operatingDaysCustom))
-  row('Breaks / shift', p.breaksPerShift ? `${p.breaksPerShift}` : null)
-  row('Break duration', p.breakDurationMin ? `${p.breakDurationMin} min` : null)
+  row('Breaks / shift', p.breaksPerShift ? `${p.breaksPerShift}` : '—')
+  row('Break duration', p.breakDurationMin ? `${p.breakDurationMin} min` : '—')
 
   // ── §08  Throughput & flows ─────────────────────────────────────────────────
   sec('Throughput & flows')
-  row('Average throughput', p.requiredThroughputPerHour ? `${p.requiredThroughputPerHour} moves/hr` : null)
-  row('Peak throughput', p.peakThroughputPerHour ? `${p.peakThroughputPerHour} moves/hr` : null)
+  row('Average throughput', p.requiredThroughputPerHour ? `${p.requiredThroughputPerHour} moves/hr` : '—')
+  row('Peak throughput', p.peakThroughputPerHour ? `${p.peakThroughputPerHour} moves/hr` : '—')
   const distTypeLabelP: Record<string, string> = { one_way: 'one-way', round_trip: 'round trip' }
   const avgDistLabel = p.avgDistanceFt
     ? `${p.avgDistanceFt} ft${p.distanceType ? ` (${distTypeLabelP[p.distanceType] ?? p.distanceType})` : ''}`
-    : null
+    : '—'
   row('Average distance', avgDistLabel)
   for (const f of p.flows ?? []) {
     if (!f.origin && !f.destination && !f.distanceFt && !f.thruPerHr) continue
@@ -276,19 +274,19 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Interlocks', fmt(p.interlocks))
   row('Hazard zone classification', fmt(p.hazardZoneClassification))
   row('Barcode scanning required', fmtBool(p.barcodeScanningRequired))
-  row('WMS required', p.wmsRequired == null ? null : fmtBool(p.wmsRequired))
+  row('WMS required', fmtBool(p.wmsRequired))
   if (p.wmsRequired) {
     row('WMS vendor', fmt(p.wmsVendor))
     const ifaceLabels: Record<string, string> = {
       rest_api: 'REST API', file: 'File-based', middleware: 'Middleware', other: 'Other',
     }
-    row('WMS interface type', p.wmsInterfaceType ? ifaceLabels[p.wmsInterfaceType] ?? p.wmsInterfaceType : null)
+    row('WMS interface type', p.wmsInterfaceType ? ifaceLabels[p.wmsInterfaceType] ?? p.wmsInterfaceType : '—')
     const apiLabels: Record<string, string> = { yes: 'Yes', no: 'No', not_sure: 'Not sure' }
-    row('REST API available', p.restApiAvailable ? apiLabels[p.restApiAvailable] ?? p.restApiAvailable : null)
+    row('REST API available', p.restApiAvailable ? apiLabels[p.restApiAvailable] ?? p.restApiAvailable : '—')
     const scanLabels: Record<string, string> = {
       barcode: 'Barcode', qr: 'QR code', rfid: 'RFID', none: 'None',
     }
-    row('Tagging / scan method', p.taggingScanMethod ? scanLabels[p.taggingScanMethod] ?? p.taggingScanMethod : null)
+    row('Tagging / scan method', p.taggingScanMethod ? scanLabels[p.taggingScanMethod] ?? p.taggingScanMethod : '—')
   }
 
   // ── §11  Technology & network ───────────────────────────────────────────────
@@ -306,9 +304,9 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   }
   row('Why automating', fmt(p.projectDrivers))
   row('Current process', fmt(p.currentProcess))
-  row('People / forklifts doing this today', p.currentHeadcount != null ? `${p.currentHeadcount}` : null)
-  row('Operators doing task per shift', p.operatorsPerShift ? `${p.operatorsPerShift}` : null)
-  row('Fully burdened rate', p.fullyBurdenedRateUsdPerYear != null ? `$${p.fullyBurdenedRateUsdPerYear.toLocaleString()}/yr per operator` : null)
+  row('People / forklifts doing this today', p.currentHeadcount != null ? `${p.currentHeadcount}` : '—')
+  row('Operators doing task per shift', p.operatorsPerShift ? `${p.operatorsPerShift}` : '—')
+  row('Fully burdened rate', p.fullyBurdenedRateUsdPerYear != null ? `$${p.fullyBurdenedRateUsdPerYear.toLocaleString()}/yr per operator` : '—')
   row('Volume growth', fmt(p.volumeGrowthNote))
   row('Seasonality', fmt(p.seasonalityNote))
 

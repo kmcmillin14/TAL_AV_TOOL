@@ -1,5 +1,16 @@
 # Changelog
 
+### Questionnaire update (2026-08-10 — session 3)
+- `projectSchema`: added `budgetMin` / `budgetMax` (number ≥ 0, optional) — replaces free-text
+  `budgetRange` (kept as legacy field for backward compat with old exports).
+- `projectSchema`: added `pickingFromRacking` (boolean, optional) — gates racking aisle width
+  display in §05; informational only (not a vehicle gate).
+- Questionnaire §05: ramp section always visible (removed outdoor gate); grade/length fields
+  conditional on `rampRequired = true`; racking aisle conditional on `pickingFromRacking`.
+- Questionnaire §10: budget replaced with two $ amount inputs (low / high).
+- Questionnaire title h1: shows "Company — Project Name" when both are set.
+- PDF export: all fields always print; unanswered fields show "—" (no silent omissions).
+
 ### Questionnaire update (2026-08-07 — session 2)
 - `projectSchema`: added `roiTargetYears` (int 1–20, optional) — customer's target payback
   period; informational for ROM framing, not used in fleet calc.

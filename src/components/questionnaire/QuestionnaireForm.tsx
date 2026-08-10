@@ -55,7 +55,7 @@ const SECTIONS: readonly QSection[] = [
   { id: "q-sec-04", num: "04", short: "How it's moved", tier: TIER_APP,
     fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'dwellTimeMin', 'chargingStrategyPreference', 'topOfRollerHeightFt', 'maxLiftHeightFt', 'specialtyApplications'] },
   { id: 'q-sec-05', num: '05', short: 'Where it runs', tier: TIER_APP,
-    fields: ['driveAisleWidthFt', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
+    fields: ['driveAisleWidthFt', 'pickingFromRacking', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'rampDistanceFt', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
   { id: 'q-sec-06', num: '06', short: 'Site readiness', tier: TIER_APP,
     fields: ['facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable', 'cadAvailable', 'cadNotes'] },
   { id: 'q-sec-07', num: '07', short: 'Throughput & flows', tier: TIER_APP,
@@ -65,7 +65,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
     fields: ['certifications', 'interlocks', 'hazardZoneClassification', 'barcodeScanningRequired', 'wmsRequired', 'wmsVendor', 'wmsInterfaceType', 'taggingScanMethod', 'restApiAvailable'] },
   { id: 'q-sec-10', num: '10', short: 'Commercial', tier: TIER_DETAILS,
-    fields: ['projectStage', 'budgetStatus', 'budgetRange', 'roiTargetYears', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate'] },
+    fields: ['projectStage', 'budgetStatus', 'budgetMin', 'budgetMax', 'roiTargetYears', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
     fields: ['currentToyotaForklifts', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
@@ -274,7 +274,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
   // Reusable No/Yes segmented toggle for a tri-state boolean. Clicking the
   // already-selected option clears it back to unanswered (undefined).
-  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' }) => (
+  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="seg-toggle">
         <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(field.value === false ? undefined : false)}>No</button>
@@ -288,7 +288,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
       <div className="page-header">
         <div className="page-title">
           <span className="step-num">AV Questionnaire · {today}</span>
-          <h1>{values.customerName?.trim() || values.projectName?.trim() || 'New Questionnaire'}</h1>
+          <h1>
+            {values.customerName?.trim() || 'New Questionnaire'}
+            {values.projectName?.trim() && <span className="q-title-project"> — {values.projectName.trim()}</span>}
+          </h1>
         </div>
       </div>
 
@@ -469,13 +472,19 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 </div>
               </div>
               <div className="fld">
-                <label>Racking aisle width</label>
-                <div className="input-with-unit">
-                  <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" placeholder="6" {...register('rackingAisleWidthFt', { setValueAs: emptyToNum })} />
-                  <div className="unit">ft</div>
-                </div>
-                {isVNA && <div className="help" style={{ fontWeight: 600 }}>VNA selected — racking aisle width is critical for fit.</div>}
+                <label>Picking from racking?</label>
+                <YesNo name="pickingFromRacking" />
               </div>
+              {values.pickingFromRacking && (
+                <div className="fld">
+                  <label>Racking aisle width</label>
+                  <div className="input-with-unit">
+                    <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" placeholder="6" {...register('rackingAisleWidthFt', { setValueAs: emptyToNum })} />
+                    <div className="unit">ft</div>
+                  </div>
+                  {isVNA && <div className="help" style={{ fontWeight: 600 }}>VNA selected — racking aisle width is critical for fit.</div>}
+                </div>
+              )}
               <div className="fld">
                 <label>Floor condition</label>
                 <select {...register('floorCondition', { setValueAs: emptyToUndef })} defaultValue="">
@@ -528,20 +537,25 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   </select>
                 </div>
               )}
-              {isOutdoor && (<>
+              <div className="fld">
+                <label>Ramps / grades present?</label>
+                <YesNo name="rampRequired" />
+              </div>
+              {values.rampRequired && (<>
                 <div className="fld">
-                  <label>Ramps / grades present?</label>
-                  <YesNo name="rampRequired" />
-                </div>
-                {values.rampRequired && (
-                  <div className="fld">
-                    <label>Max incline</label>
-                    <div className="input-with-unit">
-                      <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" {...register('maxRampGrade', { setValueAs: emptyToNum })} />
-                      <div className="unit">%</div>
-                    </div>
+                  <label>Max grade</label>
+                  <div className="input-with-unit">
+                    <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" {...register('maxRampGrade', { setValueAs: emptyToNum })} />
+                    <div className="unit">%</div>
                   </div>
-                )}
+                </div>
+                <div className="fld">
+                  <label>Ramp length</label>
+                  <div className="input-with-unit">
+                    <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" {...register('rampDistanceFt', { setValueAs: emptyToNum })} />
+                    <div className="unit">ft</div>
+                  </div>
+                </div>
               </>)}
             </div>
           </FormSection>
@@ -727,7 +741,20 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <option value="allocated">Allocated</option>
                 </select>
               </div>
-              <div className="fld"><label>Budget range</label><input {...register('budgetRange')} placeholder="e.g. $1–2M" /></div>
+              <div className="fld">
+                <label>Budget (low)</label>
+                <div className="fld-money">
+                  <span className="fld-money-sym">$</span>
+                  <input type="number" min="0" inputMode="numeric" className="mono" placeholder="500000" {...register('budgetMin', { setValueAs: emptyToNum })} />
+                </div>
+              </div>
+              <div className="fld">
+                <label>Budget (high)</label>
+                <div className="fld-money">
+                  <span className="fld-money-sym">$</span>
+                  <input type="number" min="0" inputMode="numeric" className="mono" placeholder="2000000" {...register('budgetMax', { setValueAs: emptyToNum })} />
+                </div>
+              </div>
               <div className="fld"><label>ROI target (yrs)</label><input type="number" min="1" max="20" inputMode="numeric" className="mono" {...register('roiTargetYears', { setValueAs: emptyToNum })} placeholder="e.g. 3" /></div>
               <div className="fld"><label>Is there an RFQ?</label><YesNo name="isRfq" /></div>
               {isRfq && <div className="fld"><label>RFQ number</label><input {...register('rfqNumber')} /></div>}

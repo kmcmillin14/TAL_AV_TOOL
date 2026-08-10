@@ -83,6 +83,7 @@ export const projectSchema = z.object({
 
   // Section 3
   minAisleWidthFt: z.number().min(0).optional(),
+  pickingFromRacking: z.boolean().optional(),
   floorCondition: z.string().optional(),
 
   // Section 4
@@ -189,7 +190,9 @@ export const projectSchema = z.object({
   cadNotes: z.string().optional(),
   projectStage: z.enum(['exploring', 'budgeting', 'approved', 'committed']).optional(),
   budgetStatus: z.enum(['budgetary', 'firm', 'allocated']).optional(),
-  budgetRange: z.string().optional(),
+  budgetRange: z.string().optional(),  // legacy free-text; superseded by budgetMin/budgetMax
+  budgetMin: z.number().min(0).optional(),
+  budgetMax: z.number().min(0).optional(),
   decisionDate: z.string().optional(),
   targetGoLiveDate: z.string().optional(),
   projectDrivers: z.array(z.string()).max(50).default([]),
