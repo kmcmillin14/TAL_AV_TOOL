@@ -826,6 +826,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .fld-money { position: relative; }
 .fld-money-sym { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--text-tertiary); font-family: var(--tal-font-numeric); font-size: 13px; pointer-events: none; }
 .fld .fld-money input { padding-left: 26px; }
+/* Budget range — two money inputs side by side with an em dash between them. */
+.fld-budget-range { display: flex; align-items: center; gap: 8px; }
+.fld-budget-range .fld-money { flex: 1; min-width: 0; }
+.fld-range-sep { color: var(--text-tertiary); font-size: 14px; flex-shrink: 0; line-height: 1; }
 .fld label { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
 .req { color: var(--accent); }
 

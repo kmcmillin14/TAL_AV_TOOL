@@ -783,18 +783,18 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <option value="allocated">Allocated</option>
                 </select>
               </div>
-              <div className="fld">
-                <label>Budget (low)</label>
-                <div className="fld-money">
-                  <span className="fld-money-sym">$</span>
-                  <ThousandsInput name="budgetMin" control={control} placeholder="500,000" className="mono" />
-                </div>
-              </div>
-              <div className="fld">
-                <label>Budget (high)</label>
-                <div className="fld-money">
-                  <span className="fld-money-sym">$</span>
-                  <ThousandsInput name="budgetMax" control={control} placeholder="2,000,000" className="mono" />
+              <div className="fld span-2">
+                <label>Budget range</label>
+                <div className="fld-budget-range">
+                  <div className="fld-money">
+                    <span className="fld-money-sym">$</span>
+                    <ThousandsInput name="budgetMin" control={control} placeholder="500,000" className="mono" />
+                  </div>
+                  <span className="fld-range-sep">—</span>
+                  <div className="fld-money">
+                    <span className="fld-money-sym">$</span>
+                    <ThousandsInput name="budgetMax" control={control} placeholder="2,000,000" className="mono" />
+                  </div>
                 </div>
               </div>
               <div className="fld"><label>ROI target (yrs)</label><input type="number" min="1" max="20" inputMode="numeric" className="mono" {...register('roiTargetYears', { setValueAs: emptyToNum })} placeholder="e.g. 3" /></div>
