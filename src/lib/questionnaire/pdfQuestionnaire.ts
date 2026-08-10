@@ -105,7 +105,9 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   }
 
   // ── Cover header ────────────────────────────────────────────────────────────
-  const submitted = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+  const now = new Date()
+  const submitted = now.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
+    + ' at ' + now.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })
   page.drawText('AV QUESTIONNAIRE', { x: MX, y: H - 110, size: 10, font: bold, color: TAL_RED })
   page.drawLine({ start: { x: MX, y: H - 120 }, end: { x: W - MX, y: H - 120 }, thickness: 0.5, color: RULE })
   const coverTitle = winAnsiSafe(p.customerName || p.projectName || 'Untitled Opportunity')
