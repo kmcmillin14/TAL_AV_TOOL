@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useForm, useFieldArray, Controller, type SubmitHandler, type Resolver } from 'react-hook-form'
+import { useForm, useFieldArray, Controller, type Control, type SubmitHandler, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import FormSection from '@/src/components/step1/FormSection'
 import Icon from '@/src/design-system/components/Icon'
@@ -88,6 +88,48 @@ const emptyToNum = (v: unknown) => {
   if (v === '' || v == null) return undefined
   const n = Number(v)
   return Number.isNaN(n) ? undefined : n
+}
+
+// Formatted number input: shows locale-formatted value (with commas) when blurred,
+// raw digits when focused. Integers only unless allowDecimals is set.
+function ThousandsInput({
+  name, control, placeholder, className, allowDecimals = false,
+}: {
+  name: keyof PartialProjectFormData
+  control: Control<PartialProjectFormData>
+  placeholder?: string
+  className?: string
+  allowDecimals?: boolean
+}) {
+  const [focused, setFocused] = useState(false)
+  return (
+    <Controller
+      name={name}
+      control={control}
+      render={({ field }) => {
+        const raw = field.value as number | undefined | null
+        const displayValue = focused
+          ? (raw != null ? String(raw) : '')
+          : (raw != null ? Number(raw).toLocaleString() : '')
+        return (
+          <input
+            type="text"
+            inputMode={allowDecimals ? 'decimal' : 'numeric'}
+            className={className}
+            placeholder={placeholder}
+            value={displayValue}
+            ref={field.ref}
+            onFocus={() => setFocused(true)}
+            onBlur={() => { setFocused(false); field.onBlur() }}
+            onChange={(e) => {
+              const stripped = e.target.value.replace(allowDecimals ? /[^0-9.]/g : /[^0-9]/g, '')
+              field.onChange(stripped === '' ? undefined : Number(stripped))
+            }}
+          />
+        )
+      }}
+    />
+  )
 }
 
 // Friendly labels for the rare validation block (range-constrained fields).
@@ -372,7 +414,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld">
                 <label>Max load weight</label>
                 <div className="input-with-unit">
-                  <input type="number" step="0.1" min="0" inputMode="decimal" className="mono" placeholder="2000" {...register('maxLoadWeightLbs', { setValueAs: emptyToNum })} />
+                  <ThousandsInput name="maxLoadWeightLbs" control={control} placeholder="2,000" className="mono" allowDecimals />
                   <div className="unit">lbs</div>
                 </div>
               </div>
@@ -562,7 +604,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
           <FormSection id="q-sec-06" sectionNum="06" title="Site readiness">
             <div className="fld-grid-3">
-              <div className="fld"><label>Facility size (sq ft)</label><input type="number" inputMode="numeric" className="mono" placeholder="e.g. 50000" {...register('facilitySizeSqFt', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Facility size (sq ft)</label><ThousandsInput name="facilitySizeSqFt" control={control} placeholder="e.g. 50,000" className="mono" /></div>
               <div className="fld"><label>Dock doors</label><input type="number" inputMode="numeric" className="mono" {...register('dockDoors', { setValueAs: emptyToNum })} /></div>
               <div className="fld"><label>Network / WiFi ready?</label><YesNo name="networkReady" /></div>
               <div className="fld"><label>Site walkthrough available?</label><YesNo name="siteWalkthroughAvailable" /></div>
@@ -745,14 +787,14 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <label>Budget (low)</label>
                 <div className="fld-money">
                   <span className="fld-money-sym">$</span>
-                  <input type="number" min="0" inputMode="numeric" className="mono" placeholder="500000" {...register('budgetMin', { setValueAs: emptyToNum })} />
+                  <ThousandsInput name="budgetMin" control={control} placeholder="500,000" className="mono" />
                 </div>
               </div>
               <div className="fld">
                 <label>Budget (high)</label>
                 <div className="fld-money">
                   <span className="fld-money-sym">$</span>
-                  <input type="number" min="0" inputMode="numeric" className="mono" placeholder="2000000" {...register('budgetMax', { setValueAs: emptyToNum })} />
+                  <ThousandsInput name="budgetMax" control={control} placeholder="2,000,000" className="mono" />
                 </div>
               </div>
               <div className="fld"><label>ROI target (yrs)</label><input type="number" min="1" max="20" inputMode="numeric" className="mono" {...register('roiTargetYears', { setValueAs: emptyToNum })} placeholder="e.g. 3" /></div>
@@ -788,7 +830,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <label>Fully burdened rate ($/yr per operator)</label>
                 <div className="fld-money">
                   <span className="fld-money-sym">$</span>
-                  <input type="number" min="0" inputMode="numeric" className="mono" {...register('fullyBurdenedRateUsdPerYear', { setValueAs: emptyToNum })} placeholder="65000" />
+                  <ThousandsInput name="fullyBurdenedRateUsdPerYear" control={control} placeholder="65,000" className="mono" />
                 </div>
               </div>
               <div className="fld"><label>Any existing automation on site?</label><YesNo name="hasExistingAutomation" /></div>
