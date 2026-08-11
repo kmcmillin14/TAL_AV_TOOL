@@ -317,7 +317,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   row('Existing automation', fmtBool(p.hasExistingAutomation))
   if (p.hasExistingAutomation) {
     row('Automation (brand / fleet)', fmt(p.existingAutomation))
-    row('Interoperability notes', fmt(p.existingAutomationInterop))
+    row('AV fleet paths cross?', fmt(p.existingAutomationInterop))
   }
   row('Why automating', fmt(p.projectDrivers))
   row('Current process', fmt(p.currentProcess))
