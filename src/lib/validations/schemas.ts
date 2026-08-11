@@ -227,7 +227,7 @@ export const projectSchema = z.object({
   unitLoadTypes: z.array(z.string()).max(50).default([]),
   // §04 handling detail
   dwellTimeMin: z.number().min(0).optional().nullable(),
-  chargingStrategyPreference: z.enum(['floor_contact', 'inductive', 'battery_swap', 'not_sure', 'opportunity']).optional(),
+  chargingStrategyPreference: z.enum(['plug_in', 'opportunity', 'hydrogen', 'floor_contact', 'inductive', 'battery_swap', 'not_sure']).optional(),
   topOfRollerHeightFt: z.number().min(0).optional().nullable(),
   // §05 environment. driveAisle/rackingAisle mirror min()→minAisleWidthFt on save.
   driveAisleWidthFt: z.number().min(0).optional().nullable(),

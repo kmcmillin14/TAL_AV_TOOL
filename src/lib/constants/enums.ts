@@ -76,10 +76,9 @@ export const SUBMISSION_TYPES = [
 
 /** §04 charging strategy preference (customer view — informational). */
 export const CHARGING_STRATEGIES = [
-  { value: 'floor_contact', label: 'Floor contact / pantograph' },
-  { value: 'inductive', label: 'Inductive (wireless)' },
-  { value: 'battery_swap', label: 'Battery swap' },
-  { value: 'not_sure', label: "Don't know / not sure" },
+  { value: 'plug_in', label: 'Plug in' },
+  { value: 'opportunity', label: 'Opportunity charging' },
+  { value: 'hydrogen', label: 'Hydrogen refueling' },
 ] as const
 
 /** §05 shared traffic in the operating area (multi-select). */

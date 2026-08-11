@@ -1,5 +1,10 @@
 # Changelog
 
+### Questionnaire UX feedback round 1b (2026-08-10)
+- `chargingStrategyPreference`: replaced experimental floor_contact/inductive options with
+  the correct three choices — `plug_in` (Plug in), `opportunity` (Opportunity charging),
+  `hydrogen` (Hydrogen refueling). Legacy values kept as tail entries for back-compat.
+
 ### Questionnaire UX feedback round 1 (2026-08-10)
 - `chargingStrategyPreference`: expanded enum — added `floor_contact` (floor contact /
   pantograph) and `inductive` (wireless). Old `opportunity` value kept as tail entry so

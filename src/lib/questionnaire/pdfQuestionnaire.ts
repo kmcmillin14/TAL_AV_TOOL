@@ -211,7 +211,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Max lift height', p.maxLiftHeightFt != null ? `${p.maxLiftHeightFt} ft` : '—')
   row('Top of roller height', p.topOfRollerHeightFt != null ? `${p.topOfRollerHeightFt} ft` : '—')
   row('Dwell time at station', p.dwellTimeMin != null ? `${p.dwellTimeMin} min` : '—')
-  const chargingLabels: Record<string, string> = { floor_contact: 'Floor contact / pantograph', inductive: 'Inductive (wireless)', battery_swap: 'Battery swap', not_sure: 'Not sure', opportunity: 'Opportunity charging' }
+  const chargingLabels: Record<string, string> = { plug_in: 'Plug in', opportunity: 'Opportunity charging', hydrogen: 'Hydrogen refueling', floor_contact: 'Floor contact / pantograph', inductive: 'Inductive (wireless)', battery_swap: 'Battery swap', not_sure: 'Not sure' }
   row('Charging preference', p.chargingStrategyPreference ? chargingLabels[p.chargingStrategyPreference] ?? p.chargingStrategyPreference : '—')
 
   // ── §06  Facility environment ───────────────────────────────────────────────
