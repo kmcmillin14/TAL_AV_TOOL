@@ -76,9 +76,10 @@ export const SUBMISSION_TYPES = [
 
 /** §04 charging strategy preference (customer view — informational). */
 export const CHARGING_STRATEGIES = [
-  { value: 'opportunity', label: 'Opportunity charging' },
+  { value: 'floor_contact', label: 'Floor contact / pantograph' },
+  { value: 'inductive', label: 'Inductive (wireless)' },
   { value: 'battery_swap', label: 'Battery swap' },
-  { value: 'not_sure', label: 'Not sure' },
+  { value: 'not_sure', label: "Don't know / not sure" },
 ] as const
 
 /** §05 shared traffic in the operating area (multi-select). */
@@ -117,6 +118,18 @@ export const TAGGING_SCAN_METHODS = [
 
 /** §03 unit/load type multi-select (same options as the singular list). */
 export const UNIT_LOAD_TYPE_OPTIONS = TYPICAL_UNIT_TYPES
+
+/** Maps load type label → image filename stem (no extension).
+ *  Drop PNG/WebP at public/images/load-types/<slug>.png to activate the image. */
+export const LOAD_TYPE_IMAGE_SLUG: Partial<Record<string, string>> = {
+  'Standard Pallet': 'standard-pallet',
+  'Tote': 'tote',
+  'Cart': 'cart',
+  'Roll': 'roll',
+  'IBC': 'ibc',
+  'Coil': 'coil',
+  'Rack': 'rack',
+}
 
 export type TransferMethod = typeof TRANSFER_METHODS[number]
 export type TypicalUnitType = typeof TYPICAL_UNIT_TYPES[number]

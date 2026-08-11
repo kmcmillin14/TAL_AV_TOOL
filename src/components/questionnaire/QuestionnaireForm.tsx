@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import FormSection from '@/src/components/step1/FormSection'
 import Icon from '@/src/design-system/components/Icon'
 import VehiclePicker from './VehiclePicker'
+import LoadTypePicker from './LoadTypePicker'
 import AddressInput from './AddressInput'
 import QuestionnaireNav, { type QSection } from './QuestionnaireNav'
 import {
@@ -405,7 +406,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             <div className="fld-grid-4">
               <div className="fld span-4">
                 <label>Unit / load type(s)</label>
-                <Chips name="unitLoadTypes" options={UNIT_LOAD_TYPE_OPTIONS} />
+                <Controller control={control} name="unitLoadTypes" render={({ field }) => (
+                  <LoadTypePicker value={field.value ?? []} onChange={field.onChange} />
+                )} />
                 <div className="help">Select all that apply.</div>
               </div>
               {showOtherUnit && (

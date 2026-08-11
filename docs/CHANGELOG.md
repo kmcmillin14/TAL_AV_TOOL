@@ -1,5 +1,13 @@
 # Changelog
 
+### Questionnaire UX feedback round 1 (2026-08-10)
+- `chargingStrategyPreference`: expanded enum — added `floor_contact` (floor contact /
+  pantograph) and `inductive` (wireless). Old `opportunity` value kept as tail entry so
+  existing exports still parse. Informational only; not used in fleet calc.
+- `LoadTypePicker`: new visual card grid replaces text chips for `unitLoadTypes` (§03).
+  Images activate by dropping PNG at `public/images/load-types/<slug>.png`; degrades to
+  blank card when image absent.
+
 ### Questionnaire update (2026-08-10 — session 3)
 - `projectSchema`: added `budgetMin` / `budgetMax` (number ≥ 0, optional) — replaces free-text
   `budgetRange` (kept as legacy field for backward compat with old exports).
