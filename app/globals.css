@@ -4153,16 +4153,21 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 /* Section scroller offset: the standalone page has only the ~60px brand bar
    (not Step 1's tall hero), so the sticky rail sits near the top. */
 .q-page-nav .section-nav { top: 24px; max-height: calc(100vh - 48px); }
-/* Unit toggle in brand bar — pair of tbtn-icon-sized text buttons */
-.q-unit-toggle { display: flex; gap: 4px; }
-.q-unit-btn {
-  width: auto !important; padding: 0 10px;
-  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+/* Unit toggle in brand bar — pill-style outlined segmented control */
+.q-unit-toggle {
+  display: flex; align-items: center; gap: 2px;
+  border: 1px solid var(--border); border-radius: 999px;
+  padding: 2px; background: transparent;
 }
+.q-unit-btn {
+  border: 1.5px solid transparent; border-radius: 999px;
+  padding: 3px 12px; background: transparent; cursor: pointer;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--text-tertiary); transition: all 0.12s; white-space: nowrap;
+}
+.q-unit-btn:hover:not(.active) { color: var(--text-secondary); }
 .q-unit-btn.active {
-  background: var(--accent) !important;
-  color: white !important;
-  border-color: var(--accent) !important;
+  border-color: var(--accent); color: var(--accent); background: var(--bg-surface);
 }
 
 /* ============================================================

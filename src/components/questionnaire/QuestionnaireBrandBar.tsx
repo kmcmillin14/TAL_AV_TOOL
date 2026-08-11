@@ -29,8 +29,8 @@ export default function QuestionnaireBrandBar() {
         <span className="q-brandbar-date">{today}</span>
         <div className="q-toolbar">
           <div className="q-unit-toggle">
-            <button type="button" className={`tbtn-icon q-unit-btn${unit === 'imperial' ? ' active' : ''}`} onClick={() => setUnit('imperial')} aria-pressed={unit === 'imperial'} title="Imperial units">Imp</button>
-            <button type="button" className={`tbtn-icon q-unit-btn${unit === 'metric' ? ' active' : ''}`} onClick={() => setUnit('metric')} aria-pressed={unit === 'metric'} title="Metric units">Met</button>
+            <button type="button" className={`q-unit-btn${unit === 'imperial' ? ' active' : ''}`} onClick={() => setUnit('imperial')} aria-pressed={unit === 'imperial'}>Imperial</button>
+            <button type="button" className={`q-unit-btn${unit === 'metric' ? ' active' : ''}`} onClick={() => setUnit('metric')} aria-pressed={unit === 'metric'}>Metric</button>
           </div>
           <span className="q-brandbar-divider" />
           <button type="button" className="tbtn-icon" onClick={toggleTheme} aria-label="Toggle light/dark" title="Toggle light/dark">
