@@ -4153,11 +4153,17 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 /* Section scroller offset: the standalone page has only the ~60px brand bar
    (not Step 1's tall hero), so the sticky rail sits near the top. */
 .q-page-nav .section-nav { top: 24px; max-height: calc(100vh - 48px); }
-/* Page header with unit toggle */
-.q-page-header {
-  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+/* Unit toggle in brand bar — pair of tbtn-icon-sized text buttons */
+.q-unit-toggle { display: flex; gap: 4px; }
+.q-unit-btn {
+  width: auto !important; padding: 0 10px;
+  font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
 }
-.q-unit-toggle { flex-shrink: 0; }
+.q-unit-btn.active {
+  background: var(--accent) !important;
+  color: white !important;
+  border-color: var(--accent) !important;
+}
 
 /* ============================================================
    Questionnaire refinement — spacing & symmetry pass.

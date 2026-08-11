@@ -372,17 +372,13 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
   return (
     <form className="workspace q-form" onSubmit={handleSubmit(onSubmit, onInvalid)}>
-      <div className="page-header q-page-header">
+      <div className="page-header">
         <div className="page-title">
           <span className="step-num">AV Questionnaire · {today}</span>
           <h1>
             {values.customerName?.trim() || 'New Questionnaire'}
             {values.projectName?.trim() && <span className="q-title-project"> — {values.projectName.trim()}</span>}
           </h1>
-        </div>
-        <div className="q-unit-toggle seg-toggle">
-          <button type="button" className={`seg-btn${!isMetric ? ' on' : ''}`} onClick={() => setUnit('imperial')}>Imperial</button>
-          <button type="button" className={`seg-btn${isMetric ? ' on' : ''}`} onClick={() => setUnit('metric')}>Metric</button>
         </div>
       </div>
 
