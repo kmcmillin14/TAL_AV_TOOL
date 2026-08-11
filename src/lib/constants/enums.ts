@@ -73,7 +73,7 @@ export const PROJECT_DRIVERS = [
 export const SUBMISSION_TYPES = [
   { value: 'customer', label: 'Customer (Direct)' },
   { value: 'dealer', label: 'Dealer' },
-  { value: 'internal', label: 'Internal (TAL Regional Office)' },
+  { value: 'internal', label: 'Internal TAL' },
   { value: 'partner', label: '3rd Party Partner' },
 ] as const
 

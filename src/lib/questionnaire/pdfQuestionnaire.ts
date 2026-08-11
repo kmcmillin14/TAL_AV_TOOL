@@ -135,7 +135,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
     customer: 'Customer (direct)',
     dealer: 'Dealer',
     partner: 'Integration partner',
-    internal: 'TAL internal',
+    internal: 'Internal TAL',
   }
   row('Submitted by', p.submissionType ? subTypeLabel[p.submissionType] ?? p.submissionType : '—')
 
