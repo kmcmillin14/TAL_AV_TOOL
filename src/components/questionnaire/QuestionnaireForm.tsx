@@ -137,9 +137,10 @@ function ThousandsInput({
 // Unit-aware number input. Displays in the user's chosen unit system; stores in
 // imperial. toDisplay converts storage→display; toStorage converts display→storage.
 // iDec/mDec: fixed decimal places for imperial/metric display (avoids floating-point drift on round-trips).
+// commas: show thousands separators (uses text input so browser formatting is controlled).
 function UnitInput({
   name, control, imperialUnit, metricUnit, toDisplay, toStorage,
-  placeholder, step = '0.1', isMetric, iDec, mDec,
+  placeholder, step = '0.1', isMetric, iDec, mDec, commas,
 }: {
   name: keyof PartialProjectFormData
   control: Control<PartialProjectFormData>
@@ -150,10 +151,10 @@ function UnitInput({
   placeholder?: string
   step?: string
   isMetric: boolean
-  iDec?: number  // decimal places when showing imperial
-  mDec?: number  // decimal places when showing metric
+  iDec?: number
+  mDec?: number
+  commas?: boolean
 }) {
-  // Derive defaults from step when not explicitly set.
   const stepDec = step.includes('.') ? step.split('.')[1].length : 0
   const imperialDec = iDec ?? stepDec
   const metricDec   = mDec ?? Math.max(stepDec + 1, 1)
@@ -161,17 +162,41 @@ function UnitInput({
   return (
     <Controller name={name} control={control} render={({ field }) => {
       const stored = field.value as number | undefined | null
-      const display = stored != null
-        ? (isMetric
-            ? +toDisplay(stored).toFixed(metricDec)
-            : +stored.toFixed(imperialDec))
-        : ''
+      const numVal = stored != null
+        ? (isMetric ? +toDisplay(stored).toFixed(metricDec) : +stored.toFixed(imperialDec))
+        : null
+
+      const onChange = (raw: string) => {
+        const stripped = raw.replace(/,/g, '')
+        const n = stripped === '' ? undefined : Number(stripped)
+        field.onChange(n == null || isNaN(n) ? undefined : (isMetric ? toStorage(n) : n))
+      }
+
+      if (commas) {
+        const displayStr = numVal != null
+          ? numVal.toLocaleString('en-US', { maximumFractionDigits: isMetric ? metricDec : imperialDec })
+          : ''
+        return (
+          <div className="input-with-unit">
+            <input
+              type="text" inputMode="numeric" className="mono"
+              placeholder={placeholder}
+              value={displayStr}
+              ref={field.ref}
+              onChange={(e) => onChange(e.target.value)}
+              onBlur={field.onBlur}
+            />
+            <div className="unit">{isMetric ? metricUnit : imperialUnit}</div>
+          </div>
+        )
+      }
+
       return (
         <div className="input-with-unit">
           <input
             type="number" step={step} inputMode="decimal" className="mono"
             placeholder={placeholder}
-            value={display}
+            value={numVal ?? ''}
             ref={field.ref}
             onChange={(e) => {
               const raw = e.target.value === '' ? undefined : Number(e.target.value)
@@ -568,9 +593,6 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 )}
                 <div className="help">Where the vehicle delivers the load</div>
               </div>
-              <div className="fld fld-full q-info-note">
-                Pick / drop context is captured for the fleet engineer&apos;s reference — it does not affect vehicle qualification scores. The engineer will review racking type, aisle access, and transfer compatibility during the detailed assessment.
-              </div>
               <div className="fld">
                 <label>Type of handling</label>
                 <select {...register('transferType', { setValueAs: emptyToUndef })} defaultValue="">
@@ -593,7 +615,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                     imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} iDec={1} mDec={2} />
                 </div>
               )}
-              {(isForklift || isVNA) && (
+              {isForklift && (
                 <div className="fld">
                   <label>Max lift height</label>
                   <UnitInput name="maxLiftHeightFt" control={control} isMetric={isMetric}
@@ -713,7 +735,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
           <FormSection id="q-sec-06" sectionNum="06" title="Site readiness">
             <div className="fld-grid-3">
-              <div className="fld"><label>Facility size ({isMetric ? 'm²' : 'sq ft'})</label><UnitInput name="facilitySizeSqFt" control={control} imperialUnit="sq ft" metricUnit="m²" toDisplay={sqftToM2} toStorage={m2ToSqft} placeholder={isMetric ? '4650' : '50000'} step="1" isMetric={isMetric} iDec={0} mDec={0} /></div>
+              <div className="fld"><label>Facility size ({isMetric ? 'm²' : 'sq ft'})</label><UnitInput name="facilitySizeSqFt" control={control} imperialUnit="sq ft" metricUnit="m²" toDisplay={sqftToM2} toStorage={m2ToSqft} placeholder={isMetric ? '4,650' : '50,000'} step="1" isMetric={isMetric} iDec={0} mDec={0} commas /></div>
               <div className="fld"><label>Dock doors</label><input type="number" inputMode="numeric" className="mono" {...register('dockDoors', { setValueAs: emptyToNum })} /></div>
               <div className="fld"><label>Network / WiFi ready?</label><YesNo name="networkReady" /></div>
               <div className="fld"><label>Site walkthrough available?</label><YesNo name="siteWalkthroughAvailable" /></div>
