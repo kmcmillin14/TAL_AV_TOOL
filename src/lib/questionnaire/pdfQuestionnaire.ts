@@ -132,7 +132,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   // ── §01  Submission routing ─────────────────────────────────────────────────
   sec('Submission routing')
   const subTypeLabel: Record<string, string> = {
-    customer: 'Customer (direct)',
+    customer: 'End User',
     dealer: 'TMHNA Dealership',
     partner: 'Integration partner',
     internal: 'Internal TAL',
