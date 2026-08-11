@@ -495,12 +495,13 @@ export default function PersistentHeader({
 
           <button
             type="button"
-            className="tbtn-icon"
+            className="tbtn-clear"
             aria-label="Clear all data"
-            title="Clear all data"
+            title="Clear all project data"
             onClick={handleClearAll}
           >
             <Icon name="trash" />
+            Clear
           </button>
         </div>
       </div>
