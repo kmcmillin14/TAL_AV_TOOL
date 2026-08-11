@@ -133,7 +133,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   sec('Submission routing')
   const subTypeLabel: Record<string, string> = {
     customer: 'Customer (direct)',
-    dealer: 'Dealer',
+    dealer: 'TMHNA Dealership',
     partner: 'Integration partner',
     internal: 'Internal TAL',
   }
@@ -162,9 +162,8 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   row('TAL representative', fmt(p.talRepName))
   const repReach = [p.talRepEmail, p.talRepPhone].filter(Boolean).join('  ·  ')
   row('TAL rep email / phone', fmt(repReach))
-  row('Current Toyota forklifts', fmt(p.currentToyotaForklifts))
   const partnerLabel = p.toyotaRaymondPartnership == null ? '—' : p.toyotaRaymondPartnership ? `Yes${p.toyotaRaymondDealer ? ` — ${p.toyotaRaymondDealer}` : ''}` : 'No'
-  row('Toyota / Raymond dealer partnership', partnerLabel)
+  row('TMH / Raymond existing relationship', partnerLabel)
   row('History with TAL / Toyota', fmt(p.talHistory))
 
   // ── §03  Opportunity ────────────────────────────────────────────────────────

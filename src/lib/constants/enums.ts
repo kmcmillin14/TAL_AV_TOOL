@@ -72,7 +72,7 @@ export const PROJECT_DRIVERS = [
 /** Customer-questionnaire: who is submitting (§01). */
 export const SUBMISSION_TYPES = [
   { value: 'customer', label: 'Customer (Direct)' },
-  { value: 'dealer', label: 'Dealer' },
+  { value: 'dealer', label: 'TMHNA Dealership' },
   { value: 'internal', label: 'Internal TAL' },
   { value: 'partner', label: '3rd Party Partner' },
 ] as const

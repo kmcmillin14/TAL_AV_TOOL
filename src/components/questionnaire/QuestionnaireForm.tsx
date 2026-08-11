@@ -69,7 +69,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-10', num: '10', short: 'Commercial', tier: TIER_DETAILS,
     fields: ['projectStage', 'budgetStatus', 'budgetMin', 'budgetMax', 'roiTargetYears', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
-    fields: ['currentToyotaForklifts', 'toyotaRaymondPartnership', 'toyotaRaymondDealer', 'talHistory'] },
+    fields: ['toyotaRaymondPartnership', 'toyotaRaymondDealer', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
     fields: ['projectDrivers', 'currentProcess', 'hasExistingAutomation', 'existingAutomation', 'existingAutomationInterop', 'currentHeadcount', 'volumeGrowthNote', 'seasonalityNote'] },
   { id: 'q-sec-13', num: '13', short: 'Notes', tier: TIER_DETAILS,
@@ -896,14 +896,13 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
           <FormSection id="q-sec-11" sectionNum="11" title="TAL / Toyota">
             <div className="fld-grid-2">
-              <div className="fld"><label>Current Toyota forklifts?</label><input {...register('currentToyotaForklifts')} placeholder="How many / which models, if any" /></div>
-              <div className="fld"><label>Existing Toyota or Raymond dealership partnership?</label><YesNo name="toyotaRaymondPartnership" /></div>
+              <div className="fld"><label>TMH or Raymond dealership existing relationship?</label><YesNo name="toyotaRaymondPartnership" /></div>
               {values.toyotaRaymondPartnership && (
-                <div className="fld"><label>Which dealer?</label><input {...register('toyotaRaymondDealer')} placeholder="Dealer name / location" /></div>
+                <div className="fld"><label>Dealership name</label><input {...register('toyotaRaymondDealer')} placeholder="Dealer name / location" /></div>
               )}
             </div>
             <div className="fld-grid-2">
-              <div className="fld span-2"><label>History with TAL / Toyota</label><textarea {...register('talHistory')} placeholder="Existing fleet, prior projects, current relationship…" /></div>
+              <div className="fld span-2"><label>Notes</label><textarea {...register('talHistory')} placeholder="Existing fleet, prior projects, current relationship…" /></div>
             </div>
           </FormSection>
 
