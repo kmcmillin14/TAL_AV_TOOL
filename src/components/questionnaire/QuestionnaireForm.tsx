@@ -136,9 +136,10 @@ function ThousandsInput({
 
 // Unit-aware number input. Displays in the user's chosen unit system; stores in
 // imperial. toDisplay converts storage→display; toStorage converts display→storage.
+// iDec/mDec: fixed decimal places for imperial/metric display (avoids floating-point drift on round-trips).
 function UnitInput({
   name, control, imperialUnit, metricUnit, toDisplay, toStorage,
-  placeholder, step = '0.1', isMetric,
+  placeholder, step = '0.1', isMetric, iDec, mDec,
 }: {
   name: keyof PartialProjectFormData
   control: Control<PartialProjectFormData>
@@ -149,17 +150,26 @@ function UnitInput({
   placeholder?: string
   step?: string
   isMetric: boolean
+  iDec?: number  // decimal places when showing imperial
+  mDec?: number  // decimal places when showing metric
 }) {
+  // Derive defaults from step when not explicitly set.
+  const stepDec = step.includes('.') ? step.split('.')[1].length : 0
+  const imperialDec = iDec ?? stepDec
+  const metricDec   = mDec ?? Math.max(stepDec + 1, 1)
+
   return (
     <Controller name={name} control={control} render={({ field }) => {
       const stored = field.value as number | undefined | null
       const display = stored != null
-        ? (isMetric ? +toDisplay(stored).toFixed(4).replace(/\.?0+$/, '') : stored)
+        ? (isMetric
+            ? +toDisplay(stored).toFixed(metricDec)
+            : +stored.toFixed(imperialDec))
         : ''
       return (
         <div className="input-with-unit">
           <input
-            type="number" step={step} min={0} inputMode="decimal" className="mono"
+            type="number" step={step} inputMode="decimal" className="mono"
             placeholder={placeholder}
             value={display}
             ref={field.ref}
@@ -500,7 +510,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <UnitInput name="maxLoadWeightLbs" control={control} isMetric={isMetric}
                   imperialUnit="lbs" metricUnit="kg"
                   toDisplay={lbsToKg} toStorage={kgToLbs}
-                  placeholder={isMetric ? '900' : '2000'} step="1" />
+                  placeholder={isMetric ? '900' : '2000'} step="1" iDec={0} mDec={1} />
               </div>
             </div>
             <div className="fld-row-3">
@@ -508,19 +518,19 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <label>Load length ({isMetric ? 'cm' : 'in'})</label>
                 <UnitInput name="loadLengthIn" control={control} isMetric={isMetric}
                   imperialUnit="in" metricUnit="cm" toDisplay={inToCm} toStorage={cmToIn}
-                  placeholder={isMetric ? '122' : '48'} />
+                  placeholder={isMetric ? '122' : '48'} iDec={1} mDec={1} />
               </div>
               <div className="fld">
                 <label>Load width ({isMetric ? 'cm' : 'in'})</label>
                 <UnitInput name="loadWidthIn" control={control} isMetric={isMetric}
                   imperialUnit="in" metricUnit="cm" toDisplay={inToCm} toStorage={cmToIn}
-                  placeholder={isMetric ? '102' : '40'} />
+                  placeholder={isMetric ? '102' : '40'} iDec={1} mDec={1} />
               </div>
               <div className="fld">
                 <label>Load height ({isMetric ? 'cm' : 'in'})</label>
                 <UnitInput name="loadHeightIn" control={control} isMetric={isMetric}
                   imperialUnit="in" metricUnit="cm" toDisplay={inToCm} toStorage={cmToIn}
-                  placeholder={isMetric ? '152' : '60'} />
+                  placeholder={isMetric ? '152' : '60'} iDec={1} mDec={1} />
               </div>
             </div>
           </FormSection>
@@ -554,7 +564,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="fld">
                   <label>Transfer height</label>
                   <UnitInput name="transferHeightFt" control={control} isMetric={isMetric}
-                    imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder="0" />
+                    imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder="0" iDec={1} mDec={2} />
                   <div className="help">How high the load is raised to pick / place</div>
                 </div>
               )}
@@ -562,14 +572,14 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="fld">
                   <label>Top-of-roller height</label>
                   <UnitInput name="topOfRollerHeightFt" control={control} isMetric={isMetric}
-                    imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} />
+                    imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} iDec={1} mDec={2} />
                 </div>
               )}
               {(isForklift || isVNA) && (
                 <div className="fld">
                   <label>Max lift height</label>
                   <UnitInput name="maxLiftHeightFt" control={control} isMetric={isMetric}
-                    imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} />
+                    imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} iDec={1} mDec={2} />
                 </div>
               )}
               <div className="fld">
@@ -601,7 +611,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             <div className="fld-grid-3">
               <div className="fld">
                 <label>Drive aisle width ({isMetric ? 'm' : 'ft'})</label>
-                <UnitInput name="driveAisleWidthFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '2.4' : '8'} isMetric={isMetric} />
+                <UnitInput name="driveAisleWidthFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '2.4' : '8'} isMetric={isMetric} iDec={1} mDec={2} />
               </div>
               <div className="fld">
                 <label>Picking from racking?</label>
@@ -610,7 +620,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               {values.pickingFromRacking && (
                 <div className="fld">
                   <label>Racking aisle width ({isMetric ? 'm' : 'ft'})</label>
-                  <UnitInput name="rackingAisleWidthFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '1.8' : '6'} isMetric={isMetric} />
+                  <UnitInput name="rackingAisleWidthFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '1.8' : '6'} isMetric={isMetric} iDec={1} mDec={2} />
                   {isVNA && <div className="help" style={{ fontWeight: 600 }}>VNA selected — racking aisle width is critical for fit.</div>}
                 </div>
               )}
@@ -643,8 +653,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 )} />
               </div>
               {showTempRange && (<>
-                <div className="fld"><label>Min temperature ({isMetric ? '°C' : '°F'})</label><UnitInput name="tempMinF" control={control} imperialUnit="°F" metricUnit="°C" toDisplay={fToC} toStorage={cToF} placeholder={isMetric ? '-20' : '-5'} step="1" isMetric={isMetric} /></div>
-                <div className="fld"><label>Max temperature ({isMetric ? '°C' : '°F'})</label><UnitInput name="tempMaxF" control={control} imperialUnit="°F" metricUnit="°C" toDisplay={fToC} toStorage={cToF} placeholder={isMetric ? '38' : '100'} step="1" isMetric={isMetric} /></div>
+                <div className="fld"><label>Min temperature ({isMetric ? '°C' : '°F'})</label><UnitInput name="tempMinF" control={control} imperialUnit="°F" metricUnit="°C" toDisplay={fToC} toStorage={cToF} placeholder={isMetric ? '-20' : '-5'} step="1" isMetric={isMetric} iDec={0} mDec={1} /></div>
+                <div className="fld"><label>Max temperature ({isMetric ? '°C' : '°F'})</label><UnitInput name="tempMaxF" control={control} imperialUnit="°F" metricUnit="°C" toDisplay={fToC} toStorage={cToF} placeholder={isMetric ? '38' : '100'} step="1" isMetric={isMetric} iDec={0} mDec={1} /></div>
               </>)}
               <div className="fld">
                 <label>Dust / moisture</label>
@@ -680,7 +690,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 </div>
                 <div className="fld">
                   <label>Ramp length ({isMetric ? 'm' : 'ft'})</label>
-                  <UnitInput name="rampDistanceFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '3' : '10'} isMetric={isMetric} />
+                  <UnitInput name="rampDistanceFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '3' : '10'} isMetric={isMetric} iDec={1} mDec={2} />
                 </div>
               </>)}
             </div>
@@ -688,7 +698,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
           <FormSection id="q-sec-06" sectionNum="06" title="Site readiness">
             <div className="fld-grid-3">
-              <div className="fld"><label>Facility size ({isMetric ? 'm²' : 'sq ft'})</label><UnitInput name="facilitySizeSqFt" control={control} imperialUnit="sq ft" metricUnit="m²" toDisplay={sqftToM2} toStorage={m2ToSqft} placeholder={isMetric ? '4650' : '50000'} step="1" isMetric={isMetric} /></div>
+              <div className="fld"><label>Facility size ({isMetric ? 'm²' : 'sq ft'})</label><UnitInput name="facilitySizeSqFt" control={control} imperialUnit="sq ft" metricUnit="m²" toDisplay={sqftToM2} toStorage={m2ToSqft} placeholder={isMetric ? '4650' : '50000'} step="1" isMetric={isMetric} iDec={0} mDec={0} /></div>
               <div className="fld"><label>Dock doors</label><input type="number" inputMode="numeric" className="mono" {...register('dockDoors', { setValueAs: emptyToNum })} /></div>
               <div className="fld"><label>Network / WiFi ready?</label><YesNo name="networkReady" /></div>
               <div className="fld"><label>Site walkthrough available?</label><YesNo name="siteWalkthroughAvailable" /></div>
@@ -725,7 +735,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="help">Busiest-hour rate</div>
               </div>
               <div className="fld"><label>Average distance ({isMetric ? 'm' : 'ft'})</label>
-                <UnitInput name="avgDistanceFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '75' : '250'} step="1" isMetric={isMetric} />
+                <UnitInput name="avgDistanceFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '75' : '250'} step="1" isMetric={isMetric} iDec={0} mDec={1} />
               </div>
               <div className="fld">
                 <label>Distance type</label>
