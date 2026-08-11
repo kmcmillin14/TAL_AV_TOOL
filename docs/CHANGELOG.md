@@ -1,5 +1,14 @@
 # Changelog
 
+### Questionnaire field updates (2026-08-11)
+- §05 Dust/moisture: changed from single-select dropdown to multi-select chips
+  (`dustMoisture` schema changed to `string[]`; legacy string values auto-coerced
+  via `z.preprocess`; sample fixtures updated).
+- §12 "Any existing automation on site?" → renamed to "Existing AGV / AMR on site?"
+- §11 TAL / Toyota: added "Existing Toyota or Raymond dealership partnership?"
+  Yes/No toggle (`toyotaRaymondPartnership: boolean`) with conditional "Which dealer?"
+  text field (`toyotaRaymondDealer: string`). PDF updated for all three changes.
+
 ### Questionnaire imperial ↔ metric unit toggle (2026-08-10)
 - `useQUnit` hook (`src/lib/questionnaire/useQUnit.ts`): persists chosen unit to
   `tal:q-unit` localStorage key; conversion helpers for lbs↔kg, in↔cm, ft↔m,

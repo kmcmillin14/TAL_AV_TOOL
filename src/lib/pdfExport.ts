@@ -421,7 +421,7 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
     row('Max temperature', project.tempMaxF != null ? `${project.tempMaxF}°F` : null)
     row('Outdoor required', project.outdoorRequired ? 'Yes' : 'No')
     row('Freezer required', project.freezerCapable ? 'Yes' : 'No')
-    row('Dust / moisture', project.dustMoisture)
+    row('Dust / moisture', Array.isArray(project.dustMoisture) ? project.dustMoisture.join(', ') : project.dustMoisture)
 
     sec('Section 12 — Software integration')
     row('WMS required', project.wmsRequired ? 'Yes' : 'No')

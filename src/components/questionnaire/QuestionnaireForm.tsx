@@ -57,7 +57,7 @@ const SECTIONS: readonly QSection[] = [
   { id: "q-sec-04", num: "04", short: "How it's moved", tier: TIER_APP,
     fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'dwellTimeMin', 'chargingStrategyPreference', 'topOfRollerHeightFt', 'maxLiftHeightFt', 'specialtyApplications'] },
   { id: 'q-sec-05', num: '05', short: 'Where it runs', tier: TIER_APP,
-    fields: ['driveAisleWidthFt', 'pickingFromRacking', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'rampDistanceFt', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'dustMoisture'] },
+    fields: ['driveAisleWidthFt', 'pickingFromRacking', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'rampDistanceFt', 'temperatureEnvironment', 'tempMinF', 'tempMaxF'] },
   { id: 'q-sec-06', num: '06', short: 'Site readiness', tier: TIER_APP,
     fields: ['facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable', 'cadAvailable', 'cadNotes'] },
   { id: 'q-sec-07', num: '07', short: 'Throughput & flows', tier: TIER_APP,
@@ -69,7 +69,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-10', num: '10', short: 'Commercial', tier: TIER_DETAILS,
     fields: ['projectStage', 'budgetStatus', 'budgetMin', 'budgetMax', 'roiTargetYears', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate'] },
   { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
-    fields: ['currentToyotaForklifts', 'talHistory'] },
+    fields: ['currentToyotaForklifts', 'toyotaRaymondPartnership', 'toyotaRaymondDealer', 'talHistory'] },
   { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
     fields: ['projectDrivers', 'currentProcess', 'hasExistingAutomation', 'existingAutomation', 'existingAutomationInterop', 'currentHeadcount', 'volumeGrowthNote', 'seasonalityNote'] },
   { id: 'q-sec-13', num: '13', short: 'Notes', tier: TIER_DETAILS,
@@ -352,7 +352,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   }, [handleSubmit, onSubmit, onInvalid, clearAll])
 
   // Reusable chip multiselect (matches Step 1's .cert-grid / .chk).
-  const Chips = ({ name, options }: { name: 'projectDrivers' | 'specialtyApplications' | 'certifications' | 'interlocks' | 'unitLoadTypes' | 'sharedTrafficTypes'; options: readonly string[] }) => (
+  const Chips = ({ name, options }: { name: 'projectDrivers' | 'specialtyApplications' | 'certifications' | 'interlocks' | 'unitLoadTypes' | 'sharedTrafficTypes' | 'dustMoisture'; options: readonly string[] }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="cert-grid">
         {options.map(opt => {
@@ -371,7 +371,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
   // Reusable No/Yes segmented toggle for a tri-state boolean. Clicking the
   // already-selected option clears it back to unanswered (undefined).
-  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' }) => (
+  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' | 'toyotaRaymondPartnership' }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="seg-toggle">
         <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(field.value === false ? undefined : false)}>No</button>
@@ -656,12 +656,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="fld"><label>Min temperature ({isMetric ? '°C' : '°F'})</label><UnitInput name="tempMinF" control={control} imperialUnit="°F" metricUnit="°C" toDisplay={fToC} toStorage={cToF} placeholder={isMetric ? '-20' : '-5'} step="1" isMetric={isMetric} iDec={0} mDec={1} /></div>
                 <div className="fld"><label>Max temperature ({isMetric ? '°C' : '°F'})</label><UnitInput name="tempMaxF" control={control} imperialUnit="°F" metricUnit="°C" toDisplay={fToC} toStorage={cToF} placeholder={isMetric ? '38' : '100'} step="1" isMetric={isMetric} iDec={0} mDec={1} /></div>
               </>)}
-              <div className="fld">
-                <label>Dust / moisture</label>
-                <select {...register('dustMoisture', { setValueAs: emptyToUndef })} defaultValue="">
-                  <option value="">Select…</option>
-                  {DUST_MOISTURE_OPTS.map(d => <option key={d}>{d}</option>)}
-                </select>
+              <div className="fld span-3">
+                <label>Dust / moisture (select all that apply)</label>
+                <Chips name="dustMoisture" options={DUST_MOISTURE_OPTS} />
               </div>
               <div className="fld span-3">
                 <label>Shared traffic in the area</label>
@@ -900,6 +897,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <FormSection id="q-sec-11" sectionNum="11" title="TAL / Toyota">
             <div className="fld-grid-2">
               <div className="fld"><label>Current Toyota forklifts?</label><input {...register('currentToyotaForklifts')} placeholder="How many / which models, if any" /></div>
+              <div className="fld"><label>Existing Toyota or Raymond dealership partnership?</label><YesNo name="toyotaRaymondPartnership" /></div>
+              {values.toyotaRaymondPartnership && (
+                <div className="fld"><label>Which dealer?</label><input {...register('toyotaRaymondDealer')} placeholder="Dealer name / location" /></div>
+              )}
             </div>
             <div className="fld-grid-2">
               <div className="fld span-2"><label>History with TAL / Toyota</label><textarea {...register('talHistory')} placeholder="Existing fleet, prior projects, current relationship…" /></div>
@@ -924,7 +925,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <ThousandsInput name="fullyBurdenedRateUsdPerYear" control={control} placeholder="65,000" className="mono" />
                 </div>
               </div>
-              <div className="fld"><label>Any existing automation on site?</label><YesNo name="hasExistingAutomation" /></div>
+              <div className="fld"><label>Existing AGV / AMR on site?</label><YesNo name="hasExistingAutomation" /></div>
               {hasExistingAutomation && (<>
                 <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
                 <div className="fld"><label>Must new fleet interoperate with it?</label><input {...register('existingAutomationInterop')} placeholder="Shared traffic, handoffs, controls…" /></div>

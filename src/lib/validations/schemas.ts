@@ -173,7 +173,10 @@ export const projectSchema = z.object({
   outdoorRequired: z.boolean().optional(), // tri-state: unset / Indoor / Outdoor
   freezerCapable: z.boolean().optional(), // legacy — superseded by temperatureEnvironment
   temperatureEnvironment: z.enum(['ambient', 'refrigerated', 'freezer']).optional(),
-  dustMoisture: z.string().optional(),
+  dustMoisture: z.preprocess(
+    v => (typeof v === 'string' ? (v ? [v] : []) : v),
+    z.array(z.string()).optional()
+  ),
 
   // Section 12
   wmsRequired: z.boolean().default(false),
@@ -217,6 +220,8 @@ export const projectSchema = z.object({
   talRepPhone: z.string().optional(),
   talHistory: z.string().optional(),
   currentToyotaForklifts: z.string().optional(),
+  toyotaRaymondPartnership: z.boolean().optional(),
+  toyotaRaymondDealer: z.string().optional(),
 
   // ---- Customer questionnaire change-log additions (2026-08-07) ----
   // §01 submitter routing

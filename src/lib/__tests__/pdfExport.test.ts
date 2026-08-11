@@ -222,7 +222,7 @@ describe('exportProjectPdf — fully populated project', () => {
     tempMaxF: 110,
     outdoorRequired: false,
     freezerCapable: false,
-    dustMoisture: 'Dusty environment',
+    dustMoisture: ['Dusty environment'],
 
     // Section 12 — Software
     wmsRequired: true,
@@ -285,7 +285,7 @@ describe('exportProjectPdf — fully populated project', () => {
     expect(p.otherAGVVendor).toBe('Linde, Jungheinrich')
     expect(p.tempMinF).toBe(14)
     expect(p.tempMaxF).toBe(110)
-    expect(p.dustMoisture).toBe('Dusty environment')
+    expect(p.dustMoisture).toEqual(['Dusty environment'])
     expect(p.wmsRequired).toBe(true)
     expect(p.wmsVendor).toBe('Manhattan Active WM')
     expect(p.projectNotes).toContain('Two phases')

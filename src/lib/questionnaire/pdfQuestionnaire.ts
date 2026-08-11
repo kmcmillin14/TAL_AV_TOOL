@@ -163,6 +163,8 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   const repReach = [p.talRepEmail, p.talRepPhone].filter(Boolean).join('  ·  ')
   row('TAL rep email / phone', fmt(repReach))
   row('Current Toyota forklifts', fmt(p.currentToyotaForklifts))
+  const partnerLabel = p.toyotaRaymondPartnership == null ? '—' : p.toyotaRaymondPartnership ? `Yes${p.toyotaRaymondDealer ? ` — ${p.toyotaRaymondDealer}` : ''}` : 'No'
+  row('Toyota / Raymond dealer partnership', partnerLabel)
   row('History with TAL / Toyota', fmt(p.talHistory))
 
   // ── §03  Opportunity ────────────────────────────────────────────────────────
@@ -235,7 +237,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   row('Temperature environment', p.temperatureEnvironment ? tempEnvLabels[p.temperatureEnvironment] ?? p.temperatureEnvironment : '—')
   row('Min temperature', fmtTemp(p.tempMinF))
   row('Max temperature', fmtTemp(p.tempMaxF))
-  row('Dust / moisture', fmt(p.dustMoisture))
+  row('Dust / moisture', Array.isArray(p.dustMoisture) ? (p.dustMoisture.length ? p.dustMoisture.join(' · ') : '—') : fmt(p.dustMoisture))
   row('Floor condition', fmt(p.floorCondition))
   row('Drive aisle width', fmtFt(p.driveAisleWidthFt))
   row('Picking from racking', fmtBool(p.pickingFromRacking))

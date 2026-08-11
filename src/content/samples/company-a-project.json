@@ -44,7 +44,7 @@
     "temperatureEnvironment": "ambient",
     "tempMinF": 60,
     "tempMaxF": 85,
-    "dustMoisture": "None",
+    "dustMoisture": [],
     "facilitySizeSqFt": 600000,
     "dockDoors": 32,
     "networkReady": true,
