@@ -30,7 +30,7 @@ const INTERLOCKS = ['High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems',
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
 const DUST_MOISTURE_OPTS = ['None', 'Dusty environment', 'Wash-down required', 'High humidity', 'Outdoor exposure']
 const OPERATING_DAYS = ['Mon–Fri', 'Mon–Sat', 'Mon–Sun', 'Custom']
-const PICK_DROP = ['Floor', 'Rack', 'Gravity flow rack', 'Conveyor', 'Lift table', 'Trailer', 'Machine', 'Custom']
+const PICK_DROP = ['Floor', 'Selective racking', 'Gravity flow rack', 'Pushback rack', 'Drive-in rack', 'Conveyor', 'Lift table', 'Trailer', 'Machine', 'Custom']
 const HEIGHT_TRANSFER = new Set(TRANSFER_TYPE_OPTIONS.filter(o => o.needsHeight).map(o => o.value))
 
 // Empty defaults — array fields seeded so chips/picker controllers start defined.
