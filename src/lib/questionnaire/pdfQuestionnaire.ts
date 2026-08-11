@@ -3,6 +3,7 @@
 import { type PartialProjectFormData } from '@/src/lib/validations/schemas'
 import { buildQuestionnaireEnvelope } from './questionnaireExport'
 import { winAnsiSafe } from '@/src/lib/utils/winAnsi'
+import { lbsToKg, inToCm, ftToM, sqftToM2, fToC, type QUnitSystem } from './useQUnit'
 
 const TAL_RED_RGB = [235 / 255, 10 / 255, 30 / 255] as const
 
@@ -19,7 +20,13 @@ function fmtBool(v: boolean | undefined | null): string {
   return v ? 'Yes' : 'No'
 }
 
-export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise<Blob> {
+export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSystem: QUnitSystem = 'imperial'): Promise<Blob> {
+  const isMetric = unitSystem === 'metric'
+  const fmtFt  = (v: number | null | undefined) => v != null ? (isMetric ? `${+ftToM(v).toFixed(2)} m` : `${v} ft`) : '—'
+  const fmtIn  = (v: number | null | undefined) => v != null ? (isMetric ? `${+inToCm(v).toFixed(1)} cm` : `${v} in`) : '—'
+  const fmtLbs = (v: number | null | undefined) => v != null ? (isMetric ? `${+lbsToKg(v).toFixed(1)} kg` : `${v.toLocaleString()} lbs`) : '—'
+  const fmtSqft = (v: number | null | undefined) => v != null ? (isMetric ? `${+sqftToM2(v).toFixed(0)} m²` : `${v.toLocaleString()} sq ft`) : '—'
+  const fmtTemp = (v: number | null | undefined) => v != null ? (isMetric ? `${+fToC(v).toFixed(1)}°C` : `${v}°F`) : '—'
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib')
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
@@ -199,9 +206,9 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
       row('  Load', fmt(detail))
     }
   } else {
-    row('Max load weight', p.maxLoadWeightLbs ? `${p.maxLoadWeightLbs.toLocaleString()} lbs` : '—')
+    row('Max load weight', fmtLbs(p.maxLoadWeightLbs))
     const dims = [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].some(d => d != null)
-      ? [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].map(d => d != null ? `${d} in` : '—').join(' × ')
+      ? [p.loadLengthIn, p.loadWidthIn, p.loadHeightIn].map(fmtIn).join(' × ')
       : '—'
     row('Load L × W × H', dims)
   }
@@ -211,34 +218,34 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Pick loads up from', fmt(p.pickContext))
   row('Set loads down at', fmt(p.dropContext))
   row('Transfer type', fmt(p.transferType))
-  row('Transfer height', p.transferHeightFt != null ? `${p.transferHeightFt} ft` : '—')
+  row('Transfer height', fmtFt(p.transferHeightFt))
   row('Lift type needed', fmt(p.liftTypeNeeded))
-  row('Max lift height', p.maxLiftHeightFt != null ? `${p.maxLiftHeightFt} ft` : '—')
-  row('Top of roller height', p.topOfRollerHeightFt != null ? `${p.topOfRollerHeightFt} ft` : '—')
+  row('Max lift height', fmtFt(p.maxLiftHeightFt))
+  row('Top of roller height', fmtFt(p.topOfRollerHeightFt))
   row('Dwell time at station', p.dwellTimeMin != null ? `${p.dwellTimeMin} min` : '—')
   const chargingLabels: Record<string, string> = { plug_in: 'Plug in', opportunity: 'Opportunity charging', hydrogen: 'Hydrogen refueling', floor_contact: 'Floor contact / pantograph', inductive: 'Inductive (wireless)', battery_swap: 'Battery swap', not_sure: 'Not sure' }
   row('Charging preference', p.chargingStrategyPreference ? chargingLabels[p.chargingStrategyPreference] ?? p.chargingStrategyPreference : '—')
 
   // ── §06  Facility environment ───────────────────────────────────────────────
   sec('Facility environment')
-  row('Facility size', p.facilitySizeSqFt ? `${p.facilitySizeSqFt.toLocaleString()} sq ft` : '—')
+  row('Facility size', fmtSqft(p.facilitySizeSqFt))
   row('Dock doors', fmt(p.dockDoors))
   row('Indoor / outdoor', p.outdoorRequired == null ? '—' : p.outdoorRequired ? 'Outdoor' : 'Indoor')
   const tempEnvLabels: Record<string, string> = { ambient: 'Ambient', refrigerated: 'Refrigerated', freezer: 'Freezer' }
   row('Temperature environment', p.temperatureEnvironment ? tempEnvLabels[p.temperatureEnvironment] ?? p.temperatureEnvironment : '—')
-  row('Min temperature', p.tempMinF != null ? `${p.tempMinF}°F` : '—')
-  row('Max temperature', p.tempMaxF != null ? `${p.tempMaxF}°F` : '—')
+  row('Min temperature', fmtTemp(p.tempMinF))
+  row('Max temperature', fmtTemp(p.tempMaxF))
   row('Dust / moisture', fmt(p.dustMoisture))
   row('Floor condition', fmt(p.floorCondition))
-  row('Drive aisle width', p.driveAisleWidthFt != null ? `${p.driveAisleWidthFt} ft` : '—')
+  row('Drive aisle width', fmtFt(p.driveAisleWidthFt))
   row('Picking from racking', fmtBool(p.pickingFromRacking))
-  row('Racking aisle width', p.rackingAisleWidthFt != null ? `${p.rackingAisleWidthFt} ft` : '—')
+  row('Racking aisle width', fmtFt(p.rackingAisleWidthFt))
   row('Shared traffic', fmt(p.sharedTrafficTypes))
   const guidanceLabels: Record<string, string> = { wire: 'Wire-guided', rail: 'Rail-guided' }
   row('VNA guidance type', p.guidanceType ? guidanceLabels[p.guidanceType] ?? p.guidanceType : '—')
   row('Ramps / grades', fmtBool(p.rampRequired))
   row('Max ramp grade', p.maxRampGrade ? `${p.maxRampGrade}%` : '—')
-  row('Ramp length', p.rampDistanceFt ? `${p.rampDistanceFt} ft` : '—')
+  row('Ramp length', fmtFt(p.rampDistanceFt))
 
   // ── §07  Schedule ───────────────────────────────────────────────────────────
   sec('Schedule')
@@ -255,12 +262,12 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
   row('Peak throughput', p.peakThroughputPerHour ? `${p.peakThroughputPerHour} moves/hr` : '—')
   const distTypeLabelP: Record<string, string> = { one_way: 'one-way', round_trip: 'round trip' }
   const avgDistLabel = p.avgDistanceFt
-    ? `${p.avgDistanceFt} ft${p.distanceType ? ` (${distTypeLabelP[p.distanceType] ?? p.distanceType})` : ''}`
+    ? `${fmtFt(p.avgDistanceFt)}${p.distanceType ? ` (${distTypeLabelP[p.distanceType] ?? p.distanceType})` : ''}`
     : '—'
   row('Average distance', avgDistLabel)
   for (const f of p.flows ?? []) {
     if (!f.origin && !f.destination && !f.distanceFt && !f.thruPerHr) continue
-    const distLabel = f.distanceFt ? `${f.distanceFt} ft${f.distanceType ? ` ${distTypeLabelP[f.distanceType] ?? f.distanceType}` : ''}` : null
+    const distLabel = f.distanceFt ? `${fmtFt(f.distanceFt)}${f.distanceType ? ` ${distTypeLabelP[f.distanceType] ?? f.distanceType}` : ''}` : null
     const parts = [
       `${f.origin || '?'} → ${f.destination || '?'}`,
       distLabel,
@@ -351,6 +358,6 @@ function fileBase(p: PartialProjectFormData): string {
   return `${name}_AV-Questionnaire_${date}`
 }
 
-export async function downloadQuestionnairePdf(p: PartialProjectFormData): Promise<void> {
-  triggerDownload(await exportQuestionnairePdf(p), `${fileBase(p)}.pdf`)
+export async function downloadQuestionnairePdf(p: PartialProjectFormData, unitSystem: QUnitSystem = 'imperial'): Promise<void> {
+  triggerDownload(await exportQuestionnairePdf(p, unitSystem), `${fileBase(p)}.pdf`)
 }

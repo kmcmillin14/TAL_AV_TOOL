@@ -1,5 +1,20 @@
 # Changelog
 
+### Questionnaire imperial ↔ metric unit toggle (2026-08-10)
+- `useQUnit` hook (`src/lib/questionnaire/useQUnit.ts`): persists chosen unit to
+  `tal:q-unit` localStorage key; conversion helpers for lbs↔kg, in↔cm, ft↔m,
+  sq ft↔m², °F↔°C exported alongside.
+- `UnitInput` component: Controller-based input that converts storage (always imperial)
+  to display on render and converts back on change — storage never changes unit.
+- Imperial/Metric segmented toggle added to questionnaire page header (`.q-page-header`).
+- All measured inputs now unit-aware: weight (lbs/kg), load dimensions (in/cm), heights
+  (ft/m), aisle widths (ft/m), ramp length (ft/m), temperatures (°F/°C), facility size
+  (sq ft/m²), average distance (ft/m). Labels update dynamically.
+- `exportQuestionnairePdf` / `downloadQuestionnairePdf`: accept optional `unitSystem`
+  param; all measured rows print in the user's chosen unit (converted at render time;
+  storage stays imperial).
+- CSS: `.q-page-header` flex layout + `.q-unit-toggle` shorthand added to globals.css.
+
 ### Questionnaire UX feedback round 1c (2026-08-10)
 - Vehicle JSONs: no payload-type changes (reverted experimental pallet-name expansion;
   all vehicles retain "Standard Pallet" as the canonical pallet payload type).

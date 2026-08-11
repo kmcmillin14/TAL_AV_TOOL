@@ -4153,6 +4153,11 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 /* Section scroller offset: the standalone page has only the ~60px brand bar
    (not Step 1's tall hero), so the sticky rail sits near the top. */
 .q-page-nav .section-nav { top: 24px; max-height: calc(100vh - 48px); }
+/* Page header with unit toggle */
+.q-page-header {
+  display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px;
+}
+.q-unit-toggle { flex-shrink: 0; }
 
 /* ============================================================
    Questionnaire refinement — spacing & symmetry pass.
