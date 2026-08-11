@@ -39,8 +39,9 @@ export default function QuestionnaireBrandBar() {
           <button type="button" className="tbtn-icon" onClick={() => fire('tal:q-export')} aria-label="Export PDF" title="Export PDF">
             <Icon name="export" />
           </button>
-          <button type="button" className="tbtn-icon" onClick={() => fire('tal:q-clear')} aria-label="Clear all answers" title="Clear all answers">
+          <button type="button" className="tbtn-clear" onClick={() => fire('tal:q-clear')} aria-label="Clear all answers" title="Clear all answers">
             <Icon name="trash" />
+            Clear
           </button>
         </div>
       </div>

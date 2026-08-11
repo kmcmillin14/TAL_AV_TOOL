@@ -568,6 +568,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 )}
                 <div className="help">Where the vehicle delivers the load</div>
               </div>
+              <div className="fld fld-full q-info-note">
+                Pick / drop context is captured for the fleet engineer&apos;s reference — it does not affect vehicle qualification scores. The engineer will review racking type, aisle access, and transfer compatibility during the detailed assessment.
+              </div>
               <div className="fld">
                 <label>Type of handling</label>
                 <select {...register('transferType', { setValueAs: emptyToUndef })} defaultValue="">
