@@ -214,7 +214,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   // Volume can be given as overall averages OR per-flow detail — they're redundant, so pick one.
   const [thruMode, setThruMode] = useState<'avg' | 'flows'>('avg')
   const { unit, setUnit, isMetric } = useQUnit()
-  const { register, handleSubmit, control, reset, watch, setValue } = useForm<PartialProjectFormData>({
+  const { register, handleSubmit, control, reset, watch, setValue, getValues } = useForm<PartialProjectFormData>({
     resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
     defaultValues: EMPTY_VALUES,
   })
@@ -224,6 +224,14 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
     origin: '', destination: '', distanceFt: 0, thruPerHr: 0, routeLayout: 'medium', liftHeightFt: 0,
     distanceType: 'one_way',
   })
+  const copyFlow = (i: number) => {
+    const src = getValues(`flows.${i}`)
+    appendFlow({
+      origin: '', destination: '', distanceFt: 0, thruPerHr: 0, routeLayout: 'medium', liftHeightFt: 0,
+      ...src,
+      id: 'f_' + Math.random().toString(36).slice(2, 10),
+    })
+  }
 
   // Restore a previously-saved draft (validated; corrupt/stale shapes dropped).
   useEffect(() => {
@@ -381,7 +389,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   )
 
   return (
-    <form className="workspace q-form" onSubmit={handleSubmit(onSubmit, onInvalid)}>
+    <form className="workspace q-form" onSubmit={handleSubmit(onSubmit, onInvalid)}
+      onKeyDown={(e) => { if (e.key === 'Enter' && (e.target as HTMLElement).tagName !== 'TEXTAREA') e.preventDefault() }}>
       <div className="page-header">
         <div className="page-title">
           <span className="step-num">AV Questionnaire · {today}</span>
@@ -777,6 +786,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                         )} />
                       </div>
                       <div className="step1-flow-actions">
+                        <button type="button" className="tbtn-icon" aria-label="Copy flow" title="Copy flow" onClick={() => copyFlow(i)}>
+                          <Icon name="copy" size={13} />
+                        </button>
                         <button type="button" className="tbtn-icon" aria-label="Delete flow" title="Delete flow" onClick={() => removeFlow(i)}>
                           <Icon name="x" size={13} />
                         </button>
