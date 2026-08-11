@@ -1,20 +1,27 @@
 'use client'
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 
 export type QUnitSystem = 'imperial' | 'metric'
 const Q_UNIT_KEY = 'tal:q-unit'
+const Q_UNIT_EVENT = 'tal:q-unit-change'
+
+function readStored(): QUnitSystem {
+  try { return localStorage.getItem(Q_UNIT_KEY) === 'metric' ? 'metric' : 'imperial' } catch { return 'imperial' }
+}
 
 export function useQUnit() {
-  const [unit, setUnitRaw] = useState<QUnitSystem>(() => {
-    try {
-      const stored = localStorage.getItem(Q_UNIT_KEY)
-      return stored === 'metric' ? 'metric' : 'imperial'
-    } catch { return 'imperial' }
-  })
+  const [unit, setUnitRaw] = useState<QUnitSystem>(readStored)
+
+  // Listen for changes from other hook instances in the same window.
+  useEffect(() => {
+    const handler = () => setUnitRaw(readStored())
+    window.addEventListener(Q_UNIT_EVENT, handler)
+    return () => window.removeEventListener(Q_UNIT_EVENT, handler)
+  }, [])
 
   const setUnit = useCallback((u: QUnitSystem) => {
-    setUnitRaw(u)
     try { localStorage.setItem(Q_UNIT_KEY, u) } catch { /* quota */ }
+    window.dispatchEvent(new Event(Q_UNIT_EVENT))
   }, [])
 
   return { unit, setUnit, isMetric: unit === 'metric' }

@@ -21,12 +21,12 @@ function fmtBool(v: boolean | undefined | null): string {
 }
 
 export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSystem: QUnitSystem = 'imperial'): Promise<Blob> {
-  const isMetric = unitSystem === 'metric'
-  const fmtFt  = (v: number | null | undefined) => v != null ? (isMetric ? `${+ftToM(v).toFixed(2)} m` : `${v} ft`) : '—'
-  const fmtIn  = (v: number | null | undefined) => v != null ? (isMetric ? `${+inToCm(v).toFixed(1)} cm` : `${v} in`) : '—'
-  const fmtLbs = (v: number | null | undefined) => v != null ? (isMetric ? `${+lbsToKg(v).toFixed(1)} kg` : `${v.toLocaleString()} lbs`) : '—'
-  const fmtSqft = (v: number | null | undefined) => v != null ? (isMetric ? `${+sqftToM2(v).toFixed(0)} m²` : `${v.toLocaleString()} sq ft`) : '—'
-  const fmtTemp = (v: number | null | undefined) => v != null ? (isMetric ? `${+fToC(v).toFixed(1)}°C` : `${v}°F`) : '—'
+  // Always print both units so the PDF is unambiguous regardless of how it was filled out.
+  const fmtFt  = (v: number | null | undefined) => v != null ? `${v} ft / ${+ftToM(v).toFixed(2)} m` : '—'
+  const fmtIn  = (v: number | null | undefined) => v != null ? `${v} in / ${+inToCm(v).toFixed(1)} cm` : '—'
+  const fmtLbs = (v: number | null | undefined) => v != null ? `${v.toLocaleString()} lbs / ${+lbsToKg(v).toFixed(1)} kg` : '—'
+  const fmtSqft = (v: number | null | undefined) => v != null ? `${v.toLocaleString()} sq ft / ${+sqftToM2(v).toFixed(0)} m²` : '—'
+  const fmtTemp = (v: number | null | undefined) => v != null ? `${v}°F / ${+fToC(v).toFixed(1)}°C` : '—'
   const { PDFDocument, StandardFonts, rgb } = await import('pdf-lib')
   const pdfDoc = await PDFDocument.create()
   const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
