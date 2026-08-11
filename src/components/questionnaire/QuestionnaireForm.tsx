@@ -657,7 +657,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="fld"><label>Max temperature ({isMetric ? '°C' : '°F'})</label><UnitInput name="tempMaxF" control={control} imperialUnit="°F" metricUnit="°C" toDisplay={fToC} toStorage={cToF} placeholder={isMetric ? '38' : '100'} step="1" isMetric={isMetric} iDec={0} mDec={1} /></div>
               </>)}
               <div className="fld span-3">
-                <label>Dust / moisture (select all that apply)</label>
+                <label>Environment variables</label>
                 <Chips name="dustMoisture" options={DUST_MOISTURE_OPTS} />
               </div>
               <div className="fld span-3">

@@ -1,5 +1,11 @@
 # Changelog
 
+### Questionnaire minor fixes (2026-08-11)
+- `wmsRequired`: changed from `z.boolean().default(false)` to `.optional()` so
+  the WMS integration toggle starts blank (unanswered) instead of pre-selecting No.
+- §05 dust/moisture chip label: "Dust / moisture (select all that apply)" →
+  "Environment variables".
+
 ### Questionnaire field updates (2026-08-11)
 - §05 Dust/moisture: changed from single-select dropdown to multi-select chips
   (`dustMoisture` schema changed to `string[]`; legacy string values auto-coerced

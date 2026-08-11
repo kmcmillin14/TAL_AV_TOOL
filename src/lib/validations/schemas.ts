@@ -179,7 +179,7 @@ export const projectSchema = z.object({
   ),
 
   // Section 12
-  wmsRequired: z.boolean().default(false),
+  wmsRequired: z.boolean().optional(),
   wmsVendor: z.string().optional(),
 
   // ---- Customer questionnaire: opportunity / sales context (informational only) ----
