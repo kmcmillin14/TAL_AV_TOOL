@@ -411,16 +411,43 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 )} />
                 <div className="help">Select all that apply.</div>
               </div>
-              {unitLoadTypes.includes('Standard Pallet') && (
+              {unitLoadTypes.includes('Standard Pallet') && (<>
                 <div className="fld span-2">
                   <label>Pallet subtype</label>
-                  <select {...register('palletBottomBoard', { setValueAs: emptyToUndef })} defaultValue="">
+                  <select
+                    {...register('palletBottomBoard', { setValueAs: emptyToUndef })}
+                    defaultValue=""
+                    onChange={(e) => {
+                      const sub = e.target.value
+                      register('palletBottomBoard').onChange(e)
+                      const AUTOFILL: Record<string, { l: number; w: number }> = {
+                        GMA:  { l: 48, w: 40 },
+                        Euro: { l: 47.2, w: 31.5 },
+                        CHEP: { l: 45.9, w: 45.9 },
+                      }
+                      const d = AUTOFILL[sub.split(' ')[0]]
+                      if (d) {
+                        setValue('loadLengthIn', d.l, { shouldDirty: true })
+                        setValue('loadWidthIn', d.w, { shouldDirty: true })
+                      }
+                    }}
+                  >
                     <option value="">Select subtype…</option>
                     {PALLET_SUBTYPES.map(t => <option key={t}>{t}</option>)}
                   </select>
-                  <div className="help">Selects standard dimensions</div>
+                  <div className="help">Fills in standard dimensions automatically</div>
                 </div>
-              )}
+                <div className="fld span-2">
+                  <label>Pallet bottom board / entry</label>
+                  <select {...register('palletEntryType', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select…</option>
+                    <option value="stringer">Stringer (2-way entry)</option>
+                    <option value="block">Block (4-way entry)</option>
+                    <option value="not_sure">Not sure</option>
+                  </select>
+                  <div className="help">Affects vehicle compatibility — block pallets work with more vehicles</div>
+                </div>
+              </>)}
               {showOtherUnit && (
                 <div className="fld"><label>Describe load type</label><input {...register('otherUnitTypeDescription')} /></div>
               )}

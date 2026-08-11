@@ -98,6 +98,8 @@ export interface ApplicationRequirements {
   /** Temperature environment the application operates in. `refrigerated` is a
    *  soft (YELLOW) gate; `freezer` is a hard (RED) gate; `ambient`/unset skips. */
   temperatureEnvironment?: 'ambient' | 'refrigerated' | 'freezer'
+  /** Pallet bottom-board construction — drives the soft pallet_entry gate. */
+  palletEntryType?: 'stringer' | 'block' | 'not_sure'
   loadLengthIn?: number | null
   loadWidthIn?: number | null
   loadHeightIn?: number | null

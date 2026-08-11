@@ -383,6 +383,25 @@ export const GATES: readonly GateSpec[] = [
       }
     } },
 
+  // ── PALLET ENTRY ──
+  { id: 'pallet_entry', name: 'Pallet Entry', severity: 'soft',
+    run(vehicle, app) {
+      const compat = vehicle.palletEntryCompatibility
+      if (!compat || compat.length === 0) return skippedGate('pallet_entry', 'Pallet Entry', 'soft', 'Any')
+      const entryType = app.palletEntryType
+      if (!entryType || entryType === 'not_sure') return skippedGate('pallet_entry', 'Pallet Entry', 'soft', compat.join(', '))
+      const passed = compat.includes(entryType as 'stringer' | 'block')
+      const entryLabel = entryType === 'stringer' ? 'Stringer (2-way)' : 'Block (4-way)'
+      const compatLabel = compat.map(c => c === 'stringer' ? 'Stringer (2-way)' : 'Block (4-way)').join(', ')
+      return {
+        gateId: 'pallet_entry', name: 'Pallet Entry', severity: 'soft', passed, skipped: false,
+        vehicleValue: compatLabel, requiredValue: entryLabel,
+        reason: passed
+          ? `Vehicle compatible with ${entryLabel} pallets`
+          : `Vehicle entry (${compatLabel}) may not suit ${entryLabel} pallet — verify approach`,
+      }
+    } },
+
   // ── COMPLIANCE ──
   { id: 'certifications', name: 'Certifications', severity: 'soft',
     run(vehicle, app) {

@@ -88,6 +88,10 @@ export interface Vehicle {
   transferMethods: TransferMethod[]
   /** Payload categories this vehicle can carry — matched against ApplicationRequirements.typicalUnitType. */
   payloadTypes: string[]
+  /** Pallet bottom-board / stringer compatibility. 'stringer' = 2-way entry (forks from
+   *  the end only); 'block' = 4-way entry; omit or leave empty = any / not applicable.
+   *  Drives a soft (YELLOW) gate when the project's palletEntryType is set. */
+  palletEntryCompatibility?: ('stringer' | 'block')[]
   /** This vehicle tows carts rather than carrying the load directly (tugger). */
   towsCarts?: boolean
   /** What the towed carts can carry. Matched in the payload gate (a project whose unit

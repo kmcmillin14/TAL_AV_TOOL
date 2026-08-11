@@ -60,5 +60,9 @@
       "ANSI B56.5",
       "VDA 5050"
     ]
-  }
+  },
+  "palletEntryCompatibility": [
+    "stringer",
+    "block"
+  ]
 }

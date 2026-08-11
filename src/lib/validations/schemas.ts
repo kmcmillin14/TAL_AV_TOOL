@@ -62,6 +62,8 @@ export const projectSchema = z.object({
   maxLoadWeightLbs: z.number().min(0).optional(),
   typicalUnitType: z.string().optional(),
   palletBottomBoard: z.string().optional(),
+  /** Pallet bottom-board construction — drives the palletEntry soft gate in Step 2. */
+  palletEntryType: z.enum(['stringer', 'block', 'not_sure']).optional(),
   customPalletDescription: z.string().optional(),
   otherUnitTypeDescription: z.string().optional(),
   loadLengthIn: z.number().positive().optional().nullable(),

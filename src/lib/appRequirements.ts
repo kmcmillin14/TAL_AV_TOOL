@@ -42,6 +42,7 @@ export function appRequirementsFromProject(p: StoredProject): ApplicationRequire
     outdoorRequired: p.outdoorRequired,
     freezerCapable: p.freezerCapable ?? false,
     temperatureEnvironment: p.temperatureEnvironment,
+    palletEntryType: p.palletEntryType,
     loadLengthIn: p.loadLengthIn,
     loadWidthIn: p.loadWidthIn,
     loadHeightIn: p.loadHeightIn,

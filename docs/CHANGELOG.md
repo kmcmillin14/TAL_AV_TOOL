@@ -2074,3 +2074,13 @@ Engineer feedback on R6. Same-day follow-up.
 - To share or back up a project, user clicks Export → downloads a `.json` file
 - To resume on another device (or after clearing browser data), user clicks Import → picks the `.json` file
 - No accounts, no sign-in, no shared server state — every user's data stays in their own browser
+
+### Bottom board / pallet entry gate (2026-08-10)
+- `palletEntryType`: new schema field (`stringer | block | not_sure`) — questionnaire §03
+  conditional (appears when Standard Pallet selected).
+- `palletEntryCompatibility`: new Vehicle JSON field listing which entry modes each vehicle
+  supports. 8HBC40A = `["stringer"]` (pallet truck, 2-way only); CB18/ebase7 = both;
+  ML2/M10/8TB50A omitted (tuggers, don't carry pallets directly).
+- New soft gate `pallet_entry`: YELLOW when vehicle entry modes don't include stated type.
+- Questionnaire: pallet subtype selection auto-fills loadLengthIn/loadWidthIn (GMA/Euro/CHEP).
+- Pallet bottom board field prints in PDF when set.

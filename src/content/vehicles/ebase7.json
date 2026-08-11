@@ -76,5 +76,9 @@
       "ISO 3691-4",
       "VDA 5050"
     ]
-  }
+  },
+  "palletEntryCompatibility": [
+    "stringer",
+    "block"
+  ]
 }
