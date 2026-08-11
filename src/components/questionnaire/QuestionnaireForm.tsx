@@ -30,7 +30,7 @@ const INTERLOCKS = ['High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems',
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
 const DUST_MOISTURE_OPTS = ['None', 'Dusty environment', 'Wash-down required', 'High humidity', 'Outdoor exposure']
 const OPERATING_DAYS = ['Mon–Fri', 'Mon–Sat', 'Mon–Sun', 'Custom']
-const PICK_DROP = ['Floor', 'Rack', 'Conveyor', 'Trailer', 'Machine', 'Other']
+const PICK_DROP = ['Floor', 'Rack', 'Gravity flow rack', 'Conveyor', 'Lift table', 'Trailer', 'Machine', 'Custom']
 const HEIGHT_TRANSFER = new Set(TRANSFER_TYPE_OPTIONS.filter(o => o.needsHeight).map(o => o.value))
 
 // Empty defaults — array fields seeded so chips/picker controllers start defined.
@@ -552,6 +552,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <option value="">Select…</option>
                   {PICK_DROP.map(o => <option key={o}>{o}</option>)}
                 </select>
+                {values.pickContext === 'Custom' && (
+                  <input style={{ marginTop: 6 }} {...register('pickContextCustom')} placeholder="Describe pick location…" />
+                )}
                 <div className="help">Where the vehicle takes the load from</div>
               </div>
               <div className="fld">
@@ -560,6 +563,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <option value="">Select…</option>
                   {PICK_DROP.map(o => <option key={o}>{o}</option>)}
                 </select>
+                {values.dropContext === 'Custom' && (
+                  <input style={{ marginTop: 6 }} {...register('dropContextCustom')} placeholder="Describe drop location…" />
+                )}
                 <div className="help">Where the vehicle delivers the load</div>
               </div>
               <div className="fld">

@@ -216,8 +216,10 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
 
   // ── §05  How loads are handled ──────────────────────────────────────────────
   sec('How loads are handled')
-  row('Pick loads up from', fmt(p.pickContext))
-  row('Set loads down at', fmt(p.dropContext))
+  const pickLabel = p.pickContext === 'Custom' && p.pickContextCustom ? `Custom — ${p.pickContextCustom}` : fmt(p.pickContext)
+  const dropLabel = p.dropContext === 'Custom' && p.dropContextCustom ? `Custom — ${p.dropContextCustom}` : fmt(p.dropContext)
+  row('Pick loads up from', pickLabel)
+  row('Set loads down at', dropLabel)
   row('Transfer type', fmt(p.transferType))
   row('Transfer height', fmtFt(p.transferHeightFt))
   row('Lift type needed', fmt(p.liftTypeNeeded))

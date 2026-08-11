@@ -1,5 +1,13 @@
 # Changelog
 
+### Questionnaire pick/drop context expansion (2026-08-11)
+- PICK_DROP options: added 'Gravity flow rack', 'Lift table', 'Custom'
+  (replacing 'Other'); 'Custom' shows a conditional description text field.
+- Schema: added `pickContextCustom` and `dropContextCustom` (string, optional)
+  for Custom pick/drop descriptions.
+- PDF: Custom contexts print as "Custom — <description>".
+- Downstream: informational only; no gate calc changes.
+
 ### Questionnaire minor fixes (2026-08-11)
 - `wmsRequired`: changed from `z.boolean().default(false)` to `.optional()` so
   the WMS integration toggle starts blank (unanswered) instead of pre-selecting No.
