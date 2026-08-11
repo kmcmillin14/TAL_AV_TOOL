@@ -14,7 +14,7 @@ import {
 } from '@/src/lib/validations/schemas'
 import {
   UNIT_LOAD_TYPE_OPTIONS, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS,
-  SPECIALTY_APPLICATIONS, PROJECT_DRIVERS,
+  SPECIALTY_APPLICATIONS, PROJECT_DRIVERS, PALLET_SUBTYPES,
   SUBMISSION_TYPES, CHARGING_STRATEGIES, SHARED_TRAFFIC_TYPES, GUIDANCE_TYPES,
   REST_API_OPTIONS, WMS_INTERFACE_TYPES, TAGGING_SCAN_METHODS,
 } from '@/src/lib/constants/enums'
@@ -346,7 +346,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <FormSection id="q-sec-01" sectionNum="01" title="General Info">
             <div className="fld-grid-3">
               <div className="fld span-3">
-                <label>How are you submitting this? <span className="req-star" aria-hidden>*</span></label>
+                <label>Submission channel <span className="req-star" aria-hidden>*</span></label>
                 <Controller control={control} name="submissionType" render={({ field }) => (
                   <div className="seg-toggle">
                     {SUBMISSION_TYPES.map(o => (
@@ -411,6 +411,16 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 )} />
                 <div className="help">Select all that apply.</div>
               </div>
+              {unitLoadTypes.includes('Standard Pallet') && (
+                <div className="fld span-2">
+                  <label>Pallet subtype</label>
+                  <select {...register('palletBottomBoard', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select subtype…</option>
+                    {PALLET_SUBTYPES.map(t => <option key={t}>{t}</option>)}
+                  </select>
+                  <div className="help">Selects standard dimensions</div>
+                </div>
+              )}
               {showOtherUnit && (
                 <div className="fld"><label>Describe load type</label><input {...register('otherUnitTypeDescription')} /></div>
               )}

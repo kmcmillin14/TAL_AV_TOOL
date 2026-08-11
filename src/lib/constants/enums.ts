@@ -33,6 +33,9 @@ export const TYPICAL_UNIT_TYPES = [
   'Other',
 ] as const
 
+/** Pallet subtype options — mirrors Step 1 ApplicationForm's PALLET_SUBTYPES. */
+export const PALLET_SUBTYPES = ['GMA (48×40)', 'Euro (47.2×31.5)', 'CHEP (45.9×45.9)', 'Custom'] as const
+
 export const CERTIFICATIONS = [
   'ISO 3691-4',
   'ANSI B56.5',
@@ -121,7 +124,7 @@ export const UNIT_LOAD_TYPE_OPTIONS = TYPICAL_UNIT_TYPES
 /** Maps load type label → image filename stem (no extension).
  *  Drop PNG/WebP at public/images/load-types/<slug>.png to activate the image. */
 export const LOAD_TYPE_IMAGE_SLUG: Partial<Record<string, string>> = {
-  'Standard Pallet': 'standard-pallet',
+  'Standard Pallet': 'pallet',
   'Tote': 'tote',
   'Cart': 'cart',
   'Roll': 'roll',

@@ -1,5 +1,12 @@
 # Changelog
 
+### Questionnaire UX feedback round 1c (2026-08-10)
+- Vehicle JSONs: no payload-type changes (reverted experimental pallet-name expansion;
+  all vehicles retain "Standard Pallet" as the canonical pallet payload type).
+- `PALLET_SUBTYPES` exported from `enums.ts` (shared with Step 1 ApplicationForm).
+- Questionnaire §03: pallet subtype selector (GMA/Euro/CHEP/Custom) appears when
+  Standard Pallet is selected; stored in `palletBottomBoard`; prints in PDF.
+
 ### Questionnaire UX feedback round 1b (2026-08-10)
 - `chargingStrategyPreference`: replaced experimental floor_contact/inductive options with
   the correct three choices — `plug_in` (Plug in), `opportunity` (Opportunity charging),

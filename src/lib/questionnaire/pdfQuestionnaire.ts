@@ -183,6 +183,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData): Promise
     ? fmt(p.unitLoadTypes)
     : fmt(p.typicalUnitType ?? p.loads?.[0]?.unitType)
   row('Unit / load types', loadTypes)
+  if (p.palletBottomBoard) row('Pallet subtype', fmt(p.palletBottomBoard))
   // Print per-load detail rows when multiple loads are defined
   if ((p.loads ?? []).length > 1) {
     for (const ld of p.loads ?? []) {
