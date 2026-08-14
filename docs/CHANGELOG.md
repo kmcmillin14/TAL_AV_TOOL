@@ -1,5 +1,11 @@
 # Changelog
 
+### Questionnaire §03/§04 field updates (2026-08-14)
+- Dwell time: added `dwellTimeSec` field (seconds); `dwellTimeMin` kept as legacy
+  back-compat field. PDF falls back to `dwellTimeMin` for old exports.
+- Added `palletHasBottomBoard: z.boolean().optional()` — Yes/No toggle in pallet section.
+- Added `palletMaterial: z.string().optional()` — Wooden / Plastic / Metal / Cardboard select.
+
 ### Load type cleanup (2026-08-14)
 - Removed 'IBC' and 'Coil' from `TYPICAL_UNIT_TYPES` enum and `LOAD_TYPE_IMAGE_SLUG`.
 - Removed 'IBC' from cb18.json `payloadTypes` (no longer a selectable load type).

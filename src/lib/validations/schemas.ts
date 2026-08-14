@@ -62,6 +62,8 @@ export const projectSchema = z.object({
   maxLoadWeightLbs: z.number().min(0).optional(),
   typicalUnitType: z.string().optional(),
   palletBottomBoard: z.string().optional(),
+  palletHasBottomBoard: z.boolean().optional(),
+  palletMaterial: z.string().optional(),
   /** Pallet bottom-board construction — drives the palletEntry soft gate in Step 2. */
   palletEntryType: z.enum(['stringer', 'block', 'not_sure']).optional(),
   customPalletDescription: z.string().optional(),
@@ -235,7 +237,8 @@ export const projectSchema = z.object({
   // §03 load types (multi). Legacy singular `typicalUnitType` mirrors [0] on save.
   unitLoadTypes: z.array(z.string()).max(50).default([]),
   // §04 handling detail
-  dwellTimeMin: z.number().min(0).optional().nullable(),
+  dwellTimeSec: z.number().min(0).optional().nullable(),
+  dwellTimeMin: z.number().min(0).optional().nullable(), // legacy — superseded by dwellTimeSec
   chargingStrategyPreference: z.enum(['plug_in', 'opportunity', 'hydrogen', 'floor_contact', 'inductive', 'battery_swap', 'not_sure']).optional(),
   topOfRollerHeightFt: z.number().min(0).optional().nullable(),
   // §05 environment. driveAisle/rackingAisle mirror min()→minAisleWidthFt on save.

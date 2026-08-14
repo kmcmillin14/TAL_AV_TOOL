@@ -196,6 +196,11 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
     const entryLabels: Record<string, string> = { stringer: 'Stringer (2-way)', block: 'Block (4-way)', not_sure: 'Not sure' }
     row('Pallet bottom board', entryLabels[p.palletEntryType] ?? p.palletEntryType)
   }
+  if (p.palletHasBottomBoard != null) row('Bottom board present', p.palletHasBottomBoard ? 'Yes' : 'No')
+  if (p.palletMaterial) {
+    const matLabels: Record<string, string> = { wooden: 'Wooden', plastic: 'Plastic', metal: 'Metal', cardboard: 'Cardboard' }
+    row('Pallet material', matLabels[p.palletMaterial] ?? p.palletMaterial)
+  }
   // Print per-load detail rows when multiple loads are defined
   if ((p.loads ?? []).length > 1) {
     for (const ld of p.loads ?? []) {
@@ -225,7 +230,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   row('Lift type needed', fmt(p.liftTypeNeeded))
   row('Max lift height', fmtFt(p.maxLiftHeightFt))
   row('Top of roller height', fmtFt(p.topOfRollerHeightFt))
-  row('Dwell time at station', p.dwellTimeMin != null ? `${p.dwellTimeMin} min` : '—')
+  row('Dwell time at station', p.dwellTimeSec != null ? `${p.dwellTimeSec} sec` : p.dwellTimeMin != null ? `${p.dwellTimeMin} min` : '—')
   const chargingLabels: Record<string, string> = { plug_in: 'Plug in', opportunity: 'Opportunity charging', hydrogen: 'Hydrogen refueling', floor_contact: 'Floor contact / pantograph', inductive: 'Inductive (wireless)', battery_swap: 'Battery swap', not_sure: 'Not sure' }
   row('Charging preference', p.chargingStrategyPreference ? chargingLabels[p.chargingStrategyPreference] ?? p.chargingStrategyPreference : '—')
 
