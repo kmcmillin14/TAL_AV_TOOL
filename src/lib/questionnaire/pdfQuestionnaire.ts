@@ -198,7 +198,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   }
   if (p.palletHasBottomBoard != null) row('Bottom board present', p.palletHasBottomBoard ? 'Yes' : 'No')
   if (p.palletMaterial) {
-    const matLabels: Record<string, string> = { wooden: 'Wooden', plastic: 'Plastic', metal: 'Metal', cardboard: 'Cardboard' }
+    const matLabels: Record<string, string> = { wooden: 'Wood', plastic: 'Plastic', metal: 'Metal', cardboard: 'Cardboard' }
     row('Pallet material', matLabels[p.palletMaterial] ?? p.palletMaterial)
   }
   // Print per-load detail rows when multiple loads are defined

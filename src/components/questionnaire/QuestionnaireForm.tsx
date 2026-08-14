@@ -543,7 +543,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <label>Pallet material</label>
                   <select {...register('palletMaterial', { setValueAs: emptyToUndef })} defaultValue="">
                     <option value="">Select…</option>
-                    <option value="wooden">Wooden</option>
+                    <option value="wooden">Wood</option>
                     <option value="plastic">Plastic</option>
                     <option value="metal">Metal</option>
                     <option value="cardboard">Cardboard</option>
