@@ -404,7 +404,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
   // Reusable No/Yes segmented toggle for a tri-state boolean. Clicking the
   // already-selected option clears it back to unanswered (undefined).
-  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' | 'toyotaRaymondPartnership' | 'palletHasBottomBoard' }) => (
+  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' | 'toyotaRaymondPartnership' | 'palletHasBottomBoard' | 'palletHasStringer' }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="seg-toggle">
         <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(field.value === false ? undefined : false)}>No</button>
@@ -526,14 +526,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <div className="help">Fills in standard dimensions automatically</div>
                 </div>
                 <div className="fld span-2">
-                  <label>Pallet bottom board / entry</label>
-                  <select {...register('palletEntryType', { setValueAs: emptyToUndef })} defaultValue="">
-                    <option value="">Select…</option>
-                    <option value="stringer">Stringer (2-way entry)</option>
-                    <option value="block">Block (4-way entry)</option>
-                    <option value="not_sure">Not sure</option>
-                  </select>
-                  <div className="help">Affects vehicle compatibility — block pallets work with more vehicles</div>
+                  <label>Stringer pallet?</label>
+                  <YesNo name="palletHasStringer" />
                 </div>
                 <div className="fld span-2">
                   <label>Bottom board present?</label>

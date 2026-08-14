@@ -194,9 +194,10 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   if (p.palletBottomBoard) row('Pallet subtype', fmt(p.palletBottomBoard))
   if (p.palletEntryType) {
     const entryLabels: Record<string, string> = { stringer: 'Stringer (2-way)', block: 'Block (4-way)', not_sure: 'Not sure' }
-    row('Pallet bottom board', entryLabels[p.palletEntryType] ?? p.palletEntryType)
+    row('Pallet entry type', entryLabels[p.palletEntryType] ?? p.palletEntryType)
   }
   if (p.palletHasBottomBoard != null) row('Bottom board present', p.palletHasBottomBoard ? 'Yes' : 'No')
+  if (p.palletHasStringer != null) row('Stringer pallet', p.palletHasStringer ? 'Yes' : 'No')
   if (p.palletMaterial) {
     const matLabels: Record<string, string> = { wooden: 'Wood', plastic: 'Plastic', metal: 'Metal', cardboard: 'Cardboard' }
     row('Pallet material', matLabels[p.palletMaterial] ?? p.palletMaterial)

@@ -63,6 +63,7 @@ export const projectSchema = z.object({
   typicalUnitType: z.string().optional(),
   palletBottomBoard: z.string().optional(),
   palletHasBottomBoard: z.boolean().optional(),
+  palletHasStringer: z.boolean().optional(),
   palletMaterial: z.string().optional(),
   /** Pallet bottom-board construction — drives the palletEntry soft gate in Step 2. */
   palletEntryType: z.enum(['stringer', 'block', 'not_sure']).optional(),

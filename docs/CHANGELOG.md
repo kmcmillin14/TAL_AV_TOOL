@@ -1,5 +1,10 @@
 # Changelog
 
+### Questionnaire pallet fields (2026-08-14)
+- Replaced `palletEntryType` select (stringer/block/not_sure) with
+  `palletHasStringer: z.boolean().optional()` — simple Yes/No toggle.
+- Removed "Affects vehicle compatibility" help text from pallet section.
+
 ### Questionnaire §03/§04 field updates (2026-08-14)
 - Dwell time: added `dwellTimeSec` field (seconds); `dwellTimeMin` kept as legacy
   back-compat field. PDF falls back to `dwellTimeMin` for old exports.
