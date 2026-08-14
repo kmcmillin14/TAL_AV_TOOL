@@ -1,5 +1,10 @@
 # Changelog
 
+### Load type cleanup (2026-08-14)
+- Removed 'IBC' and 'Coil' from `TYPICAL_UNIT_TYPES` enum and `LOAD_TYPE_IMAGE_SLUG`.
+- Removed 'IBC' from cb18.json `payloadTypes` (no longer a selectable load type).
+- Questionnaire project name placeholder and help.ts example updated to remove 'Acme' branding.
+
 ### Questionnaire pick/drop context expansion (2026-08-11)
 - PICK_DROP options: added 'Gravity flow rack', 'Lift table', 'Custom'
   (replacing 'Other'); 'Custom' shows a conditional description text field.

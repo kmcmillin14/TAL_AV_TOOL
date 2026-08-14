@@ -23,8 +23,7 @@
   ],
   "payloadTypes": [
     "Standard Pallet",
-    "Rack",
-    "IBC"
+    "Rack"
   ],
   "calc": {
     "maxWeightLbs": 4000,

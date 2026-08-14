@@ -443,7 +443,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   </div>
                 )} />
               </div>
-              <div className="fld"><label>Project name</label><input {...register('projectName')} placeholder="e.g. Acme DC Phase 2" /></div>
+              <div className="fld"><label>Project name</label><input {...register('projectName')} placeholder="e.g. Distribution Center Phase 2" /></div>
               <div className="fld"><label>Customer / company</label><input {...register('customerName')} /></div>
               <div className="fld span-3">
                 <label>Facility location</label>

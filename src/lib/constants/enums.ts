@@ -27,8 +27,6 @@ export const TYPICAL_UNIT_TYPES = [
   'Tote',
   'Cart',
   'Roll',
-  'IBC',
-  'Coil',
   'Rack',
   'Other',
 ] as const
@@ -128,8 +126,6 @@ export const LOAD_TYPE_IMAGE_SLUG: Partial<Record<string, string>> = {
   'Tote': 'tote',
   'Cart': 'cart',
   'Roll': 'roll',
-  'IBC': 'ibc',
-  'Coil': 'coil',
   'Rack': 'rack',
 }
 

@@ -79,7 +79,7 @@ export const HELP: HelpSection[] = [
     example: {
       title: 'Example — a new revision of an existing quote',
       lines: [
-        'You quoted "Acme – Dock Replen" last month and need a Rev B.',
+        'You quoted "Riverside DC – Dock Replen" last month and need a Rev B.',
         'Pick Import Previous Revision → choose the saved .json.',
         'The new project lands on Step 01 with everything pre-filled; bump REV to B.',
       ],
