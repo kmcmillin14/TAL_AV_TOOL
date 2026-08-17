@@ -240,7 +240,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const [thruMode, setThruMode] = useState<'avg' | 'flows'>('avg')
   const { unit, setUnit, isMetric } = useQUnit()
   const { register, handleSubmit, control, reset, watch, setValue, getValues } = useForm<PartialProjectFormData>({
-    resolver: zodResolver(projectSchema) as Resolver<PartialProjectFormData>,
+    resolver: zodResolver(partialProjectSchema) as Resolver<PartialProjectFormData>,
     defaultValues: EMPTY_VALUES,
   })
   const { fields: flowFields, append: appendFlow, remove: removeFlow } = useFieldArray({ control, name: 'flows' })
@@ -264,14 +264,19 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
       const raw = localStorage.getItem(DRAFT_KEY)
       if (!raw) return
       const parsed = partialProjectSchema.safeParse(JSON.parse(raw))
-      if (parsed.success) reset(parsed.data)
+      if (parsed.success) {
+        reset(parsed.data)
+        if ((parsed.data.flows?.length ?? 0) > 0) setThruMode('flows')
+      }
     } catch { /* ignore corrupt draft */ }
   }, [reset])
 
   // Autosave draft to its own key (never touches the app's tal:projects).
+  // Also clears the "exported" status so re-edits don't show a stale success message.
   useEffect(() => {
     const sub = watch((values) => {
       try { localStorage.setItem(DRAFT_KEY, JSON.stringify(values)) } catch { /* quota */ }
+      setSubmitted(false)
     })
     return () => sub.unsubscribe()
   }, [watch])
@@ -508,15 +513,16 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                     onChange={(e) => {
                       const sub = e.target.value
                       register('palletBottomBoard').onChange(e)
-                      const AUTOFILL: Record<string, { l: number; w: number }> = {
-                        GMA:  { l: 48, w: 40 },
-                        Euro: { l: 47.2, w: 31.5 },
-                        CHEP: { l: 45.9, w: 45.9 },
+                      const AUTOFILL: Record<string, { l: number; w: number; h: number }> = {
+                        GMA:  { l: 48, w: 40, h: 5.7 },
+                        Euro: { l: 47.2, w: 31.5, h: 5.7 },
+                        CHEP: { l: 45.9, w: 45.9, h: 5.7 },
                       }
                       const d = AUTOFILL[sub.split(' ')[0]]
                       if (d) {
                         setValue('loadLengthIn', d.l, { shouldDirty: true })
                         setValue('loadWidthIn', d.w, { shouldDirty: true })
+                        setValue('loadHeightIn', d.h, { shouldDirty: true })
                       }
                     }}
                   >

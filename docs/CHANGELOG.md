@@ -1,5 +1,17 @@
 # Changelog
 
+### End-to-end review fixes (2026-08-16)
+- C1: `bufferPct` default aligned to `DEFAULT_BUFFER_PCT` (0.25 = 80% utilization)
+  in `storage.ts` and `useFleetData.ts` (was 0.10 = 91%, inconsistent with calc engine)
+- C3: Questionnaire resolver changed from `projectSchema` to `partialProjectSchema` —
+  blank optional fields no longer block PDF export
+- L2: `fleetModel.ts` numberOfOperators uses `??` not `||` — explicit zero operators
+  (fully automated line) no longer silently overridden by derived value
+- L3: Questionnaire thruMode restores to 'flows' when draft has saved flow rows
+- L5: Pallet subtype autofill now sets loadHeightIn (5.7 in) alongside L×W
+- U2: Questionnaire 'submitted' banner resets on any field edit
+- U3: PDF questionnaire transfer type prints human label not raw enum value
+
 ### Questionnaire pallet fields (2026-08-14)
 - Replaced `palletEntryType` select (stringer/block/not_sure) with
   `palletHasStringer: z.boolean().optional()` — simple Yes/No toggle.

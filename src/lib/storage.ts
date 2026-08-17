@@ -1,5 +1,6 @@
 import { partialProjectSchema, SCHEMA_VERSION, type PartialProjectFormData } from './validations/schemas'
 import { projectFilename } from './projectFilename'
+import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
 
 const STORAGE_KEY = 'tal:projects'
 
@@ -69,7 +70,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   flowGroups: [],
   flowGroupColors: {},
   chargeRegime: undefined,  // unset → derived from shift coverage (useFleetData)
-  bufferPct: 0.10,
+  bufferPct: DEFAULT_BUFFER_PCT,
   chargeMethods: {},
   otherAGVs: false,
   otherAGVVendor: undefined,

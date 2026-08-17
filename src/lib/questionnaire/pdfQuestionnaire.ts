@@ -226,7 +226,8 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   const dropLabel = p.dropContext === 'Custom' && p.dropContextCustom ? `Custom — ${p.dropContextCustom}` : fmt(p.dropContext)
   row('Pick loads up from', pickLabel)
   row('Set loads down at', dropLabel)
-  row('Transfer type', fmt(p.transferType))
+  const transferLabels: Record<string, string> = { forklift: 'Forklift — lifts to height', lift_table: 'Lift table — same-height transfer', pallet_truck: 'Pallet truck — floor-to-floor', conveyor: 'Conveyor', tow_cart: 'Tow cart (tugger)', custom: 'Custom' }
+  row('Transfer type', p.transferType ? (transferLabels[p.transferType] ?? p.transferType) : '—')
   row('Transfer height', fmtFt(p.transferHeightFt))
   row('Lift type needed', fmt(p.liftTypeNeeded))
   row('Max lift height', fmtFt(p.maxLiftHeightFt))
