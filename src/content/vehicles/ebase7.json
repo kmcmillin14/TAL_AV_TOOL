@@ -80,5 +80,13 @@
   "palletEntryCompatibility": [
     "stringer",
     "block"
-  ]
+  ],
+  "romInputs": {
+    "baseCommissioningPerUnit": 3000,
+    "integrationFloor": 1,
+    "softwareFloor": 1,
+    "baseIntegrationSellPrice": 30000,
+    "baseSoftwareSellPrice": 10000,
+    "_placeholder": "ALL romInputs values are PLACEHOLDERS pending real pricing from Kyle"
+  }
 }

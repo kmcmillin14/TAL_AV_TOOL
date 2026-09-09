@@ -3777,6 +3777,40 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-price-total { font-weight: 800; color: var(--accent); }
 .rom-price-mid { color: var(--text-tertiary); }
 
+/* Internal ROM — sell price (Hardware/Integration/Software/Adders). Scoped to
+   .rom-sp; reuses the app design tokens, never the shared structural selectors. */
+.rom-sp-placeholder-warning {
+  font-family: var(--tal-font-family); font-size: 12px; font-weight: 600;
+  color: var(--warn, #a15c00); background: color-mix(in srgb, var(--warn, #a15c00) 12%, transparent);
+  border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;
+}
+.rom-sp-gap-flag {
+  font-family: var(--tal-font-family); font-size: 12px; color: var(--bad, #b3261e);
+  background: color-mix(in srgb, var(--bad, #b3261e) 10%, transparent);
+  border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;
+}
+.rom-sp-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
+.rom-sp-vehicle-picker { display: flex; align-items: center; gap: 8px; font-family: var(--tal-font-family); font-size: 13px; margin-bottom: 14px; }
+.rom-sp-breakdowns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 18px; }
+@media (max-width: 700px) { .rom-sp-breakdowns { grid-template-columns: 1fr; } }
+.rom-sp-tier { background: var(--bg-surface-2, var(--bg-surface)); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.rom-sp-tier-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.rom-sp-tier-badge { font-family: var(--tal-font-numeric); font-weight: 800; color: var(--accent); font-size: 13px; }
+.rom-sp-tier-score { font-family: var(--tal-font-numeric); font-size: 11px; color: var(--text-tertiary); }
+.rom-sp-floor-note { font-family: var(--tal-font-family); font-size: 12px; color: var(--text-tertiary); font-style: italic; margin: 4px 0 8px; }
+.rom-sp-reasons { list-style: none; margin: 0 0 8px; padding: 0; font-family: var(--tal-font-family); font-size: 12.5px; }
+.rom-sp-reasons li { display: flex; justify-content: space-between; padding: 3px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
+.rom-sp-not-triggered { font-family: var(--tal-font-family); font-size: 12px; color: var(--text-tertiary); margin-bottom: 8px; }
+.rom-sp-override { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.rom-sp-override select, .rom-sp-override input { font-family: var(--tal-font-family); font-size: 12px; padding: 4px 6px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-surface); color: var(--text-primary); }
+.rom-sp-lines { width: 100%; border-collapse: collapse; margin-bottom: 18px; }
+.rom-sp-lines td { font-family: var(--tal-font-family); font-size: 13px; padding: 8px 6px; border-bottom: 1px solid color-mix(in srgb, var(--border) 60%, transparent); }
+.rom-sp-lines td.mono { font-family: var(--tal-font-numeric); text-align: right; }
+.rom-sp-total td { font-weight: 800; color: var(--accent); }
+.rom-sp-adders { display: flex; flex-direction: column; gap: 8px; }
+.rom-sp-adder-row { display: flex; align-items: center; gap: 8px; font-family: var(--tal-font-family); font-size: 13px; }
+.rom-sp-adder-row .mono { margin-left: auto; font-family: var(--tal-font-numeric); color: var(--text-tertiary); }
+
 .rom-econ-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
 .rom-econ-field { display: flex; flex-direction: column; gap: 5px; }
 .rom-econ-lbl {

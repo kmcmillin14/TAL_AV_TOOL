@@ -31,7 +31,7 @@ the **code** (`src/lib/pptx/tokenMap.ts`). Keep them in sync.
 
 **Appendix chain** (all cloned after S35, in order): vehicle verdict table →
 gate × vehicle screening grid → sizing derivations (3 slides: Raw / Charging /
-Buffer) → methodology → per-flow cycle math → cost detail.
+Buffer) → methodology → per-flow cycle math → cost detail → ROM sell price.
 
 ## Placeholders
 
@@ -56,7 +56,8 @@ S27 `06 — INVESTMENT` · S28 `06 — RETURN ON INVESTMENT`.
 Appendix eyebrows: verdict table + gate grid → `APPENDIX — VEHICLE SCREENING` ·
 sizing derivations (3 slides) → `APPENDIX — SIZING DERIVATION` ·
 methodology → `APPENDIX — METHODOLOGY` · per-flow cycle math → `APPENDIX — CYCLE MATH` ·
-cost detail → `APPENDIX — COST DETAIL`.
+cost detail → `APPENDIX — COST DETAIL` ·
+ROM sell price → `APPENDIX — ROM SELL PRICE`.
 
 Table style: white header + TAL-red underline rule, hairline dividers, no zebra (`cellXml`
 in `ooxml.ts`); explicit per-cell `fill`/`color` (verdicts, TOTAL row) still wins.
@@ -193,6 +194,13 @@ All appendix slides are appended via the existing `cloneSlide` machinery and car
    `APPENDIX — CYCLE MATH`.
 6. **Cost detail** — TCO @ service life, cost/move, and other financial tiles cut from
    the body (annual OPEX). Status gauges (Utilization · Availability · Charging · Redundancy) are web-app-only and dropped from the export entirely. Eyebrow: `APPENDIX — COST DETAIL`.
+7. **ROM sell price** (2026-09-09) — internal sell-price build-up, separate from the
+   customer-facing ROM economics above: one row per engineer-assigned chassis with
+   configured pricing (Vehicle · Qty · Hardware · Integration · Software · Adders · Total),
+   closed by a red TOTAL row, footnote naming each vehicle's Integration/Software tier.
+   `src/lib/pptx/romSellPrice.ts` (`buildRomSellPriceLines` / `fillRomSellPriceAppendix`).
+   The slide is only cloned when at least one line has valid pricing — silently absent
+   otherwise, not a blank shell. Eyebrow: `APPENDIX — ROM SELL PRICE`.
 
 ### Still planned
 

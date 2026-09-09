@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "_placeholderWarning": "Amounts are PLACEHOLDERS pending real pricing input from Kyle — do not quote a customer from these numbers.",
+  "adders": [
+    { "id": "warranty2yr", "label": "Extended Warranty (2yr)", "amount": 18000 },
+    { "id": "warranty3yr", "label": "Extended Warranty (3yr)", "amount": 32000 },
+    { "id": "shift2Support", "label": "2nd-Shift Support", "amount": 18000 },
+    { "id": "shift247Support", "label": "24x7 Support", "amount": 36000 },
+    { "id": "remoteSupportPlus", "label": "Enhanced Remote Support", "amount": 12000 },
+    { "id": "extendedTraining", "label": "Extended Training Session", "amount": 6000 }
+  ]
+}

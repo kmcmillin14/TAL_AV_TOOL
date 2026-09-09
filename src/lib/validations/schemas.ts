@@ -262,6 +262,31 @@ export const projectSchema = z.object({
 
   // Section 13
   projectNotes: z.string().optional(),
+
+  // ---- Internal ROM sell-price engine (2026-09-09 — additive) ----
+  // Computed dollar amounts are NEVER persisted (recomputed live from vehicle
+  // romInputs + pricing content); only the engineer's choices are stored.
+  /** Selected adder ids from content/pricing/adders.json, shared across the
+   *  project's ROM (not per-vehicle — adders are a program-level menu). */
+  romSellPriceSelectedAdderIds: z.array(z.string()).max(50).default([]),
+  /** Per-vehicleId tier overrides + reason, keyed by the vehicle id the
+   *  engineer is viewing ROM sell-price for. Absent tier → the scored tier
+   *  (floored by the vehicle's romInputs floor, and still clamped to that
+   *  floor even when overridden — a floor is a minimum, not a suggestion).
+   *  Integration and Software each carry their OWN reason (2026-09-09 fix —
+   *  a single shared field silently overwrote whichever override was edited
+   *  last). */
+  romSellPriceOverrides: z
+    .record(
+      z.string(),
+      z.object({
+        integrationTierOverride: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+        softwareTierOverride: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional(),
+        integrationOverrideReason: z.string().optional(),
+        softwareOverrideReason: z.string().optional(),
+      })
+    )
+    .default({}),
 })
 
 export type ProjectFormData = z.infer<typeof projectSchema>

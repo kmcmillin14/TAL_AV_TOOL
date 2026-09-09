@@ -1,5 +1,115 @@
 # Changelog
 
+## 2026-09-09 — Internal ROM sell-price engine (Hardware + Integration + Software + Adders)
+
+Additive feature, built after a Section-0 compatibility review that resolved several
+mismatches between the original spec and the live codebase (see that review's findings
+below — kept for future reference since they explain naming/scope decisions elsewhere in
+the code).
+
+**Compatibility review findings (before any code):**
+- The new engine's name collided with the existing `src/calc/rom.ts` (`RomSummary`, the
+  customer-facing CAPEX/OPEX/payback engine already wired into Step 4 + PPTX S25/S27/S28).
+  **Decision (owner): keep them separate** — the new engine lives in
+  `src/calc/sellPriceRom.ts` (`RomPricingResult`/`computeSellPriceRom`), not `rom.ts`.
+- The app has Steps 0–4 only (no "Step 5") — the spec's "Step 5 ROM" maps to the existing
+  Step 4 "ROM Dashboard".
+- Vehicle JSON path is `src/content/vehicles/<id>.json` (flat files), not
+  `content/vehicles/<id>/vehicle.json`; the library has **6** vehicles, not 8.
+- The existing PPTX export is a **template-fill** pipeline (fills
+  `public/templates/tal-rom-template.pptx` via PizZip/OOXML), not a from-scratch deck
+  builder — no "QuickTron RCS deck" pattern exists anywhere in this repo.
+  **Decision (owner): extend the existing template-fill appendix chain** rather than build
+  a standalone deck (`src/lib/pptx/romSellPrice.ts`, one new appendix slide).
+- A new internal PDF cutsheet route (`GET /api/cutsheet`) was **not built** — PDF export
+  was deliberately retired from the main app in the 2026-07-21 W1 pre-launch cleanup
+  (one-export-per-audience: PPTX/XLSX/JSON). **Decision (owner): no cutsheet** — the
+  integration×fleet-size grid from the original spec's §2g is dropped, not relocated.
+- `ComplexityAnswers` field mapping against the live questionnaire schema
+  (`src/lib/validations/schemas.ts`): `wmsIntegrationRequired`←`wmsRequired`,
+  `barcodeScanningRequired`←`barcodeScanningRequired`, `ramps`←`rampRequired`,
+  `facilitySqFt`←`facilitySizeSqFt`, `trafficType`←`sharedTrafficTypes` (mapped
+  'Pedestrians'/'Manual forklifts'/'Other AGVs'), `hasPlcInterlock`←
+  `interlocks.includes('PLC Systems')` (feeds the software `automationInterface` trigger —
+  there is no separate automation-interface count field), `customLoad`←
+  `unitLoadTypes.includes('Other')` (best-effort proxy; no literal customLoad field).
+  **Door/elevator counting and multi-site scoring were dropped by explicit owner decision**
+  ("no doors, no site count") — no `doorCount`/`elevatorCount`/`siteCount` field exists or
+  will be added; the corresponding point-table keys were removed entirely (not defaulted).
+  Three fields remain real gaps with no schema field yet — `storageTrackingRequired`,
+  `hasAgvExperience`, `pickDropLocationCount` — defaulted to false/0 with a visible
+  "complexity may be understated" flag in the UI/PPTX, per the owner's instruction not to
+  silently understate complexity.
+
+**Shipped:**
+- `src/calc/scoreTier.ts` — generic tier scorer (points → threshold → tier, then raised to
+  a vehicle floor). One mechanism, two instances (integration/software point tables).
+- `src/calc/complexityInputs.ts` — `ComplexityAnswers` + `buildIntegrationTriggers`/
+  `buildSoftwareTriggers`, with `GAP_FIELDS` documenting the 3 fields above.
+- `src/calc/sellPriceRom.ts` — `computeSellPriceRom`: Hardware (midpoint + commissioning) ×
+  qty, Integration/Software (base × tier multiplier), Adders (flat sum) → sell total → ROM
+  band (rounded to the nearest `$5,000` placeholder increment).
+- `src/lib/romPricingValidation.ts` / `src/lib/validations/pricingSchemas.ts` — Zod
+  validation for `vehicle.romInputs` and the two content files (strictly-increasing
+  multiplier maps, strictly-increasing thresholds, `romBand.low < 0 < romBand.high`);
+  malformed content fails loudly, naming the offending field.
+- `src/content/pricing/global-assumptions.json` / `adders.json` — placeholder dollar
+  values and multipliers, tagged `_placeholder`/`_placeholderWarning` throughout.
+- `src/content/vehicles/*.json` (all 6) — new `romInputs` block per vehicle (placeholder).
+- `src/lib/validations/schemas.ts` — `romSellPriceSelectedAdderIds` (project-level,
+  shared) and `romSellPriceOverrides` (per-vehicleId tier override + reason). Computed
+  dollar amounts are never persisted, only the engineer's choices.
+- Step 4 UI: `RomSellPriceCell.tsx` — a new additive bento cell ("Internal ROM — sell
+  price") in `RomBento.tsx` with the two complexity breakdowns (tier/score/reasons/
+  not-triggered/floor callout/override), the 4-line breakdown + per-unit + band, and the
+  live adders checklist. Placeholder-pricing banner and the gap-fields flag always visible.
+- PPTX: `src/lib/pptx/romSellPrice.ts` — a 7th appendix slide (`APPENDIX — ROM SELL
+  PRICE`), cloned only when at least one assigned chassis has configured pricing.
+- Verified end-to-end in-browser against the bundled Company A sample project (CB18 ×4,
+  M10 ×6, 8HBC40A ×5): live tier scoring, adder toggling + persistence to
+  `localStorage`, and a full PPTX export all confirmed working with no thrown errors.
+
+**Post-implementation code review (2 independent multi-agent passes) found and fixed 6 real bugs:**
+- **Tier overrides now respect the vehicle floor.** An engineer's manual tier override was
+  substituted with no re-clamp — a vehicle with `integrationFloor: 3` could be overridden
+  down to Tier 1, silently undercutting the sell price by up to 3× with no warning. Fixed via
+  `scoreTier.ts`'s new `clampToFloor()`, applied in `romSellPriceLine.ts`'s `withOverride()`.
+- **Integration and Software overrides now have independent reasons.** Both axes shared one
+  `overrideReason` field in `romSellPriceOverrides`, so saving the second override silently
+  discarded the first. Schema split into `integrationOverrideReason`/`softwareOverrideReason`.
+- **Fixed fleet-size complexity scoring: total program size, not per-line qty.** The
+  `fleetBand6to10/11to20/21plus` driver was scored against a single vehicle group's own
+  `fleetSold`, so a 15-unit fleet split 4/6/5 across 3 chassis never crossed the 11-unit
+  threshold on any line. Now scored against `FleetSummary.totalFleetSold`
+  (`buildIntegrationTriggers(answers, totalFleetSize)` in `complexityInputs.ts`).
+- **Fixed stale ROM state leaking across project navigation.** `RomSellPriceCell`'s
+  `selectedAdderIds`/`overrides` were seeded via `useState` only at mount, with no remount
+  guard — Next.js App Router reuses the component across client-side `/projects/[id]/step4`
+  navigation, so switching projects without a full reload could write project A's leftover
+  selections onto project B. Fixed with `key={project.id}` on the cell in `RomBento.tsx`.
+- **Extracted `src/lib/romSellPriceLine.ts`** as the single scoring/pricing resolver shared by
+  the Step 4 UI and the PPTX appendix — they previously each re-implemented the same
+  trigger→score→override→price pipeline independently and had already drifted on missing-
+  `romInputs` handling.
+- Hardened `addersConfigSchema` to reject duplicate adder ids (would otherwise double-count
+  silently via `computeSellPriceRom`'s Set-based selection filter).
+- Simplification cleanup: `scoreTier.ts` collapsed to boolean-only triggers (dropped an unused
+  numeric-multiplier branch), `complexityInputs.ts`'s three band functions consolidated into
+  one generic `band()` helper, `pricingContent.ts`'s two loaders consolidated into one generic
+  `loadPricingContent<T>()`, dropped a dead `romInputs` field and a gratuitous re-export alias.
+
+**Known, deliberately-not-fixed:**
+- `TierBreakdown`'s `React.memo` doesn't fully isolate the two axes (their callback props are
+  still recreated per render) — skipped after confirming the naive `useCallback` fix didn't
+  actually achieve independence either (callback identity still depended on `overrides` state)
+  and the absolute cost is negligible at this UI's scale (≤2 panels, a handful of vehicles).
+- **Open architecture question for the owner:** `romInputs`' per-line dollar fields
+  (`baseCommissioningPerUnit`, `baseIntegrationSellPrice`, `baseSoftwareSellPrice`) are single
+  values, not `minUsd`/`maxUsd` ranges — in tension with ARCHITECTURE.md's "Price is a range,
+  never a single value" rule. This mirrors the original design spec exactly (single base price
+  × tier multiplier, banded only at the final total via `romBand.low/high`); not changed
+  unilaterally since it would materially deviate from the given spec.
+
 ### End-to-end review fixes (2026-08-16)
 - C1: `bufferPct` default aligned to `DEFAULT_BUFFER_PCT` (0.25 = 80% utilization)
   in `storage.ts` and `useFleetData.ts` (was 0.10 = 91%, inconsistent with calc engine)

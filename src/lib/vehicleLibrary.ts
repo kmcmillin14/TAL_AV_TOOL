@@ -1,5 +1,6 @@
 import fs from 'fs'
 import path from 'path'
+import type { RomInputs } from '@/src/lib/validations/pricingSchemas'
 
 const VEHICLES_DIR = path.join(process.cwd(), 'src/content/vehicles')
 
@@ -100,6 +101,12 @@ export interface Vehicle {
   cartPayloads?: string[]
   calc: VehicleCalc
   specs: VehicleSpecs
+  /** Sell-price ROM engine inputs (commissioning cost + integration/software
+   *  floors and base sell prices). Optional at the type level because a vehicle
+   *  missing it is a valid, loadable vehicle — it's simply excluded from the ROM
+   *  sell-price UI ("pricing not configured") rather than failing to load. See
+   *  `src/calc/sellPriceRom.ts` and `src/lib/validations/pricingSchemas.ts`. */
+  romInputs?: RomInputs
 }
 
 export async function loadVehicleLibrary(): Promise<Vehicle[]> {

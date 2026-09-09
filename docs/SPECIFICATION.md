@@ -563,6 +563,46 @@ first stage open) leading the section, above the live `FleetMath` worked numbers
 matrix, Resilience, and the Assumptions value-list. The same content is appended to the **branded
 PPTX** as a Methodology appendix slide (cloned + filled — see below).
 
+**Internal ROM — sell price (2026-09-09, additive).** A separate, internal-only sell-price
+build-up — Hardware + Integration + Software + Adders — distinct from the customer-facing
+ROM economics above (`src/calc/rom.ts`, CAPEX/OPEX/payback). Lives in `src/calc/sellPriceRom.ts`
+to avoid the name collision; a dedicated Step 4 bento cell (`RomSellPriceCell.tsx`, "Internal
+ROM — sell price") shows it per engineer-assigned chassis:
+
+- **Hardware** = `(vehicle price-range midpoint + romInputs.baseCommissioningPerUnit) × qty`
+  — qty only, no complexity score (commissioning is a fixed per-unit cost).
+- **Integration** and **Software** are scored independently by one shared generic tier
+  scorer (`src/calc/scoreTier.ts`) against two point tables in
+  `content/pricing/global-assumptions.json` (`integrationScoring` / `softwareScoring`), then
+  `baseSellPrice × multiplier[tier]`. Each vehicle's `romInputs.integrationFloor`/`softwareFloor`
+  sets a minimum tier the score can't go below. An engineer can override either tier with a
+  reason (persisted per-vehicle in `romSellPriceOverrides`).
+- **Adders** — a flat, project-level checklist from `content/pricing/adders.json`
+  (`romSellPriceSelectedAdderIds`, shared across the project's vehicles, not per-vehicle).
+- Total → a **ROM band** (`romBand.low`/`.high` in the assumptions file, e.g. −10%/+25%),
+  rounded to the nearest `rounding` ($5,000 today).
+
+**Complexity inputs** (`src/calc/complexityInputs.ts`, `ComplexityAnswers`) map from the
+questionnaire/project schema — see `docs/CHANGELOG.md` (2026-09-09) for the full field
+mapping and the gap list. Two point-table axes were dropped by explicit owner decision
+(not silently): per-door/elevator counting and multi-site scoring — neither field exists
+in the questionnaire and none will be added. Three remaining fields
+(`storageTrackingRequired`, `hasAgvExperience`, `pickDropLocationCount`) have no schema
+field yet; they default to false/0 and the UI/PPTX surface a visible
+"complexity may be understated" flag rather than silently under-scoring.
+
+**ALL dollar values and multipliers are placeholders** pending real pricing from the
+business owner — tagged `_placeholder`/`_placeholderWarning` in the JSON content and vehicle
+deltas, and shown as a standing banner in the UI/PPTX ("ROM — budgetary estimate, placeholder
+pricing").
+
+Vehicle JSON delta (`src/content/vehicles/*.json`, all 6 library vehicles): a `romInputs`
+block (`baseCommissioningPerUnit`, `integrationFloor`, `softwareFloor`,
+`baseIntegrationSellPrice`, `baseSoftwareSellPrice`) — Zod-validated
+(`src/lib/validations/pricingSchemas.ts`, `romInputsSchema`); a vehicle missing it (or
+`calc.priceRange`) is excluded from the sell-price UI/PPTX line with a "pricing not
+configured" state rather than crashing.
+
 **Export:** two-part proposal PDF · project JSON · **Branded PowerPoint** (see below) ·
 **editable Excel fleet model**. All build on `src/lib/fleetModel.ts` (`computeFleetModel`).
 
@@ -661,7 +701,12 @@ eyebrow `APPENDIX — SIZING DERIVATION`); (4) **methodology** (Stage · Formula
 from `src/content/methodology.ts`, eyebrow `APPENDIX — METHODOLOGY`); (5) **per-flow cycle
 math** (`fillFlowMath` — each assigned flow's substituted formula, paginated 9 flows/slide,
 eyebrow `APPENDIX — CYCLE MATH`); (6) **cost detail** (TCO @ service life, cost/move, and
-other cut financial figures, eyebrow `APPENDIX — COST DETAIL`). Detail is relocated, never
+other cut financial figures, eyebrow `APPENDIX — COST DETAIL`); (7) **ROM sell price**
+(2026-09-09, additive — Hardware/Integration/Software/Adders per assigned chassis + a red
+TOTAL row, plus a footnote naming each vehicle's Integration/Software tier, eyebrow
+`APPENDIX — ROM SELL PRICE`; `src/lib/pptx/romSellPrice.ts`; the slide is cloned only when
+at least one assigned chassis has a valid `romInputs`, and no-ops otherwise — see the
+Internal ROM — sell price note above). Detail is relocated, never
 deleted. Filename: `Rev# Opp# Customer Project.pptx`. Contract: `docs/PPTX-TOKEN-CONTRACT.md`.
 
 ---

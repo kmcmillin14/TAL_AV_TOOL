@@ -79,5 +79,13 @@
       "ANSI B56.5",
       "VDA 5050"
     ]
+  },
+  "romInputs": {
+    "baseCommissioningPerUnit": 4000,
+    "integrationFloor": 1,
+    "softwareFloor": 1,
+    "baseIntegrationSellPrice": 35000,
+    "baseSoftwareSellPrice": 12000,
+    "_placeholder": "ALL romInputs values are PLACEHOLDERS pending real pricing from Kyle"
   }
 }

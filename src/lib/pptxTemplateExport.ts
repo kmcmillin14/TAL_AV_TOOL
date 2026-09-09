@@ -19,6 +19,8 @@ import {
   assignedVehicleIds,
 } from '@/src/lib/pptx/tables'
 import { renderPaybackChartPng } from '@/src/lib/pptx/romChart'
+import { resolveAllRomSellPriceLines } from '@/src/lib/romSellPriceLine'
+import { fillRomSellPriceAppendix } from '@/src/lib/pptx/romSellPrice'
 import {
   PPTX_SECTIONS, VEHICLE_SLIDE, ROM_SLIDE, slidesToRemove, type PptxSelection,
 } from '@/src/lib/pptx/sections'
@@ -93,6 +95,12 @@ export async function exportBrandedRomPptx(
     if (slide != null) mathPages.push({ slide, flows: mathFlows.slice(i, i + FLOWS_PER_SLIDE) })
   }
   const costSlide = model.rom.pricing.totalMid > 0 ? cloneSlide(zip, ROM_SLIDE.requirements) : null
+  // Internal ROM sell price (Hardware + Integration + Software + Adders) —
+  // separate concept from the customer-facing rom.pricing above; see
+  // src/calc/sellPriceRom.ts. Only cloned when at least one assigned chassis
+  // has configured pricing (romInputs).
+  const sellPriceLines = resolveAllRomSellPriceLines(project, model.fleet, vehicleById)
+  const sellPriceSlide = sellPriceLines.length > 0 ? cloneSlide(zip, ROM_SLIDE.requirements) : null
 
   // ── Remove unselected slides. S19 shows only assigned chassis — nothing
   // assigned means the tool would have to pick, and it never picks: drop it.
@@ -162,6 +170,10 @@ export async function exportBrandedRomPptx(
   if (costSlide != null) {
     setSlideTitle(zip, costSlide, 'Cost model detail')
     fillCostDetail(zip, costSlide, model, serviceLifeYears)
+  }
+  if (sellPriceSlide != null) {
+    setSlideTitle(zip, sellPriceSlide, 'ROM sell price — internal detail')
+    fillRomSellPriceAppendix(zip, sellPriceSlide, sellPriceLines)
   }
 
   const blob = zip.generate({ type: 'blob', mimeType: PPTX_MIME }) as Blob

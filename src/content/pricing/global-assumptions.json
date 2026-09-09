@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "currency": "USD",
+  "_placeholderWarning": "ALL dollar values and multipliers in this file are PLACEHOLDERS pending real pricing input from Kyle — do not quote a customer from these numbers.",
+
+  "integrationMultipliers": { "1": 1.0, "2": 1.8, "3": 3.0 },
+  "softwareMultipliers": { "1": 1.0, "2": 1.6, "3": 2.5 },
+
+  "integrationScoring": {
+    "_note": "door/elevator counting deliberately omitted (owner: 'no doors') — no doorCount/elevatorCount field exists in the questionnaire and none will be added.",
+    "points": {
+      "trafficPedestrian": 1,
+      "trafficForklift": 2,
+      "ramps": 1,
+      "customLoad": 2,
+      "fleetBand6to10": 1,
+      "fleetBand11to20": 3,
+      "fleetBand21plus": 5,
+      "sqftBand100kTo250k": 1,
+      "sqftBand250kTo500k": 2,
+      "sqftBand500kPlus": 4,
+      "pickDropBand10to25": 1,
+      "pickDropBand25to50": 3,
+      "pickDropBand50plus": 5,
+      "noAgvExperience": 2
+    },
+    "thresholds": { "tier2": 5, "tier3": 11 }
+  },
+
+  "softwareScoring": {
+    "_note": "multi-site scoring deliberately omitted (owner: 'no site count') — no siteCount field exists in the questionnaire and none will be added.",
+    "points": {
+      "wmsIntegration": 5,
+      "storageTracking": 3,
+      "barcodeScanning": 2,
+      "otherAgvTraffic": 6,
+      "automationInterface": 3
+    },
+    "thresholds": { "tier2": 4, "tier3": 9 }
+  },
+
+  "romBand": { "low": -0.10, "high": 0.25 },
+  "rounding": 5000,
+  "cutsheetRepresentativeQty": [2, 6, 15]
+}
