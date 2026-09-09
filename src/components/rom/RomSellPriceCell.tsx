@@ -47,21 +47,23 @@ const TierBreakdown = memo(function TierBreakdown({
   const [draftReason, setDraftReason] = useState(overrideReason ?? '')
 
   return (
-    <div className="rom-sp-tier">
-      <div className="rom-sp-tier-head">
-        <span className="rom-card-eyebrow">{title}</span>
+    <div className="rom-sp-tier rom2-hero">
+      <div className="rom2-hero-head">{title}</div>
+      <div className="rom-sp-tier-figure">
         <span className="rom-sp-tier-badge">Tier {result.tier}</span>
         <span className="rom-sp-tier-score">score {result.score}</span>
       </div>
       {result.flooredBy && (
-        <p className="rom-sp-floor-note">Floored by {result.flooredBy} — vehicle&rsquo;s inherent minimum.</p>
+        <p className="rom-sp-floor-note">Floored by {result.flooredBy} — vehicle&rsquo;s inherent minimum</p>
       )}
-      {result.reasons.length > 0 && (
-        <ul className="rom-sp-reasons">
+      {result.reasons.length > 0 ? (
+        <dl className="rom-sp-reasons">
           {result.reasons.map(r => (
-            <li key={r.label}>{r.label} <span className="mono">+{r.points}</span></li>
+            <div key={r.label}><dt>{r.label}</dt><dd>+{r.points}</dd></div>
           ))}
-        </ul>
+        </dl>
+      ) : (
+        <p className="rom-sp-empty-drivers">No complexity drivers triggered — floor tier only.</p>
       )}
       {result.notTriggered.length > 0 && (
         <details className="rom-sp-not-triggered">
@@ -71,7 +73,7 @@ const TierBreakdown = memo(function TierBreakdown({
       )}
       <div className="rom-sp-override">
         <label>
-          Override tier
+          Override
           <select
             value={overrideTier ?? ''}
             onChange={e => onOverride(e.target.value === '' ? undefined : (Number(e.target.value) as 1 | 2 | 3))}
@@ -209,37 +211,41 @@ export default function RomSellPriceCell({ project, fleet, vehicleById }: Props)
             />
           </div>
 
-          <table className="rom-sp-lines">
-            <tbody>
-              <tr><td>Hardware</td><td className="mono">{fullUsd(line.pricing.hardwareSellTotal)}</td></tr>
-              <tr><td>Integration</td><td className="mono">{fullUsd(line.pricing.integrationSellTotal)}</td></tr>
-              <tr><td>Software</td><td className="mono">{fullUsd(line.pricing.softwareSellTotal)}</td></tr>
-              <tr><td>Adders</td><td className="mono">{fullUsd(line.pricing.addersTotal)}</td></tr>
-              <tr className="rom-sp-total">
-                <td>Total ({group.fleetSold} unit{group.fleetSold === 1 ? '' : 's'})</td>
-                <td className="mono">{fullUsd(line.pricing.sellTotal)}</td>
-              </tr>
-              <tr className="rom-sp-total"><td>Per unit</td><td className="mono">{fullUsd(line.pricing.sellPerUnit)}</td></tr>
-              <tr>
-                <td>Program range</td>
-                <td className="mono">{fullUsd(line.pricing.band.lowTotal)} – {fullUsd(line.pricing.band.highTotal)}</td>
-              </tr>
-            </tbody>
-          </table>
+          <section className="rom-sp-pricing rom2-hero">
+            <div className="rom2-hero-head">
+              Sell price — {group.fleetSold} unit{group.fleetSold === 1 ? '' : 's'}
+            </div>
+            <div className="rom2-hero-lead">
+              <div className="rom-kpi rom-kpi-accent">
+                <span className="rom-kpi-val mono">{fullUsd(line.pricing.sellTotal)}</span>
+                <span className="rom-kpi-lbl">Total sell price</span>
+              </div>
+            </div>
+            <div className="rom2-hero-grid">
+              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.hardwareSellTotal)}</span><span className="rom-kpi-lbl">Hardware</span></div>
+              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.integrationSellTotal)}</span><span className="rom-kpi-lbl">Integration</span></div>
+              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.softwareSellTotal)}</span><span className="rom-kpi-lbl">Software</span></div>
+              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.addersTotal)}</span><span className="rom-kpi-lbl">Adders</span></div>
+              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.sellPerUnit)}</span><span className="rom-kpi-lbl">Per unit</span></div>
+              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.band.lowTotal)} – {fullUsd(line.pricing.band.highTotal)}</span><span className="rom-kpi-lbl">Program range</span></div>
+            </div>
+          </section>
 
-          <div className="rom-sp-adders">
+          <section className="rom-sp-adders">
             <span className="rom-card-eyebrow">Adders</span>
-            {ADDERS_CONFIG.adders.map(a => (
-              <label key={a.id} className="rom-sp-adder-row">
-                <input
-                  type="checkbox"
-                  checked={selectedAdderIds.includes(a.id)}
-                  onChange={() => toggleAdder(a.id)}
-                />
-                {a.label} <span className="mono">{fullUsd(a.amount)}</span>
-              </label>
-            ))}
-          </div>
+            <div className="rom-sp-adder-grid">
+              {ADDERS_CONFIG.adders.map(a => (
+                <label key={a.id} className="rom-sp-adder-row">
+                  <input
+                    type="checkbox"
+                    checked={selectedAdderIds.includes(a.id)}
+                    onChange={() => toggleAdder(a.id)}
+                  />
+                  {a.label} <span className="mono">{fullUsd(a.amount)}</span>
+                </label>
+              ))}
+            </div>
+          </section>
         </>
       )}
     </div>
