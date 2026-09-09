@@ -1,6 +1,6 @@
 'use client'
 
-import { memo, useMemo, useState } from 'react'
+import { memo, type ReactNode, useMemo, useState } from 'react'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetSummary } from '@/src/calc/types'
@@ -9,7 +9,10 @@ import { complexityAnswersFromProject } from '@/src/lib/romComplexityFromProject
 import { resolveRomSellPriceLine, type RomSellPriceOverride } from '@/src/lib/romSellPriceLine'
 import { GAP_FIELDS } from '@/src/calc/complexityInputs'
 import type { TierResult } from '@/src/calc/scoreTier'
-import { ADDERS_CONFIG } from '@/src/lib/pricingContent'
+import { getValidRomInputs } from '@/src/lib/romPricingValidation'
+import { vehiclePricingMidpoint } from '@/src/calc/sellPriceRom'
+import { ADDERS_CONFIG, PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
+import { complexityLabel } from '@/src/lib/romComplexityLabels'
 
 interface Props {
   project: StoredProject
@@ -25,6 +28,23 @@ interface Props {
 const usdFormatter = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
 function fullUsd(n: number): string {
   return usdFormatter.format(n)
+}
+
+/** One receipt line: label + amount, expandable (native <details>, no extra
+ *  state) to reveal the substituted math behind the figure. */
+function ReceiptRow({ label, amount, detail }: { label: string; amount: string; detail: ReactNode }) {
+  return (
+    <details className="rom-sp-receipt-row">
+      <summary>
+        <svg className="rom-sp-receipt-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <polyline points="9 6 15 12 9 18" />
+        </svg>
+        <span>{label}</span>
+        <span className="rom-sp-receipt-amount mono">{amount}</span>
+      </summary>
+      <div className="rom-sp-receipt-detail">{detail}</div>
+    </details>
+  )
 }
 
 const TierBreakdown = memo(function TierBreakdown({
@@ -59,7 +79,7 @@ const TierBreakdown = memo(function TierBreakdown({
       {result.reasons.length > 0 ? (
         <dl className="rom-sp-reasons">
           {result.reasons.map(r => (
-            <div key={r.label}><dt>{r.label}</dt><dd>+{r.points}</dd></div>
+            <div key={r.label}><dt>{complexityLabel(r.label)}</dt><dd>+{r.points}</dd></div>
           ))}
         </dl>
       ) : (
@@ -68,7 +88,7 @@ const TierBreakdown = memo(function TierBreakdown({
       {result.notTriggered.length > 0 && (
         <details className="rom-sp-not-triggered">
           <summary>{result.notTriggered.length} not triggered</summary>
-          <ul>{result.notTriggered.map(k => <li key={k}>{k}</li>)}</ul>
+          <ul>{result.notTriggered.map(k => <li key={k}>{complexityLabel(k)}</li>)}</ul>
         </details>
       )}
       <div className="rom-sp-override">
@@ -155,6 +175,10 @@ export default function RomSellPriceCell({ project, fleet, vehicleById }: Props)
   }
 
   const vehicle = vehicleById.get(group.vehicleId)
+  const romInputs = vehicle ? getValidRomInputs(vehicle) : null
+  const integrationMultiplier = line ? PRICING_ASSUMPTIONS.integrationMultipliers[String(line.integrationResult.tier) as '1' | '2' | '3'] : 0
+  const softwareMultiplier = line ? PRICING_ASSUMPTIONS.softwareMultipliers[String(line.softwareResult.tier) as '1' | '2' | '3'] : 0
+  const selectedAdders = ADDERS_CONFIG.adders.filter(a => selectedAdderIds.includes(a.id))
 
   return (
     <div className="rom-sp">
@@ -215,19 +239,65 @@ export default function RomSellPriceCell({ project, fleet, vehicleById }: Props)
             <div className="rom2-hero-head">
               Sell price — {group.fleetSold} unit{group.fleetSold === 1 ? '' : 's'}
             </div>
-            <div className="rom2-hero-lead">
-              <div className="rom-kpi rom-kpi-accent">
-                <span className="rom-kpi-val mono">{fullUsd(line.pricing.sellTotal)}</span>
-                <span className="rom-kpi-lbl">Total sell price</span>
+            <div className="rom-sp-receipt">
+              <ReceiptRow
+                label="Hardware"
+                amount={fullUsd(line.pricing.hardwareSellTotal)}
+                detail={romInputs && vehicle && (
+                  <div className="rom-sp-receipt-detail-row">
+                    <span>
+                      ({fullUsd(vehiclePricingMidpoint(vehicle))} vehicle midpoint + {fullUsd(romInputs.baseCommissioningPerUnit)} commissioning) × {group.fleetSold} units
+                    </span>
+                    <span className="mono">{fullUsd(line.pricing.hardwareSellTotal)}</span>
+                  </div>
+                )}
+              />
+              <ReceiptRow
+                label="Integration"
+                amount={fullUsd(line.pricing.integrationSellTotal)}
+                detail={romInputs && (
+                  <div className="rom-sp-receipt-detail-row">
+                    <span>{fullUsd(romInputs.baseIntegrationSellPrice)} base × {integrationMultiplier}× (Tier {line.integrationResult.tier})</span>
+                    <span className="mono">{fullUsd(line.pricing.integrationSellTotal)}</span>
+                  </div>
+                )}
+              />
+              <ReceiptRow
+                label="Software"
+                amount={fullUsd(line.pricing.softwareSellTotal)}
+                detail={romInputs && (
+                  <div className="rom-sp-receipt-detail-row">
+                    <span>{fullUsd(romInputs.baseSoftwareSellPrice)} base × {softwareMultiplier}× (Tier {line.softwareResult.tier})</span>
+                    <span className="mono">{fullUsd(line.pricing.softwareSellTotal)}</span>
+                  </div>
+                )}
+              />
+              <ReceiptRow
+                label="Adders"
+                amount={fullUsd(line.pricing.addersTotal)}
+                detail={selectedAdders.length > 0 ? (
+                  <>
+                    {selectedAdders.map(a => (
+                      <div key={a.id} className="rom-sp-receipt-detail-row">
+                        <span>{a.label}</span>
+                        <span className="mono">{fullUsd(a.amount)}</span>
+                      </div>
+                    ))}
+                  </>
+                ) : 'No adders selected.'}
+              />
+              <div className="rom-sp-receipt-total">
+                <span>Total ({group.fleetSold} unit{group.fleetSold === 1 ? '' : 's'})</span>
+                <span className="rom-sp-receipt-amount mono">{fullUsd(line.pricing.sellTotal)}</span>
               </div>
-            </div>
-            <div className="rom2-hero-grid">
-              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.hardwareSellTotal)}</span><span className="rom-kpi-lbl">Hardware</span></div>
-              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.integrationSellTotal)}</span><span className="rom-kpi-lbl">Integration</span></div>
-              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.softwareSellTotal)}</span><span className="rom-kpi-lbl">Software</span></div>
-              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.addersTotal)}</span><span className="rom-kpi-lbl">Adders</span></div>
-              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.sellPerUnit)}</span><span className="rom-kpi-lbl">Per unit</span></div>
-              <div className="rom-kpi"><span className="rom-kpi-val mono">{fullUsd(line.pricing.band.lowTotal)} – {fullUsd(line.pricing.band.highTotal)}</span><span className="rom-kpi-lbl">Program range</span></div>
+              <div className="rom-sp-receipt-foot">
+                <span>Per unit</span>
+                <span className="mono">{fullUsd(line.pricing.sellPerUnit)}</span>
+              </div>
+              <div className="rom-sp-receipt-foot">
+                <span>Program range</span>
+                <span className="mono">{fullUsd(line.pricing.band.lowTotal)} – {fullUsd(line.pricing.band.highTotal)}</span>
+              </div>
             </div>
           </section>
 

@@ -3836,12 +3836,40 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 .rom-sp-override input { flex: 1 1 160px; min-width: 0; }
 
-/* Pricing breakdown — reuses .rom2-hero/.rom-kpi verbatim: lead = sell total,
-   supporting grid = Hardware/Integration/Software/Adders/Per-unit/Range. */
+/* Pricing breakdown — a receipt: each line expands (native <details>, no JS
+   state needed) to show the substituted math behind it, closed by a bold
+   TOTAL row and smaller per-unit/range lines. Reuses .rom2-hero as the card
+   shell for visual consistency with the rest of the dashboard. */
 .rom-sp-pricing { margin-bottom: 20px; }
-.rom-sp-pricing .rom-kpi { cursor: default; }
-.rom-sp-pricing .rom-kpi:hover { transform: none; }
-.rom-sp-pricing .rom2-hero-lead .rom-kpi-lbl { text-transform: uppercase; letter-spacing: 0.06em; }
+.rom-sp-receipt { display: flex; flex-direction: column; }
+.rom-sp-receipt-row { border-bottom: 1px solid var(--border); }
+.rom-sp-receipt-row summary {
+  display: flex; align-items: center; gap: 8px; list-style: none; cursor: pointer;
+  padding: 10px 2px; font-family: var(--tal-font-family); font-size: 13.5px; color: var(--text-primary);
+}
+.rom-sp-receipt-row summary::-webkit-details-marker,
+.rom-sp-receipt-row summary::marker { display: none; content: ''; }
+.rom-sp-receipt-row summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.rom-sp-receipt-chevron { flex-shrink: 0; color: var(--text-disabled); transition: transform 0.15s ease; }
+.rom-sp-receipt-row[open] .rom-sp-receipt-chevron { transform: rotate(90deg); color: var(--text-tertiary); }
+.rom-sp-receipt-amount { margin-left: auto; font-family: var(--tal-font-numeric); font-weight: 700; }
+.rom-sp-receipt-detail {
+  margin: 0 0 12px 23px; padding: 10px 12px;
+  background: var(--bg-surface-2); border-radius: 8px;
+  font-family: var(--tal-font-family); font-size: 12px; line-height: 1.6; color: var(--text-secondary);
+}
+.rom-sp-receipt-detail .mono { font-family: var(--tal-font-numeric); color: var(--text-primary); font-weight: 600; }
+.rom-sp-receipt-detail-row { display: flex; justify-content: space-between; gap: 12px; }
+.rom-sp-receipt-total {
+  display: flex; align-items: baseline; gap: 8px; padding: 12px 2px 4px;
+  font-family: var(--tal-font-family); font-size: 14.5px; font-weight: 800; color: var(--accent);
+}
+.rom-sp-receipt-total .rom-sp-receipt-amount { font-size: 17px; color: var(--accent); }
+.rom-sp-receipt-foot {
+  display: flex; justify-content: space-between; gap: 12px; padding: 6px 2px;
+  font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-tertiary);
+}
+.rom-sp-receipt-foot .mono { font-family: var(--tal-font-numeric); color: var(--text-secondary); font-weight: 600; }
 
 /* Adders — compact chip grid, not a stretched full-width list. */
 .rom-sp-adders { margin-bottom: 4px; }
