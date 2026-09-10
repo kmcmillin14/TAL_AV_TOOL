@@ -16,7 +16,8 @@ Questionnaire                        Fleet Calculator
   Export PDF  ──────────────────────►  Step 1: Refine inputs
   (JSON embedded inside)               Step 2: Review vehicle matrix
                                        Step 3: Size the fleet
-                                       Step 4: ROM + ROI dashboard
+                                       Step 4: ROM Configuration (sell-price build-up)
+                                       Step 5: ROI dashboard
                                        Export customer deck (PPTX)
 ```
 
@@ -151,8 +152,8 @@ Output:
 | Engineer imports questionnaire | Main app Step 00 → Import |
 | Engineer reviews vehicle eligibility | Main app Step 2 (read-only) |
 | Engineer assigns vehicles + sizes fleet | Main app Step 3 |
-| Engineer builds ROI case | Main app Step 4 |
-| Generate customer deck | Main app Step 4 → Export PPTX |
+| Engineer builds ROI case | Main app Step 5 |
+| Generate customer deck | Main app Step 5 → Export PPTX |
 
 ---
 
@@ -174,9 +175,9 @@ driveAisleWidthFt            →   Informational (not a gate)
 rackingAisleWidthFt          →   Informational (not a gate)
 shiftsPerDay × hoursPerShift →   Operating hours (fleet model)
 requiredThroughputPerHour    →   Fleet sizing input (Step 3)
-operatorsPerShift            →   Labor offset (Step 4 ROM)
-fullyBurdenedRateUsdPerYear  →   Labor savings calc (Step 4)
-roiTargetYears               →   Payback framing (Step 4)
+operatorsPerShift            →   Labor offset (Step 5)
+fullyBurdenedRateUsdPerYear  →   Labor savings calc (Step 5)
+roiTargetYears               →   Payback framing (Step 5)
 certifications               →   Cert gate (Step 2)
 temperatureEnvironment       →   Temp gate (Step 2)
 ```
