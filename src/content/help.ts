@@ -1,7 +1,7 @@
 // In-app help content. Written for a first-time user ("novice") learning HOW to
 // use the tool — plain language, one worked example per step, and an illustrative
 // mockup. Kept as data (like the vehicle library) so it's easy to edit without
-// touching the UI. One section per id: 'app' (overview) + 'step0'..'step4'.
+// touching the UI. One section per id: 'app' (overview) + 'step0'..'step5'.
 //
 // `figure.mock` names an illustration drawn by HelpMock.tsx. These are simple
 // on-brand mockups today; a real screenshot can replace each one later by adding
@@ -41,13 +41,14 @@ export const HELP: HelpSection[] = [
     id: 'app',
     title: 'How this tool works',
     summary:
-      'The Fleet Calculator turns your application requirements into a sized AGV/AMR fleet and a rough-order (ROM) proposal you can hand to a customer. You move left-to-right through five steps in the top ribbon. Nothing is required — fill in what you know and come back later; everything auto-saves to this browser.',
+      'The Fleet Calculator turns your application requirements into a sized AGV/AMR fleet and a rough-order (ROM) proposal you can hand to a customer. You move left-to-right through six steps in the top ribbon. Nothing is required — fill in what you know and come back later; everything auto-saves to this browser.',
     howTo: [
       'Start (00) — begin a new project, or import a questionnaire / a previous revision.',
       'Application (01) — answer the questionnaire: what you move, how, the site, the schedule, and throughput.',
       'Vehicles (02) — see which vehicles qualify, shown as traffic lights. This step is just information — you don’t pick a vehicle here.',
       'Fleet Engine (03) — lay out each material flow and assign a vehicle; the tool sizes the fleet live.',
-      'ROM Dashboard (04) — read the economics (CAPEX, payback, KPIs), try what-if scenarios, and export the proposal.',
+      'ROM Configuration (04) — score Integration and Software complexity per vehicle, pick adders, and see a fleet-wide sell-price total.',
+      'Dashboard (05) — read the economics (CAPEX, payback, KPIs), try what-if scenarios, and export the proposal.',
     ],
     example: {
       title: 'The big picture, in one line',
@@ -57,7 +58,7 @@ export const HELP: HelpSection[] = [
         'a CAPEX range, payback, and a PowerPoint proposal out.',
       ],
     },
-    figure: { mock: 'app-flow', caption: 'The five steps, left to right — each feeds the next.' },
+    figure: { mock: 'app-flow', caption: 'The six steps, left to right — each feeds the next.' },
     tips: [
       'The Imperial / Metric toggle (top-right) only changes what’s displayed — every value is stored in imperial.',
       'Use the accent Export button (top-right) any time to download the PowerPoint proposal, an Excel workbook, or a .json save file.',
@@ -185,7 +186,6 @@ export const HELP: HelpSection[] = [
         'Fleet total sums both subtotals + one Extended Warranty adder — never doubled per vehicle.',
       ],
     },
-    figure: { mock: 'engine', caption: 'Step 04 — one block per assigned chassis, closed by a fleet-wide TOTAL.' },
     tips: [
       'Adders are project-wide, not per-vehicle — checking one applies it once to the fleet total, however many chassis types you have.',
       'A vehicle with no pricing configured (missing romInputs) is skipped with a note, not silently priced at zero.',
