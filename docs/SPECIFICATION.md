@@ -535,15 +535,23 @@ vehicle's full math expanded at once.)
   (once) → a **ROM band** (`romBand.low`/`.high` in the assumptions file, e.g. −10%/+25%)
   applied ONCE on that fleet-wide sum — not summed from each vehicle's own rounded band,
   which would compound rounding error — rounded to the nearest `rounding` ($5,000 today).
+  (2026-09-10: the Fleet total's **Hardware** line is itself a drill-down — expanding it
+  shows each assigned vehicle type's own hardware contribution, e.g. `CB18 AGF × 4 —
+  $750,000`, so a mixed fleet's hardware split is visible without opening every vehicle
+  block. Integration/Software/Adders stay flat summary lines for now.)
 
 **Complexity inputs** (`src/calc/complexityInputs.ts`, `ComplexityAnswers`) map from the
 questionnaire/project schema — see `docs/CHANGELOG.md` (2026-09-09) for the full field
-mapping and the gap list. Two point-table axes were dropped by explicit owner decision
-(not silently): per-door/elevator counting and multi-site scoring — neither field exists
-in the questionnaire and none will be added. Three remaining fields
-(`storageTrackingRequired`, `hasAgvExperience`, `pickDropLocationCount`) have no schema
-field yet; they default to false/0 and the UI/PPTX surface a visible
-"complexity may be understated" flag rather than silently under-scoring.
+mapping. Two point-table axes were dropped by explicit owner decision (not silently):
+per-door/elevator counting and multi-site scoring — neither field exists in the
+questionnaire and none will be added. Three fields (`storageTrackingRequired`,
+`hasAgvExperience`, `pickDropLocationCount`) default to false/0 when unanswered; **as of
+2026-09-10** they are real, optional fields on the Step 1 intake form (§09 Integration,
+`ApplicationForm.tsx`) rather than permanently-undefined gaps. `unresolvedComplexityGaps`
+(`src/lib/romComplexityFromProject.ts`) computes which of the three are still genuinely
+unanswered on a given project; the UI's "complexity may be understated" flag lists only
+those, and disappears once all three are answered. Answering them is **never required to
+advance** — no required fields to advance between steps (`ARCHITECTURE.md`).
 
 **ALL dollar values and multipliers are placeholders** pending real pricing from the
 business owner — tagged `_placeholder`/`_placeholderWarning` in the JSON content and vehicle

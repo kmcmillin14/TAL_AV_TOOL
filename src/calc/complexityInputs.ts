@@ -7,20 +7,30 @@
 // decision, not by silent default: per-door/per-elevator counting ("no doors")
 // and multi-site scoring ("no site count") — neither `doorCount`/`elevatorCount`
 // nor `siteCount` exist anywhere in the questionnaire/project schema, and the
-// owner confirmed not to add them. `storageTrackingRequired`, `hasAgvExperience`,
-// and `pickDropLocationCount` remain real gaps (no schema field yet) — callers
-// MUST default these to `false`/`0` (never omit) and surface a visible
-// "complexity may be understated — not yet collected" flag per GAP_FIELDS below,
-// rather than silently under-scoring.
+// owner confirmed not to add them.
+//
+// `storageTrackingRequired`, `hasAgvExperience`, and `pickDropLocationCount`
+// were originally undefined for every project (no schema field at all); as of
+// 2026-09-10 they are real, optional intake-form fields (§09 Integration,
+// ApplicationForm.tsx) — GAP_FIELDS now names fields that MAY be unanswered on
+// a given project rather than fields that always are. Callers MUST still
+// default these to `false`/`0` here (never omit — this module always needs a
+// concrete value to score), but should use
+// src/lib/romComplexityFromProject.ts's `unresolvedComplexityGaps(project)` to
+// know which ones are still genuinely unanswered and surface the "complexity
+// may be understated" flag only for those — never silently under-score, and
+// never block navigation to get an answer (ARCHITECTURE.md: no required
+// fields to advance).
 
 /** Answers this module reads directly. Every field maps to a real
- *  `projectSchema` key except the three GAP_FIELDS, which have no schema field
- *  today — the caller must supply a conservative default (false/0) and is
- *  responsible for surfacing the understatement flag. */
+ *  `projectSchema` key, including the three GAP_FIELDS (optional on the
+ *  schema — see the note above) — the caller must supply a conservative
+ *  default (false/0) when unanswered and is responsible for surfacing the
+ *  understatement flag via `unresolvedComplexityGaps`. */
 export interface ComplexityAnswers {
   /** ← project.wmsRequired */
   wmsIntegrationRequired: boolean
-  /** GAP — no schema field. Caller defaults to false. */
+  /** ← project.storageTrackingRequired. May be unanswered — see GAP_FIELDS. */
   storageTrackingRequired: boolean
   /** ← project.barcodeScanningRequired */
   barcodeScanningRequired: boolean
@@ -34,17 +44,20 @@ export interface ComplexityAnswers {
   /** ← project.unitLoadTypes.includes('Other') — best-effort proxy for "non-standard
    *  load"; there is no literal customLoad boolean in the schema. */
   customLoad: boolean
-  /** GAP — no schema field ("AGV experience" is not collected). Caller defaults to false. */
+  /** ← project.hasAgvExperience. May be unanswered — see GAP_FIELDS. */
   hasAgvExperience: boolean
   /** ← project.facilitySizeSqFt ?? 0 */
   facilitySqFt: number
-  /** GAP — no schema field (pick/drop location count is not collected). Caller defaults to 0. */
+  /** ← project.pickDropLocationCount. May be unanswered — see GAP_FIELDS. */
   pickDropLocationCount: number
 }
 
-/** Keys of {@link ComplexityAnswers} that have no source field in the project
- *  schema today. Surface these in the UI/PPTX wherever a ComplexityBreakdown is
- *  shown, per the owner's "do not silently understate complexity" instruction. */
+/** Keys of {@link ComplexityAnswers} that have optional, sometimes-unanswered
+ *  project schema fields — use `unresolvedComplexityGaps(project)`
+ *  (src/lib/romComplexityFromProject.ts) to get the subset actually unanswered
+ *  on a given project. Per the owner's "do not silently understate
+ *  complexity" instruction, surface unanswered ones in the UI/PPTX wherever a
+ *  ComplexityBreakdown is shown. */
 export const GAP_FIELDS: Array<keyof ComplexityAnswers> = [
   'storageTrackingRequired',
   'hasAgvExperience',

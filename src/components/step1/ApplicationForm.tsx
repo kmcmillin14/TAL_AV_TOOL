@@ -187,6 +187,10 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
       temperatureEnvironment: initialData?.temperatureEnvironment,
       rampRequired: initialData?.rampRequired,
       wmsRequired: initialData?.wmsRequired ?? false,
+      // Tri-state ROM pricing complexity inputs — no default so an
+      // unanswered field stays unanswered (drives unresolvedComplexityGaps).
+      storageTrackingRequired: initialData?.storageTrackingRequired,
+      hasAgvExperience: initialData?.hasAgvExperience,
       distanceType: initialData?.distanceType ?? 'one_way',
       flows: initialFlowRows(initialData),
       loads: initialLoadRows(initialData),
@@ -1172,6 +1176,48 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 />
               </div>
             )}
+
+            <div className="fld">
+              <label>Storage Tracking Required?</label>
+              <Controller
+                name="storageTrackingRequired"
+                control={control}
+                render={({ field }) => (
+                  <div className="seg-toggle">
+                    <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
+                    <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                  </div>
+                )}
+              />
+              <div className="help">Drives ROM pricing complexity — feeds Step 4.</div>
+            </div>
+            <div className="fld">
+              <label>Customer Has AGV/AMR Experience?</label>
+              <Controller
+                name="hasAgvExperience"
+                control={control}
+                render={({ field }) => (
+                  <div className="seg-toggle">
+                    <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
+                    <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                  </div>
+                )}
+              />
+              <div className="help">Drives ROM pricing complexity — feeds Step 4.</div>
+            </div>
+            <div className="fld">
+              <label>Pick/Drop Location Count</label>
+              <input
+                type="number"
+                step="1"
+                min="0"
+                className="mono"
+                placeholder="0"
+                defaultValue={initialData?.pickDropLocationCount ?? ''}
+                {...register('pickDropLocationCount', { valueAsNumber: true, onBlur: onBlurSave })}
+              />
+              <div className="help">Distinct pick/drop stops in the flow — drives ROM pricing complexity.</div>
+            </div>
           </div>
         </FormSection>
 

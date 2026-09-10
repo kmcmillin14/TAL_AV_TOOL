@@ -5,13 +5,13 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetSummary } from '@/src/calc/types'
 import { updateProject } from '@/src/lib/storage'
-import { complexityAnswersFromProject } from '@/src/lib/romComplexityFromProject'
+import { complexityAnswersFromProject, unresolvedComplexityGaps } from '@/src/lib/romComplexityFromProject'
 import {
   resolveRomSellPriceLine, resolveFleetSellPriceTotal, type RomSellPriceLine, type RomSellPriceOverride,
 } from '@/src/lib/romSellPriceLine'
-import { GAP_FIELDS } from '@/src/calc/complexityInputs'
 import { ADDERS_CONFIG } from '@/src/lib/pricingContent'
-import { fullUsd } from './RomSellPriceParts'
+import { complexityLabel } from '@/src/lib/romComplexityLabels'
+import { fullUsd, ReceiptRow } from './RomSellPriceParts'
 import VehicleSellPriceBlock from './VehicleSellPriceBlock'
 
 interface Props {
@@ -44,6 +44,7 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
   }
 
   const answers = useMemo(() => complexityAnswersFromProject(project), [project])
+  const gaps = useMemo(() => unresolvedComplexityGaps(project), [project])
 
   const lines = useMemo(() => {
     const resolved: RomSellPriceLine[] = []
@@ -88,10 +89,13 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
         ROM — budgetary estimate, placeholder pricing. All dollar values and multipliers are
         pending real pricing input.
       </p>
-      <p className="rom-sp-gap-flag">
-        Complexity may be understated — not yet collected by the questionnaire:{' '}
-        {GAP_FIELDS.join(', ')}.
-      </p>
+      {gaps.length > 0 && (
+        <p className="rom-sp-gap-flag">
+          Complexity may be understated — not yet answered on the intake form:{' '}
+          {gaps.map(complexityLabel).join(', ')}. Answer these on Step 1 (Intake, §09
+          Integration) to clear this flag — not required to move forward.
+        </p>
+      )}
 
       {lines.length === 0 && (
         <p className="rom-sp-empty">
@@ -107,7 +111,20 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
             {lines.length} vehicle {lines.length === 1 ? 'type' : 'types'}
           </div>
           <div className="rom-sp-receipt">
-            <div className="rom-sp-receipt-foot"><span>Hardware</span><span className="mono">{fullUsd(fleetTotal.hardwareTotal)}</span></div>
+            <ReceiptRow
+              label="Hardware"
+              amount={fullUsd(fleetTotal.hardwareTotal)}
+              detail={
+                <div className="rom-sp-fleet-line-breakdown">
+                  {lines.map(l => (
+                    <div key={l.vehicleId} className="rom-sp-receipt-detail-row">
+                      <span>{l.vehicleName} <span className="mono">× {l.qty}</span></span>
+                      <span className="mono">{fullUsd(l.pricing.hardwareSellTotal)}</span>
+                    </div>
+                  ))}
+                </div>
+              }
+            />
             <div className="rom-sp-receipt-foot"><span>Integration</span><span className="mono">{fullUsd(fleetTotal.integrationTotal)}</span></div>
             <div className="rom-sp-receipt-foot"><span>Software</span><span className="mono">{fullUsd(fleetTotal.softwareTotal)}</span></div>
             <div className="rom-sp-receipt-foot"><span>Adders</span><span className="mono">{fullUsd(fleetTotal.addersTotal)}</span></div>

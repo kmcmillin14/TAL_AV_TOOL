@@ -22,6 +22,10 @@ const COMPLEXITY_LABELS: Record<string, string> = {
   barcodeScanning: 'Barcode Scanning',
   otherAgvTraffic: 'Other AGV Traffic',
   automationInterface: 'Automation Interface (PLC)',
+  // ComplexityAnswers/GAP_FIELDS keys (unanswered-gap banner, not trigger keys).
+  storageTrackingRequired: 'Storage Tracking Required',
+  hasAgvExperience: 'AGV/AMR Experience',
+  pickDropLocationCount: 'Pick/Drop Location Count',
 }
 
 /** Human-readable label for a trigger key; falls back to the raw key so an

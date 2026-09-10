@@ -260,6 +260,18 @@ export const projectSchema = z.object({
   existingAutomationInterop: z.string().optional(),
   currentHeadcount: z.number().min(0).optional().nullable(),
 
+  // ---- ROM pricing complexity inputs (2026-09-10 — additive) ----
+  // Previously undefined for every project (see GAP_FIELDS in
+  // src/calc/complexityInputs.ts) — now real, optional intake-form fields so
+  // an engineer CAN answer them (§09 Integration, ApplicationForm.tsx). Still
+  // optional — no required fields to advance (ARCHITECTURE.md) — but
+  // answering all three clears the "complexity may be understated" flag on
+  // Step 4/5's ROM pricing (see unresolvedComplexityGaps in
+  // src/lib/romComplexityFromProject.ts). Tri-state: unset / No / Yes.
+  storageTrackingRequired: z.boolean().optional(),
+  hasAgvExperience: z.boolean().optional(),
+  pickDropLocationCount: z.number().int().min(0).optional().nullable(),
+
   // Section 13
   projectNotes: z.string().optional(),
 

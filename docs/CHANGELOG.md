@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-09-10 — Fleet-total Hardware drill-down; complexity gap fields on the intake form
+
+**Fleet total's Hardware line is now a drill-down** (`RomFleetSellPrice.tsx`, Step 4):
+expanding it shows each assigned vehicle type's own hardware contribution (`ReceiptRow`,
+same expand pattern used elsewhere) — e.g. a 3-vehicle-type fleet's $2,400,000 Hardware line
+breaks into `CB18 AGF × 4 — $750,000`, `M10 Tunnel Type × 6 — $600,000`,
+`8HBC40A × 5 — $1,050,000`. Answers "how do we deal with mixed fleets" without needing to
+open every vehicle block — the split by type is visible at the fleet-total level.
+
+**The three ROM-pricing "complexity gap" fields are now real, optional intake-form fields**
+instead of permanently-undefined gaps:
+- `storageTrackingRequired`, `hasAgvExperience` (booleans), `pickDropLocationCount`
+  (integer) added to `projectSchema` (`src/lib/validations/schemas.ts`) — all optional,
+  tri-state (unset / No / Yes) for the two booleans, matching the existing
+  `rampRequired`/`outdoorRequired` pattern. **No required fields to advance** — this does
+  NOT gate navigation (`ARCHITECTURE.md`); it only makes the fields answerable.
+- New Step 1 §09 Integration inputs (`ApplicationForm.tsx`): "Storage Tracking Required?",
+  "Customer Has AGV/AMR Experience?", "Pick/Drop Location Count" — each labeled "Drives ROM
+  pricing complexity — feeds Step 4."
+- `src/lib/romComplexityFromProject.ts` gained `unresolvedComplexityGaps(project)` —
+  returns only the subset of `GAP_FIELDS` (`src/calc/complexityInputs.ts`) genuinely
+  `undefined` on a given project (not merely defaulted for scoring). Replaces the old
+  always-shown, static `GAP_FIELDS` banner in `RomFleetSellPrice.tsx`: the "complexity may
+  be understated" flag now lists only what's actually still unanswered, in human-readable
+  form (`src/lib/romComplexityLabels.ts` gained entries for the three field keys), and
+  disappears entirely once an engineer answers all three.
+- `src/calc/complexityInputs.ts` comments updated to reflect that these three fields are no
+  longer structurally gap-only — `ComplexityAnswers`/`GAP_FIELDS`'s shape and scoring
+  behavior are unchanged (calc layer stays pure; still needs a concrete false/0 default when
+  unanswered).
+
+**Shipped:** `src/lib/validations/schemas.ts`, `src/components/step1/ApplicationForm.tsx`,
+`src/lib/romComplexityFromProject.ts`, `src/lib/romComplexityLabels.ts`,
+`src/calc/complexityInputs.ts`, `src/components/rom/RomFleetSellPrice.tsx`,
+`docs/SPECIFICATION.md`.
+
 ## 2026-09-10 — Concise step labels; ROM pricing leads with fleet total, drills down per vehicle
 
 **Step labels shortened** in the top nav (`src/components/PersistentHeader.tsx`): `Intake
