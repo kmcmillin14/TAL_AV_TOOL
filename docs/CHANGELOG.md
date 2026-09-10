@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-10 — Concise step labels; ROM pricing leads with fleet total, drills down per vehicle
+
+**Step labels shortened** in the top nav (`src/components/PersistentHeader.tsx`): `Intake
+Form` → `Intake`, `Hardware Compatibility` → `Compatibility`, `Fleet Sizing` → `Sizing`,
+`ROM Configuration` → `Pricing`. `Start` and `Dashboard` were already concise, unchanged.
+Each step's page keeps its own fuller descriptive `<h1>` (e.g. Step 4's page still reads
+"ROM Configuration") and richer titles in guided tours/in-app help — only the compact nav
+tab label changed. `ARCHITECTURE.md` and `docs/SPECIFICATION.md`'s nav-steps strings updated
+to match.
+
+**ROM pricing now leads with the fleet total, not individual vehicles:**
+- **Step 4 (Pricing):** `RomFleetSellPrice.tsx` reorders so the fleet-wide **TOTAL** section
+  renders first, followed by a "Per-vehicle detail" label and one collapsed-by-default
+  `VehicleSellPriceBlock` per assigned chassis. Each block is now a native `<details>` — its
+  `<summary>` shows the vehicle name, qty, and Subtotal at a glance; expanding drills into
+  that vehicle's own Integration/Software tier scoring and receipt math. No vehicle's detail
+  is lost — it's one click away instead of always-expanded.
+- **Step 5 (Dashboard) ROM pricing card:** `RomPricingTable.tsx` now shows a **Total ROM
+  CAPEX** headline (range + planning midpoint) first, with the per-vehicle-type line-item
+  table collapsed behind a `<details>` drill-down ("N vehicle types — click to expand").
+
+**Shipped:** `src/components/PersistentHeader.tsx`, `src/components/rom/RomFleetSellPrice.tsx`,
+`src/components/rom/VehicleSellPriceBlock.tsx`, `src/components/rom/RomPricingTable.tsx`,
+`app/globals.css`, `ARCHITECTURE.md`, `docs/SPECIFICATION.md`. Purely a nav-label and
+layout/disclosure change — no calc, schema, or pricing-math changes.
+
 ## 2026-09-09 — ROM Configuration split into its own step; adders double-counting fixed
 
 The wizard is now 6 steps: `0 Start · 1 Intake Form · 2 Hardware Compatibility ·

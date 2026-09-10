@@ -3760,6 +3760,22 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 .rom-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
+/* ROM pricing card (Dashboard, Step 5): fleet-total headline leads, the
+   per-vehicle-type table is a drill-down <details> below it. */
+.rom-price-headline {
+  display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 12px;
+}
+.rom-price-headline-lbl { font-family: var(--tal-font-family); font-size: 13px; font-weight: 700; color: var(--text-secondary); }
+.rom-price-headline-amount { font-family: var(--tal-font-numeric); font-size: 20px; font-weight: 800; color: var(--accent); }
+.rom-price-headline-mid { font-family: var(--tal-font-numeric); font-size: 12.5px; color: var(--text-tertiary); }
+.rom-price-breakdown summary {
+  display: flex; align-items: center; gap: 8px; list-style: none; cursor: pointer;
+  padding: 6px 0; font-family: var(--tal-font-family); font-size: 12px; color: var(--text-tertiary);
+}
+.rom-price-breakdown summary::-webkit-details-marker,
+.rom-price-breakdown summary::marker { display: none; content: ''; }
+.rom-price-breakdown[open] > summary .rom-sp-receipt-chevron { transform: rotate(90deg); color: var(--text-tertiary); }
+.rom-price-breakdown[open] summary { margin-bottom: 4px; }
 .rom-price-table { width: 100%; border-collapse: collapse; }
 .rom-price-table th, .rom-price-table td {
   text-align: left; padding: 9px 8px; font-family: var(--tal-font-family); font-size: 13px;
@@ -3771,11 +3787,6 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 .rom-price-table .num { text-align: right; }
 .rom-veh { display: inline-flex; align-items: center; gap: 8px; }
-.rom-price-total-lbl, .rom-price-mid-lbl {
-  text-align: right; font-weight: 700; color: var(--text-secondary);
-}
-.rom-price-total { font-weight: 800; color: var(--accent); }
-.rom-price-mid { color: var(--text-tertiary); }
 
 /* Internal ROM — sell price (Hardware/Integration/Software/Adders). Scoped to
    .rom-sp; reuses the SAME tile system as the top hero boxes (.rom2-hero /
@@ -3883,21 +3894,37 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 .rom-sp-adder-row:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
 
-/* Full-fleet ROM Configuration (Step 4) — one .rom-sp-vehicle-block per
-   assigned chassis, stacked, closed by a .rom-sp-fleet-total section. Reuses
-   the .rom-sp-* receipt/tile system above; only the vehicle-block wrapper and
+/* Full-fleet ROM Configuration (Step 4) — the .rom-sp-fleet-total section
+   leads the page; one collapsed-by-default .rom-sp-vehicle-block (native
+   <details>) per assigned chassis follows for drill-down detail. Reuses the
+   .rom-sp-* receipt/tile system above; only the vehicle-block wrapper and
    the fleet-total accent border are new. */
+.rom-sp-detail-eyebrow {
+  font-family: var(--tal-font-family); font-size: 12px; font-weight: 600;
+  letter-spacing: 0.02em; color: var(--text-tertiary); margin: 4px 2px 10px;
+}
 .rom-sp-vehicle-block {
   background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px;
-  box-shadow: var(--shadow-card); padding: 20px 22px 22px; margin-bottom: 20px;
+  box-shadow: var(--shadow-card); padding: 4px 22px 4px; margin-bottom: 12px;
 }
+.rom-sp-vehicle-block[open] { padding: 20px 22px 22px; }
+.rom-sp-vehicle-summary {
+  display: flex; align-items: center; gap: 10px; list-style: none; cursor: pointer;
+  padding: 16px 0; margin: 0;
+}
+.rom-sp-vehicle-summary::-webkit-details-marker,
+.rom-sp-vehicle-summary::marker { display: none; content: ''; }
+.rom-sp-vehicle-summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.rom-sp-vehicle-block[open] .rom-sp-vehicle-summary { padding-bottom: 4px; }
+.rom-sp-vehicle-block[open] > summary .rom-sp-receipt-chevron { transform: rotate(90deg); color: var(--text-tertiary); }
 .rom-sp-vehicle-name {
   display: flex; align-items: baseline; gap: 10px;
   font-family: var(--tal-font-family); font-size: 16px; font-weight: 700;
-  color: var(--text-primary); margin: 0 0 16px;
+  color: var(--text-primary);
 }
 .rom-sp-vehicle-name .mono { font-family: var(--tal-font-numeric); font-weight: 600; color: var(--text-tertiary); font-size: 13px; }
-.rom-sp-fleet-total { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.rom-sp-vehicle-subtotal { margin-left: auto; font-family: var(--tal-font-numeric); font-weight: 700; font-size: 14.5px; color: var(--text-secondary); }
+.rom-sp-fleet-total { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); margin-bottom: 24px; }
 .rom-sp-fleet-total .rom-sp-receipt-total { font-size: 16px; }
 .rom-sp-fleet-total .rom-sp-adders { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
 .rom-sp-adder-row .mono { margin-left: auto; font-family: var(--tal-font-numeric); color: var(--text-tertiary); flex-shrink: 0; }

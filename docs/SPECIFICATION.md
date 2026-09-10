@@ -249,7 +249,7 @@ Step 1 sizing data seeds downstream values only while the user hasn't overridden
 The sizing calculation lives in **one scrolling page** (`app/projects/[id]/step3`) with **all three
 sub-stages always visible** — **01 Raw Fleet · 02 Charging · 03 Buffer** — sharing a single live
 recompute. The engineer sees the entire waterfall at once; nothing is hidden behind a wizard.
-Navigation: `0 Start · 1 Intake Form · 2 Hardware Compatibility · 3 Fleet Sizing · 4 ROM Configuration · 5 Dashboard` (ROM consumes
+Navigation: `0 Start · 1 Intake · 2 Compatibility · 3 Sizing · 4 Pricing · 5 Dashboard` (ROM consumes
 the engine's total; KPIs belong to it). Combines the former Flows/Charging/Buffer steps — see the
 `ARCHITECTURE.md` exception. *(2026-06-12: replaced the staged wizard — stage rail, Back/Next, View
 Transitions morphing — with this questionnaire-style layout.)*
@@ -502,10 +502,14 @@ The internal sell-price build-up — Hardware + Integration + Software + Adders 
 from the customer-facing ROM economics on the Dashboard (`src/calc/rom.ts`, CAPEX/OPEX/
 payback). Lives in `src/calc/sellPriceRom.ts` (per-vehicle) + `src/calc/fleetSellPrice.ts`
 (fleet-wide aggregate) to avoid both a name collision with `rom.ts` and, per the
-2026-09-09 owner correction below, a double-counting bug. `RomFleetSellPrice.tsx` renders
-one `VehicleSellPriceBlock` per engineer-assigned, priced chassis — **every assigned
-vehicle type at once**, not a single vehicle picked from a dropdown — closed by a
-fleet-wide **TOTAL** section:
+2026-09-09 owner correction below, a double-counting bug. `RomFleetSellPrice.tsx` leads with
+the fleet-wide **TOTAL** section, then renders one `VehicleSellPriceBlock` per
+engineer-assigned, priced chassis below it — **every assigned vehicle type at once**, not a
+single vehicle picked from a dropdown. (2026-09-10: reordered fleet-total-first, and each
+vehicle block is now a collapsed-by-default `<details>` — its `<summary>` alone shows the
+vehicle name, qty, and Subtotal; expanding drills into that vehicle's own tier scoring and
+receipt math, so the page reads as a summary with detail on demand rather than every
+vehicle's full math expanded at once.)
 
 - **Hardware** = `vehicle price-range midpoint × qty` — qty only, no complexity score, no
   commissioning. (2026-09-09: commissioning and Integration are the same cost bucket per the
@@ -579,6 +583,11 @@ shows a larger **delta chip colored by benefit** — green when the change helps
 hurts (per-metric desirable direction). Below, a **gauge strip** (`RomGauge`, SVG 270° arc with
 a hover definition): Utilization · Availability · Charging · **Redundancy** (the resilience
 metric, renamed) — availability/charging weighted across the fleet from the charging series.
+
+**ROM pricing card** (`RomPricingTable.tsx`, customer-facing): leads with a **Total ROM
+CAPEX** headline (range + planning midpoint), the per-vehicle-type line-item table collapsed
+by default behind a `<details>` drill-down ("N vehicle types — click to expand") — same
+fleet-total-first, detail-on-demand pattern as Step 4's per-vehicle blocks. (2026-09-10.)
 
 **Bento body:** full-width **material flow map** (industrial neutral + single red accent,
 symmetric columns, throughput pills) with a **backing data table** underneath; paired money

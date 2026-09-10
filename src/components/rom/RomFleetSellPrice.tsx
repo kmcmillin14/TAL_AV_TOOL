@@ -21,15 +21,16 @@ interface Props {
 }
 
 /** ROM Configuration (Step 4) — the full-fleet internal sell-price build-up
- *  (Hardware + Integration + Software + Adders), one block per engineer-
- *  assigned chassis with configured pricing, closed by a fleet-wide TOTAL.
- *  Adders are a project-wide, once-only cost — computed here exactly once via
- *  resolveFleetSellPriceTotal, never per vehicle (see src/calc/fleetSellPrice.ts
- *  for the bug this replaced: adders used to be added on every vehicle line
- *  independently). Scoring/pricing is resolved by the shared
- *  src/lib/romSellPriceLine.ts — the PPTX export
- *  (src/lib/pptx/romSellPrice.ts) uses the same resolver so the two surfaces
- *  can't drift. */
+ *  (Hardware + Integration + Software + Adders). Leads with the fleet-wide
+ *  TOTAL, then one collapsed-by-default block per engineer-assigned chassis
+ *  with configured pricing — expand a block to drill into that vehicle's
+ *  own tier scoring and receipt math. Adders are a project-wide, once-only
+ *  cost — computed here exactly once via resolveFleetSellPriceTotal, never
+ *  per vehicle (see src/calc/fleetSellPrice.ts for the bug this replaced:
+ *  adders used to be added on every vehicle line independently).
+ *  Scoring/pricing is resolved by the shared src/lib/romSellPriceLine.ts —
+ *  the PPTX export (src/lib/pptx/romSellPrice.ts) uses the same resolver so
+ *  the two surfaces can't drift. */
 export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props) {
   const assignedGroups = useMemo(() => fleet.groups.filter(g => g.fleetSold > 0), [fleet.groups])
   const [selectedAdderIds, setSelectedAdderIds] = useState<string[]>(project.romSellPriceSelectedAdderIds ?? [])
@@ -99,15 +100,6 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
         </p>
       )}
 
-      {lines.map(line => (
-        <VehicleSellPriceBlock
-          key={line.vehicleId}
-          line={line}
-          override={overrides[line.vehicleId]}
-          onOverride={patch => setOverride(line.vehicleId, patch)}
-        />
-      ))}
-
       {lines.length > 0 && (
         <section className="rom-sp-pricing rom2-hero rom-sp-fleet-total">
           <div className="rom2-hero-head">
@@ -144,6 +136,19 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
           </div>
         </section>
       )}
+
+      {lines.length > 0 && (
+        <p className="rom-sp-detail-eyebrow">Per-vehicle detail — click a row to expand</p>
+      )}
+
+      {lines.map(line => (
+        <VehicleSellPriceBlock
+          key={line.vehicleId}
+          line={line}
+          override={overrides[line.vehicleId]}
+          onOverride={patch => setOverride(line.vehicleId, patch)}
+        />
+      ))}
     </div>
   )
 }

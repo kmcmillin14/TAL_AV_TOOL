@@ -15,17 +15,26 @@ interface Props {
 /** One engineer-assigned chassis's ROM sell-price block: both complexity
  *  breakdowns + a Hardware/Integration/Software receipt closed by a
  *  Subtotal — never "Total": adders are fleet-wide only, shown once in
- *  RomFleetSellPrice's Fleet total section. */
+ *  RomFleetSellPrice's Fleet total section. Collapsed by default (native
+ *  <details>, matching the receipt-row expand pattern) so the page reads as
+ *  fleet-total-first with per-vehicle math available on demand — the
+ *  <summary> alone still surfaces the vehicle's subtotal without expanding. */
 export default function VehicleSellPriceBlock({ line, override, onOverride }: Props) {
   const romInputs = getValidRomInputs(line.vehicle)
   const integrationMultiplier = PRICING_ASSUMPTIONS.integrationMultipliers[String(line.integrationResult.tier) as '1' | '2' | '3']
   const softwareMultiplier = PRICING_ASSUMPTIONS.softwareMultipliers[String(line.softwareResult.tier) as '1' | '2' | '3']
 
   return (
-    <section className="rom-sp-vehicle-block">
-      <h3 className="rom-sp-vehicle-name">
-        {line.vehicleName} <span className="mono">× {line.qty}</span>
-      </h3>
+    <details className="rom-sp-vehicle-block">
+      <summary className="rom-sp-vehicle-summary">
+        <svg className="rom-sp-receipt-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+          <polyline points="9 6 15 12 9 18" />
+        </svg>
+        <span className="rom-sp-vehicle-name">
+          {line.vehicleName} <span className="mono">× {line.qty}</span>
+        </span>
+        <span className="rom-sp-vehicle-subtotal mono">{fullUsd(line.pricing.lineSubtotal)}</span>
+      </summary>
 
       <div className="rom-sp-breakdowns">
         <TierBreakdown
@@ -86,6 +95,6 @@ export default function VehicleSellPriceBlock({ line, override, onOverride }: Pr
           <span className="mono">{fullUsd(line.pricing.sellPerUnit)}</span>
         </div>
       </div>
-    </section>
+    </details>
   )
 }
