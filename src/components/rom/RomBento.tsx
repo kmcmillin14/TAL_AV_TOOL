@@ -25,7 +25,6 @@ import AssumptionsPanel from './AssumptionsPanel'
 import MethodologyPanel from './MethodologyPanel'
 import FleetMath from './FleetMath'
 import RomPricingTable from './RomPricingTable'
-import RomSellPriceCell from './RomSellPriceCell'
 
 interface Props {
   project: StoredProject
@@ -152,17 +151,6 @@ export default function RomBento(p: Props) {
         </CollapsibleSection>
       </Cell>
       <Cell title="Assumptions" span={4} cellId="rom-assumptions"><AssumptionsPanel project={p.project} /></Cell>
-
-      {/* Internal ROM — sell price (Hardware + Integration + Software + Adders).
-          Separate from the customer-facing ROM economics above (src/calc/rom.ts) —
-          see src/calc/sellPriceRom.ts for why the two "ROM" concepts stay apart. */}
-      <Cell title="Internal ROM — sell price" span={4} cellId="rom-sell-price">
-        {/* key=project.id forces a clean remount (resetting local selection/
-            override state) when the Step 4 route's [id] param changes without
-            a full page reload — Next.js App Router reuses this component
-            instance across client-side navigation between projects. */}
-        <RomSellPriceCell key={p.project.id} project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} />
-      </Cell>
     </div>
   )
 }
