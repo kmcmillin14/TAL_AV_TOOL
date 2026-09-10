@@ -121,7 +121,7 @@ export default function RomDashboardPage() {
         <div className="engine-head with-actions">
           <div className="eh-text">
             <span className="eh-eyebrow mono">Step 05 / 05</span>
-            <h1 className="eh-title">ROM Dashboard</h1>
+            <h1 className="eh-title">Dashboard</h1>
             <p className="eh-sub">
               Rough-order fleet economics. Adjust the drivers on the left to run a what-if
               scenario — every KPI and chart recomputes live; toggle Baseline / Scenario to compare.
