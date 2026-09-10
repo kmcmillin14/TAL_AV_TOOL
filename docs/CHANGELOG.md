@@ -1,5 +1,51 @@
 # Changelog
 
+## 2026-09-09 — ROM Configuration split into its own step; adders double-counting fixed
+
+The wizard is now 6 steps: `0 Start · 1 Intake Form · 2 Hardware Compatibility ·
+3 Fleet Sizing · 4 ROM Configuration · 5 Dashboard`. The internal sell-price engine
+(Hardware + Integration + Software + Adders) moved out of the Dashboard's bento grid into
+its own dedicated step, and its UI now shows **every** engineer-assigned vehicle type at
+once — one block per chassis — closed by a fleet-wide **TOTAL**, instead of a single
+vehicle picked from a dropdown.
+
+**Real bug fixed along the way:** `computeSellPriceRom` used to add the *entire* selected-
+adders total onto *every* vehicle line independently — a 3-chassis fleet with one $18,000
+adder checked would silently charge $54,000 (3×) instead of $18,000. This was invisible
+under the old single-vehicle-picker UI (only one line was ever shown/summed at a time) and
+became impossible to ignore the moment multiple vehicle types render together. Adders are
+now computed exactly once, fleet-wide, by a new pure aggregator
+(`src/calc/fleetSellPrice.ts`, `aggregateFleetSellPrice`) — `computeSellPriceRom` no longer
+accepts `selectedAdderIds`/`adders` at all, and `RomPricingResult.sellTotal` was renamed to
+`lineSubtotal` to make explicit that a per-vehicle figure never includes adders. The ROM
+band (±10%/+25% placeholder) is applied once on the fleet aggregate rather than summed from
+each vehicle's own rounded band, avoiding compounded rounding error.
+
+**Shipped:**
+- `src/calc/fleetSellPrice.ts` — `aggregateFleetSellPrice`, the fleet-wide totals.
+- `src/lib/romSellPriceLine.ts` — `resolveRomSellPriceLine` drops its `selectedAdderIds`
+  param; `RomSellPriceLine` gains a `vehicle` field; new `resolveFleetSellPriceTotal`
+  wires a project's adders selection into the aggregator — the one function both the UI
+  and the PPTX appendix call, so they can't drift.
+- `src/components/rom/RomSellPriceParts.tsx` — `fullUsd`/`ReceiptRow`/`TierBreakdown`
+  extracted from the deleted `RomSellPriceCell.tsx` for reuse.
+- `src/components/rom/VehicleSellPriceBlock.tsx` — one chassis's complexity breakdowns +
+  receipt, ending in a **Subtotal** (never "Total" — no adders per vehicle).
+- `src/components/rom/RomFleetSellPrice.tsx` — the new page-level orchestrator: one block
+  per assigned, priced chassis + the fleet-wide TOTAL section + the adders checklist.
+  Replaces the deleted `src/components/rom/RomSellPriceCell.tsx`.
+- `app/projects/[id]/step4/page.tsx` — new ROM Configuration page.
+- `app/projects/[id]/step5/page.tsx` — the former `step4/page.tsx` (Dashboard), moved,
+  `currentStep` 4→5.
+- `src/components/PersistentHeader.tsx`, `src/components/GuidedTour.tsx`,
+  `src/content/help.ts` — nav, both guided tours, and in-app help all updated for the
+  6-step flow.
+- `src/lib/pptx/romSellPrice.ts` / `src/lib/pptxTemplateExport.ts` — the PPTX appendix
+  table drops its per-vehicle Adders column (adders aren't per-vehicle) in favor of one
+  fleet-wide "Adders (fleet-wide)" row before the TOTAL row.
+- `ARCHITECTURE.md`, `docs/SPECIFICATION.md`, `docs/WORKFLOW-GUIDE.md`,
+  `docs/PPTX-TOKEN-CONTRACT.md` — all updated for the new step and the adders fix.
+
 ## 2026-09-09 — ROM sell-price: fleet-wide sell-price aggregator
 
 Adds `aggregateFleetSellPrice` (`src/calc/fleetSellPrice.ts`), the piece the prior entry's
