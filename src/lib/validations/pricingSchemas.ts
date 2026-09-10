@@ -49,7 +49,7 @@ export const addersConfigSchema = z.object({
       })
     )
     .refine(adders => new Set(adders.map(a => a.id)).size === adders.length, {
-      message: 'adder ids must be unique — a duplicate id would be summed twice by computeSellPriceRom\'s selection filter',
+      message: 'adder ids must be unique — a duplicate id would be summed twice by aggregateFleetSellPrice\'s selection filter',
     }),
 })
 export type AddersConfig = z.infer<typeof addersConfigSchema>

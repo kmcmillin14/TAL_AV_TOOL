@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-09 — ROM sell-price: fleet-wide sell-price aggregator
+
+Adds `aggregateFleetSellPrice` (`src/calc/fleetSellPrice.ts`), the piece the prior entry's
+adders fix was deferring to. It sums every vehicle line's `hardwareSellTotal` /
+`integrationSellTotal` / `softwareSellTotal` (from `computeSellPriceRom`'s `RomPricingResult`)
+across the fleet, adds the project's selected adders exactly once (not per vehicle line),
+and applies the ROM band a single time on that fleet-wide total rather than summing each
+line's own rounded band — avoiding compounding rounding error across a multi-chassis fleet.
+Pure aggregator, 9 new tests (`src/calc/__tests__/fleetSellPrice.test.ts`). Also fixed a
+stale comment in `src/lib/validations/pricingSchemas.ts`'s adder-id-uniqueness refine that
+still named `computeSellPriceRom`'s (removed) selection filter — now names
+`aggregateFleetSellPrice`. `src/lib/romSellPriceLine.ts` and its downstream PPTX/UI
+consumers are still not wired to this aggregator — that's a later task.
+
 ## 2026-09-09 — ROM sell-price: adders removed from per-vehicle calc (double-counting fix)
 
 `computeSellPriceRom` was adding the *entire* selected-adders total onto *every* vehicle
