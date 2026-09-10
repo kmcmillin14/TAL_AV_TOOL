@@ -194,13 +194,17 @@ All appendix slides are appended via the existing `cloneSlide` machinery and car
    `APPENDIX — CYCLE MATH`.
 6. **Cost detail** — TCO @ service life, cost/move, and other financial tiles cut from
    the body (annual OPEX). Status gauges (Utilization · Availability · Charging · Redundancy) are web-app-only and dropped from the export entirely. Eyebrow: `APPENDIX — COST DETAIL`.
-7. **ROM sell price** (2026-09-09) — internal sell-price build-up, separate from the
-   customer-facing ROM economics above: one row per engineer-assigned chassis with
-   configured pricing (Vehicle · Qty · Hardware · Integration · Software · Adders · Total),
-   closed by a red TOTAL row, footnote naming each vehicle's Integration/Software tier.
-   `src/lib/pptx/romSellPrice.ts` (`buildRomSellPriceLines` / `fillRomSellPriceAppendix`).
-   The slide is only cloned when at least one line has valid pricing — silently absent
-   otherwise, not a blank shell. Eyebrow: `APPENDIX — ROM SELL PRICE`.
+7. **ROM sell price** (2026-09-09, updated 2026-09-09) — internal sell-price build-up,
+   separate from the customer-facing ROM economics above: one row per engineer-assigned
+   chassis with configured pricing (Vehicle · Qty · Hardware · Integration · Software ·
+   Subtotal), closed by one fleet-wide "Adders (fleet-wide)" row and a red TOTAL row —
+   adders are a project-wide, once-only cost, not per-vehicle, so they never appear as a
+   per-row column (a fleet of N chassis must not multiply a selected adder by N). Footnote
+   names each vehicle's Integration/Software tier. `src/lib/pptx/romSellPrice.ts`
+   (`fillRomSellPriceAppendix`, fed by `resolveAllRomSellPriceLines` +
+   `resolveFleetSellPriceTotal` from `src/lib/romSellPriceLine.ts`). The slide is only
+   cloned when at least one line has valid pricing — silently absent otherwise, not a
+   blank shell. Eyebrow: `APPENDIX — ROM SELL PRICE`.
 
 ### Still planned
 
