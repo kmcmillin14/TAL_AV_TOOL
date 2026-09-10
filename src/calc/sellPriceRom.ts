@@ -66,8 +66,10 @@ export function computeSellPriceRom(input: RomPricingInput): RomPricingResult {
     throw new Error(`computeSellPriceRom: qty must be > 0 (got ${input.qty}) for vehicle "${input.vehicle.id}"`)
   }
 
-  const hardwareSellTotal =
-    (vehiclePricingMidpoint(input.vehicle) + input.romInputs.baseCommissioningPerUnit) * input.qty
+  // Commissioning and Integration are the same cost bucket (owner, 2026-09-09) —
+  // bring-up/install cost lives entirely in baseIntegrationSellPrice below, not
+  // here. Hardware is vehicle price only.
+  const hardwareSellTotal = vehiclePricingMidpoint(input.vehicle) * input.qty
 
   const integrationSellTotal =
     input.romInputs.baseIntegrationSellPrice *

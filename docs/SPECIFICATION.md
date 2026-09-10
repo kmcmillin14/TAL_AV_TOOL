@@ -569,14 +569,18 @@ ROM economics above (`src/calc/rom.ts`, CAPEX/OPEX/payback). Lives in `src/calc/
 to avoid the name collision; a dedicated Step 4 bento cell (`RomSellPriceCell.tsx`, "Internal
 ROM — sell price") shows it per engineer-assigned chassis:
 
-- **Hardware** = `(vehicle price-range midpoint + romInputs.baseCommissioningPerUnit) × qty`
-  — qty only, no complexity score (commissioning is a fixed per-unit cost).
+- **Hardware** = `vehicle price-range midpoint × qty` — qty only, no complexity score, no
+  commissioning. (2026-09-09: commissioning and Integration are the same cost bucket per the
+  owner — there is no separate `baseCommissioningPerUnit`; bring-up/install cost lives
+  entirely inside `romInputs.baseIntegrationSellPrice` below.)
 - **Integration** and **Software** are scored independently by one shared generic tier
   scorer (`src/calc/scoreTier.ts`) against two point tables in
   `content/pricing/global-assumptions.json` (`integrationScoring` / `softwareScoring`), then
-  `baseSellPrice × multiplier[tier]`. Each vehicle's `romInputs.integrationFloor`/`softwareFloor`
-  sets a minimum tier the score can't go below. An engineer can override either tier with a
-  reason (persisted per-vehicle in `romSellPriceOverrides`).
+  `baseSellPrice × multiplier[tier]`. Integration's base price includes commissioning. Each
+  vehicle's `romInputs.integrationFloor`/`softwareFloor` sets a minimum tier the score can't
+  go below (an override can raise it further but never below the floor). An engineer can
+  override either tier with its own reason (persisted per-vehicle, per-axis in
+  `romSellPriceOverrides`).
 - **Adders** — a flat, project-level checklist from `content/pricing/adders.json`
   (`romSellPriceSelectedAdderIds`, shared across the project's vehicles, not per-vehicle).
 - Total → a **ROM band** (`romBand.low`/`.high` in the assumptions file, e.g. −10%/+25%),
@@ -597,8 +601,8 @@ deltas, and shown as a standing banner in the UI/PPTX ("ROM — budgetary estima
 pricing").
 
 Vehicle JSON delta (`src/content/vehicles/*.json`, all 6 library vehicles): a `romInputs`
-block (`baseCommissioningPerUnit`, `integrationFloor`, `softwareFloor`,
-`baseIntegrationSellPrice`, `baseSoftwareSellPrice`) — Zod-validated
+block (`integrationFloor`, `softwareFloor`, `baseIntegrationSellPrice`,
+`baseSoftwareSellPrice`) — Zod-validated
 (`src/lib/validations/pricingSchemas.ts`, `romInputsSchema`); a vehicle missing it (or
 `calc.priceRange`) is excluded from the sell-price UI/PPTX line with a "pricing not
 configured" state rather than crashing.

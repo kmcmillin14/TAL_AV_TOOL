@@ -26,15 +26,17 @@ function tierResult(tier: 1 | 2 | 3): TierResult {
 }
 
 // Mirrors src/content/vehicles/cb18.json (priceRange 165000-210000, mid 187500).
+// baseIntegrationSellPrice includes commissioning — there is no separate
+// baseCommissioningPerUnit field (owner: commissioning and integration are
+// the same cost bucket, 2026-09-09).
 function cb18(): Vehicle {
   return {
     id: 'cb18',
     calc: { priceRange: { minUsd: 165_000, maxUsd: 210_000 } },
     romInputs: {
-      baseCommissioningPerUnit: 5000,
       integrationFloor: 1,
       softwareFloor: 1,
-      baseIntegrationSellPrice: 45_000,
+      baseIntegrationSellPrice: 50_000,
       baseSoftwareSellPrice: 15_000,
     } satisfies RomInputs,
   } as unknown as Vehicle
@@ -58,11 +60,11 @@ describe('computeSellPriceRom — hand-checked qty 6, Integration T2, Software T
     adders: noAdders,
   })
 
-  it('hardware = (midpoint + commissioning) × qty = (187500+5000)×6', () => {
-    expect(result.hardwareSellTotal).toBe(1_155_000)
+  it('hardware = midpoint × qty (no commissioning line — folded into Integration) = 187500×6', () => {
+    expect(result.hardwareSellTotal).toBe(1_125_000)
   })
-  it('integration = base × multiplier[2] = 45000×1.8', () => {
-    expect(result.integrationSellTotal).toBe(81_000)
+  it('integration = base (incl. commissioning) × multiplier[2] = 50000×1.8', () => {
+    expect(result.integrationSellTotal).toBe(90_000)
   })
   it('software = base × multiplier[2] = 15000×1.6', () => {
     expect(result.softwareSellTotal).toBe(24_000)
@@ -71,19 +73,19 @@ describe('computeSellPriceRom — hand-checked qty 6, Integration T2, Software T
     expect(result.addersTotal).toBe(0)
   })
   it('sellTotal sums all four lines', () => {
-    expect(result.sellTotal).toBe(1_260_000)
+    expect(result.sellTotal).toBe(1_239_000)
   })
   it('sellPerUnit = sellTotal / qty', () => {
-    expect(result.sellPerUnit).toBe(210_000)
+    expect(result.sellPerUnit).toBe(206_500)
   })
   it('band rounds to the nearest $5,000 (low -10% / high +25%)', () => {
-    // 1,260,000 × 0.90 = 1,134,000 → nearest 5000 = 1,135,000
-    expect(result.band.lowTotal).toBe(1_135_000)
-    // 1,260,000 × 1.25 = 1,575,000 (already a multiple of 5000)
-    expect(result.band.highTotal).toBe(1_575_000)
+    // 1,239,000 × 0.90 = 1,115,100 → nearest 5000 = 1,115,000
+    expect(result.band.lowTotal).toBe(1_115_000)
+    // 1,239,000 × 1.25 = 1,548,750 → nearest 5000 = 1,550,000
+    expect(result.band.highTotal).toBe(1_550_000)
     // per-unit computed AFTER rounding the totals, then rounded again
-    expect(result.band.lowPerUnit).toBe(190_000)
-    expect(result.band.highPerUnit).toBe(265_000)
+    expect(result.band.lowPerUnit).toBe(185_000)
+    expect(result.band.highPerUnit).toBe(260_000)
   })
 })
 

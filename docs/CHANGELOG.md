@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-09 — ROM sell-price: commissioning merged into Integration
+
+Owner correction: commissioning and Integration are the same cost bucket, not two separate
+line items. `romInputs.baseCommissioningPerUnit` is removed entirely (from the Zod schema,
+`computeSellPriceRom`, and all 6 vehicle JSONs); its former per-unit value was folded into
+each vehicle's `baseIntegrationSellPrice` (e.g. cb18: 45,000 + 5,000 commissioning → 50,000).
+`Hardware` is now `vehicle price-range midpoint × qty` only — no commissioning add, no
+complexity score. `Integration` is now the single line for all bring-up/install work,
+still scored by complexity tier like everything else Integration covers. Placeholder
+warning on each vehicle's `romInputs._placeholder` field now notes the fold explicitly.
+Hand-checked qty-6 example, receipt UI copy, and all three test fixtures
+(`sellPriceRom.test.ts`, `romSellPriceLine.test.ts`, `pptx/romSellPrice.test.ts`) updated
+to match — no other pricing logic changed.
+
 ## 2026-09-09 — Internal ROM sell-price engine (Hardware + Integration + Software + Adders)
 
 Additive feature, built after a Section-0 compatibility review that resolved several
@@ -46,9 +60,10 @@ the code).
   a vehicle floor). One mechanism, two instances (integration/software point tables).
 - `src/calc/complexityInputs.ts` — `ComplexityAnswers` + `buildIntegrationTriggers`/
   `buildSoftwareTriggers`, with `GAP_FIELDS` documenting the 3 fields above.
-- `src/calc/sellPriceRom.ts` — `computeSellPriceRom`: Hardware (midpoint + commissioning) ×
-  qty, Integration/Software (base × tier multiplier), Adders (flat sum) → sell total → ROM
-  band (rounded to the nearest `$5,000` placeholder increment).
+- `src/calc/sellPriceRom.ts` — `computeSellPriceRom`: Hardware (midpoint × qty; see the
+  2026-09-09 commissioning-merge entry above), Integration/Software (base × tier multiplier),
+  Adders (flat sum) → sell total → ROM band (rounded to the nearest `$5,000` placeholder
+  increment).
 - `src/lib/romPricingValidation.ts` / `src/lib/validations/pricingSchemas.ts` — Zod
   validation for `vehicle.romInputs` and the two content files (strictly-increasing
   multiplier maps, strictly-increasing thresholds, `romBand.low < 0 < romBand.high`);
@@ -104,8 +119,8 @@ the code).
   actually achieve independence either (callback identity still depended on `overrides` state)
   and the absolute cost is negligible at this UI's scale (≤2 panels, a handful of vehicles).
 - **Open architecture question for the owner:** `romInputs`' per-line dollar fields
-  (`baseCommissioningPerUnit`, `baseIntegrationSellPrice`, `baseSoftwareSellPrice`) are single
-  values, not `minUsd`/`maxUsd` ranges — in tension with ARCHITECTURE.md's "Price is a range,
+  (`baseIntegrationSellPrice`, `baseSoftwareSellPrice`) are single values, not `minUsd`/
+  `maxUsd` ranges — in tension with ARCHITECTURE.md's "Price is a range,
   never a single value" rule. This mirrors the original design spec exactly (single base price
   × tier multiplier, banded only at the final total via `romBand.low/high`); not changed
   unilaterally since it would materially deviate from the given spec.

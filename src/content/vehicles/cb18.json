@@ -65,11 +65,10 @@
     "block"
   ],
   "romInputs": {
-    "baseCommissioningPerUnit": 5000,
     "integrationFloor": 1,
     "softwareFloor": 1,
-    "baseIntegrationSellPrice": 45000,
+    "baseIntegrationSellPrice": 50000,
     "baseSoftwareSellPrice": 15000,
-    "_placeholder": "ALL romInputs values are PLACEHOLDERS pending real pricing from Kyle"
+    "_placeholder": "ALL romInputs values are PLACEHOLDERS pending real pricing from Kyle. baseIntegrationSellPrice includes commissioning (owner: commissioning and integration are the same cost bucket)."
   }
 }

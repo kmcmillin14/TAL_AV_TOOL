@@ -243,11 +243,9 @@ export default function RomSellPriceCell({ project, fleet, vehicleById }: Props)
               <ReceiptRow
                 label="Hardware"
                 amount={fullUsd(line.pricing.hardwareSellTotal)}
-                detail={romInputs && vehicle && (
+                detail={vehicle && (
                   <div className="rom-sp-receipt-detail-row">
-                    <span>
-                      ({fullUsd(vehiclePricingMidpoint(vehicle))} vehicle midpoint + {fullUsd(romInputs.baseCommissioningPerUnit)} commissioning) × {group.fleetSold} units
-                    </span>
+                    <span>{fullUsd(vehiclePricingMidpoint(vehicle))} vehicle midpoint × {group.fleetSold} units</span>
                     <span className="mono">{fullUsd(line.pricing.hardwareSellTotal)}</span>
                   </div>
                 )}
@@ -257,7 +255,7 @@ export default function RomSellPriceCell({ project, fleet, vehicleById }: Props)
                 amount={fullUsd(line.pricing.integrationSellTotal)}
                 detail={romInputs && (
                   <div className="rom-sp-receipt-detail-row">
-                    <span>{fullUsd(romInputs.baseIntegrationSellPrice)} base × {integrationMultiplier}× (Tier {line.integrationResult.tier})</span>
+                    <span>{fullUsd(romInputs.baseIntegrationSellPrice)} base (incl. commissioning) × {integrationMultiplier}× (Tier {line.integrationResult.tier})</span>
                     <span className="mono">{fullUsd(line.pricing.integrationSellTotal)}</span>
                   </div>
                 )}

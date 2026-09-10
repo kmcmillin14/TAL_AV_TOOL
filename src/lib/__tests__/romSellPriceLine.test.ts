@@ -10,7 +10,6 @@ function veh(integrationFloor: 1 | 2 | 3 = 1, softwareFloor: 1 | 2 | 3 = 1): Veh
     name: 'Vehicle A',
     calc: { priceRange: { minUsd: 100_000, maxUsd: 200_000 } },
     romInputs: {
-      baseCommissioningPerUnit: 1000,
       integrationFloor,
       softwareFloor,
       baseIntegrationSellPrice: 10_000,

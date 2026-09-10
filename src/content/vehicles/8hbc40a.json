@@ -64,11 +64,10 @@
     "stringer"
   ],
   "romInputs": {
-    "baseCommissioningPerUnit": 5500,
     "integrationFloor": 1,
     "softwareFloor": 1,
-    "baseIntegrationSellPrice": 50000,
+    "baseIntegrationSellPrice": 55500,
     "baseSoftwareSellPrice": 16000,
-    "_placeholder": "ALL romInputs values are PLACEHOLDERS pending real pricing from Kyle"
+    "_placeholder": "ALL romInputs values are PLACEHOLDERS pending real pricing from Kyle. baseIntegrationSellPrice includes commissioning (owner: commissioning and integration are the same cost bucket)."
   }
 }

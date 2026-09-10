@@ -12,7 +12,6 @@ function veh(id: string, hasRomInputs: boolean): Vehicle {
     ...(hasRomInputs
       ? {
           romInputs: {
-            baseCommissioningPerUnit: 1000,
             integrationFloor: 1,
             softwareFloor: 1,
             baseIntegrationSellPrice: 10_000,
@@ -62,7 +61,7 @@ describe('buildRomSellPriceLines', () => {
     const lines = buildRomSellPriceLines(project(), fleet([{ vehicleId: 'a', fleetSold: 2 }]), vehicleById)
     expect(lines).toHaveLength(1)
     expect(lines[0].qty).toBe(2)
-    expect(lines[0].pricing.hardwareSellTotal).toBe((150_000 + 1000) * 2) // midpoint + commissioning × qty
+    expect(lines[0].pricing.hardwareSellTotal).toBe(150_000 * 2) // midpoint × qty (no commissioning line)
     expect(lines[0].pricing.sellTotal).toBeGreaterThan(0)
   })
 

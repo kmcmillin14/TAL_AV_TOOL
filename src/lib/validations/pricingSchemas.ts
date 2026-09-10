@@ -54,12 +54,15 @@ export const addersConfigSchema = z.object({
 })
 export type AddersConfig = z.infer<typeof addersConfigSchema>
 
-/** Vehicle JSON delta for the sell-price ROM engine — all five fields required.
+/** Vehicle JSON delta for the sell-price ROM engine — all four fields required.
  *  A vehicle missing this block (or `calc.priceRange`) is excluded from the ROM
  *  UI with a "pricing not configured" state rather than crashing or silently
- *  pricing at 0 — see vehicleLibrary.loadVehicleLibrary. */
+ *  pricing at 0 — see vehicleLibrary.loadVehicleLibrary.
+ *  Commissioning and Integration are the same cost bucket (owner, 2026-09-09) —
+ *  there is no separate `baseCommissioningPerUnit`; bring-up/install cost lives
+ *  entirely in `baseIntegrationSellPrice`, scored by complexity tier like
+ *  everything else Integration covers. Hardware is vehicle price × qty only. */
 export const romInputsSchema = z.object({
-  baseCommissioningPerUnit: z.number().min(0),
   integrationFloor: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   softwareFloor: z.union([z.literal(1), z.literal(2), z.literal(3)]),
   baseIntegrationSellPrice: z.number().min(0),
