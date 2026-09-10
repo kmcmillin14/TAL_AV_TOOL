@@ -25,7 +25,7 @@ export interface HelpExample {
 }
 
 export interface HelpSection {
-  id: 'app' | 'step0' | 'step1' | 'step2' | 'step3' | 'step4'
+  id: 'app' | 'step0' | 'step1' | 'step2' | 'step3' | 'step4' | 'step5'
   /** Small label above the title, e.g. "Step 01". */
   eyebrow?: string
   title: string
@@ -168,7 +168,33 @@ export const HELP: HelpSection[] = [
   {
     id: 'step4',
     eyebrow: 'Step 04',
-    title: 'ROM Dashboard',
+    title: 'ROM Configuration',
+    summary:
+      'The internal sell-price build-up — Hardware + Integration + Software + Adders — for every vehicle type the engineer assigned in the Fleet Engine. Integration and Software each score a complexity tier from the intake answers (facility size, fleet size, WMS integration, and more); a fleet-wide TOTAL sums every vehicle plus the adders you pick, once.',
+    howTo: [
+      'For each vehicle block, review the scored Integration and Software tier — hover a reason to see which answer triggered it.',
+      'Override a tier with a reason if your judgment differs from the score; an override can never go below the vehicle’s inherent floor tier.',
+      'Open the arrow on any receipt line (Hardware, Integration, Software) to see the substituted math.',
+      'Pick adders (warranty, support, training) at the bottom — they apply once to the whole fleet, never per vehicle.',
+    ],
+    example: {
+      title: 'Example — a two-chassis fleet',
+      lines: [
+        'CB18 ×4: Hardware $750K, Integration $90K (Tier 2), Software $24K (Tier 2) → Subtotal $864K.',
+        'M10 ×6: a second block with its own tiers and subtotal.',
+        'Fleet total sums both subtotals + one Extended Warranty adder — never doubled per vehicle.',
+      ],
+    },
+    figure: { mock: 'engine', caption: 'Step 04 — one block per assigned chassis, closed by a fleet-wide TOTAL.' },
+    tips: [
+      'Adders are project-wide, not per-vehicle — checking one applies it once to the fleet total, however many chassis types you have.',
+      'A vehicle with no pricing configured (missing romInputs) is skipped with a note, not silently priced at zero.',
+    ],
+  },
+  {
+    id: 'step5',
+    eyebrow: 'Step 05',
+    title: 'Dashboard',
     summary:
       'The customer-facing summary built from the fleet total — KPIs (fleet size, CAPEX range, payback, utilization), charts, and the proposal export. A driver rail on the left lets you run what-if scenarios; every KPI and chart recomputes live, and you can toggle Baseline vs Scenario to compare.',
     howTo: [
@@ -185,7 +211,7 @@ export const HELP: HelpSection[] = [
         'Toggle Baseline / Scenario to compare the two side by side.',
       ],
     },
-    figure: { mock: 'dashboard', shot: '/images/help/step4.png', caption: 'Step 04 — KPI band, driver rail for what-ifs, gauges, and the operation map.' },
+    figure: { mock: 'dashboard', shot: '/images/help/step4.png', caption: 'Step 05 — KPI band, driver rail for what-ifs, gauges, and the operation map.' },
     tips: [
       'Scenarios are in-memory — they never change your saved project until you click “Apply to baseline”.',
       'The PowerPoint export always reflects the baseline numbers, not an unsaved scenario.',
