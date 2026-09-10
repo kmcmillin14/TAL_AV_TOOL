@@ -52,7 +52,7 @@ per audience** (2026-07-21) — the icon export menu shows exactly three:
 (`.json`). The main-app PDF export was retired; the `.pdf` **import** path on
 Step 00 is unchanged (it reads the questionnaire's branded PDF), and
 `exportProjectPdf` survives as the pure builder behind that round-trip's tests.
-On the **ROM Dashboard (step 04) only**, the labeled actions render in the page
+On the **Dashboard (step 05) only**, the labeled actions render in the page
 header's blank space (`src/components/ExportActions.tsx`, plus the page's
 `RomExportBar`):
 
@@ -249,7 +249,7 @@ Step 1 sizing data seeds downstream values only while the user hasn't overridden
 The sizing calculation lives in **one scrolling page** (`app/projects/[id]/step3`) with **all three
 sub-stages always visible** — **01 Raw Fleet · 02 Charging · 03 Buffer** — sharing a single live
 recompute. The engineer sees the entire waterfall at once; nothing is hidden behind a wizard.
-Navigation: `0 Start · 1 Application · 2 Vehicles · 3 Fleet Engine · 4 ROM Dashboard` (ROM consumes
+Navigation: `0 Start · 1 Intake Form · 2 Hardware Compatibility · 3 Fleet Sizing · 4 ROM Configuration · 5 Dashboard` (ROM consumes
 the engine's total; KPIs belong to it). Combines the former Flows/Charging/Buffer steps — see the
 `ARCHITECTURE.md` exception. *(2026-06-12: replaced the staged wizard — stage rail, Back/Next, View
 Transitions morphing — with this questionnaire-style layout.)*
@@ -760,7 +760,7 @@ with three structural JS changes where CSS can't carry the layout.
   bottom-sheet picker (`BottomSheet`/`SheetSelect` in `src/components/mobile/`). Delete is
   in the sheet header. Reorder, duplicate, and group rename/color/delete stay desktop-only.
   Autosave is live, so the sheet just closes on Done.
-- **ROM Dashboard ≤ 700px.** The drivers rail becomes a collapsible `<details>` (summary
+- **Dashboard ≤ 700px.** The drivers rail becomes a collapsible `<details>` (summary
   toggles on phone; forced open on desktop). KPI/gauge grids stack (existing 900/560
   rules); the page-header export actions wrap under the title. Driver inputs render 16px
   (no iOS zoom) and a full-screened chart tile goes edge-to-edge.
