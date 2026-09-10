@@ -259,7 +259,7 @@ rail lists the three sections (`01 Raw Fleet · 02 Charging · 03 Buffer`), high
 view via IntersectionObserver, scrolls on click, and shows the live **TOTAL fleet** figure at the
 top. Sections render as full-width blocks with numbered headers, visually matching the Step 1
 form sections. Both pieces are the shared `src/components/ScrollSpyNav.tsx` /
-`src/components/ScrollSection.tsx`, also used by the Step 4 ROM dashboard's scrolling layout.
+`src/components/ScrollSection.tsx`, also used by the Step 5 Dashboard's scrolling layout.
 
 **Hero** (`.engine-result`): the headline is always the **total fleet sold**; the
 `base · +charging · ×buffer = total` build-up bar shows every segment lit (all stages are visible).
@@ -496,7 +496,66 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 
 ---
 
-## Step 4 — ROM Dashboard
+## Step 4 — ROM Configuration
+
+The internal sell-price build-up — Hardware + Integration + Software + Adders — distinct
+from the customer-facing ROM economics on the Dashboard (`src/calc/rom.ts`, CAPEX/OPEX/
+payback). Lives in `src/calc/sellPriceRom.ts` (per-vehicle) + `src/calc/fleetSellPrice.ts`
+(fleet-wide aggregate) to avoid both a name collision with `rom.ts` and, per the
+2026-09-09 owner correction below, a double-counting bug. `RomFleetSellPrice.tsx` renders
+one `VehicleSellPriceBlock` per engineer-assigned, priced chassis — **every assigned
+vehicle type at once**, not a single vehicle picked from a dropdown — closed by a
+fleet-wide **TOTAL** section:
+
+- **Hardware** = `vehicle price-range midpoint × qty` — qty only, no complexity score, no
+  commissioning. (2026-09-09: commissioning and Integration are the same cost bucket per the
+  owner — there is no separate `baseCommissioningPerUnit`; bring-up/install cost lives
+  entirely inside `romInputs.baseIntegrationSellPrice` below.)
+- **Integration** and **Software** are scored independently by one shared generic tier
+  scorer (`src/calc/scoreTier.ts`) against two point tables in
+  `content/pricing/global-assumptions.json` (`integrationScoring` / `softwareScoring`), then
+  `baseSellPrice × multiplier[tier]`. Integration's base price includes commissioning. Each
+  vehicle's `romInputs.integrationFloor`/`softwareFloor` sets a minimum tier the score can't
+  go below (an override can raise it further but never below the floor). An engineer can
+  override either tier with its own reason (persisted per-vehicle, per-axis in
+  `romSellPriceOverrides`).
+- Each vehicle block closes with a **Subtotal** (Hardware + Integration + Software only —
+  never "Total": adders are fleet-wide, not per-vehicle).
+- **Adders** — a flat, project-level checklist from `content/pricing/adders.json`
+  (`romSellPriceSelectedAdderIds`, shared across the project's vehicles). **Fixed
+  2026-09-09:** adders used to be added to the per-vehicle `computeSellPriceRom` call,
+  so a selected adder was silently multiplied by however many vehicle types were in the
+  fleet. They are now summed exactly once by `aggregateFleetSellPrice`
+  (`src/calc/fleetSellPrice.ts`), in the **Fleet total** section only.
+- **Fleet total** = Σ every vehicle's Hardware + Σ Integration + Σ Software + Adders
+  (once) → a **ROM band** (`romBand.low`/`.high` in the assumptions file, e.g. −10%/+25%)
+  applied ONCE on that fleet-wide sum — not summed from each vehicle's own rounded band,
+  which would compound rounding error — rounded to the nearest `rounding` ($5,000 today).
+
+**Complexity inputs** (`src/calc/complexityInputs.ts`, `ComplexityAnswers`) map from the
+questionnaire/project schema — see `docs/CHANGELOG.md` (2026-09-09) for the full field
+mapping and the gap list. Two point-table axes were dropped by explicit owner decision
+(not silently): per-door/elevator counting and multi-site scoring — neither field exists
+in the questionnaire and none will be added. Three remaining fields
+(`storageTrackingRequired`, `hasAgvExperience`, `pickDropLocationCount`) have no schema
+field yet; they default to false/0 and the UI/PPTX surface a visible
+"complexity may be understated" flag rather than silently under-scoring.
+
+**ALL dollar values and multipliers are placeholders** pending real pricing from the
+business owner — tagged `_placeholder`/`_placeholderWarning` in the JSON content and vehicle
+deltas, and shown as a standing banner in the UI/PPTX ("ROM — budgetary estimate, placeholder
+pricing").
+
+Vehicle JSON delta (`src/content/vehicles/*.json`, all 6 library vehicles): a `romInputs`
+block (`integrationFloor`, `softwareFloor`, `baseIntegrationSellPrice`,
+`baseSoftwareSellPrice`) — Zod-validated
+(`src/lib/validations/pricingSchemas.ts`, `romInputsSchema`); a vehicle missing it (or
+`calc.priceRange`) is excluded from the sell-price UI/PPTX line with a "pricing not
+configured" state rather than crashing.
+
+---
+
+## Step 5 — Dashboard
 
 Customer-facing summary fed by the Fleet Engine `FleetSummary`. Rebuilt (2026-06-22) as an
 interactive **bento dashboard**: a sticky left **driver rail** (`RomDrivers`) edits in-memory
@@ -562,50 +621,6 @@ unit), and a **"why this works"** rationale. It's a **collapsed accordion** (nat
 first stage open) leading the section, above the live `FleetMath` worked numbers, the Requirements
 matrix, Resilience, and the Assumptions value-list. The same content is appended to the **branded
 PPTX** as a Methodology appendix slide (cloned + filled — see below).
-
-**Internal ROM — sell price (2026-09-09, additive).** A separate, internal-only sell-price
-build-up — Hardware + Integration + Software + Adders — distinct from the customer-facing
-ROM economics above (`src/calc/rom.ts`, CAPEX/OPEX/payback). Lives in `src/calc/sellPriceRom.ts`
-to avoid the name collision; a dedicated Step 4 bento cell (`RomSellPriceCell.tsx`, "Internal
-ROM — sell price") shows it per engineer-assigned chassis:
-
-- **Hardware** = `vehicle price-range midpoint × qty` — qty only, no complexity score, no
-  commissioning. (2026-09-09: commissioning and Integration are the same cost bucket per the
-  owner — there is no separate `baseCommissioningPerUnit`; bring-up/install cost lives
-  entirely inside `romInputs.baseIntegrationSellPrice` below.)
-- **Integration** and **Software** are scored independently by one shared generic tier
-  scorer (`src/calc/scoreTier.ts`) against two point tables in
-  `content/pricing/global-assumptions.json` (`integrationScoring` / `softwareScoring`), then
-  `baseSellPrice × multiplier[tier]`. Integration's base price includes commissioning. Each
-  vehicle's `romInputs.integrationFloor`/`softwareFloor` sets a minimum tier the score can't
-  go below (an override can raise it further but never below the floor). An engineer can
-  override either tier with its own reason (persisted per-vehicle, per-axis in
-  `romSellPriceOverrides`).
-- **Adders** — a flat, project-level checklist from `content/pricing/adders.json`
-  (`romSellPriceSelectedAdderIds`, shared across the project's vehicles, not per-vehicle).
-- Total → a **ROM band** (`romBand.low`/`.high` in the assumptions file, e.g. −10%/+25%),
-  rounded to the nearest `rounding` ($5,000 today).
-
-**Complexity inputs** (`src/calc/complexityInputs.ts`, `ComplexityAnswers`) map from the
-questionnaire/project schema — see `docs/CHANGELOG.md` (2026-09-09) for the full field
-mapping and the gap list. Two point-table axes were dropped by explicit owner decision
-(not silently): per-door/elevator counting and multi-site scoring — neither field exists
-in the questionnaire and none will be added. Three remaining fields
-(`storageTrackingRequired`, `hasAgvExperience`, `pickDropLocationCount`) have no schema
-field yet; they default to false/0 and the UI/PPTX surface a visible
-"complexity may be understated" flag rather than silently under-scoring.
-
-**ALL dollar values and multipliers are placeholders** pending real pricing from the
-business owner — tagged `_placeholder`/`_placeholderWarning` in the JSON content and vehicle
-deltas, and shown as a standing banner in the UI/PPTX ("ROM — budgetary estimate, placeholder
-pricing").
-
-Vehicle JSON delta (`src/content/vehicles/*.json`, all 6 library vehicles): a `romInputs`
-block (`integrationFloor`, `softwareFloor`, `baseIntegrationSellPrice`,
-`baseSoftwareSellPrice`) — Zod-validated
-(`src/lib/validations/pricingSchemas.ts`, `romInputsSchema`); a vehicle missing it (or
-`calc.priceRange`) is excluded from the sell-price UI/PPTX line with a "pricing not
-configured" state rather than crashing.
 
 **Export:** two-part proposal PDF · project JSON · **Branded PowerPoint** (see below) ·
 **editable Excel fleet model**. All build on `src/lib/fleetModel.ts` (`computeFleetModel`).
@@ -687,7 +702,7 @@ Qty · Unit Price (ROM range) · Line Total (ROM range) + red TOTAL row, from `r
 pure `paybackSeries`) over a 3-row metrics table (simple payback · annual labor offset · annual
 OPEX); table-only fallback when no DOM. Canvas image placed at native aspect ratio.
 
-A **Section Picker** (`PptxSectionPicker`, from the Step 4 export bar and the header menu)
+A **Section Picker** (`PptxSectionPicker`, from the Step 5 export bar and the header menu)
 chooses which sections to include; **Product Overview slides are auto-limited to the
 engineer-assigned fleet chassis** (Cleanfix always dropped). The builder removes unselected and
 retired slides via OOXML (`presentation.xml` sldIdLst + rels + `[Content_Types]`). Cover (S1)
@@ -791,7 +806,7 @@ Cleanup defensively removes any stale `.tour-highlight` elements on step change,
 **Guide step targets (sample-rfq walkthrough):** step targets are retargeted to compact section
 headers (`.form-section-header` inside the section ID) rather than entire sections, so the
 highlight ring is a narrow strip rather than a full page-height box. Step 2 targets `.page-header`
-(the compact title bar); Step 4 `.rom2-kpiband` (a band, not a page) is unchanged.
+(the compact title bar); Step 5 `.rom2-kpiband` (a band, not a page) is unchanged.
 
 **Walkthrough finish action:** `Guide` accepts optional `finishLabel` (primary button text on last
 step, defaults to `'Get started'`) and `finishAction: 'discardSampleAndStart'`. When the last step
