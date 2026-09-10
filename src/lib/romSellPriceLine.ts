@@ -1,11 +1,13 @@
 // src/lib/romSellPriceLine.ts — resolves ONE engineer-assigned chassis into a
-// priced ROM sell-price line (scoring + overrides + computeSellPriceRom), and
-// the project-wide list of them. Single source of truth for this pipeline —
-// both the Step 4 UI (RomSellPriceCell.tsx) and the PPTX appendix
-// (src/lib/pptx/romSellPrice.ts) call this instead of each re-deriving it,
-// so a missing-romInputs vehicle behaves identically in both places (dropped,
-// not scored with a floor fallback — "pricing not configured" is a per-line
-// exclusion, not a partial result).
+// priced ROM sell-price line (scoring + overrides + computeSellPriceRom), the
+// project-wide list of them, and the fleet-wide total (adders + ROM band,
+// computed once — see src/calc/fleetSellPrice.ts). Single source of truth for
+// this pipeline — both the ROM Configuration step UI
+// (RomFleetSellPrice.tsx) and the PPTX appendix (src/lib/pptx/romSellPrice.ts)
+// call this instead of each re-deriving it, so a missing-romInputs vehicle
+// behaves identically in both places (dropped, not scored with a floor
+// fallback — "pricing not configured" is a per-line exclusion, not a partial
+// result).
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetGroup, FleetSummary } from '@/src/calc/types'
@@ -14,11 +16,13 @@ import { complexityAnswersFromProject } from './romComplexityFromProject'
 import { buildIntegrationTriggers, buildSoftwareTriggers, type ComplexityAnswers } from '@/src/calc/complexityInputs'
 import { scoreTier, clampToFloor, type TierResult } from '@/src/calc/scoreTier'
 import { computeSellPriceRom, type RomPricingResult } from '@/src/calc/sellPriceRom'
+import { aggregateFleetSellPrice, type FleetSellPriceTotal } from '@/src/calc/fleetSellPrice'
 import { PRICING_ASSUMPTIONS, ADDERS_CONFIG } from './pricingContent'
 
 export type RomSellPriceOverride = NonNullable<StoredProject['romSellPriceOverrides']>[string]
 
 export interface RomSellPriceLine {
+  vehicle: Vehicle
   vehicleId: string
   vehicleName: string
   qty: number
@@ -46,8 +50,7 @@ export function resolveRomSellPriceLine(
   group: FleetGroup,
   totalFleetSize: number,
   answers: ComplexityAnswers,
-  override: RomSellPriceOverride | undefined,
-  selectedAdderIds: string[]
+  override: RomSellPriceOverride | undefined
 ): RomSellPriceLine | null {
   const romInputs = getValidRomInputs(vehicle)
   if (!romInputs) return null
@@ -73,12 +76,11 @@ export function resolveRomSellPriceLine(
     qty: group.fleetSold,
     integrationResult,
     softwareResult,
-    selectedAdderIds,
     assumptions: PRICING_ASSUMPTIONS,
-    adders: ADDERS_CONFIG,
   })
 
   return {
+    vehicle,
     vehicleId: group.vehicleId,
     vehicleName: vehicle.name,
     qty: group.fleetSold,
@@ -97,15 +99,23 @@ export function resolveAllRomSellPriceLines(
 ): RomSellPriceLine[] {
   const answers = complexityAnswersFromProject(project)
   const overrides = project.romSellPriceOverrides ?? {}
-  const selectedAdderIds = project.romSellPriceSelectedAdderIds ?? []
 
   const lines: RomSellPriceLine[] = []
   for (const g of fleet.groups) {
     if (g.fleetSold <= 0) continue
     const vehicle = vehicleById.get(g.vehicleId)
     if (!vehicle) continue
-    const line = resolveRomSellPriceLine(vehicle, g, fleet.totalFleetSold, answers, overrides[g.vehicleId], selectedAdderIds)
+    const line = resolveRomSellPriceLine(vehicle, g, fleet.totalFleetSold, answers, overrides[g.vehicleId])
     if (line) lines.push(line)
   }
   return lines
+}
+
+/** The fleet-wide total across every resolved line: Hardware/Integration/
+ *  Software summed, the project's selected adders added ONCE, and the ROM
+ *  band applied on that fleet aggregate. Both the ROM Configuration UI and
+ *  the PPTX appendix call this — never sum `line.pricing` fields directly. */
+export function resolveFleetSellPriceTotal(project: StoredProject, lines: RomSellPriceLine[]): FleetSellPriceTotal {
+  const selectedAdderIds = project.romSellPriceSelectedAdderIds ?? []
+  return aggregateFleetSellPrice(lines, selectedAdderIds, ADDERS_CONFIG, PRICING_ASSUMPTIONS)
 }
