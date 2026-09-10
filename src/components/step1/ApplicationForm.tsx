@@ -392,7 +392,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     <form onSubmit={handleSubmit(onSubmit)}>
       <div className="page-header">
         <div className="page-title">
-          <span className="step-num">Step 01 / 04</span>
+          <span className="step-num">Step 01 / 05</span>
           <h1>Application Requirements</h1>
           <div className="desc">
             The first tier is what qualifies vehicles — load, transfer, and environment.

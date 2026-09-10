@@ -171,7 +171,7 @@ export default function Step0Page() {
         <div className="entry-wrap">
           <div className="page-header">
             <div className="page-title">
-              <span className="step-num">Step 00 / 04</span>
+              <span className="step-num">Step 00 / 05</span>
               <h1>Project Setup</h1>
               <div className="desc">
                 Add the project details, then choose how to begin. These fields are also
