@@ -3776,6 +3776,10 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-price-breakdown summary::marker { display: none; content: ''; }
 .rom-price-breakdown[open] > summary .rom-sp-receipt-chevron { transform: rotate(90deg); color: var(--text-tertiary); }
 .rom-price-breakdown[open] summary { margin-bottom: 4px; }
+.rom-price-breakdown-note {
+  font-family: var(--tal-font-family); font-size: 11px; font-style: italic;
+  color: var(--text-tertiary); margin: 0 0 8px;
+}
 .rom-price-table { width: 100%; border-collapse: collapse; }
 .rom-price-table th, .rom-price-table td {
   text-align: left; padding: 9px 8px; font-family: var(--tal-font-family); font-size: 13px;
@@ -3927,6 +3931,11 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-sp-fleet-total { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); margin-bottom: 24px; }
 .rom-sp-fleet-total .rom-sp-receipt-total { font-size: 16px; }
 .rom-sp-fleet-total .rom-sp-adders { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
+.rom-sp-integration-group:not(:last-child) { margin-bottom: 10px; }
+.rom-sp-integration-shared-note {
+  font-family: var(--tal-font-family); font-size: 11px; font-style: italic;
+  color: var(--text-tertiary); margin: 2px 0 0;
+}
 .rom-sp-adder-row .mono { margin-left: auto; font-family: var(--tal-font-numeric); color: var(--text-tertiary); flex-shrink: 0; }
 
 .rom-econ-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }

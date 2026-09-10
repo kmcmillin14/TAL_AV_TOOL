@@ -62,6 +62,24 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
     return resolveFleetSellPriceTotal(projectForTotal, lines)
   }, [project, selectedAdderIds, lines])
 
+  // Per-vehicle "not billed separately" note for the shared-integration rule
+  // — populated only for lines riding along on another vehicle's platform
+  // charge (see fleetSellPrice.ts's integrationByPlatform). Recomputed from
+  // fleetTotal rather than memoized separately — cheap, and fleetTotal
+  // already recomputes on every relevant change.
+  const integrationNoteByVehicleId = new Map<string, string>()
+  for (const g of fleetTotal.integrationByPlatform) {
+    if (g.vehicleIds.length <= 1) continue
+    const billedLine = lines.find(l => l.vehicleId === g.billedVehicleId)
+    for (const vehicleId of g.vehicleIds) {
+      if (vehicleId === g.billedVehicleId) continue
+      integrationNoteByVehicleId.set(
+        vehicleId,
+        `Integration shared fleet-wide via ${billedLine?.vehicleName ?? g.billedVehicleId} (${g.platform}) — not billed separately for this vehicle type.`
+      )
+    }
+  }
+
   const setOverride = (vehicleId: string, patch: Partial<RomSellPriceOverride>) => {
     const next = { ...overrides, [vehicleId]: { ...overrides[vehicleId], ...patch } }
     setOverrides(next)
@@ -125,7 +143,32 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
                 </div>
               }
             />
-            <div className="rom-sp-receipt-foot"><span>Integration</span><span className="mono">{fullUsd(fleetTotal.integrationTotal)}</span></div>
+            <ReceiptRow
+              label="Integration"
+              amount={fullUsd(fleetTotal.integrationTotal)}
+              detail={
+                <div className="rom-sp-fleet-line-breakdown">
+                  {fleetTotal.integrationByPlatform.map(g => {
+                    const billedLine = lines.find(l => l.vehicleId === g.billedVehicleId)
+                    const rideAlong = g.vehicleIds.filter(id => id !== g.billedVehicleId)
+                      .map(id => lines.find(l => l.vehicleId === id)?.vehicleName ?? id)
+                    return (
+                      <div key={g.platform} className="rom-sp-integration-group">
+                        <div className="rom-sp-receipt-detail-row">
+                          <span>{g.platform} — billed via {billedLine?.vehicleName ?? g.billedVehicleId}</span>
+                          <span className="mono">{fullUsd(g.amount)}</span>
+                        </div>
+                        {rideAlong.length > 0 && (
+                          <div className="rom-sp-integration-shared-note">
+                            Shared platform — {rideAlong.join(', ')} not billed separately.
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              }
+            />
             <div className="rom-sp-receipt-foot"><span>Software</span><span className="mono">{fullUsd(fleetTotal.softwareTotal)}</span></div>
             <div className="rom-sp-receipt-foot"><span>Adders</span><span className="mono">{fullUsd(fleetTotal.addersTotal)}</span></div>
             <div className="rom-sp-receipt-total">
@@ -164,6 +207,7 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
           line={line}
           override={overrides[line.vehicleId]}
           onOverride={patch => setOverride(line.vehicleId, patch)}
+          integrationSharedNote={integrationNoteByVehicleId.get(line.vehicleId) ?? null}
         />
       ))}
     </div>

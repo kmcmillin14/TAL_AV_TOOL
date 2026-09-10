@@ -12,7 +12,14 @@ interface Props {
 
 /** Fleet-total headline (Total ROM CAPEX range + midpoint) leads the card;
  *  the per-vehicle-type line items are collapsed behind a drill-down
- *  <details> below it. Price is ALWAYS a range. */
+ *  <details> below it. Price is ALWAYS a range.
+ *
+ *  2026-09-10: the headline now includes Integration/Software/Adders (see
+ *  src/lib/fleetModel.ts — reuses the Step 4 sell-price resolver), but
+ *  `pricing.lines` below stays HARDWARE-ONLY (vehicle price range × qty) —
+ *  the per-line unit/line-total columns will not sum to the headline. A
+ *  caption under the drill-down summary makes that explicit rather than
+ *  leaving it to look like a rounding error. */
 export default function RomPricingTable({ pricing, vehicleById }: Props) {
   if (pricing.lines.length === 0) {
     return <div className="rom-empty">Size the fleet in the Fleet Engine to see ROM pricing.</div>
@@ -32,6 +39,10 @@ export default function RomPricingTable({ pricing, vehicleById }: Props) {
           </svg>
           {pricing.lines.length} vehicle {pricing.lines.length === 1 ? 'type' : 'types'} — click to expand
         </summary>
+        <p className="rom-price-breakdown-note">
+          Hardware only — the headline total above also includes Integration, Software, and
+          Adders (see Step 4).
+        </p>
         <table className="rom-price-table">
           <thead>
             <tr>

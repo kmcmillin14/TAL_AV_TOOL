@@ -1,5 +1,73 @@
 # Changelog
 
+## 2026-09-10 — Shared-platform Integration billing; vehicle data normalized to BlueBotics; Dashboard CAPEX now matches Step 4
+
+**Integration is now charged once per shared fleet-manager platform, not once per vehicle
+type (owner rule).** Previously every assigned vehicle type's own scored Integration cost
+was summed into the fleet total independently, even when multiple vehicle types share the
+same fleet-management software and only need ONE integration effort.
+- `src/calc/fleetSellPrice.ts` — `aggregateFleetSellPrice` now groups lines by
+  `fleetManagerPlatform`; each group is charged once, using its highest-integration-tier
+  line's own dollar amount (ties broken by the higher amount) rather than summing every
+  line in the group. Software is unaffected (still summed per vehicle type — software
+  integration can differ by role even on a shared platform). New `FleetSellPriceLineInput`
+  type (replaces the old minimal `{pricing, qty}` line shape) and
+  `IntegrationPlatformCharge`/`integrationByPlatform` on `FleetSellPriceTotal` expose the
+  per-platform billing detail.
+- `src/lib/romSellPriceLine.ts` — `resolveFleetSellPriceTotal` supplies
+  `fleetManagerPlatform` from `Vehicle.display.fleetSoftware` and `integrationTier` from
+  each line's scored result.
+- **UI transparency:** the Fleet total's Integration line (Step 4) is now a drill-down
+  (`RomFleetSellPrice.tsx`) showing, per platform group, which vehicle's line is billed and
+  which vehicles ride along free. A non-billed vehicle's own block
+  (`VehicleSellPriceBlock.tsx`) shows an always-visible note: "Integration shared
+  fleet-wide via `<billed vehicle>` (`<platform>`) — not billed separately for this vehicle
+  type." Its own per-vehicle Subtotal still shows its own scored Integration figure
+  (useful for comparison) even though that amount isn't separately added to the fleet
+  total.
+- 13 new/updated tests in `src/calc/__tests__/fleetSellPrice.test.ts` cover: same-platform
+  fleets charge once, tier (not dollar amount) breaks ties for which line is "highest," and
+  mixed-platform fleets pay once per distinct group.
+
+**Vehicle data normalized — all 6 library vehicles now report `"BlueBotics ANT"`** as
+`display.fleetSoftware` (owner correction): `8hbc40a.json` and `8tb50a.json` previously said
+`"Toyota Fleet Manager"`; `ebase7.json` previously said `"BlueBotics FM"`. All three updated
+to match `cb18`/`m10`/`ml2`'s existing `"BlueBotics ANT"` — with today's library, every
+fleet's Integration is charged once fleet-wide regardless of how many vehicle types are
+assigned, since they all share one platform.
+
+**Dashboard's ROM CAPEX now matches Step 4's real total (owner-reported bug fix).** The
+Dashboard's customer-facing "ROM CAPEX" (`src/calc/rom.ts`'s `romPricing`) was hardware-only
+— Σ vehicle price range × qty — and never included Integration/Software/Adders, silently
+understating the true sell price versus Step 4's internal engine (e.g. a sample fleet showed
+$2.40M midpoint on the Dashboard vs. Step 4's real $2,568,700+ total, a ~7% gap in this
+example, driven by both the missing Integration/Software/Adders AND the shared-integration
+fix above).
+- `src/lib/fleetModel.ts` (`computeFleetModel` — the single derivation point for the
+  Dashboard, PPTX export, PDF export, and XLSX export) now reuses the SAME resolver Step 4
+  uses (`resolveAllRomSellPriceLines`/`resolveFleetSellPriceTotal`) to compute
+  `RomPricing.totalMin/totalMax/totalMid`, instead of `romPricing()`'s hardware-only sum.
+  Falls back to the old hardware-only figures when no assigned vehicle has configured
+  `romInputs` yet (nothing beyond hardware to price). `romPricing()` itself and
+  `RomPricing.lines` (the per-vehicle-type hardware breakdown) are unchanged — only the
+  fleet-wide totals are replaced.
+- This single change propagates everywhere `pricing.totalMin/totalMax/totalMid` is read:
+  the Dashboard's ROM CAPEX KPI, Payback, Net Benefit, Annual OPEX, TCO
+  (`RomKpis.tsx`), the ROM Pricing card headline (`RomPricingTable.tsx` — gained a caption
+  noting its per-vehicle-type rows stay hardware-only), and every PPTX
+  chart/table/takeaway/content slide that reads `rom.pricing.*` (`src/lib/pptx/*`) — all
+  automatically consistent with Step 4, can't drift.
+- `src/calc/rom.ts` itself is untouched (stays pure, hardware-only `romPricing()` unchanged)
+  — the substitution happens in `src/lib/fleetModel.ts`, which is allowed to depend on both
+  `src/calc/rom.ts` and `src/lib/romSellPriceLine.ts` without breaking calc-purity or
+  module-layering rules (`ARCHITECTURE.md` §3/§4).
+
+**Shipped:** `src/calc/fleetSellPrice.ts`, `src/calc/__tests__/fleetSellPrice.test.ts`,
+`src/lib/romSellPriceLine.ts`, `src/lib/fleetModel.ts`, `src/components/rom/RomFleetSellPrice.tsx`,
+`src/components/rom/VehicleSellPriceBlock.tsx`, `src/components/rom/RomPricingTable.tsx`,
+`app/globals.css`, `src/content/vehicles/8hbc40a.json`, `src/content/vehicles/8tb50a.json`,
+`src/content/vehicles/ebase7.json`, `docs/SPECIFICATION.md`.
+
 ## 2026-09-10 — Fleet-total Hardware drill-down; complexity gap fields on the intake form
 
 **Fleet total's Hardware line is now a drill-down** (`RomFleetSellPrice.tsx`, Step 4):

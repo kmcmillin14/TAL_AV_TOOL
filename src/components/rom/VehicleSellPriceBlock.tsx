@@ -10,6 +10,12 @@ interface Props {
   line: RomSellPriceLine
   override: RomSellPriceOverride | undefined
   onOverride: (patch: Partial<RomSellPriceOverride>) => void
+  /** Set when this vehicle's Integration isn't separately billed — it shares
+   *  a fleet-manager platform with another assigned vehicle type whose own
+   *  Integration line is the one actually charged (see the shared-integration
+   *  rule in src/calc/fleetSellPrice.ts). Null when this line IS billed (or
+   *  is the only vehicle on its platform). */
+  integrationSharedNote: string | null
 }
 
 /** One engineer-assigned chassis's ROM sell-price block: both complexity
@@ -19,7 +25,7 @@ interface Props {
  *  <details>, matching the receipt-row expand pattern) so the page reads as
  *  fleet-total-first with per-vehicle math available on demand — the
  *  <summary> alone still surfaces the vehicle's subtotal without expanding. */
-export default function VehicleSellPriceBlock({ line, override, onOverride }: Props) {
+export default function VehicleSellPriceBlock({ line, override, onOverride, integrationSharedNote }: Props) {
   const romInputs = getValidRomInputs(line.vehicle)
   const integrationMultiplier = PRICING_ASSUMPTIONS.integrationMultipliers[String(line.integrationResult.tier) as '1' | '2' | '3']
   const softwareMultiplier = PRICING_ASSUMPTIONS.softwareMultipliers[String(line.softwareResult.tier) as '1' | '2' | '3']
@@ -76,6 +82,9 @@ export default function VehicleSellPriceBlock({ line, override, onOverride }: Pr
             </div>
           )}
         />
+        {integrationSharedNote && (
+          <p className="rom-sp-integration-shared-note">{integrationSharedNote}</p>
+        )}
         <ReceiptRow
           label="Software"
           amount={fullUsd(line.pricing.softwareSellTotal)}

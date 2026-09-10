@@ -5,8 +5,9 @@ import type { Vehicle } from './vehicleLibrary'
 import { DEFAULT_BUFFER_PCT, type FleetSettings, type Flow, type FlowDerived, type FleetSummary } from '../calc/types'
 import { flowDerived, groupSummary } from '../calc/flowMetrics'
 import { fleetSummary, defaultChargeRegime } from '../calc/fleet'
-import { romSummary, type RomSummary, type RomCostInputs } from '../calc/rom'
+import { romPricing, romOpex, romPayback, type RomPricing, type RomSummary, type RomCostInputs } from '../calc/rom'
 import { defaultOperatingDaysPerYear, consecutiveOperatingDays } from '../calc/romAnalytics'
+import { resolveAllRomSellPriceLines, resolveFleetSellPriceTotal } from './romSellPriceLine'
 
 export interface FleetModel {
   flows: Flow[]
@@ -53,7 +54,30 @@ export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): 
     operatingDaysPerYear: project.operatingDaysPerYear
       ?? defaultOperatingDaysPerYear(project.operatingDaysPattern, project.operatingDaysCustom),
   }
-  const rom = romSummary(fleet, vehicleById, costs, { dailyOpHr })
+  // Full sell-price CAPEX (2026-09-10 — owner correction): the Dashboard's
+  // customer-facing ROM CAPEX used to be hardware-only (Σ vehicle price
+  // range × qty), silently omitting Integration/Software/Adders that Step
+  // 4's internal sell-price engine treats as part of the real total —
+  // understating the true sell price. Reuses the SAME resolver Step 4/PPTX
+  // call (resolveAllRomSellPriceLines/resolveFleetSellPriceTotal — see
+  // src/lib/romSellPriceLine.ts) so the Dashboard can't drift from Step 4;
+  // falls back to hardware-only when no assigned vehicle has configured
+  // romInputs yet (nothing beyond hardware to price).
+  const hardwarePricing = romPricing(fleet, vehicleById)
+  const sellLines = resolveAllRomSellPriceLines(project, fleet, vehicleById)
+  const sellTotal = resolveFleetSellPriceTotal(project, sellLines)
+  const pricing: RomPricing = sellLines.length > 0
+    ? {
+        lines: hardwarePricing.lines, // still hardware-only per-vehicle-type breakdown rows
+        totalMin: sellTotal.band.lowTotal,
+        totalMax: sellTotal.band.highTotal,
+        totalMid: sellTotal.sellTotal,
+      }
+    : hardwarePricing
+
+  const opex = romOpex(fleet, vehicleById, costs, { dailyOpHr }, pricing.totalMid)
+  const payback = romPayback(costs, pricing.totalMid)
+  const rom: RomSummary = { pricing, opex, payback }
 
   return { flows, derivedByFlowId, settings, fleet, rom, costs }
 }

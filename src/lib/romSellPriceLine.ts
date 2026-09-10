@@ -117,5 +117,16 @@ export function resolveAllRomSellPriceLines(
  *  the PPTX appendix call this — never sum `line.pricing` fields directly. */
 export function resolveFleetSellPriceTotal(project: StoredProject, lines: RomSellPriceLine[]): FleetSellPriceTotal {
   const selectedAdderIds = project.romSellPriceSelectedAdderIds ?? []
-  return aggregateFleetSellPrice(lines, selectedAdderIds, ADDERS_CONFIG, PRICING_ASSUMPTIONS)
+  const aggregatorLines = lines.map(l => ({
+    vehicleId: l.vehicleId,
+    pricing: l.pricing,
+    qty: l.qty,
+    // Fleet-manager platform key for the shared-integration rule (see
+    // fleetSellPrice.ts) — vehicle.display.fleetSoftware, or a per-vehicle
+    // fallback key when unset so an unconfigured vehicle never silently
+    // groups with (and rides free on) a configured one.
+    fleetManagerPlatform: l.vehicle.display.fleetSoftware ?? `unknown:${l.vehicleId}`,
+    integrationTier: l.integrationResult.tier,
+  }))
+  return aggregateFleetSellPrice(aggregatorLines, selectedAdderIds, ADDERS_CONFIG, PRICING_ASSUMPTIONS)
 }

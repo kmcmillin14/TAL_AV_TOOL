@@ -5,7 +5,7 @@
     "manufacturer": "Toyota Material Handling",
     "partnership": "TAL 3rd Party",
     "tHive": false,
-    "fleetSoftware": "Toyota Fleet Manager",
+    "fleetSoftware": "BlueBotics ANT",
     "heroImage": "/images/vehicles/8tb50a.png",
     "typicalLoad": "Cart Train",
     "category": "Automated Tugger",

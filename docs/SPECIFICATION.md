@@ -523,22 +523,38 @@ vehicle's full math expanded at once.)
   go below (an override can raise it further but never below the floor). An engineer can
   override either tier with its own reason (persisted per-vehicle, per-axis in
   `romSellPriceOverrides`).
+- **Integration is charged once per shared fleet-manager platform, not once per vehicle
+  type (2026-09-10, owner rule).** Lines are grouped by `Vehicle.display.fleetSoftware`
+  (e.g. `"BlueBotics ANT"` — every vehicle in the library today ships this same platform);
+  each platform group is charged exactly once, using its highest-integration-tier line's own
+  dollar amount (ties broken by the higher amount) — the other vehicles in that group ride
+  along without a separate Integration charge. A fleet mixing platforms pays once **per**
+  platform group, never shared across groups. Implemented in `aggregateFleetSellPrice`
+  (`src/calc/fleetSellPrice.ts`, `integrationByPlatform` on the result) and surfaced in the
+  UI: the Fleet total's Integration line is a drill-down showing which vehicle is billed per
+  platform, and a non-billed vehicle's own block shows a "shared fleet-wide, not billed
+  separately" note. **Software is unaffected — still summed per vehicle type** (software
+  integration can differ by vehicle role even on a shared fleet-manager platform).
 - Each vehicle block closes with a **Subtotal** (Hardware + Integration + Software only —
-  never "Total": adders are fleet-wide, not per-vehicle).
+  never "Total": adders are fleet-wide, not per-vehicle). Note: a vehicle riding along on a
+  shared platform still shows its own scored Integration figure in this per-vehicle Subtotal
+  (useful for judgment/comparison) even though that amount isn't separately added to the
+  Fleet total — only the platform group's single billed line is.
 - **Adders** — a flat, project-level checklist from `content/pricing/adders.json`
   (`romSellPriceSelectedAdderIds`, shared across the project's vehicles). **Fixed
   2026-09-09:** adders used to be added to the per-vehicle `computeSellPriceRom` call,
   so a selected adder was silently multiplied by however many vehicle types were in the
   fleet. They are now summed exactly once by `aggregateFleetSellPrice`
   (`src/calc/fleetSellPrice.ts`), in the **Fleet total** section only.
-- **Fleet total** = Σ every vehicle's Hardware + Σ Integration + Σ Software + Adders
-  (once) → a **ROM band** (`romBand.low`/`.high` in the assumptions file, e.g. −10%/+25%)
-  applied ONCE on that fleet-wide sum — not summed from each vehicle's own rounded band,
-  which would compound rounding error — rounded to the nearest `rounding` ($5,000 today).
-  (2026-09-10: the Fleet total's **Hardware** line is itself a drill-down — expanding it
-  shows each assigned vehicle type's own hardware contribution, e.g. `CB18 AGF × 4 —
-  $750,000`, so a mixed fleet's hardware split is visible without opening every vehicle
-  block. Integration/Software/Adders stay flat summary lines for now.)
+- **Fleet total** = Σ every vehicle's Hardware + Σ (once-per-platform-group) Integration +
+  Σ every vehicle's Software + Adders (once) → a **ROM band** (`romBand.low`/`.high` in the
+  assumptions file, e.g. −10%/+25%) applied ONCE on that fleet-wide sum — not summed from
+  each vehicle's own rounded band, which would compound rounding error — rounded to the
+  nearest `rounding` ($5,000 today). The Fleet total's **Hardware** and **Integration**
+  lines are both drill-downs (2026-09-10) — Hardware expands to each assigned vehicle
+  type's own hardware contribution (e.g. `CB18 AGF × 4 — $750,000`); Integration expands to
+  the per-platform-group billing detail described above. Software and Adders stay flat
+  summary lines.
 
 **Complexity inputs** (`src/calc/complexityInputs.ts`, `ComplexityAnswers`) map from the
 questionnaire/project schema — see `docs/CHANGELOG.md` (2026-09-09) for the full field
@@ -595,7 +611,17 @@ metric, renamed) — availability/charging weighted across the fleet from the ch
 **ROM pricing card** (`RomPricingTable.tsx`, customer-facing): leads with a **Total ROM
 CAPEX** headline (range + planning midpoint), the per-vehicle-type line-item table collapsed
 by default behind a `<details>` drill-down ("N vehicle types — click to expand") — same
-fleet-total-first, detail-on-demand pattern as Step 4's per-vehicle blocks. (2026-09-10.)
+fleet-total-first, detail-on-demand pattern as Step 4's per-vehicle blocks. **The headline
+now includes Integration/Software/Adders (2026-09-10 fix)** — it used to be hardware-only
+(Σ vehicle price range × qty), which silently understated the real sell price by omitting
+everything Step 4's internal engine adds on top; `src/lib/fleetModel.ts` now reuses the
+SAME resolver Step 4 and the PPTX export use
+(`resolveAllRomSellPriceLines`/`resolveFleetSellPriceTotal`) so the Dashboard's ROM CAPEX
+KPI, this card's headline, Payback, Net Benefit, Annual OPEX, and TCO all move together and
+can't drift from Step 4's real total. Falls back to the old hardware-only figure when no
+assigned vehicle has configured `romInputs` yet. The per-vehicle-type breakdown table below
+the drill-down stays **hardware-only** (a caption says so explicitly) — it will not sum to
+the headline.
 
 **Bento body:** full-width **material flow map** (industrial neutral + single red accent,
 symmetric columns, throughput pills) with a **backing data table** underneath; paired money
