@@ -151,9 +151,9 @@ const SAMPLE_RFQ_GUIDE: Guide = {
     },
     {
       route: '/step4',
-      target: '.rom-sp-vehicle-block',
-      title: 'Configure the sell price',
-      body: 'Each assigned chassis scores Integration and Software complexity from the intake answers, then prices Hardware + Integration + Software. Pick adders below for a fleet-wide total.',
+      target: '.rom-quote',
+      title: 'The project quotation',
+      body: 'Hardware, software, professional services, and adders — each a category with its own subtotal, closed by the total project investment. Pick options below to add them, and see how the project scored underneath.',
     },
     {
       route: '/step5',

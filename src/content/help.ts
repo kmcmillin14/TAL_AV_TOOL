@@ -169,25 +169,26 @@ export const HELP: HelpSection[] = [
   {
     id: 'step4',
     eyebrow: 'Step 04',
-    title: 'ROM Configuration',
+    title: 'Pricing',
     summary:
-      'The internal sell-price build-up — Hardware + Integration + Software + Adders — for every vehicle type the engineer assigned in the Fleet Engine. Integration and Software each score a complexity tier from the intake answers (facility size, fleet size, WMS integration, and more); a fleet-wide TOTAL sums every vehicle plus the adders you pick, once.',
+      'The project quotation. Four priced categories — Hardware, Software, Professional services, and Adders — each with its own subtotal, closed by the total project investment. Underneath, a plain-English panel explains how the project scored: one complexity result for the whole fleet, because complexity comes from the site and the program, not from which chassis you picked.',
     howTo: [
-      'For each vehicle block, review the scored Integration and Software tier — hover a reason to see which answer triggered it.',
-      'Override a tier with a reason if your judgment differs from the score; an override can never go below the vehicle’s inherent floor tier.',
-      'Open the arrow on any receipt line (Hardware, Integration, Software) to see the substituted math.',
-      'Pick adders (warranty, support, training) at the bottom — they apply once to the whole fleet, never per vehicle.',
+      'Read the quotation top to bottom — Hardware itemizes per vehicle type; Software and Professional services are single fleet-wide lines.',
+      'Pick options (warranty, support, training) below the quote — each applies once to the project total, never per vehicle.',
+      'Check the scoring panel: each axis shows a named tier (Straightforward / Standard / Complex) and the plain-English reasons behind it. Open “Show scoring detail” for the point math.',
+      'Use “Adjust tiers per vehicle” only when one chassis genuinely differs — an override needs a reason and can never drop below that vehicle’s own minimum.',
     ],
     example: {
-      title: 'Example — a two-chassis fleet',
+      title: 'Example — a three-chassis fleet',
       lines: [
-        'CB18 ×4: Hardware $750K, Integration $90K (Tier 2), Software $24K (Tier 2) → Subtotal $864K.',
-        'M10 ×6: a second block with its own tiers and subtotal.',
-        'Fleet total sums both subtotals + one Extended Warranty adder — never doubled per vehicle.',
+        'Hardware $2.40M itemized across CB18 ×4, M10 ×6, 8HBC40A ×5.',
+        'Professional services $99.9K — charged once, because one fleet manager runs all three chassis.',
+        'Scored Standard (2 of 3): an 11–20 unit fleet, a 500K+ sq ft facility, a customer new to AGVs.',
       ],
     },
     tips: [
-      'Adders are project-wide, not per-vehicle — checking one applies it once to the fleet total, however many chassis types you have.',
+      'Professional services covers integration, commissioning, startup support, and project management as one line — and is charged once per fleet-manager platform, not per vehicle type.',
+      'Options are project-wide — checking one adds it once to the total, however many chassis types you have.',
       'A vehicle with no pricing configured (missing romInputs) is skipped with a note, not silently priced at zero.',
     ],
   },

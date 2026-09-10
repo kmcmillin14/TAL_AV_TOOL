@@ -90,6 +90,44 @@ export function resolveRomSellPriceLine(
   }
 }
 
+export interface FleetComplexityBaseline {
+  integration: TierResult
+  software: TierResult
+}
+
+/** The fleet-wide complexity scores, BEFORE any vehicle's own floor or an
+ *  engineer's per-vehicle override.
+ *
+ *  Both axes score purely from project-level answers plus the program's total
+ *  fleet size (`buildIntegrationTriggers`/`buildSoftwareTriggers` — nothing
+ *  vehicle-specific goes in), so this one result is the baseline every
+ *  assigned vehicle starts from. A vehicle only diverges from it when its own
+ *  `romInputs` floor raises it, or an engineer overrides that vehicle's tier.
+ *  That's what makes a single fleet-level complexity summary honest for a
+ *  mixed-chassis fleet instead of repeating the identical breakdown once per
+ *  vehicle type. Floor is passed as 1 (no floor) so `flooredBy` is always
+ *  null here — flooring is a per-vehicle concern, reported per line. */
+export function resolveFleetComplexityBaseline(
+  project: StoredProject,
+  totalFleetSize: number
+): FleetComplexityBaseline {
+  const answers = complexityAnswersFromProject(project)
+  return {
+    integration: scoreTier(
+      buildIntegrationTriggers(answers, totalFleetSize),
+      PRICING_ASSUMPTIONS.integrationScoring,
+      1,
+      'vehicle integration floor'
+    ),
+    software: scoreTier(
+      buildSoftwareTriggers(answers),
+      PRICING_ASSUMPTIONS.softwareScoring,
+      1,
+      'vehicle software floor'
+    ),
+  }
+}
+
 /** Resolves every engineer-assigned chassis with fleetSold > 0 into a priced
  *  line, silently omitting any with no configured pricing. */
 export function resolveAllRomSellPriceLines(

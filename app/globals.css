@@ -3792,10 +3792,14 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-price-table .num { text-align: right; }
 .rom-veh { display: inline-flex; align-items: center; gap: 8px; }
 
-/* Internal ROM — sell price (Hardware/Integration/Software/Adders). Scoped to
-   .rom-sp; reuses the SAME tile system as the top hero boxes (.rom2-hero /
-   .rom-kpi) so this card reads as part of the dashboard, not a bolted-on
-   table — the pricing breakdown below literally shares those classes. */
+/* ── ROM Configuration (Step 4) ──────────────────────────────────────────
+   Three stacked surfaces: .rom-quote (the priced quotation: Hardware ·
+   Software · Professional services · Adders, each a category with a
+   subtotal), .rom-options (the adder picker that feeds the Adders
+   category), and .rom-cx (plain-English "how this project scored", ONE
+   fleet-wide result — both complexity axes score from project answers +
+   total fleet size, never anything chassis-specific). Card shell matches
+   .rom2-hero so the page reads as part of the same design system. */
 .rom-sp-placeholder-warning {
   font-family: var(--tal-font-family); font-size: 12px; font-weight: 600;
   color: var(--warn); background: var(--warn-soft);
@@ -3807,87 +3811,79 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   border-radius: 8px; padding: 8px 12px; margin-bottom: 16px;
 }
 .rom-sp-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
-.rom-sp-vehicle-picker { display: flex; align-items: center; gap: 8px; font-family: var(--tal-font-family); font-size: 13px; margin-bottom: 16px; }
-.rom-sp-vehicle-picker select {
-  font-family: var(--tal-font-numeric); font-size: 13px; font-weight: 600; color: var(--text-primary);
-  background: var(--bg-input); border: 1px solid var(--border); border-radius: 7px; padding: 6px 10px;
-}
 
-/* Two complexity breakdown cards — same card recipe as .rom2-hero (top
-   Financials/Fleet&Flow boxes) so they don't read as a different component. */
-.rom-sp-breakdowns { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; align-items: stretch; }
-@media (max-width: 700px) { .rom-sp-breakdowns { grid-template-columns: 1fr; } }
-.rom-sp-tier { display: flex; flex-direction: column; min-height: 100%; }
-.rom-sp-tier-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 10px; }
-.rom-sp-tier-figure { display: flex; align-items: baseline; gap: 8px; }
-.rom-sp-tier-badge { font-family: var(--tal-font-numeric); font-weight: 800; color: var(--accent); font-size: 20px; }
-.rom-sp-tier-score { font-family: var(--tal-font-numeric); font-size: 11px; color: var(--text-tertiary); }
-.rom-sp-floor-note {
-  font-family: var(--tal-font-family); font-size: 11.5px; color: var(--warn);
-  background: var(--warn-soft); border-radius: 6px; padding: 4px 8px; margin: 0 0 10px; width: fit-content;
-}
-.rom-sp-reasons { margin: 0 0 8px; font-family: var(--tal-font-family); font-size: 12.5px; }
-.rom-sp-reasons div { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
-.rom-sp-reasons dt { color: var(--text-secondary); }
-.rom-sp-reasons dd { margin: 0; font-family: var(--tal-font-numeric); font-weight: 700; color: var(--accent); }
-.rom-sp-empty-drivers { font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-tertiary); font-style: italic; margin: 0 0 8px; }
-.rom-sp-not-triggered { font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-tertiary); margin-bottom: 10px; }
-.rom-sp-not-triggered summary { cursor: pointer; }
-.rom-sp-not-triggered ul { margin: 6px 0 0; padding-left: 16px; }
-.rom-sp-override { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: auto; padding-top: 10px; }
-.rom-sp-override label {
-  display: flex; align-items: center; gap: 6px;
-  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
-  letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary);
-}
-.rom-sp-override select, .rom-sp-override input {
-  font: inherit; font-family: var(--tal-font-numeric); font-size: 13px; font-weight: 600;
-  color: var(--text-primary); background: var(--bg-input);
-  border: 1px solid var(--border); border-radius: 7px; padding: 6px 8px;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease;
-}
-.rom-sp-override select:focus, .rom-sp-override input:focus {
-  outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft);
-}
-.rom-sp-override input { flex: 1 1 160px; min-width: 0; }
-
-/* Pricing breakdown — a receipt: each line expands (native <details>, no JS
-   state needed) to show the substituted math behind it, closed by a bold
-   TOTAL row and smaller per-unit/range lines. Reuses .rom2-hero as the card
-   shell for visual consistency with the rest of the dashboard. */
-.rom-sp-pricing { margin-bottom: 20px; }
-.rom-sp-receipt { display: flex; flex-direction: column; }
-.rom-sp-receipt-row { border-bottom: 1px solid var(--border); }
-.rom-sp-receipt-row summary {
-  display: flex; align-items: center; gap: 8px; list-style: none; cursor: pointer;
-  padding: 10px 2px; font-family: var(--tal-font-family); font-size: 13.5px; color: var(--text-primary);
-}
-.rom-sp-receipt-row summary::-webkit-details-marker,
-.rom-sp-receipt-row summary::marker { display: none; content: ''; }
-.rom-sp-receipt-row summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+/* Chevron shared with the Dashboard's ROM pricing drill-down. */
 .rom-sp-receipt-chevron { flex-shrink: 0; color: var(--text-disabled); transition: transform 0.15s ease; }
-.rom-sp-receipt-row[open] .rom-sp-receipt-chevron { transform: rotate(90deg); color: var(--text-tertiary); }
-.rom-sp-receipt-amount { margin-left: auto; font-family: var(--tal-font-numeric); font-weight: 700; }
-.rom-sp-receipt-detail {
-  margin: 0 0 12px 23px; padding: 10px 12px;
-  background: var(--bg-surface-2); border-radius: 8px;
-  font-family: var(--tal-font-family); font-size: 12px; line-height: 1.6; color: var(--text-secondary);
+
+/* ── The quotation ─────────────────────────────────────────────────────── */
+.rom-quote {
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: var(--shadow-card); padding: 24px 26px 20px; margin-bottom: 20px;
 }
-.rom-sp-receipt-detail .mono { font-family: var(--tal-font-numeric); color: var(--text-primary); font-weight: 600; }
-.rom-sp-receipt-detail-row { display: flex; justify-content: space-between; gap: 12px; }
-.rom-sp-receipt-total {
-  display: flex; align-items: baseline; gap: 8px; padding: 12px 2px 4px;
-  font-family: var(--tal-font-family); font-size: 14.5px; font-weight: 800; color: var(--accent);
+.rom-quote-head { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 2px solid var(--border); }
+.rom-quote-title {
+  font-family: var(--tal-font-family); font-size: 18px; font-weight: 800;
+  color: var(--text-primary); margin: 0;
 }
-.rom-sp-receipt-total .rom-sp-receipt-amount { font-size: 17px; color: var(--accent); }
-.rom-sp-receipt-foot {
-  display: flex; justify-content: space-between; gap: 12px; padding: 6px 2px;
+.rom-quote-sub {
+  font-family: var(--tal-font-numeric); font-size: 11px; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--text-tertiary); margin: 4px 0 0;
+}
+.rom-quote-cat { margin-bottom: 16px; }
+.rom-quote-cat-head {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+}
+.rom-quote-cat-name {
+  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-primary);
+}
+.rom-quote-cat-amount {
+  font-family: var(--tal-font-numeric); font-size: 15px; font-weight: 800; color: var(--text-primary);
+}
+.rom-quote-cat-body { padding: 8px 0 0 14px; }
+.rom-quote-line {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 5px 0; font-family: var(--tal-font-family); font-size: 13px; color: var(--text-secondary);
+}
+.rom-quote-line-qty { color: var(--text-tertiary); font-size: 12px; }
+.rom-quote-line-amount { font-family: var(--tal-font-numeric); font-weight: 600; color: var(--text-secondary); }
+.rom-quote-includes {
+  margin: 2px 0 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 6px 8px;
+}
+.rom-quote-includes li {
+  font-family: var(--tal-font-family); font-size: 12px; color: var(--text-secondary);
+  background: var(--bg-surface-2); border-radius: 999px; padding: 3px 10px;
+}
+.rom-quote-note {
+  font-family: var(--tal-font-family); font-size: 11.5px; font-style: italic;
+  color: var(--text-tertiary); margin: 8px 0 0;
+}
+.rom-quote-total {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  margin-top: 20px; padding-top: 14px; border-top: 2px solid var(--accent);
+  font-family: var(--tal-font-family); font-size: 15px; font-weight: 800; color: var(--accent);
+}
+.rom-quote-total-amount { font-family: var(--tal-font-numeric); font-size: 22px; font-weight: 800; color: var(--accent); }
+.rom-quote-foot {
+  display: flex; justify-content: space-between; gap: 12px; padding: 5px 0;
   font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-tertiary);
 }
-.rom-sp-receipt-foot .mono { font-family: var(--tal-font-numeric); color: var(--text-secondary); font-weight: 600; }
+.rom-quote-foot .mono { font-family: var(--tal-font-numeric); color: var(--text-secondary); font-weight: 600; }
 
-/* Adders — compact chip grid, not a stretched full-width list. */
-.rom-sp-adders { margin-bottom: 4px; }
+/* ── Options (adder picker) ────────────────────────────────────────────── */
+.rom-options {
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: var(--shadow-card); padding: 20px 22px; margin-bottom: 20px;
+}
+.rom-options-title {
+  font-family: var(--tal-font-family); font-size: 15px; font-weight: 700;
+  color: var(--text-primary); margin: 0;
+}
+.rom-options-sub {
+  font-family: var(--tal-font-family); font-size: 12px; color: var(--text-tertiary); margin: 3px 0 12px;
+}
 .rom-sp-adder-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
 @media (max-width: 560px) { .rom-sp-adder-grid { grid-template-columns: 1fr; } }
 .rom-sp-adder-row {
@@ -3897,46 +3893,74 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   transition: border-color 0.12s ease, background 0.12s ease;
 }
 .rom-sp-adder-row:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-
-/* Full-fleet ROM Configuration (Step 4) — the .rom-sp-fleet-total section
-   leads the page; one collapsed-by-default .rom-sp-vehicle-block (native
-   <details>) per assigned chassis follows for drill-down detail. Reuses the
-   .rom-sp-* receipt/tile system above; only the vehicle-block wrapper and
-   the fleet-total accent border are new. */
-.rom-sp-detail-eyebrow {
-  font-family: var(--tal-font-family); font-size: 12px; font-weight: 600;
-  letter-spacing: 0.02em; color: var(--text-tertiary); margin: 4px 2px 10px;
-}
-.rom-sp-vehicle-block {
-  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px;
-  box-shadow: var(--shadow-card); padding: 4px 22px 4px; margin-bottom: 12px;
-}
-.rom-sp-vehicle-block[open] { padding: 20px 22px 22px; }
-.rom-sp-vehicle-summary {
-  display: flex; align-items: center; gap: 10px; list-style: none; cursor: pointer;
-  padding: 16px 0; margin: 0;
-}
-.rom-sp-vehicle-summary::-webkit-details-marker,
-.rom-sp-vehicle-summary::marker { display: none; content: ''; }
-.rom-sp-vehicle-summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-.rom-sp-vehicle-block[open] .rom-sp-vehicle-summary { padding-bottom: 4px; }
-.rom-sp-vehicle-block[open] > summary .rom-sp-receipt-chevron { transform: rotate(90deg); color: var(--text-tertiary); }
-.rom-sp-vehicle-name {
-  display: flex; align-items: baseline; gap: 10px;
-  font-family: var(--tal-font-family); font-size: 16px; font-weight: 700;
-  color: var(--text-primary);
-}
-.rom-sp-vehicle-name .mono { font-family: var(--tal-font-numeric); font-weight: 600; color: var(--text-tertiary); font-size: 13px; }
-.rom-sp-vehicle-subtotal { margin-left: auto; font-family: var(--tal-font-numeric); font-weight: 700; font-size: 14.5px; color: var(--text-secondary); }
-.rom-sp-fleet-total { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); margin-bottom: 24px; }
-.rom-sp-fleet-total .rom-sp-receipt-total { font-size: 16px; }
-.rom-sp-fleet-total .rom-sp-adders { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
-.rom-sp-integration-group:not(:last-child) { margin-bottom: 10px; }
-.rom-sp-integration-shared-note {
-  font-family: var(--tal-font-family); font-size: 11px; font-style: italic;
-  color: var(--text-tertiary); margin: 2px 0 0;
-}
 .rom-sp-adder-row .mono { margin-left: auto; font-family: var(--tal-font-numeric); color: var(--text-tertiary); flex-shrink: 0; }
+
+/* ── Complexity, in plain English ──────────────────────────────────────── */
+.rom-cx {
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: var(--shadow-card); padding: 20px 22px 22px; margin-bottom: 20px;
+}
+.rom-cx-title { font-family: var(--tal-font-family); font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0; }
+.rom-cx-sub { font-family: var(--tal-font-family); font-size: 12px; color: var(--text-tertiary); margin: 3px 0 16px; }
+.rom-cx-axes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .rom-cx-axes { grid-template-columns: 1fr; } }
+.rom-cx-axis { background: var(--bg-surface-2); border-radius: 12px; padding: 14px 16px; }
+.rom-cx-axis-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.rom-cx-axis-name {
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.rom-cx-tier { font-family: var(--tal-font-family); font-size: 15px; font-weight: 800; color: var(--accent); }
+.rom-cx-tier-1 { color: var(--good, var(--text-primary)); }
+.rom-cx-tier-of { font-family: var(--tal-font-numeric); font-size: 10.5px; font-weight: 600; color: var(--text-tertiary); }
+.rom-cx-driver { font-family: var(--tal-font-family); font-size: 13px; line-height: 1.5; color: var(--text-primary); margin: 0 0 6px; }
+.rom-cx-multiplier { font-family: var(--tal-font-family); font-size: 12px; color: var(--text-tertiary); margin: 0 0 8px; }
+.rom-cx-multiplier .mono { font-family: var(--tal-font-numeric); font-weight: 700; color: var(--text-secondary); }
+.rom-cx-detail { font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-tertiary); }
+.rom-cx-detail summary { cursor: pointer; }
+.rom-cx-detail summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.rom-cx-detail-body { padding-top: 8px; }
+.rom-cx-detail-score { margin: 0 0 6px; }
+.rom-cx-detail-score .mono { font-family: var(--tal-font-numeric); font-weight: 700; color: var(--text-secondary); }
+.rom-cx-points { margin: 0 0 6px; font-size: 12px; }
+.rom-cx-points div { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
+.rom-cx-points dt { color: var(--text-secondary); }
+.rom-cx-points dd { margin: 0; font-family: var(--tal-font-numeric); font-weight: 700; color: var(--accent); }
+.rom-cx-not-triggered { margin: 6px 0 0; line-height: 1.5; }
+.rom-cx-diverged {
+  font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.5;
+  color: var(--text-secondary); background: var(--bg-surface-2);
+  border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0;
+  padding: 10px 12px; margin: 16px 0 0;
+}
+.rom-cx-adjust-toggle {
+  margin-top: 16px; background: none; border: none; cursor: pointer; padding: 0;
+  font-family: var(--tal-font-family); font-size: 12.5px; font-weight: 600;
+  color: var(--accent); text-decoration: underline; text-underline-offset: 3px;
+}
+.rom-cx-adjust { margin-top: 12px; padding-top: 14px; border-top: 1px solid var(--border); }
+.rom-cx-note { font-family: var(--tal-font-family); font-size: 11.5px; font-style: italic; color: var(--text-tertiary); margin: 0 0 12px; }
+.rom-cx-adjust-row {
+  display: flex; flex-wrap: wrap; align-items: flex-start; gap: 10px 16px;
+  padding: 10px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+}
+.rom-cx-adjust-veh {
+  flex: 1 1 100%; font-family: var(--tal-font-family); font-size: 13px;
+  font-weight: 700; color: var(--text-primary);
+}
+.rom-cx-adjust-axis { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; flex: 1 1 260px; }
+.rom-cx-adjust-axis label {
+  display: flex; align-items: center; gap: 6px;
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.rom-cx-adjust-axis select, .rom-cx-adjust-reason {
+  font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-primary);
+  background: var(--bg-input); border: 1px solid var(--border); border-radius: 7px; padding: 5px 8px;
+  text-transform: none; letter-spacing: 0;
+}
+.rom-cx-adjust-axis select:focus, .rom-cx-adjust-reason:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rom-cx-adjust-reason { flex: 1 1 160px; min-width: 0; }
 
 .rom-econ-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
 .rom-econ-field { display: flex; flex-direction: column; gap: 5px; }

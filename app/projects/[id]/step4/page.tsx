@@ -57,9 +57,9 @@ export default function RomConfigurationPage() {
           <span className="eh-eyebrow mono">Step 04 / 05</span>
           <h1 className="eh-title">ROM Configuration</h1>
           <p className="eh-sub">
-            Internal sell-price build-up — Hardware + Integration + Software + Adders — for
-            every assigned chassis, with a fleet-wide total. Budgetary estimate, placeholder
-            pricing pending real numbers from the business owner.
+            The project quotation — hardware, software, professional services, and adders,
+            priced across the whole fleet. Budgetary estimate, placeholder pricing pending
+            real numbers from the business owner.
           </p>
         </div>
 

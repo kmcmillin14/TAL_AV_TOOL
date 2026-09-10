@@ -1,5 +1,58 @@
 # Changelog
 
+## 2026-09-10 — Step 4 rebuilt as a quotation; complexity explained in plain English
+
+**Step 4 now reads as a quotation, not a receipt** (owner request). `RomFleetSellPrice.tsx`
+is now a thin orchestrator over three surfaces:
+
+- **`src/components/rom/RomQuotation.tsx` (new)** — four priced categories, each a header
+  row carrying its subtotal with sub-lines indented beneath:
+  - **Hardware** — itemized per assigned vehicle type (`CB18 AGF × 4 — $750,000`).
+  - **Software** — one fleet-wide line (the math still sums per vehicle type; only the
+    presentation is consolidated).
+  - **Professional services** — one fleet-wide line, rendered with a descriptive
+    **"includes" list: Integration · Commissioning · Startup support · Project
+    management**, plus a note when it's shared across a fleet-manager platform. Per owner
+    decision these four are **descriptive scope on ONE dollar figure**, not four separately
+    priced lines — no new pricing inputs were added, but that single number
+    (`romInputs.baseIntegrationSellPrice`) is now nominally covering all four and must be
+    sized accordingly when real pricing lands.
+  - **Adders** — the selected options, itemized.
+  Closed by **Total project investment**, then per-unit blended and the budgetary range.
+- **Options** — the adder checklist, moved out of the total card into its own block.
+- **`src/components/rom/RomComplexityPanel.tsx` (new)** — see below.
+
+**Complexity is now one fleet-wide result in plain English, not the same list repeated per
+chassis.** Both axes score from project-level answers plus total fleet size — nothing
+vehicle-specific — so a mixed-chassis fleet was rendering the identical breakdown once per
+vehicle type (three times in the sample project).
+- `resolveFleetComplexityBaseline` (`src/lib/romSellPriceLine.ts`) returns that unfloored
+  fleet-wide baseline.
+- `src/lib/romComplexityLabels.ts` gained `tierName` (**Straightforward / Standard /
+  Complex**, shown with the numeral: "Standard · 2 of 3") and `complexityDriverPhrase`
+  (sentence-fragment phrasing, e.g. "an 11–20 unit fleet", "a customer new to AGVs") so an
+  axis reads *"Driven by an 11–20 unit fleet, a 500K+ sq ft facility, and a customer new to
+  AGVs. Priced at 1.8× the base rate."*
+- Point math (score, thresholds, per-trigger points, not-triggered list) moved behind a
+  **Show scoring detail** toggle. Per-vehicle tier controls moved behind an **Adjust tiers
+  per vehicle** toggle, each axis keeping its own independent reason field. A vehicle that
+  diverges from the baseline (its own floor, or an override) is called out by name.
+
+**Removed:** `src/components/rom/VehicleSellPriceBlock.tsx` (superseded — it was the
+per-chassis repetition), and with it `ReceiptRow`/`TierBreakdown` from
+`RomSellPriceParts.tsx`, which now exports only `fullUsd`. Dead CSS for those components
+was dropped from `app/globals.css` in the same pass.
+
+**No pricing math changed** — every figure still comes from the same
+`resolveAllRomSellPriceLines`/`resolveFleetSellPriceTotal` resolver the Dashboard and PPTX
+export call, so the three surfaces still can't drift (sample project verified unchanged at
+$2,568,700).
+
+**Also updated:** `src/components/GuidedTour.tsx` (the `/step4` tour step targeted the
+deleted `.rom-sp-vehicle-block`; now targets `.rom-quote` with copy matching the new
+layout), `src/content/help.ts` (step4 help rewritten for the quotation), and the step 4
+page intro (`app/projects/[id]/step4/page.tsx`).
+
 ## 2026-09-10 — Shared-platform Integration: billed line now picked by dollar amount, not tier
 
 **Refinement of the same-day shared-integration rule below** — which line within a
