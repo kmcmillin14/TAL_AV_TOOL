@@ -69,8 +69,8 @@ const INTRO_GUIDE: Guide = {
   steps: [
     {
       target: '.hero-nav .step-dots',
-      title: 'Five steps, one flow',
-      body: 'This tool sizes an AGV/AMR fleet in five steps. The engineering discipline behind it: Cut waste → Connect the moves → Add the economics. Here is where each step lives.',
+      title: 'Six steps, one flow',
+      body: 'This tool sizes an AGV/AMR fleet in six steps. The engineering discipline behind it: Cut waste → Connect the moves → Add the economics. Here is where each step lives.',
     },
     {
       target: '.hero-nav .step-dot:nth-child(2)',
