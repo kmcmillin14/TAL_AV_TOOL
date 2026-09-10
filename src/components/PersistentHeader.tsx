@@ -28,7 +28,7 @@ interface HeaderData {
   step2Complete: boolean
 }
 
-type StepId = 0 | 1 | 2 | 3 | 4
+type StepId = 0 | 1 | 2 | 3 | 4 | 5
 
 interface PersistentHeaderProps {
   project: HeaderData
@@ -41,11 +41,12 @@ type EditField = 'projectName' | 'customerName' | 'facilityLocation' | 'bastianR
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
 const STEPS: ReadonlyArray<{ id: StepId; label: string; desc: string }> = [
-  { id: 0, label: 'Start',        desc: 'Import or create' },
-  { id: 1, label: 'Application',  desc: 'Load, transfer, environment' },
-  { id: 2, label: 'Vehicles',     desc: 'Compatibility & qualification' },
-  { id: 3, label: 'Fleet Engine', desc: 'Flows, charging & buffer' },
-  { id: 4, label: 'ROM Dashboard', desc: 'Fleet, KPIs & pricing' },
+  { id: 0, label: 'Start',                   desc: 'Import or create' },
+  { id: 1, label: 'Intake Form',              desc: 'Load, transfer, environment' },
+  { id: 2, label: 'Hardware Compatibility',   desc: 'Compatibility & qualification' },
+  { id: 3, label: 'Fleet Sizing',             desc: 'Flows, charging & buffer' },
+  { id: 4, label: 'ROM Configuration',        desc: 'Complexity, adders & sell price' },
+  { id: 5, label: 'Dashboard',                desc: 'Fleet, KPIs & pricing' },
 ]
 
 const META_FIELDS = new Set<EditField>(['versionNumber', 'createdAt'])
