@@ -112,7 +112,7 @@ export default function RomDashboardPage() {
           step1Complete: project.step1Complete,
           step2Complete: project.step2Complete,
         }}
-        currentStep={4}
+        currentStep={5}
         unitSystem={unitSystem}
         onUnitToggle={toggleUnitSystem}
       />
@@ -120,7 +120,7 @@ export default function RomDashboardPage() {
       <div className="workspace">
         <div className="engine-head with-actions">
           <div className="eh-text">
-            <span className="eh-eyebrow mono">Step 04 / 04</span>
+            <span className="eh-eyebrow mono">Step 05 / 05</span>
             <h1 className="eh-title">ROM Dashboard</h1>
             <p className="eh-sub">
               Rough-order fleet economics. Adjust the drivers on the left to run a what-if
