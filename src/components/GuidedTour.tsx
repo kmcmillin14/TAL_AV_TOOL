@@ -69,8 +69,8 @@ const INTRO_GUIDE: Guide = {
   steps: [
     {
       target: '.hero-nav .step-dots',
-      title: 'Four steps, one flow',
-      body: 'This tool sizes an AGV/AMR fleet in four steps. The engineering discipline behind it: Cut waste → Connect the moves → Add the economics. Here is where each step lives.',
+      title: 'Five steps, one flow',
+      body: 'This tool sizes an AGV/AMR fleet in five steps. The engineering discipline behind it: Cut waste → Connect the moves → Add the economics. Here is where each step lives.',
     },
     {
       target: '.hero-nav .step-dot:nth-child(2)',
@@ -89,7 +89,12 @@ const INTRO_GUIDE: Guide = {
     },
     {
       target: '.hero-nav .step-dot:nth-child(5)',
-      title: '④ ROM Dashboard',
+      title: '④ ROM Configuration',
+      body: 'Score Integration and Software complexity per vehicle, pick adders, and see a fleet-wide sell-price total — budgetary, placeholder pricing until real numbers land.',
+    },
+    {
+      target: '.hero-nav .step-dot:nth-child(6)',
+      title: '⑤ Dashboard',
       body: 'Fleet size, CAPEX, payback, and cost-per-move — then export the customer deck. Adjust the drivers to run what-if scenarios.',
     },
   ],
@@ -146,6 +151,12 @@ const SAMPLE_RFQ_GUIDE: Guide = {
     },
     {
       route: '/step4',
+      target: '.rom-sp-vehicle-block',
+      title: 'Configure the sell price',
+      body: 'Each assigned chassis scores Integration and Software complexity from the intake answers, then prices Hardware + Integration + Software. Pick adders below for a fleet-wide total.',
+    },
+    {
+      route: '/step5',
       // The Financials hero card — a single bounded surface; ringing the whole
       // multi-card kpiband drew broken fragments across the card gaps.
       target: '.rom2-hero',
@@ -153,7 +164,7 @@ const SAMPLE_RFQ_GUIDE: Guide = {
       body: 'Fleet, CAPEX range, payback. Adjust drivers for what-ifs, then Export builds the customer deck.',
     },
     {
-      route: '/step4',
+      route: '/step5',
       // Desktop drivers render as aside.rom2-rail; the <summary> only exists in
       // the collapsed (narrow) layout and is hidden on desktop — no ring showed.
       target: '.rom2-rail-head',
@@ -161,25 +172,25 @@ const SAMPLE_RFQ_GUIDE: Guide = {
       body: 'Run what-ifs here — throughput boost, labor rate, shifts. Every KPI recomputes live; toggle Baseline / Scenario to compare.',
     },
     {
-      route: '/step4',
+      route: '/step5',
       target: '#rom-fleet-math .rom2-cell-head',
       title: 'Fleet & flow math',
       body: 'The full sizing math — every stage from cycle time to the binding constraint, with this project\'s numbers substituted in.',
     },
     {
-      route: '/step4',
+      route: '/step5',
       target: '#rom-assumptions .rom2-cell-head',
       title: 'Assumptions',
       body: 'Every assumption is listed and defensible — DoD, availability, headroom. This is what you stand behind in the customer meeting.',
     },
     {
-      route: '/step4',
+      route: '/step5',
       target: '.rom-card-export',
       title: 'Export',
       body: 'Done? One format per audience — the customer deck (PPTX), the internal model (Excel), and a JSON revision to reopen later.',
     },
     {
-      route: '/step4',
+      route: '/step5',
       target: null,
       title: 'Your turn',
       body: 'That\'s the whole flow — RFQ in, defensible ROM out. Ready? This wipes the sample and starts your own application.',
