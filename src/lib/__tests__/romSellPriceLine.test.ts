@@ -36,14 +36,14 @@ const flatAnswers: ComplexityAnswers = {
 describe('resolveRomSellPriceLine — tier overrides respect the vehicle floor', () => {
   it('an override tier is clamped UP to the vehicle floor, never allowed below it', () => {
     const override: RomSellPriceOverride = { integrationTierOverride: 1 }
-    const line = resolveRomSellPriceLine(veh(3, 1), group(), 2, flatAnswers, override, [])
+    const line = resolveRomSellPriceLine(veh(3, 1), group(), 2, flatAnswers, override)
     expect(line?.integrationResult.tier).toBe(3) // floor wins over the Tier-1 override
     expect(line?.integrationResult.flooredBy).toBe('vehicle integration floor')
   })
 
   it('an override tier above the floor is honored as-is', () => {
     const override: RomSellPriceOverride = { softwareTierOverride: 3 }
-    const line = resolveRomSellPriceLine(veh(1, 1), group(), 2, flatAnswers, override, [])
+    const line = resolveRomSellPriceLine(veh(1, 1), group(), 2, flatAnswers, override)
     expect(line?.softwareResult.tier).toBe(3)
     expect(line?.softwareResult.flooredBy).toBeNull()
   })
@@ -53,7 +53,7 @@ describe('resolveRomSellPriceLine — tier overrides respect the vehicle floor',
       integrationTierOverride: 3, integrationOverrideReason: 'site survey confirmed complexity',
       softwareTierOverride: 2, softwareOverrideReason: 'no WMS integration required',
     }
-    const line = resolveRomSellPriceLine(veh(1, 1), group(), 2, flatAnswers, override, [])
+    const line = resolveRomSellPriceLine(veh(1, 1), group(), 2, flatAnswers, override)
     expect(line?.integrationResult.tier).toBe(3)
     expect(line?.softwareResult.tier).toBe(2)
     // Both reasons survive on the override object itself (not lost/merged).

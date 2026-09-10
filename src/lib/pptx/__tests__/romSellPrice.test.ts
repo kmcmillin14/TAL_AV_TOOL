@@ -62,7 +62,7 @@ describe('buildRomSellPriceLines', () => {
     expect(lines).toHaveLength(1)
     expect(lines[0].qty).toBe(2)
     expect(lines[0].pricing.hardwareSellTotal).toBe(150_000 * 2) // midpoint × qty (no commissioning line)
-    expect(lines[0].pricing.sellTotal).toBeGreaterThan(0)
+    expect(lines[0].pricing.lineSubtotal).toBeGreaterThan(0)
   })
 
   it('never throws for an empty fleet', () => {
