@@ -102,7 +102,22 @@ This is where the engineer assigns vehicles and the system sizes the fleet.
 
 > Distance entry is **one-way**. The engine accounts for round-trip internally.
 
-#### Step 4 — ROM Dashboard
+#### Step 4 — ROM Configuration
+
+Internal sell-price build-up for every assigned chassis, closed by a fleet-wide total.
+
+1. **Review each vehicle's complexity tiers** — Integration and Software each score from
+   the intake answers (facility size, fleet size, WMS integration, and more).
+2. **Override a tier** with a reason if your judgment differs — an override can never go
+   below the vehicle's inherent floor tier.
+3. **Pick adders** (warranty, support, training) — these apply **once** to the whole
+   fleet, never per vehicle.
+4. Review the **Fleet total**: Hardware + Integration + Software summed across every
+   vehicle type, plus adders once, banded to a program range.
+
+> All dollar values and multipliers here are placeholders pending real pricing.
+
+#### Step 5 — Dashboard
 
 Return-on-investment summary for the customer deck.
 
