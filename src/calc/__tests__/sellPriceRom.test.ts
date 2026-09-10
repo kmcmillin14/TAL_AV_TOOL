@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { computeSellPriceRom, vehiclePricingMidpoint } from '../sellPriceRom'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { PricingAssumptions, AddersConfig, RomInputs } from '@/src/lib/validations/pricingSchemas'
+import type { PricingAssumptions, RomInputs } from '@/src/lib/validations/pricingSchemas'
 import type { TierResult } from '../scoreTier'
 
 // Mirrors src/content/pricing/global-assumptions.json's numeric shape (a
@@ -18,8 +18,6 @@ const assumptions: PricingAssumptions = {
   rounding: 5000,
   cutsheetRepresentativeQty: [2, 6, 15],
 }
-
-const noAdders: AddersConfig = { schemaVersion: 1, adders: [] }
 
 function tierResult(tier: 1 | 2 | 3): TierResult {
   return { score: 0, tier, reasons: [], notTriggered: [], flooredBy: null }
@@ -48,16 +46,14 @@ describe('vehiclePricingMidpoint', () => {
   })
 })
 
-describe('computeSellPriceRom — hand-checked qty 6, Integration T2, Software T2, no adders', () => {
+describe('computeSellPriceRom — hand-checked qty 6, Integration T2, Software T2', () => {
   const result = computeSellPriceRom({
     vehicle: cb18(),
     romInputs: cb18().romInputs as RomInputs,
     qty: 6,
     integrationResult: tierResult(2),
     softwareResult: tierResult(2),
-    selectedAdderIds: [],
     assumptions,
-    adders: noAdders,
   })
 
   it('hardware = midpoint × qty (no commissioning line — folded into Integration) = 187500×6', () => {
@@ -69,16 +65,16 @@ describe('computeSellPriceRom — hand-checked qty 6, Integration T2, Software T
   it('software = base × multiplier[2] = 15000×1.6', () => {
     expect(result.softwareSellTotal).toBe(24_000)
   })
-  it('adders = 0', () => {
-    expect(result.addersTotal).toBe(0)
+  it('has no adders field — adders are fleet-wide only (src/calc/fleetSellPrice.ts)', () => {
+    expect(result).not.toHaveProperty('addersTotal')
   })
-  it('sellTotal sums all four lines', () => {
-    expect(result.sellTotal).toBe(1_239_000)
+  it('lineSubtotal sums hardware + integration + software only', () => {
+    expect(result.lineSubtotal).toBe(1_239_000)
   })
-  it('sellPerUnit = sellTotal / qty', () => {
+  it('sellPerUnit = lineSubtotal / qty', () => {
     expect(result.sellPerUnit).toBe(206_500)
   })
-  it('band rounds to the nearest $5,000 (low -10% / high +25%)', () => {
+  it('band rounds to the nearest $5,000 (low -10% / high +25%), computed off lineSubtotal', () => {
     // 1,239,000 × 0.90 = 1,115,100 → nearest 5000 = 1,115,000
     expect(result.band.lowTotal).toBe(1_115_000)
     // 1,239,000 × 1.25 = 1,548,750 → nearest 5000 = 1,550,000
@@ -86,30 +82,6 @@ describe('computeSellPriceRom — hand-checked qty 6, Integration T2, Software T
     // per-unit computed AFTER rounding the totals, then rounded again
     expect(result.band.lowPerUnit).toBe(185_000)
     expect(result.band.highPerUnit).toBe(260_000)
-  })
-})
-
-describe('computeSellPriceRom — adders sum', () => {
-  it('adds only the selected adders', () => {
-    const adders: AddersConfig = {
-      schemaVersion: 1,
-      adders: [
-        { id: 'a', label: 'A', amount: 1000 },
-        { id: 'b', label: 'B', amount: 2000 },
-        { id: 'c', label: 'C', amount: 4000 },
-      ],
-    }
-    const result = computeSellPriceRom({
-      vehicle: cb18(),
-      romInputs: cb18().romInputs as RomInputs,
-      qty: 1,
-      integrationResult: tierResult(1),
-      softwareResult: tierResult(1),
-      selectedAdderIds: ['a', 'c'],
-      assumptions,
-      adders,
-    })
-    expect(result.addersTotal).toBe(5000) // 1000 + 4000, b excluded
   })
 })
 
@@ -122,9 +94,7 @@ describe('computeSellPriceRom — guards', () => {
         qty: 0,
         integrationResult: tierResult(1),
         softwareResult: tierResult(1),
-        selectedAdderIds: [],
         assumptions,
-        adders: noAdders,
       })
     ).toThrow()
   })

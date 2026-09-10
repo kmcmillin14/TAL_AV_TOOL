@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-09-09 — ROM sell-price: adders removed from per-vehicle calc (double-counting fix)
+
+`computeSellPriceRom` was adding the *entire* selected-adders total onto *every* vehicle
+line independently — a fleet of 3 vehicle types with a single $18,000 adder checked would
+charge $54,000 (3x) instead of $18,000 once. Adders are a flat, project-level checklist
+shared across the project's vehicles, not per-vehicle, so they must be summed exactly once
+at the fleet level. `RomPricingInput` no longer takes `selectedAdderIds`/`adders`;
+`RomPricingResult` no longer has `addersTotal`/`sellTotal` — replaced by `lineSubtotal`
+(Hardware + Integration + Software only) and a band computed off it. Adders are added back
+correctly, once, by a new fleet-level aggregator (`src/calc/fleetSellPrice.ts`, separate
+task) — until that lands, `src/lib/romSellPriceLine.ts` and its downstream PPTX/UI
+consumers (`src/lib/pptx/romSellPrice.ts`, `src/components/rom/RomSellPriceCell.tsx`) have
+known tsc errors referencing the removed fields; not fixed in this change by design.
+
 ## 2026-09-09 — ROM sell-price: commissioning merged into Integration
 
 Owner correction: commissioning and Integration are the same cost bucket, not two separate

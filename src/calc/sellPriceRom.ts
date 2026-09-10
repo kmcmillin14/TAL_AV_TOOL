@@ -1,11 +1,15 @@
-// src/calc/sellPriceRom.ts — internal ROM SELL-PRICE engine: Hardware +
-// Integration + Software + Adders → sell total → ROM band.
+// src/calc/sellPriceRom.ts — internal ROM SELL-PRICE engine: per-vehicle
+// Hardware + Integration + Software → a line subtotal + ROM band. Adders are
+// NOT computed here — they're a flat, project-wide, once-only cost, summed
+// by src/calc/fleetSellPrice.ts across the whole fleet (2026-09-09: adders
+// used to be added per vehicle line, so a 3-chassis fleet would triple-count
+// a single selected adder — fixed by moving them to the fleet aggregator).
 //
 // Deliberately a SEPARATE module from `src/calc/rom.ts` (the existing CAPEX/OPEX/
-// payback customer-ROI engine, already wired into the Step 4 dashboard and PPTX
+// payback customer-ROI engine, already wired into the Dashboard step and PPTX
 // S25/S27/S28) — same "ROM" word, two different questions. `rom.ts` answers "what
 // does the customer pay back and when"; this module answers "what do we sell it
-// for, broken into Hardware/Integration/Software/Adders so an estimator can defend
+// for, broken into Hardware/Integration/Software so an estimator can defend
 // each line." See docs/CHANGELOG.md (2026-09-09 compatibility review) for why the
 // names were kept apart.
 //
@@ -14,7 +18,7 @@
 // allowed to import Zod schemas; src/calc/* is not per ARCHITECTURE.md §4) —
 // callers validate there and pass the already-validated `RomInputs` in.
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { PricingAssumptions, AddersConfig, RomInputs } from '@/src/lib/validations/pricingSchemas'
+import type { PricingAssumptions, RomInputs } from '@/src/lib/validations/pricingSchemas'
 import type { TierResult } from './scoreTier'
 
 /** Midpoint of the vehicle's price range — the Hardware line's per-unit vehicle cost. */
@@ -24,7 +28,10 @@ export function vehiclePricingMidpoint(vehicle: Vehicle): number {
   return (range.minUsd + range.maxUsd) / 2
 }
 
-function roundTo(value: number, increment: number): number {
+/** Rounds `value` to the nearest multiple of `increment`. Exported for reuse by
+ *  src/calc/fleetSellPrice.ts, which applies the same ROM-band rounding once
+ *  at the fleet level rather than summing per-line rounded bands. */
+export function roundTo(value: number, increment: number): number {
   return Math.round(value / increment) * increment
 }
 
@@ -36,9 +43,7 @@ export interface RomPricingInput {
   qty: number
   integrationResult: TierResult
   softwareResult: TierResult
-  selectedAdderIds: string[]
   assumptions: PricingAssumptions
-  adders: AddersConfig
 }
 
 export interface RomPricingBand {
@@ -52,13 +57,16 @@ export interface RomPricingResult {
   hardwareSellTotal: number
   integrationSellTotal: number
   softwareSellTotal: number
-  addersTotal: number
-  sellTotal: number
+  /** Hardware + Integration + Software for THIS vehicle line only — no adders
+   *  (adders are fleet-wide, added once by src/calc/fleetSellPrice.ts). */
+  lineSubtotal: number
   sellPerUnit: number
+  /** ROM band on `lineSubtotal` (excludes adders) — informational per-vehicle
+   *  range; the customer-facing fleet range comes from the fleet aggregator. */
   band: RomPricingBand
 }
 
-/** Hardware + Integration + Software + Adders → sell total → ROM band. Assumes
+/** Hardware + Integration + Software → a line subtotal → ROM band. Assumes
  *  `input.romInputs` was already validated by the caller (see the module note
  *  above) — this function does not re-validate, only computes. */
 export function computeSellPriceRom(input: RomPricingInput): RomPricingResult {
@@ -79,18 +87,13 @@ export function computeSellPriceRom(input: RomPricingInput): RomPricingResult {
     input.romInputs.baseSoftwareSellPrice *
     input.assumptions.softwareMultipliers[String(input.softwareResult.tier) as '1' | '2' | '3']
 
-  const selected = new Set(input.selectedAdderIds)
-  const addersTotal = input.adders.adders
-    .filter(a => selected.has(a.id))
-    .reduce((sum, a) => sum + a.amount, 0)
-
-  const sellTotal = hardwareSellTotal + integrationSellTotal + softwareSellTotal + addersTotal
-  const sellPerUnit = sellTotal / input.qty
+  const lineSubtotal = hardwareSellTotal + integrationSellTotal + softwareSellTotal
+  const sellPerUnit = lineSubtotal / input.qty
 
   const { low, high } = input.assumptions.romBand
   const rounding = input.assumptions.rounding
-  const lowTotal = roundTo(sellTotal * (1 + low), rounding)
-  const highTotal = roundTo(sellTotal * (1 + high), rounding)
+  const lowTotal = roundTo(lineSubtotal * (1 + low), rounding)
+  const highTotal = roundTo(lineSubtotal * (1 + high), rounding)
   const lowPerUnit = roundTo(lowTotal / input.qty, rounding)
   const highPerUnit = roundTo(highTotal / input.qty, rounding)
 
@@ -98,8 +101,7 @@ export function computeSellPriceRom(input: RomPricingInput): RomPricingResult {
     hardwareSellTotal,
     integrationSellTotal,
     softwareSellTotal,
-    addersTotal,
-    sellTotal,
+    lineSubtotal,
     sellPerUnit,
     band: { lowTotal, highTotal, lowPerUnit, highPerUnit },
   }
