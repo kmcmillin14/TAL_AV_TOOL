@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-10 — Shared-platform Integration: billed line now picked by dollar amount, not tier
+
+**Refinement of the same-day shared-integration rule below** — which line within a
+platform group gets billed changed from "highest complexity tier" to "highest dollar
+amount" (owner clarification: the goal is reflecting **total project cost**, not using tier
+as a complexity proxy). Ties now break by tier instead of the reverse.
+- `src/calc/fleetSellPrice.ts` — `aggregateFleetSellPrice`'s per-group `billed` selection:
+  primary comparison is now `integrationSellTotal` (dollar amount); tier only breaks an
+  exact-dollar tie.
+- `src/calc/__tests__/fleetSellPrice.test.ts` — replaced the tier-priority test with one
+  proving the highest-dollar line wins even when it scored a LOWER tier than a cheaper
+  same-platform line, plus a new dollar-amount-tie-breaks-by-tier test.
+- No change to the platform-grouping mechanism itself, `integrationByPlatform`'s shape, or
+  the "once per platform group, never shared across groups" rule — only the tiebreak
+  priority within a group.
+
 ## 2026-09-10 — Shared-platform Integration billing; vehicle data normalized to BlueBotics; Dashboard CAPEX now matches Step 4
 
 **Integration is now charged once per shared fleet-manager platform, not once per vehicle

@@ -11,12 +11,12 @@
 // platform, not once per vehicle TYPE. Lines are grouped by
 // `fleetManagerPlatform` (the vehicle's fleet-management software, e.g.
 // "BlueBotics ANT" — see Vehicle.display.fleetSoftware); each group is
-// charged exactly once, using its highest-integration-tier line's own
-// `integrationSellTotal` (ties broken by higher dollar amount) as a
-// conservative "worst case drives the integration effort" proxy — cheaper
-// same-platform vehicles ride along for free rather than each paying their
-// own integration. A fleet on ONE platform end-to-end (the common case today
-// — every vehicle in the library ships "BlueBotics ANT") is charged
+// charged exactly once, using its highest-`integrationSellTotal` (dollar
+// amount) line — ties broken by the higher complexity tier — matching the
+// goal of reflecting TOTAL PROJECT COST rather than a complexity proxy;
+// cheaper same-platform vehicles ride along for free rather than each paying
+// their own integration. A fleet on ONE platform end-to-end (the common case
+// today — every vehicle in the library ships "BlueBotics ANT") is charged
 // integration once, fleet-wide, regardless of how many vehicle types are
 // assigned. A fleet mixing platforms pays once PER platform group — never
 // summed per vehicle type within a shared group. Software stays summed per
@@ -87,8 +87,8 @@ export function aggregateFleetSellPrice(
   const integrationByPlatform: IntegrationPlatformCharge[] = Array.from(platformGroups.entries()).map(
     ([platform, group]) => {
       const billed = group.reduce((best, l) =>
-        l.integrationTier > best.integrationTier
-        || (l.integrationTier === best.integrationTier && l.pricing.integrationSellTotal > best.pricing.integrationSellTotal)
+        l.pricing.integrationSellTotal > best.pricing.integrationSellTotal
+        || (l.pricing.integrationSellTotal === best.pricing.integrationSellTotal && l.integrationTier > best.integrationTier)
           ? l : best
       )
       return {

@@ -526,10 +526,11 @@ vehicle's full math expanded at once.)
 - **Integration is charged once per shared fleet-manager platform, not once per vehicle
   type (2026-09-10, owner rule).** Lines are grouped by `Vehicle.display.fleetSoftware`
   (e.g. `"BlueBotics ANT"` — every vehicle in the library today ships this same platform);
-  each platform group is charged exactly once, using its highest-integration-tier line's own
-  dollar amount (ties broken by the higher amount) — the other vehicles in that group ride
-  along without a separate Integration charge. A fleet mixing platforms pays once **per**
-  platform group, never shared across groups. Implemented in `aggregateFleetSellPrice`
+  each platform group is charged exactly once, using its **highest-dollar-amount** line's
+  own `integrationSellTotal` (ties broken by the higher complexity tier) — matching the goal
+  of reflecting **total project cost**, not a complexity proxy — the other vehicles in that
+  group ride along without a separate Integration charge. A fleet mixing platforms pays once
+  **per** platform group, never shared across groups. Implemented in `aggregateFleetSellPrice`
   (`src/calc/fleetSellPrice.ts`, `integrationByPlatform` on the result) and surfaced in the
   UI: the Fleet total's Integration line is a drill-down showing which vehicle is billed per
   platform, and a non-billed vehicle's own block shows a "shared fleet-wide, not billed

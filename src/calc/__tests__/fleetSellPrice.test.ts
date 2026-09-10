@@ -116,30 +116,39 @@ describe('aggregateFleetSellPrice — shared fleet-manager-platform integration 
   it('charges Integration ONCE for a fleet all on the same platform, not summed per vehicle type', () => {
     // Three vehicle types, all "BlueBotics ANT" — mirrors every vehicle in
     // the library today. Cheaper-integration types ride along free; only the
-    // highest-tier line's own integration dollar amount is charged.
+    // highest-DOLLAR-amount line's own integration cost is charged.
     const lines = [
       line('cb18', 750_000, 90_000, 24_000, 4, 'BlueBotics ANT', 2),
       line('m10', 600_000, 70_200, 19_200, 6, 'BlueBotics ANT', 2),
       line('8hbc40a', 1_050_000, 99_900, 25_600, 5, 'BlueBotics ANT', 2),
     ]
     const t = aggregateFleetSellPrice(lines, [], adders, assumptions)
-    // Highest tier is a 3-way tie at tier 2 — the tiebreaker is the higher
-    // dollar amount, so 8hbc40a's 99,900 wins, not the sum of all three.
+    // Highest dollar amount wins — 8hbc40a's 99,900 — not the sum of all three.
     expect(t.integrationTotal).toBe(99_900)
     expect(t.hardwareTotal).toBe(2_400_000) // Hardware still sums normally
     expect(t.softwareTotal).toBe(68_800)    // Software still sums normally
   })
 
-  it('picks the highest-TIER line within a platform group even if a lower tier has a bigger dollar amount', () => {
+  it('picks the highest-DOLLAR-amount line within a platform group even if it scored a LOWER tier (goal: total project cost, not a complexity proxy)', () => {
     const lines = [
-      line('cheap-but-complex', 100_000, 50_000, 5_000, 1, 'BlueBotics ANT', 3),
-      line('expensive-but-simple', 900_000, 10_000, 5_000, 1, 'BlueBotics ANT', 1),
+      line('expensive-but-lower-tier', 900_000, 80_000, 5_000, 1, 'BlueBotics ANT', 1),
+      line('cheap-but-higher-tier', 100_000, 50_000, 5_000, 1, 'BlueBotics ANT', 3),
     ]
     const t = aggregateFleetSellPrice(lines, [], adders, assumptions)
-    expect(t.integrationTotal).toBe(50_000)
+    expect(t.integrationTotal).toBe(80_000)
     expect(t.integrationByPlatform).toEqual([
-      { platform: 'BlueBotics ANT', vehicleIds: ['cheap-but-complex', 'expensive-but-simple'], billedVehicleId: 'cheap-but-complex', amount: 50_000 },
+      { platform: 'BlueBotics ANT', vehicleIds: ['expensive-but-lower-tier', 'cheap-but-higher-tier'], billedVehicleId: 'expensive-but-lower-tier', amount: 80_000 },
     ])
+  })
+
+  it('breaks a dollar-amount TIE by the higher tier', () => {
+    const lines = [
+      line('same-amount-lower-tier', 500_000, 60_000, 5_000, 1, 'BlueBotics ANT', 1),
+      line('same-amount-higher-tier', 500_000, 60_000, 5_000, 1, 'BlueBotics ANT', 2),
+    ]
+    const t = aggregateFleetSellPrice(lines, [], adders, assumptions)
+    expect(t.integrationTotal).toBe(60_000)
+    expect(t.integrationByPlatform[0].billedVehicleId).toBe('same-amount-higher-tier')
   })
 
   it('charges Integration once PER platform group — mixed platforms never share', () => {
