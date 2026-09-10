@@ -3882,6 +3882,24 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   transition: border-color 0.12s ease, background 0.12s ease;
 }
 .rom-sp-adder-row:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+
+/* Full-fleet ROM Configuration (Step 4) — one .rom-sp-vehicle-block per
+   assigned chassis, stacked, closed by a .rom-sp-fleet-total section. Reuses
+   the .rom-sp-* receipt/tile system above; only the vehicle-block wrapper and
+   the fleet-total accent border are new. */
+.rom-sp-vehicle-block {
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px;
+  box-shadow: var(--shadow-card); padding: 20px 22px 22px; margin-bottom: 20px;
+}
+.rom-sp-vehicle-name {
+  display: flex; align-items: baseline; gap: 10px;
+  font-family: var(--tal-font-family); font-size: 16px; font-weight: 700;
+  color: var(--text-primary); margin: 0 0 16px;
+}
+.rom-sp-vehicle-name .mono { font-family: var(--tal-font-numeric); font-weight: 600; color: var(--text-tertiary); font-size: 13px; }
+.rom-sp-fleet-total { border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.rom-sp-fleet-total .rom-sp-receipt-total { font-size: 16px; }
+.rom-sp-fleet-total .rom-sp-adders { margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); }
 .rom-sp-adder-row .mono { margin-left: auto; font-family: var(--tal-font-numeric); color: var(--text-tertiary); flex-shrink: 0; }
 
 .rom-econ-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 18px; }
