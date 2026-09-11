@@ -815,7 +815,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .span-2 { grid-column: span 2; }
 .span-3 { grid-column: span 3; }
-.span-4 { grid-column: span 4; }
+/* Full row, not literally four columns — the name is historical. Every use of
+   this class means "this field owns its own row" (chip grids, notes
+   textareas). A fixed `span 4` silently broke above 1400px, where
+   .fld-grid-4 becomes 6 columns and .fld-grid-3 becomes 4: a chip group then
+   covered only part of the row and the following fields backfilled the gap,
+   so Step 1's Integration section rendered ragged on wide monitors. */
+.span-4 { grid-column: 1 / -1; }
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 /* Phone: every Step-1 field grid collapses to a single column, spans reset,

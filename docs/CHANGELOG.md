@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-11 — Step 1 layout: pick/drop count moved to Transfer; full-width fields fixed on wide screens
+
+- **`pickDropLocationCount` moved from §09 Integration to §02 "How is it transferred?"**,
+  where it belongs — it describes the flow's stops, alongside pick height and drop height.
+- **`.span-4` now spans the whole row (`grid-column: 1 / -1`) instead of a literal four
+  columns.** Above 1400px `.fld-grid-4` becomes a 6-column grid (and `.fld-grid-3` becomes
+  4), so a "full width" chip group covered only part of the row and the following fields
+  backfilled the gap — which is why Integration rendered ragged on a wide monitor, with
+  Shared Traffic sharing a row with two toggles. Every one of the 14 `.span-4` usages
+  across both forms means "this field owns its row", so the one-line fix corrects all of
+  them; the class name is now historical and commented as such.
+- **§09 reordered** so the four `*`-marked pricing toggles sit together in one row (WMS ·
+  Barcode · Storage Tracking · AGV/AMR Experience), with the non-pricing "Other AGVs on
+  Site?" and the two conditional vendor inputs trailing after.
+
+Verified at 1600px: both chip groups span the full 1314px grid, and all six toggles render
+at identical width (207px) on a single row. At 1200px the four pricing toggles form one
+exact row.
+
+**Shipped:** `app/globals.css`, `src/components/step1/ApplicationForm.tsx`.
+
 ## 2026-09-11 — No collapsed sections on Step 1; scoring inputs marked `*required`
 
 - **Nothing on Step 1 starts collapsed.** `startCollapsed` is gone from all three remaining

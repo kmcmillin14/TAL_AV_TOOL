@@ -684,6 +684,20 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               </div>
               <div className="help">Height the load is placed AT. Drives the lift gate in Step 2.</div>
             </div>
+
+            <div className="fld">
+              <label>Pick/Drop Location Count <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
+              <input
+                type="number"
+                step="1"
+                min="0"
+                className="mono"
+                placeholder="0"
+                defaultValue={initialData?.pickDropLocationCount ?? ''}
+                {...register('pickDropLocationCount', { valueAsNumber: true, onBlur: onBlurSave })}
+              />
+              <div className="help">Distinct pick/drop stops in the flow.</div>
+            </div>
           </div>
         </FormSection>
 
@@ -1201,67 +1215,6 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               </div>
             </div>
 
-            <div className="fld">
-              <label>Other AGVs on Site?</label>
-              <Controller
-                name="otherAGVs"
-                control={control}
-                render={({ field }) => (
-                  <div className="seg-toggle">
-                    <button
-                      type="button"
-                      className={`seg-btn${field.value ? ' on' : ''}`}
-                      onClick={() => { field.onChange(true); onBlurSave() }}
-                    >
-                      Yes
-                    </button>
-                    <button
-                      type="button"
-                      className={`seg-btn${!field.value ? ' on' : ''}`}
-                      onClick={() => { field.onChange(false); onBlurSave() }}
-                    >
-                      No
-                    </button>
-                  </div>
-                )}
-              />
-            </div>
-
-            {otherAGVs && (
-              <div className="fld">
-                <label>Other AGV Vendor(s)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Linde, Jungheinrich"
-                  {...register('otherAGVVendor', { onBlur: onBlurSave })}
-                />
-              </div>
-            )}
-
-            <div className="fld">
-              <label>WMS Required? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
-              <Controller
-                name="wmsRequired"
-                control={control}
-                render={({ field }) => (
-                  <div className="seg-toggle">
-                    <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
-                    <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
-                  </div>
-                )}
-              />
-            </div>
-            {wmsRequired && (
-              <div className="fld">
-                <label>WMS Vendor / System</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Manhattan, SAP EWM"
-                  {...register('wmsVendor', { onBlur: onBlurSave })}
-                />
-              </div>
-            )}
-
             {/* Shared traffic drives BOTH axes — pedestrians +1 and forklifts
                 +2 on integration, other-vendor AGVs +6 on software — the
                 largest combined pricing driver, and questionnaire-only until
@@ -1288,6 +1241,19 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               </div>
             </div>
 
+            <div className="fld">
+              <label>WMS Required? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
+              <Controller
+                name="wmsRequired"
+                control={control}
+                render={({ field }) => (
+                  <div className="seg-toggle">
+                    <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
+                    <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                  </div>
+                )}
+              />
+            </div>
             <div className="fld">
               <label>Barcode Scanning Required? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <Controller
@@ -1329,18 +1295,53 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               />
             </div>
             <div className="fld">
-              <label>Pick/Drop Location Count <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
-              <input
-                type="number"
-                step="1"
-                min="0"
-                className="mono"
-                placeholder="0"
-                defaultValue={initialData?.pickDropLocationCount ?? ''}
-                {...register('pickDropLocationCount', { valueAsNumber: true, onBlur: onBlurSave })}
+              <label>Other AGVs on Site?</label>
+              <Controller
+                name="otherAGVs"
+                control={control}
+                render={({ field }) => (
+                  <div className="seg-toggle">
+                    <button
+                      type="button"
+                      className={`seg-btn${field.value ? ' on' : ''}`}
+                      onClick={() => { field.onChange(true); onBlurSave() }}
+                    >
+                      Yes
+                    </button>
+                    <button
+                      type="button"
+                      className={`seg-btn${!field.value ? ' on' : ''}`}
+                      onClick={() => { field.onChange(false); onBlurSave() }}
+                    >
+                      No
+                    </button>
+                  </div>
+                )}
               />
-              <div className="help">Distinct pick/drop stops in the flow.</div>
             </div>
+
+            {otherAGVs && (
+              <div className="fld">
+                <label>Other AGV Vendor(s)</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Linde, Jungheinrich"
+                  {...register('otherAGVVendor', { onBlur: onBlurSave })}
+                />
+              </div>
+            )}
+
+            {wmsRequired && (
+              <div className="fld">
+                <label>WMS Vendor / System</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Manhattan, SAP EWM"
+                  {...register('wmsVendor', { onBlur: onBlurSave })}
+                />
+              </div>
+            )}
+
           </div>
         </FormSection>
 
