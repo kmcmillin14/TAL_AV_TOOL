@@ -5,13 +5,12 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetSummary } from '@/src/calc/types'
 import { updateProject } from '@/src/lib/storage'
-import { complexityAnswersFromProject, unresolvedComplexityGaps } from '@/src/lib/romComplexityFromProject'
+import { complexityAnswersFromProject, pricingInputConfidence } from '@/src/lib/romComplexityFromProject'
 import {
   resolveRomSellPriceLine, resolveFleetSellPriceTotal, resolveFleetComplexityBaseline,
   type RomSellPriceLine, type RomSellPriceOverride,
 } from '@/src/lib/romSellPriceLine'
 import { ADDERS_CONFIG } from '@/src/lib/pricingContent'
-import { complexityLabel } from '@/src/lib/romComplexityLabels'
 import { fullUsd } from './RomSellPriceParts'
 import RomQuotation from './RomQuotation'
 import RomComplexityPanel from './RomComplexityPanel'
@@ -49,7 +48,7 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
   }
 
   const answers = useMemo(() => complexityAnswersFromProject(project), [project])
-  const gaps = useMemo(() => unresolvedComplexityGaps(project), [project])
+  const confidence = useMemo(() => pricingInputConfidence(project), [project])
   const baseline = useMemo(
     () => resolveFleetComplexityBaseline(project, fleet.totalFleetSold),
     [project, fleet.totalFleetSold]
@@ -98,14 +97,6 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
         ROM — budgetary estimate, placeholder pricing. All dollar values and multipliers are
         pending real pricing input.
       </p>
-      {gaps.length > 0 && (
-        <p className="rom-sp-gap-flag">
-          Complexity may be understated — not yet answered on the intake form:{' '}
-          {gaps.map(complexityLabel).join(', ')}. Answer these on Step 1 (Intake, §09
-          Integration) to clear this flag — not required to move forward.
-        </p>
-      )}
-
       {lines.length === 0 ? (
         <p className="rom-sp-empty">
           None of the {assignedGroups.length} assigned vehicle{assignedGroups.length === 1 ? '' : 's'} has
@@ -113,7 +104,12 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
         </p>
       ) : (
         <>
-          <RomQuotation lines={lines} fleetTotal={fleetTotal} selectedAdderIds={selectedAdderIds} />
+          <RomQuotation
+            lines={lines}
+            fleetTotal={fleetTotal}
+            selectedAdderIds={selectedAdderIds}
+            confidence={confidence}
+          />
 
           <section className="rom-options">
             <h2 className="rom-options-title">Options</h2>

@@ -565,6 +565,38 @@ fleet (see the complexity note below for why the breakdown is genuinely fleet-wi
   rounding error — rounded to the nearest `rounding` ($5,000 today), and shown as the
   **budgetary range** under the total.
 
+**Unanswered inputs widen the range (2026-09-11).** An unanswered complexity input scores
+ZERO points, which is indistinguishable from "this site is simple" — so a thin intake would
+otherwise quote like the easiest possible project, and the error always lands in the
+**under-pricing** direction. Rather than make fields required (`ARCHITECTURE.md`: no
+required fields to advance), the uncertainty is priced and disclosed:
+
+- `pricingInputConfidence(project)` (`src/lib/romComplexityFromProject.ts`) reports
+  `answered / total` plus the display labels of what's missing, across the **7 pricing
+  inputs whose unanswered state is actually detectable**: WMS integration, storage
+  tracking, barcode scanning, ramps, AGV/AMR experience, facility size, pick/drop
+  locations. It deliberately **excludes** the array-valued inputs that also score points
+  (`sharedTrafficTypes`, `interlocks`, `unitLoadTypes`) — each defaults to `[]`, so empty
+  is ambiguous between "answered: none apply" and "never asked", and counting them would
+  report confident projects as incomplete.
+- `aggregateFleetSellPrice` takes that count and widens the **high side only**, by
+  `unknownInputPenalty.highPctPerUnknown` per unknown, capped at `maxHighPct`
+  (placeholder: +5% each, capped at +60%). The widening is one-sided **by design** — an
+  unknown can only mean MORE complexity than the zero-points default already assumed,
+  never less, so the floor never moves. `bandHighPct` and `unknownInputCount` are returned
+  on `FleetSellPriceTotal` so the UI can say why the range is wide.
+- The quotation shows it tersely: a compact confidence strip (*"3 of 7 pricing inputs
+  confirmed. Unknowns price as 'simple', so the range widens. Missing on Step 1: …"*) and
+  a *"widened for N unknowns"* note on the budgetary range. **The intake forms
+  deliberately carry no extra copy about this** — the consequence lives in the pricing
+  step, where it's actionable, rather than cluttering the forms.
+- Because the Dashboard reads the same resolver (`src/lib/fleetModel.ts`), its ROM CAPEX
+  range, Payback, and TCO widen in step — the two surfaces cannot disagree.
+- Answering an input **tightens the range without moving the total** unless the answer
+  actually adds complexity: answering "no" to barcode scanning takes the sample fleet from
+  4 unknowns ($2,310,000 – $3,725,000) to 3 ($2,310,000 – $3,595,000), total unchanged at
+  $2,568,700.
+
 **Complexity, in plain English** (`RomComplexityPanel.tsx`, 2026-09-10). Both axes score
 from project-level answers plus the program's total fleet size — **nothing
 vehicle-specific goes into the scoring** — so the breakdown is ONE fleet-wide result, not
@@ -586,13 +618,15 @@ questionnaire/project schema — see `docs/CHANGELOG.md` (2026-09-09) for the fu
 mapping. Two point-table axes were dropped by explicit owner decision (not silently):
 per-door/elevator counting and multi-site scoring — neither field exists in the
 questionnaire and none will be added. Three fields (`storageTrackingRequired`,
-`hasAgvExperience`, `pickDropLocationCount`) default to false/0 when unanswered; **as of
-2026-09-10** they are real, optional fields on the Step 1 intake form (§09 Integration,
-`ApplicationForm.tsx`) rather than permanently-undefined gaps. `unresolvedComplexityGaps`
-(`src/lib/romComplexityFromProject.ts`) computes which of the three are still genuinely
-unanswered on a given project; the UI's "complexity may be understated" flag lists only
-those, and disappears once all three are answered. Answering them is **never required to
-advance** — no required fields to advance between steps (`ARCHITECTURE.md`).
+`hasAgvExperience`, `pickDropLocationCount`) had no schema field at all until **2026-09-10**,
+when they became real, optional fields on the Step 1 intake form (§09 Integration,
+`ApplicationForm.tsx`). Every optional input defaults to false/0 when unanswered — see
+"Unanswered inputs widen the range" above for why that default is dangerous and how
+`pricingInputConfidence` + the band widening compensate for it. Answering them is **never
+required to advance** — no required fields to advance between steps (`ARCHITECTURE.md`).
+(The earlier standalone "complexity may be understated" banner was replaced 2026-09-11 by
+the quotation's confidence strip, which covers 7 inputs rather than 3 and ties them to the
+range.)
 
 **ALL dollar values and multipliers are placeholders** pending real pricing from the
 business owner — tagged `_placeholder`/`_placeholderWarning` in the JSON content and vehicle

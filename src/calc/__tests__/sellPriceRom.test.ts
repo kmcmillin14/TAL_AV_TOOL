@@ -15,6 +15,7 @@ const assumptions: PricingAssumptions = {
   integrationScoring: { points: {}, thresholds: { tier2: 5, tier3: 11 } },
   softwareScoring: { points: {}, thresholds: { tier2: 4, tier3: 9 } },
   romBand: { low: -0.10, high: 0.25 },
+  unknownInputPenalty: { highPctPerUnknown: 0.05, maxHighPct: 0.60 },
   rounding: 5000,
   cutsheetRepresentativeQty: [2, 6, 15],
 }

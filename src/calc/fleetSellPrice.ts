@@ -42,6 +42,12 @@ export interface FleetSellPriceTotal {
    *  vehicle's line is the one actually charged, and its dollar amount. One
    *  entry per distinct `fleetManagerPlatform` among the input lines. */
   integrationByPlatform: IntegrationPlatformCharge[]
+  /** The high-side band percentage actually used, AFTER widening for
+   *  unanswered pricing inputs (equals `assumptions.romBand.high` when
+   *  nothing is unknown). Exposed so the UI can say why the range is wide. */
+  bandHighPct: number
+  /** How many unanswered pricing inputs widened the band. */
+  unknownInputCount: number
 }
 
 export interface IntegrationPlatformCharge {
@@ -67,12 +73,23 @@ export interface FleetSellPriceLineInput {
 /** Sums Hardware/Software across every line's own components, charges
  *  Integration once per shared fleet-manager-platform group (see module
  *  note), adds the project's selected adders ONCE, then applies the ROM band
- *  on that fleet-wide total. */
+ *  on that fleet-wide total.
+ *
+ *  `unknownInputCount` is how many pricing-relevant intake inputs are still
+ *  unanswered (see `pricingInputConfidence` in
+ *  src/lib/romComplexityFromProject.ts). Each one widens the HIGH side of the
+ *  band per `assumptions.unknownInputPenalty`, because an unanswered input
+ *  scores zero complexity points — indistinguishable from "this site is
+ *  simple" — so a thin intake would otherwise quote like the easiest possible
+ *  project. The widening is one-sided on purpose: an unknown can only mean
+ *  MORE complexity than that default assumed, never less. Defaults to 0 so
+ *  callers that genuinely have no project context keep the base band. */
 export function aggregateFleetSellPrice(
   lines: FleetSellPriceLineInput[],
   selectedAdderIds: string[],
   adders: AddersConfig,
-  assumptions: PricingAssumptions
+  assumptions: PricingAssumptions,
+  unknownInputCount = 0
 ): FleetSellPriceTotal {
   const totalQty = lines.reduce((s, l) => s + l.qty, 0)
   const hardwareTotal = lines.reduce((s, l) => s + l.pricing.hardwareSellTotal, 0)
@@ -110,9 +127,12 @@ export function aggregateFleetSellPrice(
   const sellPerUnit = totalQty > 0 ? sellTotal / totalQty : 0
 
   const { low, high } = assumptions.romBand
+  const { highPctPerUnknown, maxHighPct } = assumptions.unknownInputPenalty
+  // One-sided: unknowns push the ceiling up, never the floor down.
+  const bandHighPct = Math.min(high + unknownInputCount * highPctPerUnknown, maxHighPct)
   const rounding = assumptions.rounding
   const lowTotal = totalQty > 0 ? roundTo(sellTotal * (1 + low), rounding) : 0
-  const highTotal = totalQty > 0 ? roundTo(sellTotal * (1 + high), rounding) : 0
+  const highTotal = totalQty > 0 ? roundTo(sellTotal * (1 + bandHighPct), rounding) : 0
   const lowPerUnit = totalQty > 0 ? roundTo(lowTotal / totalQty, rounding) : 0
   const highPerUnit = totalQty > 0 ? roundTo(highTotal / totalQty, rounding) : 0
 
@@ -126,5 +146,7 @@ export function aggregateFleetSellPrice(
     sellPerUnit,
     band: { lowTotal, highTotal, lowPerUnit, highPerUnit },
     integrationByPlatform,
+    bandHighPct,
+    unknownInputCount,
   }
 }

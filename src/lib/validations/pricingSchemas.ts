@@ -32,6 +32,15 @@ export const pricingAssumptionsSchema = z.object({
     .refine(b => b.low < 0 && b.high > 0, {
       message: 'romBand.low must be < 0 and romBand.high must be > 0',
     }),
+  _unknownInputPenaltyNote: z.string().optional(),
+  /** How much each unanswered pricing input widens the HIGH side of the ROM
+   *  band. Asymmetric by design — an unknown can only mean MORE complexity
+   *  than the zero-points default already assumed, so the low side never
+   *  moves. `maxHighPct` caps the widening so a blank project doesn't quote
+   *  an absurd ceiling; it's an absolute high-side value, not an addition. */
+  unknownInputPenalty: z
+    .object({ highPctPerUnknown: z.number().min(0), maxHighPct: z.number().positive() })
+    .refine(p => p.maxHighPct > 0, { message: 'unknownInputPenalty.maxHighPct must be > 0' }),
   rounding: z.number().positive(),
   cutsheetRepresentativeQty: z.array(z.number().int().positive()).min(1),
 })

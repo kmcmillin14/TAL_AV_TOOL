@@ -3871,6 +3871,19 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-tertiary);
 }
 .rom-quote-foot .mono { font-family: var(--tal-font-numeric); color: var(--text-secondary); font-weight: 600; }
+.rom-quote-range-why { color: var(--text-disabled); font-size: 11.5px; }
+/* Pricing-input confidence — why the range is as wide as it is. Neutral when
+   everything is answered, warning-tinted while inputs are still missing. */
+.rom-quote-confidence {
+  display: flex; align-items: baseline; gap: 8px; margin-top: 14px;
+  padding: 9px 12px; border-radius: 8px;
+  background: var(--bg-surface-2);
+  font-family: var(--tal-font-family); font-size: 11.5px; line-height: 1.5;
+  color: var(--text-tertiary);
+}
+.rom-quote-confidence.is-incomplete { background: var(--warn-soft); color: var(--warn); }
+.rom-quote-confidence-score { flex-shrink: 0; font-family: var(--tal-font-numeric); font-weight: 800; }
+.rom-quote-confidence strong { font-weight: 700; }
 
 /* ── Options (adder picker) ────────────────────────────────────────────── */
 .rom-options {

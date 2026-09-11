@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-09-11 — Unanswered pricing inputs widen the range instead of silently under-pricing
+
+**The problem:** an unanswered complexity input scores ZERO points, which is
+indistinguishable from *"this site is simple"* — so a thin intake quoted like the easiest
+possible project, and the error always landed in the **under-pricing** direction. With
+professional services spanning 1.0× → 3.0× across tiers, that's a $50K vs $150K swing on a
+CB18-based fleet.
+
+**The fix — price the uncertainty, don't hide it, and don't block the form.** Fields stay
+optional (`ARCHITECTURE.md`: no required fields to advance); the consequence surfaces in
+Step 4 where it's actionable, rather than as extra copy on the intake forms.
+
+- **`pricingInputConfidence(project)`** (`src/lib/romComplexityFromProject.ts`) reports
+  `answered / total` plus what's missing, across the **7 pricing inputs whose unanswered
+  state is actually detectable**: WMS integration, storage tracking, barcode scanning,
+  ramps, AGV/AMR experience, facility size, pick/drop locations. It deliberately
+  **excludes** the array-valued scoring inputs (`sharedTrafficTypes`, `interlocks`,
+  `unitLoadTypes`) — each defaults to `[]`, so empty is ambiguous between "answered: none
+  apply" and "never asked", and counting them would report confident projects as
+  incomplete.
+- **`aggregateFleetSellPrice` widens the HIGH side only**, once per unknown, per new
+  `unknownInputPenalty` in `content/pricing/global-assumptions.json` (placeholder: +5%
+  each, capped at +60%). One-sided **by design** — an unknown can only mean MORE complexity
+  than the zero-points default already assumed, never less, so the floor never moves.
+  `bandHighPct` and `unknownInputCount` are returned on `FleetSellPriceTotal`.
+- **The quotation says so tersely** — a compact confidence strip (*"3 of 7 pricing inputs
+  confirmed. Unknowns price as 'simple', so the range widens. Missing on Step 1: …"*) plus
+  a *"widened for N unknowns"* note on the budgetary range.
+- **The Dashboard widens in step** — it reads the same resolver via
+  `src/lib/fleetModel.ts`, so ROM CAPEX, Payback and TCO can't disagree with Step 4.
+
+Sample fleet, verified end to end: 4 unknowns → `$2,310,000 – $3,725,000`; answering one
+input (even answering *"no"*) → 3 unknowns → `$2,310,000 – $3,595,000`, with the total
+unchanged at `$2,568,700`. Filling in the form tightens the range without moving the
+midpoint unless the answer genuinely adds complexity.
+
+**Removed as superseded:** the standalone "complexity may be understated" banner, and with
+it `unresolvedComplexityGaps` (`src/lib/romComplexityFromProject.ts`) and `GAP_FIELDS`
+(`src/calc/complexityInputs.ts`) — the confidence strip covers 7 inputs rather than 3 and
+ties them to the range. `complexityInputs.ts`'s module note now explains the
+zero-points-means-simple hazard directly.
+
+**Shipped:** `src/content/pricing/global-assumptions.json`,
+`src/lib/validations/pricingSchemas.ts`, `src/lib/romComplexityFromProject.ts`,
+`src/calc/fleetSellPrice.ts`, `src/calc/complexityInputs.ts`, `src/lib/romSellPriceLine.ts`,
+`src/components/rom/RomQuotation.tsx`, `src/components/rom/RomFleetSellPrice.tsx`,
+`app/globals.css`, `docs/SPECIFICATION.md`, plus 4 new band-widening tests in
+`src/calc/__tests__/fleetSellPrice.test.ts`.
+
 ## 2026-09-10 — Step 4 rebuilt as a quotation; complexity explained in plain English
 
 **Step 4 now reads as a quotation, not a receipt** (owner request). `RomFleetSellPrice.tsx`

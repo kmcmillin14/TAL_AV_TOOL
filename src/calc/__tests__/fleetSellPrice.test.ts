@@ -11,6 +11,7 @@ const assumptions: PricingAssumptions = {
   integrationScoring: { points: {}, thresholds: { tier2: 5, tier3: 11 } },
   softwareScoring: { points: {}, thresholds: { tier2: 4, tier3: 9 } },
   romBand: { low: -0.10, high: 0.25 },
+  unknownInputPenalty: { highPctPerUnknown: 0.05, maxHighPct: 0.60 },
   rounding: 5000,
   cutsheetRepresentativeQty: [2, 6, 15],
 }
@@ -109,6 +110,40 @@ describe('aggregateFleetSellPrice', () => {
     expect(t.sellPerUnit).toBe(0)
     expect(t.band).toEqual({ lowTotal: 0, highTotal: 0, lowPerUnit: 0, highPerUnit: 0 })
     expect(t.integrationByPlatform).toEqual([])
+  })
+})
+
+describe('aggregateFleetSellPrice — unanswered pricing inputs widen the band (2026-09-11)', () => {
+  // 1,000,000 sell total keeps the arithmetic readable; rounding is 5,000.
+  const oneLine = [line('a', 1_000_000, 0, 0, 4)]
+
+  it('leaves the band at its base width when nothing is unknown', () => {
+    const t = aggregateFleetSellPrice(oneLine, [], adders, assumptions, 0)
+    expect(t.unknownInputCount).toBe(0)
+    expect(t.bandHighPct).toBeCloseTo(0.25, 6)
+    expect(t.band.highTotal).toBe(1_250_000)
+    expect(t.band.lowTotal).toBe(900_000)
+  })
+
+  it('widens ONLY the high side, once per unknown — the floor never moves', () => {
+    const t = aggregateFleetSellPrice(oneLine, [], adders, assumptions, 4)
+    // 0.25 + 4 × 0.05 = 0.45 → 1,450,000. Low side stays at −10%.
+    expect(t.bandHighPct).toBeCloseTo(0.45, 6)
+    expect(t.band.highTotal).toBe(1_450_000)
+    expect(t.band.lowTotal).toBe(900_000)
+  })
+
+  it('caps the widening at maxHighPct so a blank project cannot quote an absurd ceiling', () => {
+    const t = aggregateFleetSellPrice(oneLine, [], adders, assumptions, 99)
+    // 0.25 + 99 × 0.05 would be 5.20; the cap holds it at 0.60.
+    expect(t.bandHighPct).toBeCloseTo(0.60, 6)
+    expect(t.band.highTotal).toBe(1_600_000)
+  })
+
+  it('defaults to no widening when the caller supplies no project context', () => {
+    const t = aggregateFleetSellPrice(oneLine, [], adders, assumptions)
+    expect(t.unknownInputCount).toBe(0)
+    expect(t.bandHighPct).toBeCloseTo(0.25, 6)
   })
 })
 

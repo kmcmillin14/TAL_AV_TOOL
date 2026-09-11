@@ -3,7 +3,7 @@
 // StoredProject shape; src/calc/* stays generic and doesn't know about the
 // project schema).
 import type { StoredProject } from '@/src/lib/storage'
-import { GAP_FIELDS, type ComplexityAnswers } from '@/src/calc/complexityInputs'
+import type { ComplexityAnswers } from '@/src/calc/complexityInputs'
 
 export function complexityAnswersFromProject(project: StoredProject): ComplexityAnswers {
   const trafficType: ComplexityAnswers['trafficType'] = []
@@ -28,19 +28,43 @@ export function complexityAnswersFromProject(project: StoredProject): Complexity
   return answers
 }
 
-/** Which of the three GAP_FIELDS (2026-09-09 design: no schema field at the
- *  time) are still unanswered on THIS project — i.e. genuinely `undefined`
- *  in storage, not merely defaulted for scoring. (2026-09-10: all three now
- *  have real, optional intake-form fields — §09 Integration,
- *  ApplicationForm.tsx — so this set shrinks as an engineer answers them and
- *  is empty once all three are answered.) Drives the "complexity may be
- *  understated" flag; answering these NEVER blocks navigation — no required
- *  fields to advance (ARCHITECTURE.md) — it only removes the flag. */
-export function unresolvedComplexityGaps(project: StoredProject): Array<keyof ComplexityAnswers> {
-  return GAP_FIELDS.filter(key => {
-    if (key === 'storageTrackingRequired') return project.storageTrackingRequired === undefined
-    if (key === 'hasAgvExperience') return project.hasAgvExperience === undefined
-    if (key === 'pickDropLocationCount') return project.pickDropLocationCount === undefined || project.pickDropLocationCount === null
-    return true
-  })
+/** Every project field that feeds a complexity point table AND whose
+ *  "unanswered" state is actually detectable, with the label Step 4 shows.
+ *
+ *  Deliberately EXCLUDES the array-valued inputs that also drive points —
+ *  `sharedTrafficTypes` (pedestrian/forklift/other-AGV), `interlocks` (PLC)
+ *  and `unitLoadTypes` (custom load). Each defaults to `[]`, so an empty
+ *  array is genuinely ambiguous: it means either "answered: none apply" or
+ *  "never asked", and the schema can't tell them apart. Counting them would
+ *  report confident projects as incomplete, so they're left out rather than
+ *  guessed at. */
+const PRICING_INPUTS: Array<{ label: string; unanswered: (p: StoredProject) => boolean }> = [
+  { label: 'WMS integration', unanswered: p => p.wmsRequired === undefined },
+  { label: 'Storage tracking', unanswered: p => p.storageTrackingRequired === undefined },
+  { label: 'Barcode scanning', unanswered: p => p.barcodeScanningRequired === undefined },
+  { label: 'Ramps', unanswered: p => p.rampRequired === undefined },
+  { label: 'AGV/AMR experience', unanswered: p => p.hasAgvExperience === undefined },
+  { label: 'Facility size', unanswered: p => p.facilitySizeSqFt === undefined || p.facilitySizeSqFt === null },
+  { label: 'Pick/drop locations', unanswered: p => p.pickDropLocationCount === undefined || p.pickDropLocationCount === null },
+]
+
+export interface PricingInputConfidence {
+  answered: number
+  total: number
+  /** Display labels of the still-unanswered inputs, in PRICING_INPUTS order. */
+  missing: string[]
+}
+
+/** How much of the pricing-relevant intake is actually filled in.
+ *
+ *  Drives the budgetary band: an unanswered input scores zero complexity
+ *  points, which is indistinguishable from "this site is simple", so a thin
+ *  intake would otherwise quote like the easiest possible project. Rather
+ *  than make fields required (no required fields to advance —
+ *  `ARCHITECTURE.md`), Step 4 widens the high side of the range once per
+ *  unknown and shows what's missing. See `unknownInputPenalty` in
+ *  content/pricing/global-assumptions.json. */
+export function pricingInputConfidence(project: StoredProject): PricingInputConfidence {
+  const missing = PRICING_INPUTS.filter(f => f.unanswered(project)).map(f => f.label)
+  return { answered: PRICING_INPUTS.length - missing.length, total: PRICING_INPUTS.length, missing }
 }

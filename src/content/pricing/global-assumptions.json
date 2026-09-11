@@ -40,6 +40,10 @@
   },
 
   "romBand": { "low": -0.10, "high": 0.25 },
+
+  "_unknownInputPenaltyNote": "An unanswered complexity input scores ZERO points — identical to 'this site is simple' — so a thin intake silently prices like the easiest possible project, and the error always lands in the under-quoting direction. Rather than block the form (no required fields to advance), each unanswered pricing input widens the HIGH side of the ROM band to cover the unknown. Widening is deliberately asymmetric: an unknown can only mean MORE complexity than the simple default already assumed, never less, so the low side never moves. PLACEHOLDER rates — tune with real pricing.",
+  "unknownInputPenalty": { "highPctPerUnknown": 0.05, "maxHighPct": 0.60 },
+
   "rounding": 5000,
   "cutsheetRepresentativeQty": [2, 6, 15]
 }

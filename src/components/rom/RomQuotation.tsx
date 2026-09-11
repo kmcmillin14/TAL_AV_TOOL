@@ -3,6 +3,7 @@
 import type { ReactNode } from 'react'
 import type { FleetSellPriceTotal } from '@/src/calc/fleetSellPrice'
 import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
+import type { PricingInputConfidence } from '@/src/lib/romComplexityFromProject'
 import { ADDERS_CONFIG } from '@/src/lib/pricingContent'
 import { fullUsd } from './RomSellPriceParts'
 
@@ -22,6 +23,7 @@ interface Props {
   lines: RomSellPriceLine[]
   fleetTotal: FleetSellPriceTotal
   selectedAdderIds: string[]
+  confidence: PricingInputConfidence
 }
 
 /** One quotation category: a header row carrying the category subtotal, with
@@ -60,7 +62,7 @@ function QuoteLine({ label, qty, amount }: { label: string; qty?: number; amount
  *  src/calc/fleetSellPrice.ts). Every figure comes from the shared resolver
  *  (src/lib/romSellPriceLine.ts) that the Dashboard and the PPTX appendix
  *  also call, so the three surfaces can't drift. */
-export default function RomQuotation({ lines, fleetTotal, selectedAdderIds }: Props) {
+export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, confidence }: Props) {
   const selected = new Set(selectedAdderIds)
   const selectedAdders = ADDERS_CONFIG.adders.filter(a => selected.has(a.id))
   const sharedPlatforms = fleetTotal.integrationByPlatform.filter(g => g.vehicleIds.length > 1)
@@ -119,10 +121,30 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds }: Pr
         <span className="mono">{fullUsd(fleetTotal.sellPerUnit)}</span>
       </div>
       <div className="rom-quote-foot">
-        <span>Budgetary range</span>
+        <span>
+          Budgetary range
+          {fleetTotal.unknownInputCount > 0 && (
+            <span className="rom-quote-range-why"> — widened for {fleetTotal.unknownInputCount} unknown
+              {fleetTotal.unknownInputCount === 1 ? '' : 's'}</span>
+          )}
+        </span>
         <span className="mono">
           {fullUsd(fleetTotal.band.lowTotal)} – {fullUsd(fleetTotal.band.highTotal)}
         </span>
+      </div>
+
+      <div className={`rom-quote-confidence${confidence.missing.length > 0 ? ' is-incomplete' : ''}`}>
+        <span className="rom-quote-confidence-score mono">
+          {confidence.answered} of {confidence.total}
+        </span>
+        {confidence.missing.length === 0 ? (
+          <span>pricing inputs confirmed — range is as tight as it gets.</span>
+        ) : (
+          <span>
+            {'pricing inputs confirmed. Unknowns price as “simple”, so the range widens. Missing on Step 1: '}
+            <strong>{confidence.missing.join(', ')}</strong>
+          </span>
+        )}
       </div>
     </section>
   )

@@ -12,7 +12,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetGroup, FleetSummary } from '@/src/calc/types'
 import { getValidRomInputs } from './romPricingValidation'
-import { complexityAnswersFromProject } from './romComplexityFromProject'
+import { complexityAnswersFromProject, pricingInputConfidence } from './romComplexityFromProject'
 import { buildIntegrationTriggers, buildSoftwareTriggers, type ComplexityAnswers } from '@/src/calc/complexityInputs'
 import { scoreTier, clampToFloor, type TierResult } from '@/src/calc/scoreTier'
 import { computeSellPriceRom, type RomPricingResult } from '@/src/calc/sellPriceRom'
@@ -166,5 +166,10 @@ export function resolveFleetSellPriceTotal(project: StoredProject, lines: RomSel
     fleetManagerPlatform: l.vehicle.display.fleetSoftware ?? `unknown:${l.vehicleId}`,
     integrationTier: l.integrationResult.tier,
   }))
-  return aggregateFleetSellPrice(aggregatorLines, selectedAdderIds, ADDERS_CONFIG, PRICING_ASSUMPTIONS)
+  // Unanswered pricing inputs widen the band's high side — see
+  // pricingInputConfidence and aggregateFleetSellPrice's note.
+  const { missing } = pricingInputConfidence(project)
+  return aggregateFleetSellPrice(
+    aggregatorLines, selectedAdderIds, ADDERS_CONFIG, PRICING_ASSUMPTIONS, missing.length
+  )
 }
