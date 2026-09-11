@@ -80,7 +80,10 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   freezerCapable: undefined,
   temperatureEnvironment: undefined,
   dustMoisture: undefined,
-  wmsRequired: false,
+  // tri-state — seeding `false` here made every new project look like the
+  // engineer had answered "No", which pricingInputConfidence then counted as
+  // a confirmed pricing input (2026-09-11). Unset must stay unset.
+  wmsRequired: undefined,
   wmsVendor: undefined,
   projectNotes: undefined,
 })

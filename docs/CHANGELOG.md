@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-09-11 — Pricing inputs are marked on Step 1; the confidence count no longer over-reports
+
+Two owner-reported problems with the confidence strip, plus the marker it was missing.
+
+**1. The count over-reported — a form default was being read as an answer.**
+`storage.ts`'s `defaultFields()` seeded **`wmsRequired: false` on every new project**, and
+`ApplicationForm`'s `defaultValues` did the same (`?? false`). `pricingInputConfidence`
+treats any non-`undefined` value as answered, so a brand-new project claimed a pricing input
+was confirmed that nobody had touched — the strip read "1 of 7" (or more, alongside any
+imported values) on a project with nothing filled in.
+- `wmsRequired` is now tri-state everywhere — `undefined` in both `defaultFields()` and the
+  form's `defaultValues`, matching `rampRequired`/`outdoorRequired`/`temperatureEnvironment`
+  and the fields added earlier today.
+- Its Yes/No toggle now tests `=== true` / `=== false`, so *unset* renders with neither
+  button selected instead of falsely showing "No".
+- Verified: a brand-new project now reads **0 of 7**.
+
+**2. Nothing marked which fields actually drive the price.** Added a compact `$` marker
+(`.pricing-tag`) to all nine intake labels that feed a complexity point table — facility
+size, shared traffic, barcode scanning, storage tracking, AGV/AMR experience, pick/drop
+locations, WMS, interlocks, ramps — with a legend on the Fleet Sizing & Economics tier band:
+*"$ marks an input that moves the ROM price — leaving one blank widens the quoted range."*
+It's deliberately distinct from `.req` (which marks a Step 2 qualification input), because
+the consequence differs: a blank here doesn't fail a gate, it silently scores as "simple".
+The five repeated *"Drives ROM pricing complexity — feeds Step 4"* help lines were removed
+in favour of the marker.
+
+**3. Sections still appearing collapsed** was not a code fault — the un-collapse fix from
+the entry below was committed locally but never pushed, so it wasn't in the running build.
+
+**Shipped:** `src/lib/storage.ts`, `src/components/step1/ApplicationForm.tsx`,
+`app/globals.css`.
+
 ## 2026-09-11 — Nothing that moves a gate or a price is hidden behind a collapse
 
 Follow-up to the field-exposure pass below: the fields existed, but five of them were

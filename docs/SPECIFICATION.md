@@ -183,6 +183,19 @@ engineer can see which answers move the Step 2 traffic lights:
    engineer, proposal date, OEM dealer, dealership, rep), 11 timeline (install date),
    12 notes. Nothing here feeds a gate or a price.
 
+**Pricing inputs are marked.** Every label whose field feeds a complexity point table
+carries a `$` chip (`.pricing-tag`), with a legend on the Fleet Sizing & Economics tier
+band. It is deliberately distinct from the `*` required marker (`.req`, a Step 2
+qualification input) because the consequence differs: a blank pricing input doesn't fail a
+gate, it silently scores as "simple" and widens the quoted range.
+
+**Tri-state discipline:** any optional input counted by `pricingInputConfidence` must stay
+`undefined` until answered — never seeded with a concrete default. `wmsRequired` was seeded
+`false` in both `storage.ts`'s `defaultFields()` and the form's `defaultValues`, so a
+brand-new project reported it as a confirmed pricing input nobody had touched. Yes/No
+toggles for these fields must test `=== true` / `=== false` so unset renders with neither
+option selected.
+
 **Rule (2026-09-11): an input that moves a gate or a price is Tier 1/2 and starts
 EXPANDED.** Tier 3 is only for fields no calculation reads. Sections 08 and 09 were Tier 3
 — collapsed and badged *"Advanced · proposal only"*, under a tier hint promising *"pricing
