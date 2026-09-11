@@ -64,8 +64,9 @@ single, version-controlled source of Claude Code instructions for the project
 ## Skill Workflow (see docs/SKILLS.md)
 
 Build (`/frontend-design` for new UI) → `/simplify` (pre-commit cleanup) → `/review`
-(pre-merge) → commit + push. Auto-commit: after a set of changes, stage all, commit with a
-summary, push to `origin main`.
+(pre-merge) → commit → **summarize for approval** → push. Auto-commit is fine: after a set
+of changes, stage all and commit with a summary message. **Auto-push is not** — pushing
+always waits on the owner's approval of the change summary (Pre-Push Checklist step 8).
 
 ## Pre-Push Checklist (run before EVERY push)
 
@@ -82,7 +83,12 @@ Run this every push. The `.githooks/pre-push` hook automates the mechanical gate
 7. **CSS edited?** — after editing `app/globals.css`, restart the dev server clean
    (`rm -rf .next` then `npm run dev`) so the served chunk isn't stale; hard-refresh
    the browser (the chunk URL can stay the same hash).
-8. Stage all, commit with a summary, push to `origin main`.
+8. **Summarize for approval — then wait.** Before pushing, present a short summary of
+   what changed and what it affects: the behavior change in plain English, anything whose
+   *output* moves (quoted numbers, gate results, exported documents), files touched, and
+   any known issue being left behind. **Do not push until the owner approves.** Staging
+   and committing locally is fine without asking; `git push` is not.
+9. On approval, push to `origin main`.
 
 The `pre-push` hook enforces 2–4 and prints a reminder for the rest. Bypass with
 `git push --no-verify` only for an intentional exception.
