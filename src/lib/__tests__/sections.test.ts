@@ -24,14 +24,18 @@ describe('FORM_SECTIONS tiers', () => {
     expect(FORM_SECTIONS.filter(s => s.tier === 'proposal')).toHaveLength(3)
   })
 
-  it('never hides a section that drives a gate or a price behind a collapse', () => {
-    // An input that moves the quote must be visible without a disclosure —
+  it('starts every section expanded — nothing on Step 1 hides behind a disclosure', () => {
     // 08/09 were collapsed AND badged "not matched in any downstream calc"
-    // while holding the biggest pricing drivers in the app.
-    const mustBeOpen = ['section-08', 'section-09']
-    for (const id of mustBeOpen) {
+    // while holding the biggest pricing drivers in the app; 10–12 were
+    // collapsed too. An engineer should read the whole intake top to bottom.
+    for (const sec of FORM_SECTIONS) {
+      expect(sec.startCollapsed, `${sec.id} must start expanded`).toBeFalsy()
+    }
+  })
+
+  it('never badges a pricing-driving section as "not matched" downstream', () => {
+    for (const id of ['section-08', 'section-09']) {
       const sec = FORM_SECTIONS.find(s => s.id === id)!
-      expect(sec.startCollapsed, `${id} must start expanded`).toBeFalsy()
       expect(sec.notMatched, `${id} feeds ROM pricing — cannot be badged "not matched"`).toBeFalsy()
     }
   })

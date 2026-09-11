@@ -790,7 +790,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               <div className="help">Refrigerated = review (yellow) · Freezer = required (red)</div>
             </div>
             <div className="fld">
-              <label>Ramps on Site? <span className="pricing-tag" title="Affects the ROM price — unanswered is priced as &quot;simple&quot;">$</span></label>
+              <label>Ramps on Site? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <Controller
                 name="rampRequired"
                 control={control}
@@ -880,7 +880,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        <TierBand label={TIER_LABELS.sizing} hint="$ marks an input that moves the ROM price — leaving one blank widens the quoted range" />
+        <TierBand label={TIER_LABELS.sizing} hint="* marks an input required for ROM pricing — leaving one blank scores it as “simple” and widens the quoted range" />
 
         {/* ===== Section 05: Operating schedule ===== */}
         <FormSection {...secProps('section-05')}>
@@ -1156,7 +1156,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 2026-09-11 — a project arriving without a questionnaire could
                 never confirm it, and unanswered scores as zero. */}
             <div className="fld">
-              <label>Facility size <span className="pricing-tag" title="Affects the ROM price — unanswered is priced as &quot;simple&quot;">$</span></label>
+              <label>Facility size <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -1177,7 +1177,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-09')}>
           <div className="fld-grid-4">
             <div className="fld span-4">
-              <label>Required Interlocks <span className="pricing-tag" title="Affects the ROM price — unanswered is priced as &quot;simple&quot;">$</span></label>
+              <label>Required Interlocks <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <div className="cert-grid">
                 {INTERLOCKS.map(item => {
                   const on = interlocks.includes(item)
@@ -1239,7 +1239,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             )}
 
             <div className="fld">
-              <label>WMS Required? <span className="pricing-tag" title="Affects the ROM price — unanswered is priced as &quot;simple&quot;">$</span></label>
+              <label>WMS Required? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <Controller
                 name="wmsRequired"
                 control={control}
@@ -1267,7 +1267,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 largest combined pricing driver, and questionnaire-only until
                 2026-09-11. */}
             <div className="fld span-4">
-              <label>Shared Traffic in the Operating Area <span className="pricing-tag" title="Affects the ROM price — unanswered is priced as &quot;simple&quot;">$</span></label>
+              <label>Shared Traffic in the Operating Area <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <div className="cert-grid">
                 {SHARED_TRAFFIC_TYPES.map(item => {
                   const on = sharedTrafficTypes.includes(item)
@@ -1289,7 +1289,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>Barcode Scanning Required? <span className="pricing-tag" title="Affects the ROM price — unanswered is priced as &quot;simple&quot;">$</span></label>
+              <label>Barcode Scanning Required? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <Controller
                 name="barcodeScanningRequired"
                 control={control}
@@ -1303,7 +1303,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>Storage Tracking Required? <span className="pricing-tag" title="Affects the ROM price — unanswered is priced as &quot;simple&quot;">$</span></label>
+              <label>Storage Tracking Required? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <Controller
                 name="storageTrackingRequired"
                 control={control}
@@ -1316,7 +1316,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               />
             </div>
             <div className="fld">
-              <label>Customer Has AGV/AMR Experience? <span className="pricing-tag" title="Affects the ROM price — unanswered is priced as &quot;simple&quot;">$</span></label>
+              <label>Customer Has AGV/AMR Experience? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <Controller
                 name="hasAgvExperience"
                 control={control}
@@ -1329,7 +1329,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               />
             </div>
             <div className="fld">
-              <label>Pick/Drop Location Count <span className="pricing-tag" title="Affects the ROM price — unanswered is priced as &quot;simple&quot;">$</span></label>
+              <label>Pick/Drop Location Count <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <input
                 type="number"
                 step="1"

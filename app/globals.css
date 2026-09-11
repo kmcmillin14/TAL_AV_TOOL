@@ -840,19 +840,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .fld-range-sep { color: var(--text-tertiary); font-size: 14px; flex-shrink: 0; line-height: 1; }
 .fld label { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
 .req { color: var(--accent); }
-/* Marks an intake field that feeds the ROM price (src/calc/complexityInputs.ts).
-   Distinct from `.req` (which marks a Step 2 qualification input) because the
-   consequence is different: a blank here doesn't fail a gate, it silently
-   scores as "simple" and widens the quoted range. Legend sits on the
-   Fleet Sizing & Economics tier band. */
-.pricing-tag {
-  display: inline-flex; align-items: center; justify-content: center;
-  min-width: 15px; height: 15px; padding: 0 4px; margin-left: 4px;
-  border-radius: 4px; background: var(--accent-soft); color: var(--accent);
-  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 800;
-  line-height: 1; vertical-align: middle; cursor: help;
-}
-
 .fld input,
 .fld select,
 .fld textarea {

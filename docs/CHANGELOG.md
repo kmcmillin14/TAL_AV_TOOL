@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-09-11 — No collapsed sections on Step 1; scoring inputs marked `*required`
+
+- **Nothing on Step 1 starts collapsed.** `startCollapsed` is gone from all three remaining
+  Tier 3 sections (10 Dealer & contact, 11 Timeline, 12 Notes), so the whole intake reads
+  top to bottom with no disclosure triangles. The guard test in
+  `src/lib/__tests__/sections.test.ts` now asserts this for **every** section, not just the
+  two that hold pricing drivers.
+- **Scoring inputs use the `*required` marker.** The `$` chip added earlier today is
+  replaced by the same red `*` used for qualification-required fields, on all nine labels
+  that feed a complexity point table. Legend on the Fleet Sizing & Economics tier band:
+  *"* marks an input required for ROM pricing — leaving one blank scores it as 'simple' and
+  widens the quoted range."* The now-unused `.pricing-tag` CSS was removed.
+
+**Shipped:** `src/lib/constants/sections.ts`, `src/components/step1/ApplicationForm.tsx`,
+`src/lib/__tests__/sections.test.ts`, `app/globals.css`.
+
 ## 2026-09-11 — Pricing inputs are marked on Step 1; the confidence count no longer over-reports
 
 Two owner-reported problems with the confidence strip, plus the marker it was missing.

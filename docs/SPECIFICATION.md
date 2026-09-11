@@ -179,15 +179,19 @@ engineer can see which answers move the Step 2 traffic lights:
    08 site details (floor condition, dust/moisture, **facility size**), 09 integration
    (interlocks, WMS, other AGVs, **shared traffic**, **barcode scanning**, storage
    tracking, AGV experience, pick/drop locations).
-3. **PROPOSAL DETAILS** (collapsed by default) — 10 dealer & contact (facility, TAL
+3. **PROPOSAL DETAILS** — 10 dealer & contact (facility, TAL
    engineer, proposal date, OEM dealer, dealership, rep), 11 timeline (install date),
    12 notes. Nothing here feeds a gate or a price.
 
-**Pricing inputs are marked.** Every label whose field feeds a complexity point table
-carries a `$` chip (`.pricing-tag`), with a legend on the Fleet Sizing & Economics tier
-band. It is deliberately distinct from the `*` required marker (`.req`, a Step 2
-qualification input) because the consequence differs: a blank pricing input doesn't fail a
-gate, it silently scores as "simple" and widens the quoted range.
+**Pricing inputs are marked `*required`.** Every label whose field feeds a complexity point
+table carries the same red `*` used for qualification-required fields, with a legend on the
+Fleet Sizing & Economics tier band. The marker's `title` spells out the distinct
+consequence: a blank pricing input doesn't fail a gate, it silently scores as "simple" and
+widens the quoted range.
+
+**No section on Step 1 starts collapsed.** The whole intake reads top to bottom; a guard
+test in `src/lib/__tests__/sections.test.ts` asserts `startCollapsed` is unset on every
+section.
 
 **Tri-state discipline:** any optional input counted by `pricingInputConfidence` must stay
 `undefined` until answered — never seeded with a concrete default. `wmsRequired` was seeded

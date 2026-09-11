@@ -60,13 +60,16 @@ export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
     tier: 'sizing', requiredFields: [] },
   { id: 'section-09', num: '09', label: 'Integration', short: 'Integration',
     tier: 'sizing', requiredFields: [] },
-  // ── Tier 3 — PROPOSAL DETAILS (collapsed; no gate or price depends on these) ──
+  // ── Tier 3 — PROPOSAL DETAILS (no gate or price depends on these) ──
+  // Expanded like everything else (2026-09-11): no section on Step 1 starts
+  // collapsed. An engineer should be able to read the whole intake top to
+  // bottom without hunting for a disclosure triangle.
   { id: 'section-10', num: '10', label: 'Dealer & contact', short: 'Dealer',
-    tier: 'proposal', requiredFields: [], startCollapsed: true },
+    tier: 'proposal', requiredFields: [] },
   { id: 'section-11', num: '11', label: 'Timeline', short: 'Timeline',
-    tier: 'proposal', requiredFields: [], startCollapsed: true },
+    tier: 'proposal', requiredFields: [] },
   { id: 'section-12', num: '12', label: 'Project notes', short: 'Notes',
-    tier: 'proposal', requiredFields: [], startCollapsed: true },
+    tier: 'proposal', requiredFields: [] },
 ] as const
 
 export type SectionStatus = 'complete' | 'in-progress' | 'untouched' | 'optional'
