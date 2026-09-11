@@ -563,9 +563,14 @@ payback). Lives in `src/calc/sellPriceRom.ts` (per-vehicle) + `src/calc/fleetSel
    charged once per platform) — the four items are descriptive scope, not separately
    priced lines, so that single number must be sized to cover all four when real pricing
    lands.
-2. **Options** — the adder checklist that feeds the Adders category; each applies once to
-   the project total, never per vehicle.
-3. **`RomComplexityPanel.tsx`** — how the project scored, in plain English (see below).
+2. **`RomPriceDrivers.tsx`** — one card holding everything that MOVES that total, in two
+   columns: **How it scored** (the plain-English complexity axes, see below) beside
+   **Options** (the adder checklist feeding the Adders category; each applies once to the
+   project total, never per vehicle), with the per-vehicle tier overrides in a disclosure
+   underneath. Scoring and options were separate cards until 2026-09-11, which buried the
+   relationship — the quotation is the output, these are the two inputs that change it
+   (tiers multiply, options add). The quotation itself deliberately carries no controls, so
+   it stays clean enough to screenshot.
 
 The per-chassis `VehicleSellPriceBlock` was **deleted** in this redesign: it repeated the
 identical complexity breakdown once per vehicle type, which is noise in a mixed-chassis
@@ -642,7 +647,7 @@ required fields to advance), the uncertainty is priced and disclosed:
   4 unknowns ($2,310,000 – $3,725,000) to 3 ($2,310,000 – $3,595,000), total unchanged at
   $2,568,700.
 
-**Complexity, in plain English** (`RomComplexityPanel.tsx`, 2026-09-10). Both axes score
+**Complexity, in plain English** (`RomPriceDrivers.tsx`, 2026-09-10). Both axes score
 from project-level answers plus the program's total fleet size — **nothing
 vehicle-specific goes into the scoring** — so the breakdown is ONE fleet-wide result, not
 the same list repeated per chassis. `resolveFleetComplexityBaseline`

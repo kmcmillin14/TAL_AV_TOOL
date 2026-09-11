@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-09-11 — Step 4 simplified: scoring and options merged into one card
+
+Step 4 was three stacked cards, and the split was arbitrary: the quotation is the **output**,
+while Options and Complexity are both **inputs that move it** — options add dollars, tiers
+multiply them — with nothing showing which drove what.
+
+`RomComplexityPanel.tsx` becomes **`RomPriceDrivers.tsx`**: one card, *"What's driving this
+price"*, with **How it scored** (the two complexity axes, stacked) beside **Options** (the
+adder checklist), and the per-vehicle tier overrides still in a disclosure underneath. The
+standalone Options card is gone. Three cards → two.
+
+The quotation is deliberately left untouched and carries no controls, so it stays clean
+enough to screenshot or paste into a proposal.
+
+Verified at 1600px: the two columns render 884px / 610px with near-identical heights (235 vs
+234), and toggling an option from the merged card still updates the quotation's Adders
+category and total (+$18,000, restoring cleanly on uncheck). Below 1000px the columns stack.
+
+**Shipped:** `src/components/rom/RomPriceDrivers.tsx` (renamed from `RomComplexityPanel.tsx`),
+`src/components/rom/RomFleetSellPrice.tsx`, `app/globals.css`, `docs/SPECIFICATION.md`.
+
 ## 2026-09-11 — Integration chip groups sit side by side instead of leaving dead rows
 
 Follow-up: making `.span-4` a true full row (entry below) fixed the ragged backfill but

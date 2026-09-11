@@ -5,12 +5,16 @@ import type { TierResult } from '@/src/calc/scoreTier'
 import type { FleetComplexityBaseline, RomSellPriceLine, RomSellPriceOverride } from '@/src/lib/romSellPriceLine'
 import { PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
 import { complexityLabel, complexityDriverPhrase, tierName } from '@/src/lib/romComplexityLabels'
+import { ADDERS_CONFIG } from '@/src/lib/pricingContent'
+import { fullUsd } from './RomSellPriceParts'
 
 interface Props {
   baseline: FleetComplexityBaseline
   lines: RomSellPriceLine[]
   overrides: Record<string, RomSellPriceOverride | undefined>
   onOverride: (vehicleId: string, patch: Partial<RomSellPriceOverride>) => void
+  selectedAdderIds: string[]
+  onToggleAdder: (id: string) => void
 }
 
 /** "an 11–20 unit fleet, a 500K+ sq ft facility, and a customer new to AGVs" */
@@ -72,8 +76,10 @@ function AxisSummary({
   )
 }
 
-/** Fleet-level complexity, in plain English, plus the per-vehicle tier
- *  adjustments an engineer can still make.
+/** Everything that moves the quotation above, in one card: how the project
+ *  scored, and the options an engineer can add. They were two separate cards
+ *  until 2026-09-11, which buried the relationship — the quote is the output,
+ *  these are the inputs that change it (tiers multiply, options add).
  *
  *  Both axes score from project-level answers and the program's total fleet
  *  size — nothing vehicle-specific — so the breakdown is ONE fleet-wide
@@ -81,7 +87,9 @@ function AxisSummary({
  *  mixed-chassis fleet used to render). A vehicle only diverges from the
  *  baseline when its own floor raises it or an engineer overrides it, and
  *  those cases are called out by name in the adjustments section. */
-export default function RomComplexityPanel({ baseline, lines, overrides, onOverride }: Props) {
+export default function RomPriceDrivers({
+  baseline, lines, overrides, onOverride, selectedAdderIds, onToggleAdder,
+}: Props) {
   const [openAdjust, setOpenAdjust] = useState(false)
 
   const diverged = lines.filter(
@@ -93,18 +101,39 @@ export default function RomComplexityPanel({ baseline, lines, overrides, onOverr
   const swMultiplier = PRICING_ASSUMPTIONS.softwareMultipliers[String(baseline.software.tier) as '1' | '2' | '3']
 
   return (
-    <section className="rom-cx">
+    <section className="rom-cx rom-drivers">
       <header className="rom-cx-head">
-        <h2 className="rom-cx-title">How this project was scored</h2>
+        <h2 className="rom-cx-title">What&rsquo;s driving this price</h2>
         <p className="rom-cx-sub">
           One score for the whole fleet — complexity comes from the site and the program, not
-          from which chassis you picked.
+          from which chassis you picked. Options are added once to the project total.
         </p>
       </header>
 
-      <div className="rom-cx-axes">
-        <AxisSummary axis="Professional services" result={baseline.integration} multiplier={intMultiplier} />
-        <AxisSummary axis="Software" result={baseline.software} multiplier={swMultiplier} />
+      <div className="rom-drivers-cols">
+        <div className="rom-drivers-col">
+          <span className="rom-drivers-coltitle">How it scored</span>
+          <div className="rom-cx-axes">
+            <AxisSummary axis="Professional services" result={baseline.integration} multiplier={intMultiplier} />
+            <AxisSummary axis="Software" result={baseline.software} multiplier={swMultiplier} />
+          </div>
+        </div>
+
+        <div className="rom-drivers-col">
+          <span className="rom-drivers-coltitle">Options</span>
+          <div className="rom-sp-adder-grid">
+            {ADDERS_CONFIG.adders.map(a => (
+              <label key={a.id} className="rom-sp-adder-row">
+                <input
+                  type="checkbox"
+                  checked={selectedAdderIds.includes(a.id)}
+                  onChange={() => onToggleAdder(a.id)}
+                />
+                {a.label} <span className="mono">{fullUsd(a.amount)}</span>
+              </label>
+            ))}
+          </div>
+        </div>
       </div>
 
       {diverged.length > 0 && (

@@ -10,10 +10,8 @@ import {
   resolveRomSellPriceLine, resolveFleetSellPriceTotal, resolveFleetComplexityBaseline,
   type RomSellPriceLine, type RomSellPriceOverride,
 } from '@/src/lib/romSellPriceLine'
-import { ADDERS_CONFIG } from '@/src/lib/pricingContent'
-import { fullUsd } from './RomSellPriceParts'
 import RomQuotation from './RomQuotation'
-import RomComplexityPanel from './RomComplexityPanel'
+import RomPriceDrivers from './RomPriceDrivers'
 
 interface Props {
   project: StoredProject
@@ -22,13 +20,13 @@ interface Props {
 }
 
 /** ROM Configuration (Step 4) — the fleet's internal sell price, laid out as
- *  a quotation: RomQuotation renders the priced categories (Hardware ·
- *  Software · Professional services · Adders) closed by the total project
- *  investment, an Options block underneath picks the adders that feed the
- *  Adders category, and RomComplexityPanel explains in plain English how the
- *  project scored — once, fleet-wide, because both complexity axes score from
- *  project-level answers and total fleet size rather than anything
- *  chassis-specific.
+ *  a quotation. Two cards: RomQuotation renders the priced categories
+ *  (Hardware · Software · Professional services · Adders) closed by the total
+ *  project investment, deliberately kept clean enough to screenshot; below it
+ *  RomPriceDrivers holds everything that MOVES that total — how the project
+ *  scored (once, fleet-wide, because both complexity axes read project-level
+ *  answers and total fleet size rather than anything chassis-specific) beside
+ *  the options that add to it.
  *
  *  Every figure comes from the shared resolver (src/lib/romSellPriceLine.ts)
  *  that the Dashboard (via src/lib/fleetModel.ts) and the PPTX appendix also
@@ -111,30 +109,13 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
             confidence={confidence}
           />
 
-          <section className="rom-options">
-            <h2 className="rom-options-title">Options</h2>
-            <p className="rom-options-sub">
-              Selected options are added once to the project total, never per vehicle.
-            </p>
-            <div className="rom-sp-adder-grid">
-              {ADDERS_CONFIG.adders.map(a => (
-                <label key={a.id} className="rom-sp-adder-row">
-                  <input
-                    type="checkbox"
-                    checked={selectedAdderIds.includes(a.id)}
-                    onChange={() => toggleAdder(a.id)}
-                  />
-                  {a.label} <span className="mono">{fullUsd(a.amount)}</span>
-                </label>
-              ))}
-            </div>
-          </section>
-
-          <RomComplexityPanel
+          <RomPriceDrivers
             baseline={baseline}
             lines={lines}
             overrides={overrides}
             onOverride={setOverride}
+            selectedAdderIds={selectedAdderIds}
+            onToggleAdder={toggleAdder}
           />
         </>
       )}

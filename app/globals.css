@@ -3809,7 +3809,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 /* ── ROM Configuration (Step 4) ──────────────────────────────────────────
    Three stacked surfaces: .rom-quote (the priced quotation: Hardware ·
    Software · Professional services · Adders, each a category with a
-   subtotal), .rom-options (the adder picker that feeds the Adders
+   subtotal), .rom-drivers (scoring beside the adder picker that feeds the Adders
    category), and .rom-cx (plain-English "how this project scored", ONE
    fleet-wide result — both complexity axes score from project answers +
    total fleet size, never anything chassis-specific). Card shell matches
@@ -3899,18 +3899,22 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-quote-confidence-score { flex-shrink: 0; font-family: var(--tal-font-numeric); font-weight: 800; }
 .rom-quote-confidence strong { font-weight: 700; }
 
-/* ── Options (adder picker) ────────────────────────────────────────────── */
-.rom-options {
-  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px;
-  box-shadow: var(--shadow-card); padding: 20px 22px; margin-bottom: 20px;
+/* ── Price drivers: scoring beside options ─────────────────────────────── */
+/* One card holding everything that moves the quotation above — the two
+   complexity axes on the left, the option picker on the right. They were two
+   separate cards, which buried the fact that both are inputs to the same
+   total. The quote itself stays a clean, screenshot-able output. */
+.rom-drivers-cols { display: grid; grid-template-columns: 1.45fr 1fr; gap: 24px; align-items: start; }
+@media (max-width: 1000px) { .rom-drivers-cols { grid-template-columns: 1fr; gap: 20px; } }
+.rom-drivers-coltitle {
+  display: block; margin-bottom: 10px;
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
 }
-.rom-options-title {
-  font-family: var(--tal-font-family); font-size: 15px; font-weight: 700;
-  color: var(--text-primary); margin: 0;
-}
-.rom-options-sub {
-  font-family: var(--tal-font-family); font-size: 12px; color: var(--text-tertiary); margin: 3px 0 12px;
-}
+/* Axes stack inside their column — side by side they'd be too narrow to read. */
+.rom-drivers-col .rom-cx-axes { grid-template-columns: 1fr; gap: 12px; }
+/* Options sit one per row in the narrower right-hand column. */
+.rom-drivers-col .rom-sp-adder-grid { grid-template-columns: 1fr; }
 .rom-sp-adder-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
 @media (max-width: 560px) { .rom-sp-adder-grid { grid-template-columns: 1fr; } }
 .rom-sp-adder-row {
