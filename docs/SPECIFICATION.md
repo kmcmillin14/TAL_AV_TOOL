@@ -170,15 +170,34 @@ Thirteen flat sections became **three labeled tiers** (2026-06-10) so an applica
 engineer can see which answers move the Step 2 traffic lights:
 
 1. **VEHICLE QUALIFICATION** — every field the gate engine reads:
-   01 *What are you moving?* (weight, unit type, load L×W×H, pallet subtype/custom),
-   02 *How is it transferred?* (one **Transfer type** + conditional transfer height),
+   01 *What are you moving?* (weight, unit type, load L×W×H, pallet subtype/custom,
+   **pallet entry**), 02 *How is it transferred?* (one **Transfer type** + conditional
+   transfer height, **pick height**, **drop height**),
    03 *Environment & site* (temp min/max, outdoor, freezer, ramp grade + ramp distance,
    aisle width — informational only), 04 *Certifications* (soft gate).
 2. **FLEET SIZING & ECONOMICS** — 05 schedule, 06 throughput & distance, 07 labor.
 3. **PROPOSAL DETAILS** (collapsed by default; consumers arrive in future revisions) —
-   08 site details (floor condition, dust/moisture), 09 integration (interlocks, WMS,
-   other AGVs), 10 dealer & contact (facility, TAL engineer, proposal date, OEM dealer,
-   dealership, rep), 11 timeline (install date), 12 notes.
+   08 site details (floor condition, dust/moisture, **facility size**), 09 integration
+   (interlocks, WMS, other AGVs, **shared traffic**, **barcode scanning**, storage
+   tracking, AGV experience, pick/drop locations), 10 dealer & contact (facility, TAL
+   engineer, proposal date, OEM dealer, dealership, rep), 11 timeline (install date),
+   12 notes.
+
+**Rule (2026-09-11): Step 1 contains every field that moves a calculated output** — gate,
+fleet size, or price. The engineer owns the quote, so they must be able to fill or correct
+anything that changes it. The bolded fields above were added when an audit of
+`src/calc/gates.ts` and the complexity point tables found six such inputs with no field in
+Step 1 — `pickHeightFt`/`dropHeightFt` (a **hard** gate) and `palletEntryType` had no field
+in *either* form, reachable only by hand-editing JSON, while `facilitySizeSqFt`,
+`sharedTrafficTypes` and `barcodeScanningRequired` were questionnaire-only.
+
+This is deliberately **not** a mirror of the customer questionnaire — the two forms have
+different jobs. The questionnaire is a cold-capture instrument for a customer (budget,
+contacts, current process, project stage); Step 1 is the engineer's working surface.
+Where both ask the same thing they must use the identical schema key; where they diverge,
+`src/lib/questionnaire/questionnaireExport.ts` reconciles on import (`bastianRep ||
+talRepName`, `desiredInstallDate || targetGoLiveDate`) and every consumer reads the
+canonical key first.
 
 **Qualification readiness meter** (SectionNav): counts answered gate inputs —
 `maxLoadWeightLbs, typicalUnitType, loadLengthIn, loadWidthIn, loadHeightIn,

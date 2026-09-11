@@ -10,7 +10,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject, subscribeSaveDrops } from '@/src/lib/storage'
-import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS } from '@/src/lib/constants/enums'
+import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
 import SectionNav from './SectionNav'
 import ProgressStrip from './ProgressStrip'
@@ -191,6 +191,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
       // unanswered field stays unanswered (drives unresolvedComplexityGaps).
       storageTrackingRequired: initialData?.storageTrackingRequired,
       hasAgvExperience: initialData?.hasAgvExperience,
+      barcodeScanningRequired: initialData?.barcodeScanningRequired,
+      sharedTrafficTypes: initialData?.sharedTrafficTypes ?? [],
       distanceType: initialData?.distanceType ?? 'one_way',
       flows: initialFlowRows(initialData),
       loads: initialLoadRows(initialData),
@@ -241,6 +243,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   const wmsRequired = watch('wmsRequired')
   const certifications = watch('certifications') || []
   const interlocks = watch('interlocks') || []
+  const sharedTrafficTypes = watch('sharedTrafficTypes') || []
   const shiftsPerDay = watch('shiftsPerDay')
   const hoursPerShift = watch('hoursPerShift')
   const operatingDaysPattern = watch('operatingDaysPattern')
@@ -373,8 +376,10 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   const iLabel = unitSystem === 'metric' ? 'mm' : 'in'
   const tLabel = unitSystem === 'metric' ? '°C' : '°F'
 
-  const toggleArrayItem = (fieldName: 'certifications' | 'interlocks', value: string) => {
-    const current = fieldName === 'certifications' ? certifications : interlocks
+  const toggleArrayItem = (fieldName: 'certifications' | 'interlocks' | 'sharedTrafficTypes', value: string) => {
+    const current = fieldName === 'certifications' ? certifications
+      : fieldName === 'interlocks' ? interlocks
+      : sharedTrafficTypes
     const next = current.includes(value)
       ? current.filter(x => x !== value)
       : [...current, value]
@@ -489,6 +494,27 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                         {PALLET_SUBTYPES.map(t => <option key={t}>{t}</option>)}
                       </select>
                       <div className="help">Selects standard dimensions</div>
+                    </div>
+                  )}
+
+                  {/* Pallet entry drives the Pallet Entry soft gate
+                      (src/calc/gates.ts) — project-level, so only the first
+                      load block asks. Had no field in Step 1 until 2026-09-11. */}
+                  {isPalletRow && i === 0 && (
+                    <div className="fld">
+                      <label>Pallet Entry</label>
+                      <select
+                        {...register('palletEntryType', {
+                          setValueAs: v => (v === '' ? undefined : v),
+                          onBlur: onBlurSave,
+                        })}
+                        defaultValue={initialData?.palletEntryType || ''}
+                      >
+                        <option value="">Not sure</option>
+                        <option value="stringer">Stringer (2-way)</option>
+                        <option value="block">Block (4-way)</option>
+                      </select>
+                      <div className="help">Matched against each vehicle in Step 2.</div>
                     </div>
                   )}
 
@@ -616,6 +642,48 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 </div>
               </div>
             )}
+
+            {/* Pick/drop heights drive the lift & transfer HARD gate
+                (src/calc/gates.ts) but had no field in either form until
+                2026-09-11 — they could only be set by hand-editing JSON. */}
+            <div className="fld">
+              <label>Pick height ({dLabel})</label>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  placeholder="0"
+                  className="mono"
+                  defaultValue={dispFt(initialData?.pickHeightFt)}
+                  {...register('pickHeightFt', {
+                    setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'ft', unitSystem),
+                    onBlur: onBlurSave,
+                  })}
+                />
+                <div className="unit">{dLabel}</div>
+              </div>
+              <div className="help">Height the load is picked FROM. Drives the lift gate in Step 2.</div>
+            </div>
+            <div className="fld">
+              <label>Drop height ({dLabel})</label>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  step="0.1"
+                  min="0"
+                  placeholder="0"
+                  className="mono"
+                  defaultValue={dispFt(initialData?.dropHeightFt)}
+                  {...register('dropHeightFt', {
+                    setValueAs: v => v === '' ? null : parseImperialInput(String(v), 'ft', unitSystem),
+                    onBlur: onBlurSave,
+                  })}
+                />
+                <div className="unit">{dLabel}</div>
+              </div>
+              <div className="help">Height the load is placed AT. Drives the lift gate in Step 2.</div>
+            </div>
           </div>
         </FormSection>
 
@@ -1085,6 +1153,26 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 {DUST_MOISTURE_OPTS.map(o => <option key={o}>{o}</option>)}
               </select>
             </div>
+            {/* Facility size is the single biggest integration pricing driver
+                (+4 points at 500K+ sq ft) but was questionnaire-only until
+                2026-09-11 — a project arriving without a questionnaire could
+                never confirm it, and unanswered scores as zero. */}
+            <div className="fld">
+              <label>Facility size</label>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  step="1000"
+                  min="0"
+                  placeholder="0"
+                  className="mono"
+                  defaultValue={initialData?.facilitySizeSqFt ?? ''}
+                  {...register('facilitySizeSqFt', { valueAsNumber: true, onBlur: onBlurSave })}
+                />
+                <div className="unit">sq ft</div>
+              </div>
+              <div className="help">Drives ROM pricing complexity — feeds Step 4.</div>
+            </div>
           </div>
         </FormSection>
 
@@ -1176,6 +1264,48 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 />
               </div>
             )}
+
+            {/* Shared traffic drives BOTH axes — pedestrians +1 and forklifts
+                +2 on integration, other-vendor AGVs +6 on software — the
+                largest combined pricing driver, and questionnaire-only until
+                2026-09-11. */}
+            <div className="fld span-4">
+              <label>Shared Traffic in the Operating Area</label>
+              <div className="cert-grid">
+                {SHARED_TRAFFIC_TYPES.map(item => {
+                  const on = sharedTrafficTypes.includes(item)
+                  return (
+                    <label key={item} className={`chk${on ? ' on' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => toggleArrayItem('sharedTrafficTypes', item)}
+                      />
+                      <span className="box">
+                        {on && <Icon name="check" size={10} />}
+                      </span>
+                      <span>{item}</span>
+                    </label>
+                  )
+                })}
+              </div>
+              <div className="help">Drives ROM pricing complexity — feeds Step 4.</div>
+            </div>
+
+            <div className="fld">
+              <label>Barcode Scanning Required?</label>
+              <Controller
+                name="barcodeScanningRequired"
+                control={control}
+                render={({ field }) => (
+                  <div className="seg-toggle">
+                    <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
+                    <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                  </div>
+                )}
+              />
+              <div className="help">Drives ROM pricing complexity — feeds Step 4.</div>
+            </div>
 
             <div className="fld">
               <label>Storage Tracking Required?</label>

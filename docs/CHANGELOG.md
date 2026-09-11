@@ -1,5 +1,47 @@
 # Changelog
 
+## 2026-09-11 — Every gate and pricing input is now visible on Step 1
+
+**Principle:** Step 1 must contain every field that moves a calculated output — gate, fleet
+size, or price. The engineer owns the quote, so they must be able to fill or correct
+anything that changes it. (The customer questionnaire keeps its extra sales/context fields;
+the two forms are deliberately NOT mirrored — they have different jobs. Where both ask the
+same thing they share one schema key.)
+
+Audited `src/calc/gates.ts` and the complexity point tables against what
+`ApplicationForm.tsx` actually renders. **Six inputs drove a gate or a price but had no
+field in Step 1** — several had no field in *either* form, reachable only by hand-editing
+JSON:
+
+- **`pickHeightFt` / `dropHeightFt`** (§02 Transfer) — drive the lift & transfer **hard
+  gate**. Previously settable only via hand-edited JSON, so the gate was effectively inert
+  on most projects. Verified live: setting a 12 ft drop height correctly narrowed the
+  sample from 6 compatible vehicles to 1 (only the CB18's 14.67 ft reach clears it).
+- **`palletEntryType`** (§01 Load, first load block only — it's project-level) — drives the
+  Pallet Entry soft gate.
+- **`facilitySizeSqFt`** (§08 Site) — the single biggest integration pricing driver (+4 at
+  500K+ sq ft), and questionnaire-only until now. A project arriving without a
+  questionnaire could never confirm it, and unanswered scores as zero.
+- **`sharedTrafficTypes`** (§09 Integration) — the largest *combined* pricing driver:
+  pedestrians +1 and forklifts +2 on integration, other-vendor AGVs +6 on software.
+- **`barcodeScanningRequired`** (§09 Integration) — software complexity +2, and one of the
+  7 inputs the new confidence strip counts.
+
+This also closes the "7 of 7 confirmed but never actually asked" hole: `facilitySizeSqFt`
+and `barcodeScanningRequired` are both counted by `pricingInputConfidence`, so they were
+scoreable-but-unanswerable from inside the app.
+
+**Duplicate field pairs — narrower than the earlier audit suggested.**
+`src/lib/questionnaire/questionnaireExport.ts` already reconciles both pairs on import
+(`bastianRep || talRepName`, `desiredInstallDate || targetGoLiveDate`), so the canonical
+keys were already correct. The real remaining bug was isolated to the app's own PDF:
+`src/lib/pdfExport.ts` printed the questionnaire's raw copies, so an engineer's Step 1
+install-date edit never reached the PDF, and the rep could appear twice under two names.
+Both rows now resolve canonical-key-first, matching the import. No schema migration needed.
+
+**Shipped:** `src/components/step1/ApplicationForm.tsx`, `src/lib/pdfExport.ts`,
+`docs/SPECIFICATION.md`.
+
 ## 2026-09-11 — Unanswered pricing inputs widen the range instead of silently under-pricing
 
 **The problem:** an unanswered complexity input scores ZERO points, which is

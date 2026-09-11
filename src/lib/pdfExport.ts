@@ -401,9 +401,15 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
     row('Budget', joinList([project.budgetStatus, project.budgetRange]))
     row('Drivers', (project.projectDrivers ?? []).join(', ') || null)
     row('Specialty applications', (project.specialtyApplications ?? []).join(', ') || null)
-    row('Target go-live', project.targetGoLiveDate)
+    // Both of these resolve to the app's canonical key first, matching what
+    // questionnaireExport.ts writes on import (bastianRep ?? talRepName,
+    // desiredInstallDate ?? targetGoLiveDate). Before 2026-09-11 this section
+    // printed the questionnaire's copies raw, so an engineer's own Step 1
+    // edits never reached this PDF and the rep could appear twice under two
+    // names — once here and once as "TAL Engineer" in the meta block above.
+    row('Target go-live', project.desiredInstallDate || project.targetGoLiveDate)
     row('Customer contact', joinList([project.customerContactName, project.customerContactEmail]))
-    row('TAL representative', joinList([project.talRepName, project.talRepEmail]))
+    row('TAL representative', joinList([project.bastianRep || project.talRepName, project.talRepEmail]))
     row('OEM dealer', project.oemDealer)
     row('Dealership name', project.dealershipName)
     row('Dealer representative', project.dealerRep)
