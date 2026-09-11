@@ -1190,7 +1190,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         {/* ===== Section 09: Integration ===== */}
         <FormSection {...secProps('section-09')}>
           <div className="fld-grid-4">
-            <div className="fld span-4">
+            <div className="fld span-half">
               <label>Required Interlocks <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <div className="cert-grid">
                 {INTERLOCKS.map(item => {
@@ -1219,7 +1219,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 +2 on integration, other-vendor AGVs +6 on software — the
                 largest combined pricing driver, and questionnaire-only until
                 2026-09-11. */}
-            <div className="fld span-4">
+            <div className="fld span-half">
               <label>Shared Traffic in the Operating Area <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <div className="cert-grid">
                 {SHARED_TRAFFIC_TYPES.map(item => {

@@ -822,6 +822,15 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
    covered only part of the row and the following fields backfilled the gap,
    so Step 1's Integration section rendered ragged on wide monitors. */
 .span-4 { grid-column: 1 / -1; }
+/* Half a row, tracking the column count at each breakpoint. For a chip group
+   that's too wide to sit beside a normal field but nowhere near wide enough
+   to justify a whole row — `.span-4` left Integration's two chip groups with
+   61% and 69% dead space on a wide monitor. Defined after the 1400px block
+   above so this override wins; the 600px collapse below resets it. */
+.span-half { grid-column: span 2; }
+@media (min-width: 1400px) {
+  .span-half { grid-column: span 3; }
+}
 .form-row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
 /* Phone: every Step-1 field grid collapses to a single column, spans reset,
@@ -831,7 +840,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
     grid-template-columns: 1fr;
     gap: 14px;
   }
-  .span-2, .span-3, .span-4 { grid-column: span 1; }
+  .span-2, .span-3, .span-4, .span-half { grid-column: span 1; }
   input, select, textarea { font-size: 16px; }
 }
 

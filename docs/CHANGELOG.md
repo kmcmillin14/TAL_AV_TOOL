@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-11 — Integration chip groups sit side by side instead of leaving dead rows
+
+Follow-up: making `.span-4` a true full row (entry below) fixed the ragged backfill but
+traded it for the opposite problem — Integration's two chip groups each owned a full
+1314px row while their chips used only ~400–500px, leaving **61% and 69% dead space** above
+a dense six-toggle row. Measured, not eyeballed.
+
+New `.span-half` class takes half the row and tracks the column count at each breakpoint
+(span 2 in a 4-column grid, span 3 in the 6-column ≥1400px grid, span 1 on phones). Both
+Integration chip groups now use it, so Required Interlocks and Shared Traffic sit side by
+side on one row.
+
+Verified: at 1600px both groups render at exactly 650px with dead space down to 22%/38%; at
+1200px both at 450px with the four pricing toggles forming one exact row below; at 375px
+everything collapses to full-width single column. The horizontal overflow visible at phone
+width is pre-existing `.app-shell` behaviour — no element inside §09 exceeds the viewport.
+
+**Shipped:** `app/globals.css`, `src/components/step1/ApplicationForm.tsx`.
+
 ## 2026-09-11 — Step 1 layout: pick/drop count moved to Transfer; full-width fields fixed on wide screens
 
 - **`pickDropLocationCount` moved from §09 Integration to §02 "How is it transferred?"**,
