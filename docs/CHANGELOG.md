@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-09-11 — Nothing that moves a gate or a price is hidden behind a collapse
+
+Follow-up to the field-exposure pass below: the fields existed, but five of them were
+**invisible on load**. Sections 08 (Site details) and 09 (Integration) were Tier 3
+"Proposal Details" — `startCollapsed: true` and badged **"Advanced · proposal only"**, with
+a tier hint reading *"pricing fields arrive in a future revision"*.
+
+All three claims were false. Between them those two sections hold the biggest pricing
+drivers in the app: `facilitySizeSqFt` (+4), `sharedTrafficTypes` (+3 integration / +6
+software), `wmsRequired` (+5), `pickDropLocationCount` (up to +5), `storageTrackingRequired`
+(+3), `interlocks`/PLC (+3), `hasAgvExperience` (+2), `barcodeScanningRequired` (+2). An
+engineer could quote a project having never seen them.
+
+- **08 and 09 moved to Tier 2 (Fleet Sizing & Economics)** — expanded on load, no
+  "not matched" badge. Pricing *is* economics.
+- **The Proposal Details tier band moved below them**, and its hint now reads "Captured for
+  the proposal PDF — does not affect any gate or price" — which is true of what remains
+  there (10 Dealer & contact, 11 Timeline, 12 Notes).
+- **New guard test** in `src/lib/__tests__/sections.test.ts` asserts 08/09 can never regress
+  to `startCollapsed` or `notMatched`, so a future edit can't quietly re-hide them.
+
+Verified on load without expanding anything: all 11 gate/pricing inputs visible; only 10,
+11 and 12 remain collapsed.
+
+**Rule:** an input that moves a gate or a price is Tier 1/2 and starts expanded. Tier 3 is
+for fields no calculation reads.
+
+**Shipped:** `src/lib/constants/sections.ts`, `src/components/step1/ApplicationForm.tsx`,
+`src/lib/__tests__/sections.test.ts`.
+
 ## 2026-09-11 — Every gate and pricing input is now visible on Step 1
 
 **Principle:** Step 1 must contain every field that moves a calculated output — gate, fleet

@@ -1128,8 +1128,6 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        <TierBand label={TIER_LABELS.proposal} hint="Feeds the proposal PDF — pricing fields arrive in a future revision" />
-
         {/* ===== Section 08: Site details ===== */}
         <FormSection {...secProps('section-08')}>
           <div className="fld-grid-3">
@@ -1350,6 +1348,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
           </div>
         </FormSection>
+
+        <TierBand label={TIER_LABELS.proposal} hint="Captured for the proposal PDF — does not affect any gate or price" />
 
         {/* ===== Section 10: Dealer & contact ===== */}
         <FormSection {...secProps('section-10')}>

@@ -175,13 +175,22 @@ engineer can see which answers move the Step 2 traffic lights:
    transfer height, **pick height**, **drop height**),
    03 *Environment & site* (temp min/max, outdoor, freezer, ramp grade + ramp distance,
    aisle width — informational only), 04 *Certifications* (soft gate).
-2. **FLEET SIZING & ECONOMICS** — 05 schedule, 06 throughput & distance, 07 labor.
-3. **PROPOSAL DETAILS** (collapsed by default; consumers arrive in future revisions) —
+2. **FLEET SIZING & ECONOMICS** — 05 schedule, 06 throughput & distance, 07 labor,
    08 site details (floor condition, dust/moisture, **facility size**), 09 integration
    (interlocks, WMS, other AGVs, **shared traffic**, **barcode scanning**, storage
-   tracking, AGV experience, pick/drop locations), 10 dealer & contact (facility, TAL
+   tracking, AGV experience, pick/drop locations).
+3. **PROPOSAL DETAILS** (collapsed by default) — 10 dealer & contact (facility, TAL
    engineer, proposal date, OEM dealer, dealership, rep), 11 timeline (install date),
-   12 notes.
+   12 notes. Nothing here feeds a gate or a price.
+
+**Rule (2026-09-11): an input that moves a gate or a price is Tier 1/2 and starts
+EXPANDED.** Tier 3 is only for fields no calculation reads. Sections 08 and 09 were Tier 3
+— collapsed and badged *"Advanced · proposal only"*, under a tier hint promising *"pricing
+fields arrive in a future revision"* — while already holding the biggest pricing drivers in
+the app (`facilitySizeSqFt` +4, `sharedTrafficTypes` +3/+6, `wmsRequired` +5,
+`pickDropLocationCount` up to +5, and more). An engineer could quote a project having never
+seen them. A guard test in `src/lib/__tests__/sections.test.ts` prevents either section
+regressing to `startCollapsed`/`notMatched`.
 
 **Rule (2026-09-11): Step 1 contains every field that moves a calculated output** — gate,
 fleet size, or price. The engineer owns the quote, so they must be able to fill or correct

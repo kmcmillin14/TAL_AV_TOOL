@@ -47,11 +47,20 @@ export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
     tier: 'sizing', requiredFields: [] },
   { id: 'section-07', num: '07', label: 'Labor', short: 'Labor',
     tier: 'sizing', requiredFields: [] },
-  // ── Tier 3 — PROPOSAL DETAILS (collapsed; consumers arrive in future revisions) ──
+  // 08 and 09 were Tier 3 ("proposal only", collapsed, badged "not matched in
+  // any downstream calc") until 2026-09-11 — which became flatly untrue once
+  // the ROM pricing engine started scoring them. Between them they hold the
+  // biggest pricing drivers in the app: facilitySizeSqFt (+4),
+  // sharedTrafficTypes (+3 integration / +6 software), wmsRequired (+5),
+  // pickDropLocationCount (up to +5), storageTrackingRequired (+3),
+  // interlocks/PLC (+3), hasAgvExperience (+2), barcodeScanningRequired (+2).
+  // Anything that moves a gate or a price is Tier 1/2 and starts EXPANDED —
+  // an input that changes the quote must never be hidden behind a disclosure.
   { id: 'section-08', num: '08', label: 'Site details', short: 'Site',
-    tier: 'proposal', requiredFields: [], startCollapsed: true, notMatched: true },
+    tier: 'sizing', requiredFields: [] },
   { id: 'section-09', num: '09', label: 'Integration', short: 'Integration',
-    tier: 'proposal', requiredFields: [], startCollapsed: true, notMatched: true },
+    tier: 'sizing', requiredFields: [] },
+  // ── Tier 3 — PROPOSAL DETAILS (collapsed; no gate or price depends on these) ──
   { id: 'section-10', num: '10', label: 'Dealer & contact', short: 'Dealer',
     tier: 'proposal', requiredFields: [], startCollapsed: true },
   { id: 'section-11', num: '11', label: 'Timeline', short: 'Timeline',

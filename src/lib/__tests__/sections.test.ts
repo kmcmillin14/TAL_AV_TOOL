@@ -15,11 +15,25 @@ describe('FORM_SECTIONS tiers', () => {
     expect(tiers.slice(firstProposal).every(t => t === 'proposal')).toBe(true)
   })
 
-  it('has 12 sections: 4 qualification, 3 sizing, 5 proposal', () => {
+  it('has 12 sections: 4 qualification, 5 sizing, 3 proposal', () => {
     expect(FORM_SECTIONS).toHaveLength(12)
     expect(FORM_SECTIONS.filter(s => s.tier === 'qualification')).toHaveLength(4)
-    expect(FORM_SECTIONS.filter(s => s.tier === 'sizing')).toHaveLength(3)
-    expect(FORM_SECTIONS.filter(s => s.tier === 'proposal')).toHaveLength(5)
+    // 08 Site details and 09 Integration moved sizing-ward 2026-09-11 — they
+    // hold the ROM pricing drivers, so they're no longer "proposal only".
+    expect(FORM_SECTIONS.filter(s => s.tier === 'sizing')).toHaveLength(5)
+    expect(FORM_SECTIONS.filter(s => s.tier === 'proposal')).toHaveLength(3)
+  })
+
+  it('never hides a section that drives a gate or a price behind a collapse', () => {
+    // An input that moves the quote must be visible without a disclosure —
+    // 08/09 were collapsed AND badged "not matched in any downstream calc"
+    // while holding the biggest pricing drivers in the app.
+    const mustBeOpen = ['section-08', 'section-09']
+    for (const id of mustBeOpen) {
+      const sec = FORM_SECTIONS.find(s => s.id === id)!
+      expect(sec.startCollapsed, `${id} must start expanded`).toBeFalsy()
+      expect(sec.notMatched, `${id} feeds ROM pricing — cannot be badged "not matched"`).toBeFalsy()
+    }
   })
 })
 
