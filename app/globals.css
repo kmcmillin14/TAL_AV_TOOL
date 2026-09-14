@@ -855,6 +855,19 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .fld-range-sep { color: var(--text-tertiary); font-size: 14px; flex-shrink: 0; line-height: 1; }
 .fld label { font-size: 13px; font-weight: 600; color: var(--text-secondary); display: flex; align-items: center; gap: 4px; }
 .req { color: var(--accent); }
+
+/* Conditional follow-up fields, nested inside their parent's .fld (see
+   src/components/SubQuestions.tsx). The left rule + indent say "these belong
+   to the answer above" — previously children were sibling grid cells and
+   could wrap under an unrelated question. Children stack; they no longer
+   participate in the parent grid. */
+.sub-questions {
+  display: flex; flex-direction: column; gap: 12px;
+  margin-top: 12px; padding-left: 14px;
+  border-left: 2px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+.sub-questions .fld { display: flex; flex-direction: column; gap: 5px; }
+.sub-questions > :last-child { margin-bottom: 2px; }
 .fld input,
 .fld select,
 .fld textarea {

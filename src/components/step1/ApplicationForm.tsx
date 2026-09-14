@@ -12,6 +12,7 @@ import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@
 import { createProject, updateProject, getProject, subscribeSaveDrops } from '@/src/lib/storage'
 import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
+import SubQuestions from '@/src/components/SubQuestions'
 import SectionNav from './SectionNav'
 import ProgressStrip from './ProgressStrip'
 
@@ -1253,6 +1254,18 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                   </div>
                 )}
               />
+              {wmsRequired && (
+                <SubQuestions>
+                  <div className="fld">
+                    <label>WMS Vendor / System</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Manhattan, SAP EWM"
+                      {...register('wmsVendor', { onBlur: onBlurSave })}
+                    />
+                  </div>
+                </SubQuestions>
+              )}
             </div>
             <div className="fld">
               <label>Barcode Scanning Required? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
@@ -1318,29 +1331,20 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                   </div>
                 )}
               />
+              {otherAGVs && (
+                <SubQuestions>
+                  <div className="fld">
+                    <label>Other AGV Vendor(s)</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Linde, Jungheinrich"
+                      {...register('otherAGVVendor', { onBlur: onBlurSave })}
+                    />
+                  </div>
+                </SubQuestions>
+              )}
             </div>
 
-            {otherAGVs && (
-              <div className="fld">
-                <label>Other AGV Vendor(s)</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Linde, Jungheinrich"
-                  {...register('otherAGVVendor', { onBlur: onBlurSave })}
-                />
-              </div>
-            )}
-
-            {wmsRequired && (
-              <div className="fld">
-                <label>WMS Vendor / System</label>
-                <input
-                  type="text"
-                  placeholder="e.g. Manhattan, SAP EWM"
-                  {...register('wmsVendor', { onBlur: onBlurSave })}
-                />
-              </div>
-            )}
 
           </div>
         </FormSection>

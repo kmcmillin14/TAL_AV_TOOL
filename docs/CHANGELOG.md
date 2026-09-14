@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-09-14 — Conditional sub-questions nest under the question that reveals them
+
+Both forms emitted conditional follow-up fields as **sibling cells in the same grid**, so
+they flowed wherever the grid had room rather than staying with their parent. In a
+two-column grid a parent sitting in column 2 pushed its children onto the next row starting
+at column 1 — directly beneath an unrelated question.
+
+Concretely, in the questionnaire's §09: *"WMS vendor"*, *"WMS interface type"*, *"REST API
+available?"* and *"Tagging / scan method"* rendered under **"Barcode scanning required?"**,
+not under the WMS toggle that produced them. The same defect put Step 1's *"WMS Vendor /
+System"* beside *"Other AGVs on Site?"*.
+
+New shared **`src/components/SubQuestions.tsx`** renders children INSIDE the parent's
+`.fld`, indented behind a left rule. Two structural wins: a child can no longer drift away
+from its parent, and revealing one stops reflowing unrelated fields — only the parent's own
+cell grows taller.
+
+Converted the cases where a child was landing under an unrelated question:
+- **Questionnaire** — WMS integration (4 children), existing AGV/AMR on site (2 children,
+  which previously interleaved with the unrelated "Volume growth" and "Seasonality" fields).
+- **Step 1** — WMS Required, Other AGVs on Site.
+
+Verified at 1400px: the WMS children now sit directly beneath their own parent (same left
+edge, 66px below), inputs 308px wide, and **zero** children fall under the barcode question.
+The remaining ~18 conditionals still use the old pattern and can follow.
+
+**Shipped:** `src/components/SubQuestions.tsx` (new), `app/globals.css`,
+`src/components/questionnaire/QuestionnaireForm.tsx`,
+`src/components/step1/ApplicationForm.tsx`.
+
 ## 2026-09-11 — Step 4 simplified: scoring and options merged into one card
 
 Step 4 was three stacked cards, and the split was arbitrary: the quotation is the **output**,

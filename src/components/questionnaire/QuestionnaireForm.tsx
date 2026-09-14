@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useForm, useFieldArray, Controller, type Control, type SubmitHandler, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import FormSection from '@/src/components/step1/FormSection'
+import SubQuestions from '@/src/components/SubQuestions'
 import Icon from '@/src/design-system/components/Icon'
 import VehiclePicker from './VehiclePicker'
 import LoadTypePicker from './LoadTypePicker'
@@ -878,8 +879,11 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             </div>
             <div className="fld-grid-2">
               <div className="fld"><label>Barcode scanning required?</label><YesNo name="barcodeScanningRequired" /></div>
-              <div className="fld"><label>WMS integration required?</label><YesNo name="wmsRequired" /></div>
-              {wmsRequired && (<>
+              <div className="fld">
+                <label>WMS integration required?</label>
+                <YesNo name="wmsRequired" />
+                {wmsRequired && (
+                  <SubQuestions>
                 <div className="fld"><label>WMS vendor</label><input {...register('wmsVendor')} /></div>
                 <div className="fld">
                   <label>WMS interface type</label>
@@ -901,8 +905,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                     <option value="">Select…</option>
                     {TAGGING_SCAN_METHODS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
                   </select>
-                </div>
-              </>)}
+                  </div>
+                  </SubQuestions>
+                )}
+              </div>
             </div>
           </FormSection>
 
@@ -981,11 +987,16 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <ThousandsInput name="fullyBurdenedRateUsdPerYear" control={control} placeholder="65,000" className="mono" />
                 </div>
               </div>
-              <div className="fld"><label>Existing AGV / AMR on site?</label><YesNo name="hasExistingAutomation" /></div>
-              {hasExistingAutomation && (<>
-                <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
-                <div className="fld"><label>Do the new and existing AV fleet paths cross at any point?</label><input {...register('existingAutomationInterop')} placeholder="Shared traffic, handoffs, controls…" /></div>
-              </>)}
+              <div className="fld">
+                <label>Existing AGV / AMR on site?</label>
+                <YesNo name="hasExistingAutomation" />
+                {hasExistingAutomation && (
+                  <SubQuestions>
+                    <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
+                    <div className="fld"><label>Do the new and existing AV fleet paths cross at any point?</label><input {...register('existingAutomationInterop')} placeholder="Shared traffic, handoffs, controls…" /></div>
+                  </SubQuestions>
+                )}
+              </div>
               <div className="fld"><label>Volume growth</label><input {...register('volumeGrowthNote')} placeholder="e.g. +10%/yr" /></div>
               <div className="fld"><label>Seasonality</label><input {...register('seasonalityNote')} placeholder="e.g. Q4 peak" /></div>
             </div>
