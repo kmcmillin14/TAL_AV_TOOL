@@ -1,5 +1,52 @@
 # Changelog
 
+## 2026-09-14 — Questionnaire regrouped into 14 sections; Step 1 and the PDF mirror it
+
+The section names described where a question had historically been added, not what it was
+about. Four regroupings, applied to all three surfaces (questionnaire form, Step 1 intake,
+questionnaire PDF) so none of them can tell a different story about the same answers:
+
+- **General Site Info** — *Where it runs* and *Site readiness* were one subject split in
+  two, with aisle widths and temperature several sections away from facility size and CAD.
+  Merged, and the two adjacent grids fused into one so it reads as a single section.
+- **Certifications · Automation interlocks · Software** — the old *Certifications &
+  controls* held three unrelated topics under one heading. Now three sections.
+  `'Fire Alarms'` added to the interlock list (owner request), and the duplicated local
+  `INTERLOCKS` arrays in both forms collapsed into one export in
+  `src/lib/constants/enums.ts` — two private copies is how two lists drift apart. Note
+  only `'PLC Systems'` scores complexity, so the new option changes no price on its own.
+- **RFQ moved to General Info (01)** — whether there is an RFQ is submission routing, and
+  it now renders as a nested sub-question of "Is there an RFQ?" rather than two loose cells.
+- **Vehicles you're interested in moved to 13** — asking which truck a customer wants
+  before understanding the application invites anchoring on the wrong one. *Why & how it's
+  done today* took its old position at 02.
+
+**Section numbers are now derived, not hardcoded.** Anchor ids are semantic
+(`q-sec-site`, `q-sec-certs`, …) and a module-scope `Section` wrapper reads the number from
+the `SECTIONS` list, as do the two validation messages that used to say "(Section 01)" and
+"(Section 09)" in literal text. Reordering the list renumbers the heading, the nav rail and
+the error copy together.
+
+**The PDF was the surface most out of step** — it carried its own 13 section names in its
+own order (*Submission routing*, *Opportunity*, *Facility environment*, *Technology &
+network*, *Current state*), so a customer could not check a returned questionnaire against
+what they were asked. It now prints the same 14 sections in the same order.
+
+**Step 1 mirrors the grouping** at 12 sections (one merged, one split): 03 *Environment &
+site* + 08 *Site details* → **03 General Site Info**; 09 *Integration* → **08 Automation
+interlocks** + **09 Software & integration**. `sharedTrafficTypes` moved into General Site
+Info to match where the questionnaire asks it. Anchor ids and the `section-06` flow-list
+special case in `sectionStatus` are unchanged, so no saved project or scroll target breaks.
+
+No field was added, removed or renamed, and no gate or pricing input changed — this is
+grouping and ordering only. Verified in the browser: both forms render the expected sections
+in order with clean grid rows; `tsc`, `npm run build`, `check:arch` and 435 tests green.
+
+**Shipped:** `src/components/questionnaire/QuestionnaireForm.tsx`,
+`src/components/step1/ApplicationForm.tsx`, `src/lib/constants/sections.ts`,
+`src/lib/constants/enums.ts`, `src/lib/questionnaire/pdfQuestionnaire.ts`,
+`docs/SPECIFICATION.md`.
+
 ## 2026-09-14 — Parent/child questions read as one unit, on screen and in the PDF
 
 An indent and a 2px rule read as decoration, not linkage — and they only existed on screen.

@@ -133,8 +133,13 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
     y = H - 220
   }
 
-  // ── §01  Submission routing ─────────────────────────────────────────────────
-  sec('Submission routing')
+  // Section order and grouping mirror the on-screen questionnaire
+  // (src/components/questionnaire/QuestionnaireForm.tsx SECTIONS). A customer
+  // reads this PDF right after filling that form, so the two drifting apart is
+  // what makes a returned questionnaire hard to check against what was asked.
+
+  // ── §01  General Info ───────────────────────────────────────────────────────
+  sec('General Info')
   const subTypeLabel: Record<string, string> = {
     customer: 'End User',
     dealer: 'TMHNA Dealership',
@@ -143,22 +148,9 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   }
   row('Submitted by', p.submissionType ? subTypeLabel[p.submissionType] ?? p.submissionType : '—')
 
-  if (p.submissionType === 'dealer') {
-    row('Dealer / OEM', fmt([p.oemDealer, p.dealershipName].filter(Boolean).join(' — ')))
-    row('Dealer rep', fmt(p.dealerRep))
-  }
-  if (p.submissionType === 'partner') {
-    row('Partner company', fmt(p.partnerCompanyName))
-    row('Partner contact', fmt(p.partnerRepContact))
-  }
-  if (p.submissionType === 'internal') {
-    const oppLabel = p.opportunityType === 'lead' ? 'Lead' : p.opportunityType === 'opp' ? 'Opportunity' : '—'
-    row('CRM record type', oppLabel)
-    row('Lead / Opp number', fmt(p.opportunityNumber))
-  }
-
-  // ── §02  Contacts ───────────────────────────────────────────────────────────
-  sec('Contacts')
+  row('Project name', fmt(p.projectName))
+  row('Customer / company', fmt(p.customerName))
+  row('Facility location', fmt(p.facilityLocation))
   const custContact = [p.customerContactName, p.customerContactRole].filter(Boolean).join(' — ')
   row('Customer contact', fmt(custContact))
   const custReach = [p.customerContactEmail, p.customerContactPhone].filter(Boolean).join('  ·  ')
@@ -166,30 +158,45 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   row('TAL representative', fmt(p.talRepName))
   const repReach = [p.talRepEmail, p.talRepPhone].filter(Boolean).join('  ·  ')
   row('TAL rep email / phone', fmt(repReach))
-  const partnerLabel = p.toyotaRaymondPartnership == null ? '—' : p.toyotaRaymondPartnership ? `Yes${p.toyotaRaymondDealer ? ` — ${p.toyotaRaymondDealer}` : ''}` : 'No'
-  row('TMH / Raymond existing relationship', partnerLabel)
-  row('History with TAL / Toyota', fmt(p.talHistory))
 
-  // ── §03  Opportunity ────────────────────────────────────────────────────────
-  sec('Opportunity')
-  row('Facility location', fmt(p.facilityLocation))
-  row('CAD / drawings available', p.cadAvailable == null ? '—' : p.cadAvailable ? `Yes${p.cadNotes ? ` — ${p.cadNotes}` : ''}` : 'No')
+  // Channel-specific follow-ups, indented like the form's sub-questions.
+  if (p.submissionType === 'dealer') {
+    row('Dealer / OEM', fmt([p.oemDealer, p.dealershipName].filter(Boolean).join(' — ')), true)
+    row('Dealer rep', fmt(p.dealerRep), true)
+  }
+  if (p.submissionType === 'partner') {
+    row('Partner company', fmt(p.partnerCompanyName), true)
+    row('Partner contact', fmt(p.partnerRepContact), true)
+  }
+  if (p.submissionType === 'internal') {
+    const oppLabel = p.opportunityType === 'lead' ? 'Lead' : p.opportunityType === 'opp' ? 'Opportunity' : '—'
+    row('CRM record type', oppLabel, true)
+    row('Lead / Opp number', fmt(p.opportunityNumber), true)
+  }
 
-  // ── §04-C  Commercial ───────────────────────────────────────────────────────
-  sec('Commercial')
-  row('Project stage', fmt(p.projectStage))
-  row('Budget status', fmt(p.budgetStatus))
-  const budgetStr = p.budgetMin != null || p.budgetMax != null
-    ? [p.budgetMin != null ? `$${p.budgetMin.toLocaleString()}` : null, p.budgetMax != null ? `$${p.budgetMax.toLocaleString()}` : null].filter(Boolean).join(' – ')
-    : fmt(p.budgetRange)
-  row('Budget', budgetStr)
-  row('ROI target', p.roiTargetYears != null ? `${p.roiTargetYears} yr${p.roiTargetYears !== 1 ? 's' : ''}` : '—')
-  row('RFQ', p.isRfq == null ? '—' : p.isRfq ? `Yes${p.rfqNumber ? ` — ${p.rfqNumber}` : ''}${p.rfqDueDate ? ` (due ${p.rfqDueDate})` : ''}` : 'No')
-  row('Decision date', fmt(p.decisionDate))
-  row('Target go-live', fmt(p.targetGoLiveDate))
+  row('RFQ', p.isRfq == null ? '—' : p.isRfq ? 'Yes' : 'No')
+  if (p.isRfq) {
+    row('RFQ number', fmt(p.rfqNumber), true)
+    row('RFQ due date', fmt(p.rfqDueDate), true)
+  }
 
-  // ── §04  What you move ──────────────────────────────────────────────────────
-  sec('What you move')
+  // ── §02  Why & how it's done today ──────────────────────────────────────────
+  sec("Why & how it's done today")
+  row('Why automating', fmt(p.projectDrivers))
+  row('Current process', fmt(p.currentProcess))
+  row('People / forklifts doing this today', p.currentHeadcount != null ? `${p.currentHeadcount}` : '—')
+  row('Operators doing task per shift', p.operatorsPerShift ? `${p.operatorsPerShift}` : '—')
+  row('Fully burdened rate', p.fullyBurdenedRateUsdPerYear != null ? `$${p.fullyBurdenedRateUsdPerYear.toLocaleString()}/yr per operator` : '—')
+  row('Existing automation', fmtBool(p.hasExistingAutomation))
+  if (p.hasExistingAutomation) {
+    row('Automation (brand / fleet)', fmt(p.existingAutomation), true)
+    row('AV fleet paths cross?', fmt(p.existingAutomationInterop), true)
+  }
+  row('Volume growth', fmt(p.volumeGrowthNote))
+  row('Seasonality', fmt(p.seasonalityNote))
+
+  // ── §03  What you're moving ─────────────────────────────────────────────────
+  sec("What you're moving")
   // Prefer multi-select unitLoadTypes; fall back to legacy singular typicalUnitType
   const loadTypes = (p.unitLoadTypes ?? []).length
     ? fmt(p.unitLoadTypes)
@@ -224,8 +231,8 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
     row('Load L × W × H', dims)
   }
 
-  // ── §05  How loads are handled ──────────────────────────────────────────────
-  sec('How loads are handled')
+  // ── §04  How it's moved ─────────────────────────────────────────────────────
+  sec("How it's moved")
   const pickLabel = p.pickContext === 'Custom' && p.pickContextCustom ? `Custom — ${p.pickContextCustom}` : fmt(p.pickContext)
   const dropLabel = p.dropContext === 'Custom' && p.dropContextCustom ? `Custom — ${p.dropContextCustom}` : fmt(p.dropContext)
   row('Pick loads up from', pickLabel)
@@ -239,9 +246,10 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   row('Dwell time at station', p.dwellTimeSec != null ? `${p.dwellTimeSec} sec` : p.dwellTimeMin != null ? `${p.dwellTimeMin} min` : '—')
   const chargingLabels: Record<string, string> = { plug_in: 'Plug in', opportunity: 'Opportunity charging', hydrogen: 'Hydrogen refueling', floor_contact: 'Floor contact / pantograph', inductive: 'Inductive (wireless)', battery_swap: 'Battery swap', not_sure: 'Not sure' }
   row('Charging preference', p.chargingStrategyPreference ? chargingLabels[p.chargingStrategyPreference] ?? p.chargingStrategyPreference : '—')
+  row('Specialty applications', fmt(p.specialtyApplications))
 
-  // ── §06  Facility environment ───────────────────────────────────────────────
-  sec('Facility environment')
+  // ── §05  General Site Info ──────────────────────────────────────────────────
+  sec('General Site Info')
   row('Facility size', fmtSqft(p.facilitySizeSqFt))
   row('Dock doors', fmt(p.dockDoors))
   row('Indoor / outdoor', p.outdoorRequired == null ? '—' : p.outdoorRequired ? 'Outdoor' : 'Indoor')
@@ -259,18 +267,14 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   row('VNA guidance type', p.guidanceType ? guidanceLabels[p.guidanceType] ?? p.guidanceType : '—')
   row('Ramps / grades', fmtBool(p.rampRequired))
   row('Max ramp grade', p.maxRampGrade ? `${p.maxRampGrade}%` : '—', true)
-  row('Ramp length', fmtFt(p.rampDistanceFt))
+  row('Ramp length', fmtFt(p.rampDistanceFt), true)
+  row('Network ready', fmtBool(p.networkReady))
+  row('IT contact', fmt(p.itContact))
+  row('Site walkthrough available', fmtBool(p.siteWalkthroughAvailable))
+  row('CAD / drawings available', fmtBool(p.cadAvailable))
+  if (p.cadAvailable) row('CAD notes', fmt(p.cadNotes), true)
 
-  // ── §07  Schedule ───────────────────────────────────────────────────────────
-  sec('Schedule')
-  row('Shifts / day', fmt(p.shiftsPerDay))
-  row('Hours / shift', fmt(p.hoursPerShift))
-  row('Operating days', fmt(p.operatingDaysPattern))
-  if ((p.operatingDaysCustom ?? []).length) row('Custom days', fmt(p.operatingDaysCustom))
-  row('Breaks / shift', p.breaksPerShift ? `${p.breaksPerShift}` : '—')
-  row('Break duration', p.breakDurationMin ? `${p.breakDurationMin} min` : '—')
-
-  // ── §08  Throughput & flows ─────────────────────────────────────────────────
+  // ── §06  Throughput & flows ─────────────────────────────────────────────────
   sec('Throughput & flows')
   row('Average throughput', p.requiredThroughputPerHour ? `${p.requiredThroughputPerHour} moves/hr` : '—')
   row('Peak throughput', p.peakThroughputPerHour ? `${p.peakThroughputPerHour} moves/hr` : '—')
@@ -290,18 +294,26 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
     row(f.sectionName ? `Flow (${f.sectionName})` : 'Flow', parts)
   }
 
-  // ── §09  Vehicles & interests ───────────────────────────────────────────────
-  sec('Vehicles & interests')
-  row('Vehicles of interest', fmt(p.vehiclesOfInterest?.length ? p.vehiclesOfInterest : null))
-  row('Vehicle in mind', fmt(p.vehicleInMind))
-  row('Specialty applications', fmt(p.specialtyApplications))
-  row('Install date', fmt(p.desiredInstallDate))
+  // ── §07  Operating schedule ─────────────────────────────────────────────────
+  sec('Operating schedule')
+  row('Shifts / day', fmt(p.shiftsPerDay))
+  row('Hours / shift', fmt(p.hoursPerShift))
+  row('Operating days', fmt(p.operatingDaysPattern))
+  if ((p.operatingDaysCustom ?? []).length) row('Custom days', fmt(p.operatingDaysCustom))
+  row('Breaks / shift', p.breaksPerShift ? `${p.breaksPerShift}` : '—')
+  row('Break duration', p.breakDurationMin ? `${p.breakDurationMin} min` : '—')
 
-  // ── §10  Certifications & controls ─────────────────────────────────────────
-  sec('Certifications & controls')
+  // ── §08  Certifications ─────────────────────────────────────────────────────
+  sec('Certifications')
   row('Certifications', fmt(p.certifications))
-  row('Interlocks', fmt(p.interlocks))
   row('Hazard zone classification', fmt(p.hazardZoneClassification))
+
+  // ── §09  Automation interlocks ──────────────────────────────────────────────
+  sec('Automation interlocks')
+  row('Interlocks', fmt(p.interlocks))
+
+  // ── §10  Software ───────────────────────────────────────────────────────────
+  sec('Software')
   row('Barcode scanning required', fmtBool(p.barcodeScanningRequired))
   row('WMS required', fmtBool(p.wmsRequired))
   if (p.wmsRequired) {
@@ -318,30 +330,33 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
     row('Tagging / scan method', p.taggingScanMethod ? scanLabels[p.taggingScanMethod] ?? p.taggingScanMethod : '—')
   }
 
-  // ── §11  Technology & network ───────────────────────────────────────────────
-  sec('Technology & network')
-  row('Network ready', fmtBool(p.networkReady))
-  row('IT contact', fmt(p.itContact))
-  row('Site walkthrough available', fmtBool(p.siteWalkthroughAvailable))
+  // ── §11  Commercial ─────────────────────────────────────────────────────────
+  sec('Commercial')
+  row('Project stage', fmt(p.projectStage))
+  row('Budget status', fmt(p.budgetStatus))
+  const budgetStr = p.budgetMin != null || p.budgetMax != null
+    ? [p.budgetMin != null ? `$${p.budgetMin.toLocaleString()}` : null, p.budgetMax != null ? `$${p.budgetMax.toLocaleString()}` : null].filter(Boolean).join(' – ')
+    : fmt(p.budgetRange)
+  row('Budget', budgetStr)
+  row('ROI target', p.roiTargetYears != null ? `${p.roiTargetYears} yr${p.roiTargetYears !== 1 ? 's' : ''}` : '—')
+  row('Decision date', fmt(p.decisionDate))
+  row('Target go-live', fmt(p.targetGoLiveDate))
 
-  // ── §12  Current state ──────────────────────────────────────────────────────
-  sec('Current state')
-  row('Existing automation', fmtBool(p.hasExistingAutomation))
-  if (p.hasExistingAutomation) {
-    row('Automation (brand / fleet)', fmt(p.existingAutomation))
-    row('AV fleet paths cross?', fmt(p.existingAutomationInterop))
-  }
-  row('Why automating', fmt(p.projectDrivers))
-  row('Current process', fmt(p.currentProcess))
-  row('People / forklifts doing this today', p.currentHeadcount != null ? `${p.currentHeadcount}` : '—')
-  row('Operators doing task per shift', p.operatorsPerShift ? `${p.operatorsPerShift}` : '—')
-  row('Fully burdened rate', p.fullyBurdenedRateUsdPerYear != null ? `$${p.fullyBurdenedRateUsdPerYear.toLocaleString()}/yr per operator` : '—')
-  row('Volume growth', fmt(p.volumeGrowthNote))
-  row('Seasonality', fmt(p.seasonalityNote))
+  // ── §12  TAL / Toyota ───────────────────────────────────────────────────────
+  sec('TAL / Toyota')
+  row('TMH / Raymond existing relationship', fmtBool(p.toyotaRaymondPartnership))
+  if (p.toyotaRaymondPartnership) row('Dealership', fmt(p.toyotaRaymondDealer), true)
+  row('History with TAL / Toyota', fmt(p.talHistory))
 
-  // ── §13  Notes ──────────────────────────────────────────────────────────────
+  // ── §13  Vehicles you're interested in ──────────────────────────────────────
+  sec("Vehicles you're interested in")
+  row('Vehicles of interest', fmt(p.vehiclesOfInterest?.length ? p.vehiclesOfInterest : null))
+  row('Vehicle in mind', fmt(p.vehicleInMind))
+  row('Install date', fmt(p.desiredInstallDate))
+
+  // ── §14  Anything else ──────────────────────────────────────────────────────
   if (p.projectNotes) {
-    sec('Notes')
+    sec('Anything else')
     row('Notes', fmt(p.projectNotes))
   }
 

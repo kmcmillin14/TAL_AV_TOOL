@@ -1,6 +1,6 @@
 import type { ProjectFormData } from '@/src/lib/validations/schemas'
 
-// All 12 sections of the Step 1 questionnaire, grouped into three tiers
+// All 12 sections of the Step 1 intake form, grouped into three tiers
 // (qualification → sizing → proposal). The order here is the order they
 // render on the page and in the SectionNav. `requiredFields` mirrors the visible
 // red asterisks — when every required field has a non-empty value, the section
@@ -34,7 +34,12 @@ export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
     tier: 'qualification', requiredFields: ['maxLoadWeightLbs', 'typicalUnitType'] },
   { id: 'section-02', num: '02', label: 'How is it transferred?', short: 'Transfer',
     tier: 'qualification', requiredFields: ['transferType'] },
-  { id: 'section-03', num: '03', label: 'Environment & site', short: 'Environment',
+  // 'Environment & site' and the old Tier-2 'Site details' were one subject split
+  // across two sections half the form apart — aisle width and temperature here,
+  // floor condition and facility size six sections later. Merged 2026-09-14 to
+  // mirror the customer questionnaire's 'General Site Info', so an engineer
+  // transcribing a returned questionnaire answers one section, not two.
+  { id: 'section-03', num: '03', label: 'General Site Info', short: 'Site',
     tier: 'qualification', requiredFields: ['minAisleWidthFt'] },
   { id: 'section-04', num: '04', label: 'Certifications', short: 'Certs',
     tier: 'qualification', requiredFields: [] },
@@ -47,18 +52,20 @@ export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
     tier: 'sizing', requiredFields: [] },
   { id: 'section-07', num: '07', label: 'Labor', short: 'Labor',
     tier: 'sizing', requiredFields: [] },
-  // 08 and 09 were Tier 3 ("proposal only", collapsed, badged "not matched in
-  // any downstream calc") until 2026-09-11 — which became flatly untrue once
-  // the ROM pricing engine started scoring them. Between them they hold the
-  // biggest pricing drivers in the app: facilitySizeSqFt (+4),
-  // sharedTrafficTypes (+3 integration / +6 software), wmsRequired (+5),
-  // pickDropLocationCount (up to +5), storageTrackingRequired (+3),
-  // interlocks/PLC (+3), hasAgvExperience (+2), barcodeScanningRequired (+2).
-  // Anything that moves a gate or a price is Tier 1/2 and starts EXPANDED —
-  // an input that changes the quote must never be hidden behind a disclosure.
-  { id: 'section-08', num: '08', label: 'Site details', short: 'Site',
+  // The old single 'Integration' section was Tier 3 ("proposal only", collapsed,
+  // badged "not matched in any downstream calc") until 2026-09-11 — which became
+  // flatly untrue once the ROM pricing engine started scoring it. It holds some
+  // of the biggest pricing drivers in the app: wmsRequired (+5),
+  // storageTrackingRequired (+3), interlocks/PLC (+3), hasAgvExperience (+2),
+  // barcodeScanningRequired (+2). Anything that moves a gate or a price is
+  // Tier 1/2 and starts EXPANDED — an input that changes the quote must never be
+  // hidden behind a disclosure.
+  //
+  // Split in two 2026-09-14 to mirror the questionnaire: what the fleet must
+  // physically wait on / talk to, vs. what it must integrate with in software.
+  { id: 'section-08', num: '08', label: 'Automation interlocks', short: 'Interlocks',
     tier: 'sizing', requiredFields: [] },
-  { id: 'section-09', num: '09', label: 'Integration', short: 'Integration',
+  { id: 'section-09', num: '09', label: 'Software & integration', short: 'Software',
     tier: 'sizing', requiredFields: [] },
   // ── Tier 3 — PROPOSAL DETAILS (no gate or price depends on these) ──
   // Expanded like everything else (2026-09-11): no section on Step 1 starts

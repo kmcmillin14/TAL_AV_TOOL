@@ -80,11 +80,42 @@ Calculator project without requiring the customer to access the main application
 main app — it imports no storage, calc engine, or step internals. This keeps the split clean:
 the questionnaire can be deployed as a separate artifact if needed.
 
-**Layout.** The form is organized into 12 sections across two tiers ("Your project",
-"Your application") with a sticky **section scroller** (the same component pattern as Step 1:
-progress meter + click-to-scroll + active-section highlight). Labels use plain customer
-language; sections reveal follow-up fields conditionally (RFQ→number/date, budget→range,
-CAD→notes, forklift/lift-table→transfer height, network→IT contact, WMS→vendor).
+**Layout.** The form is organized into 14 sections across three tiers ("Getting started",
+"Your application", "Project details") with a sticky **section scroller** (the same component
+pattern as Step 1: progress meter + click-to-scroll + active-section highlight). Labels use
+plain customer language; sections reveal follow-up fields conditionally (RFQ→number/date,
+budget→range, CAD→notes, forklift/lift-table→transfer height, network→IT contact,
+WMS→vendor), rendered as nested `SubQuestions` under their parent with a `FollowUpMarker`
+on the parent label.
+
+**Section list (restructured 2026-09-14).** 01 *General Info* (submission channel, project
+and customer identity, contacts, **RFQ**) · 02 *Why & how it's done today* · 03 *What you're
+moving* · 04 *How it's moved* · 05 *General Site Info* · 06 *Throughput & flows* ·
+07 *Operating schedule* · 08 *Certifications* · 09 *Automation interlocks* · 10 *Software* ·
+11 *Commercial* · 12 *TAL / Toyota* · 13 *Vehicles you're interested in* · 14 *Anything else*.
+
+Four grouping decisions behind that order:
+
+- *Where it runs* and *Site readiness* were one subject split in two — aisle widths and
+  temperature in one section, facility size and CAD several sections later. Merged into
+  **General Site Info**.
+- The old *Certifications & controls* mixed three unrelated topics. Split into
+  **Certifications** (certs + hazard zone), **Automation interlocks** (the equipment the
+  fleet must wait on or talk to), and **Software** (barcode, WMS and its interface).
+- **RFQ** moved from Commercial to General Info: whether there is an RFQ is submission
+  routing, and a customer answers it in the same breath as who they are.
+- **Vehicles you're interested in** moved from position 02 to near the end — asking which
+  truck a customer wants before understanding the application invites anchoring on the
+  wrong one.
+
+Section numbers are **derived from the `SECTIONS` list**, not hardcoded in the markup: anchor
+ids are semantic (`q-sec-site`, `q-sec-certs`, …) and the heading number, the nav rail and
+the validation messages all read `SECTIONS[].num`. Reordering the list renumbers all three
+together.
+
+**The PDF mirrors these sections.** `pdfQuestionnaire.ts` prints the same 14 section names in
+the same order, so a returned questionnaire can be checked line-for-line against what was
+asked. Conditional follow-ups print indented under their parent row.
 
 **What it captures.** The form collects all project-level Step 1 inputs plus a rich set of
 opportunity and sales context:
@@ -173,12 +204,13 @@ engineer can see which answers move the Step 2 traffic lights:
    01 *What are you moving?* (weight, unit type, load L×W×H, pallet subtype/custom,
    **pallet entry**), 02 *How is it transferred?* (one **Transfer type** + conditional
    transfer height, **pick height**, **drop height**),
-   03 *Environment & site* (temp min/max, outdoor, freezer, ramp grade + ramp distance,
-   aisle width — informational only), 04 *Certifications* (soft gate).
+   03 *General Site Info* (temp min/max, outdoor, freezer, ramp grade + ramp distance,
+   aisle width — informational only, floor condition, dust/moisture, **facility size**,
+   **shared traffic**), 04 *Certifications* (soft gate).
 2. **FLEET SIZING & ECONOMICS** — 05 schedule, 06 throughput & distance, 07 labor,
-   08 site details (floor condition, dust/moisture, **facility size**), 09 integration
-   (interlocks, WMS, other AGVs, **shared traffic**, **barcode scanning**, storage
-   tracking, AGV experience, pick/drop locations).
+   08 *Automation interlocks* (the equipment the fleet must wait on or talk to),
+   09 *Software & integration* (WMS, **barcode scanning**, storage tracking, AGV
+   experience, other AGVs).
 3. **PROPOSAL DETAILS** — 10 dealer & contact (facility, TAL
    engineer, proposal date, OEM dealer, dealership, rep), 11 timeline (install date),
    12 notes. Nothing here feeds a gate or a price.
@@ -192,6 +224,15 @@ widens the quoted range.
 **No section on Step 1 starts collapsed.** The whole intake reads top to bottom; a guard
 test in `src/lib/__tests__/sections.test.ts` asserts `startCollapsed` is unset on every
 section.
+
+**Step 1 mirrors the questionnaire's grouping (2026-09-14).** The same three regroupings were
+applied here so an engineer transcribing a returned questionnaire answers one section per
+section rather than hunting across the form: *Environment & site* + *Site details* merged
+into **03 General Site Info**, and *Integration* split into **08 Automation interlocks** and
+**09 Software & integration**. `sharedTrafficTypes` moved with it into General Site Info,
+matching where the questionnaire asks it. Step 1 stays at 12 sections (one merged, one
+split); anchor ids (`section-01` … `section-12`) and the `section-06` flow-list special case
+in `sectionStatus` are unchanged.
 
 **Tri-state discipline:** any optional input counted by `pricingInputConfidence` must stay
 `undefined` until answered — never seeded with a concrete default. `wmsRequired` was seeded

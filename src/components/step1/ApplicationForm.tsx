@@ -10,7 +10,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject, subscribeSaveDrops } from '@/src/lib/storage'
-import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES } from '@/src/lib/constants/enums'
+import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES, INTERLOCKS } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
 import SubQuestions, { FollowUpMarker } from '@/src/components/SubQuestions'
 import SectionNav from './SectionNav'
@@ -41,7 +41,6 @@ export function palletLoadPatch<L extends { lengthIn?: number | null; widthIn?: 
 
 const PALLET_SUBTYPES = ['GMA (48×40)', 'Euro (47.2×31.5)', 'CHEP (45.9×45.9)', 'Custom']
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
-const INTERLOCKS = ['High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems', 'Other']
 const DUST_MOISTURE_OPTS = ['None', 'Dusty environment', 'Wash-down required', 'High humidity', 'Outdoor exposure']
 const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 
@@ -856,6 +855,71 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 </div>
               </>
             )}
+            <div className="fld">
+              <label>Floor Condition</label>
+              <select
+                {...register('floorCondition', { onBlur: onBlurSave })}
+                defaultValue={initialData?.floorCondition || ''}
+              >
+                <option value="" disabled>Select condition…</option>
+                {FLOOR_CONDITIONS.map(c => <option key={c}>{c}</option>)}
+              </select>
+            </div>
+            <div className="fld">
+              <label>Dust / Moisture</label>
+              <select
+                {...register('dustMoisture', { onBlur: onBlurSave })}
+                defaultValue={initialData?.dustMoisture || ''}
+              >
+                <option value="">None</option>
+                {DUST_MOISTURE_OPTS.map(o => <option key={o}>{o}</option>)}
+              </select>
+            </div>
+            {/* Facility size is the single biggest integration pricing driver
+                (+4 points at 500K+ sq ft) but was questionnaire-only until
+                2026-09-11 — a project arriving without a questionnaire could
+                never confirm it, and unanswered scores as zero. */}
+            <div className="fld">
+              <label>Facility size <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
+              <div className="input-with-unit">
+                <input
+                  type="number"
+                  step="1000"
+                  min="0"
+                  placeholder="0"
+                  className="mono"
+                  defaultValue={initialData?.facilitySizeSqFt ?? ''}
+                  {...register('facilitySizeSqFt', { valueAsNumber: true, onBlur: onBlurSave })}
+                />
+                <div className="unit">sq ft</div>
+              </div>
+            </div>
+            {/* Shared traffic drives BOTH pricing axes — pedestrians +1 and
+                forklifts +2 on integration, other-vendor AGVs +6 on software —
+                the largest combined pricing driver. It lives here rather than
+                under Software because it describes the operating area, which is
+                also where the questionnaire asks it. */}
+            <div className="fld span-4">
+              <label>Shared Traffic in the Operating Area <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
+              <div className="cert-grid">
+                {SHARED_TRAFFIC_TYPES.map(item => {
+                  const on = sharedTrafficTypes.includes(item)
+                  return (
+                    <label key={item} className={`chk${on ? ' on' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={on}
+                        onChange={() => toggleArrayItem('sharedTrafficTypes', item)}
+                      />
+                      <span className="box">
+                        {on && <Icon name="check" size={10} />}
+                      </span>
+                      <span>{item}</span>
+                    </label>
+                  )
+                })}
+              </div>
+            </div>
           </div>
         </FormSection>
 
@@ -1143,56 +1207,11 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        {/* ===== Section 08: Site details ===== */}
+        {/* ===== Section 08: Automation interlocks ===== */}
         <FormSection {...secProps('section-08')}>
-          <div className="fld-grid-3">
-            <div className="fld">
-              <label>Floor Condition</label>
-              <select
-                {...register('floorCondition', { onBlur: onBlurSave })}
-                defaultValue={initialData?.floorCondition || ''}
-              >
-                <option value="" disabled>Select condition…</option>
-                {FLOOR_CONDITIONS.map(c => <option key={c}>{c}</option>)}
-              </select>
-            </div>
-            <div className="fld">
-              <label>Dust / Moisture</label>
-              <select
-                {...register('dustMoisture', { onBlur: onBlurSave })}
-                defaultValue={initialData?.dustMoisture || ''}
-              >
-                <option value="">None</option>
-                {DUST_MOISTURE_OPTS.map(o => <option key={o}>{o}</option>)}
-              </select>
-            </div>
-            {/* Facility size is the single biggest integration pricing driver
-                (+4 points at 500K+ sq ft) but was questionnaire-only until
-                2026-09-11 — a project arriving without a questionnaire could
-                never confirm it, and unanswered scores as zero. */}
-            <div className="fld">
-              <label>Facility size <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
-              <div className="input-with-unit">
-                <input
-                  type="number"
-                  step="1000"
-                  min="0"
-                  placeholder="0"
-                  className="mono"
-                  defaultValue={initialData?.facilitySizeSqFt ?? ''}
-                  {...register('facilitySizeSqFt', { valueAsNumber: true, onBlur: onBlurSave })}
-                />
-                <div className="unit">sq ft</div>
-              </div>
-            </div>
-          </div>
-        </FormSection>
-
-        {/* ===== Section 09: Integration ===== */}
-        <FormSection {...secProps('section-09')}>
           <div className="fld-grid-4">
-            <div className="fld span-half">
-              <label>Required Interlocks <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
+            <div className="fld span-4">
+              <label>Equipment the fleet must interlock with <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
               <div className="cert-grid">
                 {INTERLOCKS.map(item => {
                   const on = interlocks.includes(item)
@@ -1214,34 +1233,14 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                   )
                 })}
               </div>
+              <div className="help">Anything the vehicles must talk to or wait on — doors, lifts, conveyors, controls, alarms.</div>
             </div>
+          </div>
+        </FormSection>
 
-            {/* Shared traffic drives BOTH axes — pedestrians +1 and forklifts
-                +2 on integration, other-vendor AGVs +6 on software — the
-                largest combined pricing driver, and questionnaire-only until
-                2026-09-11. */}
-            <div className="fld span-half">
-              <label>Shared Traffic in the Operating Area <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
-              <div className="cert-grid">
-                {SHARED_TRAFFIC_TYPES.map(item => {
-                  const on = sharedTrafficTypes.includes(item)
-                  return (
-                    <label key={item} className={`chk${on ? ' on' : ''}`}>
-                      <input
-                        type="checkbox"
-                        checked={on}
-                        onChange={() => toggleArrayItem('sharedTrafficTypes', item)}
-                      />
-                      <span className="box">
-                        {on && <Icon name="check" size={10} />}
-                      </span>
-                      <span>{item}</span>
-                    </label>
-                  )
-                })}
-              </div>
-            </div>
-
+        {/* ===== Section 09: Software & integration ===== */}
+        <FormSection {...secProps('section-09')}>
+          <div className="fld-grid-4">
             <div className="fld">
               <label>WMS Required? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span> <FollowUpMarker /></label>
               <Controller

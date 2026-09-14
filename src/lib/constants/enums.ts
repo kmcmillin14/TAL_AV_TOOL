@@ -82,6 +82,17 @@ export const CHARGING_STRATEGIES = [
   { value: 'hydrogen', label: 'Hydrogen refueling' },
 ] as const
 
+/** §09 equipment the fleet must interlock with (multi-select). Shared by the
+ *  Step 1 intake form and the customer questionnaire — it lived as a private
+ *  copy in each, which is how two lists drift apart.
+ *
+ *  NOTE: only 'PLC Systems' currently scores complexity
+ *  (`hasPlcInterlock` → `automationInterface`, +3 software). Adding an option
+ *  here does NOT change any price on its own. */
+export const INTERLOCKS = [
+  'High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems', 'Fire Alarms', 'Other',
+] as const
+
 /** §05 shared traffic in the operating area (multi-select). */
 export const SHARED_TRAFFIC_TYPES = [
   'Pedestrians', 'Manual forklifts', 'Other AGVs', 'None',

@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, type ReactNode } from 'react'
 import { useForm, useFieldArray, Controller, type Control, type SubmitHandler, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import FormSection from '@/src/components/step1/FormSection'
@@ -17,7 +17,7 @@ import {
   UNIT_LOAD_TYPE_OPTIONS, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS,
   SPECIALTY_APPLICATIONS, PROJECT_DRIVERS, PALLET_SUBTYPES,
   SUBMISSION_TYPES, CHARGING_STRATEGIES, SHARED_TRAFFIC_TYPES, GUIDANCE_TYPES,
-  REST_API_OPTIONS, WMS_INTERFACE_TYPES, TAGGING_SCAN_METHODS,
+  REST_API_OPTIONS, WMS_INTERFACE_TYPES, TAGGING_SCAN_METHODS, INTERLOCKS,
 } from '@/src/lib/constants/enums'
 import { downloadQuestionnairePdf, exportQuestionnairePdf } from '@/src/lib/questionnaire/pdfQuestionnaire'
 import { questionnaireJsonBlob } from '@/src/lib/questionnaire/questionnaireExport'
@@ -27,7 +27,6 @@ const DRAFT_KEY = 'tal:questionnaire-draft'
 
 // Local display lists — mirror the constants in ApplicationForm (kept local to
 // avoid coupling the standalone questionnaire to Step 1 internals).
-const INTERLOCKS = ['High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems', 'Other']
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
 const DUST_MOISTURE_OPTS = ['None', 'Dusty environment', 'Wash-down required', 'High humidity', 'Outdoor exposure']
 const OPERATING_DAYS = ['Mon–Fri', 'Mon–Sat', 'Mon–Sun', 'Custom']
@@ -46,36 +45,58 @@ const TIER_START = 'Getting started'
 const TIER_APP = 'Your application'
 const TIER_DETAILS = 'Project details'
 
-// Single source for the section list — drives the rail, the anchors, and the
-// per-section "started" progress meter.
+// Single source for the section list — drives the rail, the anchors, the
+// section headings' numbers, and the per-section "started" progress meter.
+//
+// Order follows how a customer actually thinks about their own project: who
+// they are, why they're here, what they move, how and where it moves, then the
+// specialist topics (certs, interlocks, software), then commercial context.
+// Vehicle interest sits near the end deliberately — asking which truck they
+// want before understanding the application invites anchoring on the wrong one.
+//
+// Ids are semantic, not positional, so reordering this list never leaves an
+// anchor pointing at the wrong section.
 const SECTIONS: readonly QSection[] = [
-  { id: 'q-sec-01', num: '01', short: 'General Info', tier: TIER_START,
-    fields: ['submissionType', 'projectName', 'customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail', 'dealershipName', 'dealerRep', 'partnerCompanyName', 'partnerRepContact', 'opportunityType', 'opportunityNumber'] },
-  { id: 'q-sec-02', num: '02', short: 'Vehicles', tier: TIER_START,
-    fields: ['vehiclesOfInterest', 'vehicleInMind'] },
-  { id: 'q-sec-03', num: '03', short: 'What you move', tier: TIER_APP,
+  { id: 'q-sec-general', num: '01', short: 'General Info', tier: TIER_START,
+    fields: ['submissionType', 'projectName', 'customerName', 'facilityLocation', 'customerContactName', 'customerContactRole', 'customerContactEmail', 'talRepName', 'dealershipName', 'dealerRep', 'partnerCompanyName', 'partnerRepContact', 'opportunityType', 'opportunityNumber', 'isRfq', 'rfqNumber', 'rfqDueDate'] },
+  { id: 'q-sec-why', num: '02', short: 'Why & today', tier: TIER_START,
+    fields: ['projectDrivers', 'currentProcess', 'hasExistingAutomation', 'existingAutomation', 'existingAutomationInterop', 'currentHeadcount', 'operatorsPerShift', 'fullyBurdenedRateUsdPerYear', 'volumeGrowthNote', 'seasonalityNote'] },
+  { id: 'q-sec-loads', num: '03', short: 'What you move', tier: TIER_APP,
     fields: ['unitLoadTypes', 'typicalUnitType', 'otherUnitTypeDescription', 'maxLoadWeightLbs', 'loadLengthIn', 'loadWidthIn', 'loadHeightIn'] },
-  { id: "q-sec-04", num: "04", short: "How it's moved", tier: TIER_APP,
+  { id: "q-sec-handling", num: "04", short: "How it's moved", tier: TIER_APP,
     fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'dwellTimeSec', 'chargingStrategyPreference', 'topOfRollerHeightFt', 'maxLiftHeightFt', 'specialtyApplications'] },
-  { id: 'q-sec-05', num: '05', short: 'Where it runs', tier: TIER_APP,
-    fields: ['driveAisleWidthFt', 'pickingFromRacking', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'rampDistanceFt', 'temperatureEnvironment', 'tempMinF', 'tempMaxF'] },
-  { id: 'q-sec-06', num: '06', short: 'Site readiness', tier: TIER_APP,
-    fields: ['facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable', 'cadAvailable', 'cadNotes'] },
-  { id: 'q-sec-07', num: '07', short: 'Throughput & flows', tier: TIER_APP,
+  { id: 'q-sec-site', num: '05', short: 'General Site Info', tier: TIER_APP,
+    fields: ['driveAisleWidthFt', 'pickingFromRacking', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'dustMoisture', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'rampDistanceFt', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable', 'cadAvailable', 'cadNotes'] },
+  { id: 'q-sec-throughput', num: '06', short: 'Throughput & flows', tier: TIER_APP,
     fields: ['requiredThroughputPerHour', 'peakThroughputPerHour', 'avgDistanceFt', 'distanceType', 'flows'] },
-  { id: 'q-sec-08', num: '08', short: 'Schedule', tier: TIER_APP,
+  { id: 'q-sec-schedule', num: '07', short: 'Schedule', tier: TIER_APP,
     fields: ['shiftsPerDay', 'hoursPerShift', 'operatingDaysPattern', 'breaksPerShift', 'breakDurationMin'] },
-  { id: 'q-sec-09', num: '09', short: 'Certs & controls', tier: TIER_APP,
-    fields: ['certifications', 'interlocks', 'hazardZoneClassification', 'barcodeScanningRequired', 'wmsRequired', 'wmsVendor', 'wmsInterfaceType', 'taggingScanMethod', 'restApiAvailable'] },
-  { id: 'q-sec-10', num: '10', short: 'Commercial', tier: TIER_DETAILS,
-    fields: ['projectStage', 'budgetStatus', 'budgetMin', 'budgetMax', 'roiTargetYears', 'isRfq', 'rfqNumber', 'rfqDueDate', 'decisionDate', 'targetGoLiveDate'] },
-  { id: 'q-sec-11', num: '11', short: 'TAL / Toyota', tier: TIER_DETAILS,
+  { id: 'q-sec-certs', num: '08', short: 'Certifications', tier: TIER_APP,
+    fields: ['certifications', 'hazardZoneClassification'] },
+  { id: 'q-sec-interlocks', num: '09', short: 'Automation interlocks', tier: TIER_APP,
+    fields: ['interlocks'] },
+  { id: 'q-sec-software', num: '10', short: 'Software', tier: TIER_APP,
+    fields: ['barcodeScanningRequired', 'wmsRequired', 'wmsVendor', 'wmsInterfaceType', 'taggingScanMethod', 'restApiAvailable'] },
+  { id: 'q-sec-commercial', num: '11', short: 'Commercial', tier: TIER_DETAILS,
+    fields: ['projectStage', 'budgetStatus', 'budgetMin', 'budgetMax', 'roiTargetYears', 'decisionDate', 'targetGoLiveDate'] },
+  { id: 'q-sec-tal', num: '12', short: 'TAL / Toyota', tier: TIER_DETAILS,
     fields: ['toyotaRaymondPartnership', 'toyotaRaymondDealer', 'talHistory'] },
-  { id: 'q-sec-12', num: '12', short: 'Why & today', tier: TIER_DETAILS,
-    fields: ['projectDrivers', 'currentProcess', 'hasExistingAutomation', 'existingAutomation', 'existingAutomationInterop', 'currentHeadcount', 'volumeGrowthNote', 'seasonalityNote'] },
-  { id: 'q-sec-13', num: '13', short: 'Notes', tier: TIER_DETAILS,
+  { id: 'q-sec-vehicles', num: '13', short: 'Vehicles', tier: TIER_DETAILS,
+    fields: ['vehiclesOfInterest', 'vehicleInMind'] },
+  { id: 'q-sec-notes', num: '14', short: 'Notes', tier: TIER_DETAILS,
     fields: ['projectNotes'] },
 ]
+
+const SECTION_NUM: Record<string, string> = Object.fromEntries(SECTIONS.map(s => [s.id, s.num]))
+
+/** FormSection bound to SECTIONS: the heading number is looked up from the
+ *  single source rather than hardcoded, so reordering the list above renumbers
+ *  the headings, the rail and the validation messages together. Defined at
+ *  module scope — a component declared inside the form body would remount every
+ *  section on each keystroke. */
+function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
+  return <FormSection id={id} sectionNum={SECTION_NUM[id] ?? ''} title={title}>{children}</FormSection>
+}
 
 /** Toggle a string in a string[] field (chip behavior). */
 function toggle(list: string[] | undefined, value: string): string[] {
@@ -320,14 +341,14 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const onSubmit: SubmitHandler<PartialProjectFormData> = useCallback(async (v) => {
     setInvalidMsg(null)
     if (!v.submissionType) {
-      setInvalidMsg("Please choose how you're submitting (Section 01) before exporting.")
-      document.getElementById('q-sec-01')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setInvalidMsg(`Please choose how you're submitting (Section ${SECTION_NUM['q-sec-general']}) before exporting.`)
+      document.getElementById('q-sec-general')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
     const certList = v.certifications ?? []
     if ((certList.includes('ATEX') || certList.includes('IECEx')) && !v.hazardZoneClassification?.trim()) {
-      setInvalidMsg('Hazard zone classification is required for ATEX / IECEx (Section 09).')
-      document.getElementById('q-sec-09')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setInvalidMsg(`Hazard zone classification is required for ATEX / IECEx (Section ${SECTION_NUM['q-sec-certs']}).`)
+      document.getElementById('q-sec-certs')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
     setBusy(true)
@@ -346,8 +367,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const onSendToEngineer = useCallback(async (v: PartialProjectFormData) => {
     setInvalidMsg(null)
     if (!v.submissionType) {
-      setInvalidMsg("Please choose how you're submitting (Section 01) before sending.")
-      document.getElementById('q-sec-01')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      setInvalidMsg(`Please choose how you're submitting (Section ${SECTION_NUM['q-sec-general']}) before sending.`)
+      document.getElementById('q-sec-general')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
       return
     }
     setBusy(true)
@@ -437,7 +458,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
         <div className="form-stack">
           {/* ── Getting started ── */}
-          <FormSection id="q-sec-01" sectionNum="01" title="General Info">
+          <Section id="q-sec-general" title="General Info">
             <div className="fld-grid-3">
               <div className="fld span-3">
                 <label>Submission channel <span className="req-star" aria-hidden>*</span></label>
@@ -481,22 +502,54 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 </div>
                 <div className="fld"><label>Lead / Opp number</label><input {...register('opportunityNumber')} placeholder="e.g. OPP-12345" /></div>
               </>)}
+              <div className="fld">
+                <label>Is there an RFQ? <FollowUpMarker /></label>
+                <YesNo name="isRfq" />
+                {isRfq && (
+                  <SubQuestions>
+                    <div className="fld"><label>RFQ number</label><input {...register('rfqNumber')} /></div>
+                    <div className="fld"><label>RFQ due date</label><input type="date" {...register('rfqDueDate')} /></div>
+                  </SubQuestions>
+                )}
+              </div>
             </div>
-          </FormSection>
+          </Section>
 
-          <FormSection id="q-sec-02" sectionNum="02" title="Vehicles you're interested in">
+          <Section id="q-sec-why" title="Why & how it's done today">
             <div className="fld-grid-4">
               <div className="fld span-4">
-                <Controller control={control} name="vehiclesOfInterest" render={({ field }) => (
-                  <VehiclePicker value={field.value ?? []} onChange={field.onChange} />
-                )} />
+                <label>Why are you automating?</label>
+                <Chips name="projectDrivers" options={PROJECT_DRIVERS} />
               </div>
-              <div className="fld span-2"><label>Other vehicle / not listed</label><input {...register('vehicleInMind')} placeholder="Anything specific in mind" /></div>
             </div>
-          </FormSection>
+            <div className="fld-grid-2">
+              <div className="fld"><label>How is this done today?</label><textarea {...register('currentProcess')} placeholder="Manual forklifts, hand carts, …" /></div>
+              <div className="fld"><label>Per shift operator headcount</label><input type="number" min="0" inputMode="numeric" className="mono" {...register('currentHeadcount', { setValueAs: emptyToNum })} /></div>
+              <div className="fld"><label>Operators doing this task per shift</label><input type="number" min="0" inputMode="numeric" className="mono" {...register('operatorsPerShift', { setValueAs: emptyToNum })} /></div>
+              <div className="fld">
+                <label>Fully burdened rate ($/yr per operator)</label>
+                <div className="fld-money">
+                  <span className="fld-money-sym">$</span>
+                  <ThousandsInput name="fullyBurdenedRateUsdPerYear" control={control} placeholder="65,000" className="mono" />
+                </div>
+              </div>
+              <div className="fld">
+                <label>Existing AGV / AMR on site? <FollowUpMarker /></label>
+                <YesNo name="hasExistingAutomation" />
+                {hasExistingAutomation && (
+                  <SubQuestions>
+                    <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
+                    <div className="fld"><label>Do the new and existing AV fleet paths cross at any point?</label><input {...register('existingAutomationInterop')} placeholder="Shared traffic, handoffs, controls…" /></div>
+                  </SubQuestions>
+                )}
+              </div>
+              <div className="fld"><label>Volume growth</label><input {...register('volumeGrowthNote')} placeholder="e.g. +10%/yr" /></div>
+              <div className="fld"><label>Seasonality</label><input {...register('seasonalityNote')} placeholder="e.g. Q4 peak" /></div>
+            </div>
+          </Section>
 
           {/* ── Your application ── */}
-          <FormSection id="q-sec-03" sectionNum="03" title="What you're moving">
+          <Section id="q-sec-loads" title="What you're moving">
             <div className="fld-grid-4">
               <div className="fld span-4">
                 <label>Unit / load type(s)</label>
@@ -582,9 +635,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   placeholder={isMetric ? '152' : '60'} iDec={1} mDec={1} />
               </div>
             </div>
-          </FormSection>
+          </Section>
 
-          <FormSection id="q-sec-04" sectionNum="04" title="How it's moved">
+          <Section id="q-sec-handling" title="How it's moved">
             <div className="fld-grid-2">
               <div className="fld">
                 <label>Pick loads up from</label>
@@ -660,10 +713,12 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <div className="help">Trailer loading/unloading, high reach, etc.</div>
               </div>
             </div>
-          </FormSection>
+          </Section>
 
-          <FormSection id="q-sec-05" sectionNum="05" title="Where it runs">
+          <Section id="q-sec-site" title="General Site Info">
             <div className="fld-grid-3">
+              <div className="fld"><label>Facility size ({isMetric ? 'm²' : 'sq ft'})</label><UnitInput name="facilitySizeSqFt" control={control} imperialUnit="sq ft" metricUnit="m²" toDisplay={sqftToM2} toStorage={m2ToSqft} placeholder={isMetric ? '4,650' : '50,000'} step="1" isMetric={isMetric} iDec={0} mDec={0} commas /></div>
+              <div className="fld"><label>Dock doors</label><input type="number" inputMode="numeric" className="mono" {...register('dockDoors', { setValueAs: emptyToNum })} /></div>
               <div className="fld">
                 <label>Drive aisle width ({isMetric ? 'm' : 'ft'})</label>
                 <UnitInput name="driveAisleWidthFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '2.4' : '8'} isMetric={isMetric} iDec={1} mDec={2} />
@@ -749,21 +804,14 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <UnitInput name="rampDistanceFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '3' : '10'} isMetric={isMetric} iDec={1} mDec={2} />
                 </div>
               </>)}
-            </div>
-          </FormSection>
-
-          <FormSection id="q-sec-06" sectionNum="06" title="Site readiness">
-            <div className="fld-grid-3">
-              <div className="fld"><label>Facility size ({isMetric ? 'm²' : 'sq ft'})</label><UnitInput name="facilitySizeSqFt" control={control} imperialUnit="sq ft" metricUnit="m²" toDisplay={sqftToM2} toStorage={m2ToSqft} placeholder={isMetric ? '4,650' : '50,000'} step="1" isMetric={isMetric} iDec={0} mDec={0} commas /></div>
-              <div className="fld"><label>Dock doors</label><input type="number" inputMode="numeric" className="mono" {...register('dockDoors', { setValueAs: emptyToNum })} /></div>
               <div className="fld"><label>Network / WiFi ready?</label><YesNo name="networkReady" /></div>
               <div className="fld"><label>Site walkthrough available?</label><YesNo name="siteWalkthroughAvailable" /></div>
               <div className="fld"><label>CAD / drawings available?</label><YesNo name="cadAvailable" /></div>
               {cadAvailable && <div className="fld span-2"><label>CAD notes</label><input {...register('cadNotes')} placeholder="Format, what's included…" /></div>}
             </div>
-          </FormSection>
+          </Section>
 
-          <FormSection id="q-sec-07" sectionNum="07" title="Throughput & flows">
+          <Section id="q-sec-throughput" title="Throughput & flows">
             <div className="fld-grid-4">
               <div className="fld span-4">
                 <label>How would you like to describe volume?</label>
@@ -851,9 +899,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="help" style={{ marginTop: 8 }}>One row per origin → destination move. These are the same flows your TAL engineer sizes in Step 3.</div>
             </div>
             )}
-          </FormSection>
+          </Section>
 
-          <FormSection id="q-sec-08" sectionNum="08" title="Operating schedule">
+          <Section id="q-sec-schedule" title="Operating schedule">
             <div className="fld-grid-3">
               <div className="fld"><label>Shifts / day</label><input type="number" min="1" max="3" inputMode="numeric" className="mono" {...register('shiftsPerDay', { setValueAs: emptyToNum })} /></div>
               <div className="fld"><label>Hours / shift</label><input type="number" min="4" max="12" inputMode="numeric" className="mono" {...register('hoursPerShift', { setValueAs: emptyToNum })} /></div>
@@ -867,9 +915,9 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld"><label>Breaks / shift</label><input type="number" min="0" inputMode="numeric" className="mono" {...register('breaksPerShift', { setValueAs: emptyToNum })} /></div>
               <div className="fld"><label>Break duration (min)</label><input type="number" min="0" inputMode="numeric" className="mono" {...register('breakDurationMin', { setValueAs: emptyToNum })} /></div>
             </div>
-          </FormSection>
+          </Section>
 
-          <FormSection id="q-sec-09" sectionNum="09" title="Certifications & controls">
+          <Section id="q-sec-certs" title="Certifications">
             <div className="fld-grid-4">
               <div className="fld span-4"><label>Required certifications</label><Chips name="certifications" options={CERTIFICATIONS} /></div>
               {showHazardZone && (
@@ -879,8 +927,20 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <div className="help">Required for ATEX / IECEx applications.</div>
                 </div>
               )}
-              <div className="fld span-4"><label>Equipment interlocks</label><Chips name="interlocks" options={INTERLOCKS} /></div>
             </div>
+          </Section>
+
+          <Section id="q-sec-interlocks" title="Automation interlocks">
+            <div className="fld-grid-4">
+              <div className="fld span-4">
+                <label>Equipment the fleet must interlock with</label>
+                <Chips name="interlocks" options={INTERLOCKS} />
+                <div className="help">Anything the vehicles must talk to or wait on — doors, lifts, conveyors, controls, alarms.</div>
+              </div>
+            </div>
+          </Section>
+
+          <Section id="q-sec-software" title="Software">
             <div className="fld-grid-2">
               <div className="fld"><label>Barcode scanning required?</label><YesNo name="barcodeScanningRequired" /></div>
               <div className="fld">
@@ -914,10 +974,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 )}
               </div>
             </div>
-          </FormSection>
+          </Section>
 
           {/* ── Project details (commercial / context) ── */}
-          <FormSection id="q-sec-10" sectionNum="10" title="Commercial">
+          <Section id="q-sec-commercial" title="Commercial">
             <div className="fld-grid-3">
               <div className="fld">
                 <label>Project stage</label>
@@ -953,15 +1013,12 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 </div>
               </div>
               <div className="fld"><label>ROI target (yrs)</label><input type="number" min="1" max="20" inputMode="numeric" className="mono" {...register('roiTargetYears', { setValueAs: emptyToNum })} placeholder="e.g. 3" /></div>
-              <div className="fld"><label>Is there an RFQ?</label><YesNo name="isRfq" /></div>
-              {isRfq && <div className="fld"><label>RFQ number</label><input {...register('rfqNumber')} /></div>}
-              {isRfq && <div className="fld"><label>RFQ due date</label><input type="date" {...register('rfqDueDate')} /></div>}
               <div className="fld"><label>Decision date</label><input type="date" {...register('decisionDate')} /></div>
               <div className="fld"><label>Target go-live</label><input type="date" {...register('targetGoLiveDate')} /></div>
             </div>
-          </FormSection>
+          </Section>
 
-          <FormSection id="q-sec-11" sectionNum="11" title="TAL / Toyota">
+          <Section id="q-sec-tal" title="TAL / Toyota">
             <div className="fld-grid-2">
               <div className="fld">
                 <label>TMH or Raymond dealership existing relationship? <FollowUpMarker /></label>
@@ -976,46 +1033,24 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             <div className="fld-grid-2">
               <div className="fld span-2"><label>Notes</label><textarea {...register('talHistory')} placeholder="Existing fleet, prior projects, current relationship…" /></div>
             </div>
-          </FormSection>
+          </Section>
 
-          <FormSection id="q-sec-12" sectionNum="12" title="Why & how it's done today">
+          <Section id="q-sec-vehicles" title="Vehicles you're interested in">
             <div className="fld-grid-4">
               <div className="fld span-4">
-                <label>Why are you automating?</label>
-                <Chips name="projectDrivers" options={PROJECT_DRIVERS} />
+                <Controller control={control} name="vehiclesOfInterest" render={({ field }) => (
+                  <VehiclePicker value={field.value ?? []} onChange={field.onChange} />
+                )} />
               </div>
+              <div className="fld span-2"><label>Other vehicle / not listed</label><input {...register('vehicleInMind')} placeholder="Anything specific in mind" /></div>
             </div>
-            <div className="fld-grid-2">
-              <div className="fld"><label>How is this done today?</label><textarea {...register('currentProcess')} placeholder="Manual forklifts, hand carts, …" /></div>
-              <div className="fld"><label>Per shift operator headcount</label><input type="number" min="0" inputMode="numeric" className="mono" {...register('currentHeadcount', { setValueAs: emptyToNum })} /></div>
-              <div className="fld"><label>Operators doing this task per shift</label><input type="number" min="0" inputMode="numeric" className="mono" {...register('operatorsPerShift', { setValueAs: emptyToNum })} /></div>
-              <div className="fld">
-                <label>Fully burdened rate ($/yr per operator)</label>
-                <div className="fld-money">
-                  <span className="fld-money-sym">$</span>
-                  <ThousandsInput name="fullyBurdenedRateUsdPerYear" control={control} placeholder="65,000" className="mono" />
-                </div>
-              </div>
-              <div className="fld">
-                <label>Existing AGV / AMR on site? <FollowUpMarker /></label>
-                <YesNo name="hasExistingAutomation" />
-                {hasExistingAutomation && (
-                  <SubQuestions>
-                    <div className="fld"><label>Existing automation (brand / fleet)</label><textarea {...register('existingAutomation')} placeholder="Any AGVs/AMRs already on site" /></div>
-                    <div className="fld"><label>Do the new and existing AV fleet paths cross at any point?</label><input {...register('existingAutomationInterop')} placeholder="Shared traffic, handoffs, controls…" /></div>
-                  </SubQuestions>
-                )}
-              </div>
-              <div className="fld"><label>Volume growth</label><input {...register('volumeGrowthNote')} placeholder="e.g. +10%/yr" /></div>
-              <div className="fld"><label>Seasonality</label><input {...register('seasonalityNote')} placeholder="e.g. Q4 peak" /></div>
-            </div>
-          </FormSection>
+          </Section>
 
-          <FormSection id="q-sec-13" sectionNum="13" title="Anything else">
+          <Section id="q-sec-notes" title="Anything else">
             <div className="fld-grid-4">
               <div className="fld span-4"><label>Notes</label><textarea {...register('projectNotes')} placeholder="Anything that would help us understand the application" /></div>
             </div>
-          </FormSection>
+          </Section>
         </div>
       </div>
 
