@@ -1,5 +1,6 @@
 import type { StoredProject } from './storage'
 import type { ApplicationRequirements, LoadSpec } from '../calc/types'
+import { effectivePalletEntryType } from './palletEntry'
 
 /** Declared loads mapped to the calc engine's LoadSpec shape. Empty when the
  *  project predates the loads model — the legacy singular fields then flow
@@ -42,7 +43,7 @@ export function appRequirementsFromProject(p: StoredProject): ApplicationRequire
     outdoorRequired: p.outdoorRequired,
     freezerCapable: p.freezerCapable ?? false,
     temperatureEnvironment: p.temperatureEnvironment,
-    palletEntryType: p.palletEntryType,
+    palletEntryType: effectivePalletEntryType(p),
     loadLengthIn: p.loadLengthIn,
     loadWidthIn: p.loadWidthIn,
     loadHeightIn: p.loadHeightIn,

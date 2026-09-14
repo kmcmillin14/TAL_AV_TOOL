@@ -258,6 +258,15 @@ Step 1 — `pickHeightFt`/`dropHeightFt` (a **hard** gate) and `palletEntryType`
 in *either* form, reachable only by hand-editing JSON, while `facilitySizeSqFt`,
 `sharedTrafficTypes` and `barcodeScanningRequired` were questionnaire-only.
 
+**Pallet entry (2026-09-14).** The questionnaire asked "Stringer pallet?" and "Bottom board
+present?" as two Yes/No toggles that described one thing and fed nothing. Both were replaced
+by the single `palletEntryType` select Step 1 already had, so the questionnaire now answers
+the Pallet Entry soft gate. `palletHasStringer` / `palletHasBottomBoard` stay in the schema
+as `@deprecated` for round-tripping; `effectivePalletEntryType` (`src/lib/palletEntry.ts`)
+derives the gate input, reading `palletHasStringer` as a fallback for older projects and
+ignoring `palletHasBottomBoard` (bottom boards occur on both constructions, so it identifies
+neither).
+
 This is deliberately **not** a mirror of the customer questionnaire — the two forms have
 different jobs. The questionnaire is a cold-capture instrument for a customer (budget,
 contacts, current process, project stage); Step 1 is the engineer's working surface.

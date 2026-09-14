@@ -12,6 +12,7 @@ import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@
 import { createProject, updateProject, getProject, subscribeSaveDrops } from '@/src/lib/storage'
 import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES, INTERLOCKS } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
+import { PALLET_ENTRY_LABELS } from '@/src/lib/palletEntry'
 import SubQuestions, { FollowUpMarker } from '@/src/components/SubQuestions'
 import SectionNav from './SectionNav'
 import ProgressStrip from './ProgressStrip'
@@ -511,8 +512,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                         defaultValue={initialData?.palletEntryType || ''}
                       >
                         <option value="">Not sure</option>
-                        <option value="stringer">Stringer (2-way)</option>
-                        <option value="block">Block (4-way)</option>
+                        <option value="stringer">{PALLET_ENTRY_LABELS.stringer}</option>
+                        <option value="block">{PALLET_ENTRY_LABELS.block}</option>
                       </select>
                       <div className="help">Matched against each vehicle in Step 2.</div>
                     </div>

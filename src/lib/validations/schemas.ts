@@ -62,7 +62,15 @@ export const projectSchema = z.object({
   maxLoadWeightLbs: z.number().min(0).optional(),
   typicalUnitType: z.string().optional(),
   palletBottomBoard: z.string().optional(),
+  /** @deprecated Retired from both forms 2026-09-14 — "Stringer pallet?" and
+   *  "Bottom board present?" described one thing (pallet construction) and fed
+   *  nothing; `palletEntryType` below is what the gate reads and is now the
+   *  single question. Kept in the schema so projects and exported JSON written
+   *  before that date still round-trip; `palletHasStringer` is read as a
+   *  fallback in effectivePalletEntryType (src/lib/appRequirements.ts). Do not
+   *  render either in a form. */
   palletHasBottomBoard: z.boolean().optional(),
+  /** @deprecated See palletHasBottomBoard above. */
   palletHasStringer: z.boolean().optional(),
   palletMaterial: z.string().optional(),
   /** Pallet bottom-board construction — drives the palletEntry soft gate in Step 2. */

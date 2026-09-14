@@ -3,6 +3,7 @@
 import { type PartialProjectFormData } from '@/src/lib/validations/schemas'
 import { buildQuestionnaireEnvelope } from './questionnaireExport'
 import { winAnsiSafe } from '@/src/lib/utils/winAnsi'
+import { effectivePalletEntryType, PALLET_ENTRY_LABELS } from '@/src/lib/palletEntry'
 import { lbsToKg, inToCm, ftToM, sqftToM2, fToC, type QUnitSystem } from './useQUnit'
 
 const TAL_RED_RGB = [235 / 255, 10 / 255, 30 / 255] as const
@@ -203,12 +204,11 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
     : fmt(p.typicalUnitType ?? p.loads?.[0]?.unitType)
   row('Unit / load types', loadTypes)
   if (p.palletBottomBoard) row('Pallet subtype', fmt(p.palletBottomBoard))
-  if (p.palletEntryType) {
-    const entryLabels: Record<string, string> = { stringer: 'Stringer (2-way)', block: 'Block (4-way)', not_sure: 'Not sure' }
-    row('Pallet entry type', entryLabels[p.palletEntryType] ?? p.palletEntryType)
-  }
-  if (p.palletHasBottomBoard != null) row('Bottom board present', p.palletHasBottomBoard ? 'Yes' : 'No')
-  if (p.palletHasStringer != null) row('Stringer pallet', p.palletHasStringer ? 'Yes' : 'No')
+  // One row, not three: palletHasBottomBoard / palletHasStringer are deprecated
+  // (see schemas.ts) and the entry type replaced both. A project answered before
+  // the change still prints here via the shared fallback.
+  const palletEntry = effectivePalletEntryType(p)
+  if (palletEntry) row('Pallet entry', PALLET_ENTRY_LABELS[palletEntry])
   if (p.palletMaterial) {
     const matLabels: Record<string, string> = { wooden: 'Wood', plastic: 'Plastic', metal: 'Metal', cardboard: 'Cardboard' }
     row('Pallet material', matLabels[p.palletMaterial] ?? p.palletMaterial)

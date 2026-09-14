@@ -431,7 +431,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
   // Reusable No/Yes segmented toggle for a tri-state boolean. Clicking the
   // already-selected option clears it back to unanswered (undefined).
-  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' | 'toyotaRaymondPartnership' | 'palletHasBottomBoard' | 'palletHasStringer' }) => (
+  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' | 'toyotaRaymondPartnership' }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="seg-toggle">
         <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(field.value === false ? undefined : false)}>No</button>
@@ -585,13 +585,19 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   </select>
                   <div className="help">Fills in standard dimensions automatically</div>
                 </div>
+                {/* "Stringer pallet?" and "Bottom board present?" were two Yes/No
+                    questions describing one thing — pallet construction — and
+                    neither fed anything: the Pallet Entry gate reads
+                    `palletEntryType`, which the questionnaire never asked. One
+                    select replaces both and answers the gate (2026-09-14). */}
                 <div className="fld span-2">
-                  <label>Stringer pallet?</label>
-                  <YesNo name="palletHasStringer" />
-                </div>
-                <div className="fld span-2">
-                  <label>Bottom board present?</label>
-                  <YesNo name="palletHasBottomBoard" />
+                  <label>Pallet entry</label>
+                  <select {...register('palletEntryType', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Not sure</option>
+                    <option value="stringer">Stringer (2-way)</option>
+                    <option value="block">Block (4-way)</option>
+                  </select>
+                  <div className="help">Stringer pallets take forks from the ends only; block pallets take them from all four sides.</div>
                 </div>
                 <div className="fld span-2">
                   <label>Pallet material</label>

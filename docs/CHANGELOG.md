@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-09-14 — Two redundant pallet questions become one that actually feeds a gate
+
+The questionnaire asked **"Stringer pallet?"** and **"Bottom board present?"** as separate
+Yes/No toggles. They describe one thing — pallet construction — and, worse, neither was
+read by anything: the **Pallet Entry** soft gate (`src/calc/gates.ts`) has always read
+`palletEntryType`, which the questionnaire never asked at all. So a customer answered two
+questions and the gate still skipped.
+
+Both replaced by the single **Pallet entry** select (Stringer 2-way / Block 4-way / Not
+sure) that Step 1 already uses and the gate already reads. Combining the pair closes the
+gap as a side effect: a questionnaire can now answer the Pallet Entry gate.
+
+- `palletHasStringer` / `palletHasBottomBoard` are `@deprecated` in the schema but **kept**,
+  so projects and exported JSON written earlier still round-trip.
+- `effectivePalletEntryType` (new `src/lib/palletEntry.ts`, no imports so the split-ready
+  questionnaire PDF can share it) reads `palletHasStringer` as a fallback for those older
+  projects — stringer and block are the two constructions, so "not a stringer" is a block.
+  `palletHasBottomBoard` is deliberately ignored: bottom boards occur on both, so it can't
+  identify either. An explicit `palletEntryType` always wins.
+- The questionnaire PDF printed three pallet-construction rows; it now prints one, via the
+  same fallback, so an older project still shows its answer.
+
+**Effect on output:** a legacy project that answered "Stringer pallet? Yes/No" now resolves
+the Pallet Entry soft gate instead of skipping it — which can turn a GREEN vehicle YELLOW in
+Step 2 where the vehicle's `palletEntryCompatibility` doesn't include that construction.
+That is the gate working as specified for the first time on questionnaire-sourced data.
+
+**Shipped:** `src/lib/palletEntry.ts` (new), `src/lib/__tests__/palletEntry.test.ts` (new),
+`src/components/questionnaire/QuestionnaireForm.tsx`, `src/components/step1/ApplicationForm.tsx`,
+`src/lib/appRequirements.ts`, `src/lib/validations/schemas.ts`,
+`src/lib/questionnaire/pdfQuestionnaire.ts`.
+
 ## 2026-09-14 — Questionnaire regrouped into 14 sections; Step 1 and the PDF mirror it
 
 The section names described where a question had historically been added, not what it was
