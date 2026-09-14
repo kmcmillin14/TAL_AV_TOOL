@@ -101,11 +101,15 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   }
 
   // Draws a label + value row. Always prints; unanswered fields show '—'.
-  const row = (label: string, value: string) => {
+  // `sub` indents a follow-up whose existence depends on the answer above it —
+  // the form nests these visually, and without the indent the PDF flattened
+  // the relationship completely (WMS vendor read as a peer of WMS required).
+  // Indent only, no box-drawing glyph: those aren't WinAnsi-encodable.
+  const row = (label: string, value: string, sub = false) => {
     const safe = winAnsiSafe(value)
     const lines = wrap(safe, font, 10, VALUE_W)
     const rowH = Math.max(lineH, lines.length * (lineH - 2) + 2); ensure(rowH)
-    page.drawText(winAnsiSafe(label), { x: MX, y, size: 9, font, color: MUTED })
+    page.drawText(winAnsiSafe(label), { x: sub ? MX + 12 : MX, y, size: 9, font, color: MUTED })
     let ly = y
     for (const l of lines) { page.drawText(l, { x: VALUE_X, y: ly, size: 10, font, color: TEXT }); ly -= lineH - 2 }
     y -= rowH
@@ -254,7 +258,7 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   const guidanceLabels: Record<string, string> = { wire: 'Wire-guided', rail: 'Rail-guided' }
   row('VNA guidance type', p.guidanceType ? guidanceLabels[p.guidanceType] ?? p.guidanceType : '—')
   row('Ramps / grades', fmtBool(p.rampRequired))
-  row('Max ramp grade', p.maxRampGrade ? `${p.maxRampGrade}%` : '—')
+  row('Max ramp grade', p.maxRampGrade ? `${p.maxRampGrade}%` : '—', true)
   row('Ramp length', fmtFt(p.rampDistanceFt))
 
   // ── §07  Schedule ───────────────────────────────────────────────────────────
@@ -301,11 +305,11 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   row('Barcode scanning required', fmtBool(p.barcodeScanningRequired))
   row('WMS required', fmtBool(p.wmsRequired))
   if (p.wmsRequired) {
-    row('WMS vendor', fmt(p.wmsVendor))
+    row('WMS vendor', fmt(p.wmsVendor), true)
     const ifaceLabels: Record<string, string> = {
       rest_api: 'REST API', file: 'File-based', middleware: 'Middleware', other: 'Other',
     }
-    row('WMS interface type', p.wmsInterfaceType ? ifaceLabels[p.wmsInterfaceType] ?? p.wmsInterfaceType : '—')
+    row('WMS interface type', p.wmsInterfaceType ? ifaceLabels[p.wmsInterfaceType] ?? p.wmsInterfaceType : '—', true)
     const apiLabels: Record<string, string> = { yes: 'Yes', no: 'No', not_sure: 'Not sure' }
     row('REST API available', p.restApiAvailable ? apiLabels[p.restApiAvailable] ?? p.restApiAvailable : '—')
     const scanLabels: Record<string, string> = {

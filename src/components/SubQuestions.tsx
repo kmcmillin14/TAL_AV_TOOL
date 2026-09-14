@@ -19,3 +19,15 @@ import type { ReactNode } from 'react'
 export default function SubQuestions({ children }: { children: ReactNode }) {
   return <div className="sub-questions">{children}</div>
 }
+
+/** Marks a question whose answer reveals follow-ups, so the expansion is
+ *  anticipated rather than a surprise and a customer can gauge how long the
+ *  form really is. Needed as an explicit marker because when the parent is
+ *  unanswered its children aren't rendered at all — CSS can't infer it. */
+export function FollowUpMarker() {
+  return (
+    <span className="followup-marker" title="Answering this reveals follow-up questions" aria-hidden>
+      +
+    </span>
+  )
+}

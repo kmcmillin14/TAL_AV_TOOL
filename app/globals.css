@@ -866,6 +866,24 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   margin-top: 12px; padding-left: 14px;
   border-left: 2px solid color-mix(in srgb, var(--accent) 30%, var(--border));
 }
+/* Tint the whole family — parent AND its revealed children — so they read as
+   one unit no matter which grid column they land in. A left rule alone reads
+   as decoration; the shared ground is what carries the "these belong
+   together" meaning. :has() is already used elsewhere in this file. */
+.fld:has(> .sub-questions) {
+  background: var(--bg-surface-2);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+/* Says a question HAS follow-ups before it's answered — the children aren't
+   in the DOM yet, so this can't be derived from CSS. */
+.followup-marker {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 14px; height: 14px; margin-left: 5px;
+  border-radius: 50%; background: color-mix(in srgb, var(--accent) 14%, transparent);
+  color: var(--accent); font-family: var(--tal-font-numeric);
+  font-size: 10px; font-weight: 800; line-height: 1; vertical-align: middle; cursor: help;
+}
 .sub-questions .fld { display: flex; flex-direction: column; gap: 5px; }
 .sub-questions > :last-child { margin-bottom: 2px; }
 .fld input,

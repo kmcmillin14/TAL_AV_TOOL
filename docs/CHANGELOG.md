@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-09-14 — Parent/child questions read as one unit, on screen and in the PDF
+
+An indent and a 2px rule read as decoration, not linkage — and they only existed on screen.
+Two additions:
+
+- **The whole family is tinted.** Parent *and* its revealed children now share one
+  background block (`.fld:has(> .sub-questions)`), so they read as a single unit regardless
+  of which grid column they land in. No JSX change — `:has()` derives it.
+- **Parents advertise their follow-ups.** `FollowUpMarker` puts a small `+` on questions
+  whose answer reveals more, so the expansion is anticipated rather than a surprise.
+  It has to be explicit: when the parent is unanswered its children aren't in the DOM, so
+  CSS can't infer it. Five parents marked.
+
+**The PDF flattened the relationship entirely** — `pdfQuestionnaire.ts` printed
+`row('WMS required')`, `row('WMS vendor')`, `row('WMS interface type')` at identical indent,
+so the artifact the engineer actually reads lost the structure the form shows. `row()` gained
+a `sub` flag that indents follow-ups; WMS vendor, WMS interface type and max ramp grade now
+print indented. Indent only, no box-drawing glyph — those aren't WinAnsi-encodable.
+
+Verified on a clean page load: unanswered → no tint, no children; answered → children nested
+inside the parent and the family tinted. All five markers render before any answer is given.
+
+**Shipped:** `src/components/SubQuestions.tsx`, `app/globals.css`,
+`src/components/questionnaire/QuestionnaireForm.tsx`,
+`src/components/step1/ApplicationForm.tsx`, `src/lib/questionnaire/pdfQuestionnaire.ts`.
+
 ## 2026-09-14 — Primary pick/drop wording; more sub-questions nested
 
 **Pick/drop heights are now labelled "primary"** with guidance on *which* number to enter —

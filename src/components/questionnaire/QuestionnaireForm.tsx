@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { useForm, useFieldArray, Controller, type Control, type SubmitHandler, type Resolver } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import FormSection from '@/src/components/step1/FormSection'
-import SubQuestions from '@/src/components/SubQuestions'
+import SubQuestions, { FollowUpMarker } from '@/src/components/SubQuestions'
 import Icon from '@/src/design-system/components/Icon'
 import VehiclePicker from './VehiclePicker'
 import LoadTypePicker from './LoadTypePicker'
@@ -669,7 +669,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <UnitInput name="driveAisleWidthFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '2.4' : '8'} isMetric={isMetric} iDec={1} mDec={2} />
               </div>
               <div className="fld">
-                <label>Picking from racking?</label>
+                <label>Picking from racking? <FollowUpMarker /></label>
                 <YesNo name="pickingFromRacking" />
                 {values.pickingFromRacking && (
                 <SubQuestions>
@@ -698,7 +698,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 )} />
               </div>
               <div className="fld">
-                <label>Temperature</label>
+                <label>Temperature <FollowUpMarker /></label>
                 <Controller control={control} name="temperatureEnvironment" render={({ field }) => (
                   <div className="seg-toggle">
                     {(['ambient', 'refrigerated', 'freezer'] as const).map(opt => (
@@ -884,7 +884,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             <div className="fld-grid-2">
               <div className="fld"><label>Barcode scanning required?</label><YesNo name="barcodeScanningRequired" /></div>
               <div className="fld">
-                <label>WMS integration required?</label>
+                <label>WMS integration required? <FollowUpMarker /></label>
                 <YesNo name="wmsRequired" />
                 {wmsRequired && (
                   <SubQuestions>
@@ -964,7 +964,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
           <FormSection id="q-sec-11" sectionNum="11" title="TAL / Toyota">
             <div className="fld-grid-2">
               <div className="fld">
-                <label>TMH or Raymond dealership existing relationship?</label>
+                <label>TMH or Raymond dealership existing relationship? <FollowUpMarker /></label>
                 <YesNo name="toyotaRaymondPartnership" />
                 {values.toyotaRaymondPartnership && (
                   <SubQuestions>
@@ -997,7 +997,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 </div>
               </div>
               <div className="fld">
-                <label>Existing AGV / AMR on site?</label>
+                <label>Existing AGV / AMR on site? <FollowUpMarker /></label>
                 <YesNo name="hasExistingAutomation" />
                 {hasExistingAutomation && (
                   <SubQuestions>

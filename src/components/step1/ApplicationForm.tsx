@@ -12,7 +12,7 @@ import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@
 import { createProject, updateProject, getProject, subscribeSaveDrops } from '@/src/lib/storage'
 import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
-import SubQuestions from '@/src/components/SubQuestions'
+import SubQuestions, { FollowUpMarker } from '@/src/components/SubQuestions'
 import SectionNav from './SectionNav'
 import ProgressStrip from './ProgressStrip'
 
@@ -1243,7 +1243,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>WMS Required? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span></label>
+              <label>WMS Required? <span className="req" title="Required for ROM pricing — unanswered scores as &quot;simple&quot; and widens the quoted range">*</span> <FollowUpMarker /></label>
               <Controller
                 name="wmsRequired"
                 control={control}
@@ -1308,7 +1308,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               />
             </div>
             <div className="fld">
-              <label>Other AGVs on Site?</label>
+              <label>Other AGVs on Site? <FollowUpMarker /></label>
               <Controller
                 name="otherAGVs"
                 control={control}
