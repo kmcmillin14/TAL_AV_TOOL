@@ -671,14 +671,16 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
               <div className="fld">
                 <label>Picking from racking?</label>
                 <YesNo name="pickingFromRacking" />
-              </div>
-              {values.pickingFromRacking && (
+                {values.pickingFromRacking && (
+                <SubQuestions>
                 <div className="fld">
                   <label>Racking aisle width ({isMetric ? 'm' : 'ft'})</label>
                   <UnitInput name="rackingAisleWidthFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '1.8' : '6'} isMetric={isMetric} iDec={1} mDec={2} />
                   {isVNA && <div className="help" style={{ fontWeight: 600 }}>VNA selected — racking aisle width is critical for fit.</div>}
                 </div>
-              )}
+                </SubQuestions>
+                )}
+              </div>
               <div className="fld">
                 <label>Floor condition</label>
                 <select {...register('floorCondition', { setValueAs: emptyToUndef })} defaultValue="">
@@ -706,11 +708,13 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                     ))}
                   </div>
                 )} />
-              </div>
-              {showTempRange && (<>
+                {showTempRange && (
+                <SubQuestions>
                 <div className="fld"><label>Min temperature ({isMetric ? '°C' : '°F'})</label><UnitInput name="tempMinF" control={control} imperialUnit="°F" metricUnit="°C" toDisplay={fToC} toStorage={cToF} placeholder={isMetric ? '-20' : '-5'} step="1" isMetric={isMetric} iDec={0} mDec={1} /></div>
                 <div className="fld"><label>Max temperature ({isMetric ? '°C' : '°F'})</label><UnitInput name="tempMaxF" control={control} imperialUnit="°F" metricUnit="°C" toDisplay={fToC} toStorage={cToF} placeholder={isMetric ? '38' : '100'} step="1" isMetric={isMetric} iDec={0} mDec={1} /></div>
-              </>)}
+                </SubQuestions>
+                )}
+              </div>
               <div className="fld span-3">
                 <label>Environment variables</label>
                 <Chips name="dustMoisture" options={DUST_MOISTURE_OPTS} />
@@ -959,10 +963,15 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
           <FormSection id="q-sec-11" sectionNum="11" title="TAL / Toyota">
             <div className="fld-grid-2">
-              <div className="fld"><label>TMH or Raymond dealership existing relationship?</label><YesNo name="toyotaRaymondPartnership" /></div>
-              {values.toyotaRaymondPartnership && (
-                <div className="fld"><label>Dealership name</label><input {...register('toyotaRaymondDealer')} placeholder="Dealer name / location" /></div>
-              )}
+              <div className="fld">
+                <label>TMH or Raymond dealership existing relationship?</label>
+                <YesNo name="toyotaRaymondPartnership" />
+                {values.toyotaRaymondPartnership && (
+                  <SubQuestions>
+                    <div className="fld"><label>Dealership name</label><input {...register('toyotaRaymondDealer')} placeholder="Dealer name / location" /></div>
+                  </SubQuestions>
+                )}
+              </div>
             </div>
             <div className="fld-grid-2">
               <div className="fld span-2"><label>Notes</label><textarea {...register('talHistory')} placeholder="Existing fleet, prior projects, current relationship…" /></div>

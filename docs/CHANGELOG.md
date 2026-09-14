@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-09-14 — Primary pick/drop wording; more sub-questions nested
+
+**Pick/drop heights are now labelled "primary"** with guidance on *which* number to enter —
+mirroring how throughput already says *"peak capacity, not average"*. They stand for many
+moves, and for a HARD gate the safe single value is the **tallest drop in the movement being
+sized for**, not the most common: a false pass gets quoted and then fails on site, while a
+false fail is visible immediately. The help text names the escape hatch that already exists
+— per-flow `liftHeightFt`, editable in Step 3 — so the intake captures one defensible number
+and the apps engineer refines where it matters.
+
+**Four more conditionals nested** under the question that reveals them (`SubQuestions`):
+picking-from-racking → racking aisle width, temperature environment → min/max temperature,
+TMH/Raymond relationship → dealership name, plus the two converted earlier. Remaining
+un-converted conditionals (submission type, pallet subtype, transfer heights, hazard zone,
+ramps) still use the old sibling-cell pattern.
+
+**Shipped:** `src/components/step1/ApplicationForm.tsx`,
+`src/components/questionnaire/QuestionnaireForm.tsx`.
+
 ## 2026-09-14 — Conditional sub-questions nest under the question that reveals them
 
 Both forms emitted conditional follow-up fields as **sibling cells in the same grid**, so

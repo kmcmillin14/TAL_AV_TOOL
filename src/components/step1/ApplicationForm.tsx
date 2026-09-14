@@ -648,7 +648,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 (src/calc/gates.ts) but had no field in either form until
                 2026-09-11 — they could only be set by hand-editing JSON. */}
             <div className="fld">
-              <label>Pick height ({dLabel})</label>
+              <label>Pick height, primary ({dLabel})</label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -664,10 +664,10 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 />
                 <div className="unit">{dLabel}</div>
               </div>
-              <div className="help">Height the load is picked FROM. Drives the lift gate in Step 2.</div>
+              <div className="help">The main pick height — the tallest in the movement you&rsquo;re sizing for, not the average. One-off exceptions are handled per flow in Step 3. Drives the lift gate in Step 2.</div>
             </div>
             <div className="fld">
-              <label>Drop height ({dLabel})</label>
+              <label>Drop height, primary ({dLabel})</label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -683,7 +683,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 />
                 <div className="unit">{dLabel}</div>
               </div>
-              <div className="help">Height the load is placed AT. Drives the lift gate in Step 2.</div>
+              <div className="help">The main drop height — the tallest in the movement you&rsquo;re sizing for, not the average. One-off exceptions are handled per flow in Step 3. Drives the lift gate in Step 2.</div>
             </div>
 
             <div className="fld">
