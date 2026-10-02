@@ -75,8 +75,17 @@ export const projectSchema = z.object({
   palletMaterial: z.string().optional(),
   /** Pallet bottom-board construction — drives the palletEntry soft gate in Step 2. */
   palletEntryType: z.enum(['stringer', 'block', 'not_sure']).optional(),
-  /** Are pallets stacked on each other? Drives the palletStacking gate. */
-  palletStacking: z.boolean().optional(),
+  /** Must the AGV stack or destack pallets itself? Drives the palletStacking
+   *  gate. Tri-state rather than a boolean: "not sure" is a real answer here
+   *  and cannot pass, because what it stands in for might be an interlocked
+   *  stack, which fails hard. */
+  palletStacking: z.union([
+    z.enum(['yes', 'no', 'not_sure']),
+    // The field briefly shipped as a boolean (2026-10-02); coerce so projects
+    // saved in that window still load. z.preprocess does NOT survive
+    // projectSchema.partial() in Zod 4 — a union with a transform does.
+    z.boolean().transform(v => (v ? 'yes' : 'no') as 'yes' | 'no'),
+  ]).optional(),
   /** How the stack interlocks. 'pin_post' and 'cup_cap' are RED (no vehicle in
    *  the library handles an interlocked stack); 'flat' and 'other' are YELLOW. */
   palletStackingType: z.enum(['pin_post', 'cup_cap', 'flat', 'other']).optional(),

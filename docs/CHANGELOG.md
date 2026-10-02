@@ -2,9 +2,19 @@
 
 ## 2026-10-02 — Pallet stacking: a new question and a new gate
 
-"Are pallets stacked?" added to BOTH the Step 1 intake and the customer
-questionnaire, revealing two follow-ups when answered Yes: **stacking type**
-(Pin and post · Cup and cap · Flat bottom · Other) and **how many stacked**.
+**"AGV required to stack or destack pallets?"** — **Yes / No / Not sure** — added
+to BOTH the Step 1 intake and the customer questionnaire, revealing two
+follow-ups on Yes: **stacking type** (Pin and post · Cup and cap · Flat bottom ·
+Other) and **how many stacked**.
+
+The wording is deliberate. It asks what the *vehicle must do*, not what state
+the load happens to be in — a warehouse can be full of stacked pallets the AGV
+never touches, and that is not a gate. Tri-state rather than Yes/No because
+**"Not sure" cannot pass**: what it stands in for might be the interlocked case
+that fails hard, so it returns a YELLOW review like the other unknowns.
+(`palletStacking` shipped as a boolean earlier the same day; the schema accepts
+both and coerces `true`/`false` → `'yes'`/`'no'`. `z.preprocess` does NOT
+survive `projectSchema.partial()` in Zod 4 — a union with a transform does.)
 
 It is a gate, with **answer-driven severity** — the severity is a property of
 the stack, not of any vehicle spec, because no chassis in the library can split
@@ -14,8 +24,10 @@ or carry an interlocked stack:
     Cup and cap    -> HARD, RED for every vehicle
     Flat bottom    -> SOFT, YELLOW (site-walk review)
     Other          -> SOFT, YELLOW
-    Stacked, type unanswered -> SOFT, YELLOW (review, never a pass)
-    Not stacked / unanswered -> passes / skips
+    Yes, type unanswered     -> SOFT, YELLOW (review, never a pass)
+    Not sure                 -> SOFT, YELLOW (review, never a pass)
+    No                       -> passes
+    Unanswered               -> skips
 
 The gate is declared `severity: 'soft'` at the spec level even though it can
 return HARD. That is deliberate: declaring it hard would make the unanswered

@@ -100,7 +100,7 @@ export interface ApplicationRequirements {
   temperatureEnvironment?: 'ambient' | 'refrigerated' | 'freezer'
   /** Pallet bottom-board construction — drives the soft pallet_entry gate. */
   palletEntryType?: 'stringer' | 'block' | 'not_sure'
-  palletStacking?: boolean
+  palletStacking?: 'yes' | 'no' | 'not_sure'
   palletStackingType?: 'pin_post' | 'cup_cap' | 'flat' | 'other'
   loadLengthIn?: number | null
   loadWidthIn?: number | null

@@ -413,15 +413,26 @@ export const GATES: readonly GateSpec[] = [
   // (same dynamic-severity pattern as temperature_env above).
   { id: 'pallet_stacking', name: 'Pallet Stacking', severity: 'soft',
     run(_vehicle, app) {
-      if (app.palletStacking !== true) {
-        return app.palletStacking === false
-          ? {
-              gateId: 'pallet_stacking', name: 'Pallet Stacking', severity: 'soft',
-              passed: true, skipped: false,
-              vehicleValue: 'Single pallets', requiredValue: 'Not stacked',
-              reason: 'Pallets are not stacked',
-            }
-          : skippedGate('pallet_stacking', 'Pallet Stacking', 'soft', 'Single pallets')
+      if (app.palletStacking == null) {
+        return skippedGate('pallet_stacking', 'Pallet Stacking', 'soft', 'Single pallets')
+      }
+      if (app.palletStacking === 'no') {
+        return {
+          gateId: 'pallet_stacking', name: 'Pallet Stacking', severity: 'soft',
+          passed: true, skipped: false,
+          vehicleValue: 'Single pallets', requiredValue: 'No stacking required',
+          reason: 'The AGV is not asked to stack or destack',
+        }
+      }
+      if (app.palletStacking === 'not_sure') {
+        // An explicit "don't know" cannot pass: the answer it stands in for
+        // might be an interlocked stack, which fails hard.
+        return {
+          gateId: 'pallet_stacking', name: 'Pallet Stacking', severity: 'soft',
+          passed: false, skipped: false,
+          vehicleValue: 'Single pallets', requiredValue: 'Stacking — not sure',
+          reason: 'Whether the AGV must stack or destack is unconfirmed — settle it before quoting',
+        }
       }
       const type = app.palletStackingType
       if (type === 'pin_post' || type === 'cup_cap') {
@@ -430,7 +441,7 @@ export const GATES: readonly GateSpec[] = [
           gateId: 'pallet_stacking', name: 'Pallet Stacking', severity: 'hard',
           passed: false, skipped: false,
           vehicleValue: 'Single pallets', requiredValue: `Stacked — ${label}`,
-          reason: `${label} stacking interlocks the pallets — no vehicle in the library can handle the stack`,
+          reason: `${label} stacking interlocks the pallets — no vehicle in the library can stack or destack them`,
         }
       }
       if (type === 'flat' || type === 'other') {
@@ -447,7 +458,7 @@ export const GATES: readonly GateSpec[] = [
         gateId: 'pallet_stacking', name: 'Pallet Stacking', severity: 'soft',
         passed: false, skipped: false,
         vehicleValue: 'Single pallets', requiredValue: 'Stacked — type not specified',
-        reason: 'Pallets are stacked but the stacking type is unanswered — confirm before quoting',
+        reason: 'The AGV must stack or destack, but the stacking type is unanswered — confirm before quoting',
       }
     } },
 

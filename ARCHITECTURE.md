@@ -50,12 +50,15 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
   to finish this". Owner rule: every hardware gate has to be filled in, and an unfilled one
   is a review condition.
 
-- **Pallet stacking (answer-driven severity).** When pallets are stacked, the
+- **Pallet stacking (answer-driven severity).** *"AGV required to stack or
+  destack pallets?"* — Yes / No / **Not sure**. When stacking is required the
   severity comes from the stack's construction, not from any vehicle spec — no
-  chassis in the library can split or carry an interlocked stack:
+  chassis in the library can stack or destack an interlocked stack:
   **pin-and-post** and **cup-and-cap** fail **HARD (→ RED)** for every vehicle;
   **flat-bottom** and **other** are **SOFT (→ YELLOW)**, a site-walk review;
-  stacked with the type unanswered is also SOFT (review, never a pass).
+  stacked with the type unanswered is also SOFT, and an explicit **"Not sure"
+  is SOFT too — never a pass**, because what it stands in for might be the
+  interlocked case that fails hard.
   Declared `severity: 'soft'` at the spec level so an unanswered
   "Are pallets stacked?" does not mark every pre-existing project INCOMPLETE —
   the HARD verdict is returned per-answer. *Why:* stacking changes the handled

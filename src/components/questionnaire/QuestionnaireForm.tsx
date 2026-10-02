@@ -18,7 +18,7 @@ import {
   SPECIALTY_APPLICATIONS, PROJECT_DRIVERS, PALLET_SUBTYPES,
   SUBMISSION_TYPES, CHARGING_STRATEGIES, SHARED_TRAFFIC_TYPES, GUIDANCE_TYPES,
   REST_API_OPTIONS, WMS_INTERFACE_TYPES, TAGGING_SCAN_METHODS, INTERLOCKS,
-  PALLET_STACKING_TYPES,
+  PALLET_STACKING_TYPES, PALLET_STACKING_ANSWERS,
 } from '@/src/lib/constants/enums'
 import { downloadQuestionnairePdf, exportQuestionnairePdf } from '@/src/lib/questionnaire/pdfQuestionnaire'
 import { questionnaireJsonBlob } from '@/src/lib/questionnaire/questionnaireExport'
@@ -432,7 +432,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
   // Reusable No/Yes segmented toggle for a tri-state boolean. Clicking the
   // already-selected option clears it back to unanswered (undefined).
-  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' | 'toyotaRaymondPartnership' | 'palletStacking' }) => (
+  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' | 'toyotaRaymondPartnership' }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="seg-toggle">
         <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(field.value === false ? undefined : false)}>No</button>
@@ -601,9 +601,19 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <div className="help">Stringer pallets take forks from the ends only; block pallets take them from all four sides.</div>
                 </div>
                 <div className="fld span-2">
-                  <label>Are pallets stacked? <FollowUpMarker /></label>
-                  <YesNo name="palletStacking" />
-                  {values.palletStacking && (
+                  <label>AGV required to stack or destack pallets? <FollowUpMarker /></label>
+                  <Controller control={control} name="palletStacking" render={({ field }) => (
+                    <div className="seg-toggle">
+                      {PALLET_STACKING_ANSWERS.map(o => (
+                        <button
+                          key={o.value} type="button"
+                          className={`seg-btn${field.value === o.value ? ' on' : ''}`}
+                          onClick={() => field.onChange(field.value === o.value ? undefined : o.value)}
+                        >{o.label}</button>
+                      ))}
+                    </div>
+                  )} />
+                  {values.palletStacking === 'yes' && (
                     <SubQuestions>
                       <div className="fld">
                         <label>Stacking type</label>

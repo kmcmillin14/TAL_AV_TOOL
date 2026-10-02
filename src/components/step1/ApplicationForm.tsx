@@ -10,7 +10,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject, subscribeSaveDrops } from '@/src/lib/storage'
-import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES, INTERLOCKS, PALLET_STACKING_TYPES } from '@/src/lib/constants/enums'
+import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES, INTERLOCKS, PALLET_STACKING_TYPES, PALLET_STACKING_ANSWERS } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
 import { PALLET_ENTRY_LABELS } from '@/src/lib/palletEntry'
 import SubQuestions, { FollowUpMarker } from '@/src/components/SubQuestions'
@@ -556,18 +556,23 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                       site-walk review (src/calc/gates.ts). */}
                   {isPalletRow && i === 0 && (
                     <div className="fld">
-                      <label>Are pallets stacked? <Mark roles={['compat']} /> <FollowUpMarker /></label>
+                      <label>AGV required to stack or destack pallets? <Mark roles={['compat']} /> <FollowUpMarker /></label>
                       <Controller
                         name="palletStacking"
                         control={control}
                         render={({ field }) => (
                           <div className="seg-toggle">
-                            <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
-                            <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
+                            {PALLET_STACKING_ANSWERS.map(o => (
+                              <button
+                                key={o.value} type="button"
+                                className={`seg-btn${field.value === o.value ? ' on' : ''}`}
+                                onClick={() => { field.onChange(field.value === o.value ? undefined : o.value); onBlurSave() }}
+                              >{o.label}</button>
+                            ))}
                           </div>
                         )}
                       />
-                      {palletStacking && (
+                      {palletStacking === 'yes' && (
                         <SubQuestions>
                           <div className="fld">
                             <label>Stacking type</label>

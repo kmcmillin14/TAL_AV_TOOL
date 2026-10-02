@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest'
 import { qualifyVehicle } from '../trafficLight'
 import type { ApplicationRequirements } from '../types'
 import type { Vehicle } from '../../lib/vehicleLibrary'
+import { projectSchema } from '../../lib/validations/schemas'
 
 // Same minimal fixture shape as trafficLight.test.ts — a vehicle that passes
 // every other gate, so the verdict isolates pallet stacking.
@@ -46,36 +47,51 @@ const gateOf = (app: ApplicationRequirements) => {
 const statusOf = (app: ApplicationRequirements) => qualifyVehicle(fixtureVehicle(), app).status
 
 describe('pallet stacking gate', () => {
-  it('skips when nobody said whether pallets are stacked — and does not block GREEN', () => {
+  it('skips when the question is unanswered — and does not block GREEN', () => {
     expect(gateOf(completeApp)?.skipped).toBe(true)
     expect(statusOf(completeApp)).toBe('GREEN')
   })
 
-  it('passes when pallets are explicitly not stacked', () => {
-    const app = { ...completeApp, palletStacking: false }
+  it('passes when the AGV is not asked to stack', () => {
+    const app = { ...completeApp, palletStacking: 'no' } as unknown as ApplicationRequirements
     expect(gateOf(app)?.skipped).toBe(false)
     expect(gateOf(app)?.passed).toBe(true)
     expect(statusOf(app)).toBe('GREEN')
   })
 
   it.each(['pin_post', 'cup_cap'] as const)('fails HARD → RED for %s', type => {
-    const app = { ...completeApp, palletStacking: true, palletStackingType: type }
+    const app = { ...completeApp, palletStacking: 'yes', palletStackingType: type } as unknown as ApplicationRequirements
     expect(gateOf(app)?.severity).toBe('hard')
     expect(gateOf(app)?.passed).toBe(false)
     expect(statusOf(app)).toBe('RED')
   })
 
   it.each(['flat', 'other'] as const)('fails SOFT → YELLOW for %s', type => {
-    const app = { ...completeApp, palletStacking: true, palletStackingType: type }
+    const app = { ...completeApp, palletStacking: 'yes', palletStackingType: type } as unknown as ApplicationRequirements
     expect(gateOf(app)?.severity).toBe('soft')
     expect(gateOf(app)?.passed).toBe(false)
     expect(statusOf(app)).toBe('YELLOW')
   })
 
-  it('stacked with an unanswered type is a review, never a pass', () => {
-    const app = { ...completeApp, palletStacking: true }
+  it('stacking required with an unanswered type is a review, never a pass', () => {
+    const app = { ...completeApp, palletStacking: 'yes' } as unknown as ApplicationRequirements
     expect(gateOf(app)?.severity).toBe('soft')
     expect(gateOf(app)?.passed).toBe(false)
     expect(statusOf(app)).toBe('YELLOW')
+  })
+
+  it('"Not sure" is a review, never a pass — the real answer might be interlocked', () => {
+    const app = { ...completeApp, palletStacking: 'not_sure' } as unknown as ApplicationRequirements
+    expect(gateOf(app)?.skipped).toBe(false)
+    expect(gateOf(app)?.passed).toBe(false)
+    expect(gateOf(app)?.severity).toBe('soft')
+    expect(statusOf(app)).toBe('YELLOW')
+  })
+
+  it('still accepts the boolean this field briefly shipped as', () => {
+    // projectSchema coerces legacy true/false -> 'yes'/'no' (z.preprocess).
+    const parsed = projectSchema.partial().parse({ palletStacking: true })
+    expect(parsed.palletStacking).toBe('yes')
+    expect(projectSchema.partial().parse({ palletStacking: false }).palletStacking).toBe('no')
   })
 })

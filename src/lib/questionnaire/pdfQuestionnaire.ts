@@ -211,8 +211,9 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   const palletEntry = effectivePalletEntryType(p)
   if (palletEntry) row('Pallet entry', PALLET_ENTRY_LABELS[palletEntry])
   if (p.palletStacking != null) {
-    row('Pallets stacked', p.palletStacking ? 'Yes' : 'No')
-    if (p.palletStacking) {
+    const stackAnswer: Record<string, string> = { yes: 'Yes', no: 'No', not_sure: 'Not sure' }
+    row('AGV must stack / destack', stackAnswer[p.palletStacking] ?? String(p.palletStacking))
+    if (p.palletStacking === 'yes') {
       row('Stacking type', p.palletStackingType ? PALLET_STACKING_LABELS[p.palletStackingType] ?? p.palletStackingType : '—', true)
       row('Pallets per stack', p.palletStackCount != null ? String(p.palletStackCount) : '—', true)
     }

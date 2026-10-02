@@ -150,6 +150,15 @@ export const LOAD_TYPE_IMAGE_SLUG: Partial<Record<string, string>> = {
 export type TransferMethod = typeof TRANSFER_METHODS[number]
 export type TypicalUnitType = typeof TYPICAL_UNIT_TYPES[number]
 
+/** Answers to "AGV required to stack or destack pallets?". Tri-state, not a
+ *  Yes/No: "Not sure" is a real answer that must not pass the gate, because
+ *  what it stands in for might be an interlocked stack. */
+export const PALLET_STACKING_ANSWERS = [
+  { value: 'no', label: 'No' },
+  { value: 'yes', label: 'Yes' },
+  { value: 'not_sure', label: 'Not sure' },
+] as const
+
 /** How a pallet stack interlocks. Severity is a property of the construction,
  *  not of any vehicle: an interlocked stack (pin-and-post, cup-and-cap) cannot
  *  be split or handled by the fleet as it stands, so it fails hard; a flat or
