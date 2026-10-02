@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import type { FleetSellPriceTotal } from '@/src/calc/fleetSellPrice'
 import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
-import type { PricingInputConfidence } from '@/src/lib/romComplexityFromProject'
+import type { PricingInputConfidence, PricingGate } from '@/src/lib/romComplexityFromProject'
 import type { FleetComplexityBaseline } from '@/src/lib/romSellPriceLine'
 import { ADDERS_CONFIG, PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
 
@@ -28,23 +28,39 @@ interface Props {
   selectedAdderIds: string[]
   confidence: PricingInputConfidence
   baseline: FleetComplexityBaseline
+  gate: PricingGate
 }
 
 /** One quotation category: a header row carrying the category subtotal, with
  *  its sub-lines (or descriptive items) indented underneath. */
 function QuoteCategory(
-  { name, amount, badge, children }:
-  { name: string; amount: number; badge?: ReactNode; children?: ReactNode },
+  { name, amount, badge, withheld, children }:
+  { name: string; amount: number; badge?: ReactNode; withheld?: string[]; children?: ReactNode },
 ) {
+  const isWithheld = withheld != null && withheld.length > 0
   return (
-    <section className="rom-quote-cat">
+    <section className={`rom-quote-cat${isWithheld ? ' is-withheld' : ''}`}>
       <div className="rom-quote-cat-head">
         <span className="rom-quote-cat-name">{name}</span>
-        {badge}
-        <span className="rom-quote-cat-amount mono">{fullUsd(amount)}</span>
+        {!isWithheld && badge}
+        {isWithheld
+          ? <WithheldAmount missing={withheld} />
+          : <span className="rom-quote-cat-amount mono">{fullUsd(amount)}</span>}
       </div>
       {children && <div className="rom-quote-cat-body">{children}</div>}
     </section>
+  )
+}
+
+/** Stands in for a category amount that is deliberately not shown. The owner's
+ *  rule is that no number beats a bad number, so this renders the blocking
+ *  answers by name rather than a figure — a blank to fill, not a price to
+ *  quote. */
+function WithheldAmount({ missing }: { missing: string[] }) {
+  return (
+    <span className="rom-quote-withheld">
+      Not priced — needs <strong>{missing.join(', ')}</strong> on Step 1
+    </span>
   )
 }
 
@@ -70,10 +86,15 @@ function QuoteLine({ label, qty, amount }: { label: string; qty?: number; amount
  *  src/calc/fleetSellPrice.ts). Every figure comes from the shared resolver
  *  (src/lib/romSellPriceLine.ts) that the Dashboard and the PPTX appendix
  *  also call, so the three surfaces can't drift. */
-export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, confidence, baseline }: Props) {
+export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, confidence, baseline, gate }: Props) {
   const selected = new Set(selectedAdderIds)
   const selectedAdders = ADDERS_CONFIG.adders.filter(a => selected.has(a.id))
   const sharedPlatforms = fleetTotal.integrationByPlatform.filter(g => g.vehicleIds.length > 1)
+
+  const blockedLabels = [
+    ...(gate.integrationReady ? [] : ['Professional services']),
+    ...(gate.softwareReady ? [] : ['Software']),
+  ]
 
   const intMultiplier = PRICING_ASSUMPTIONS.integrationMultipliers[String(baseline.integration.tier) as '1' | '2' | '3']
   const swMultiplier = PRICING_ASSUMPTIONS.softwareMultipliers[String(baseline.software.tier) as '1' | '2' | '3']
@@ -95,7 +116,8 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
       </QuoteCategory>
 
       <QuoteCategory name="Software" amount={fleetTotal.softwareTotal}
-        badge={<TierCompact result={baseline.software} />}>
+        badge={<TierCompact result={baseline.software} />}
+        withheld={gate.softwareReady ? undefined : gate.missingSoftware}>
         <p className="rom-quote-note">
           Fleet management software, licensed across all {fleetTotal.totalQty} unit
           {fleetTotal.totalQty === 1 ? '' : 's'}.
@@ -103,7 +125,8 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
       </QuoteCategory>
 
       <QuoteCategory name="Professional services" amount={fleetTotal.integrationTotal}
-        badge={<TierCompact result={baseline.integration} />}>
+        badge={<TierCompact result={baseline.integration} />}
+        withheld={gate.integrationReady ? undefined : gate.missingIntegration}>
         <ul className="rom-quote-includes">
           {PROFESSIONAL_SERVICES_INCLUDES.map(item => (
             <li key={item}>{item}</li>
@@ -128,7 +151,7 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
       {/* Complexity reads as part of the quote, not a separate study: the tier
           chips above answer "what did this cost us" at a glance, and this one
           disclosure carries the whole audit trail for anyone who needs it. */}
-      <details className="rom-quote-cx">
+      {!gate.blocked && <details className="rom-quote-cx">
         <summary>
           <span className="rom-quote-cx-label">Complexity</span>
           <span className="rom-quote-cx-summary">
@@ -147,35 +170,64 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
             <ComplexityAxis axis="Software" result={baseline.software} multiplier={swMultiplier} />
           </div>
         </div>
-      </details>
+      </details>}
 
-      <div className="rom-quote-total">
-        <span>Total project investment</span>
-        <span className="rom-quote-total-amount mono">{fullUsd(fleetTotal.sellTotal)}</span>
-      </div>
-      <div className="rom-quote-foot">
-        <span>Per unit, blended across {fleetTotal.totalQty} unit{fleetTotal.totalQty === 1 ? '' : 's'}</span>
-        <span className="mono">{fullUsd(fleetTotal.sellPerUnit)}</span>
-      </div>
-      <div className="rom-quote-foot">
-        <span>
-          Budgetary range
-          {fleetTotal.unknownInputCount > 0 && (
-            <span className="rom-quote-range-why"> — widened for {fleetTotal.unknownInputCount} unknown
-              {fleetTotal.unknownInputCount === 1 ? '' : 's'}</span>
-          )}
-        </span>
-        <span className="mono">
-          {fullUsd(fleetTotal.band.lowTotal)} – {fullUsd(fleetTotal.band.highTotal)}
-        </span>
-      </div>
+      {gate.blocked ? (
+        <>
+          {/* No project total while a category is unpriced. A total that quietly
+              omits professional services reads as the whole job and gets quoted
+              that way, which is the failure this gate exists to prevent. */}
+          <div className="rom-quote-total is-partial">
+            <span>Hardware subtotal</span>
+            <span className="rom-quote-total-amount mono">{fullUsd(fleetTotal.hardwareTotal)}</span>
+          </div>
+          <p className="rom-quote-blocked">
+            <strong>No project total yet.</strong> {blockedLabels.length === 1
+              ? `${blockedLabels[0]} is`
+              : `${blockedLabels.join(' and ')} are`}{' '}
+            not priced until the inputs above are answered — an unanswered input scores as
+            &ldquo;simple&rdquo;, so quoting now would under-price the job.
+          </p>
+        </>
+      ) : (
+        <>
+          <div className="rom-quote-total">
+            <span>Total project investment</span>
+            <span className="rom-quote-total-amount mono">{fullUsd(fleetTotal.sellTotal)}</span>
+          </div>
+          <div className="rom-quote-foot">
+            <span>Per unit, blended across {fleetTotal.totalQty} unit{fleetTotal.totalQty === 1 ? '' : 's'}</span>
+            <span className="mono">{fullUsd(fleetTotal.sellPerUnit)}</span>
+          </div>
+          <div className="rom-quote-foot">
+            <span>
+              Budgetary range
+              {fleetTotal.unknownInputCount > 0 && (
+                <span className="rom-quote-range-why"> — widened for {fleetTotal.unknownInputCount} unknown
+                  {fleetTotal.unknownInputCount === 1 ? '' : 's'}</span>
+              )}
+            </span>
+            <span className="mono">
+              {fullUsd(fleetTotal.band.lowTotal)} – {fullUsd(fleetTotal.band.highTotal)}
+            </span>
+          </div>
+        </>
+      )}
 
+      {/* While a category is withheld there is no range to widen, so the strip
+          reports coverage only — promising a wider range next to a withheld
+          price was two different stories about the same blanks. */}
       <div className={`rom-quote-confidence${confidence.missing.length > 0 ? ' is-incomplete' : ''}`}>
         <span className="rom-quote-confidence-score mono">
           {confidence.answered} of {confidence.total}
         </span>
         {confidence.missing.length === 0 ? (
           <span>pricing inputs confirmed — range is as tight as it gets.</span>
+        ) : gate.blocked ? (
+          <span>
+            {'pricing inputs confirmed. Still missing on Step 1: '}
+            <strong>{confidence.missing.join(', ')}</strong>
+          </span>
         ) : (
           <span>
             {'pricing inputs confirmed. Unknowns price as “simple”, so the range widens. Missing on Step 1: '}

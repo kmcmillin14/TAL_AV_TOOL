@@ -1,5 +1,58 @@
 # Changelog
 
+## 2026-10-02 — No price at all beats a bad price: integration/software pricing gate
+
+Owner rule: *"I would rather not show pricing than show bad pricing."*
+
+An unanswered complexity input scores ZERO points, which is indistinguishable
+from "this site is simple" — so a thin intake quoted like the easiest possible
+project, and the error always landed in the under-quoting direction. Widening
+the band softened that but still put a number on screen.
+
+**Professional services and Software now withhold their amount entirely** until
+the inputs that decide their tier are answered, showing the blocking answers by
+name instead. **No project total is shown while either is withheld** — only a
+Hardware subtotal. A total that quietly omits professional services reads as the
+whole job and gets quoted that way, which is the failure this exists to prevent.
+Hardware is never gated: it is qty × price range and touches no complexity input.
+
+Gating inputs were picked by how far each can move the score, not by
+completeness — a blank that cannot realistically change the tier should never
+block a quote:
+
+    professional services        software
+    Pick/drop locations  +5      Other-AGV traffic  +6
+    Facility size        +4      WMS integration    +5
+    Shared traffic     +1/+2     Storage tracking   +3
+    AGV/AMR experience   +2      PLC interlock      +3
+
+Ramps (+1), custom load (+2) and barcode scanning (+2) deliberately do NOT gate
+— they still widen the band, as before. The list is one constant,
+`PRICING_GATE_INPUTS` in `src/lib/romComplexityFromProject.ts`.
+
+**`'None'` added to `INTERLOCKS`.** The field defaults to `[]`, so without an
+explicit none-of-these answer an empty list means both "no interlocks" and
+"never asked" — and a gate cannot withhold a price on an ambiguity.
+`SHARED_TRAFFIC_TYPES` has carried `'None'` for this reason already.
+
+What this is worth, measured on the bundled sample project. Answering the four
+blanks moved BOTH axes from tier 2 to tier 3:
+
+    before (blanks scoring "simple")   after (answered)
+    Software              $68,800      $107,500
+    Professional services $99,900      $166,500     +67%
+    Total              $2,568,700      $2,674,000
+
+**Known gap:** the Dashboard's ROM CAPEX still reads the ungated resolver, so a
+blocked project shows no total on Step 4 but a CAPEX range on Step 5. Closing it
+means withholding every KPI built on CAPEX (payback, TCO, cost/move, net
+benefit) — a decision the owner has not made yet.
+
+**Shipped:** `src/lib/romComplexityFromProject.ts`,
+`src/lib/__tests__/pricingGate.test.ts` (new), `src/lib/constants/enums.ts`,
+`src/components/rom/RomQuotation.tsx`, `src/components/rom/RomFleetSellPrice.tsx`,
+`app/globals.css`.
+
 ## 2026-10-02 — Complexity on the quotation: plain tier, scale behind the toggle
 
 Follow-up to the entry below, on owner feedback. The tier chip was a tinted

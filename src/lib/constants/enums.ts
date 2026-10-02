@@ -88,9 +88,16 @@ export const CHARGING_STRATEGIES = [
  *
  *  NOTE: only 'PLC Systems' currently scores complexity
  *  (`hasPlcInterlock` → `automationInterface`, +3 software). Adding an option
- *  here does NOT change any price on its own. */
+ *  here does NOT change any price on its own.
+ *
+ *  'None' is load-bearing, not filler: the field defaults to `[]`, so without
+ *  an explicit none-of-these answer an empty list means both "no interlocks"
+ *  and "never asked". The pricing gate (src/lib/romComplexityFromProject.ts)
+ *  has to tell those apart before it can suppress a price, so picking 'None'
+ *  is how a customer says "asked and answered". Mirrors SHARED_TRAFFIC_TYPES,
+ *  which has carried a 'None' option for the same reason. */
 export const INTERLOCKS = [
-  'High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems', 'Fire Alarms', 'Other',
+  'High-Speed Doors', 'Elevators', 'Conveyors', 'PLC Systems', 'Fire Alarms', 'None', 'Other',
 ] as const
 
 /** §05 shared traffic in the operating area (multi-select). */

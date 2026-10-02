@@ -815,6 +815,17 @@ asynchronously. Computation is inline (no dependency on the parent `costs` memo)
 `payback = capexMid / annualOffset` (— when offset = 0). OPEX is informational only
 — not netted against the offset.
 
+**Pricing gate (2026-10-02).** Professional services and Software withhold their
+amount — and the project total is replaced by a Hardware subtotal — until the
+inputs that decide their tier are answered. An unanswered complexity input
+scores zero, which is indistinguishable from "simple", so quoting on a thin
+intake under-prices the job; the owner's rule is that no number beats a bad
+number. Gating inputs are chosen by score swing, not completeness, and are
+defined once in `PRICING_GATE_INPUTS` (`src/lib/romComplexityFromProject.ts`).
+Hardware is never gated. Low-swing inputs (ramps, custom load, barcode
+scanning) still widen the band rather than blocking. This does NOT yet gate the
+Dashboard's ROM CAPEX.
+
 **Complexity is shown inside the quotation (2026-10-02).** Each priced category
 that complexity multiplies — Professional services and Software — carries a tier
 chip in its header (named tier, position in the scale, multiplier). A single

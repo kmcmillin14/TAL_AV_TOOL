@@ -68,3 +68,91 @@ export function pricingInputConfidence(project: StoredProject): PricingInputConf
   const missing = PRICING_INPUTS.filter(f => f.unanswered(project)).map(f => f.label)
   return { answered: PRICING_INPUTS.length - missing.length, total: PRICING_INPUTS.length, missing }
 }
+
+// ── Pricing gate ─────────────────────────────────────────────────────────────
+// "I would rather not show pricing than show bad pricing" (owner, 2026-10-02).
+//
+// An unanswered complexity input scores ZERO points, which is indistinguishable
+// from "this site is simple" — so a thin intake prices like the easiest
+// possible project and the error always lands in the under-quoting direction.
+// Widening the band (see `unknownInputPenalty`) softens that but still puts a
+// number on screen. Past a point the honest answer is no number at all.
+//
+// Only the inputs below gate a price. They were picked by how far each one can
+// move the score, not by completeness — a blank that cannot realistically
+// change the tier should never block a quote:
+//
+//   professional services        software
+//   ─────────────────────        ────────────────────
+//   Pick/drop locations  +5      Other-AGV traffic  +6
+//   Facility size        +4      WMS integration    +5
+//   Shared traffic     +1/+2     Storage tracking   +3
+//   AGV/AMR experience   +2      PLC interlock      +3
+//   ── 14 of a 22-point scale    ── 17 of a 19-point scale
+//
+// Deliberately NOT gating: ramps (+1), custom load (+2), barcode scanning (+2).
+// Low swing — blocking a quote on them would be noise.
+//
+// Shared traffic appears on BOTH axes (pedestrian/forklift score integration,
+// other-AGV scores software), so that single answer unblocks part of each.
+//
+// EDIT THIS LIST to change what gates a price — it is the only definition.
+
+type GateAxis = 'integration' | 'software'
+
+interface GateInput {
+  label: string
+  axes: GateAxis[]
+  unanswered: (p: StoredProject) => boolean
+}
+
+const PRICING_GATE_INPUTS: GateInput[] = [
+  { label: 'Pick/drop locations', axes: ['integration'],
+    unanswered: p => p.pickDropLocationCount == null },
+  { label: 'Facility size', axes: ['integration'],
+    unanswered: p => p.facilitySizeSqFt == null },
+  { label: 'AGV/AMR experience', axes: ['integration'],
+    unanswered: p => p.hasAgvExperience === undefined },
+  // Empty is genuinely "never asked" for both of these: each list carries an
+  // explicit 'None' option, so an answered project is never empty.
+  { label: 'Shared traffic in the area', axes: ['integration', 'software'],
+    unanswered: p => (p.sharedTrafficTypes ?? []).length === 0 },
+  { label: 'WMS integration', axes: ['software'],
+    unanswered: p => p.wmsRequired === undefined },
+  { label: 'Storage tracking', axes: ['software'],
+    unanswered: p => p.storageTrackingRequired === undefined },
+  { label: 'Automation interlocks', axes: ['software'],
+    unanswered: p => (p.interlocks ?? []).length === 0 },
+]
+
+export interface PricingGate {
+  /** Professional services may be priced. */
+  integrationReady: boolean
+  /** Software may be priced. */
+  softwareReady: boolean
+  /** Labels still blocking professional services, in list order. */
+  missingIntegration: string[]
+  /** Labels still blocking software, in list order. */
+  missingSoftware: string[]
+  /** Either axis blocked — the project total cannot be stated. */
+  blocked: boolean
+}
+
+/** Which priced categories have enough intake behind them to quote.
+ *
+ *  Hardware is never gated: it is qty × price range and touches no complexity
+ *  input, so it stays quotable on the thinnest project. */
+export function pricingGate(project: StoredProject): PricingGate {
+  const missingFor = (axis: GateAxis) =>
+    PRICING_GATE_INPUTS.filter(i => i.axes.includes(axis) && i.unanswered(project)).map(i => i.label)
+
+  const missingIntegration = missingFor('integration')
+  const missingSoftware = missingFor('software')
+  return {
+    integrationReady: missingIntegration.length === 0,
+    softwareReady: missingSoftware.length === 0,
+    missingIntegration,
+    missingSoftware,
+    blocked: missingIntegration.length > 0 || missingSoftware.length > 0,
+  }
+}

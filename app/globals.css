@@ -3888,6 +3888,22 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 .rom-quote-cat-body { padding: 8px 0 0 14px; }
 
+/* A category whose price is deliberately withheld. Muted, not alarming: this
+   is a blank to fill, not an error. */
+.rom-quote-cat.is-withheld .rom-quote-cat-name { color: var(--text-tertiary); }
+.rom-quote-withheld {
+  margin-left: auto; font-family: var(--tal-font-family); font-size: 11.5px;
+  color: var(--text-tertiary); text-align: right;
+}
+.rom-quote-withheld strong { color: var(--accent); font-weight: 700; }
+.rom-quote-total.is-partial .rom-quote-total-amount { color: var(--text-primary); }
+.rom-quote-blocked {
+  font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.5;
+  color: var(--text-secondary); margin: 10px 0 0; padding: 10px 12px;
+  background: var(--bg-surface-2); border-left: 2px solid var(--accent);
+}
+.rom-quote-blocked strong { color: var(--text-primary); }
+
 /* The amount stays hard right once a tier chip sits between it and the name. */
 .rom-quote-cat-amount { margin-left: auto; }
 

@@ -5,7 +5,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetSummary } from '@/src/calc/types'
 import { updateProject } from '@/src/lib/storage'
-import { complexityAnswersFromProject, pricingInputConfidence } from '@/src/lib/romComplexityFromProject'
+import { complexityAnswersFromProject, pricingInputConfidence, pricingGate } from '@/src/lib/romComplexityFromProject'
 import {
   resolveRomSellPriceLine, resolveFleetSellPriceTotal, resolveFleetComplexityBaseline,
   type RomSellPriceLine, type RomSellPriceOverride,
@@ -47,6 +47,7 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
 
   const answers = useMemo(() => complexityAnswersFromProject(project), [project])
   const confidence = useMemo(() => pricingInputConfidence(project), [project])
+  const gate = useMemo(() => pricingGate(project), [project])
   const baseline = useMemo(
     () => resolveFleetComplexityBaseline(project, fleet.totalFleetSold),
     [project, fleet.totalFleetSold]
@@ -108,6 +109,7 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
             selectedAdderIds={selectedAdderIds}
             confidence={confidence}
             baseline={baseline}
+            gate={gate}
           />
 
           <RomPriceDrivers
