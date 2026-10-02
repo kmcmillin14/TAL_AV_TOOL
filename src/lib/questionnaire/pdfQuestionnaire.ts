@@ -4,6 +4,7 @@ import { type PartialProjectFormData } from '@/src/lib/validations/schemas'
 import { buildQuestionnaireEnvelope } from './questionnaireExport'
 import { winAnsiSafe } from '@/src/lib/utils/winAnsi'
 import { effectivePalletEntryType, PALLET_ENTRY_LABELS } from '@/src/lib/palletEntry'
+import { PALLET_STACKING_LABELS } from '@/src/lib/constants/enums'
 import { lbsToKg, inToCm, ftToM, sqftToM2, fToC, type QUnitSystem } from './useQUnit'
 
 const TAL_RED_RGB = [235 / 255, 10 / 255, 30 / 255] as const
@@ -209,6 +210,13 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   // the change still prints here via the shared fallback.
   const palletEntry = effectivePalletEntryType(p)
   if (palletEntry) row('Pallet entry', PALLET_ENTRY_LABELS[palletEntry])
+  if (p.palletStacking != null) {
+    row('Pallets stacked', p.palletStacking ? 'Yes' : 'No')
+    if (p.palletStacking) {
+      row('Stacking type', p.palletStackingType ? PALLET_STACKING_LABELS[p.palletStackingType] ?? p.palletStackingType : '—', true)
+      row('Pallets per stack', p.palletStackCount != null ? String(p.palletStackCount) : '—', true)
+    }
+  }
   if (p.palletMaterial) {
     const matLabels: Record<string, string> = { wooden: 'Wood', plastic: 'Plastic', metal: 'Metal', cardboard: 'Cardboard' }
     row('Pallet material', matLabels[p.palletMaterial] ?? p.palletMaterial)

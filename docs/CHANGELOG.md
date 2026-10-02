@@ -1,5 +1,42 @@
 # Changelog
 
+## 2026-10-02 — Pallet stacking: a new question and a new gate
+
+"Are pallets stacked?" added to BOTH the Step 1 intake and the customer
+questionnaire, revealing two follow-ups when answered Yes: **stacking type**
+(Pin and post · Cup and cap · Flat bottom · Other) and **how many stacked**.
+
+It is a gate, with **answer-driven severity** — the severity is a property of
+the stack, not of any vehicle spec, because no chassis in the library can split
+or carry an interlocked stack:
+
+    Pin and post   -> HARD, RED for every vehicle
+    Cup and cap    -> HARD, RED for every vehicle
+    Flat bottom    -> SOFT, YELLOW (site-walk review)
+    Other          -> SOFT, YELLOW
+    Stacked, type unanswered -> SOFT, YELLOW (review, never a pass)
+    Not stacked / unanswered -> passes / skips
+
+The gate is declared `severity: 'soft'` at the spec level even though it can
+return HARD. That is deliberate: declaring it hard would make the unanswered
+case a skipped HARD gate, which marks a project INCOMPLETE — and every project
+that existed before today has this question blank. Severity is returned
+per-answer instead, the same dynamic-severity pattern `temperature_env`
+already uses.
+
+The characterization snapshot was updated and reviewed: it gained only skipped
+`pallet_stacking` entries, no existing verdict moved.
+
+`palletStackCount` is informational — it sizes the handled unit but no gate or
+price reads it yet.
+
+**Shipped:** `src/calc/gates.ts`, `src/calc/types.ts`,
+`src/calc/__tests__/palletStacking.test.ts` (new),
+`src/lib/validations/schemas.ts`, `src/lib/constants/enums.ts`,
+`src/lib/appRequirements.ts`, `src/components/step1/ApplicationForm.tsx`,
+`src/components/questionnaire/QuestionnaireForm.tsx`,
+`src/lib/questionnaire/pdfQuestionnaire.ts`, `ARCHITECTURE.md`.
+
 ## 2026-10-02 — Review pass: the pricing gate was leakier than reported
 
 A four-angle `/simplify` review found the gate shipped earlier today was

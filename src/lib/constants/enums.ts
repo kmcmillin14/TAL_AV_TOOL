@@ -149,3 +149,18 @@ export const LOAD_TYPE_IMAGE_SLUG: Partial<Record<string, string>> = {
 
 export type TransferMethod = typeof TRANSFER_METHODS[number]
 export type TypicalUnitType = typeof TYPICAL_UNIT_TYPES[number]
+
+/** How a pallet stack interlocks. Severity is a property of the construction,
+ *  not of any vehicle: an interlocked stack (pin-and-post, cup-and-cap) cannot
+ *  be split or handled by the fleet as it stands, so it fails hard; a flat or
+ *  unknown stack is a site-walk review. See the palletStacking gate in
+ *  src/calc/gates.ts. */
+export const PALLET_STACKING_TYPES = [
+  { value: 'pin_post', label: 'Pin and post' },
+  { value: 'cup_cap', label: 'Cup and cap' },
+  { value: 'flat', label: 'Flat bottom' },
+  { value: 'other', label: 'Other' },
+] as const
+
+export const PALLET_STACKING_LABELS: Record<string, string> =
+  Object.fromEntries(PALLET_STACKING_TYPES.map(t => [t.value, t.label]))

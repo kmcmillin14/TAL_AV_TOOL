@@ -10,7 +10,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject, subscribeSaveDrops } from '@/src/lib/storage'
-import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES, INTERLOCKS } from '@/src/lib/constants/enums'
+import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES, INTERLOCKS, PALLET_STACKING_TYPES } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
 import { PALLET_ENTRY_LABELS } from '@/src/lib/palletEntry'
 import SubQuestions, { FollowUpMarker } from '@/src/components/SubQuestions'
@@ -264,6 +264,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   const certifications = watch('certifications') || []
   const interlocks = watch('interlocks') || []
   const sharedTrafficTypes = watch('sharedTrafficTypes') || []
+  const palletStacking = watch('palletStacking')
   const shiftsPerDay = watch('shiftsPerDay')
   const hoursPerShift = watch('hoursPerShift')
   const operatingDaysPattern = watch('operatingDaysPattern')
@@ -546,6 +547,53 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                         placeholder="48×40 double-faced block"
                         {...register(`loads.${i}.customDescription`, { onBlur: onBlurSave })}
                       />
+                    </div>
+                  )}
+
+                  {/* Stacking is project-level like pallet entry, so only the
+                      first load block asks. Pin-and-post / cup-and-cap interlock
+                      the stack and RED-flag every vehicle; flat / other are a
+                      site-walk review (src/calc/gates.ts). */}
+                  {isPalletRow && i === 0 && (
+                    <div className="fld">
+                      <label>Are pallets stacked? <Mark roles={['compat']} /> <FollowUpMarker /></label>
+                      <Controller
+                        name="palletStacking"
+                        control={control}
+                        render={({ field }) => (
+                          <div className="seg-toggle">
+                            <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => { field.onChange(false); onBlurSave() }}>No</button>
+                            <button type="button" className={`seg-btn${field.value === true ? ' on' : ''}`} onClick={() => { field.onChange(true); onBlurSave() }}>Yes</button>
+                          </div>
+                        )}
+                      />
+                      {palletStacking && (
+                        <SubQuestions>
+                          <div className="fld">
+                            <label>Stacking type</label>
+                            <select
+                              {...register('palletStackingType', { setValueAs: v => (v === '' ? undefined : v), onBlur: onBlurSave })}
+                              defaultValue={initialData?.palletStackingType || ''}
+                            >
+                              <option value="">Select…</option>
+                              {PALLET_STACKING_TYPES.map(t => (
+                                <option key={t.value} value={t.value}>{t.label}</option>
+                              ))}
+                            </select>
+                            <div className="help">Pin and post or cup and cap interlock the stack — no vehicle can handle it.</div>
+                          </div>
+                          <div className="fld">
+                            <label>How many stacked?</label>
+                            <input
+                              type="number" min="2" max="20" step="1" inputMode="numeric" className="mono"
+                              placeholder="2"
+                              defaultValue={initialData?.palletStackCount ?? ''}
+                              {...register('palletStackCount', { valueAsNumber: true, onBlur: onBlurSave })}
+                            />
+                            <div className="help">Pallets per stack.</div>
+                          </div>
+                        </SubQuestions>
+                      )}
                     </div>
                   )}
 

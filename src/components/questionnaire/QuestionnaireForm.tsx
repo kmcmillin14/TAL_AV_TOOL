@@ -18,6 +18,7 @@ import {
   SPECIALTY_APPLICATIONS, PROJECT_DRIVERS, PALLET_SUBTYPES,
   SUBMISSION_TYPES, CHARGING_STRATEGIES, SHARED_TRAFFIC_TYPES, GUIDANCE_TYPES,
   REST_API_OPTIONS, WMS_INTERFACE_TYPES, TAGGING_SCAN_METHODS, INTERLOCKS,
+  PALLET_STACKING_TYPES,
 } from '@/src/lib/constants/enums'
 import { downloadQuestionnairePdf, exportQuestionnairePdf } from '@/src/lib/questionnaire/pdfQuestionnaire'
 import { questionnaireJsonBlob } from '@/src/lib/questionnaire/questionnaireExport'
@@ -62,7 +63,7 @@ const SECTIONS: readonly QSection[] = [
   { id: 'q-sec-why', num: '02', short: 'Why & today', tier: TIER_START,
     fields: ['projectDrivers', 'currentProcess', 'hasExistingAutomation', 'existingAutomation', 'existingAutomationInterop', 'currentHeadcount', 'operatorsPerShift', 'fullyBurdenedRateUsdPerYear', 'volumeGrowthNote', 'seasonalityNote'] },
   { id: 'q-sec-loads', num: '03', short: 'What you move', tier: TIER_APP,
-    fields: ['unitLoadTypes', 'typicalUnitType', 'otherUnitTypeDescription', 'maxLoadWeightLbs', 'loadLengthIn', 'loadWidthIn', 'loadHeightIn'] },
+    fields: ['unitLoadTypes', 'typicalUnitType', 'otherUnitTypeDescription', 'maxLoadWeightLbs', 'loadLengthIn', 'loadWidthIn', 'loadHeightIn', 'palletEntryType', 'palletStacking', 'palletStackingType', 'palletStackCount'] },
   { id: "q-sec-handling", num: "04", short: "How it's moved", tier: TIER_APP,
     fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'dwellTimeSec', 'chargingStrategyPreference', 'topOfRollerHeightFt', 'maxLiftHeightFt', 'specialtyApplications'] },
   { id: 'q-sec-site', num: '05', short: 'General Site Info', tier: TIER_APP,
@@ -431,7 +432,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
   // Reusable No/Yes segmented toggle for a tri-state boolean. Clicking the
   // already-selected option clears it back to unanswered (undefined).
-  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' | 'toyotaRaymondPartnership' }) => (
+  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' | 'toyotaRaymondPartnership' | 'palletStacking' }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="seg-toggle">
         <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(field.value === false ? undefined : false)}>No</button>
@@ -598,6 +599,30 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                     <option value="block">Block (4-way)</option>
                   </select>
                   <div className="help">Stringer pallets take forks from the ends only; block pallets take them from all four sides.</div>
+                </div>
+                <div className="fld span-2">
+                  <label>Are pallets stacked? <FollowUpMarker /></label>
+                  <YesNo name="palletStacking" />
+                  {values.palletStacking && (
+                    <SubQuestions>
+                      <div className="fld">
+                        <label>Stacking type</label>
+                        <select {...register('palletStackingType', { setValueAs: emptyToUndef })} defaultValue="">
+                          <option value="">Select…</option>
+                          {PALLET_STACKING_TYPES.map(t => (
+                            <option key={t.value} value={t.value}>{t.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="fld">
+                        <label>How many stacked?</label>
+                        <input type="number" min="2" max="20" step="1" inputMode="numeric" className="mono"
+                          placeholder="2"
+                          {...register('palletStackCount', { setValueAs: emptyToNum })} />
+                        <div className="help">Pallets per stack.</div>
+                      </div>
+                    </SubQuestions>
+                  )}
                 </div>
                 <div className="fld span-2">
                   <label>Pallet material</label>

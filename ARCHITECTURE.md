@@ -50,6 +50,17 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
   to finish this". Owner rule: every hardware gate has to be filled in, and an unfilled one
   is a review condition.
 
+- **Pallet stacking (answer-driven severity).** When pallets are stacked, the
+  severity comes from the stack's construction, not from any vehicle spec — no
+  chassis in the library can split or carry an interlocked stack:
+  **pin-and-post** and **cup-and-cap** fail **HARD (→ RED)** for every vehicle;
+  **flat-bottom** and **other** are **SOFT (→ YELLOW)**, a site-walk review;
+  stacked with the type unanswered is also SOFT (review, never a pass).
+  Declared `severity: 'soft'` at the spec level so an unanswered
+  "Are pallets stacked?" does not mark every pre-existing project INCOMPLETE —
+  the HARD verdict is returned per-answer. *Why:* stacking changes the handled
+  unit, and an interlocked stack is a different product, not a heavier pallet.
+
 - **Soft gates (→ YELLOW, never block).** **Temperature Environment = Refrigerated** (review if
   not cold-rated); **Ramps on Site = Yes** (any ramp is a site-walk review regardless of rated
   grade); **required certifications** (review if any selected cert is missing). *Why:* these are

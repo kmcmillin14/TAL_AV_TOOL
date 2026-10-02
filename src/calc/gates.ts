@@ -402,6 +402,55 @@ export const GATES: readonly GateSpec[] = [
       }
     } },
 
+  // ── PALLET STACKING ──
+  // Severity is a property of the stack, not of any vehicle: no chassis in the
+  // library can split or carry an interlocked stack, so pin-and-post and
+  // cup-and-cap fail HARD for everything. A flat or unidentified stack is a
+  // site-walk review (SOFT) — it may be handleable, but not without eyes on it.
+  // Declared SOFT so an unanswered question doesn't retroactively mark every
+  // existing project INCOMPLETE — stacking is a new question, and it is only
+  // meaningful for pallet loads. The RED verdict is returned per-answer instead
+  // (same dynamic-severity pattern as temperature_env above).
+  { id: 'pallet_stacking', name: 'Pallet Stacking', severity: 'soft',
+    run(_vehicle, app) {
+      if (app.palletStacking !== true) {
+        return app.palletStacking === false
+          ? {
+              gateId: 'pallet_stacking', name: 'Pallet Stacking', severity: 'soft',
+              passed: true, skipped: false,
+              vehicleValue: 'Single pallets', requiredValue: 'Not stacked',
+              reason: 'Pallets are not stacked',
+            }
+          : skippedGate('pallet_stacking', 'Pallet Stacking', 'soft', 'Single pallets')
+      }
+      const type = app.palletStackingType
+      if (type === 'pin_post' || type === 'cup_cap') {
+        const label = type === 'pin_post' ? 'Pin and post' : 'Cup and cap'
+        return {
+          gateId: 'pallet_stacking', name: 'Pallet Stacking', severity: 'hard',
+          passed: false, skipped: false,
+          vehicleValue: 'Single pallets', requiredValue: `Stacked — ${label}`,
+          reason: `${label} stacking interlocks the pallets — no vehicle in the library can handle the stack`,
+        }
+      }
+      if (type === 'flat' || type === 'other') {
+        const label = type === 'flat' ? 'Flat bottom' : 'Other'
+        return {
+          gateId: 'pallet_stacking', name: 'Pallet Stacking', severity: 'soft',
+          passed: false, skipped: false,
+          vehicleValue: 'Single pallets', requiredValue: `Stacked — ${label}`,
+          reason: `${label} stacking — verify stack stability and handling on a site walk`,
+        }
+      }
+      // Stacked, but nobody said how. Review, not a pass.
+      return {
+        gateId: 'pallet_stacking', name: 'Pallet Stacking', severity: 'soft',
+        passed: false, skipped: false,
+        vehicleValue: 'Single pallets', requiredValue: 'Stacked — type not specified',
+        reason: 'Pallets are stacked but the stacking type is unanswered — confirm before quoting',
+      }
+    } },
+
   // ── COMPLIANCE ──
   { id: 'certifications', name: 'Certifications', severity: 'soft',
     run(vehicle, app) {

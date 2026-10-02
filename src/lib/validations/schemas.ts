@@ -75,6 +75,13 @@ export const projectSchema = z.object({
   palletMaterial: z.string().optional(),
   /** Pallet bottom-board construction — drives the palletEntry soft gate in Step 2. */
   palletEntryType: z.enum(['stringer', 'block', 'not_sure']).optional(),
+  /** Are pallets stacked on each other? Drives the palletStacking gate. */
+  palletStacking: z.boolean().optional(),
+  /** How the stack interlocks. 'pin_post' and 'cup_cap' are RED (no vehicle in
+   *  the library handles an interlocked stack); 'flat' and 'other' are YELLOW. */
+  palletStackingType: z.enum(['pin_post', 'cup_cap', 'flat', 'other']).optional(),
+  /** Pallets per stack — informational, sizes the handled unit. */
+  palletStackCount: z.number().int().min(2).max(20).optional(),
   customPalletDescription: z.string().optional(),
   otherUnitTypeDescription: z.string().optional(),
   loadLengthIn: z.number().positive().optional().nullable(),

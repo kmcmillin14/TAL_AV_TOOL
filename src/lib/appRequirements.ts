@@ -44,6 +44,8 @@ export function appRequirementsFromProject(p: StoredProject): ApplicationRequire
     freezerCapable: p.freezerCapable ?? false,
     temperatureEnvironment: p.temperatureEnvironment,
     palletEntryType: effectivePalletEntryType(p),
+    palletStacking: p.palletStacking,
+    palletStackingType: p.palletStackingType,
     loadLengthIn: p.loadLengthIn,
     loadWidthIn: p.loadWidthIn,
     loadHeightIn: p.loadHeightIn,
