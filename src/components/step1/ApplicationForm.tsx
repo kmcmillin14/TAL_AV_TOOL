@@ -249,6 +249,13 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
   const { fields: loadFields, append: appendLoad, remove: removeLoad } =
     useFieldArray({ control, name: 'loads' })
   const loadsValues = watch('loads')
+  // palletEntryType and palletStacking are project-level, so exactly one load
+  // row asks. It must be the first row OF THE APPLICABLE TYPE, not row 0 — a
+  // project declaring [Tote, Standard Pallet] previously could never answer
+  // either question, so both gates silently skipped on a project that does
+  // move pallets (code review, 2026-10-02). -1 when no row qualifies.
+  const firstPalletIdx = (loadsValues ?? []).findIndex(l => l?.unitType === 'Standard Pallet')
+  const firstStackableIdx = (loadsValues ?? []).findIndex(l => STACKABLE_UNIT_TYPES.has(l?.unitType ?? ''))
 
   const addLoadRow = () => {
     appendLoad(emptyLoadRow())
@@ -454,9 +461,6 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           {loadFields.map((lf, i) => {
             const unitType = loadsValues?.[i]?.unitType ?? ''
             const isPalletRow = unitType === 'Standard Pallet'
-            // Racks and "Other" stack too — the question is about what the AGV
-            // must do, so it follows the load types that can be stacked.
-            const canStack = STACKABLE_UNIT_TYPES.has(unitType)
             return (
               <div className={`step1-load${i > 0 ? ' step1-load-extra' : ''}`} key={lf.id}>
                 {loadFields.length > 1 && (
@@ -524,7 +528,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                   {/* Pallet entry drives the Pallet Entry soft gate
                       (src/calc/gates.ts) — project-level, so only the first
                       load block asks. Had no field in Step 1 until 2026-09-11. */}
-                  {isPalletRow && i === 0 && (
+                  {i === firstPalletIdx && (
                     <div className="fld">
                       <label>Pallet Entry <Mark roles={['compat']} /></label>
                       <select
@@ -557,7 +561,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                       first load block asks. Pin-and-post / cup-and-cap interlock
                       the stack and RED-flag every vehicle; flat / other are a
                       site-walk review (src/calc/gates.ts). */}
-                  {canStack && i === 0 && (
+                  {i === firstStackableIdx && (
                     <div className="fld">
                       <label>AGV required to stack or destack {isPalletRow ? 'pallets' : 'loads'}? <Mark roles={['compat']} /> <FollowUpMarker /></label>
                       <Controller
@@ -569,7 +573,15 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                               <button
                                 key={o.value} type="button"
                                 className={`seg-btn${field.value === o.value ? ' on' : ''}`}
-                                onClick={() => { field.onChange(field.value === o.value ? undefined : o.value); onBlurSave() }}
+                                onClick={() => {
+                                  const next = field.value === o.value ? undefined : o.value
+                                  field.onChange(next)
+                                  if (next !== 'yes') {
+                                    setValue('palletStackingType', undefined, { shouldDirty: true })
+                                    setValue('palletStackCount', undefined, { shouldDirty: true })
+                                  }
+                                  onBlurSave()
+                                }}
                               >{o.label}</button>
                             ))}
                           </div>

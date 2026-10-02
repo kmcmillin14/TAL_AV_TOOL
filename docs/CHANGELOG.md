@@ -1,5 +1,48 @@
 # Changelog
 
+## 2026-10-02 — Code-review fixes: two gates were unreachable
+
+A `/code-review` pass found that both project-level load questions could be
+impossible to answer, which let a vehicle show **Compatible** on a gate nobody
+had answered — the failure the gates exist to prevent.
+
+**Pallet Entry and stack/destack were pinned to load row 0.** The guards were
+`isPalletRow && i === 0` and `canStack && i === 0`, so a project declaring
+`loads = [Tote, Standard Pallet]` could never answer either: row 0 failed the
+type test, row 1 failed the index test. `palletEntryType` and `palletStacking`
+stayed undefined, both gates skipped, and Step 2 reported Compatible. They now
+ask on the first row **of the applicable type** (`firstPalletIdx` /
+`firstStackableIdx`), still exactly once. The Pallet Entry half was
+pre-existing; the stacking question inherited it by copying the pattern.
+Verified live on the exact failing shape, and pinned by six regression tests in
+`src/components/step1/__tests__/loadRowQuestions.test.ts`.
+
+**A hidden racking aisle width kept feeding `minAisleWidthFt`.** Changing the
+pick/drop location away from racking hides the input but does not clear the
+value, and the mirror still took `min(drive, racking)` — so a project with no
+racking reported a 6 ft minimum aisle in Step 1 and the PDF. The racking width
+now only counts while a pick or drop location *is* racking.
+
+**Stacking follow-ups are cleared when the answer leaves "Yes".** Answering Yes
++ Pin and post, then No, left `palletStackingType: 'pin_post'` in storage;
+flipping back to Yes silently restored a value that RED-flags every vehicle and
+that the user never re-selected. Both forms now clear the type and the count.
+
+**Withheld KPI tiles no longer advertise a popover.** `aria-haspopup="dialog"`
+and `aria-expanded` rendered unconditionally, so a screen reader announced an
+expandable dialog on a "Not priced" tile whose popover is deliberately absent.
+
+Not fixed, owner decision: a brand-new project starts with both gate axes
+blocked (`storage.ts` seeds `interlocks: []`, `sharedTrafficTypes` defaults
+empty), so the customer-deck export is disabled from project creation until the
+gating answers land. Correct per the rule, but a workflow consequence worth
+confirming.
+
+**Shipped:** `src/components/step1/ApplicationForm.tsx`,
+`src/components/questionnaire/QuestionnaireForm.tsx`,
+`src/components/rom/KpiTile.tsx`,
+`src/components/step1/__tests__/loadRowQuestions.test.ts` (new).
+
 ## 2026-10-02 — Explanatory sub-text removed from the working surfaces
 
 The app had grown a habit of explaining itself in prose beneath its own

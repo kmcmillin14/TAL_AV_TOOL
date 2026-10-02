@@ -42,9 +42,11 @@ export default function KpiTile({ label, value, detail, accent, colorIndex = 0, 
         onFocus={() => setHovered(true)}
         onBlur={() => setHovered(false)}
         onClick={() => setPinned(p => !p)}
-        aria-haspopup="dialog"
-        aria-expanded={open}
-        aria-label={`${label}: ${value}. ${pinned ? 'Click to unpin' : 'Click to pin details'}`}
+        aria-haspopup={detail ? 'dialog' : undefined}
+        aria-expanded={detail ? open : undefined}
+        aria-label={detail
+          ? `${label}: ${value}. ${pinned ? 'Click to unpin' : 'Click to pin details'}`
+          : `${label}: ${value}`}
       >
         <span className="rom-kpi-val mono">{value}</span>
         <span className="rom-kpi-lbl">{label}</span>

@@ -340,11 +340,15 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   }, [setValue, unitLoadTypes])
 
   // Keep legacy minAisleWidthFt (main-app informational) = narrower of the two.
+  // The racking width only counts while a pick/drop location IS racking: the
+  // input hides when the context changes, and a hidden 6 ft racking aisle used
+  // to keep winning the min() for a project with no racking at all.
   useEffect(() => {
-    const d = values.driveAisleWidthFt, r = values.rackingAisleWidthFt
+    const d = values.driveAisleWidthFt
+    const r = usesRacking ? values.rackingAisleWidthFt : undefined
     const nums = [d, r].filter((n): n is number => typeof n === 'number')
     setValue('minAisleWidthFt', nums.length ? Math.min(...nums) : undefined)
-  }, [setValue, values.driveAisleWidthFt, values.rackingAisleWidthFt])
+  }, [setValue, values.driveAisleWidthFt, values.rackingAisleWidthFt, usesRacking])
 
   const onSubmit: SubmitHandler<PartialProjectFormData> = useCallback(async (v) => {
     setInvalidMsg(null)
@@ -627,7 +631,14 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                         <button
                           key={o.value} type="button"
                           className={`seg-btn${field.value === o.value ? ' on' : ''}`}
-                          onClick={() => field.onChange(field.value === o.value ? undefined : o.value)}
+                          onClick={() => {
+                            const next = field.value === o.value ? undefined : o.value
+                            field.onChange(next)
+                            if (next !== 'yes') {
+                              setValue('palletStackingType', undefined)
+                              setValue('palletStackCount', undefined)
+                            }
+                          }}
                         >{o.label}</button>
                       ))}
                     </div>
