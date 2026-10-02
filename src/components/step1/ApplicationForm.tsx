@@ -153,48 +153,24 @@ export function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFo
   ) as Partial<ProjectFormData>
 }
 
-/** Marks an input the ROM pricing gate BLOCKS on: until it is answered,
- *  Professional services and Software show $0 on Step 4 rather than a number
- *  derived from a blank. Mirrors PRICING_GATE_INPUTS in
- *  src/lib/romComplexityFromProject.ts — keep the two in step. */
-function GateMark() {
-  return (
-    <span
-      className="req"
-      title="Required for pricing — until this is answered, Professional services and Software show $0 on Step 4"
-    >
-      *
-    </span>
-  )
+/** The single required-field marker. All three roles render the same red
+ *  asterisk — the owner's rule — so the role lives in the tooltip, and a field
+ *  with two roles gets ONE star carrying both reasons rather than `* *`.
+ *
+ *  `gate` mirrors PRICING_GATE_INPUTS in src/lib/romComplexityFromProject.ts;
+ *  `compat` mirrors the gate engine in src/calc/gates.ts. */
+const MARK_TITLES: Record<string, string> = {
+  gate: 'Required for pricing — until this is answered, Professional services and Software show $0 on Step 4',
+  compat: 'Required for compatibility — Step 2 matches this against every vehicle, and a blank leaves the vehicle In Progress rather than Compatible',
+  widens: 'Feeds ROM pricing — leaving it blank scores as "simple" and widens the quoted range',
 }
 
-/** Marks an input the Step 2 gate engine reads (src/calc/gates.ts): it decides
- *  whether a vehicle qualifies at all. Blank means the gate SKIPS — the vehicle
- *  shows green on a question nobody answered, which is the quiet failure here.
- *  Distinct from the pricing markers because it moves a different output. */
-function CompatMark() {
-  return (
-    <span
-      className="req"
-      title="Required for compatibility — Step 2 matches this against every vehicle, and a blank leaves the vehicle In Progress rather than Compatible"
-    >
-      *
-    </span>
-  )
+function Mark({ roles }: { roles: Array<'gate' | 'compat' | 'widens'> }) {
+  return <span className="req" title={roles.map(r => MARK_TITLES[r]).join(' · ')}>*</span>
 }
 
-/** Marks an input that feeds a complexity point table but does NOT gate a
- *  price: blank still scores as "simple", which widens the quoted range. */
-function WidensMark() {
-  return (
-    <span
-      className="req"
-      title="Feeds ROM pricing — leaving it blank scores as &quot;simple&quot; and widens the quoted range"
-    >
-      *
-    </span>
-  )
-}
+const MARK_LEGEND =
+  '* marks a required input — hover any one to see what it decides. Blanks leave vehicles In Progress on Step 2, or hold Professional services and Software at $0 on Step 4'
 
 function TierBand({ label, hint }: { label: string; hint?: string }) {
   return (
@@ -470,7 +446,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
       <div className="form-stack">
 
-        <TierBand label={TIER_LABELS.qualification} hint="* marks a required input — hover any one to see what it decides. Blanks leave vehicles In Progress on Step 2, or hold Professional services and Software at $0 on Step 4" />
+        <TierBand label={TIER_LABELS.qualification} hint={MARK_LEGEND} />
 
         {/* ===== Section 01: What are you moving? — one block per load ===== */}
         <FormSection {...secProps('section-01')}>
@@ -495,7 +471,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 )}
                 <div className="fld-grid-4">
                   <div className="fld">
-                    <label>Max Load Weight {i === 0 && <span className="req">*</span>} {i === 0 && <CompatMark />}</label>
+                    <label>Max Load Weight {i === 0 && <Mark roles={['compat']} />}</label>
                     <div className="input-with-unit">
                       <input
                         type="number"
@@ -514,7 +490,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                   </div>
 
                   <div className="fld">
-                    <label>Unit / Load Type {i === 0 && <span className="req">*</span>} {i === 0 && <CompatMark />}</label>
+                    <label>Unit / Load Type {i === 0 && <Mark roles={['compat']} />}</label>
                     <select
                       {...register(`loads.${i}.unitType`, { onBlur: onBlurSave })}
                       defaultValue={lf.unitType || ''}
@@ -546,7 +522,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                       load block asks. Had no field in Step 1 until 2026-09-11. */}
                   {isPalletRow && i === 0 && (
                     <div className="fld">
-                      <label>Pallet Entry <CompatMark /></label>
+                      <label>Pallet Entry <Mark roles={['compat']} /></label>
                       <select
                         {...register('palletEntryType', {
                           setValueAs: v => (v === '' ? undefined : v),
@@ -650,7 +626,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-02')}>
           <div className="fld-grid-3">
             <div className="fld">
-              <label>Transfer type <span className="req">*</span> <CompatMark /></label>
+              <label>Transfer type <Mark roles={['compat']} /></label>
               <select
                 {...register('transferType', { setValueAs: v => (v === '' ? null : v), onBlur: onBlurSave })}
                 defaultValue={initialData?.transferType || ''}
@@ -663,7 +639,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
             {showTransferHeight && (
               <div className="fld">
-                <label>Transfer height ({dLabel}) <CompatMark /></label>
+                <label>Transfer height ({dLabel}) <Mark roles={['compat']} /></label>
                 <div className="input-with-unit">
                   <input
                     type="number"
@@ -691,7 +667,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 (src/calc/gates.ts) but had no field in either form until
                 2026-09-11 — they could only be set by hand-editing JSON. */}
             <div className="fld">
-              <label>Pick height, primary ({dLabel}) <CompatMark /></label>
+              <label>Pick height, primary ({dLabel}) <Mark roles={['compat']} /></label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -710,7 +686,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               <div className="help">The main pick height — the tallest in the movement you&rsquo;re sizing for, not the average. One-off exceptions are handled per flow in Step 3. Drives the lift gate in Step 2.</div>
             </div>
             <div className="fld">
-              <label>Drop height, primary ({dLabel}) <CompatMark /></label>
+              <label>Drop height, primary ({dLabel}) <Mark roles={['compat']} /></label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -730,7 +706,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>Pick/Drop Location Count <GateMark /></label>
+              <label>Pick/Drop Location Count <Mark roles={['gate']} /></label>
               <input
                 type="number"
                 step="1"
@@ -812,7 +788,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
 
           <div className="fld-grid-4" style={{ marginTop: 14 }}>
             <div className="fld">
-              <label>Operating Environment <CompatMark /></label>
+              <label>Operating Environment <Mark roles={['compat']} /></label>
               <Controller
                 name="outdoorRequired"
                 control={control}
@@ -826,7 +802,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               <div className="help">Outdoor red-flags vehicles not rated for it</div>
             </div>
             <div className="fld">
-              <label>Temperature Environment <CompatMark /></label>
+              <label>Temperature Environment <Mark roles={['compat']} /></label>
               <Controller
                 name="temperatureEnvironment"
                 control={control}
@@ -848,7 +824,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               <div className="help">Refrigerated = review (yellow) · Freezer = required (red)</div>
             </div>
             <div className="fld">
-              <label>Ramps on Site? <CompatMark /> <WidensMark /></label>
+              <label>Ramps on Site? <Mark roles={['compat', 'widens']} /></label>
               <Controller
                 name="rampRequired"
                 control={control}
@@ -924,7 +900,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 2026-09-11 — a project arriving without a questionnaire could
                 never confirm it, and unanswered scores as zero. */}
             <div className="fld">
-              <label>Facility size <GateMark /></label>
+              <label>Facility size <Mark roles={['gate']} /></label>
               <div className="input-with-unit">
                 <input
                   type="number"
@@ -944,7 +920,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 under Software because it describes the operating area, which is
                 also where the questionnaire asks it. */}
             <div className="fld span-4">
-              <label>Shared Traffic in the Operating Area <GateMark /></label>
+              <label>Shared Traffic in the Operating Area <Mark roles={['gate']} /></label>
               <div className="cert-grid">
                 {SHARED_TRAFFIC_TYPES.map(item => {
                   const on = sharedTrafficTypes.includes(item)
@@ -971,7 +947,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-04')}>
           <div className="fld-grid-4">
             <div className="fld span-4">
-              <label>Required Certifications <CompatMark /></label>
+              <label>Required Certifications <Mark roles={['compat']} /></label>
               <div className="cert-grid">
                 {CERTIFICATIONS.map(cert => {
                   const on = certifications.includes(cert)
@@ -1003,7 +979,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           </div>
         </FormSection>
 
-        <TierBand label={TIER_LABELS.sizing} hint="* marks a required input — hover any one to see what it decides. Blanks leave vehicles In Progress on Step 2, or hold Professional services and Software at $0 on Step 4" />
+        <TierBand label={TIER_LABELS.sizing} hint={MARK_LEGEND} />
 
         {/* ===== Section 05: Operating schedule ===== */}
         <FormSection {...secProps('section-05')}>
@@ -1255,7 +1231,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-08')}>
           <div className="fld-grid-4">
             <div className="fld span-4">
-              <label>Equipment the fleet must interlock with <GateMark /></label>
+              <label>Equipment the fleet must interlock with <Mark roles={['gate']} /></label>
               <div className="cert-grid">
                 {INTERLOCKS.map(item => {
                   const on = interlocks.includes(item)
@@ -1286,7 +1262,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-09')}>
           <div className="fld-grid-4">
             <div className="fld">
-              <label>WMS Required? <GateMark /> <FollowUpMarker /></label>
+              <label>WMS Required? <Mark roles={['gate']} /> <FollowUpMarker /></label>
               <Controller
                 name="wmsRequired"
                 control={control}
@@ -1311,7 +1287,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               )}
             </div>
             <div className="fld">
-              <label>Barcode Scanning Required? <WidensMark /></label>
+              <label>Barcode Scanning Required? <Mark roles={['widens']} /></label>
               <Controller
                 name="barcodeScanningRequired"
                 control={control}
@@ -1325,7 +1301,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
             </div>
 
             <div className="fld">
-              <label>Storage Tracking Required? <GateMark /></label>
+              <label>Storage Tracking Required? <Mark roles={['gate']} /></label>
               <Controller
                 name="storageTrackingRequired"
                 control={control}
@@ -1338,7 +1314,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
               />
             </div>
             <div className="fld">
-              <label>Customer Has AGV/AMR Experience? <GateMark /></label>
+              <label>Customer Has AGV/AMR Experience? <Mark roles={['gate']} /></label>
               <Controller
                 name="hasAgvExperience"
                 control={control}

@@ -8,7 +8,9 @@ import { seriesColor } from './palette'
 interface Props {
   label: string
   value: string
-  detail: KpiDetail
+  /** Omit to suppress the popover entirely — used when the tile's value is
+   *  withheld, since the detail would otherwise print the hidden figure. */
+  detail?: KpiDetail
   accent?: boolean
   /** Index into the brand data palette for the mini-bar color. */
   colorIndex?: number
@@ -25,7 +27,8 @@ export default function KpiTile({ label, value, detail, accent, colorIndex = 0, 
   const ref = useRef<HTMLButtonElement>(null)
   const [hovered, setHovered] = useState(false)
   const [pinned, setPinned] = useState(false)
-  const open = hovered || pinned
+  // No detail means the value is withheld — there is nothing to pop open.
+  const open = (hovered || pinned) && detail != null
   const barColor = seriesColor(colorIndex)
 
   return (

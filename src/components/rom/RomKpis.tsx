@@ -38,6 +38,16 @@ interface Props {
 /** What a CAPEX-derived tile shows instead of a figure it cannot stand behind. */
 const NOT_PRICED = 'Not priced'
 
+/** Every tile whose number is derived from CAPEX, and so cannot be shown while
+ *  CAPEX is withheld. Annual OPEX and Net benefit are on this list because
+ *  `annualMaintenance = capexMid x pct` (src/calc/rom.ts) — printing them as
+ *  hard dollars lets a reader divide back out the CAPEX the gate is refusing
+ *  to state. The hover detail is withheld with the value for the same reason:
+ *  kpiDetails prints the full range and the TCO formula. */
+const CAPEX_DERIVED: ReadonlySet<KpiId> = new Set<KpiId>([
+  'capex', 'payback', 'tco', 'costPerMove', 'opex', 'net',
+])
+
 type Delta = { text: string; tone: 'good' | 'bad' | 'neutral' }
 
 /** Signed delta chip with semantic tone. `good` says which direction is desirable
@@ -109,12 +119,12 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
       delta: blocked ? undefined : chip(deltas?.capexMid, usd, 'down') },
     { id: 'payback', label: 'Payback', value: blocked ? NOT_PRICED : (payback == null ? '—' : `${payback.toFixed(1)} yr`),
       delta: blocked ? undefined : chip(deltas?.paybackYears, n => `${n.toFixed(1)} yr`, 'down') },
-    { id: 'net', label: 'Net benefit / yr', value: usd(offset - opex), accent: true,
-      delta: chip(deltas?.netAnnualBenefit, usd, 'up') },
+    { id: 'net', label: 'Net benefit / yr', value: blocked ? NOT_PRICED : usd(offset - opex), accent: true,
+      delta: blocked ? undefined : chip(deltas?.netAnnualBenefit, usd, 'up') },
     { id: 'offset', label: 'Labor offset / yr', value: usd(offset),
       delta: chip(deltas?.annualLaborOffset, usd, 'up') },
-    { id: 'opex', label: 'Annual OPEX', value: usd(opex),
-      delta: chip(deltas?.annualOpex, usd, 'down') },
+    { id: 'opex', label: 'Annual OPEX', value: blocked ? NOT_PRICED : usd(opex),
+      delta: blocked ? undefined : chip(deltas?.annualOpex, usd, 'down') },
     { id: 'tco', label: `TCO @ ${serviceLifeYears}yr`, value: blocked ? NOT_PRICED : usd(tcoAtLife) },
     { id: 'costPerMove', label: 'Cost / move', value: blocked ? NOT_PRICED : (costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}`) },
   ]
@@ -123,7 +133,9 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   const tile = (id: KpiId) => {
     const t = byId.get(id)
     if (!t) return null
-    return <KpiTile key={id} label={t.label} value={t.value} detail={detail[id]} accent={t.accent} colorIndex={t.colorIndex} delta={t.delta} />
+    // Withhold the popover too — it prints the very range the tile is hiding.
+    const d = blocked && CAPEX_DERIVED.has(id) ? undefined : detail[id]
+    return <KpiTile key={id} label={t.label} value={t.value} detail={d} accent={t.accent} colorIndex={t.colorIndex} delta={t.delta} />
   }
 
   // Two hero boxes (Financials · Fleet & flow): each leads with its headline figure,

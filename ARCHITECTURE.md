@@ -43,6 +43,12 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
   ≥ 1 hard gate is still unanswered, the vehicle shows INCOMPLETE instead of GREEN/YELLOW.
   RED still wins over INCOMPLETE. *Why:* a partial project must not display "Compatible"
   for a screening that hasn't finished — GREEN is a completed, defensible verdict.
+  **Rendering (2026-10-02):** INCOMPLETE is drawn in the WARN colour, the same amber as
+  YELLOW, and keeps its own "In Progress" label and its own filter count — it is still a
+  distinct fourth state, only its colour changed. It previously rendered in neutral grey,
+  which beside a red or green peer read as "nothing to see here" rather than "someone has
+  to finish this". Owner rule: every hardware gate has to be filled in, and an unfilled one
+  is a review condition.
 
 - **Soft gates (→ YELLOW, never block).** **Temperature Environment = Refrigerated** (review if
   not cold-rated); **Ramps on Site = Yes** (any ramp is a site-walk review regardless of rated

@@ -823,8 +823,23 @@ intake under-prices the job; the owner's rule is that no number beats a bad
 number. Gating inputs are chosen by score swing, not completeness, and are
 defined once in `PRICING_GATE_INPUTS` (`src/lib/romComplexityFromProject.ts`).
 Hardware is never gated. Low-swing inputs (ramps, custom load, barcode
-scanning) still widen the band rather than blocking. This does NOT yet gate the
-Dashboard's ROM CAPEX.
+scanning) still widen the band rather than blocking.
+
+The gate reaches the Dashboard too: ROM CAPEX, Payback, TCO, Cost/move, Annual
+OPEX and Net benefit all read "Not priced", their hover detail is suppressed
+(it printed the withheld range), and the CAPEX bars, payback curve, TCO chart
+and pricing table are replaced by the same notice. OPEX and Net benefit are on
+that list because `annualMaintenance = capexMid x pct`, so printing them as
+hard dollars would let a reader divide the withheld CAPEX back out.
+
+**The customer deck (PPTX) is blocked while a category is withheld**, because
+its pricing slides read the ungated resolver directly. The internal model
+(XLSX) and the JSON revision are unaffected — those are internal artifacts.
+**Known limitation:** the gate is enforced at the display and export-button
+level, not inside `computeFleetModel`/`resolveFleetSellPriceTotal`. Moving it
+into the resolver — so `rom.pricing` is structurally absent when withheld —
+would make "not priced" a type-level fact and remove the need for each surface
+to re-derive it.
 
 **Complexity is shown inside the quotation (2026-10-02).** Each priced category
 that complexity multiplies — Professional services and Software — carries a tier

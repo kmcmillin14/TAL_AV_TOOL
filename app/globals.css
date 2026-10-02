@@ -958,7 +958,9 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 @media (max-width: 700px) {
   .step-nav { padding: 10px 14px max(10px, env(safe-area-inset-bottom)); gap: 10px; }
   .step-nav > .row { flex: 1; justify-content: flex-end; gap: 0; }
-  .step-nav .hint { display: none; }
+  /* The vehicle-count hint is noise on a phone, but the not-priced warning
+     is the whole point of warning before the click — keep it. */
+  .step-nav .hint:not(.step-nav-warn) { display: none; }
   .step-nav .btn { padding: 12px 16px; font-size: 14px; }
 }
 
@@ -3839,14 +3841,6 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-price-table .num { text-align: right; }
 .rom-veh { display: inline-flex; align-items: center; gap: 8px; }
 
-/* ── ROM Configuration (Step 4) ──────────────────────────────────────────
-   Three stacked surfaces: .rom-quote (the priced quotation: Hardware ·
-   Software · Professional services · Adders, each a category with a
-   subtotal), .rom-drivers (scoring beside the adder picker that feeds the Adders
-   category), and .rom-cx (plain-English "how this project scored", ONE
-   fleet-wide result — both complexity axes score from project answers +
-   total fleet size, never anything chassis-specific). Card shell matches
-   .rom2-hero so the page reads as part of the same design system. */
 .rom-sp-placeholder-warning {
   font-family: var(--tal-font-family); font-size: 12px; font-weight: 600;
   color: var(--warn); background: var(--warn-soft);
@@ -3907,6 +3901,13 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   color: var(--warn); cursor: help;
 }
 .step-nav-warn svg { flex: none; }
+
+.rom-export-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.rom-export-blocked {
+  display: flex; align-items: flex-start; gap: 7px; margin: 8px 0 0; flex-basis: 100%;
+  font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.45; color: var(--text-secondary);
+}
+.rom-export-blocked svg { flex: none; margin-top: 1px; color: var(--accent); }
 
 .rom-bento-notpriced {
   display: flex; align-items: flex-start; gap: 9px; margin: 0; padding: 4px 2px;
@@ -4035,8 +4036,6 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
    complexity axes on the left, the option picker on the right. They were two
    separate cards, which buried the fact that both are inputs to the same
    total. The quote itself stays a clean, screenshot-able output. */
-/* Axes stack inside their column — side by side they'd be too narrow to read. */
-/* Options sit one per row in the narrower right-hand column. */
 .rom-sp-adder-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
 @media (max-width: 560px) { .rom-sp-adder-grid { grid-template-columns: 1fr; } }
 .rom-sp-adder-row {
@@ -4063,14 +4062,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
 }
-.rom-cx-tier { font-family: var(--tal-font-family); font-size: 15px; font-weight: 800; color: var(--accent); }
-.rom-cx-tier-1 { color: var(--good, var(--text-primary)); }
-.rom-cx-tier-of { font-family: var(--tal-font-numeric); font-size: 10.5px; font-weight: 600; color: var(--text-tertiary); }
 .rom-cx-driver { font-family: var(--tal-font-family); font-size: 13px; line-height: 1.5; color: var(--text-primary); margin: 0 0 6px; }
-.rom-cx-detail-score {
-  font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-tertiary); margin: 0 0 6px;
-}
-.rom-cx-detail-score .mono { font-family: var(--tal-font-numeric); font-weight: 700; color: var(--text-secondary); }
 .rom-cx-points { margin: 0 0 6px; font-size: 12px; }
 .rom-cx-points div { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }
 .rom-cx-points dt { color: var(--text-secondary); }

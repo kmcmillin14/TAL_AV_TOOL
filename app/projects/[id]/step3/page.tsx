@@ -101,7 +101,6 @@ export default function FleetEnginePage() {
 
   // Whether Step 4 will actually be able to price this project.
   const gate = useMemo(() => (project ? pricingGate(project) : null), [project])
-  const gateMissing = gate ? [...new Set([...gate.missingIntegration, ...gate.missingSoftware])] : []
 
   const persistPatch = (patch: EnginePatch) => {
     if (!project) return
@@ -328,10 +327,10 @@ export default function FleetEnginePage() {
               // the list, so this just has to say "there is something to fix".
               <span
                 className="hint step-nav-warn"
-                title={`Won't price until these are answered on Step 1: ${gateMissing.join(', ')}`}
+                title={`Won't price until these are answered on Step 1: ${gate?.missingAll.join(', ')}`}
               >
                 <Icon name="warn" size={13} />
-                {gateMissing.length} answer{gateMissing.length === 1 ? '' : 's'} missing to price
+                {gate.missingAll.length} answer{gate.missingAll.length === 1 ? '' : 's'} missing to price
               </span>
             )}
             <span className="hint">

@@ -2,10 +2,11 @@
 
 import type { TierResult } from '@/src/calc/scoreTier'
 import { PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
+import type { GateAxis } from '@/src/lib/romComplexityFromProject'
 import { complexityLabel, complexityDriverPhrase, tierName } from '@/src/lib/romComplexityLabels'
 
 /** "an 11–20 unit fleet, a 500K+ sq ft facility, and a customer new to AGVs" */
-export function driverSentence(result: TierResult): string {
+function driverSentence(result: TierResult): string {
   const phrases = result.reasons.map(r => complexityDriverPhrase(r.label))
   if (phrases.length === 0) return 'Nothing in this project pushes it above the base rate.'
   if (phrases.length === 1) return `Driven by ${phrases[0]}.`
@@ -63,16 +64,18 @@ function TierScale({ result, thresholds }: { result: TierResult; thresholds: { t
  *  size — nothing vehicle-specific — so this is ONE fleet-wide result, never
  *  repeated per chassis. */
 export default function ComplexityAxis({
-  axis, result, multiplier,
-}: { axis: string; result: TierResult; multiplier: number }) {
-  const thresholds = axis === 'Software'
+  axis, label, result, multiplier,
+}: { axis: GateAxis; label: string; result: TierResult; multiplier: number }) {
+  // Keyed on the axis id, never the visible heading — renaming the heading used
+  // to silently swap in the other axis's thresholds with no type error.
+  const thresholds = axis === 'software'
     ? PRICING_ASSUMPTIONS.softwareScoring.thresholds
     : PRICING_ASSUMPTIONS.integrationScoring.thresholds
 
   return (
     <div className="rom-cx-axis">
       <div className="rom-cx-axis-head">
-        <span className="rom-cx-axis-name">{axis}</span>
+        <span className="rom-cx-axis-name">{label}</span>
         <span className="rom-cx-axis-tier">
           {tierName(result.tier)} <span className="mono">{result.tier} of 3</span>
           <span className="rom-cx-axis-mult mono">{multiplier}× base rate</span>

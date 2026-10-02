@@ -1,5 +1,55 @@
 # Changelog
 
+## 2026-10-02 — Review pass: the pricing gate was leakier than reported
+
+A four-angle `/simplify` review found the gate shipped earlier today was
+substantially cosmetic. Three confirmed leaks, now closed:
+
+- **The customer deck ignored it entirely.** No export path imports
+  `pricingGate` — the PPTX pricing slides read the ungated resolver, so a deck
+  could print the CAPEX range, payback, TCO and a TOTAL with Integration and
+  Software dollars that Step 4 was refusing to show. The one artifact that
+  leaves the building was the one surface with no gate. The deck button is now
+  disabled while a category is withheld, with the reason stated. The internal
+  XLSX model and the JSON revision stay available — they are internal.
+- **The KPI hover detail printed the hidden number.** The CAPEX tile read "Not
+  priced" while its popover printed the full range, and TCO's printed the
+  CAPEX-bearing formula. The popover is now suppressed with the value.
+- **Annual OPEX and Net benefit leaked CAPEX arithmetically.** Both were shown
+  as hard dollars while `annualMaintenance = capexMid x pct`, so CAPEX was
+  recoverable by dividing by the maintenance rate. Both now withhold too.
+
+Cleanups from the same review:
+
+- `PricingGate` gained `missingAll` and `blockedLabels`; the de-duplicated
+  union and the category-label list had each been hand-rolled in three files.
+  `pricingGate()` now walks its input list once instead of once per axis.
+- The gate was computed inline in Step 5's JSX (every slider drag) AND again
+  inside `RomBento`. Now computed once per render and passed to both.
+- `GateMark`/`CompatMark`/`WidensMark` were one component three times, and
+  four labels rendered `* *` because the new marker was added beside the bare
+  asterisk it replaced. Collapsed to one `<Mark roles={[...]} />` that carries
+  several reasons in one tooltip on a single star.
+- **The Step 3 warning was invisible on phones** — it reused `.hint`, which
+  `.step-nav .hint { display: none }` hides under 700px. Scoped that rule so
+  the warning survives.
+- `ComplexityAxis` selected its threshold table by comparing the display
+  string `'Software'`; renaming the heading would have silently swapped in the
+  other axis's thresholds. Now keyed on the `GateAxis` id with a separate label.
+- Dead CSS from the earlier complexity refactor removed; stale comments
+  describing the deleted two-column drivers layout removed.
+
+**Docs corrected.** `docs/SPECIFICATION.md` claimed the Dashboard was not gated
+(a commit landed after that paragraph and gated it) and described a tier chip
+carrying name + multiplier that was never shipped. `ARCHITECTURE.md` now
+records that INCOMPLETE renders in the warn colour while staying a distinct
+fourth state.
+
+**Known limitation, unchanged:** the gate is enforced at display and
+export-button level, not inside `computeFleetModel`/`resolveFleetSellPriceTotal`.
+Moving it into the resolver would make "not priced" a type-level fact and stop
+each surface re-deriving it — the right fix, not attempted here.
+
 ## 2026-10-02 — Pricing gate: banner, $0, warning before the step, yellow for unfilled gates
 
 Follow-ups on owner feedback, all to the gate shipped below.

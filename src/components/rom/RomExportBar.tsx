@@ -6,6 +6,7 @@ import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import Icon from '@/src/design-system/components/Icon'
 import PptxSectionPicker from './PptxSectionPicker'
 import { reportError } from '@/src/lib/notify'
+import { pricingGate } from '@/src/lib/romComplexityFromProject'
 
 interface Props { project: StoredProject }
 
@@ -13,6 +14,11 @@ interface Props { project: StoredProject }
  *  (XLSX), save revision (JSON). Mirrors the PersistentHeader export menu. */
 export default function RomExportBar({ project }: Props) {
   const [pptxOpen, setPptxOpen] = useState(false)
+  // The deck is the one artifact that leaves the building, and its pricing
+  // slides read the ungated resolver — so while Step 4 is withholding a price,
+  // the deck would print the very numbers the screen refuses to state. Blocked
+  // here until the gate is moved into the resolver itself (see SPECIFICATION).
+  const gate = pricingGate(project)
 
   const handleXlsx = async () => {
     try {
@@ -31,11 +37,24 @@ export default function RomExportBar({ project }: Props) {
       <button
         type="button" className="rom-export-btn rom-export-primary"
         onClick={() => setPptxOpen(true)}
-        title="Customer-facing ROM proposal deck"
+        disabled={gate.blocked}
+        title={gate.blocked
+          ? `Not available until the project can be priced — answer on Step 1: ${gate.missingAll.join(', ')}`
+          : 'Customer-facing ROM proposal deck'}
       >
         <Icon name="export" size={18} />
         Customer deck (PowerPoint)
       </button>
+      {gate.blocked && (
+        <p className="rom-export-blocked">
+          <Icon name="warn" size={14} />
+          <span>
+            The customer deck is unavailable while {gate.blockedLabels.join(' and ')}{' '}
+            {gate.blockedLabels.length === 1 ? 'is' : 'are'} unpriced — it would print a total the
+            app is withholding. The internal model and JSON revision are unaffected.
+          </span>
+        </p>
+      )}
       <button
         type="button" className="rom-export-btn rom-export-secondary"
         onClick={handleXlsx}

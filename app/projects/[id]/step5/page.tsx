@@ -85,6 +85,9 @@ export default function RomDashboardPage() {
 
   const active = showScenario && scnModel ? scnModel : baseModel
   const activeProject = showScenario && scnProject ? scnProject : project
+  // One gate per render pass, shared by the KPI band and the bento — it was
+  // computed inline in JSX (every slider drag) and again inside RomBento.
+  const gate = pricingGate(activeProject)
 
   const analyticsSchedule: AnalyticsSchedule = {
     shiftsPerDay: activeProject.shiftsPerDay ?? 1,
@@ -149,7 +152,7 @@ export default function RomDashboardPage() {
 
           <div className="rom2-main">
             <div className={`rom2-kpiband ${showScenario ? 'is-scenario' : ''}`}>
-              <RomKpis fleet={active.fleet} rom={active.rom} flows={active.flows} settings={active.settings} costs={active.costs} serviceLifeYears={activeProject.serviceLifeYears ?? 10} vehicleById={vehicleById} names={names} deltas={deltas} gate={pricingGate(activeProject)} />
+              <RomKpis fleet={active.fleet} rom={active.rom} flows={active.flows} settings={active.settings} costs={active.costs} serviceLifeYears={activeProject.serviceLifeYears ?? 10} vehicleById={vehicleById} names={names} deltas={deltas} gate={gate} />
             </div>
 
             <RomBento
@@ -158,6 +161,7 @@ export default function RomDashboardPage() {
               derivedByFlowId={active.derivedByFlowId}
               fleet={active.fleet}
               rom={active.rom}
+              gate={gate}
               vehicleById={vehicleById}
               effDailyOpHr={effDailyOpHr(analyticsSchedule)}
               serviceLifeYears={activeProject.serviceLifeYears ?? 10}

@@ -81,11 +81,6 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
   const selectedAdders = ADDERS_CONFIG.adders.filter(a => selected.has(a.id))
   const sharedPlatforms = fleetTotal.integrationByPlatform.filter(g => g.vehicleIds.length > 1)
 
-  const blockedLabels = [
-    ...(gate.integrationReady ? [] : ['Professional services']),
-    ...(gate.softwareReady ? [] : ['Software']),
-  ]
-
   const intMultiplier = PRICING_ASSUMPTIONS.integrationMultipliers[String(baseline.integration.tier) as '1' | '2' | '3']
   const swMultiplier = PRICING_ASSUMPTIONS.softwareMultipliers[String(baseline.software.tier) as '1' | '2' | '3']
 
@@ -156,8 +151,8 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
             from which chassis you picked.
           </p>
           <div className="rom-cx-axes">
-            <ComplexityAxis axis="Professional services" result={baseline.integration} multiplier={intMultiplier} />
-            <ComplexityAxis axis="Software" result={baseline.software} multiplier={swMultiplier} />
+            <ComplexityAxis axis="integration" label="Professional services" result={baseline.integration} multiplier={intMultiplier} />
+            <ComplexityAxis axis="software" label="Software" result={baseline.software} multiplier={swMultiplier} />
           </div>
         </div>
       </details>}
@@ -177,9 +172,9 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
           <p className="rom-quote-blocked">
             <Icon name="warn" size={14} />
             <span>
-              <strong>Not the project total.</strong> {blockedLabels.length === 1
-                ? `${blockedLabels[0]} is`
-                : `${blockedLabels.join(' and ')} are`} unpriced, so this is hardware only.
+              <strong>Not the project total.</strong>{' '}
+              {gate.blockedLabels.join(' and ')} {gate.blockedLabels.length === 1 ? 'is' : 'are'}{' '}
+              unpriced, so this is hardware only.
             </span>
           </p>
         </>

@@ -98,7 +98,7 @@ export function pricingInputConfidence(project: StoredProject): PricingInputConf
 //
 // EDIT THIS LIST to change what gates a price — it is the only definition.
 
-type GateAxis = 'integration' | 'software'
+export type GateAxis = 'integration' | 'software'
 
 interface GateInput {
   label: string
@@ -125,6 +125,14 @@ const PRICING_GATE_INPUTS: GateInput[] = [
     unanswered: p => (p.interlocks ?? []).length === 0 },
 ]
 
+/** Quotation category names, as the gate reports them. Same strings the
+ *  quotation renders as category headings, so a surface naming a blocked
+ *  category can't drift from the row it refers to. */
+const AXIS_LABEL: Record<GateAxis, string> = {
+  integration: 'Professional services',
+  software: 'Software',
+}
+
 export interface PricingGate {
   /** Professional services may be priced. */
   integrationReady: boolean
@@ -134,6 +142,12 @@ export interface PricingGate {
   missingIntegration: string[]
   /** Labels still blocking software, in list order. */
   missingSoftware: string[]
+  /** Every blocking label once, in list order — what a surface shows when it
+   *  isn't distinguishing the two axes. Derived here so the four consumers
+   *  don't each hand-roll the same de-duplicated union. */
+  missingAll: string[]
+  /** Category names currently unpriced, e.g. ['Professional services']. */
+  blockedLabels: string[]
   /** Either axis blocked — the project total cannot be stated. */
   blocked: boolean
 }
@@ -143,16 +157,30 @@ export interface PricingGate {
  *  Hardware is never gated: it is qty × price range and touches no complexity
  *  input, so it stays quotable on the thinnest project. */
 export function pricingGate(project: StoredProject): PricingGate {
-  const missingFor = (axis: GateAxis) =>
-    PRICING_GATE_INPUTS.filter(i => i.axes.includes(axis) && i.unanswered(project)).map(i => i.label)
+  // One pass: each input's `unanswered` predicate runs exactly once, and the
+  // de-duplicated union falls out of the same walk rather than needing a Set.
+  const missingIntegration: string[] = []
+  const missingSoftware: string[] = []
+  const missingAll: string[] = []
+  for (const input of PRICING_GATE_INPUTS) {
+    if (!input.unanswered(project)) continue
+    if (input.axes.includes('integration')) missingIntegration.push(input.label)
+    if (input.axes.includes('software')) missingSoftware.push(input.label)
+    missingAll.push(input.label)
+  }
 
-  const missingIntegration = missingFor('integration')
-  const missingSoftware = missingFor('software')
+  const integrationReady = missingIntegration.length === 0
+  const softwareReady = missingSoftware.length === 0
   return {
-    integrationReady: missingIntegration.length === 0,
-    softwareReady: missingSoftware.length === 0,
+    integrationReady,
+    softwareReady,
     missingIntegration,
     missingSoftware,
-    blocked: missingIntegration.length > 0 || missingSoftware.length > 0,
+    missingAll,
+    blockedLabels: [
+      ...(integrationReady ? [] : [AXIS_LABEL.integration]),
+      ...(softwareReady ? [] : [AXIS_LABEL.software]),
+    ],
+    blocked: !integrationReady || !softwareReady,
   }
 }

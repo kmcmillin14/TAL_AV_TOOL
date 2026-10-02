@@ -98,13 +98,10 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
           <Icon name="warn" size={16} />
           <span>
             <strong>Not priced.</strong>{' '}
-            {[
-              gate.integrationReady ? null : 'Professional services',
-              gate.softwareReady ? null : 'Software',
-            ].filter(Boolean).join(' and ')} show <span className="mono">$0</span>{' '}because the answers
+            {gate.blockedLabels.join(' and ')} show <span className="mono">$0</span>{' '}because the answers
             that set their complexity are missing. An unanswered input scores as
             &ldquo;simple&rdquo;, so pricing now would under-quote the job.
-            {' '}Answer on Step 1: <strong>{[...new Set([...gate.missingIntegration, ...gate.missingSoftware])].join(', ')}</strong>.
+            {' '}Answer on Step 1: <strong>{gate.missingAll.join(', ')}</strong>.
           </span>
         </p>
       ) : (
