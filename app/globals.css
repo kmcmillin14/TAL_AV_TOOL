@@ -3887,6 +3887,52 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   font-family: var(--tal-font-numeric); font-size: 15px; font-weight: 800; color: var(--text-primary);
 }
 .rom-quote-cat-body { padding: 8px 0 0 14px; }
+
+/* The amount stays hard right once a tier chip sits between it and the name. */
+.rom-quote-cat-amount { margin-left: auto; }
+
+/* Tier chip, quotation context: the full complexity answer for one category —
+   named tier, position in the scale, multiplier — compressed to a pill that
+   sits on the line it multiplies. Deliberately quieter than the axis heading
+   inside the disclosure, where the same component renders at full size. */
+.rom-quote-cat-head .rom-cx-tier {
+  display: inline-flex; align-items: baseline; gap: 5px;
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
+  padding: 2px 7px; border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.rom-quote-cat-head .rom-cx-tier-1 {
+  background: color-mix(in srgb, var(--good, var(--text-secondary)) 9%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--good, var(--text-secondary)) 28%, transparent);
+}
+.rom-quote-cat-head .rom-cx-tier-of { font-size: 9.5px; opacity: 0.75; }
+.rom-quote-cat-head .rom-cx-tier-mult { font-size: 10px; font-weight: 800; }
+.rom-cx-tier-mult { font-family: var(--tal-font-numeric); color: inherit; }
+
+.rom-quote-cx { margin: 18px 0 4px; border-top: 1px solid var(--border); }
+.rom-quote-cx > summary {
+  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
+  padding: 10px 0 2px; cursor: pointer; list-style: none;
+}
+.rom-quote-cx > summary::-webkit-details-marker { display: none; }
+.rom-quote-cx > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.rom-quote-cx-label {
+  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-primary);
+}
+.rom-quote-cx-summary { font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-tertiary); }
+.rom-quote-cx-summary strong { color: var(--text-secondary); font-weight: 700; }
+.rom-quote-cx-more {
+  margin-left: auto; font-family: var(--tal-font-family); font-size: 11.5px;
+  font-weight: 600; color: var(--accent);
+}
+.rom-quote-cx-more::after { content: ' \25BE'; }
+.rom-quote-cx[open] .rom-quote-cx-more::after { content: ' \25B4'; }
+.rom-quote-cx-body { padding: 10px 0 4px; }
+.rom-quote-cx-intro {
+  font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-tertiary); margin: 0 0 12px;
+}
 .rom-quote-line {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
   padding: 5px 0; font-family: var(--tal-font-family); font-size: 13px; color: var(--text-secondary);
@@ -3935,17 +3981,8 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
    complexity axes on the left, the option picker on the right. They were two
    separate cards, which buried the fact that both are inputs to the same
    total. The quote itself stays a clean, screenshot-able output. */
-.rom-drivers-cols { display: grid; grid-template-columns: 1.45fr 1fr; gap: 24px; align-items: start; }
-@media (max-width: 1000px) { .rom-drivers-cols { grid-template-columns: 1fr; gap: 20px; } }
-.rom-drivers-coltitle {
-  display: block; margin-bottom: 10px;
-  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
-}
 /* Axes stack inside their column — side by side they'd be too narrow to read. */
-.rom-drivers-col .rom-cx-axes { grid-template-columns: 1fr; gap: 12px; }
 /* Options sit one per row in the narrower right-hand column. */
-.rom-drivers-col .rom-sp-adder-grid { grid-template-columns: 1fr; }
 .rom-sp-adder-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
 @media (max-width: 560px) { .rom-sp-adder-grid { grid-template-columns: 1fr; } }
 .rom-sp-adder-row {
@@ -3976,13 +4013,9 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-cx-tier-1 { color: var(--good, var(--text-primary)); }
 .rom-cx-tier-of { font-family: var(--tal-font-numeric); font-size: 10.5px; font-weight: 600; color: var(--text-tertiary); }
 .rom-cx-driver { font-family: var(--tal-font-family); font-size: 13px; line-height: 1.5; color: var(--text-primary); margin: 0 0 6px; }
-.rom-cx-multiplier { font-family: var(--tal-font-family); font-size: 12px; color: var(--text-tertiary); margin: 0 0 8px; }
-.rom-cx-multiplier .mono { font-family: var(--tal-font-numeric); font-weight: 700; color: var(--text-secondary); }
-.rom-cx-detail { font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-tertiary); }
-.rom-cx-detail summary { cursor: pointer; }
-.rom-cx-detail summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-.rom-cx-detail-body { padding-top: 8px; }
-.rom-cx-detail-score { margin: 0 0 6px; }
+.rom-cx-detail-score {
+  font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-tertiary); margin: 0 0 6px;
+}
 .rom-cx-detail-score .mono { font-family: var(--tal-font-numeric); font-weight: 700; color: var(--text-secondary); }
 .rom-cx-points { margin: 0 0 6px; font-size: 12px; }
 .rom-cx-points div { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }

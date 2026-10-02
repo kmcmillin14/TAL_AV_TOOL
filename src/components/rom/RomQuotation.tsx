@@ -4,7 +4,10 @@ import type { ReactNode } from 'react'
 import type { FleetSellPriceTotal } from '@/src/calc/fleetSellPrice'
 import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
 import type { PricingInputConfidence } from '@/src/lib/romComplexityFromProject'
-import { ADDERS_CONFIG } from '@/src/lib/pricingContent'
+import type { FleetComplexityBaseline } from '@/src/lib/romSellPriceLine'
+import { ADDERS_CONFIG, PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
+import { tierName } from '@/src/lib/romComplexityLabels'
+import ComplexityAxis, { TierChip } from './ComplexityAxis'
 import { fullUsd } from './RomSellPriceParts'
 
 /** What the single Professional Services figure covers. Descriptive only —
@@ -24,15 +27,20 @@ interface Props {
   fleetTotal: FleetSellPriceTotal
   selectedAdderIds: string[]
   confidence: PricingInputConfidence
+  baseline: FleetComplexityBaseline
 }
 
 /** One quotation category: a header row carrying the category subtotal, with
  *  its sub-lines (or descriptive items) indented underneath. */
-function QuoteCategory({ name, amount, children }: { name: string; amount: number; children?: ReactNode }) {
+function QuoteCategory(
+  { name, amount, badge, children }:
+  { name: string; amount: number; badge?: ReactNode; children?: ReactNode },
+) {
   return (
     <section className="rom-quote-cat">
       <div className="rom-quote-cat-head">
         <span className="rom-quote-cat-name">{name}</span>
+        {badge}
         <span className="rom-quote-cat-amount mono">{fullUsd(amount)}</span>
       </div>
       {children && <div className="rom-quote-cat-body">{children}</div>}
@@ -62,10 +70,13 @@ function QuoteLine({ label, qty, amount }: { label: string; qty?: number; amount
  *  src/calc/fleetSellPrice.ts). Every figure comes from the shared resolver
  *  (src/lib/romSellPriceLine.ts) that the Dashboard and the PPTX appendix
  *  also call, so the three surfaces can't drift. */
-export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, confidence }: Props) {
+export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, confidence, baseline }: Props) {
   const selected = new Set(selectedAdderIds)
   const selectedAdders = ADDERS_CONFIG.adders.filter(a => selected.has(a.id))
   const sharedPlatforms = fleetTotal.integrationByPlatform.filter(g => g.vehicleIds.length > 1)
+
+  const intMultiplier = PRICING_ASSUMPTIONS.integrationMultipliers[String(baseline.integration.tier) as '1' | '2' | '3']
+  const swMultiplier = PRICING_ASSUMPTIONS.softwareMultipliers[String(baseline.software.tier) as '1' | '2' | '3']
 
   return (
     <section className="rom-quote">
@@ -83,14 +94,16 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
         ))}
       </QuoteCategory>
 
-      <QuoteCategory name="Software" amount={fleetTotal.softwareTotal}>
+      <QuoteCategory name="Software" amount={fleetTotal.softwareTotal}
+        badge={<TierChip result={baseline.software} multiplier={swMultiplier} />}>
         <p className="rom-quote-note">
           Fleet management software, licensed across all {fleetTotal.totalQty} unit
           {fleetTotal.totalQty === 1 ? '' : 's'}.
         </p>
       </QuoteCategory>
 
-      <QuoteCategory name="Professional services" amount={fleetTotal.integrationTotal}>
+      <QuoteCategory name="Professional services" amount={fleetTotal.integrationTotal}
+        badge={<TierChip result={baseline.integration} multiplier={intMultiplier} />}>
         <ul className="rom-quote-includes">
           {PROFESSIONAL_SERVICES_INCLUDES.map(item => (
             <li key={item}>{item}</li>
@@ -111,6 +124,30 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
           <p className="rom-quote-note">None selected — pick options below to add them here.</p>
         )}
       </QuoteCategory>
+
+      {/* Complexity reads as part of the quote, not a separate study: the tier
+          chips above answer "what did this cost us" at a glance, and this one
+          disclosure carries the whole audit trail for anyone who needs it. */}
+      <details className="rom-quote-cx">
+        <summary>
+          <span className="rom-quote-cx-label">Complexity</span>
+          <span className="rom-quote-cx-summary">
+            Professional services <strong>{tierName(baseline.integration.tier)}</strong>
+            {' · '}Software <strong>{tierName(baseline.software.tier)}</strong>
+          </span>
+          <span className="rom-quote-cx-more">Scoring detail</span>
+        </summary>
+        <div className="rom-quote-cx-body">
+          <p className="rom-quote-cx-intro">
+            One score for the whole fleet — complexity comes from the site and the program, not
+            from which chassis you picked.
+          </p>
+          <div className="rom-cx-axes">
+            <ComplexityAxis axis="Professional services" result={baseline.integration} multiplier={intMultiplier} />
+            <ComplexityAxis axis="Software" result={baseline.software} multiplier={swMultiplier} />
+          </div>
+        </div>
+      </details>
 
       <div className="rom-quote-total">
         <span>Total project investment</span>

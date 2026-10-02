@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-10-02 — Complexity moves into the investment summary
+
+Step 4 asked the reader to hold a number from one card against a number in
+another: the quotation listed Professional services and Software with their
+amounts, and a separate "What's driving this price" card explained, in a
+parallel column, that those amounts had been multiplied by 1.8x and 1.6x. The
+tier and the figure it moved were never on screen together.
+
+Now the tier sits on the line it multiplies. Each of the two priced categories
+carries a chip — named tier, position in the scale, and the multiplier
+(`Standard · 2 of 3 · 1.8x`) — so the complexity answer is readable without
+opening anything. One disclosure above the total, **Complexity → Scoring
+detail**, opens the full audit trail for both axes: what drove the tier, the
+score against both thresholds, every point awarded, and what did not trigger.
+Simple by default, granular on demand.
+
+The scoring display was extracted to `src/components/rom/ComplexityAxis.tsx`
+(shared `TierChip` + full axis panel) and the old per-axis "Show scoring
+detail" sub-toggle was dropped — two nested disclosures to reach one list of
+points was a layer too many now that the outer one is the gate.
+
+`RomPriceDrivers` keeps only the things an engineer can change, and is retitled
+**Options & adjustments**: the adder checkboxes and the per-vehicle tier
+override. Output above, input below. Its two-column layout went with the moved
+column, so the adders now use the full card width.
+
+No pricing, scoring or calculation changed — every figure still comes from the
+same shared resolver, so Step 4, the Dashboard and the PPTX appendix stay in
+step. Dead CSS removed with the layout it served (`.rom-drivers-cols`,
+`.rom-drivers-col*`, `.rom-drivers-coltitle`, `.rom-cx-multiplier`,
+`.rom-cx-detail*` body rules).
+
+**Shipped:** `src/components/rom/ComplexityAxis.tsx` (new),
+`src/components/rom/RomQuotation.tsx`, `src/components/rom/RomPriceDrivers.tsx`,
+`src/components/rom/RomFleetSellPrice.tsx`, `app/globals.css`.
+
 ## 2026-09-14 — Two redundant pallet questions become one that actually feeds a gate
 
 The questionnaire asked **"Stringer pallet?"** and **"Bottom board present?"** as separate

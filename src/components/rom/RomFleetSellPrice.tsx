@@ -107,6 +107,7 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
             fleetTotal={fleetTotal}
             selectedAdderIds={selectedAdderIds}
             confidence={confidence}
+            baseline={baseline}
           />
 
           <RomPriceDrivers

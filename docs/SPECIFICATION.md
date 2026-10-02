@@ -815,6 +815,15 @@ asynchronously. Computation is inline (no dependency on the parent `costs` memo)
 `payback = capexMid / annualOffset` (— when offset = 0). OPEX is informational only
 — not netted against the offset.
 
+**Complexity is shown inside the quotation (2026-10-02).** Each priced category
+that complexity multiplies — Professional services and Software — carries a tier
+chip in its header (named tier, position in the scale, multiplier). A single
+`Complexity → Scoring detail` disclosure above the project total expands to the
+full per-axis breakdown: driver sentence, score against both thresholds, the
+points awarded, and what did not trigger. The separate "What's driving this
+price" card became **Options & adjustments** and now holds only the controls
+(adders, per-vehicle tier overrides) — output above, input below.
+
 **Section 04 — Methodology.** A `MethodologyPanel` (`src/components/rom/MethodologyPanel.tsx`,
 content in `src/content/methodology.ts`) explains *how every number is derived*: for each calc
 stage — Cycle time, Raw vehicle demand, Charging availability, Buffer, ROI/payback, OPEX — it
