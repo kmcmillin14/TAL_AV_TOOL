@@ -3921,8 +3921,11 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-quote-cat.is-withheld .rom-quote-cat-name,
 .rom-quote-cat.is-withheld .rom-quote-cat-amount { color: var(--text-tertiary); }
 .rom-quote-blocked {
-  font-family: var(--tal-font-family); font-size: 12px; color: var(--text-tertiary); margin: 8px 0 0;
+  display: flex; align-items: flex-start; gap: 7px; margin: 8px 0 0;
+  font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.45; color: var(--text-secondary);
 }
+.rom-quote-blocked svg { flex: none; margin-top: 1px; color: var(--accent); }
+.rom-quote-blocked strong { color: var(--text-primary); font-weight: 700; }
 
 /* The amount stays hard right once a tier chip sits between it and the name. */
 .rom-quote-cat-amount { margin-left: auto; }

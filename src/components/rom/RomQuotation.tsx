@@ -6,6 +6,7 @@ import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
 import type { PricingInputConfidence, PricingGate } from '@/src/lib/romComplexityFromProject'
 import type { FleetComplexityBaseline } from '@/src/lib/romSellPriceLine'
 import { ADDERS_CONFIG, PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
+import Icon from '@/src/design-system/components/Icon'
 
 import ComplexityAxis, { TierCompact } from './ComplexityAxis'
 import { fullUsd } from './RomSellPriceParts'
@@ -170,10 +171,16 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
             <span>Hardware subtotal</span>
             <span className="rom-quote-total-amount mono">{fullUsd(fleetTotal.hardwareTotal)}</span>
           </div>
+          {/* The caution repeats at the total because that is the figure people
+              screenshot and quote — a reader who scrolled past the banner must
+              still see that this number is not the project. */}
           <p className="rom-quote-blocked">
-            No project total while {blockedLabels.length === 1
-              ? `${blockedLabels[0]} is`
-              : `${blockedLabels.join(' and ')} are`} unpriced — see the notice at the top of this step.
+            <Icon name="warn" size={14} />
+            <span>
+              <strong>Not the project total.</strong> {blockedLabels.length === 1
+                ? `${blockedLabels[0]} is`
+                : `${blockedLabels.join(' and ')} are`} unpriced, so this is hardware only.
+            </span>
           </p>
         </>
       ) : (
