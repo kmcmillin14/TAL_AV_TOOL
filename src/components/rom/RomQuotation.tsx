@@ -103,10 +103,6 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
       <QuoteCategory name="Software" amount={fleetTotal.softwareTotal}
         badge={<TierCompact result={baseline.software} />}
         withheld={gate.softwareReady ? undefined : gate.missingSoftware}>
-        <p className="rom-quote-note">
-          Fleet management software, licensed across all {fleetTotal.totalQty} unit
-          {fleetTotal.totalQty === 1 ? '' : 's'}.
-        </p>
       </QuoteCategory>
 
       <QuoteCategory name="Professional services" amount={fleetTotal.integrationTotal}
@@ -117,12 +113,6 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
             <li key={item}>{item}</li>
           ))}
         </ul>
-        {sharedPlatforms.length > 0 && (
-          <p className="rom-quote-note">
-            {sharedPlatforms.map(g => g.platform).join(', ')} runs the whole fleet — standing it up
-            is one job, so professional services is charged once, not per vehicle type.
-          </p>
-        )}
       </QuoteCategory>
 
       <QuoteCategory name="Adders" amount={fleetTotal.addersTotal}>
@@ -146,10 +136,6 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
           <span className="rom-quote-cx-more">Scoring detail</span>
         </summary>
         <div className="rom-quote-cx-body">
-          <p className="rom-quote-cx-intro">
-            One score for the whole fleet — complexity comes from the site and the program, not
-            from which chassis you picked.
-          </p>
           <div className="rom-cx-axes">
             <ComplexityAxis axis="integration" label="Professional services" result={baseline.integration} multiplier={intMultiplier} />
             <ComplexityAxis axis="software" label="Software" result={baseline.software} multiplier={swMultiplier} />

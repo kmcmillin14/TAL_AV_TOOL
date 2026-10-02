@@ -147,12 +147,6 @@ export default function ChargingPipeline({
           </tbody>
         </table>
       )}
-      <div className="engine-note">
-        Availability is computed per vehicle type from its cutsheet runtime and charge time plus
-        the schedule — breaks, off-shift hours, and days off all charge (a day off recharges to
-        100%), and any vehicle charges whenever it is not working. The <strong>+N</strong> extra
-        vehicles for charging pool per vehicle type at the project level.
-      </div>
     </div>
   )
 }

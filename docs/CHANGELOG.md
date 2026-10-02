@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-10-02 — Explanatory sub-text removed from the working surfaces
+
+The app had grown a habit of explaining itself in prose beneath its own
+headings — rationale paragraphs that read as justification rather than
+information, and that an engineer using the tool daily scrolls past. Removed:
+
+- Step 3, 4 and 5 page subtitles (`.eh-sub`)
+- The complexity disclosure's intro ("One score for the whole fleet — …")
+- The Options & adjustments subtitle, and the tier-override note
+- The Charging and Buffer pipeline notes (`.engine-note`) — two paragraphs of
+  methodology sitting under the tables that already show the numbers
+- The Software "licensed across all N units" line and the shared-platform
+  "standing it up is one job" explainer in the quotation
+
+**Kept deliberately:** functional states ("None selected — pick options below"),
+data lines ("15 units across 3 vehicle types"), the not-priced warnings, field
+`help` hints that say what to enter, and the asterisk legend. These answer
+"what do I do here", not "why does it work this way".
+
+**Also kept:** `src/content/help.ts` and the guided tour. Explanation is the
+entire purpose of those surfaces and they are opt-in — removing the prose from
+the working screens is what makes having them worthwhile.
+
+Dead CSS removed with the markup it styled.
+
+**Shipped:** `app/projects/[id]/step3|step4|step5/page.tsx`,
+`src/components/rom/RomQuotation.tsx`, `src/components/rom/RomPriceDrivers.tsx`,
+`src/components/engine/ChargingPipeline.tsx`,
+`src/components/engine/BufferPipeline.tsx`, `app/globals.css`.
+
 ## 2026-10-02 — Stacking applies to racks too; "Picking from racking?" retired
 
 **Stack / destack now asks on Rack and Other loads, not just pallets.** The

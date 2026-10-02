@@ -144,13 +144,6 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
           </tbody>
         </table>
       )}
-      <div className="engine-note">
-        Sizing to a target utilization leaves headroom for demand variability, maintenance, and
-        ramp-up — 80% is the AMR industry standard (past ~85% queueing and blocking wait climbs
-        non-linearly). The fleet pays the <strong>larger</strong> of two constraints: peak need with
-        headroom ÷ rotation availability, or weekly energy sustain (never buffered — idle robots
-        charge). The tag on each Fleet figure names the binding constraint.
-      </div>
     </div>
   )
 }

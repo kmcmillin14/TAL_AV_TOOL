@@ -162,10 +162,6 @@ export default function FleetEnginePage() {
         <div className="engine-head">
           <span className="eh-eyebrow mono">Step 03 / 05</span>
           <h1 className="eh-title">Fleet Engine</h1>
-          <p className="eh-sub">
-            Define material flows, then layer charging and a buffer to reach the total fleet —
-            base is engineering, charging is physics, buffer is policy.
-          </p>
         </div>
 
         <div className="form-with-nav engine-layout">

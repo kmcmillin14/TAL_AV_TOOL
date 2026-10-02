@@ -56,11 +56,6 @@ export default function RomConfigurationPage() {
         <div className="engine-head">
           <span className="eh-eyebrow mono">Step 04 / 05</span>
           <h1 className="eh-title">ROM Configuration</h1>
-          <p className="eh-sub">
-            The project quotation — hardware, software, professional services, and adders,
-            priced across the whole fleet. Budgetary estimate, placeholder pricing pending
-            real numbers from the business owner.
-          </p>
         </div>
 
         <RomFleetSellPrice project={project} fleet={fleet} vehicleById={vehicleById} />

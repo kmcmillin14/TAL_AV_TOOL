@@ -40,10 +40,6 @@ export default function RomPriceDrivers({
     <section className="rom-cx rom-drivers">
       <header className="rom-cx-head">
         <h2 className="rom-cx-title">Options &amp; adjustments</h2>
-        <p className="rom-cx-sub">
-          Options are added once to the project total. Tier overrides apply to a single vehicle
-          type — the fleet score itself sits in the quotation above.
-        </p>
       </header>
 
       <div className="rom-sp-adder-grid">
@@ -85,10 +81,6 @@ export default function RomPriceDrivers({
 
       {openAdjust && (
         <div className="rom-cx-adjust">
-          <p className="rom-cx-note">
-            An override applies to one vehicle type only, and can raise a tier but never drop it
-            below that vehicle&rsquo;s own minimum.
-          </p>
           {lines.map(l => {
             const ov = overrides[l.vehicleId]
             return (
