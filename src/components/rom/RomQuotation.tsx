@@ -6,8 +6,8 @@ import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
 import type { PricingInputConfidence } from '@/src/lib/romComplexityFromProject'
 import type { FleetComplexityBaseline } from '@/src/lib/romSellPriceLine'
 import { ADDERS_CONFIG, PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
-import { tierName } from '@/src/lib/romComplexityLabels'
-import ComplexityAxis, { TierChip } from './ComplexityAxis'
+
+import ComplexityAxis, { TierCompact } from './ComplexityAxis'
 import { fullUsd } from './RomSellPriceParts'
 
 /** What the single Professional Services figure covers. Descriptive only —
@@ -95,7 +95,7 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
       </QuoteCategory>
 
       <QuoteCategory name="Software" amount={fleetTotal.softwareTotal}
-        badge={<TierChip result={baseline.software} multiplier={swMultiplier} />}>
+        badge={<TierCompact result={baseline.software} />}>
         <p className="rom-quote-note">
           Fleet management software, licensed across all {fleetTotal.totalQty} unit
           {fleetTotal.totalQty === 1 ? '' : 's'}.
@@ -103,7 +103,7 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
       </QuoteCategory>
 
       <QuoteCategory name="Professional services" amount={fleetTotal.integrationTotal}
-        badge={<TierChip result={baseline.integration} multiplier={intMultiplier} />}>
+        badge={<TierCompact result={baseline.integration} />}>
         <ul className="rom-quote-includes">
           {PROFESSIONAL_SERVICES_INCLUDES.map(item => (
             <li key={item}>{item}</li>
@@ -132,8 +132,8 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
         <summary>
           <span className="rom-quote-cx-label">Complexity</span>
           <span className="rom-quote-cx-summary">
-            Professional services <strong>{tierName(baseline.integration.tier)}</strong>
-            {' · '}Software <strong>{tierName(baseline.software.tier)}</strong>
+            Professional services <strong>{baseline.integration.tier} of 3</strong>
+            {' · '}Software <strong>{baseline.software.tier} of 3</strong>
           </span>
           <span className="rom-quote-cx-more">Scoring detail</span>
         </summary>

@@ -13,22 +13,51 @@ export function driverSentence(result: TierResult): string {
   return `Driven by ${phrases.slice(0, -1).join(', ')}, and ${phrases[phrases.length - 1]}.`
 }
 
-/** Compact tier badge — the whole complexity answer for one axis in a chip:
- *  named tier, position in the scale, and the multiplier it applies. Sits on
- *  the quotation category it actually multiplies, so the "why" is attached to
- *  the number it moved rather than stranded in a separate card. */
-export function TierChip({ result, multiplier }: { result: TierResult; multiplier: number }) {
+/** Where a category landed on the three-step scale, and nothing else.
+ *  Deliberately plain text rather than a coloured badge: on the quotation this
+ *  sits beside a dollar figure, and a tinted pill there reads as a status
+ *  warning about the money. The tier name, the multiplier and the point math
+ *  all live one disclosure away, where there is room to explain them. */
+export function TierCompact({ result }: { result: TierResult }) {
   return (
-    <span className={`rom-cx-tier rom-cx-tier-${result.tier}`}>
-      {tierName(result.tier)}
-      <span className="rom-cx-tier-of mono">{result.tier} of 3</span>
-      <span className="rom-cx-tier-mult mono">{multiplier}×</span>
+    <span className="rom-cx-compact">
+      Complexity <span className="mono">{result.tier} of 3</span>
     </span>
   )
 }
 
-/** One complexity axis in full: what drove the tier, what it multiplies, and
- *  the point math for anyone auditing the number.
+/** The three-step scale with the project's own score placed on it — answers
+ *  "which score buys which tier" directly, instead of asking the reader to
+ *  hold two threshold numbers in their head and do the comparison. */
+function TierScale({ result, thresholds }: { result: TierResult; thresholds: { tier2: number; tier3: number } }) {
+  const bands: Array<{ tier: 1 | 2 | 3; range: string }> = [
+    { tier: 1, range: `0–${thresholds.tier2 - 1}` },
+    { tier: 2, range: `${thresholds.tier2}–${thresholds.tier3 - 1}` },
+    { tier: 3, range: `${thresholds.tier3}+` },
+  ]
+  return (
+    <ol className="rom-cx-scale">
+      {bands.map(b => {
+        const here = b.tier === result.tier
+        return (
+          <li key={b.tier} className={here ? 'is-here' : undefined}>
+            <span className="rom-cx-scale-name">{tierName(b.tier)}</span>
+            <span className="rom-cx-scale-range mono">{b.range}</span>
+            {here && (
+              <span className="rom-cx-scale-you mono">
+                scored {result.score}
+                {result.flooredBy ? ' · raised by vehicle minimum' : ''}
+              </span>
+            )}
+          </li>
+        )
+      })}
+    </ol>
+  )
+}
+
+/** One complexity axis in full: where it landed on the scale, what drove it,
+ *  what it multiplies, and the points for anyone auditing the number.
  *
  *  Both axes score from project-level answers and the program's total fleet
  *  size — nothing vehicle-specific — so this is ONE fleet-wide result, never
@@ -44,15 +73,16 @@ export default function ComplexityAxis({
     <div className="rom-cx-axis">
       <div className="rom-cx-axis-head">
         <span className="rom-cx-axis-name">{axis}</span>
-        <TierChip result={result} multiplier={multiplier} />
+        <span className="rom-cx-axis-tier">
+          {tierName(result.tier)} <span className="mono">{result.tier} of 3</span>
+          <span className="rom-cx-axis-mult mono">{multiplier}× base rate</span>
+        </span>
       </div>
+
+      <TierScale result={result} thresholds={thresholds} />
+
       <p className="rom-cx-driver">{driverSentence(result)}</p>
-      <p className="rom-cx-detail-score">
-        Score <span className="mono">{result.score}</span> — Standard starts at{' '}
-        <span className="mono">{thresholds.tier2}</span>, Complex at{' '}
-        <span className="mono">{thresholds.tier3}</span>. Priced at{' '}
-        <span className="mono">{multiplier}×</span> the base rate.
-      </p>
+
       {result.reasons.length > 0 && (
         <dl className="rom-cx-points">
           {result.reasons.map(r => (

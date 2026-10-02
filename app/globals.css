@@ -3891,24 +3891,14 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 /* The amount stays hard right once a tier chip sits between it and the name. */
 .rom-quote-cat-amount { margin-left: auto; }
 
-/* Tier chip, quotation context: the full complexity answer for one category —
-   named tier, position in the scale, multiplier — compressed to a pill that
-   sits on the line it multiplies. Deliberately quieter than the axis heading
-   inside the disclosure, where the same component renders at full size. */
-.rom-quote-cat-head .rom-cx-tier {
-  display: inline-flex; align-items: baseline; gap: 5px;
-  font-size: 10.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
-  padding: 2px 7px; border-radius: 10px;
-  background: color-mix(in srgb, var(--accent) 9%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+/* Tier on the quotation line: plain text, no tint. It sits beside a dollar
+   figure, where a coloured badge reads as a warning about the money. */
+.rom-cx-compact {
+  font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-tertiary);
 }
-.rom-quote-cat-head .rom-cx-tier-1 {
-  background: color-mix(in srgb, var(--good, var(--text-secondary)) 9%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--good, var(--text-secondary)) 28%, transparent);
+.rom-cx-compact .mono {
+  font-family: var(--tal-font-numeric); font-weight: 700; color: var(--text-secondary);
 }
-.rom-quote-cat-head .rom-cx-tier-of { font-size: 9.5px; opacity: 0.75; }
-.rom-quote-cat-head .rom-cx-tier-mult { font-size: 10px; font-weight: 800; }
-.rom-cx-tier-mult { font-family: var(--tal-font-numeric); color: inherit; }
 
 .rom-quote-cx { margin: 18px 0 4px; border-top: 1px solid var(--border); }
 .rom-quote-cx > summary {
@@ -3932,6 +3922,31 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-quote-cx-body { padding: 10px 0 4px; }
 .rom-quote-cx-intro {
   font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-tertiary); margin: 0 0 12px;
+}
+
+.rom-cx-axis-tier {
+  font-family: var(--tal-font-family); font-size: 13px; font-weight: 700; color: var(--text-primary);
+  display: inline-flex; align-items: baseline; gap: 6px;
+}
+.rom-cx-axis-tier .mono { font-family: var(--tal-font-numeric); font-weight: 600; color: var(--text-tertiary); }
+.rom-cx-axis-mult { font-size: 11px; font-weight: 600; color: var(--text-tertiary); }
+
+/* Which score buys which tier, with the project's own score placed on it. */
+.rom-cx-scale { list-style: none; margin: 8px 0 10px; padding: 0; display: flex; flex-direction: column; gap: 1px; }
+.rom-cx-scale li {
+  display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap;
+  padding: 4px 8px; background: var(--bg-surface-2); border-left: 2px solid transparent;
+}
+.rom-cx-scale li.is-here { border-left-color: var(--accent); background: var(--bg-surface-3, var(--bg-surface-2)); }
+.rom-cx-scale-name {
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.07em; text-transform: uppercase; color: var(--text-tertiary); min-width: 64px;
+}
+.rom-cx-scale li.is-here .rom-cx-scale-name { color: var(--text-primary); }
+.rom-cx-scale-range { font-family: var(--tal-font-numeric); font-size: 11.5px; color: var(--text-secondary); }
+.rom-cx-scale-you {
+  margin-left: auto; font-family: var(--tal-font-numeric); font-size: 10.5px;
+  font-weight: 700; color: var(--accent);
 }
 .rom-quote-line {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;

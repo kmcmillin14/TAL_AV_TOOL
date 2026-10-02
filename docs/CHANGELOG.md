@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-10-02 — Complexity on the quotation: plain tier, scale behind the toggle
+
+Follow-up to the entry below, on owner feedback. The tier chip was a tinted
+pill carrying tier name, position and multiplier. Two problems: beside a dollar
+figure a coloured badge reads as a warning about the money, and it said three
+things where one was wanted. The quotation line now reads
+`Complexity 2 of 3` in plain text — where it landed on the scale, nothing else.
+
+Expanding no longer states the thresholds in a sentence ("Standard starts at 5,
+Complex at 11") but draws the scale itself, with the project's score placed on
+it:
+
+    STRAIGHTFORWARD  0-4
+    STANDARD         5-10      scored 9
+    COMPLEX          11+
+
+so "which score buys which tier" is read off directly rather than reconstructed
+from two numbers. Tier name and multiplier moved to the axis heading inside the
+disclosure, where there is room to explain them.
+
+**Shipped:** `src/components/rom/ComplexityAxis.tsx`,
+`src/components/rom/RomQuotation.tsx`, `app/globals.css`.
+
 ## 2026-10-02 — Complexity moves into the investment summary
 
 Step 4 asked the reader to hold a number from one card against a number in
