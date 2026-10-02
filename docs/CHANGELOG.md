@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-10-02 — Stacking applies to racks too; "Picking from racking?" retired
+
+**Stack / destack now asks on Rack and Other loads, not just pallets.** The
+question is about what the AGV must *do*, and racks stack as readily as pallets
+— gating it on "Standard Pallet" was a leftover from where the field was first
+written. `STACKABLE_UNIT_TYPES` is the single list; totes, carts and rolls are
+handled one at a time by this fleet and are correctly excluded. The label
+follows the selection: *"...destack **pallets**?"* when pallets are the only
+type chosen, *"...destack **loads**?"* otherwise.
+
+**"Picking from racking?" removed — the form could already answer it.** Four of
+the pick/drop context options *are* racking (Selective · Gravity flow ·
+Pushback · Drive-in), so the customer was being asked to restate a choice they
+had just made one section earlier. The racking aisle width now appears on its
+own when a pick or drop location is racking, with a line saying why.
+`pickingFromRacking` stays in the schema as `@deprecated` so older projects and
+exported JSON still round-trip; nothing renders it.
+
+**`'Stack'` added to the pick/drop location list** — picking from or dropping
+onto a stack is a real location, and it was missing.
+
+**Shipped:** `src/lib/constants/enums.ts`,
+`src/components/step1/ApplicationForm.tsx`,
+`src/components/questionnaire/QuestionnaireForm.tsx`,
+`src/lib/validations/schemas.ts`, `src/lib/questionnaire/pdfQuestionnaire.ts`.
+
 ## 2026-10-02 — Pallet stacking: a new question and a new gate
 
 **"AGV required to stack or destack pallets?"** — **Yes / No / Not sure** — added

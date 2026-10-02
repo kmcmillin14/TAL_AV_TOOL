@@ -10,7 +10,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { projectSchema, type ProjectFormData } from '@/src/lib/validations/schemas'
 import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@/src/lib/utils/units'
 import { createProject, updateProject, getProject, subscribeSaveDrops } from '@/src/lib/storage'
-import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES, INTERLOCKS, PALLET_STACKING_TYPES, PALLET_STACKING_ANSWERS } from '@/src/lib/constants/enums'
+import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES, INTERLOCKS, PALLET_STACKING_TYPES, PALLET_STACKING_ANSWERS, STACKABLE_UNIT_TYPES } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
 import { PALLET_ENTRY_LABELS } from '@/src/lib/palletEntry'
 import SubQuestions, { FollowUpMarker } from '@/src/components/SubQuestions'
@@ -454,6 +454,9 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
           {loadFields.map((lf, i) => {
             const unitType = loadsValues?.[i]?.unitType ?? ''
             const isPalletRow = unitType === 'Standard Pallet'
+            // Racks and "Other" stack too — the question is about what the AGV
+            // must do, so it follows the load types that can be stacked.
+            const canStack = STACKABLE_UNIT_TYPES.has(unitType)
             return (
               <div className={`step1-load${i > 0 ? ' step1-load-extra' : ''}`} key={lf.id}>
                 {loadFields.length > 1 && (
@@ -554,9 +557,9 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                       first load block asks. Pin-and-post / cup-and-cap interlock
                       the stack and RED-flag every vehicle; flat / other are a
                       site-walk review (src/calc/gates.ts). */}
-                  {isPalletRow && i === 0 && (
+                  {canStack && i === 0 && (
                     <div className="fld">
-                      <label>AGV required to stack or destack pallets? <Mark roles={['compat']} /> <FollowUpMarker /></label>
+                      <label>AGV required to stack or destack {isPalletRow ? 'pallets' : 'loads'}? <Mark roles={['compat']} /> <FollowUpMarker /></label>
                       <Controller
                         name="palletStacking"
                         control={control}

@@ -112,6 +112,10 @@ export const projectSchema = z.object({
 
   // Section 3
   minAisleWidthFt: z.number().min(0).optional(),
+  /** @deprecated Retired from the questionnaire 2026-10-02 — four of the
+   *  pick/drop context options ARE racking, so the form could already answer
+   *  this. Derived from pickContext/dropContext now. Kept so projects and
+   *  exported JSON written before that date still round-trip; do not render. */
   pickingFromRacking: z.boolean().optional(),
   floorCondition: z.string().optional(),
 

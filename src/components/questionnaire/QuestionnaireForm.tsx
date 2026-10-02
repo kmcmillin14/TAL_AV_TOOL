@@ -18,7 +18,7 @@ import {
   SPECIALTY_APPLICATIONS, PROJECT_DRIVERS, PALLET_SUBTYPES,
   SUBMISSION_TYPES, CHARGING_STRATEGIES, SHARED_TRAFFIC_TYPES, GUIDANCE_TYPES,
   REST_API_OPTIONS, WMS_INTERFACE_TYPES, TAGGING_SCAN_METHODS, INTERLOCKS,
-  PALLET_STACKING_TYPES, PALLET_STACKING_ANSWERS,
+  PALLET_STACKING_TYPES, PALLET_STACKING_ANSWERS, STACKABLE_UNIT_TYPES,
 } from '@/src/lib/constants/enums'
 import { downloadQuestionnairePdf, exportQuestionnairePdf } from '@/src/lib/questionnaire/pdfQuestionnaire'
 import { questionnaireJsonBlob } from '@/src/lib/questionnaire/questionnaireExport'
@@ -31,7 +31,10 @@ const DRAFT_KEY = 'tal:questionnaire-draft'
 const FLOOR_CONDITIONS = ['Smooth', 'Standard', 'Rough']
 const DUST_MOISTURE_OPTS = ['None', 'Dusty environment', 'Wash-down required', 'High humidity', 'Outdoor exposure']
 const OPERATING_DAYS = ['Mon–Fri', 'Mon–Sat', 'Mon–Sun', 'Custom']
-const PICK_DROP = ['Floor', 'Selective racking', 'Gravity flow rack', 'Pushback rack', 'Drive-in rack', 'Conveyor', 'Lift table', 'Trailer', 'Machine', 'Custom']
+const PICK_DROP = ['Floor', 'Stack', 'Selective racking', 'Gravity flow rack', 'Pushback rack', 'Drive-in rack', 'Conveyor', 'Lift table', 'Trailer', 'Machine', 'Custom']
+/** The pick/drop choices that ARE racking — "picking from racking?" is derived
+ *  from these rather than asked again. */
+const RACKING_CONTEXTS = new Set(['Selective racking', 'Gravity flow rack', 'Pushback rack', 'Drive-in rack'])
 const HEIGHT_TRANSFER = new Set(TRANSFER_TYPE_OPTIONS.filter(o => o.needsHeight).map(o => o.value))
 
 // Empty defaults — array fields seeded so chips/picker controllers start defined.
@@ -67,7 +70,7 @@ const SECTIONS: readonly QSection[] = [
   { id: "q-sec-handling", num: "04", short: "How it's moved", tier: TIER_APP,
     fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'dwellTimeSec', 'chargingStrategyPreference', 'topOfRollerHeightFt', 'maxLiftHeightFt', 'specialtyApplications'] },
   { id: 'q-sec-site', num: '05', short: 'General Site Info', tier: TIER_APP,
-    fields: ['driveAisleWidthFt', 'pickingFromRacking', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'dustMoisture', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'rampDistanceFt', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable', 'cadAvailable', 'cadNotes'] },
+    fields: ['driveAisleWidthFt', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'dustMoisture', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'rampDistanceFt', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable', 'cadAvailable', 'cadNotes'] },
   { id: 'q-sec-throughput', num: '06', short: 'Throughput & flows', tier: TIER_APP,
     fields: ['requiredThroughputPerHour', 'peakThroughputPerHour', 'avgDistanceFt', 'distanceType', 'flows'] },
   { id: 'q-sec-schedule', num: '07', short: 'Schedule', tier: TIER_APP,
@@ -315,6 +318,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
   const showHazardZone = certs.includes('ATEX') || certs.includes('IECEx')
   const unitLoadTypes = values.unitLoadTypes ?? []
   const showOtherUnit = unitLoadTypes.includes('Other')
+  // Racks and "Other" stack too — the question is about what the AGV must do.
+  const canStack = unitLoadTypes.some(t => STACKABLE_UNIT_TYPES.has(t))
+  const stackLabel = unitLoadTypes.length === 1 && unitLoadTypes[0] === 'Standard Pallet' ? 'pallets' : 'loads'
+  const usesRacking = RACKING_CONTEXTS.has(values.pickContext ?? '') || RACKING_CONTEXTS.has(values.dropContext ?? '')
   const submissionType = values.submissionType
   const showHeight = !!transferType && HEIGHT_TRANSFER.has(transferType)
   const isLiftTable = transferType === 'lift_table'
@@ -432,7 +439,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
 
   // Reusable No/Yes segmented toggle for a tri-state boolean. Clicking the
   // already-selected option clears it back to unanswered (undefined).
-  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'pickingFromRacking' | 'toyotaRaymondPartnership' }) => (
+  const YesNo = ({ name }: { name: 'isRfq' | 'cadAvailable' | 'networkReady' | 'siteWalkthroughAvailable' | 'wmsRequired' | 'rampRequired' | 'barcodeScanningRequired' | 'hasExistingAutomation' | 'toyotaRaymondPartnership' }) => (
     <Controller control={control} name={name} render={({ field }) => (
       <div className="seg-toggle">
         <button type="button" className={`seg-btn${field.value === false ? ' on' : ''}`} onClick={() => field.onChange(field.value === false ? undefined : false)}>No</button>
@@ -601,7 +608,19 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <div className="help">Stringer pallets take forks from the ends only; block pallets take them from all four sides.</div>
                 </div>
                 <div className="fld span-2">
-                  <label>AGV required to stack or destack pallets? <FollowUpMarker /></label>
+                  <label>Pallet material</label>
+                  <select {...register('palletMaterial', { setValueAs: emptyToUndef })} defaultValue="">
+                    <option value="">Select…</option>
+                    <option value="wooden">Wood</option>
+                    <option value="plastic">Plastic</option>
+                    <option value="metal">Metal</option>
+                    <option value="cardboard">Cardboard</option>
+                  </select>
+                </div>
+              </>)}
+              {canStack && (
+                <div className="fld span-2">
+                  <label>AGV required to stack or destack {stackLabel}? <FollowUpMarker /></label>
                   <Controller control={control} name="palletStacking" render={({ field }) => (
                     <div className="seg-toggle">
                       {PALLET_STACKING_ANSWERS.map(o => (
@@ -634,17 +653,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                     </SubQuestions>
                   )}
                 </div>
-                <div className="fld span-2">
-                  <label>Pallet material</label>
-                  <select {...register('palletMaterial', { setValueAs: emptyToUndef })} defaultValue="">
-                    <option value="">Select…</option>
-                    <option value="wooden">Wood</option>
-                    <option value="plastic">Plastic</option>
-                    <option value="metal">Metal</option>
-                    <option value="cardboard">Cardboard</option>
-                  </select>
-                </div>
-              </>)}
+              )}
               {showOtherUnit && (
                 <div className="fld"><label>Describe load type</label><input {...register('otherUnitTypeDescription')} /></div>
               )}
@@ -764,19 +773,21 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                 <label>Drive aisle width ({isMetric ? 'm' : 'ft'})</label>
                 <UnitInput name="driveAisleWidthFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '2.4' : '8'} isMetric={isMetric} iDec={1} mDec={2} />
               </div>
-              <div className="fld">
-                <label>Picking from racking? <FollowUpMarker /></label>
-                <YesNo name="pickingFromRacking" />
-                {values.pickingFromRacking && (
-                <SubQuestions>
+              {/* "Picking from racking?" was a question the form could already
+                  answer: four of the pick/drop options ARE racking. Derived now,
+                  so the racking aisle width appears when it is relevant and the
+                  customer isn't asked to restate a choice they just made. */}
+              {usesRacking && (
                 <div className="fld">
                   <label>Racking aisle width ({isMetric ? 'm' : 'ft'})</label>
                   <UnitInput name="rackingAisleWidthFt" control={control} imperialUnit="ft" metricUnit="m" toDisplay={ftToM} toStorage={mToFt} placeholder={isMetric ? '1.8' : '6'} isMetric={isMetric} iDec={1} mDec={2} />
-                  {isVNA && <div className="help" style={{ fontWeight: 600 }}>VNA selected — racking aisle width is critical for fit.</div>}
+                  <div className="help">
+                    {isVNA
+                      ? 'VNA selected — racking aisle width is critical for fit.'
+                      : 'Shown because a pick or drop location is racking.'}
+                  </div>
                 </div>
-                </SubQuestions>
-                )}
-              </div>
+              )}
               <div className="fld">
                 <label>Floor condition</label>
                 <select {...register('floorCondition', { setValueAs: emptyToUndef })} defaultValue="">

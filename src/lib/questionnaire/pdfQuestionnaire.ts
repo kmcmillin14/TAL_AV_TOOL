@@ -269,7 +269,6 @@ export async function exportQuestionnairePdf(p: PartialProjectFormData, unitSyst
   row('Dust / moisture', Array.isArray(p.dustMoisture) ? (p.dustMoisture.length ? p.dustMoisture.join(' · ') : '—') : fmt(p.dustMoisture))
   row('Floor condition', fmt(p.floorCondition))
   row('Drive aisle width', fmtFt(p.driveAisleWidthFt))
-  row('Picking from racking', fmtBool(p.pickingFromRacking))
   row('Racking aisle width', fmtFt(p.rackingAisleWidthFt))
   row('Shared traffic', fmt(p.sharedTrafficTypes))
   const guidanceLabels: Record<string, string> = { wire: 'Wire-guided', rail: 'Rail-guided' }

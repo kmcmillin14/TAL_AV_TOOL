@@ -150,6 +150,10 @@ export const LOAD_TYPE_IMAGE_SLUG: Partial<Record<string, string>> = {
 export type TransferMethod = typeof TRANSFER_METHODS[number]
 export type TypicalUnitType = typeof TYPICAL_UNIT_TYPES[number]
 
+/** Load types that can be stacked, so the stack/destack question applies.
+ *  Totes, carts and rolls are handled one at a time by this fleet. */
+export const STACKABLE_UNIT_TYPES: ReadonlySet<string> = new Set(['Standard Pallet', 'Rack', 'Other'])
+
 /** Answers to "AGV required to stack or destack pallets?". Tri-state, not a
  *  Yes/No: "Not sure" is a real answer that must not pass the gate, because
  *  what it stands in for might be an interlocked stack. */
