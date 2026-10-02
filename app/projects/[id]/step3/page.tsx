@@ -323,10 +323,15 @@ export default function FleetEnginePage() {
             {/* Told here, before the click — arriving on a step that prices
                 nothing is a worse way to learn the intake is short. */}
             {gate?.blocked && (
-              <span className="hint step-nav-warn">
+              // Count only. Spelling out six field names here wrapped to four
+              // lines and shouted over the CTA; Step 4's banner already carries
+              // the list, so this just has to say "there is something to fix".
+              <span
+                className="hint step-nav-warn"
+                title={`Won't price until these are answered on Step 1: ${gateMissing.join(', ')}`}
+              >
                 <Icon name="warn" size={13} />
-                Won&rsquo;t price yet — {gateMissing.length} answer{gateMissing.length === 1 ? '' : 's'} missing
-                on Step 1: {gateMissing.join(', ')}
+                {gateMissing.length} answer{gateMissing.length === 1 ? '' : 's'} missing to price
               </span>
             )}
             <span className="hint">

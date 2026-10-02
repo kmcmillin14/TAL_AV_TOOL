@@ -3903,8 +3903,8 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-sp-notpriced .mono { font-family: var(--tal-font-numeric); font-weight: 700; }
 
 .step-nav-warn {
-  display: inline-flex; align-items: center; gap: 6px; color: var(--warn);
-  font-weight: 600; max-width: 46ch; text-align: right; line-height: 1.35;
+  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
+  color: var(--warn); cursor: help;
 }
 .step-nav-warn svg { flex: none; }
 

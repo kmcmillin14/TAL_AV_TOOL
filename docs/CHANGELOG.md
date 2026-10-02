@@ -13,8 +13,10 @@ money row, so the column stays scannable. The project total stays suppressed
 (Hardware subtotal only).
 
 **Told before the click.** Step 3's footer now warns that Step 4 won't price
-yet and names the missing answers. Arriving on a step that prices nothing is a
-worse way to learn the intake is short.
+yet. It shows the COUNT only — naming six fields inline wrapped to four lines
+and shouted over the CTA; the list is in the tooltip, and Step 4's banner
+carries it in full. Arriving on a step that prices nothing is a worse way to
+learn the intake is short.
 
 **Dashboard gap closed.** ROM CAPEX, Payback, TCO and Cost/move read
 "Not priced", and the CAPEX bars, payback curve, TCO chart and pricing table
