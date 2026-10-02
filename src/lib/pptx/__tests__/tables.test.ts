@@ -20,6 +20,12 @@ const reopen = (zip: PizZip) => new PizZip(zip.generate({ type: 'uint8array' }))
 
 const PROJECT = {
   projectName: 'Smoke', maxLoadWeightLbs: 2500, typicalUnitType: 'Pallet',
+  // Gating intake (src/lib/romComplexityFromProject.ts PRICING_GATE_INPUTS) —
+  // without these the deck withholds every price and the pricing assertions
+  // below would silently be testing the "Not priced" path.
+  pickDropLocationCount: 12, facilitySizeSqFt: 120000, hasAgvExperience: true,
+  sharedTrafficTypes: ['None'], wmsRequired: false, storageTrackingRequired: false,
+  interlocks: ['None'],
   transferMethod: 'Lift', deliveryPattern: 'Floor-Floor', minAisleWidthFt: 10,
   temperatureEnvironment: 'refrigerated', rampRequired: true, maxRampGrade: 5,
   outdoorRequired: false, shiftsPerDay: 2, hoursPerShift: 8, certifications: ['UL'],

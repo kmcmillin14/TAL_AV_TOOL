@@ -832,14 +832,19 @@ and pricing table are replaced by the same notice. OPEX and Net benefit are on
 that list because `annualMaintenance = capexMid x pct`, so printing them as
 hard dollars would let a reader divide the withheld CAPEX back out.
 
-**The customer deck (PPTX) is blocked while a category is withheld**, because
-its pricing slides read the ungated resolver directly. The internal model
-(XLSX) and the JSON revision are unaffected — those are internal artifacts.
-**Known limitation:** the gate is enforced at the display and export-button
-level, not inside `computeFleetModel`/`resolveFleetSellPriceTotal`. Moving it
-into the resolver — so `rom.pricing` is structurally absent when withheld —
-would make "not priced" a type-level fact and remove the need for each surface
-to re-derive it.
+**The gate rides on `FleetModel`.** `computeFleetModel` attaches `gate:
+PricingGate`, so every consumer inherits it rather than re-deriving what to
+hide — the Dashboard, the PPTX deck and anything else built on the model.
+
+**The customer deck builds either way; it withholds the numbers.** The deck is
+never blocked — an engineer may legitimately need the fleet, flow and schedule
+slides on a thin project. Its pricing surfaces print `Not priced` instead:
+S25 ROM investment and simple payback, S27 unit price / line total / TOTAL,
+S28 payback and operating cost (and the payback curve is omitted, since its
+y-axis is CAPEX), and the cost-detail appendix's net benefit, OPEX, TCO and
+cost-per-move. The sell-price appendix shows `$0` for the withheld categories
+and a HARDWARE SUBTOTAL row in place of TOTAL — the same treatment as Step 4.
+Labor offset and energy survive the gate: neither derives from CAPEX.
 
 **Complexity is shown inside the quotation (2026-10-02).** Each priced category
 that complexity multiplies — Professional services and Software — carries a tier

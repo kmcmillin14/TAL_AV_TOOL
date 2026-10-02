@@ -174,7 +174,7 @@ export async function exportBrandedRomPptx(
   }
   if (sellPriceSlide != null && sellPriceFleetTotal != null) {
     setSlideTitle(zip, sellPriceSlide, 'ROM sell price — internal detail')
-    fillRomSellPriceAppendix(zip, sellPriceSlide, sellPriceLines, sellPriceFleetTotal)
+    fillRomSellPriceAppendix(zip, sellPriceSlide, sellPriceLines, sellPriceFleetTotal, model.gate)
   }
 
   const blob = zip.generate({ type: 'blob', mimeType: PPTX_MIME }) as Blob

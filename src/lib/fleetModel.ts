@@ -9,6 +9,8 @@ import { romPricing, romOpex, romPayback, type RomPricing, type RomSummary, type
 import { defaultOperatingDaysPerYear, consecutiveOperatingDays } from '../calc/romAnalytics'
 import { resolveAllRomSellPriceLines, resolveFleetSellPriceTotal } from './romSellPriceLine'
 
+import { pricingGate, type PricingGate } from './romComplexityFromProject'
+
 export interface FleetModel {
   flows: Flow[]
   derivedByFlowId: Map<string, FlowDerived>
@@ -16,6 +18,11 @@ export interface FleetModel {
   fleet: FleetSummary
   rom: RomSummary
   costs: RomCostInputs
+  /** Whether the intake supports quoting. Carried on the model so EVERY
+   *  consumer inherits it — the dashboard, the PPTX deck and the XLSX all
+   *  derive from computeFleetModel, and a surface that forgets to check would
+   *  print a price the app is withholding everywhere else. */
+  gate: PricingGate
 }
 
 export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): FleetModel {
@@ -79,5 +86,5 @@ export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): 
   const payback = romPayback(costs, pricing.totalMid)
   const rom: RomSummary = { pricing, opex, payback }
 
-  return { flows, derivedByFlowId, settings, fleet, rom, costs }
+  return { flows, derivedByFlowId, settings, fleet, rom, costs, gate: pricingGate(project) }
 }

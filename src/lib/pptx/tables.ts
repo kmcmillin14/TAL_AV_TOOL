@@ -25,7 +25,7 @@ import {
   type TextRun,
   textBox, addImage, containRect, pngSize, nextShapeId, appendShapesToSlide,
 } from './ooxml'
-import { frame, setTitle, BODY, GAP, GRAY } from './layout'
+import { frame, setTitle, priced, BODY, GAP, GRAY } from './layout'
 import {
   requirementsTitle, vehiclesTitle, fleetTitle, flowTitle,
   investmentTitle, roiTitle, FALLBACK_TITLE,
@@ -419,6 +419,7 @@ export function fillMaterialFlow(
  *  Pricing is a range (unit & line min–max), never a single quote. */
 export function fillInvestment(zip: PizZip, model: FleetModel, names: Record<string, string>): void {
   const { rom, fleet } = model
+  const blocked = model.gate.blocked
   const nm = (id: string) => names[id] ?? id
   const rows: TableCell[][] = [[
     { t: 'Vehicle' }, { t: 'Qty', align: 'ctr' }, { t: 'Unit Price (ROM)', align: 'r' }, { t: 'Line Total (ROM)', align: 'r' },
@@ -427,13 +428,14 @@ export function fillInvestment(zip: PizZip, model: FleetModel, names: Record<str
     rows.push([
       { t: nm(l.vehicleId), bold: true },
       { t: String(l.fleetSold), align: 'ctr' },
-      { t: `${money(l.unitMin)} – ${money(l.unitMax)}`, align: 'r' },
-      { t: `${money(l.lineMin)} – ${money(l.lineMax)}`, align: 'r' },
+      { t: priced(blocked, `${money(l.unitMin)} – ${money(l.unitMax)}`), align: 'r' },
+      { t: priced(blocked, `${money(l.lineMin)} – ${money(l.lineMax)}`), align: 'r' },
     ])
   }
   if (rom.pricing.lines.length === 0) rows.push([{ t: '—' }, { t: '', align: 'ctr' }, { t: '' }, { t: 'Assign vehicles to flows (Step 3).', align: 'r' }])
   const redCell = (t: string, align: TableCell['align'] = 'l'): TableCell => ({ t, align, fill: TAL_RED, color: 'FFFFFF', bold: true })
-  rows.push([redCell('TOTAL'), redCell(String(fleet.totalFleetSold), 'ctr'), redCell(''), redCell(`${money(rom.pricing.totalMin)} – ${money(rom.pricing.totalMax)}`, 'r')])
+  rows.push([redCell('TOTAL'), redCell(String(fleet.totalFleetSold), 'ctr'), redCell(''),
+    redCell(priced(blocked, `${money(rom.pricing.totalMin)} – ${money(rom.pricing.totalMax)}`), 'r')])
 
   setTitle(zip, ROM_SLIDE.investment, investmentTitle(model), FALLBACK_TITLE.investment)
   const f = frame(zip, ROM_SLIDE.investment)
@@ -509,17 +511,20 @@ export function fillRoi(
   zip: PizZip, model: FleetModel, serviceLifeYears: number, paybackPng?: Uint8Array | null,
 ): void {
   const { rom } = model
+  const blocked = model.gate.blocked
   const payback = rom.payback.paybackYears
   setTitle(zip, ROM_SLIDE.roi, roiTitle(model, serviceLifeYears), FALLBACK_TITLE.roi)
   const f = frame(zip, ROM_SLIDE.roi)
   f.eyebrow('06 — RETURN ON INVESTMENT')
   f.rule()
-  if (paybackPng) f.image(paybackPng, ROI_IMG_H)
+  // The payback curve is drawn from CAPEX — omit the chart entirely rather
+  // than print a curve whose y-axis the deck is refusing to state.
+  if (paybackPng && !blocked) f.image(paybackPng, ROI_IMG_H)
   f.table([5000000, 5820400], [
     [{ t: 'Metric' }, { t: 'Value', align: 'r' }],
-    [{ t: 'Simple payback', bold: true }, { t: payback == null ? '—' : `${payback.toFixed(1)} years`, align: 'r' }],
+    [{ t: 'Simple payback', bold: true }, { t: priced(blocked, payback == null ? '—' : `${payback.toFixed(1)} years`), align: 'r' }],
     [{ t: 'Annual labor offset', bold: true }, { t: money(rom.payback.annualLaborOffset), align: 'r' }],
-    [{ t: 'Annual operating cost', bold: true }, { t: money(rom.opex.annualOpex), align: 'r' }],
+    [{ t: 'Annual operating cost', bold: true }, { t: priced(blocked, money(rom.opex.annualOpex)), align: 'r' }],
   ], { rowH: 320000 })
   f.caption('Labor offset is gross of operating cost \xb7 simple payback, undiscounted')
 }

@@ -14,10 +14,10 @@ interface Props { project: StoredProject }
  *  (XLSX), save revision (JSON). Mirrors the PersistentHeader export menu. */
 export default function RomExportBar({ project }: Props) {
   const [pptxOpen, setPptxOpen] = useState(false)
-  // The deck is the one artifact that leaves the building, and its pricing
-  // slides read the ungated resolver — so while Step 4 is withholding a price,
-  // the deck would print the very numbers the screen refuses to state. Blocked
-  // here until the gate is moved into the resolver itself (see SPECIFICATION).
+  // The deck builds even when the project can't be priced — it just withholds
+  // the numbers, the same way Step 4 does. The gate now rides on FleetModel
+  // (src/lib/fleetModel.ts) so every pricing surface in the deck inherits it;
+  // this is only the heads-up so nobody is surprised by what they exported.
   const gate = pricingGate(project)
 
   const handleXlsx = async () => {
@@ -37,9 +37,8 @@ export default function RomExportBar({ project }: Props) {
       <button
         type="button" className="rom-export-btn rom-export-primary"
         onClick={() => setPptxOpen(true)}
-        disabled={gate.blocked}
         title={gate.blocked
-          ? `Not available until the project can be priced — answer on Step 1: ${gate.missingAll.join(', ')}`
+          ? `Builds, but prices are withheld until these are answered on Step 1: ${gate.missingAll.join(', ')}`
           : 'Customer-facing ROM proposal deck'}
       >
         <Icon name="export" size={18} />
@@ -49,9 +48,9 @@ export default function RomExportBar({ project }: Props) {
         <p className="rom-export-blocked">
           <Icon name="warn" size={14} />
           <span>
-            The customer deck is unavailable while {gate.blockedLabels.join(' and ')}{' '}
-            {gate.blockedLabels.length === 1 ? 'is' : 'are'} unpriced — it would print a total the
-            app is withholding. The internal model and JSON revision are unaffected.
+            The deck will build, but {gate.blockedLabels.join(' and ')}{' '}
+            {gate.blockedLabels.length === 1 ? 'shows' : 'show'} <span className="mono">$0</span> and the
+            investment, payback and TCO figures read &ldquo;Not priced&rdquo; — the same as Step 4.
           </span>
         </p>
       )}

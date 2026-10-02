@@ -138,3 +138,11 @@ export function frame(zip: PizZip, slide: number): Frame {
 export function setTitle(zip: PizZip, slide: number, claim: string | null, fallback: string): void {
   setSlideTitle(zip, slide, claim ?? fallback)
 }
+
+/** What a CAPEX-derived figure prints when the intake can't support a quote.
+ *  Matches Step 4 and the Dashboard exactly — the deck must not be the one
+ *  surface that states a number the app is withholding everywhere else. */
+export const NOT_PRICED = 'Not priced'
+
+/** `value` unless the gate is blocking, in which case NOT_PRICED. */
+export const priced = (blocked: boolean, value: string): string => (blocked ? NOT_PRICED : value)

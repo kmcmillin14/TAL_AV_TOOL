@@ -1,5 +1,45 @@
 # Changelog
 
+## 2026-10-02 — The deck builds when unpriced; it withholds the numbers instead
+
+Earlier today the customer deck was *disabled* while a category was withheld.
+Wrong call: an engineer may legitimately need the fleet, flow and schedule
+slides on a thin project, and blocking the whole export to protect six figures
+is a blunt instrument. The deck now builds and withholds the prices — the same
+treatment Step 4 and the Dashboard already apply.
+
+**The gate moved onto `FleetModel`.** `computeFleetModel` attaches
+`gate: PricingGate`, so every consumer inherits it instead of re-deriving what
+to hide. This is the fix the `/simplify` altitude pass asked for: the deck was
+the one surface with no gate precisely because each surface had been wiring one
+up by hand.
+
+Withheld in the deck when blocked:
+
+    S25 Financials      ROM investment, simple payback
+    S27 Investment      unit price, line total, TOTAL row
+    S28 ROI             simple payback, annual operating cost,
+                        and the payback curve is omitted entirely
+                        (its y-axis is the CAPEX being withheld)
+    Cost detail         net benefit, OPEX, TCO, cost per move
+    Sell-price appendix $0 for the withheld categories, and a
+                        HARDWARE SUBTOTAL row in place of TOTAL
+
+**Labor offset and energy survive** — neither derives from CAPEX. Each slide's
+caption carries the reason and the missing answers.
+
+Six tests in `src/lib/pptx/__tests__/deckPricingGate.test.ts` pin this, asserting
+no `$x – $y` range survives on a blocked slide and that the payback image is
+absent. The two existing deck fixtures had to be given a quotable intake first —
+without it every pricing assertion in them was silently measuring the withheld
+path.
+
+**Shipped:** `src/lib/fleetModel.ts`, `src/lib/pptx/layout.ts`,
+`src/lib/pptx/content.ts`, `src/lib/pptx/tables.ts`,
+`src/lib/pptx/romSellPrice.ts`, `src/lib/pptxTemplateExport.ts`,
+`src/components/rom/RomExportBar.tsx`,
+`src/lib/pptx/__tests__/deckPricingGate.test.ts` (new).
+
 ## 2026-10-02 — Code-review fixes: two gates were unreachable
 
 A `/code-review` pass found that both project-level load questions could be

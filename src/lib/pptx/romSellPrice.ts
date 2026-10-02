@@ -9,7 +9,8 @@
 import type PizZip from 'pizzip'
 import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
 import type { FleetSellPriceTotal } from '@/src/calc/fleetSellPrice'
-import { frame, usd } from './layout'
+import type { PricingGate } from '@/src/lib/romComplexityFromProject'
+import { frame, usd, NOT_PRICED } from './layout'
 import { TAL_RED, type TableCell } from './ooxml'
 
 const redCell = (t: string, align: TableCell['align'] = 'r'): TableCell => ({ t, align, fill: TAL_RED, color: 'FFFFFF', bold: true })
@@ -24,7 +25,10 @@ export function fillRomSellPriceAppendix(
   zip: PizZip,
   slide: number,
   lines: RomSellPriceLine[],
-  fleetTotal: FleetSellPriceTotal
+  fleetTotal: FleetSellPriceTotal,
+  /** Omitted by callers that have no project context; a missing gate prices
+   *  normally, matching the pre-gate behaviour. */
+  gate?: PricingGate,
 ): void {
   if (lines.length === 0) return
 
@@ -32,12 +36,21 @@ export function fillRomSellPriceAppendix(
     { t: 'Vehicle' }, { t: 'Qty', align: 'r' }, { t: 'Hardware', align: 'r' },
     { t: 'Integration', align: 'r' }, { t: 'Software', align: 'r' }, { t: 'Subtotal', align: 'r' },
   ]]
+  // A blocked category prints $0, the same figure Step 4 shows — the column
+  // stays a money column, and the caption carries the reason.
+  const intOk = !gate || gate.integrationReady
+  const swOk = !gate || gate.softwareReady
   for (const l of lines) {
     const { hardwareSellTotal, integrationSellTotal, softwareSellTotal, lineSubtotal } = l.pricing
+    const subtotal = hardwareSellTotal
+      + (intOk ? integrationSellTotal : 0)
+      + (swOk ? softwareSellTotal : 0)
     rows.push([
       { t: l.vehicleName }, { t: String(l.qty), align: 'r' },
-      { t: usd(hardwareSellTotal), align: 'r' }, { t: usd(integrationSellTotal), align: 'r' },
-      { t: usd(softwareSellTotal), align: 'r' }, { t: usd(lineSubtotal), align: 'r' },
+      { t: usd(hardwareSellTotal), align: 'r' },
+      { t: usd(intOk ? integrationSellTotal : 0), align: 'r' },
+      { t: usd(swOk ? softwareSellTotal : 0), align: 'r' },
+      { t: usd(gate?.blocked ? subtotal : lineSubtotal), align: 'r' },
     ])
   }
   rows.push([
@@ -45,12 +58,14 @@ export function fillRomSellPriceAppendix(
     { t: usd(fleetTotal.addersTotal), align: 'r' },
   ])
   rows.push([
-    redCell('TOTAL', 'l'),
+    redCell(gate?.blocked ? 'HARDWARE SUBTOTAL' : 'TOTAL', 'l'),
     redCell(String(fleetTotal.totalQty)),
     redCell(usd(fleetTotal.hardwareTotal)),
-    redCell(usd(fleetTotal.integrationTotal)),
-    redCell(usd(fleetTotal.softwareTotal)),
-    redCell(usd(fleetTotal.sellTotal)),
+    redCell(usd(intOk ? fleetTotal.integrationTotal : 0)),
+    redCell(usd(swOk ? fleetTotal.softwareTotal : 0)),
+    // No project total while a category is withheld — a total that quietly
+    // omits professional services reads as the whole job.
+    redCell(gate?.blocked ? NOT_PRICED : usd(fleetTotal.sellTotal)),
   ])
 
   const f = frame(zip, slide)
@@ -59,5 +74,7 @@ export function fillRomSellPriceAppendix(
   const tierNote = lines
     .map(l => `${l.vehicleName}: Integration T${l.integrationResult.tier} · Software T${l.softwareResult.tier}`)
     .join(' · ')
-  f.caption(`ROM — budgetary estimate, placeholder pricing pending Kyle · ${tierNote}`)
+  f.caption(gate?.blocked
+    ? `Not priced — ${gate.blockedLabels.join(' and ')} show $0 until these are answered on Step 1: ${gate.missingAll.join(', ')}`
+    : `ROM — budgetary estimate, placeholder pricing pending Kyle · ${tierNote}`)
 }
