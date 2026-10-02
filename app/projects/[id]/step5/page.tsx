@@ -12,6 +12,7 @@ import { applyDrivers, scenarioKpis, diffKpis, type ScenarioDrivers } from '@/sr
 import { effDailyOpHr, defaultOperatingDaysPerYear, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
 import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
 import RomKpis from '@/src/components/rom/RomKpis'
+import { pricingGate } from '@/src/lib/romComplexityFromProject'
 import RomDrivers from '@/src/components/rom/RomDrivers'
 import RomBento from '@/src/components/rom/RomBento'
 import RomExportBar from '@/src/components/rom/RomExportBar'
@@ -148,7 +149,7 @@ export default function RomDashboardPage() {
 
           <div className="rom2-main">
             <div className={`rom2-kpiband ${showScenario ? 'is-scenario' : ''}`}>
-              <RomKpis fleet={active.fleet} rom={active.rom} flows={active.flows} settings={active.settings} costs={active.costs} serviceLifeYears={activeProject.serviceLifeYears ?? 10} vehicleById={vehicleById} names={names} deltas={deltas} />
+              <RomKpis fleet={active.fleet} rom={active.rom} flows={active.flows} settings={active.settings} costs={active.costs} serviceLifeYears={activeProject.serviceLifeYears ?? 10} vehicleById={vehicleById} names={names} deltas={deltas} gate={pricingGate(activeProject)} />
             </div>
 
             <RomBento

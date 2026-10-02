@@ -7,6 +7,7 @@ import { resilience } from '@/src/calc/romSensitivity'
 import { chargingSeries } from '@/src/calc/romCharts'
 import { kpiDetails, type KpiId } from '@/src/lib/kpiDetails'
 import type { ScenarioDiff } from '@/src/lib/scenario'
+import type { PricingGate } from '@/src/lib/romComplexityFromProject'
 import KpiTile from './KpiTile'
 import RomGauge from './RomGauge'
 
@@ -29,7 +30,13 @@ interface Props {
   names: Record<string, string>
   /** Scenario-vs-baseline deltas; when present, tiles show a delta chip. */
   deltas?: ScenarioDiff | null
+  /** Withholds CAPEX and everything built on it while complexity inputs are
+   *  missing — same rule Step 4 applies, so the surfaces can't disagree. */
+  gate: PricingGate
 }
+
+/** What a CAPEX-derived tile shows instead of a figure it cannot stand behind. */
+const NOT_PRICED = 'Not priced'
 
 type Delta = { text: string; tone: 'good' | 'bad' | 'neutral' }
 
@@ -46,7 +53,7 @@ function chip(d: number | null | undefined, fmt: (n: number) => string, good?: '
 
 /** Top KPI band — interactive tiles (hover/pin reveals each metric's breakdown).
  *  Fleet sold + ROM CAPEX are the accent headline; the rest are secondary. */
-export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLifeYears, vehicleById, names, deltas }: Props) {
+export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLifeYears, vehicleById, names, deltas, gate }: Props) {
   const payback = rom.payback.paybackYears
   const throughput = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
   const detail = kpiDetails({ fleet, rom, flows, settings, costs }, names, { serviceLifeYears })
@@ -61,6 +68,7 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   const lifetimeMoves = annualMoves * serviceLifeYears
   const costPerMove = lifetimeMoves > 0 ? tcoAtLife / lifetimeMoves : null
   const res = resilience({ fleet })
+  const blocked = gate.blocked
   const pctChip = (n: number) => `${Math.round(n * 100)}%`
   const opDays = Math.max(1, costs.operatingDaysPerYear)
   const energyPerDay = rom.opex.annualEnergyKwh / opDays
@@ -94,18 +102,21 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
     { id: 'energy', label: 'Energy kWh /d · /wk', value: `${Math.round(energyPerDay)} · ${Math.round(energyPerWeek)}`,
       delta: chip(deltas?.annualEnergyKwh == null ? undefined : deltas.annualEnergyKwh / opDays, n => `${Math.round(n)}/d`, 'down') },
     // ── Financials ──
-    { id: 'capex', label: 'ROM CAPEX', value: usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true,
-      delta: chip(deltas?.capexMid, usd, 'down') },
-    { id: 'payback', label: 'Payback', value: payback == null ? '—' : `${payback.toFixed(1)} yr`,
-      delta: chip(deltas?.paybackYears, n => `${n.toFixed(1)} yr`, 'down') },
+    // CAPEX and everything built on it read "Not priced" while the complexity
+    // inputs behind professional services / software are missing — the same
+    // rule Step 4 applies, so the two surfaces agree.
+    { id: 'capex', label: 'ROM CAPEX', value: blocked ? NOT_PRICED : usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true,
+      delta: blocked ? undefined : chip(deltas?.capexMid, usd, 'down') },
+    { id: 'payback', label: 'Payback', value: blocked ? NOT_PRICED : (payback == null ? '—' : `${payback.toFixed(1)} yr`),
+      delta: blocked ? undefined : chip(deltas?.paybackYears, n => `${n.toFixed(1)} yr`, 'down') },
     { id: 'net', label: 'Net benefit / yr', value: usd(offset - opex), accent: true,
       delta: chip(deltas?.netAnnualBenefit, usd, 'up') },
     { id: 'offset', label: 'Labor offset / yr', value: usd(offset),
       delta: chip(deltas?.annualLaborOffset, usd, 'up') },
     { id: 'opex', label: 'Annual OPEX', value: usd(opex),
       delta: chip(deltas?.annualOpex, usd, 'down') },
-    { id: 'tco', label: `TCO @ ${serviceLifeYears}yr`, value: usd(tcoAtLife) },
-    { id: 'costPerMove', label: 'Cost / move', value: costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}` },
+    { id: 'tco', label: `TCO @ ${serviceLifeYears}yr`, value: blocked ? NOT_PRICED : usd(tcoAtLife) },
+    { id: 'costPerMove', label: 'Cost / move', value: blocked ? NOT_PRICED : (costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}`) },
   ]
 
   const byId = new Map(tiles.map((t, i) => [t.id, { ...t, colorIndex: i }]))

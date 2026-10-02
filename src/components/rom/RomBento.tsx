@@ -17,6 +17,8 @@ import UtilizationChart from './charts/UtilizationChart'
 import ChargingSummary from './charts/ChargingSummary'
 import BatterySocChart from './charts/BatterySocChart'
 import CapexRangeBars from './charts/CapexRangeBars'
+import Icon from '@/src/design-system/components/Icon'
+import { pricingGate, type PricingGate } from '@/src/lib/romComplexityFromProject'
 import PaybackCurve from './charts/PaybackCurve'
 import TcoStacked from './charts/TcoStacked'
 import RequirementsMatrix from './RequirementsMatrix'
@@ -105,12 +107,30 @@ function CollapsibleSection({ title, defaultOpen = false, children }: { title: s
 /** The dashboard body as a responsive bento of cards (replaces the scroll-spy
  *  sections). Reuses the existing chart components; the driver rail + KPI band
  *  live in the page shell. */
+/** Stands in for every CAPEX-derived panel while Step 4 is withholding a price.
+ *  Says the same thing the Step 4 banner says, so the two surfaces cannot tell
+ *  the reader different stories about the same project. */
+function NotPriced({ gate }: { gate: PricingGate }) {
+  const missing = [...new Set([...gate.missingIntegration, ...gate.missingSoftware])]
+  return (
+    <p className="rom-bento-notpriced">
+      <Icon name="warn" size={16} />
+      <span>
+        <strong>Not priced.</strong> CAPEX, payback and total cost of ownership all build on
+        Professional services and Software, which are unpriced until these are answered on
+        Step 1: <strong>{missing.join(', ')}</strong>.
+      </span>
+    </p>
+  )
+}
+
 export default function RomBento(p: Props) {
   const flowSeries = useMemo(() => flowDiagramSeries(p.flows, p.vehicleById, p.fleet), [p.flows, p.vehicleById, p.fleet])
   const duty = useMemo(() => dutyCycleSeries(p.flows, p.derivedByFlowId, p.fleet), [p.flows, p.derivedByFlowId, p.fleet])
   const util = useMemo(() => utilizationSeries(p.fleet, p.vehicleById), [p.fleet, p.vehicleById])
   const charge = useMemo(() => chargingSeries(p.fleet, p.vehicleById), [p.fleet, p.vehicleById])
   const soc = useMemo(() => batterySocSeries(p.fleet, p.vehicleById, p.effDailyOpHr, 0.25), [p.fleet, p.vehicleById, p.effDailyOpHr])
+  const gate = useMemo(() => pricingGate(p.project), [p.project])
   const capex = useMemo(() => capexBarsSeries(p.rom, p.vehicleById), [p.rom, p.vehicleById])
   const payback = useMemo(() => paybackSeries(p.rom, p.serviceLifeYears), [p.rom, p.serviceLifeYears])
   const tco = useMemo(() => tcoSeries(p.rom, p.serviceLifeYears), [p.rom, p.serviceLifeYears])
@@ -125,10 +145,22 @@ export default function RomBento(p: Props) {
       </Cell>
 
       {/* The money, paired: cash over time, then the line-item detail. */}
-      <Cell title="Payback" span={2}><PaybackCurve series={payback} /></Cell>
-      <Cell title="Total cost of ownership" span={2}><TcoStacked series={tco} /></Cell>
-      <Cell title="ROM pricing" span={2}><RomPricingTable pricing={p.rom.pricing} vehicleById={p.vehicleById} /></Cell>
-      <Cell title="ROM CAPEX" span={2}><CapexRangeBars series={capex} /></Cell>
+      {/* Payback, TCO and the pricing table all build on CAPEX, and CAPEX is
+          only as good as the complexity inputs behind it. While Step 4 is
+          withholding a price, showing these would put the same unquotable
+          number back on screen through a side door. */}
+      {gate.blocked ? (
+        <Cell title="ROM pricing" span={2}>
+          <NotPriced gate={gate} />
+        </Cell>
+      ) : (
+        <>
+          <Cell title="Payback" span={2}><PaybackCurve series={payback} /></Cell>
+          <Cell title="Total cost of ownership" span={2}><TcoStacked series={tco} /></Cell>
+          <Cell title="ROM pricing" span={2}><RomPricingTable pricing={p.rom.pricing} vehicleById={p.vehicleById} /></Cell>
+        </>
+      )}
+      {!gate.blocked && <Cell title="ROM CAPEX" span={2}><CapexRangeBars series={capex} /></Cell>}
 
       {/* What the fleet does all day. */}
       <Cell title="What the fleet does" span={2}><DutyCycleChart series={duty} /></Cell>

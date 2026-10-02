@@ -20,6 +20,7 @@ import ScrollSection from '@/src/components/ScrollSection'
 import FlowsTab from '@/src/components/engine/FlowsTab'
 import ChargingPipeline from '@/src/components/engine/ChargingPipeline'
 import BufferPipeline from '@/src/components/engine/BufferPipeline'
+import { pricingGate } from '@/src/lib/romComplexityFromProject'
 
 export default function FleetEnginePage() {
   const params = useParams()
@@ -97,6 +98,10 @@ export default function FleetEnginePage() {
     () => fleetSummary(groups, vehicleById, settings),
     [groups, vehicleById, settings],
   )
+
+  // Whether Step 4 will actually be able to price this project.
+  const gate = useMemo(() => (project ? pricingGate(project) : null), [project])
+  const gateMissing = gate ? [...new Set([...gate.missingIntegration, ...gate.missingSoftware])] : []
 
   const persistPatch = (patch: EnginePatch) => {
     if (!project) return
@@ -315,6 +320,15 @@ export default function FleetEnginePage() {
             <Icon name="arrowL" size={13} /> Back to Vehicles
           </Link>
           <div className="row">
+            {/* Told here, before the click — arriving on a step that prices
+                nothing is a worse way to learn the intake is short. */}
+            {gate?.blocked && (
+              <span className="hint step-nav-warn">
+                <Icon name="warn" size={13} />
+                Won&rsquo;t price yet — {gateMissing.length} answer{gateMissing.length === 1 ? '' : 's'} missing
+                on Step 1: {gateMissing.join(', ')}
+              </span>
+            )}
             <span className="hint">
               {fleet.groups.length === 0
                 ? 'Assign a vehicle to a flow to size the fleet'

@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-10-02 — Pricing gate: banner, $0, warning before the step, yellow for unfilled gates
+
+Follow-ups on owner feedback, all to the gate shipped below.
+
+**One notice, not a per-row one.** The withheld categories were explaining
+themselves inline, which repeated the same sentence twice and broke the amount
+column. The ROM placeholder banner at the top of Step 4 is now replaced, when a
+category is withheld, by a **Not priced** notice carrying the reason and the
+exact answers needed. Professional services and Software show **$0** — still a
+money row, so the column stays scannable. The project total stays suppressed
+(Hardware subtotal only).
+
+**Told before the click.** Step 3's footer now warns that Step 4 won't price
+yet and names the missing answers. Arriving on a step that prices nothing is a
+worse way to learn the intake is short.
+
+**Dashboard gap closed.** ROM CAPEX, Payback, TCO and Cost/move read
+"Not priced", and the CAPEX bars, payback curve, TCO chart and pricing table
+are replaced by the same notice. All four build on CAPEX, so showing them would
+put the unquotable number back on screen through a side door. Net benefit,
+labor offset, OPEX and every fleet/flow tile are untouched — none depend on
+CAPEX.
+
+**Markers stay a simple red `*`.** An intermediate version used text pills
+("sets price", "compatibility"); the owner asked for one plain marker, so the
+distinction lives in each marker's tooltip instead.
+
+**An unfilled hard gate now reads YELLOW.** `INCOMPLETE` already existed in the
+engine — an unanswered hard gate has never shown Compatible — but it rendered
+in neutral grey, which read as "nothing to see here" next to a red or green
+peer. It now uses the warn colour, matching the rule that every hardware gate
+has to be filled in. Engine logic unchanged; this is presentation only.
+
+**Shipped:** `src/components/rom/RomFleetSellPrice.tsx`,
+`src/components/rom/RomQuotation.tsx`, `src/components/rom/RomBento.tsx`,
+`src/components/rom/RomKpis.tsx`, `src/components/step1/ApplicationForm.tsx`,
+`app/projects/[id]/step3/page.tsx`, `app/projects/[id]/step5/page.tsx`,
+`app/globals.css`.
+
 ## 2026-10-02 — No price at all beats a bad price: integration/software pricing gate
 
 Owner rule: *"I would rather not show pricing than show bad pricing."*

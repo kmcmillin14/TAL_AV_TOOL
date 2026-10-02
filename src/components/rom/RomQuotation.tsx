@@ -37,30 +37,19 @@ function QuoteCategory(
   { name, amount, badge, withheld, children }:
   { name: string; amount: number; badge?: ReactNode; withheld?: string[]; children?: ReactNode },
 ) {
+  // A withheld category still reads as a money row — $0, in line with the
+  // others — so the column stays scannable. The reason it is zero belongs in
+  // one place (the banner at the top of the step), not repeated on each row.
   const isWithheld = withheld != null && withheld.length > 0
   return (
     <section className={`rom-quote-cat${isWithheld ? ' is-withheld' : ''}`}>
       <div className="rom-quote-cat-head">
         <span className="rom-quote-cat-name">{name}</span>
         {!isWithheld && badge}
-        {isWithheld
-          ? <WithheldAmount missing={withheld} />
-          : <span className="rom-quote-cat-amount mono">{fullUsd(amount)}</span>}
+        <span className="rom-quote-cat-amount mono">{fullUsd(isWithheld ? 0 : amount)}</span>
       </div>
       {children && <div className="rom-quote-cat-body">{children}</div>}
     </section>
-  )
-}
-
-/** Stands in for a category amount that is deliberately not shown. The owner's
- *  rule is that no number beats a bad number, so this renders the blocking
- *  answers by name rather than a figure — a blank to fill, not a price to
- *  quote. */
-function WithheldAmount({ missing }: { missing: string[] }) {
-  return (
-    <span className="rom-quote-withheld">
-      Not priced — needs <strong>{missing.join(', ')}</strong> on Step 1
-    </span>
   )
 }
 
@@ -182,11 +171,9 @@ export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, conf
             <span className="rom-quote-total-amount mono">{fullUsd(fleetTotal.hardwareTotal)}</span>
           </div>
           <p className="rom-quote-blocked">
-            <strong>No project total yet.</strong> {blockedLabels.length === 1
+            No project total while {blockedLabels.length === 1
               ? `${blockedLabels[0]} is`
-              : `${blockedLabels.join(' and ')} are`}{' '}
-            not priced until the inputs above are answered — an unanswered input scores as
-            &ldquo;simple&rdquo;, so quoting now would under-price the job.
+              : `${blockedLabels.join(' and ')} are`} unpriced — see the notice at the top of this step.
           </p>
         </>
       ) : (

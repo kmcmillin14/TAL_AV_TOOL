@@ -10,6 +10,7 @@ import {
   resolveRomSellPriceLine, resolveFleetSellPriceTotal, resolveFleetComplexityBaseline,
   type RomSellPriceLine, type RomSellPriceOverride,
 } from '@/src/lib/romSellPriceLine'
+import Icon from '@/src/design-system/components/Icon'
 import RomQuotation from './RomQuotation'
 import RomPriceDrivers from './RomPriceDrivers'
 
@@ -92,10 +93,26 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
 
   return (
     <div className="rom-sp">
-      <p className="rom-sp-placeholder-warning">
-        ROM — budgetary estimate, placeholder pricing. All dollar values and multipliers are
-        pending real pricing input.
-      </p>
+      {gate.blocked ? (
+        <p className="rom-sp-notpriced" role="status">
+          <Icon name="warn" size={16} />
+          <span>
+            <strong>Not priced.</strong>{' '}
+            {[
+              gate.integrationReady ? null : 'Professional services',
+              gate.softwareReady ? null : 'Software',
+            ].filter(Boolean).join(' and ')} show <span className="mono">$0</span>{' '}because the answers
+            that set their complexity are missing. An unanswered input scores as
+            &ldquo;simple&rdquo;, so pricing now would under-quote the job.
+            {' '}Answer on Step 1: <strong>{[...new Set([...gate.missingIntegration, ...gate.missingSoftware])].join(', ')}</strong>.
+          </span>
+        </p>
+      ) : (
+        <p className="rom-sp-placeholder-warning">
+          ROM — budgetary estimate, placeholder pricing. All dollar values and multipliers are
+          pending real pricing input.
+        </p>
+      )}
       {lines.length === 0 ? (
         <p className="rom-sp-empty">
           None of the {assignedGroups.length} assigned vehicle{assignedGroups.length === 1 ? '' : 's'} has
