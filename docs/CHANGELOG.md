@@ -1,5 +1,54 @@
 # Changelog
 
+## 2026-10-03 — Step 1 completion audit: COMPLETE now means complete
+
+The section badges were reporting COMPLETE on sections that were mostly blank,
+because `requiredFields` and the asterisks the form actually draws had drifted
+apart. Measured, section by section:
+
+    section   asterisks shown   requiredFields   badge
+    01 Load          4                2          COMPLETE on half
+    02 Transfer      5                1          COMPLETE on one fifth
+    03 Site          6                1          COMPLETE on one sixth
+    08 Interlocks    1                0          OPTIONAL, always
+    09 Software      4                0          OPTIONAL, always
+
+Sections 08 and 09 hold the pricing-gate inputs, so a project could read
+"OPTIONAL — nothing needed here" on Step 1 while Step 4 refused to price it.
+
+**`requiredFields` now mirrors the markers one for one**, and that is written
+into the file as the contract: add a marker in the form, add the field here.
+
+**`in-progress` became `partial`**, and the rule is now explicit: anything short
+of every required field answered is partial; only all of them earns complete.
+`optional` means the section marks nothing required — never that its required
+fields happen to be empty.
+
+**Two traps caught while making the change**, either of which would have been
+worse than the bug:
+
+- **A tri-state answered "No" is answered.** `isFilled` treated `false` as
+  blank, so sections 03 and 09 — six Yes/No fields between them — could never
+  have reached complete no matter what the engineer chose. Booleans now count
+  as answered in both states.
+- **Pick/drop heights can't gate a badge.** `0` is both the unset sentinel and
+  a valid floor-to-floor answer, and nothing can tell them apart, so they are
+  deliberately excluded from every `requiredFields` list.
+
+**Certifications lost its asterisk.** An empty selection is the normal answer —
+most projects need none and the gate skips on it — so marking it would nag
+every project about a field already answered by being left alone. That restores
+the one-for-one contract; section 04 is optional on purpose.
+
+`totalRequired` / `filledRequired` deleted: dead since `ProgressStrip` went.
+
+Seven tests pin the new rules, including the section-03 regression.
+
+**Shipped:** `src/lib/constants/sections.ts`,
+`src/lib/__tests__/sectionStatusPartial.test.ts` (new),
+`src/components/step1/FormSection.tsx`, `src/components/step1/SectionNav.tsx`,
+`src/components/step1/ApplicationForm.tsx`, `app/globals.css`.
+
 ## 2026-10-03 — Less to read: one progress meter, one set of counts, no dashes
 
 A pass over what a person actually reads, under the new simplicity rule in

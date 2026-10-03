@@ -1006,7 +1006,12 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <FormSection {...secProps('section-04')}>
           <div className="fld-grid-4">
             <div className="fld span-4">
-              <label>Required Certifications <Mark roles={['compat']} /></label>
+              {/* No marker: an empty certifications list is the NORMAL answer —
+                  most projects need none, and the gate skips when nothing is
+                  selected (ARCHITECTURE §3, "optional soft gate"). Marking it
+                  would nag every project for a field that is already answered
+                  by being left alone. */}
+              <label>Required Certifications</label>
               <div className="cert-grid">
                 {CERTIFICATIONS.map(cert => {
                   const on = certifications.includes(cert)

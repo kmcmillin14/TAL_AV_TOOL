@@ -590,7 +590,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   background: var(--text-disabled);
 }
 .section-dot.complete    { background: var(--good); box-shadow: 0 0 6px rgba(94, 234, 144, 0.4); }
-.section-dot.in-progress { background: var(--warn); }
+.section-dot.partial { background: var(--warn); }
 .section-dot.untouched   { background: var(--text-disabled); }
 .section-dot.optional    { background: var(--border-strong); }
 .section-dot.required { background: var(--tal-red, #c00); box-shadow: 0 0 0 3px rgba(204,0,0,0.18); }
@@ -622,7 +622,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   border: 1px solid var(--border);
 }
 .sec-badge-complete    { color: var(--good); background: var(--good-soft); border-color: var(--good); }
-.sec-badge-in-progress { color: var(--warn); background: var(--warn-soft); border-color: var(--warn); }
+.sec-badge-partial { color: var(--warn); background: var(--warn-soft); border-color: var(--warn); }
 .sec-badge-untouched   { color: var(--text-tertiary); background: var(--bg-surface-2); }
 .sec-badge-optional    { color: var(--text-tertiary); background: transparent; }
 

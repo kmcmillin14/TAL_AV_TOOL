@@ -3,8 +3,10 @@ import type { ProjectFormData } from '@/src/lib/validations/schemas'
 // All 12 sections of the Step 1 intake form, grouped into three tiers
 // (qualification → sizing → proposal). The order here is the order they
 // render on the page and in the SectionNav. `requiredFields` mirrors the visible
-// red asterisks — when every required field has a non-empty value, the section
-// reads as 'complete' in the nav. Sections with no required fields are 'optional'.
+// red asterisks ONE FOR ONE — that is the contract. When they drifted apart
+// (2026-10-03 audit) section 03 showed six asterisks but listed one required
+// field, so it reported COMPLETE with five of them blank. Add a marker in the
+// form, add the field here.
 
 export type SectionTier = 'qualification' | 'sizing' | 'proposal'
 
@@ -31,16 +33,16 @@ export interface SectionMeta {
 export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
   // ── Tier 1 — VEHICLE QUALIFICATION ──────────────────────────────────────
   { id: 'section-01', num: '01', label: 'What are you moving?', short: 'Load',
-    tier: 'qualification', requiredFields: ['maxLoadWeightLbs', 'typicalUnitType'] },
+    tier: 'qualification', requiredFields: ['maxLoadWeightLbs', 'typicalUnitType', 'palletEntryType', 'palletStacking'] },
   { id: 'section-02', num: '02', label: 'How is it transferred?', short: 'Transfer',
-    tier: 'qualification', requiredFields: ['transferType'] },
+    tier: 'qualification', requiredFields: ['transferType', 'pickDropLocationCount'] },
   // 'Environment & site' and the old Tier-2 'Site details' were one subject split
   // across two sections half the form apart — aisle width and temperature here,
   // floor condition and facility size six sections later. Merged 2026-09-14 to
   // mirror the customer questionnaire's 'General Site Info', so an engineer
   // transcribing a returned questionnaire answers one section, not two.
   { id: 'section-03', num: '03', label: 'General Site Info', short: 'Site',
-    tier: 'qualification', requiredFields: ['minAisleWidthFt'] },
+    tier: 'qualification', requiredFields: ['minAisleWidthFt', 'outdoorRequired', 'temperatureEnvironment', 'rampRequired', 'facilitySizeSqFt', 'sharedTrafficTypes'] },
   { id: 'section-04', num: '04', label: 'Certifications', short: 'Certs',
     tier: 'qualification', requiredFields: [] },
   // ── Tier 2 — FLEET SIZING & ECONOMICS ───────────────────────────────────
@@ -64,9 +66,9 @@ export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
   // Split in two 2026-09-14 to mirror the questionnaire: what the fleet must
   // physically wait on / talk to, vs. what it must integrate with in software.
   { id: 'section-08', num: '08', label: 'Automation interlocks', short: 'Interlocks',
-    tier: 'sizing', requiredFields: [] },
+    tier: 'sizing', requiredFields: ['interlocks'] },
   { id: 'section-09', num: '09', label: 'Software & integration', short: 'Software',
-    tier: 'sizing', requiredFields: [] },
+    tier: 'sizing', requiredFields: ['wmsRequired', 'barcodeScanningRequired', 'storageTrackingRequired', 'hasAgvExperience'] },
   // ── Tier 3 — PROPOSAL DETAILS (no gate or price depends on these) ──
   // Expanded like everything else (2026-09-11): no section on Step 1 starts
   // collapsed. An engineer should be able to read the whole intake top to
@@ -79,11 +81,26 @@ export const FORM_SECTIONS: ReadonlyArray<SectionMeta> = [
     tier: 'proposal', requiredFields: [] },
 ] as const
 
-export type SectionStatus = 'complete' | 'in-progress' | 'untouched' | 'optional'
+/** 'partial' replaced 'in-progress' (2026-10-03): a section with ANY required
+ *  field unanswered is partial, never complete. Previously section 03 reported
+ *  COMPLETE on one of six marked fields, because requiredFields listed only the
+ *  one that drives a hard gate while the form showed six asterisks. */
+export type SectionStatus = 'complete' | 'partial' | 'untouched' | 'optional'
 
-/** Test whether a field's current value should count as 'filled'. */
+/** Whether a field has an answer.
+ *
+ *  `false` counts: these are tri-state booleans where undefined means "never
+ *  asked" and `false` is a deliberate "No" (no ramps, no WMS, indoor). Treating
+ *  `false` as blank would leave sections 03 and 09 permanently short of
+ *  complete no matter what the engineer answered.
+ *
+ *  Numbers still need to be > 0 — 0 is the app-wide unset sentinel for weights,
+ *  counts and sizes. The two fields where 0 is a real answer (pickHeightFt /
+ *  dropHeightFt, floor-to-floor) are deliberately not in any requiredFields
+ *  list, because unset and "floor" are indistinguishable there. */
 function isFilled(value: unknown): boolean {
   if (value == null) return false
+  if (typeof value === 'boolean') return true
   if (typeof value === 'string') return value.trim().length > 0
   if (typeof value === 'number') return Number.isFinite(value) && value > 0
   if (Array.isArray(value)) return value.length > 0
@@ -91,8 +108,11 @@ function isFilled(value: unknown): boolean {
 }
 
 /**
- * Compute a section's status from current form values.
- * Sections with no required fields are always 'optional'.
+ * A section's status from current form values.
+ *
+ * 'optional' means the section genuinely marks nothing required — not that its
+ * required fields happen to be blank. Anything short of every required field
+ * answered is 'partial'; only all of them earns 'complete'.
  */
 export function sectionStatus(meta: SectionMeta, values: Partial<ProjectFormData>): SectionStatus {
   // section-06 is the flow-row list — complete once any flow has both a
@@ -100,28 +120,13 @@ export function sectionStatus(meta: SectionMeta, values: Partial<ProjectFormData
   if (meta.id === 'section-06') {
     const flows = values.flows ?? []
     if (flows.some(f => (f.distanceFt ?? 0) > 0 && (f.thruPerHr ?? 0) > 0)) return 'complete'
-    if (flows.length > 0) return 'in-progress'
+    if (flows.length > 0) return 'partial'
     return 'untouched'
   }
   if (meta.requiredFields.length === 0) return 'optional'
   const filled = meta.requiredFields.filter(f => isFilled(values[f])).length
-  if (filled === 0) return 'untouched'
   if (filled === meta.requiredFields.length) return 'complete'
-  return 'in-progress'
-}
-
-/** Total required fields across the whole questionnaire. */
-export function totalRequired(): number {
-  return FORM_SECTIONS.reduce((sum, s) => sum + s.requiredFields.length, 0)
-}
-
-/** Number of required fields currently filled across all sections. */
-export function filledRequired(values: Partial<ProjectFormData>): number {
-  let count = 0
-  for (const s of FORM_SECTIONS) {
-    for (const f of s.requiredFields) if (isFilled(values[f])) count++
-  }
-  return count
+  return filled === 0 ? 'untouched' : 'partial'
 }
 
 // ── Qualification readiness meter ────────────────────────────────────────────

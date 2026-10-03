@@ -11,7 +11,7 @@ interface Props {
 function dotClass(status: SectionStatus): string {
   switch (status) {
     case 'complete':    return 'section-dot complete'
-    case 'in-progress': return 'section-dot in-progress'
+    case 'partial':     return 'section-dot partial'
     case 'optional':    return 'section-dot optional'
     default:            return 'section-dot untouched'
   }

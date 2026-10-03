@@ -22,7 +22,7 @@ interface FormSectionProps {
 function statusLabel(status?: SectionStatus): string | null {
   switch (status) {
     case 'complete':    return 'Complete'
-    case 'in-progress': return 'In progress'
+    case 'partial':     return 'Partial'
     case 'optional':    return 'Optional'
     case 'untouched':   return 'Required'
     default:            return null
