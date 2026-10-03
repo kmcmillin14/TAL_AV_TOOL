@@ -1,5 +1,40 @@
 # Changelog
 
+## 2026-10-02 — Dashboard: the drivers rail stays with you (phase 1)
+
+The dashboard is a what-if instrument laid out like a report: the sliders that
+change a number and the number they change were on different screens for three
+of the page's four screens of scroll. The rail is now pinned.
+
+**Two separate bugs, both silent:**
+
+1. `.rom2-rail` already declared `position: sticky` — and it had never worked.
+   A sticky child of `<details>` is not honoured, and the wrapper shrink-wraps
+   in a grid with `align-items: start`, so its box was *exactly* the rail's own
+   height (measured: both 465px) — zero travel even if it had been. Stickiness
+   moved to `.rom-drivers-collapse`, which as a grid item sticks within its grid
+   AREA, spanning the full main column.
+2. The offset would not have cleared the sticky hero bar anyway. There is now a
+   `--hero-sticky-h` token so the number lives in one place.
+
+**A measurement trap worth recording:** the hero bar is **130 CSS px**, but
+`getBoundingClientRect()` reported 104 because the in-app preview applies
+`zoom: 0.8` to the root. Rect values are scaled by zoom; `offsetHeight` is not.
+The first fix was built on the wrong number and parked the rail 11px *under*
+the header. Use `offsetHeight` for layout constants read from a zoomed viewport.
+
+**The rail now carries the scenario delta.** Comparing a scenario meant
+scrolling to find a changed tile; Fleet / CAPEX / Payback deltas now read in the
+rail itself, beside the control that moved them. Direction is carried by the
+sign as well as the colour, and the money rows are suppressed when the project
+can't be priced. Verified at the bottom of the page: rail pinned, delta legible.
+
+Desktop only (>1000px). Below that the shell is one column and the rail is a
+collapsible block, where sticking would eat the screen.
+
+**Shipped:** `app/globals.css`, `src/components/rom/RomDrivers.tsx`,
+`app/projects/[id]/step5/page.tsx`.
+
 ## 2026-10-02 — The deck builds when unpriced; it withholds the numbers instead
 
 Earlier today the customer deck was *disabled* while a category was withheld.

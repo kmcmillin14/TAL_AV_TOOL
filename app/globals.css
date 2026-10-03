@@ -167,6 +167,11 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   top: 0;
   z-index: 50;
 }
+/* Height of the sticky hero bar (logo row + step tabs). Anything else that
+   sticks has to clear it, so the number lives in one place. Measured from
+   `.hero-bar.offsetHeight`, NOT getBoundingClientRect — a zoomed viewport
+   (the in-app preview applies zoom: 0.8) scales the rect and under-reports it. */
+:root { --hero-sticky-h: 130px; }
 
 .hero-top {
   position: relative;
@@ -3539,7 +3544,30 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 /* Drivers rail as a native <details>. Desktop: no summary, content always shown
    (the min-width guard forces content visible even if collapsed on a phone then
    widened). Phone: summary toggles the panel. */
+/* The drivers rail is the dashboard's control surface: the slider and the
+   figure it moves must never be on different screens.
+ *
+ * Sticky lives HERE, on the <details> wrapper, not on the .rom2-rail <aside>
+ * inside it — where it was declared before, and silently did nothing. A sticky
+ * child of <details> is not honoured, and even where it is, the wrapper
+ * shrink-wraps in a grid with `align-items: start`, so its box was exactly the
+ * rail's own height and there was nowhere to travel. As a grid item the
+ * wrapper sticks within its grid AREA, which spans the full main column.
+ *
+ * `top` clears the sticky hero bar; without it the rail slid underneath.
+ * Desktop only — below 1000px the shell is one column and the rail is a
+ * collapsible block, where sticking would just eat the screen. */
 .rom-drivers-collapse { min-width: 0; }
+@media (min-width: 1001px) {
+  .rom-drivers-collapse {
+    position: sticky;
+    top: calc(var(--hero-sticky-h) + 12px);
+    align-self: start;
+    max-height: calc(100dvh - var(--hero-sticky-h) - 24px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
+}
 .rom-drivers-collapse > summary { display: none; }
 @media (min-width: 701px) {
   .rom-drivers-collapse:not([open]) > :not(summary) { display: block; }
@@ -3578,8 +3606,8 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom2-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; }
 
 /* Driver rail */
+/* Static by design — stickiness belongs to .rom-drivers-collapse above. */
 .rom2-rail {
-  position: sticky; top: 16px;
   display: flex; flex-direction: column; gap: 14px;
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -3588,6 +3616,27 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   padding: 16px;
 }
 .rom2-rail-head { display: flex; flex-direction: column; gap: 10px; }
+
+/* Scenario delta, read while the slider is still under the cursor. */
+.rom2-rail-delta {
+  display: flex; flex-direction: column; gap: 4px; margin: 2px 0 0;
+  padding: 8px 10px; background: var(--bg-surface-2); border-radius: 8px;
+}
+.rom2-rail-delta > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.rom2-rail-delta dt {
+  font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.rom2-rail-delta dd {
+  margin: 0; font-family: var(--tal-font-numeric); font-size: 12px; font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+/* Direction is carried by the sign in the text as well as the colour. */
+.rom2-rail-delta dd.is-good { color: var(--good); }
+.rom2-rail-delta dd.is-bad { color: var(--warn); }
+.rom2-rail-delta-none {
+  margin: 2px 0 0; font-family: var(--tal-font-family); font-size: 11px; color: var(--text-tertiary);
+}
 .rom2-rail-title {
   font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
   letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary);
@@ -3702,7 +3751,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 @media (max-width: 1000px) {
   .rom2-shell { grid-template-columns: 1fr; }
-  .rom2-rail { position: static; }
+  .rom2-rail { position: static; } /* stickiness lives on the wrapper */
 }
 @media (max-width: 680px) {
   .rom2-bento { grid-template-columns: 1fr; }

@@ -143,6 +143,8 @@ export default function RomDashboardPage() {
               hasOverrides={hasOverrides}
               mode={mode}
               onMode={setMode}
+              deltas={deltas}
+              pricingBlocked={gate.blocked}
             />
           </details>
 

@@ -1,6 +1,6 @@
 'use client'
 
-import type { ScenarioDrivers } from '@/src/lib/scenario'
+import type { ScenarioDrivers, ScenarioDiff } from '@/src/lib/scenario'
 import { bufferFromUtilization, utilizationFromBuffer } from '@/src/calc/types'
 
 /** One editable driver. `format`/`parse` map between the stored number and the
@@ -43,9 +43,47 @@ interface Props {
   hasOverrides: boolean
   mode: 'baseline' | 'scenario'
   onMode: (m: 'baseline' | 'scenario') => void
+  /** Scenario-vs-baseline deltas, for the headline readout in the rail. */
+  deltas?: ScenarioDiff | null
+  /** Suppresses the money deltas when the project cannot be priced. */
+  pricingBlocked?: boolean
 }
 
-export default function RomDrivers({ baseline, drivers, onChange, onApply, hasOverrides, mode, onMode }: Props) {
+/** The three figures worth watching while a slider moves. Shown in the rail
+ *  itself so comparing a scenario doesn't mean scrolling to find a changed
+ *  tile — the control and its consequence stay on the same screen. */
+function RailDelta(
+  { deltas, pricingBlocked }: { deltas: ScenarioDiff; pricingBlocked: boolean },
+) {
+  const money = (n: number) => `${n < 0 ? '−' : '+'}$${Math.abs(Math.round(n)).toLocaleString()}`
+  const rows: Array<{ label: string; text: string; good: boolean } | null> = [
+    deltas.totalFleetSold
+      ? { label: 'Fleet', text: `${deltas.totalFleetSold > 0 ? '+' : '−'}${Math.abs(deltas.totalFleetSold)}`, good: deltas.totalFleetSold < 0 }
+      : null,
+    !pricingBlocked && deltas.capexMid
+      ? { label: 'CAPEX', text: money(deltas.capexMid), good: deltas.capexMid < 0 }
+      : null,
+    !pricingBlocked && deltas.paybackYears != null && deltas.paybackYears !== 0
+      ? { label: 'Payback', text: `${deltas.paybackYears > 0 ? '+' : '−'}${Math.abs(deltas.paybackYears).toFixed(1)} yr`, good: deltas.paybackYears < 0 }
+      : null,
+  ]
+  const shown = rows.filter((r): r is NonNullable<typeof r> => r != null)
+  if (shown.length === 0) {
+    return <p className="rom2-rail-delta-none">No change from baseline yet.</p>
+  }
+  return (
+    <dl className="rom2-rail-delta" aria-label="Scenario vs baseline">
+      {shown.map(r => (
+        <div key={r.label}>
+          <dt>{r.label}</dt>
+          <dd className={`mono ${r.good ? 'is-good' : 'is-bad'}`}>{r.text}</dd>
+        </div>
+      ))}
+    </dl>
+  )
+}
+
+export default function RomDrivers({ baseline, drivers, onChange, onApply, hasOverrides, mode, onMode, deltas, pricingBlocked = false }: Props) {
   const set = (key: keyof ScenarioDrivers, value: number | undefined) =>
     onChange({ ...drivers, [key]: value })
 
@@ -67,6 +105,9 @@ export default function RomDrivers({ baseline, drivers, onChange, onApply, hasOv
             title={hasOverrides ? 'Show the scenario' : 'Change a driver to build a scenario'}
           >Scenario</button>
         </div>
+        {mode === 'scenario' && deltas && (
+          <RailDelta deltas={deltas} pricingBlocked={pricingBlocked} />
+        )}
       </div>
 
       <div className="rom2-drivers">
