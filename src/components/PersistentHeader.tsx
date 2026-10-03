@@ -313,10 +313,13 @@ export default function PersistentHeader({
         className="hero-meta-item"
         onClick={() => setEditing(field)}
       >
+        {/* An unset field shows its label alone — a dash is a character the
+            reader has to interpret, and "—" next to "TAL ENGINEER" reads as a
+            value rather than an absence. The button is still the way to fill it. */}
         {label && <span className="label">{label}</span>}
-        <span className="value">
-          {displayValue || <span className="placeholder">{placeholder || '—'}</span>}
-        </span>
+        {displayValue
+          ? <span className="value">{displayValue}</span>
+          : <span className="value is-empty">{placeholder || 'Add'}</span>}
       </button>
     )
   }
@@ -345,7 +348,10 @@ export default function PersistentHeader({
           <div className="divider" />
           <div className="app-name">
             <div className="product">Fleet Calculator</div>
-            <button type="button" className="product-rev mono product-rev-btn" onClick={() => setVersionLogOpen(true)} title="App version history">{APP_VERSION}</button>
+            {/* Prefixed: the app version and the project REV sat three tokens
+                apart in the same bar, both reading "v1.0", and nothing said
+                which was which. */}
+            <button type="button" className="product-rev mono product-rev-btn" onClick={() => setVersionLogOpen(true)} title="App version history">App {APP_VERSION}</button>
           </div>
         </div>
 
@@ -373,7 +379,7 @@ export default function PersistentHeader({
                 ref={inputRef}
                 type="text"
                 className="hero-meta-input"
-                placeholder="XXXXXXX"
+                placeholder="Opportunity number"
                 value={editValues.opportunityNumber || ''}
                 onChange={e => setEditValues(s => ({ ...s, opportunityNumber: e.target.value }))}
                 onBlur={() => commitEdit('opportunityNumber')}
@@ -396,7 +402,7 @@ export default function PersistentHeader({
                 role="button"
                 tabIndex={0}
               >
-                {editValues.opportunityNumber || <span className="placeholder">XXXXXXX</span>}
+                {editValues.opportunityNumber || <span className="value is-empty">Add</span>}
               </span>
             )}
           </div>

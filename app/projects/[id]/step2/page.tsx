@@ -132,7 +132,9 @@ export default function Step2Page() {
 
   const filtered = useMemo(() => qualifiedVehicles.filter(({ vehicle, result }) => {
     if (statusFilter === 'GREEN' && result.status !== 'GREEN') return false
-    if (statusFilter === 'GREEN+YELLOW' && result.status === 'RED') return false
+    if (statusFilter === 'GREEN+YELLOW' && result.status !== 'YELLOW') return false
+    if (statusFilter === 'RED' && result.status !== 'RED') return false
+    if (statusFilter === 'INCOMPLETE' && result.status !== 'INCOMPLETE') return false
     if (search) {
       const q = search.toLowerCase()
       if (
@@ -203,17 +205,25 @@ export default function Step2Page() {
           <div className="page-title">
             <span className="step-num">Step 02 / 05</span>
             <h1>Vehicle Compatibility</h1>
-            <div className="desc">
-              Informational only — vehicles evaluated against your requirements. No selection required.
-            </div>
+            <div className="desc">Every vehicle, checked against your requirements.</div>
           </div>
           <div className="status-pills">
-            <span className="pill good"><span className="dot" /> {counts.green} Compatible</span>
-            <span className="pill warn"><span className="dot" /> {counts.yellow} Review</span>
-            <span className="pill bad"><span className="dot" /> {counts.red} Incompatible</span>
-            {counts.incomplete > 0 && (
-              <span className="pill neutral"><span className="dot" /> {counts.incomplete} In Progress</span>
-            )}
+            {([
+              ['GREEN', 'good', counts.green, 'Compatible'],
+              ['GREEN+YELLOW', 'warn', counts.yellow, 'Review'],
+              ['RED', 'bad', counts.red, 'Incompatible'],
+              ...(counts.incomplete > 0 ? [['INCOMPLETE', 'neutral', counts.incomplete, 'In Progress'] as const] : []),
+            ] as const).map(([filter, tone, n, label]) => (
+              <button
+                key={label} type="button"
+                className={`pill ${tone}${statusFilter === filter ? ' is-active' : ''}`}
+                aria-pressed={statusFilter === filter}
+                onClick={() => setStatusFilter(statusFilter === filter ? 'ALL' : filter)}
+                title={statusFilter === filter ? 'Show all vehicles' : `Show only ${label.toLowerCase()}`}
+              >
+                <span className="dot" /> {n} {label}
+              </button>
+            ))}
           </div>
         </div>
 
@@ -279,15 +289,12 @@ export default function Step2Page() {
             <VehicleFilters
               search={search}
               onSearchChange={setSearch}
-              statusFilter={statusFilter}
-              onStatusFilterChange={setStatusFilter}
               categoryFilter={categoryFilter}
               onCategoryFilterChange={setCategoryFilter}
               categories={categories}
               manufacturers={manufacturers}
               manufacturerFilter={manufacturerFilter}
               onManufacturerFilterChange={setManufacturerFilter}
-              counts={counts}
               compareOptions={vehicles.map(v => ({ id: v.id, name: v.name }))}
               compareIds={compareIds}
               maxCompare={MAX_COMPARE}

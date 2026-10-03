@@ -1,5 +1,48 @@
 # Changelog
 
+## 2026-10-03 — Less to read: one progress meter, one set of counts, no dashes
+
+A pass over what a person actually reads, under the new simplicity rule in
+`CLAUDE.md`. No functionality removed anywhere.
+
+**Step 1 answered "how far along am I?" four times, and three disagreed.**
+Before the first field you read `4 of 4 sections complete`,
+`7 of 7 required fields filled`, `100%`, and `88% — 7 OF 8 QUALIFICATION
+INPUTS`. Only the last is tied to a consequence (it decides whether Step 2 can
+judge a vehicle); the others counted our own form structure back at the reader.
+`ProgressStrip` deleted, its CSS with it.
+
+Also on Step 1: the description dropped from two sentences of internal
+vocabulary ("The first tier is what qualifies vehicles… proposal details are
+optional") to **"What you're moving, how, and where."** The asterisk legend went
+from two lines to **"* needed for an accurate result"** — each marker's own
+tooltip already says what that field decides. The "Imperial units" pill went:
+the unit toggle is in the header on every step.
+
+**Step 2's counts appeared twice — now the pills ARE the filter.** The header
+showed `1 Compatible · 0 Review · 5 Incompatible` and the toolbar's status
+dropdown repeated the same numbers as option labels. The pills are now buttons
+that filter (tap to apply, tap again to clear) and the dropdown is gone: one
+control that reports and acts. `StatusFilter` gained `RED` and `INCOMPLETE`, so
+there are *more* filters available than before, not fewer.
+
+The page description also stopped telling the user their presence was pointless
+("Informational only … No selection required") in favour of what it does do:
+**"Every vehicle, checked against your requirements."**
+
+**Empty header fields read as empty.** `XXXXXXX` was rendering as literal X's,
+and an unset TAL engineer showed `—`, which reads as a value rather than an
+absence. Both now show a quiet "Add" that is still the button to fill them.
+
+**The two "v1.0"s are distinguishable.** The app version and the project REV sat
+three tokens apart in the same bar, both reading `v1.0`; the app one is now
+`App v1.0`.
+
+**Shipped:** `src/components/step1/ProgressStrip.tsx` (deleted),
+`src/components/step1/ApplicationForm.tsx`, `app/projects/[id]/step2/page.tsx`,
+`src/components/step2/VehicleFilters.tsx`,
+`src/components/PersistentHeader.tsx`, `app/globals.css`.
+
 ## 2026-10-03 — Dashboard: the answer first, then the instruments
 
 **The page opens with a claim.** It used to open with twelve numbers and no

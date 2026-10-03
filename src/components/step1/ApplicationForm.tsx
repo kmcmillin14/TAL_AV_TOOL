@@ -15,7 +15,6 @@ import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/s
 import { PALLET_ENTRY_LABELS } from '@/src/lib/palletEntry'
 import SubQuestions, { FollowUpMarker } from '@/src/components/SubQuestions'
 import SectionNav from './SectionNav'
-import ProgressStrip from './ProgressStrip'
 
 
 
@@ -169,8 +168,9 @@ function Mark({ roles }: { roles: Array<'gate' | 'compat' | 'widens'> }) {
   return <span className="req" title={roles.map(r => MARK_TITLES[r]).join(' · ')}>*</span>
 }
 
-const MARK_LEGEND =
-  '* marks a required input — hover any one to see what it decides. Blanks leave vehicles In Progress on Step 2, or hold Professional services and Software at $0 on Step 4'
+/* Six words. Each marker's own tooltip already says what that field decides —
+   a paragraph here repeated it for all of them at once. */
+const MARK_LEGEND = '* needed for an accurate result'
 
 function TierBand({ label, hint }: { label: string; hint?: string }) {
   return (
@@ -431,23 +431,14 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
         <div className="page-title">
           <span className="step-num">Step 01 / 05</span>
           <h1>Application Requirements</h1>
-          <div className="desc">
-            The first tier is what qualifies vehicles — load, transfer, and environment.
-            Sizing &amp; economics feed Steps 3–4; proposal details are optional.
-          </div>
+          <div className="desc">What you&rsquo;re moving, how, and where.</div>
         </div>
         <div className="row" style={{ gap: 10 }}>
           <span className={`save-status${saveStatus === 'saved' ? ' saved' : ''}`}>
             {saveStatus === 'saved' ? 'Saved ✓' : versionNumber}
           </span>
-          <span className="pill neutral">
-            <Icon name="info" size={11} />
-            {unitSystem === 'metric' ? 'Metric display · imperial stored' : 'Imperial units'}
-          </span>
         </div>
       </div>
-
-      <ProgressStrip values={formValues} />
 
       <div className="form-with-nav">
         <SectionNav values={formValues} />

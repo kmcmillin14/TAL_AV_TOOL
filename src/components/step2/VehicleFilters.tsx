@@ -2,7 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react'
 
-export type StatusFilter = 'GREEN' | 'GREEN+YELLOW' | 'ALL'
+/** Set by the status pills in the page header — they report the counts and act
+ *  as the filter, so the numbers appear once rather than in a pill and again in
+ *  a dropdown option. 'GREEN+YELLOW' now means YELLOW only (the pill it sits on). */
+export type StatusFilter = 'GREEN' | 'GREEN+YELLOW' | 'RED' | 'INCOMPLETE' | 'ALL'
 
 export interface CompareOption {
   id: string
@@ -12,15 +15,12 @@ export interface CompareOption {
 interface VehicleFiltersProps {
   search: string
   onSearchChange: (v: string) => void
-  statusFilter: StatusFilter
-  onStatusFilterChange: (v: StatusFilter) => void
   categoryFilter: string
   onCategoryFilterChange: (v: string) => void
   categories: string[]
   manufacturers: string[]
   manufacturerFilter: string
   onManufacturerFilterChange: (v: string) => void
-  counts: { green: number; yellow: number; red: number; incomplete: number }
   /** Comparison controls (rendered right-aligned in the toolbar). */
   compareOptions: CompareOption[]
   compareIds: string[]
@@ -32,11 +32,9 @@ interface VehicleFiltersProps {
 
 export default function VehicleFilters({
   search, onSearchChange,
-  statusFilter, onStatusFilterChange,
   categoryFilter, onCategoryFilterChange,
   categories,
   manufacturers, manufacturerFilter, onManufacturerFilterChange,
-  counts,
   compareOptions, compareIds, maxCompare, onToggleCompare, onClearCompare, onOpenCompare,
 }: VehicleFiltersProps) {
   const [pickerOpen, setPickerOpen] = useState(false)
@@ -66,16 +64,6 @@ export default function VehicleFilters({
         value={search}
         onChange={e => onSearchChange(e.target.value)}
       />
-
-      <select
-        className="vf-select"
-        value={statusFilter}
-        onChange={e => onStatusFilterChange(e.target.value as StatusFilter)}
-      >
-        <option value="ALL">All vehicles ({counts.green + counts.yellow + counts.red + counts.incomplete})</option>
-        <option value="GREEN">Compatible only ({counts.green})</option>
-        <option value="GREEN+YELLOW">Compatible + Review ({counts.green + counts.yellow})</option>
-      </select>
 
       <select
         className="vf-select"
