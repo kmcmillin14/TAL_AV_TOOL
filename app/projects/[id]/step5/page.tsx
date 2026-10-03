@@ -12,6 +12,7 @@ import { applyDrivers, scenarioKpis, diffKpis, type ScenarioDrivers } from '@/sr
 import { effDailyOpHr, defaultOperatingDaysPerYear, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
 import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
 import RomKpis from '@/src/components/rom/RomKpis'
+import Icon from '@/src/design-system/components/Icon'
 import { ScenarioDelta } from '@/src/components/rom/RomDrivers'
 import { useDashboardRail } from '@/src/lib/uiPrefs'
 import { pricingGate } from '@/src/lib/romComplexityFromProject'
@@ -144,7 +145,7 @@ export default function RomDashboardPage() {
               type="button" className="rom2-rail-tab" onClick={toggleRail}
               aria-label="Show scenario drivers" title="Show scenario drivers"
             >
-              <span className="rom2-rail-tab-chev" aria-hidden>&#x203A;</span>
+              <span className="rom2-rail-tab-chev" aria-hidden><Icon name="chevron" size={14} /></span>
               <span className="rom2-rail-tab-lbl">Drivers</span>
             </button>
           ) : (

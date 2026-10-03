@@ -1,6 +1,7 @@
 'use client'
 
 import type { ScenarioDrivers, ScenarioDiff } from '@/src/lib/scenario'
+import Icon from '@/src/design-system/components/Icon'
 import { bufferFromUtilization, utilizationFromBuffer } from '@/src/calc/types'
 
 /** One editable driver. `format`/`parse` map between the stored number and the
@@ -103,7 +104,11 @@ export default function RomDrivers({ baseline, drivers, onChange, onApply, hasOv
               type="button" className="rom2-rail-collapse" onClick={onCollapse}
               aria-label="Hide drivers and widen the charts"
               title="Hide drivers and widen the charts"
-            >&#x2039;</button>
+            >
+              {/* SVG, not a '‹' glyph — text chevrons carry asymmetric side
+                  bearings and never sit centred in a square button. */}
+              <Icon name="chevron" size={14} />
+            </button>
           )}
         </div>
         <div className="rom2-seg" role="radiogroup" aria-label="Compare mode">
