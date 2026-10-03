@@ -32,6 +32,39 @@ single, version-controlled source of Claude Code instructions for the project
   in `globals.css`, referenced as `var(--tal-font-family)` (body) / `var(--tal-font-numeric)`
   (numeric/labels). Never use Inter, Roboto, Arial, or system fonts as primary `font-family`.
 
+## Simplicity Is the Default (owner rule, 2026-10-03)
+
+**Simple beats clever — in the interface, in the code, and in how the app
+feels to move through.** This outranks completeness of presentation: a screen
+that shows less but is understood in one pass is better than one that shows
+everything.
+
+Apply it in this order when the two conflict:
+
+1. **Never remove functionality to achieve simplicity.** Fold it, derive it,
+   or move it behind a disclosure — do not delete it. "Simplify" means fewer
+   things to read and decide, never fewer things the tool can do.
+2. **One question, asked once.** If the app can derive an answer from something
+   already asked, derive it (e.g. "Picking from racking?" from the pick/drop
+   context). Two fields describing one fact is a bug.
+3. **Default to progressive disclosure.** Lead with the figure or control that
+   is acted on; put the audit trail, the point math and the diligence detail
+   one click away. The customer deck's split — three headline tiles, the rest
+   in an appendix — is the pattern.
+4. **Explain through structure, not prose.** Prefer a scale, a chip, or
+   placement that makes the meaning obvious over a paragraph that describes it.
+   Explanatory sub-text belongs in `src/content/help.ts` and the guided tour,
+   which are opt-in; the working screens stay clean.
+5. **Prefer deriving over storing, and one source over two.** A second list
+   that must be kept in step with a first is a future inconsistency; collapse
+   them (see `PRICING_GATE_INPUTS`, `STACKABLE_UNIT_TYPES`, `palletEntry.ts`).
+6. **In code: fewer moving parts.** A container query that re-flows on its own
+   beats a resize listener; a derived field beats a synced one; a shared
+   component beats three near-copies.
+
+When a change makes something simpler to look at but harder to do, it is the
+wrong change — say so and propose the alternative.
+
 ## File Locations
 
 - Architecture rules + gate model: `ARCHITECTURE.md`
