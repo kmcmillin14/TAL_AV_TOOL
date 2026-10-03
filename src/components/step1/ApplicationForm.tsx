@@ -12,6 +12,7 @@ import { formatImperialForDisplay, parseImperialInput, type UnitSystem } from '@
 import { createProject, updateProject, getProject, subscribeSaveDrops } from '@/src/lib/storage'
 import { TYPICAL_UNIT_TYPES, CERTIFICATIONS, TRANSFER_TYPE_OPTIONS, SHARED_TRAFFIC_TYPES, INTERLOCKS, PALLET_STACKING_TYPES, PALLET_STACKING_ANSWERS, STACKABLE_UNIT_TYPES } from '@/src/lib/constants/enums'
 import { FORM_SECTIONS, TIER_LABELS, sectionStatus } from '@/src/lib/constants/sections'
+import { mirrorFirstLoad } from '@/src/lib/mirrorFirstLoad'
 import { PALLET_ENTRY_LABELS } from '@/src/lib/palletEntry'
 import SubQuestions, { FollowUpMarker } from '@/src/components/SubQuestions'
 import SectionNav from './SectionNav'
@@ -80,25 +81,6 @@ function initialLoadRows(initialData?: Partial<ProjectFormData>): LoadRow[] {
     customDescription: initialData?.customPalletDescription,
     otherDescription: initialData?.otherUnitTypeDescription,
   }]
-}
-
-/** Mirror loads[0] into the legacy singular fields so every existing consumer
- *  (readiness meter, PDF rows, old-app parsers of new exports) keeps working.
- *  The gate engine itself reads the loads array. */
-function mirrorFirstLoad(data: Partial<ProjectFormData>): Partial<ProjectFormData> {
-  const l0 = data.loads?.[0]
-  if (!l0) return data
-  return {
-    ...data,
-    typicalUnitType: l0.unitType || undefined,
-    loadLengthIn: l0.lengthIn,
-    loadWidthIn: l0.widthIn,
-    loadHeightIn: l0.heightIn,
-    maxLoadWeightLbs: l0.weightLbs ?? undefined,
-    palletBottomBoard: l0.palletSubtype,
-    customPalletDescription: l0.customDescription,
-    otherUnitTypeDescription: l0.otherDescription,
-  }
 }
 
 /** Legacy projects captured one avgDistance + throughput pair instead of flows.
@@ -262,7 +244,13 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
     onBlurSave()
   }
 
-  const formValues = watch()
+  // Section badges + the readiness meter read the legacy singular load fields
+  // (maxLoadWeightLbs, typicalUnitType, loadLengthIn/WidthIn/HeightIn). The form
+  // no longer registers those — they are derived from loads[0] on the way to
+  // storage — so reading raw watch() values pinned the meter at 3 of 8 and kept
+  // section 01 off 'complete' no matter what was typed in the load table. Mirror
+  // through the same function the save path uses, so one mapping serves both.
+  const formValues = mirrorFirstLoad(watch())
   const transferTypeValue = watch('transferType')
   const showTransferHeight = transferTypeValue === 'forklift' || transferTypeValue === 'lift_table'
   const oemDealer = watch('oemDealer')

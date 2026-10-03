@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-10-03 — Step 1 readiness meter was frozen
+
+The "N of 8 qualification inputs" meter and the section-01 badge never moved
+when the load table was filled in. Both read the legacy singular load fields —
+`maxLoadWeightLbs`, `typicalUnitType`, `loadLengthIn/WidthIn/HeightIn` — which
+the form stopped registering when loads became an array. Those five are derived
+from `loads[0]` by `mirrorFirstLoad`, and that was applied only on the way to
+*storage*, never to the live form state the two status consumers read. So:
+
+- the meter was pinned at **3 of 8 (38%)**, the three still-registered inputs
+  (`transferType`, `maxRampGrade`, `minAisleWidthFt`), and could not reach 100%;
+- **section 01 could never report COMPLETE** — two of its four required fields
+  were unreachable;
+- a saved project looked right on reload (storage carries the mirrored values
+  into `defaultValues`) and then went stale again on the first keystroke, which
+  is why this read as "not updating" rather than "always wrong".
+
+`mirrorFirstLoad` moved out of `ApplicationForm.tsx` to
+`src/lib/mirrorFirstLoad.ts` and is now applied to `watch()` as well as to the
+save path — one mapping serving both, per the one-source rule. No stored data
+changes: the same values were already being written.
+
 ## 2026-10-03 — Step 1 completion audit: COMPLETE now means complete
 
 The section badges were reporting COMPLETE on sections that were mostly blank,
