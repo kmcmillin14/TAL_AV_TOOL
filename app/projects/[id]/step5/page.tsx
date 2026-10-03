@@ -12,6 +12,8 @@ import { applyDrivers, scenarioKpis, diffKpis, type ScenarioDrivers } from '@/sr
 import { effDailyOpHr, defaultOperatingDaysPerYear, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
 import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
 import RomKpis from '@/src/components/rom/RomKpis'
+import { ScenarioDelta } from '@/src/components/rom/RomDrivers'
+import { useDashboardRail } from '@/src/lib/uiPrefs'
 import { pricingGate } from '@/src/lib/romComplexityFromProject'
 import RomDrivers from '@/src/components/rom/RomDrivers'
 import RomBento from '@/src/components/rom/RomBento'
@@ -21,6 +23,7 @@ export default function RomDashboardPage() {
   const params = useParams()
   const id = params.id as string
   const { project, setProject, vehicleById, loading, error } = useFleetData(id)
+  const [railCollapsed, toggleRail] = useDashboardRail()
   const [unitSystem, toggleUnitSystem] = useUnitSystem()
 
   // In-memory what-if state (no new persisted fields). `drivers` holds overrides;
@@ -130,9 +133,21 @@ export default function RomDashboardPage() {
           <ExportActions projectId={project.id} />
         </div>
 
-        <div className="rom2-shell">
+        <div className={`rom2-shell${railCollapsed ? ' is-rail-collapsed' : ''}`}>
           {/* Collapsible on phones (summary shows ≤ 700px); always open on
               desktop via CSS (summary hidden, content forced visible). */}
+          {/* Collapsed: a thin tab in place of the rail, handing ~284px back to
+              the charts. The scenario delta moves to a full-width strip below so
+              presentation mode still responds to the drivers behind it. */}
+          {railCollapsed ? (
+            <button
+              type="button" className="rom2-rail-tab" onClick={toggleRail}
+              aria-label="Show scenario drivers" title="Show scenario drivers"
+            >
+              <span className="rom2-rail-tab-chev" aria-hidden>&#x203A;</span>
+              <span className="rom2-rail-tab-lbl">Drivers</span>
+            </button>
+          ) : (
           <details className="rom-drivers-collapse" open>
             <summary>Drivers &amp; scenario</summary>
             <RomDrivers
@@ -145,10 +160,15 @@ export default function RomDashboardPage() {
               onMode={setMode}
               deltas={deltas}
               pricingBlocked={gate.blocked}
+              onCollapse={toggleRail}
             />
           </details>
+          )}
 
           <div className="rom2-main">
+            {railCollapsed && showScenario && deltas && (
+              <ScenarioDelta deltas={deltas} pricingBlocked={gate.blocked} inline />
+            )}
             <div className={`rom2-kpiband ${showScenario ? 'is-scenario' : ''}`}>
               <RomKpis fleet={active.fleet} rom={active.rom} flows={active.flows} settings={active.settings} costs={active.costs} serviceLifeYears={activeProject.serviceLifeYears ?? 10} vehicleById={vehicleById} names={names} deltas={deltas} gate={gate} />
             </div>

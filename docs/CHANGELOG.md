@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-10-02 — Dashboard: bento sizes to its container; drivers rail collapses
+
+**The bento's breakpoints were miscalibrated by exactly the rail's width.** They
+were `@media` queries, but the grid does not live in the viewport — it lives in
+`.rom2-main`, **284px narrower** (264 rail + 20 gap). So the page decided "wide
+enough for four columns" using room the charts never had. On a 1280px laptop
+that drew 4 columns into ~916px: **~217px per chart**, a sparkline pretending to
+be a payback curve.
+
+Now `@container` queries on `.rom2-main`, with the thresholds moved down by that
+same 284px (1200 → 916, 680 → 560). Measured at a 1263px viewport, where the old
+rule claimed four columns: the grid now draws **2 readable columns** expanded,
+and **4** when the rail is collapsed. It re-flows on its own — no JS, and the
+collapse needs no special case.
+
+**The drivers rail collapses to a 36px tab**, returning ~236px to the charts
+(+21% per chart, measured). Two working modes for one page: expanded is the
+engineer's workbench, collapsed is presentation mode for a screen share. The
+state persists via `uiPrefs.ts`, like unit system and theme.
+
+**Collapsing never hides what the drivers changed.** With the rail collapsed and
+a scenario active, the Fleet / CAPEX / Payback delta moves to a full-width strip
+above the KPI band. A presentation mode where nothing visibly responds would
+defeat the point of having drivers at all.
+
+Mobile is untouched: below 1000px the shell is one column, the tab renders
+inline and horizontal, nothing sticks.
+
+**Note for future layout work in the in-app preview:** its media queries match
+the *emulated* width while CSS pixels are *zoomed* (`zoom: 0.8`), so the two
+disagree and viewport breakpoints cannot be trusted there. Container queries
+measure the element and are unaffected — an incidental argument for this change.
+
+**Shipped:** `app/globals.css`, `src/lib/uiPrefs.ts`,
+`src/components/rom/RomDrivers.tsx`, `app/projects/[id]/step5/page.tsx`.
+
 ## 2026-10-02 — Dashboard: the drivers rail stays with you (phase 1)
 
 The dashboard is a what-if instrument laid out like a report: the sliders that

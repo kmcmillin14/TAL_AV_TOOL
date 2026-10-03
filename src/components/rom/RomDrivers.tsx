@@ -47,13 +47,19 @@ interface Props {
   deltas?: ScenarioDiff | null
   /** Suppresses the money deltas when the project cannot be priced. */
   pricingBlocked?: boolean
+  /** Hide the rail, handing its width to the charts (presentation mode). */
+  onCollapse?: () => void
 }
 
 /** The three figures worth watching while a slider moves. Shown in the rail
  *  itself so comparing a scenario doesn't mean scrolling to find a changed
- *  tile — the control and its consequence stay on the same screen. */
-function RailDelta(
-  { deltas, pricingBlocked }: { deltas: ScenarioDiff; pricingBlocked: boolean },
+ *  tile — the control and its consequence stay on the same screen.
+ *
+ *  Exported because the collapsed rail has no room for it: the dashboard then
+ *  renders it as a full-width strip above the KPI band instead. Collapsing must
+ *  not leave a scenario where nothing visibly responds. */
+export function ScenarioDelta(
+  { deltas, pricingBlocked, inline = false }: { deltas: ScenarioDiff; pricingBlocked: boolean; inline?: boolean },
 ) {
   const money = (n: number) => `${n < 0 ? '−' : '+'}$${Math.abs(Math.round(n)).toLocaleString()}`
   const rows: Array<{ label: string; text: string; good: boolean } | null> = [
@@ -69,10 +75,10 @@ function RailDelta(
   ]
   const shown = rows.filter((r): r is NonNullable<typeof r> => r != null)
   if (shown.length === 0) {
-    return <p className="rom2-rail-delta-none">No change from baseline yet.</p>
+    return <p className={`rom2-rail-delta-none${inline ? ' is-inline' : ''}`}>No change from baseline yet.</p>
   }
   return (
-    <dl className="rom2-rail-delta" aria-label="Scenario vs baseline">
+    <dl className={`rom2-rail-delta${inline ? ' is-inline' : ''}`} aria-label="Scenario vs baseline">
       {shown.map(r => (
         <div key={r.label}>
           <dt>{r.label}</dt>
@@ -83,14 +89,23 @@ function RailDelta(
   )
 }
 
-export default function RomDrivers({ baseline, drivers, onChange, onApply, hasOverrides, mode, onMode, deltas, pricingBlocked = false }: Props) {
+export default function RomDrivers({ baseline, drivers, onChange, onApply, hasOverrides, mode, onMode, deltas, pricingBlocked = false, onCollapse }: Props) {
   const set = (key: keyof ScenarioDrivers, value: number | undefined) =>
     onChange({ ...drivers, [key]: value })
 
   return (
     <aside className="rom2-rail" aria-label="Scenario drivers">
       <div className="rom2-rail-head">
-        <span className="rom2-rail-title">Drivers</span>
+        <div className="rom2-rail-titlerow">
+          <span className="rom2-rail-title">Drivers</span>
+          {onCollapse && (
+            <button
+              type="button" className="rom2-rail-collapse" onClick={onCollapse}
+              aria-label="Hide drivers and widen the charts"
+              title="Hide drivers and widen the charts"
+            >&#x2039;</button>
+          )}
+        </div>
         <div className="rom2-seg" role="radiogroup" aria-label="Compare mode">
           <button
             type="button" role="radio" aria-checked={mode === 'baseline'}
@@ -106,7 +121,7 @@ export default function RomDrivers({ baseline, drivers, onChange, onApply, hasOv
           >Scenario</button>
         </div>
         {mode === 'scenario' && deltas && (
-          <RailDelta deltas={deltas} pricingBlocked={pricingBlocked} />
+          <ScenarioDelta deltas={deltas} pricingBlocked={pricingBlocked} />
         )}
       </div>
 

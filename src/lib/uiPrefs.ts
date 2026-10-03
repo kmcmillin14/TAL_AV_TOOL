@@ -5,6 +5,7 @@ import type { UnitSystem } from './utils/units'
 
 const UNIT_KEY = 'tal:unitSystem'
 const THEME_KEY = 'tal:theme'
+const RAIL_KEY = 'tal:dashboardRailCollapsed'
 
 export type Theme = 'dark' | 'light'
 
@@ -57,4 +58,30 @@ export function useTheme(): readonly [Theme, () => void] {
   }, [])
 
   return [theme, toggle] as const
+}
+
+
+/** Dashboard drivers rail collapsed? Two working modes for one page:
+ *  expanded is the engineer's workbench, collapsed is presentation mode for a
+ *  screen share — and collapsing hands ~284px back to the charts, which at
+ *  1280px is the difference between a ~217px and a ~288px chart.
+ *
+ *  Hydrates in an effect, not lazy init, so server and first client render
+ *  agree (same pattern as useUnitSystem/useTheme above). */
+export function useDashboardRail(): readonly [boolean, () => void] {
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    try { if (localStorage.getItem(RAIL_KEY) === '1') setCollapsed(true) } catch { /* private mode */ }
+  }, [])
+
+  const toggle = useCallback(() => {
+    setCollapsed(prev => {
+      const next = !prev
+      try { localStorage.setItem(RAIL_KEY, next ? '1' : '0') } catch { /* quota */ }
+      return next
+    })
+  }, [])
+
+  return [collapsed, toggle] as const
 }
