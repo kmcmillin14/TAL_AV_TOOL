@@ -14,6 +14,7 @@ import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
 import RomKpis from '@/src/components/rom/RomKpis'
 import Icon from '@/src/design-system/components/Icon'
 import { ScenarioDelta } from '@/src/components/rom/RomDrivers'
+import { dashboardClaim } from '@/src/lib/dashboardClaim'
 import { useDashboardRail } from '@/src/lib/uiPrefs'
 import { pricingGate } from '@/src/lib/romComplexityFromProject'
 import RomDrivers from '@/src/components/rom/RomDrivers'
@@ -92,6 +93,7 @@ export default function RomDashboardPage() {
   // One gate per render pass, shared by the KPI band and the bento — it was
   // computed inline in JSX (every slider drag) and again inside RomBento.
   const gate = pricingGate(activeProject)
+  const claim = dashboardClaim(active)
 
   const analyticsSchedule: AnalyticsSchedule = {
     shiftsPerDay: activeProject.shiftsPerDay ?? 1,
@@ -167,6 +169,14 @@ export default function RomDashboardPage() {
           )}
 
           <div className="rom2-main">
+            {/* The answer, before the instruments. */}
+            {claim.fleet && (
+              <p className="rom2-claim">
+                <strong>{claim.fleet}.</strong>
+                {claim.cost && <span> {claim.cost}.</span>}
+                {claim.payback && <span> {claim.payback}.</span>}
+              </p>
+            )}
             {railCollapsed && showScenario && deltas && (
               <ScenarioDelta deltas={deltas} pricingBlocked={gate.blocked} inline />
             )}

@@ -109,7 +109,10 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
       delta: chip(deltas?.vehicleTypes, n => String(Math.round(n))) },
     { id: 'flows', label: 'Flows', value: String(flows.length) },
     { id: 'throughput', label: 'Throughput', value: `${throughput} / hr` },
-    { id: 'energy', label: 'Energy kWh /d · /wk', value: `${Math.round(energyPerDay)} · ${Math.round(energyPerWeek)}`,
+    // One labelled figure, not two bare numbers sharing a tile. The weekly
+    // figure is the daily one times seven; it was carrying no information the
+    // reader couldn't get from the detail popover.
+    { id: 'energy', label: 'Energy / day', value: `${Math.round(energyPerDay)} kWh`,
       delta: chip(deltas?.annualEnergyKwh == null ? undefined : deltas.annualEnergyKwh / opDays, n => `${Math.round(n)}/d`, 'down') },
     // ── Financials ──
     // CAPEX and everything built on it read "Not priced" while the complexity
@@ -138,9 +141,11 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
     return <KpiTile key={id} label={t.label} value={t.value} detail={d} accent={t.accent} colorIndex={t.colorIndex} delta={t.delta} />
   }
 
-  // Two hero boxes (Financials · Fleet & flow): each leads with its headline figure,
-  // supporting metrics below — like items combined into one cohesive box. Then a
-  // gauges strip makes utilization / availability / charging legible at a glance.
+  // Financials leads with CAPEX and shows only the two figures a decision turns
+  // on — payback and net benefit. Labor offset, OPEX, TCO and cost/move are
+  // diligence material and fold away: seven money figures at equal weight is a
+  // report, not an answer. Same split the customer deck already makes between
+  // fillFinancials (3 tiles) and fillCostDetail (the rest).
   return (
     <>
       <div className="rom2-summary">
@@ -148,9 +153,14 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
           <div className="rom2-hero-head">Financials</div>
           <div className="rom2-hero-lead">{tile('capex')}</div>
           <div className="rom2-hero-grid">
-            {tile('net')}{tile('payback')}{tile('offset')}
-            {tile('opex')}{tile('tco')}{tile('costPerMove')}
+            {tile('payback')}{tile('net')}
           </div>
+          <details className="rom2-hero-more">
+            <summary>Cost detail</summary>
+            <div className="rom2-hero-grid">
+              {tile('offset')}{tile('opex')}{tile('tco')}{tile('costPerMove')}
+            </div>
+          </details>
         </section>
 
         <section className="rom2-hero">
@@ -163,15 +173,22 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
       </div>
 
       <div className="rom2-gauges">
+        {/* Each gauge links to the chart that proves it — the conclusion and its
+            evidence were a screen and a half apart with nothing joining them. */}
         <RomGauge value={avgUtil ?? 0} label="Utilization" display={avgUtil == null ? '—' : pctChip(avgUtil)}
+          evidenceId="rom-utilization" evidenceLabel="the utilization chart"
           def="Raw demand ÷ provisioned fleet — how hard the fleet works. Lower means more spare headroom." />
         <RomGauge value={avgAvailability} label="Availability" status
+          evidenceId="rom-battery" evidenceLabel="the battery state-of-charge chart"
           def="Share of the operating day a vehicle is available to work (not tied up recharging) — fleet uptime." />
         <RomGauge value={avgCharging} label="Charging" status
+          evidenceId="rom-battery" evidenceLabel="the battery state-of-charge chart"
           def="Share of each duty cycle a vehicle spends recharging instead of moving loads." />
+        {/* 'Held' / a % rather than a bare tick: colour alone shouldn't carry it. */}
         <RomGauge value={res.throughputHeldWithOneDown ? 1 : res.retainedPct} label="Redundancy" status
-          display={res.throughputHeldWithOneDown ? '✓' : pctChip(res.retainedPct)}
-          def="Backup capacity if one vehicle goes down: ✓ means full throughput is still met; a % is the share of demand the remaining fleet can cover." />
+          display={res.throughputHeldWithOneDown ? 'Held' : pctChip(res.retainedPct)}
+          evidenceId="rom-redundancy" evidenceLabel="the redundancy breakdown"
+          def="Backup capacity if one vehicle goes down: “Held” means full throughput is still met; a % is the share of demand the remaining fleet can cover." />
       </div>
     </>
   )

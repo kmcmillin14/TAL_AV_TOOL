@@ -37,15 +37,33 @@ interface Props {
   status?: boolean
   /** Plain-language definition shown on hover (title + a tooltip). */
   def?: string
+  /** Element id of the cell holding this gauge's evidence; makes it a link. */
+  evidenceId?: string
+  evidenceLabel?: string
 }
 
-export default function RomGauge({ value, label, display, status, def }: Props) {
+export default function RomGauge({ value, label, display, status, def, evidenceId, evidenceLabel }: Props) {
   const v = Math.max(0, Math.min(1, Number.isFinite(value) ? value : 0))
   const fill = status
     ? (v >= 0.85 ? 'var(--good)' : v >= 0.6 ? 'var(--tal-golden-orange)' : 'var(--accent)')
     : 'var(--accent)'
-  return (
-    <div className="rom2-gauge" title={def}>
+  // A gauge is a conclusion; its evidence is a chart over a screen away. When
+  // one is named, the gauge becomes the way to reach it.
+  const goToEvidence = () => {
+    if (!evidenceId) return
+    const el = document.getElementById(evidenceId)
+    if (!el) return
+    // Instant, not smooth: a ~1700px smooth scroll is slow enough to disorient,
+    // it is what reduced-motion would force anyway, and the highlight ring below
+    // is what actually answers "where did I land". `block: 'center'` keeps the
+    // target clear of the sticky header.
+    el.scrollIntoView({ block: 'center' })
+    el.classList.add('is-evidence-target')
+    window.setTimeout(() => el.classList.remove('is-evidence-target'), 1600)
+  }
+
+  const body = (
+    <>
       <svg viewBox={`0 0 ${SIZE} ${SIZE}`} className="rom2-gauge-svg" role="img" aria-label={`${label}: ${display ?? `${Math.round(v * 100)}%`}${def ? `. ${def}` : ''}`}>
         <path d={arc(START, SWEEP)} fill="none" stroke="var(--border)" strokeWidth={STROKE} strokeLinecap="round" />
         {v > 0 && (
@@ -58,6 +76,15 @@ export default function RomGauge({ value, label, display, status, def }: Props) 
         {def && <Icon name="info" size={11} className="rom2-gauge-info" />}
       </div>
       {def && <div className="rom2-gauge-tip">{def}</div>}
-    </div>
+    </>
+  )
+
+  if (!evidenceId) return <div className="rom2-gauge" title={def}>{body}</div>
+  return (
+    <button
+      type="button" className="rom2-gauge is-linked" onClick={goToEvidence}
+      title={def ? `${def} — click for the detail` : undefined}
+      aria-label={`${label}: ${display ?? `${Math.round(v * 100)}%`}. Show ${evidenceLabel ?? 'the detail'}`}
+    >{body}</button>
   )
 }

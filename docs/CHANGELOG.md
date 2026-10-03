@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-10-03 — Dashboard: the answer first, then the instruments
+
+**The page opens with a claim.** It used to open with twelve numbers and no
+statement, and a customer's question is "should we do this?" — twelve figures
+don't answer it. Now: *"15 vehicles across 3 types. $2.40M – $3.48M. Pays back
+in 2.1 years."* Money clauses drop when the project can't be priced, so a
+headline never states a number the gate is withholding.
+
+Built in `src/lib/dashboardClaim.ts` rather than reusing the deck's
+`takeaways.ts` — those builders live in `src/lib/pptx/` and import `./layout`,
+which would drag slide-rendering code into the dashboard bundle for two strings.
+
+**Financials went from seven money tiles to three.** CAPEX leads, payback and
+net benefit beside it; labor offset, OPEX, TCO and cost-per-move fold into a
+*Cost detail* disclosure. Exactly the split the deck already makes between
+`fillFinancials` (3 tiles) and `fillCostDetail` (the rest) — the dashboard now
+has the discipline the deck has had all along.
+
+**Gauges became navigation.** Utilization, Availability, Charging and Redundancy
+each jump to the chart that proves them (utilization chart, battery SoC,
+redundancy breakdown) and ring the target briefly. They were conclusions whose
+evidence sat a screen and a half away with nothing joining them.
+
+The jump is instant, not smooth: a ~1700px smooth scroll is slow enough to
+disorient, it is what reduced-motion forces anyway, and the ring is what
+actually answers "where did I land". (Smooth scrolling is also entirely
+non-functional in the in-app preview — `scrollIntoView` and `window.scrollTo`
+both no-op with `behavior: 'smooth'` while `'auto'` works — so the smooth path
+could not have been verified before shipping.)
+
+**Redundancy reads "Held" instead of a bare ✓**, so the state survives without
+colour. **Energy is one labelled figure** (`364 kWh · Energy / day`) instead of
+two unlabelled numbers sharing a tile; the weekly figure was the daily one times
+seven and carried nothing the popover didn't.
+
+**Shipped:** `src/lib/dashboardClaim.ts` (new), `src/components/rom/RomKpis.tsx`,
+`src/components/rom/RomGauge.tsx`, `src/components/rom/RomBento.tsx`,
+`app/projects/[id]/step5/page.tsx`, `app/globals.css`.
+
 ## 2026-10-02 — Dashboard: bento sizes to its container; drivers rail collapses
 
 **The bento's breakpoints were miscalibrated by exactly the rail's width.** They

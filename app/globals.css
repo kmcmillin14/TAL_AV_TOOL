@@ -3743,6 +3743,50 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   border: 1px dashed var(--accent); border-radius: 16px; padding: 10px; background: var(--accent-soft);
 }
 
+/* A gauge that links to its evidence reads as a control, not a readout. */
+.rom2-gauge.is-linked {
+  border: 0; background: none; padding: 0; font: inherit; color: inherit;
+  cursor: pointer; border-radius: 10px;
+  transition: transform 0.12s ease;
+}
+.rom2-gauge.is-linked:hover { transform: translateY(-1px); }
+.rom2-gauge.is-linked:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .rom2-gauge.is-linked:hover { transform: none; } }
+
+/* Brief ring on the cell a gauge just jumped to, so the landing is obvious
+   without a modal or a permanent highlight. */
+.rom2-cell.is-evidence-target {
+  box-shadow: 0 0 0 2px var(--accent);
+  transition: box-shadow 0.25s ease;
+}
+@media (prefers-reduced-motion: reduce) { .rom2-cell.is-evidence-target { transition: none; } }
+
+/* The opening claim — the page's answer, stated before the instruments.
+   Generous above, tight below: density is the signal that the reading has
+   changed from "the conclusion" to "the evidence". */
+.rom2-claim {
+  margin: 0; padding: 2px 0 2px;
+  font-family: var(--tal-font-family);
+  font-size: clamp(19px, 2.1vw, 27px); line-height: 1.25; letter-spacing: -0.01em;
+  color: var(--text-tertiary); text-wrap: balance;
+}
+.rom2-claim strong { color: var(--text-primary); font-weight: 700; }
+.rom2-claim span { color: var(--text-secondary); font-weight: 500; }
+
+/* Diligence figures, folded. */
+.rom2-hero-more { margin-top: 10px; border-top: 1px solid var(--border); padding-top: 8px; }
+.rom2-hero-more > summary {
+  cursor: pointer; list-style: none;
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.rom2-hero-more > summary::-webkit-details-marker { display: none; }
+.rom2-hero-more > summary::after { content: ' \25BE'; }
+.rom2-hero-more[open] > summary::after { content: ' \25B4'; }
+.rom2-hero-more > summary:hover { color: var(--text-primary); }
+.rom2-hero-more > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.rom2-hero-more .rom2-hero-grid { margin-top: 10px; }
+
 /* Bento grid */
 .rom2-bento {
   display: grid;
