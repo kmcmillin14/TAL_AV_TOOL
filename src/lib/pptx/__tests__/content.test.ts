@@ -53,7 +53,7 @@ describe('fillFinancials (S25) + fillCostDetail (appendix)', () => {
     fillCostDetail(zip, slide, model, 10)
     const xml = reopen(zip).file(`ppt/slides/slide${slide}.xml`)!.asText()
     expect(xml).toContain('APPENDIX — COST DETAIL')
-    for (const l of ['Net benefit / yr', 'Annual operating cost', 'TCO @ 10 yr', 'Cost per move', 'Energy']) {
+    for (const l of ['Net benefit / yr', 'Annual operating cost', 'TCO @ 10 yr', 'Cost per move']) {
       expect(xml).toContain(l)
     }
   })

@@ -43,7 +43,6 @@ export function fillCostDetail(
   const opDays = Math.max(1, costs.operatingDaysPerYear)
   const lifetimeMoves = throughput * settings.dailyOpHr * costs.operatingDaysPerYear * serviceLifeYears
   const costPerMove = lifetimeMoves > 0 ? tcoAtLife / lifetimeMoves : null
-  const energyPerDay = rom.opex.annualEnergyKwh / opDays
 
   const rows: TableCell[][] = [[{ t: 'Metric' }, { t: 'Value', align: 'r' }]]
   const add = (k: string, v: string) => rows.push([{ t: k, bold: true }, { t: v, align: 'r' }])
@@ -53,7 +52,6 @@ export function fillCostDetail(
   add('Annual operating cost', priced(blocked, usd(opex)))
   add(`TCO @ ${serviceLifeYears} yr`, priced(blocked, usd(tcoAtLife)))
   add('Cost per move', priced(blocked, costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}`))
-  add('Energy', `${Math.round(energyPerDay)} kWh/day`)
   if (blocked) add('Still needed on Step 1', model.gate.missingAll.join(', '))
 
   const f = frame(zip, slide)

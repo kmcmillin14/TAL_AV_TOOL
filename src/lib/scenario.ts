@@ -12,7 +12,6 @@ import type { FleetModel } from './fleetModel'
 export interface ScenarioDrivers {
   operatorsPerShift?: number
   shiftsPerDay?: number
-  energyCostUsdPerKwh?: number
   fullyBurdenedRateUsdPerYear?: number
   annualMaintenancePctOfCapex?: number
   operatingDaysPerYear?: number
@@ -26,7 +25,7 @@ export interface ScenarioDrivers {
 }
 
 const DRIVER_KEYS: ReadonlyArray<keyof ScenarioDrivers> = [
-  'operatorsPerShift', 'shiftsPerDay', 'energyCostUsdPerKwh', 'fullyBurdenedRateUsdPerYear',
+  'operatorsPerShift', 'shiftsPerDay', 'fullyBurdenedRateUsdPerYear',
   'annualMaintenancePctOfCapex', 'operatingDaysPerYear', 'bufferPct', 'serviceLifeYears',
   'numberOfOperators',
 ]
@@ -66,7 +65,6 @@ export interface ScenarioKpis {
   capexMax: number
   capexMid: number
   annualOpex: number
-  annualEnergyKwh: number
   annualLaborOffset: number
   /** annual labor offset − annual OPEX */
   netAnnualBenefit: number
@@ -88,7 +86,6 @@ export function scenarioKpis(model: FleetModel): ScenarioKpis {
     capexMax: rom.pricing.totalMax,
     capexMid: rom.pricing.totalMid,
     annualOpex,
-    annualEnergyKwh: rom.opex.annualEnergyKwh,
     annualLaborOffset,
     netAnnualBenefit: annualLaborOffset - annualOpex,
     avgUtilization: totalSold > 0 ? totalRaw / totalSold : null,
@@ -114,7 +111,6 @@ export function diffKpis(baseline: ScenarioKpis, scenario: ScenarioKpis): Scenar
     capexMax: scenario.capexMax - baseline.capexMax,
     capexMid: scenario.capexMid - baseline.capexMid,
     annualOpex: scenario.annualOpex - baseline.annualOpex,
-    annualEnergyKwh: scenario.annualEnergyKwh - baseline.annualEnergyKwh,
     annualLaborOffset: scenario.annualLaborOffset - baseline.annualLaborOffset,
     netAnnualBenefit: scenario.netAnnualBenefit - baseline.netAnnualBenefit,
     avgUtilization: sub(scenario.avgUtilization, baseline.avgUtilization),

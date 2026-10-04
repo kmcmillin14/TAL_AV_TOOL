@@ -26,10 +26,12 @@ describe('kpiDetails', () => {
        'payback', 'resilience', 'tco', 'throughput', 'types', 'utilization'])
     // New economics KPIs carry detail too.
     expect(d.opex.formula).toContain('=')
-    // The Energy / day tile was retired (2026-10-04); its kWh figures folded
-    // into the OPEX popover rather than losing a surface.
-    expect(d.opex.rows!.some(r => r.label === 'Consumption / day')).toBe(true)
-    expect(d.opex.rows!.some(r => r.label === 'Consumption / yr')).toBe(true)
+    // Energy left the model entirely 2026-10-04 (owner decision) — OPEX is
+    // maintenance alone, and no surface may print a kWh or an energy cost.
+    expect(d.opex.rows!.map(r => r.label)).toEqual(['Maintenance'])
+    // No kWh anywhere. ("A_energy" survives in the fleet note — that is the
+    // hours-based charging constraint, which never read kWh.)
+    expect(JSON.stringify(d)).not.toMatch(/kWh/)
     expect(d.resilience.rows!.some(r => r.label === 'Throughput retained')).toBe(true)
     // Fleet: build-up formula with buffer multiplier.
     expect(d.fleet.formula).toContain('headroom')

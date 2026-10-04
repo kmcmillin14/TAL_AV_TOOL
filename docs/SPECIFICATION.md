@@ -746,7 +746,7 @@ configured" state rather than crashing.
 
 Customer-facing summary fed by the Fleet Engine `FleetSummary`. Rebuilt (2026-06-22) as an
 interactive **bento dashboard**: a sticky left **driver rail** (`RomDrivers`) edits in-memory
-what-if overrides (**throughput boost %**, operators, shifts, labor $, energy $, maintenance %,
+what-if overrides (**throughput boost %**, operators, shifts, labor $, maintenance %,
 buffer %, service life); a Baseline/Scenario toggle recomputes the whole dashboard live via
 `computeFleetModel` (`src/lib/scenario.ts` — `applyDrivers`/`scenarioKpis`/`diffKpis`, pure,
 in-memory; "Apply to baseline" persists). The **throughput boost** driver is not a project
@@ -762,7 +762,8 @@ icon in the tile header; Esc or backdrop click closes) for a closer look at a ch
 and **Fleet & flow** (headline total fleet + types, flows, throughput) — each
 combining like-items into one cohesive box with the headline figure large (red on the figures,
 no red rules); hover any metric for its `kpiDetails` breakdown. The **Energy / day** tile
-was retired 2026-10-04; its kWh figures live in the **Annual OPEX** breakdown (Consumption / day · / yr) alongside the energy cost they produce. In **scenario** mode each tile
+and the energy model behind it were retired 2026-10-04 (owner decision) — see **Annual OPEX** below.
+No surface prints a kWh or an energy cost. In **scenario** mode each tile
 shows a larger **delta chip colored by benefit** — green when the change helps, red when it
 hurts (per-metric desirable direction). Below, a **gauge strip** (`RomGauge`, SVG 270° arc with
 a hover definition): Utilization · Availability · Charging · **Redundancy** (the resilience
@@ -798,15 +799,27 @@ the sample formulas (cycle-time breakdown → base → charging → buffer), wit
 
 **Economic assumptions (persisted, editable, defaulted):**
 - `operatorsPerShift` (from Step 1; default 0) × `shiftsPerDay` = total operators
-  displaced. `fullyBurdenedRateUsdPerYear` (default 65 000), `energyCostUsdPerKwh`
-  (0.12), `annualMaintenancePctOfCapex` (0.08), `operatingDaysPerYear` (312 or derived
+  displaced. `fullyBurdenedRateUsdPerYear` (default 65 000),
+  `annualMaintenancePctOfCapex` (0.08), `operatingDaysPerYear` (312 or derived
   from `operatingDaysPattern`). The `numberOfOperators` legacy override field is
   schema-optional and cleared by the ROI card on edit (the derived product is always
   authoritative).
 
-**Annual OPEX:** energy = Σ over groups of `voltageV × ratedAh × DOD / 1000 ÷ runTimeHr (usable battery energy ÷ runtime) kW ×
-dailyOpHr × operatingDaysPerYear × fleetSold × energyCostUsdPerKwh`; maintenance =
-`totalMid × annualMaintenancePctOfCapex`.
+**Annual OPEX = maintenance only** = `totalMid × annualMaintenancePctOfCapex`.
+
+**Energy is not modelled (2026-10-04, owner decision).** OPEX previously carried an
+energy term — Σ over groups of `voltageV × ratedAh × DOD / 1000 ÷ runTimeHr` kW ×
+`dailyOpHr × operatingDaysPerYear × fleetSold × energyCostUsdPerKwh`. Every term in it
+was unverified: the kW used nameplate battery capacity as a proxy for duty-cycle draw
+(the M10's implied 0.09 kW is not physical), and `energyCostUsdPerKwh` was a flat 0.12
+default no engineer ever entered. It moved OPEX, net benefit, TCO and cost/move on
+figures the app could not defend, so it is withheld rather than estimated — the same
+rule the pricing gate applies. Removed with it: the `energyCostUsdPerKwh` project
+field and what-if driver, the dashboard Energy tile and `energy` KPI detail, the
+Assumptions panel's Energy group, the PDF *Annual energy* row and the deck's appendix
+*Energy — N kWh/day* row. **Charging and availability sizing are untouched** — that
+model is hours-based (`runTimeHr` + `chargeTimeMin`) and never read kWh, so `A_energy`,
+the SoC chart and `fleetSold` are unchanged.
 
 **Simple ROI card (`RomEconomics`):** two editable inputs — *Operators replaced per
 shift* and *Fully-burdened cost* (displayed as currency `$65,000` at rest, raw number

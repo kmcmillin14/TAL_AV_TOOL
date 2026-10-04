@@ -20,13 +20,7 @@ export default function AssumptionsPanel({ project: p }: Props) {
         { label: 'Usable depth of discharge', value: '80%', why: 'Battery sized to 80% DoD for cycle life.', isDefault: true },
         { label: 'Route speed factors', value: 'Low 30% · Med 50% · High 70%', why: 'Route-average speed as a fraction of rated cruise.', isDefault: true },
         { label: 'Charging', value: 'Availability = min(energy, capacity)', why: 'Per vehicle type: energy availability credits breaks, the nightly off-shift, and the day-off reset (a day off recharges to 100%); capacity availability is whether the battery covers a production window. Availability = min(rotation run:charge ratio, weekly energy balance) from cutsheet runtime and charge hours — no derates (measured hours already contain them). The fleet pays the larger of the energy and buffered-rotation constraints.', isDefault: true },
-        { label: 'Operating days / year', value: p.operatingDaysPattern && p.operatingDaysPerYear == null ? `${days} (from ${p.operatingDaysPattern})` : String(days), why: 'Annualizes energy and labor.', isDefault: p.operatingDaysPerYear == null },
-      ],
-    },
-    {
-      title: 'Energy',
-      rows: [
-        { label: 'Energy cost', value: `$${p.energyCostUsdPerKwh ?? 0.12}/kWh`, why: 'Blended electricity rate; full-draw estimate.', isDefault: p.energyCostUsdPerKwh == null },
+        { label: 'Operating days / year', value: p.operatingDaysPattern && p.operatingDaysPerYear == null ? `${days} (from ${p.operatingDaysPattern})` : String(days), why: 'Annualizes the labor offset.', isDefault: p.operatingDaysPerYear == null },
       ],
     },
     {

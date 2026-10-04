@@ -43,29 +43,31 @@ describe('romPricing', () => {
 })
 
 describe('romOpex', () => {
-  const costs = { numberOfOperators: 4, fullyBurdenedRateUsdPerYear: 65000, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 100 }
-  const schedule = { dailyOpHr: 10 }
+  const costs = { numberOfOperators: 4, fullyBurdenedRateUsdPerYear: 65000, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 100 }
 
-  it('sums operating-draw energy across groups and adds maintenance', () => {
-    const vById = new Map([['a', veh('a', 0, 0, 4, 48)]]) // 48V × 500Ah × 0.8 / 1000 / 4h = 4.8 kW
-    const f = fleet([{ vehicleId: 'a', fleetSold: 2 }])
-    // energyKwh = 4.8 kW × 10 h × 100 d × 2 veh = 9600 ; cost = 960
-    // maintenance = capexMid(100000) × 0.08 = 8000
-    const o = romOpex(f, vById, costs, schedule, 100000)
-    expect(o.annualEnergyKwh).toBeCloseTo(9600, 5)
-    expect(o.annualEnergyCost).toBeCloseTo(960, 5)
+  it('is maintenance only — a share of CAPEX mid', () => {
+    const o = romOpex(costs, 100000)
     expect(o.annualMaintenance).toBeCloseTo(8000, 5)
-    expect(o.annualOpex).toBeCloseTo(8960, 5)
+    expect(o.annualOpex).toBeCloseTo(8000, 5)
   })
 
-  it('skips groups whose vehicle is unknown', () => {
-    const o = romOpex(fleet([{ vehicleId: 'ghost', fleetSold: 3 }]), new Map(), costs, schedule, 0)
-    expect(o.annualEnergyKwh).toBe(0)
+  /** Energy left the OPEX model 2026-10-04 (owner decision): every term was an
+   *  unverified estimate — nameplate battery kW standing in for duty-cycle draw,
+   *  and a flat $/kWh nobody entered. OPEX must not pick up an energy term again
+   *  without real figures behind it. */
+  it('REGRESSION: OPEX carries no energy term', () => {
+    const o = romOpex(costs, 100000)
+    expect(Object.keys(o).sort()).toEqual(['annualMaintenance', 'annualOpex'])
+    expect(o.annualOpex).toBe(o.annualMaintenance)
+  })
+
+  it('is zero when there is no CAPEX to take a share of', () => {
+    expect(romOpex(costs, 0).annualOpex).toBe(0)
   })
 })
 
 describe('romPayback', () => {
-  const costs = { numberOfOperators: 6, fullyBurdenedRateUsdPerYear: 40000, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
+  const costs = { numberOfOperators: 6, fullyBurdenedRateUsdPerYear: 40000, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
 
   // Simple model (user-confirmed): payback = system cost ÷ (operators × burdened
   // cost). OPEX stays informational — it does not net against the offset.
@@ -86,9 +88,8 @@ describe('romSummary', () => {
   it('wires pricing → opex → payback together', () => {
     const vById = new Map([['a', veh('a', 100000, 100000, 4, 48)]])
     const f = fleet([{ vehicleId: 'a', fleetSold: 1 }])
-    const costs = { numberOfOperators: 2, fullyBurdenedRateUsdPerYear: 30000, energyCostUsdPerKwh: 0.1, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
-    const schedule = { dailyOpHr: 16 }
-    const s = romSummary(f, vById, costs, schedule)
+    const costs = { numberOfOperators: 2, fullyBurdenedRateUsdPerYear: 30000, annualMaintenancePctOfCapex: 0.08, operatingDaysPerYear: 250 }
+    const s = romSummary(f, vById, costs)
     expect(s.pricing.totalMid).toBe(100000)
     expect(s.opex.annualMaintenance).toBeCloseTo(8000, 5)
     expect(s.payback.annualLaborOffset).toBeCloseTo(2 * 30000, 5) // 60000
@@ -100,7 +101,6 @@ describe('ROM economic-assumption defaults', () => {
     const parsed = projectSchema.parse({})
     expect(parsed.numberOfOperators).toBeUndefined()
     expect(parsed.fullyBurdenedRateUsdPerYear).toBeUndefined()
-    expect(parsed.energyCostUsdPerKwh).toBeUndefined()
     expect(parsed.annualMaintenancePctOfCapex).toBeUndefined()
     expect(parsed.operatingDaysPerYear).toBeUndefined()
   })

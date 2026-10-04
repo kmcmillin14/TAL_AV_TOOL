@@ -1,5 +1,46 @@
 # Changelog
 
+## 2026-10-04 — Energy removed from the ROM model (owner decision)
+
+**Annual OPEX is now maintenance alone.** The energy term is gone, not hidden.
+
+Why: every term in it was unverified. The kW came from nameplate battery
+capacity standing in for real duty-cycle draw — `voltageV × ratedAh × DOD /
+1000 ÷ runTimeHr` — which is why the M10 implied **0.09 kW**, not a physical
+figure for a vehicle of its class. The price was a flat `$0.12/kWh` default no
+engineer ever entered. Those two numbers moved **OPEX, net benefit, TCO and
+cost per move** on a customer-facing quote. Withheld rather than estimated,
+which is the rule the pricing gate already applies.
+
+Removed:
+- `annualEnergyKwh` / `annualEnergyCost` from `RomOpex`; `annualOpex =
+  annualMaintenance`. `romOpex(costs, capexMid)` no longer takes the fleet,
+  the vehicle map or the schedule — it needed them only for energy.
+- `energyCostUsdPerKwh`: the project schema field, the `fleetModel`/Step 5
+  defaults, and the `ScenarioDrivers` what-if override.
+- `annualEnergyKwh` from the scenario KPI snapshot and diff.
+- The Assumptions panel's whole **Energy** group.
+- The PDF internal appendix's *Annual energy* row.
+- The customer deck's appendix *Energy — N kWh/day* row.
+- The `methodology.ts` OPEX entry's energy formula and its three energy
+  variables; the entry now states plainly that electricity is not modelled and
+  invites the buyer to add their own line.
+
+**Numbers that move:** Annual OPEX drops by the former energy cost, and with it
+Net benefit / yr (up), TCO @ life (down) and Cost / move (down). ROM CAPEX,
+payback, fleet size and the labor offset are unchanged — payback never netted
+OPEX.
+
+**Charging and fleet sizing are untouched.** That model is hours-based
+(`runTimeHr` + `chargeTimeMin`) and never read kWh, so `A_energy`, the
+state-of-charge chart, `fleetSold` and the binding constraint are all
+unchanged. `DEFAULT_DOD` stays — `romCharts` uses it for the SoC curve.
+Battery nameplate kWh still shows on the vehicle spec sheet: that is a cutsheet
+spec, not an assumption.
+
+A regression test pins OPEX to exactly `annualMaintenance` + `annualOpex`, and
+`kpiDetails` is asserted to print no kWh anywhere.
+
 ## 2026-10-04 — Energy / day tile retired from the dashboard
 
 The **Energy / day** tile is gone from the Fleet & flow hero box, which now

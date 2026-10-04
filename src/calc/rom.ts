@@ -1,19 +1,13 @@
 // src/calc/rom.ts — ROM economics: CAPEX range, annual OPEX, simple payback. PURE.
 // No React, no fetch, no localStorage, no fs. (Type-only Vehicle import, as in fleet.ts.)
-import { DEFAULT_DOD } from './types'
 import type { FleetSummary } from './types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
 export interface RomCostInputs {
   numberOfOperators: number              // operators the fleet displaces
   fullyBurdenedRateUsdPerYear: number    // loaded annual cost per operator
-  energyCostUsdPerKwh: number
   annualMaintenancePctOfCapex: number   // 0..1
   operatingDaysPerYear: number
-}
-
-export interface RomSchedule {
-  dailyOpHr: number
 }
 
 export interface RomPricingLine {
@@ -52,33 +46,27 @@ export function romPricing(fleet: FleetSummary, vehiclesById: Map<string, Vehicl
 }
 
 export interface RomOpex {
-  annualEnergyKwh: number
-  annualEnergyCost: number
   annualMaintenance: number
   annualOpex: number
 }
 
-/** Annual OPEX = operating-draw energy (Σ groups) + maintenance (% of CAPEX mid).
- *  Operating power per vehicle = usable battery energy ÷ runtime: kW = voltageV × ratedAh × DOD / 1000 / runTimeHr. */
+/** Annual OPEX = maintenance (% of CAPEX mid).
+ *
+ *  Energy was removed from this model 2026-10-04 (owner decision). It had been
+ *  an operating-draw estimate — kW = voltageV × ratedAh × DOD / 1000 / runTimeHr,
+ *  annualized over op-hours × days × fleet, priced at a blended $/kWh — and
+ *  every term in it was unverified: the kW came from cutsheet nameplate battery
+ *  figures standing in for real duty-cycle draw (the M10's implied 0.09 kW is
+ *  not physical), and the $/kWh was a flat default nobody entered. It moved
+ *  OPEX, net benefit, TCO and cost/move on numbers we could not defend, so it
+ *  is gone rather than shown. Charging/availability sizing is unaffected: that
+ *  model is hours-based (runTimeHr + chargeTimeMin) and never read kWh. */
 export function romOpex(
-  fleet: FleetSummary,
-  vehiclesById: Map<string, Vehicle>,
   costs: RomCostInputs,
-  schedule: RomSchedule,
   capexMid: number,
 ): RomOpex {
-  let annualEnergyKwh = 0
-  for (const g of fleet.groups) {
-    const veh = vehiclesById.get(g.vehicleId)
-    if (!veh) continue
-    const rt = veh.calc.runTimeHr
-    if (!rt || rt <= 0) continue
-    const kw = (veh.calc.voltageV * veh.calc.ratedAh * DEFAULT_DOD) / 1000 / rt
-    annualEnergyKwh += kw * schedule.dailyOpHr * costs.operatingDaysPerYear * g.fleetSold
-  }
-  const annualEnergyCost = annualEnergyKwh * costs.energyCostUsdPerKwh
   const annualMaintenance = capexMid * costs.annualMaintenancePctOfCapex
-  return { annualEnergyKwh, annualEnergyCost, annualMaintenance, annualOpex: annualEnergyCost + annualMaintenance }
+  return { annualMaintenance, annualOpex: annualMaintenance }
 }
 
 export interface RomPayback {
@@ -109,10 +97,9 @@ export function romSummary(
   fleet: FleetSummary,
   vehiclesById: Map<string, Vehicle>,
   costs: RomCostInputs,
-  schedule: RomSchedule,
 ): RomSummary {
   const pricing = romPricing(fleet, vehiclesById)
-  const opex = romOpex(fleet, vehiclesById, costs, schedule, pricing.totalMid)
+  const opex = romOpex(costs, pricing.totalMid)
   const payback = romPayback(costs, pricing.totalMid)
   return { pricing, opex, payback }
 }

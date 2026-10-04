@@ -50,7 +50,6 @@ export function kpiDetails(
   const lifetimeMoves = annualMoves * life
   const costPerMove = lifetimeMoves > 0 ? tcoAtLife / lifetimeMoves : null
   const res = resilience({ fleet })
-  const kwh = (n: number) => `${Math.round(n).toLocaleString()} kWh`
 
   return {
     fleet: {
@@ -83,19 +82,14 @@ export function kpiDetails(
       ],
       note: 'Payback = system cost ÷ annual labor offset. OPEX is informational, not netted.',
     },
+    // Energy left the OPEX model entirely 2026-10-04 (owner decision) — every
+    // term in it was an unverified estimate (see romOpex). OPEX is maintenance.
     opex: {
-      formula: `${money(rom.opex.annualEnergyCost)} energy  +  ${money(rom.opex.annualMaintenance)} maint  =  ${money(opex)}`,
-      // The kWh figures moved here when the Energy / day tile was retired
-      // (2026-10-04) — OPEX is where the energy COST already lived, so the
-      // consumption that produces it belongs in the same disclosure rather
-      // than losing a surface.
+      formula: `${money(rom.pricing.totalMid)} CAPEX mid × ${Math.round(costs.annualMaintenancePctOfCapex * 100)}% = ${money(opex)}`,
       rows: [
-        { label: 'Energy', value: money(rom.opex.annualEnergyCost) },
         { label: 'Maintenance', value: money(rom.opex.annualMaintenance) },
-        { label: 'Consumption / day', value: kwh(rom.opex.annualEnergyKwh / Math.max(1, costs.operatingDaysPerYear)) },
-        { label: 'Consumption / yr', value: kwh(rom.opex.annualEnergyKwh) },
       ],
-      note: 'Annual operating cost — energy + maintenance (% of CAPEX). Consumption is a conservative full-draw estimate: kW (discharge × voltage) × op-hours × days × fleet.',
+      note: 'Annual operating cost — maintenance as a share of CAPEX. Energy is not modelled.',
     },
     offset: {
       formula: `${costs.numberOfOperators} operators × ${money(costs.fullyBurdenedRateUsdPerYear)} = ${money(offset)}`,

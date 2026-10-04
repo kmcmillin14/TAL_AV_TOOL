@@ -545,7 +545,6 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
       row('Operators displaced', String(model.costs.numberOfOperators))
       row('Fully-burdened rate', `${money(model.costs.fullyBurdenedRateUsdPerYear)} / yr`)
       row('Annual labor offset', `${money(rom.payback.annualLaborOffset)} / yr`)
-      row('Annual energy', `${money(rom.opex.annualEnergyCost)} / yr`)
       row('Annual maintenance', `${money(rom.opex.annualMaintenance)} / yr`)
       row('Payback', rom.payback.paybackYears == null ? '—' : `${rom.payback.paybackYears.toFixed(1)} years`)
     })

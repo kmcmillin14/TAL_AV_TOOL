@@ -56,7 +56,6 @@ export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): 
     numberOfOperators: project.numberOfOperators
       ?? ((project.operatorsPerShift ?? 0) * (project.shiftsPerDay ?? 1)),
     fullyBurdenedRateUsdPerYear: project.fullyBurdenedRateUsdPerYear ?? 65000,
-    energyCostUsdPerKwh: project.energyCostUsdPerKwh ?? 0.12,
     annualMaintenancePctOfCapex: project.annualMaintenancePctOfCapex ?? 0.08,
     operatingDaysPerYear: project.operatingDaysPerYear
       ?? defaultOperatingDaysPerYear(project.operatingDaysPattern, project.operatingDaysCustom),
@@ -82,7 +81,7 @@ export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): 
       }
     : hardwarePricing
 
-  const opex = romOpex(fleet, vehicleById, costs, { dailyOpHr }, pricing.totalMid)
+  const opex = romOpex(costs, pricing.totalMid)
   const payback = romPayback(costs, pricing.totalMid)
   const rom: RomSummary = { pricing, opex, payback }
 

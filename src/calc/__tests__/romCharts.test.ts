@@ -95,7 +95,7 @@ describe('batterySocSeries', () => {
 const romFix: RomSummary = {
   pricing: { lines: [{ vehicleId: 'cb18', fleetSold: 10, unitMin: 165000, unitMax: 210000, lineMin: 1650000, lineMax: 2100000 }],
              totalMin: 1650000, totalMax: 2100000, totalMid: 1875000 },
-  opex: { annualEnergyKwh: 1, annualEnergyCost: 1000, annualMaintenance: 150000, annualOpex: 151000 },
+  opex: { annualMaintenance: 150000, annualOpex: 150000 },
   payback: { annualLaborOffset: 600000, paybackYears: 1875000 / 600000 },
 }
 
@@ -121,8 +121,8 @@ describe('tcoSeries', () => {
   it('accumulates capex + opex vs labor offset by year', () => {
     const s = tcoSeries(romFix, 7)
     expect(s.points[2]).toMatchObject({ year: 2, capex: 1875000 })
-    expect(s.points[2].cumOpex).toBeCloseTo(151000 * 2, 5)
+    expect(s.points[2].cumOpex).toBeCloseTo(150000 * 2, 5)
     expect(s.points[2].cumLaborOffset).toBeCloseTo(600000 * 2, 5)
-    expect(s.points[2].net).toBeCloseTo(1875000 + 151000 * 2 - 600000 * 2, 5)
+    expect(s.points[2].net).toBeCloseTo(1875000 + 150000 * 2 - 600000 * 2, 5)
   })
 })

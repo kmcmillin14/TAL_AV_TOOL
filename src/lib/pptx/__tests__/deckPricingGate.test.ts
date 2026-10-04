@@ -91,8 +91,10 @@ describe('the deck inherits the pricing gate', () => {
     const model = computeFleetModel(BLOCKED, vehicles)
     const xml = xmlFor(z => fillCostDetail(z, ROM_SLIDE.investment, model, 10), ROM_SLIDE.investment)
     expect(xml).toContain('Not priced')
-    // Energy is not CAPEX-derived and must survive.
-    expect(xml).toContain('kWh/day')
+    // Every row left on this slide is CAPEX-derived, so nothing escapes the
+    // gate. Energy used to be the one exception; it left the model 2026-10-04.
+    expect(xml).not.toMatch(/kWh/)
+    expect(xml).not.toMatch(/\$[\d,]+/)
   })
 
   it('labor offset survives the gate — it is not derived from CAPEX', () => {

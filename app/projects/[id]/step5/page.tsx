@@ -57,7 +57,6 @@ export default function RomDashboardPage() {
     operatorsPerShift: project?.operatorsPerShift ?? 0,
     shiftsPerDay: project?.shiftsPerDay ?? 1,
     fullyBurdenedRateUsdPerYear: project?.fullyBurdenedRateUsdPerYear ?? 65000,
-    energyCostUsdPerKwh: project?.energyCostUsdPerKwh ?? 0.12,
     annualMaintenancePctOfCapex: project?.annualMaintenancePctOfCapex ?? 0.08,
     bufferPct: project?.bufferPct ?? DEFAULT_BUFFER_PCT,
     serviceLifeYears: project?.serviceLifeYears ?? 10,

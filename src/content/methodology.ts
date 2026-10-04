@@ -96,14 +96,11 @@ export const METHODOLOGY: readonly MethodTopic[] = [
     id: 'opex',
     num: '06',
     title: 'Operating cost',
-    formula: 'OPEX = energy + maintenance       energy = Σ(kW × h/day × days/yr × qty) × $/kWh',
+    formula: 'OPEX = maintenance = CAPEX mid × maintenance %',
     variables: [
-      { sym: 'kW', name: 'Operating power', def: 'Power per vehicle while working = draw × voltage ÷ 1000.', unit: 'kW' },
-      { sym: 'h/day', name: 'Operating hours', def: 'Run hours per day = shifts × hours/shift (capped at 24).', unit: 'h' },
-      { sym: 'days/yr', name: 'Operating days', def: 'Working days per year for the site.', unit: 'days' },
-      { sym: '$/kWh', name: 'Energy cost', def: 'Electricity price.', unit: '$/kWh' },
-      { sym: 'maintenance', name: 'Maintenance', def: 'Annual reserve = a fixed percentage of system cost.', unit: '$/yr' },
+      { sym: 'CAPEX mid', name: 'System cost', def: 'Midpoint of the ROM CAPEX range.', unit: '$' },
+      { sym: 'maintenance %', name: 'Maintenance rate', def: 'Annual reserve as a share of system cost.', unit: '% / yr' },
     ],
-    why: 'Annual cost to run the fleet: electricity to move the vehicles plus a maintenance reserve sized as a fraction of CAPEX. Energy is summed per chassis from its real power draw and the site schedule, so heavier or longer-running fleets cost proportionally more to operate.',
+    why: 'Annual cost to run the fleet: a maintenance reserve sized as a fraction of CAPEX. Electricity is deliberately NOT modelled — the estimate would have rested on nameplate battery figures standing in for real duty-cycle draw, and on a blended $/kWh nobody enters, which is not a number a buyer should see attached to a quote. Add your own energy line from your site rate and measured draw.',
   },
 ] as const
