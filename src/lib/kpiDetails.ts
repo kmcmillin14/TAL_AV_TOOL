@@ -19,7 +19,7 @@ export interface KpiDetail {
 
 export type KpiId =
   | 'fleet' | 'types' | 'flows' | 'throughput' | 'capex' | 'payback'
-  | 'opex' | 'offset' | 'net' | 'energy' | 'utilization' | 'resilience' | 'tco' | 'costPerMove'
+  | 'opex' | 'offset' | 'net' | 'utilization' | 'resilience' | 'tco' | 'costPerMove'
 
 const bars = (items: Array<{ label: string; weight: number; display: string }>): KpiBar[] => {
   const max = Math.max(1, ...items.map(i => i.weight))
@@ -85,11 +85,17 @@ export function kpiDetails(
     },
     opex: {
       formula: `${money(rom.opex.annualEnergyCost)} energy  +  ${money(rom.opex.annualMaintenance)} maint  =  ${money(opex)}`,
+      // The kWh figures moved here when the Energy / day tile was retired
+      // (2026-10-04) — OPEX is where the energy COST already lived, so the
+      // consumption that produces it belongs in the same disclosure rather
+      // than losing a surface.
       rows: [
         { label: 'Energy', value: money(rom.opex.annualEnergyCost) },
         { label: 'Maintenance', value: money(rom.opex.annualMaintenance) },
+        { label: 'Consumption / day', value: kwh(rom.opex.annualEnergyKwh / Math.max(1, costs.operatingDaysPerYear)) },
+        { label: 'Consumption / yr', value: kwh(rom.opex.annualEnergyKwh) },
       ],
-      note: 'Annual operating cost — energy + maintenance (% of CAPEX).',
+      note: 'Annual operating cost — energy + maintenance (% of CAPEX). Consumption is a conservative full-draw estimate: kW (discharge × voltage) × op-hours × days × fleet.',
     },
     offset: {
       formula: `${costs.numberOfOperators} operators × ${money(costs.fullyBurdenedRateUsdPerYear)} = ${money(offset)}`,
@@ -102,15 +108,6 @@ export function kpiDetails(
         { label: 'Net / yr', value: money(offset - opex) },
       ],
       note: 'Annual labor offset minus annual operating cost.',
-    },
-    energy: {
-      rows: [
-        { label: 'Per operating day', value: kwh(rom.opex.annualEnergyKwh / Math.max(1, costs.operatingDaysPerYear)) },
-        { label: 'Per week', value: kwh(rom.opex.annualEnergyKwh / 52) },
-        { label: 'Per year', value: kwh(rom.opex.annualEnergyKwh) },
-        { label: 'Energy cost / yr', value: money(rom.opex.annualEnergyCost) },
-      ],
-      note: 'Conservative full-draw estimate: kW (discharge × voltage) × op-hours × days × fleet.',
     },
     utilization: {
       bars: bars(fleet.groups.map(g => ({

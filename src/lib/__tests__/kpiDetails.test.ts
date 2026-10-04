@@ -22,10 +22,14 @@ describe('kpiDetails', () => {
     const d = kpiDetails(model, names)
 
     expect(Object.keys(d).sort()).toEqual(
-      ['capex', 'costPerMove', 'energy', 'fleet', 'flows', 'net', 'offset', 'opex',
+      ['capex', 'costPerMove', 'fleet', 'flows', 'net', 'offset', 'opex',
        'payback', 'resilience', 'tco', 'throughput', 'types', 'utilization'])
     // New economics KPIs carry detail too.
     expect(d.opex.formula).toContain('=')
+    // The Energy / day tile was retired (2026-10-04); its kWh figures folded
+    // into the OPEX popover rather than losing a surface.
+    expect(d.opex.rows!.some(r => r.label === 'Consumption / day')).toBe(true)
+    expect(d.opex.rows!.some(r => r.label === 'Consumption / yr')).toBe(true)
     expect(d.resilience.rows!.some(r => r.label === 'Throughput retained')).toBe(true)
     // Fleet: build-up formula with buffer multiplier.
     expect(d.fleet.formula).toContain('headroom')

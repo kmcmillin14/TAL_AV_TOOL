@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-10-04 — Energy / day tile retired from the dashboard
+
+The **Energy / day** tile is gone from the Fleet & flow hero box, which now
+shows total fleet, types, flows and throughput. Its kWh figures folded into the
+**Annual OPEX** popover as *Consumption / day* and *Consumption / yr*, next to
+the energy cost they produce, carrying the full-draw-estimate caveat with them
+— so no number lost a home, it changed which disclosure it lives behind.
+
+Also removed: the `energy` `KpiId` and its `kpiDetails` entry, and the dead
+`energyPerWeek` local in `RomKpis.tsx`.
+
+Unchanged: `annualEnergyKwh` in `src/calc/rom.ts` and in the scenario KPI
+snapshot/diff (no consumer reads the energy delta now, but it remains a
+comparable scalar the OPEX disclosure could surface), and the **customer deck's
+appendix cost-detail row** (`Energy — N kWh/day`), which is a separate audience
+and a separate decision.
+
 ## 2026-10-03 — Step 1 readiness meter was frozen
 
 The "N of 8 qualification inputs" meter and the section-01 badge never moved

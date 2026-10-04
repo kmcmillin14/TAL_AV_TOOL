@@ -759,9 +759,10 @@ icon in the tile header; Esc or backdrop click closes) for a closer look at a ch
 
 **Top summary (2026-06-23 redesign, T-Hive-inspired, TAL-formatted):** two **hero boxes** —
 **Financials** (headline ROM CAPEX + net benefit, payback, labor offset, OPEX, TCO, cost/move)
-and **Fleet & flow** (headline total fleet + types, flows, throughput, energy/day·week) — each
+and **Fleet & flow** (headline total fleet + types, flows, throughput) — each
 combining like-items into one cohesive box with the headline figure large (red on the figures,
-no red rules); hover any metric for its `kpiDetails` breakdown. In **scenario** mode each tile
+no red rules); hover any metric for its `kpiDetails` breakdown. The **Energy / day** tile
+was retired 2026-10-04; its kWh figures live in the **Annual OPEX** breakdown (Consumption / day · / yr) alongside the energy cost they produce. In **scenario** mode each tile
 shows a larger **delta chip colored by benefit** — green when the change helps, red when it
 hurts (per-metric desirable direction). Below, a **gauge strip** (`RomGauge`, SVG 270° arc with
 a hover definition): Utilization · Availability · Charging · **Redundancy** (the resilience

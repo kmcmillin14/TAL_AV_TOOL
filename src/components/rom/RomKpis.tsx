@@ -80,9 +80,6 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   const res = resilience({ fleet })
   const blocked = gate.blocked
   const pctChip = (n: number) => `${Math.round(n * 100)}%`
-  const opDays = Math.max(1, costs.operatingDaysPerYear)
-  const energyPerDay = rom.opex.annualEnergyKwh / opDays
-  const energyPerWeek = rom.opex.annualEnergyKwh / 52
 
   // Fleet-wide gauge aggregates (weighted by units sold).
   const charge = chargingSeries(fleet, vehicleById)
@@ -109,11 +106,6 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
       delta: chip(deltas?.vehicleTypes, n => String(Math.round(n))) },
     { id: 'flows', label: 'Flows', value: String(flows.length) },
     { id: 'throughput', label: 'Throughput', value: `${throughput} / hr` },
-    // One labelled figure, not two bare numbers sharing a tile. The weekly
-    // figure is the daily one times seven; it was carrying no information the
-    // reader couldn't get from the detail popover.
-    { id: 'energy', label: 'Energy / day', value: `${Math.round(energyPerDay)} kWh`,
-      delta: chip(deltas?.annualEnergyKwh == null ? undefined : deltas.annualEnergyKwh / opDays, n => `${Math.round(n)}/d`, 'down') },
     // ── Financials ──
     // CAPEX and everything built on it read "Not priced" while the complexity
     // inputs behind professional services / software are missing — the same
@@ -167,7 +159,7 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
           <div className="rom2-hero-head">Fleet &amp; flow</div>
           <div className="rom2-hero-lead">{tile('fleet')}</div>
           <div className="rom2-hero-grid">
-            {tile('types')}{tile('flows')}{tile('throughput')}{tile('energy')}
+            {tile('types')}{tile('flows')}{tile('throughput')}
           </div>
         </section>
       </div>
