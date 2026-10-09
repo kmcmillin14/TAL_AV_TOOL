@@ -4,7 +4,7 @@
   "display": {
     "manufacturer": "Toyota Material Handling",
     "partnership": "TAL 3rd Party",
-    "tHive": false,
+    "tOne": true,
     "fleetSoftware": "BlueBotics ANT",
     "heroImage": "/images/vehicles/8tb50a.png",
     "typicalLoad": "Cart Train",

@@ -28,17 +28,23 @@ const PROFESSIONAL_SERVICES_INCLUDES = [
   'Training',
 ]
 
-/** The fleet-management software the Software figure licenses. Descriptive, for
- *  the same reason as the list above: one amount, not two priced lines.
+/** The fleet-management software the Software figure licenses, derived from the
+ *  fleet actually being quoted. Descriptive only: there is one amount, not one
+ *  per platform, so these render without their own figures.
  *
- *  Not derived from `vehicle.display.fleetSoftware` — every vehicle in the
- *  library currently reads "BlueBotics ANT", so deriving would silently drop
- *  T-One from the quote. If per-platform software pricing ever lands, this
- *  becomes real lines off `fleetTotal.integrationByPlatform` and the list goes. */
-const SOFTWARE_INCLUDES = [
-  'BlueBotics ANT',
-  'T-One',
-]
+ *  Derived, not hardcoded. A static list claimed T-One on any fleet — including
+ *  one made entirely of non-BlueBotics vehicles, which do not have it. T-One
+ *  ships with BlueBotics (see Vehicle.display.tOne), so it appears exactly when
+ *  the fleet contains a vehicle that runs it. */
+function softwareIncludes(lines: RomSellPriceLine[]): string[] {
+  const out: string[] = []
+  for (const l of lines) {
+    const platform = l.vehicle.display.fleetSoftware
+    if (platform && !out.includes(platform)) out.push(platform)
+  }
+  if (lines.some(l => l.vehicle.display.tOne) && !out.includes('T-One')) out.push('T-One')
+  return out
+}
 
 interface Props {
   lines: RomSellPriceLine[]
@@ -207,7 +213,7 @@ export default function RomQuotation({
             <>
               <p className="q-detail-note">Fleet-management software licensed with the project:</p>
               <ul className="q-chips">
-                {SOFTWARE_INCLUDES.map(i => <li key={i}>{i}</li>)}
+                {softwareIncludes(lines).map(i => <li key={i}>{i}</li>)}
               </ul>
             </>
           } />

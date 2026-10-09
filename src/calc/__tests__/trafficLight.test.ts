@@ -10,7 +10,7 @@ const fixtureVehicle = (overrides: Partial<Vehicle> = {}): Vehicle => ({
   display: {
     manufacturer: 'TestCo',
     partnership: 'TAL Integrated',
-    tHive: false,
+    tOne: false,
     fleetSoftware: 'Test FM',
     heroImage: '/test.png',
     typicalLoad: 'Standard Pallet',

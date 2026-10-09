@@ -2,7 +2,7 @@
 
 import Icon from '@/src/design-system/components/Icon'
 
-/** Radial 270° gauge (T-Hive style, TAL-formatted): grey track + brand-red fill,
+/** Radial 270° gauge (T-One style, TAL-formatted): grey track + brand-red fill,
  *  big centered % and a label below. Pure SVG, scales to its container. */
 
 const SIZE = 120

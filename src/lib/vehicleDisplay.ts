@@ -158,7 +158,7 @@ export function vehicleSpecSections(v: Vehicle, unit: UnitSystem): SpecSection[]
       rows: [
         { label: 'Fleet software', value: orDash(display.fleetSoftware) },
         { label: 'Navigation', value: orDash(display.navigationType) },
-        { label: 'T-Hive enabled', value: display.tHive ? 'Yes' : 'No' },
+        { label: 'T-One enabled', value: display.tOne ? 'Yes' : 'No' },
       ],
     },
     {

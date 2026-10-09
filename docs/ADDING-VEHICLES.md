@@ -19,7 +19,7 @@ No code changes. No database migrations. Just create a JSON file.
   "display": {
     "manufacturer": "Manufacturer Name",
     "partnership": "TAL Integrated | TAL 3rd Party | OEM | 3rd Party",
-    "tHive": true,
+    "tOne": true,
     "fleetSoftware": "Software Name",
     "heroImage": "/images/vehicles/slug.jpg",
     "typicalLoad": "Standard Pallet | Tote | Cart | etc.",

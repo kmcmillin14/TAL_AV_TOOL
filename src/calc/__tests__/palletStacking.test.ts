@@ -9,7 +9,7 @@ import { projectSchema } from '../../lib/validations/schemas'
 const fixtureVehicle = (): Vehicle => ({
   id: 'fx', name: 'Fixture Vehicle',
   display: {
-    manufacturer: 'TestCo', partnership: 'TAL Integrated', tHive: false,
+    manufacturer: 'TestCo', partnership: 'TAL Integrated', tOne: false,
     fleetSoftware: 'Test FM', heroImage: '/test.png',
     typicalLoad: 'Standard Pallet', category: 'Test',
   },

@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-10-09 — T-Hive and T-One unified; T-One ties to BlueBotics, not the chassis
+
+**One name.** T-Hive and T-One are the same product. The app carried both — the
+vehicle spec sheet said "T-Hive enabled" while the Step 4 quote said "T-One" —
+so the quote and the spec sheet could describe one thing two ways.
+`display.tHive` → **`display.tOne`** across all six vehicle JSONs, the `Vehicle`
+type, the spec-sheet label, the tests and `docs/ADDING-VEHICLES.md`.
+
+**DATA FIX: T-One is a property of the fleet software, not the chassis.** It
+ships with BlueBotics, so every BlueBotics vehicle has it. **8TB50A and 8HBC40A
+are BlueBotics ANT but were flagged `false`** — a fleet of only those two would
+have had T-One silently dropped from the quote's software line. All six vehicles
+are now `tOne: true`, matching their `fleetSoftware`.
+
+The invariant `tOne === fleetSoftware includes "BlueBotics"` is pinned by
+`src/calc/__tests__/tOnePlatform.test.ts`, so the two fields cannot drift again.
+
+**The Step 4 software list is derived, not hardcoded.** Yesterday's static
+`['BlueBotics ANT', 'T-One']` claimed T-One on ANY fleet, including one made
+entirely of non-BlueBotics vehicles. It now reads the distinct `fleetSoftware`
+platforms across the quoted lines and appends T-One only when a quoted vehicle
+actually runs it.
+
+No priced figure moves — both lists are descriptive.
+
 ## 2026-10-09 — Step 4: Software names its platforms, Professional services names Training
 
 **Software** now lists what it licenses — **BlueBotics ANT** and **T-One** —

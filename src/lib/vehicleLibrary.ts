@@ -21,7 +21,18 @@ export type ChargerType = 'opportunity' | 'shift_swap' | 'manual'
 export interface VehicleDisplay {
   manufacturer: string
   partnership: Partnership
-  tHive: boolean
+  /** Runs on TAL's T-One fleet-management platform.
+   *
+   *  Renamed from `tHive` 2026-10-09 — T-Hive and T-One are the same product,
+   *  and carrying both names meant the quote could say one while the spec sheet
+   *  said the other.
+   *
+   *  T-One ships with BlueBotics, so this tracks the FLEET SOFTWARE, not the
+   *  chassis: every BlueBotics vehicle is `true`. It was wrong on 8TB50A and
+   *  8HBC40A, which are BlueBotics ANT but were flagged false. The invariant
+   *  `tOne === fleetSoftware includes "BlueBotics"` is pinned by
+   *  src/calc/__tests__/tOnePlatform.test.ts so the two cannot drift. */
+  tOne: boolean
   fleetSoftware: string
   heroImage: string
   typicalLoad: string
