@@ -168,7 +168,7 @@ export const projectSchema = z.object({
    *  default to 'continuous'). An explicit choice always wins. */
   chargeRegime: z.enum(['overnight', 'continuous']).optional(),
   /** Fleet headroom, stored as the buffer multiplier; set in the UI as a target
-   *  utilization (default 80% ⇒ 0.25). See DEFAULT_TARGET_UTILIZATION. */
+   *  utilization (default 90% ⇒ 0.111). See DEFAULT_TARGET_UTILIZATION. */
   bufferPct: z.number().min(0).max(1).default(DEFAULT_BUFFER_PCT),
   /** Per-vehicleId charge-method override ('opportunity' | 'plugged'). Absent →
    *  derived from the vehicle's chargerType. */

@@ -248,18 +248,28 @@ export const ROUTE_LAYOUT_FACTORS: Record<RouteLayout, number> = {
  *
  *   fleetSold ≈ demand × (1 + buffer)   ⇒   utilization = 1 / (1 + buffer)
  *
- * Industry practice sizes AMR/AGV fleets to ~80% peak utilization: fleet capacity
- * behaves like an M/M/c queue, so past ~85% the blocking/wait time climbs
- * non-linearly. 70% is conservative, 85% aggressive. The UI presents utilization;
- * the calc keeps the buffer multiplier.
+ * Default 90% (owner decision, 2026-10-09; was 80%). The throughput the engineer
+ * enters is PEAK, not average — Step 1 says so on the field — so the fleet is
+ * already sized for the spike. A 20% headroom on top of a peak-sized fleet let it
+ * sustain 126% of the stated peak, which is the same insurance bought twice. At
+ * 90% the headroom covers what peak demand does NOT: maintenance, availability,
+ * and operational friction.
+ *
+ * KNOWN TENSION, left deliberately: fleet capacity behaves like an M/M/c queue,
+ * so past ~85% utilization blocking and wait time climb non-linearly. That is a
+ * CONGESTION effect and it belongs in cycle time (route layout factor), not in
+ * fleet count — but it is a real reason 90% is aggressive if the route factor is
+ * ever calibrated upward. Revisit the two together, never one alone.
+ *
+ * The UI presents utilization; the calc keeps the buffer multiplier.
  */
-export const DEFAULT_TARGET_UTILIZATION = 0.80
+export const DEFAULT_TARGET_UTILIZATION = 0.90
 /** utilization → buffer multiplier (u must be in (0, 1]). */
 export const bufferFromUtilization = (u: number) => 1 / u - 1
 /** buffer multiplier → utilization. */
 export const utilizationFromBuffer = (b: number) => 1 / (1 + b)
 
-/** Default project-level buffer, i.e. the 80% target utilization above (= 0.25). */
+/** Default project-level buffer, i.e. the 90% target utilization above (= 0.111). */
 export const DEFAULT_BUFFER_PCT = bufferFromUtilization(DEFAULT_TARGET_UTILIZATION)
 
 /** Usable depth-of-discharge fraction — display/ROM only (SoC chart floor, energy

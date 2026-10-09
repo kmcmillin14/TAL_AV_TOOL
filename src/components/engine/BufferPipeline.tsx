@@ -17,12 +17,15 @@ interface Props {
 }
 
 /** Named target-utilization policies. AMR fleets are sized to a peak utilization;
- *  past ~85% queueing/blocking wait climbs non-linearly, so 80% is the standard.
+ *  past ~85% queueing/blocking wait climbs non-linearly. Standard moved to 90%
+ *  on 2026-10-09: the entered throughput is PEAK, so the fleet already carries a
+ *  spike allowance and 80% bought the same insurance twice. The queueing effect
+ *  is congestion and belongs in the route layout factor, not in fleet count.
  *  A stored value matching none (a legacy buffer) shows as Custom automatically. */
 const UTIL_PRESETS = [
-  { key: 'conservative', label: 'Conservative', util: 0.70 },
-  { key: 'standard',     label: 'Standard',     util: 0.80 },
-  { key: 'aggressive',   label: 'Aggressive',   util: 0.85 },
+  { key: 'conservative', label: 'Conservative', util: 0.80 },
+  { key: 'standard',     label: 'Standard',     util: 0.90 },
+  { key: 'aggressive',   label: 'Aggressive',   util: 0.95 },
 ] as const
 
 const presetFor = (bufferPct: number) =>

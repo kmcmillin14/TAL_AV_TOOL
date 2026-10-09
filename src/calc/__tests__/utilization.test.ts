@@ -16,8 +16,8 @@ describe('target utilization ↔ buffer multiplier', () => {
 
   it('80% utilization is a 0.25 buffer (the default)', () => {
     expect(bufferFromUtilization(0.80)).toBeCloseTo(0.25, 10)
-    expect(DEFAULT_TARGET_UTILIZATION).toBe(0.80)
-    expect(DEFAULT_BUFFER_PCT).toBeCloseTo(0.25, 10)
+    expect(DEFAULT_TARGET_UTILIZATION).toBe(0.90)
+    expect(DEFAULT_BUFFER_PCT).toBeCloseTo(1/9, 10)
   })
 
   it('standard band maps as documented', () => {

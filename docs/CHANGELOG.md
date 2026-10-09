@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-10-09 — Default target utilization 80% → 90%
+
+**The throughput the engineer enters is peak, not average** — Step 1 says so on
+the field — so the fleet is already sized for the spike. Adding 20% headroom on
+top let it sustain **126% of the stated peak**: the same insurance bought twice.
+At 90% the headroom covers what peak demand does not — maintenance, availability
+and operational friction.
+
+`DEFAULT_TARGET_UTILIZATION` 0.80 → 0.90, so `DEFAULT_BUFFER_PCT` 0.25 → 0.111.
+Presets move with it: Conservative 80% · **Standard 90%** · Aggressive 95%.
+
+**Every fleet gets smaller.** On a 40-equivalent job at 24 h: cb18 73 → 65,
+ml2 60 → 54, ebase7 61 → 54. Any quote regenerated after this differs from one
+generated before it. Projects with an explicitly stored `bufferPct` are
+unchanged — this moves the default only.
+
+**Known tension, recorded deliberately in `src/calc/types.ts`:** fleet capacity
+behaves like an M/M/c queue, so past ~85% utilization blocking and wait time
+climb non-linearly. That is a CONGESTION effect and belongs in cycle time (the
+route layout factor), not in fleet count — but it is a real reason 90% is
+aggressive *if the route factor is ever calibrated upward*. The route factor is
+currently 0.50 for "medium" and is an uncalibrated placeholder worth 2–3× this
+dial. **Revisit the two together, never one alone.**
+
 ## 2026-10-09 — Battery model rebuilt on physical inputs (owner direction)
 
 Availability now derives from what can actually be measured — **battery capacity,

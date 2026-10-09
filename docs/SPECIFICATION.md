@@ -386,16 +386,21 @@ consecutive operating days. See `docs/superpowers/specs/2026-07-18-charging-hour
 
 ### Section 03 — Target Utilization (headroom + total)
 The engineer sets a **target utilization** — the fraction of available time the fleet should run at.
-AMR/AGV fleets are sized to ~**80% peak utilization** (the default): capacity behaves like an M/M/c
-queue, so past ~85% blocking/wait time climbs non-linearly (70% conservative, 85% aggressive). It is
+Default **90%** (owner decision 2026-10-09; was 80%). The throughput the engineer enters is **peak**,
+not average, so the fleet already carries a spike allowance — a further 20% headroom let it sustain
+126% of the stated peak, the same insurance bought twice. At 90% the headroom covers what peak
+demand does not: maintenance, availability and operational friction. Known tension, left
+deliberately: capacity behaves like an M/M/c queue, so past ~85% blocking/wait climbs non-linearly —
+but that is a CONGESTION effect belonging in the route layout factor, not in fleet count. Revisit
+the two together, never one alone. It is
 stored as the equivalent **buffer multiplier** `bufferPct` — the two are inverses,
 `utilization = 1 / (1 + bufferPct)` (`bufferFromUtilization` / `utilizationFromBuffer` in
-`src/calc/types.ts`; `DEFAULT_TARGET_UTILIZATION = 0.80` ⇒ `DEFAULT_BUFFER_PCT = 0.25`). The calc composes overlap-aware (2026-07-18 v3): `fleetSold = max(baseFleet,
+`src/calc/types.ts`; `DEFAULT_TARGET_UTILIZATION = 0.90` ⇒ `DEFAULT_BUFFER_PCT = 0.111`). The calc composes overlap-aware (2026-07-18 v3): `fleetSold = max(baseFleet,
 ⌈max(groupRaw ÷ A_energy, groupRaw × (1 + bufferPct) ÷ A_cap)⌉)` — utilization headroom
 and energy recovery overlap (idle robots charge), so the buffer multiplies only the
 instantaneous rotation constraint. The section names the **binding constraint**
 (Energy / Rotation / Utilization) next to the total. The section shows a
-**utilization preset dropdown** — `Conservative (70%) · Standard (80%) · Aggressive (85%) · Custom…`
+**utilization preset dropdown** — `Conservative (80%) · Standard (90%) · Aggressive (95%) · Custom…`
 (Custom reveals a % input, clamped 50–100% so the buffer stays ≤ 1.0; a stored value matching no
 preset displays as Custom) — and the per-flow waterfall (`base → +charging → ×headroom → fleet`);
 the binding TOTAL is the hero number. The math/formula and export views keep the mechanical
@@ -445,7 +450,7 @@ In the current library, the lifting transfer methods are the `Lift` appliances o
 
 - `ROUTE_LAYOUT_FACTORS = { low: 0.3, medium: 0.5, high: 0.7 }` — route-average speed multipliers applied to rated cruise. The scale tops out at `0.7`: even the best-case open-lane *average* is ~70% of rated, because no route sustains full cruise (accel/decel/turns).
 - `T_hr = 3600` — seconds per hour.
-- `DEFAULT_BUFFER_PCT = 0.25` (= 80% target utilization) — used in Step 5, declared in `src/calc/types.ts` for cross-step visibility.
+- `DEFAULT_BUFFER_PCT = 0.111` (= 90% target utilization) — used in Step 5, declared in `src/calc/types.ts` for cross-step visibility.
 
 ### Per-flow derived
 
