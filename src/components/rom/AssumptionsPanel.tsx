@@ -19,18 +19,21 @@ export default function AssumptionsPanel({ project: p }: Props) {
       rows: [
         { label: 'Usable depth of discharge', value: '80%', why: 'Battery sized to 80% DoD for cycle life.', isDefault: true },
         { label: 'Route speed factors', value: 'Low 30% · Med 50% · High 70%', why: 'Route-average speed as a fraction of rated cruise.', isDefault: true },
-        { label: 'Charging', value: 'Availability = min(energy, capacity)', why: 'Per vehicle type: energy availability credits breaks, the nightly off-shift, and the day-off reset (a day off recharges to 100%); capacity availability is whether the battery covers a production window. Availability = min(rotation run:charge ratio, weekly energy balance) from cutsheet runtime and charge hours — no derates (measured hours already contain them). The fleet pays the larger of the energy and buffered-rotation constraints.', isDefault: true },
+        { label: 'Availability', value: 'min(1, [z·R + (H−z·R)·d] / H)', why: 'Per platform, from physical spec: usable kWh = V × Ah × usable%; R = usable ÷ average draw; d = charge input ÷ (charge input + draw) — the duty ratio, which capacity CANCELS out of; z = how much of a full charge the off-shift refills. A vehicle works off its overnight charge, then settles into its duty ratio. At 24 h there is no off-shift and availability equals the duty ratio exactly.', isDefault: true },
+        { label: 'Charging', value: 'Staggered across the fleet', why: 'Vehicles are sent to charge before they run flat, so the fleet never queues for chargers at once. Availability is therefore the average over the staffed window. Left to run in lockstep the figure would be the bare duty ratio — 11–16% more vehicles.', isDefault: true },
+        { label: 'Chargers', value: 'One per vehicle', why: 'Dock contention is not modelled at this stage: every vehicle is assumed to have a charger when it needs one. This is what makes staggered charging achievable.', isDefault: true },
+        { label: 'Operator breaks', value: 'Fleet keeps working', why: 'Breaks are recorded for the proposal but do not shorten the staffed window or credit charging time — the fleet runs through them.', isDefault: true },
         { label: 'Operating days / year', value: p.operatingDaysPattern && p.operatingDaysPerYear == null ? `${days} (from ${p.operatingDaysPattern})` : String(days), why: 'Annualizes the labor offset.', isDefault: p.operatingDaysPerYear == null },
       ],
     },
     {
       title: 'Economics',
       rows: [
+        { label: 'Target utilization', value: `${Math.round((p.targetUtilization ?? 0.90) * 100)}%`, why: 'Share of AVAILABLE working time the fleet runs at — not of the clock. Charging downtime is counted separately and is not usable slack: a vehicle on a charger cannot answer a demand spike. Default 90% because the throughput entered is PEAK, so the fleet already carries a spike allowance.', isDefault: p.targetUtilization == null },
         { label: 'Operators displaced', value: String(p.numberOfOperators || ((p.operatorsPerShift ?? 0) * (p.shiftsPerDay ?? 1))), why: 'Operators × shifts the fleet replaces.', isDefault: !p.numberOfOperators && !p.operatorsPerShift },
         { label: 'Fully-burdened operator', value: `$${(p.fullyBurdenedRateUsdPerYear ?? 65000).toLocaleString()}/yr`, why: 'All-in annual cost (wage + benefits + overhead).', isDefault: p.fullyBurdenedRateUsdPerYear == null },
         { label: 'Maintenance', value: `${Math.round((p.annualMaintenancePctOfCapex ?? 0.08) * 100)}%/yr of CAPEX`, why: 'Annual upkeep as a share of CAPEX.', isDefault: p.annualMaintenancePctOfCapex == null },
-        { label: 'Safety buffer', value: `${Math.round((p.bufferPct ?? 0.10) * 100)}%`, why: 'Margin applied to the rotation constraint only; energy is never buffered (idle robots charge). Rounded up once per chassis.', isDefault: p.bufferPct == null },
-        { label: 'Service life', value: `${p.serviceLifeYears ?? 10} yr`, why: 'Equipment lifetime for TCO / payback.', isDefault: p.serviceLifeYears == null },
+                { label: 'Service life', value: `${p.serviceLifeYears ?? 10} yr`, why: 'Equipment lifetime for TCO / payback.', isDefault: p.serviceLifeYears == null },
       ],
     },
   ]

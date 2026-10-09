@@ -4,7 +4,7 @@ import { useState } from 'react'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetSummary, Flow, FlowDerived } from '@/src/calc/types'
-import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
+import { DEFAULT_TARGET_UTILIZATION } from '@/src/calc/types'
 
 interface Props {
   project: StoredProject
@@ -27,7 +27,7 @@ const route = (f: Flow) => `${f.origin || '—'} → ${f.destination || '—'}`
  * (FlowDerived / FleetGroup); this only narrates them.
  */
 export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehicleById }: Props) {
-  const buffer = project.bufferPct ?? DEFAULT_BUFFER_PCT
+  const targetUtil = project.targetUtilization ?? DEFAULT_TARGET_UTILIZATION
   const assigned = flows.filter(f => f.vehicleId && derivedByFlowId.get(f.id)?.rawVehicles != null)
   const [scope, setScope] = useState<string>('system') // 'system' | flowId
 
@@ -64,9 +64,9 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
     if (c.runHr == null) return <div className="fm-eq mono">Battery data unavailable — charging not modeled.</div>
     return (
       <div className="fm-eq mono">
-        runtime <strong>{f1(c.runHr)} h</strong> per charge (cutsheet) ·
-        recharge {f1(c.chargeHr ?? 0)} h → availability <strong>{pct(c.availability)}</strong> →
-        <strong> +{c.chargingDelta}</strong> vehicle{c.chargingDelta === 1 ? '' : 's'}
+        usable {f1(c.usableKwh ?? 0)} kWh → runtime <strong>{f1(c.runHr)} h</strong> ·
+        recharge {f1(c.chargeHr ?? 0)} h · duty {pct(c.dutyRatio)} → availability <strong>{pct(c.availability)}</strong> →
+        <strong> +{g.chargingDelta}</strong> vehicle{g.chargingDelta === 1 ? '' : 's'}
       </div>
     )
   }
@@ -74,11 +74,10 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
   function bufferLine(vehicleId: string) {
     const g = groupFor(vehicleId)
     if (!g) return null
-    const { demandRotation: rot, demandEnergy: en } = g
-    const floored = g.baseFleet >= Math.ceil(Math.max(rot, en ?? 0))
     return (
       <div className="fm-eq mono">
-        max({f2(rot)} rotation{en != null ? `, ${f2(en)} energy` : ''}) → {floored ? `max(${g.baseFleet} base, ⌈⌉)` : '⌈⌉'} = <strong>{g.fleetSold} sold</strong> · binding: {g.binding}
+        {g.baseFleet} base + {g.chargingDelta} charging + {g.utilizationDelta} headroom
+        {' '}= <strong>{g.fleetSold} sold</strong> · demand {f2(g.demand)} · binding: {g.binding}
       </div>
     )
   }
@@ -118,7 +117,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
         ))}
       </Step>
 
-      <Step n={3} tag="policy" title="Buffer" formula="sold = max(base, ⌈max(raw ÷ A_energy, raw × (1+buffer) ÷ A_cap)⌉)" why="The fleet pays the larger of two constraints: peak need with utilization headroom (÷ rotation availability) or weekly energy sustain. Energy never gets buffered — idle robots charge — and each chassis rounds up exactly once.">
+      <Step n={3} tag="policy" title="Fleet build-up" formula="sold = max(⌈raw⌉, ⌈raw ÷ (availability × utilization)⌉)" why="One constraint. One vehicle delivers availability × utilization of work per staffed hour, so the fleet is raw ÷ (A × U). Reported as true addends: base + charging + headroom = sold, with charging costed first so it stays a platform property that does not move when the utilization dial moves.">
         {fleet.groups.map(g => (
           <div key={g.vehicleId} className="fm-group">
             <div className="fm-group-name">{vehName(g.vehicleId)}</div>
@@ -128,7 +127,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
       </Step>
 
       <div className="fm-total mono">
-        Total: <strong>{fleet.totalBaseFleet}</strong> base + <strong>{fleet.totalChargingDelta}</strong> charging · headroom ×{f2(1 + buffer)} on the binding constraint → <strong className="fm-total-sold">{fleet.totalFleetSold} vehicles sold</strong>
+        Total: <strong>{fleet.totalBaseFleet}</strong> base + <strong>{fleet.totalChargingDelta}</strong> charging + <strong>{fleet.totalUtilizationDelta}</strong> headroom (at {Math.round(targetUtil * 100)}% utilization) → <strong className="fm-total-sold">{fleet.totalFleetSold} vehicles sold</strong>
       </div>
     </>
   )
@@ -170,7 +169,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
           {chargingLine(f.vehicleId)}
         </Step>
 
-        <Step n={4} tag="policy" title="Buffer" formula="sold = max(base, ⌈max(raw ÷ A_energy, raw × (1+buffer) ÷ A_cap)⌉)" why="The fleet pays the larger of two constraints: peak need with utilization headroom (÷ rotation availability) or weekly energy sustain. Energy never gets buffered — idle robots charge — and each chassis rounds up exactly once.">
+        <Step n={4} tag="policy" title="Fleet build-up" formula="sold = max(⌈raw⌉, ⌈raw ÷ (availability × utilization)⌉)" why="One constraint. One vehicle delivers availability × utilization of work per staffed hour, so the fleet is raw ÷ (A × U). Reported as true addends: base + charging + headroom = sold, with charging costed first so it stays a platform property that does not move when the utilization dial moves.">
           {bufferLine(f.vehicleId)}
         </Step>
       </>

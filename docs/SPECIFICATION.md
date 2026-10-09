@@ -361,7 +361,7 @@ form sections. Both pieces are the shared `src/components/ScrollSpyNav.tsx` /
 Right side: per-vehicle **raw → rounded base** mix with thumbnails.
 
 **Waterfall (per vehicle group `g`, one per `vehicleId`):**
-`baseFleet → + chargingDelta` (reported stages) · `fleetSold = max(baseFleet, ⌈max(groupRaw ÷ A_energy, groupRaw × (1 + bufferPct) ÷ A_cap)⌉)` — the fleet pays the LARGER of the two constraints, rounded up exactly ONCE (2026-07-18 v3; energy scales with average work so the buffer does not multiply it; rotation is instantaneous so it does). The binding constraint (Energy / Rotation / Utilization) is surfaced next to the total. Project **TOTAL** = `Σ fleetSold`.
+`fleetSold = max(⌈groupRaw⌉, ⌈groupRaw ÷ (A × U)⌉)` — ONE constraint, rounded up exactly ONCE (v4, 2026-10-09). Reported as three stages that **add exactly**: `baseFleet + chargingDelta + utilizationDelta = fleetSold`, where `chargingDelta = max(baseFleet, ⌈raw ÷ A⌉) − baseFleet` and `utilizationDelta` is the remainder. Charging is costed FIRST so it stays a pure platform property that does not move when the utilization dial moves. The binding constraint (Charging / Target utilization) is surfaced next to the total. Project **TOTAL** = `Σ fleetSold`.
 
 ### Section 01 — Raw Fleet
 The material-flow table that produces the **base fleet** (`groupRaw`, `baseFleet = ⌈groupRaw⌉`) —
@@ -374,13 +374,33 @@ face value: no DOD or charge-efficiency derates (a measured runtime and charge t
 contain them). One uniform assumption for all vehicles: *a vehicle charges whenever it is
 not working* (charge method is display-only).
 
-Charging availability per vehicle type is `A = min(A_energy, A_cap)`:
-`A_cap = runHrEff/(runHrEff + chargeHr)` (or 1 when the battery covers the production
-window `H = shifts×hours − breaks`; `runHrEff` credits breaks as top-up time) — the
-run:charge **rotation ratio**; `A_energy = min(1, (24 + chargeHr/C) / (H·(1 + chargeHr/runTimeHr)))`
-credits the nightly off-shift (the 24-vs-H gap) and the day-off reset (`chargeHr/C` — one
-free full battery amortized over `C` consecutive operating days; ∞ for 24/7 drops it to 0).
-Then `fleetWithCharging = ⌈groupRaw/A⌉` (reported stage). Like vehicles pool (per type).
+Charging availability per vehicle type is built from the PHYSICAL battery spec
+(v4, 2026-10-09 — `chargingAvailability` in `src/calc/fleet.ts`):
+
+    usable kWh = voltageV × ratedAh / 1000 × usableCapacityPct
+    R  = usable / avgPowerDrawKw          Ch = usable / chargerPowerKw
+    d  = chargerPowerKw / (chargerPowerKw + avgPowerDrawKw)     duty ratio
+    z  = min(1, (24 − H) / Ch)                                  off-shift charge
+    A  = min(1, [z·R + (H − z·R)·d] / H)        H = min(24, shifts × hours)
+
+**Capacity cancels out of the duty ratio** — it is a current ratio, so the figure that
+dominates 24/7 sizing is immune to capacity and usable-% error; only the free-hours term
+`z·R` is exposed. At `H = 24` there is no off-shift, `z = 0`, and `A` collapses to exactly
+`d`, so one expression covers both regimes v3 split across `A_cap` and `A_energy`.
+
+`A_energy` was deleted as provably dominated: `A_energy = d × (24 + Ch/C)/H ≥ d` for all
+`H ≤ 24`, so it could only ever bind when the uncapped break credit inflated `A_cap` past
+`d`. **Breaks and `consecutiveOpDays` left the charging model entirely** — breaks existed
+only to compensate for a term `A_cap` omitted (the vehicle starts the staffed window on its
+overnight charge), and the day-off reset was worth under 2 points. Days now drive
+cycles/year and battery life instead.
+
+`A` is the duration-weighted AVERAGE over the staffed window, which is correct because
+**charging is staggered across the fleet** and **one charger per vehicle** is assumed
+(owner decisions, 2026-10-09). Run in lockstep the honest figure is the bare `dutyRatio`,
+which is 11–16% more fleet — so `dutyRatio` is carried on `ChargingResult` and displayed
+beside availability rather than hidden. Then `fleetWithCharging = max(baseFleet, ⌈groupRaw/A⌉)`
+(reported stage). Like vehicles pool (per type).
 A day off recharges to 100% (a reset, not banking), so the binding case is surviving the
 consecutive operating days. See `docs/superpowers/specs/2026-07-18-charging-hours-model-v3-design.md`.
 
@@ -393,13 +413,16 @@ demand does not: maintenance, availability and operational friction. Known tensi
 deliberately: capacity behaves like an M/M/c queue, so past ~85% blocking/wait climbs non-linearly —
 but that is a CONGESTION effect belonging in the route layout factor, not in fleet count. Revisit
 the two together, never one alone. It is
-stored as the equivalent **buffer multiplier** `bufferPct` — the two are inverses,
-`utilization = 1 / (1 + bufferPct)` (`bufferFromUtilization` / `utilizationFromBuffer` in
-`src/calc/types.ts`; `DEFAULT_TARGET_UTILIZATION = 0.90` ⇒ `DEFAULT_BUFFER_PCT = 0.111`). The calc composes overlap-aware (2026-07-18 v3): `fleetSold = max(baseFleet,
-⌈max(groupRaw ÷ A_energy, groupRaw × (1 + bufferPct) ÷ A_cap)⌉)` — utilization headroom
-and energy recovery overlap (idle robots charge), so the buffer multiplies only the
-instantaneous rotation constraint. The section names the **binding constraint**
-(Energy / Rotation / Utilization) next to the total. The section shows a
+stored as **`targetUtilization`** — what the engineer sets IS what is stored (v4,
+2026-10-09; `DEFAULT_TARGET_UTILIZATION = 0.90` in `src/calc/types.ts`). The inverse
+"buffer multiplier" is retired: the same field used to appear on screen under three
+names — *target utilization*, *buffer* and *headroom* — so one vocabulary now runs end to
+end, and **"headroom" names only the +N vehicles, never the dial**. Legacy `bufferPct` is
+converted on read by `migrateLegacyFields` in `storage.ts`, so a saved project keeps its
+fleet. Utilization is of **AVAILABLE working time, not clock time**: a vehicle on a charger
+cannot answer a demand spike, so charging downtime is not usable slack. The calc applies
+it once: `fleetSold = max(⌈groupRaw⌉, ⌈groupRaw ÷ (A × U)⌉)`. The section names the
+**binding constraint** (Charging / Target utilization) next to the total. The section shows a
 **utilization preset dropdown** — `Conservative (80%) · Standard (90%) · Aggressive (95%) · Custom…`
 (Custom reveals a % input, clamped 50–100% so the buffer stays ≤ 1.0; a stored value matching no
 preset displays as Custom) — and the per-flow waterfall (`base → +charging → ×headroom → fleet`);
@@ -419,11 +442,11 @@ Step 3 decomposes the facility's material movement into discrete **flows** (orig
 
 ```
 Step 3:  per-flow cycle → per-flow rawVehicles → per-group baseFleet (ceil of sum)
-Step 4:  baseFleet → chargingDelta (additive, from cutsheet battery hours)
-Step 5:  fleetSold = max(base, ⌈max(raw ÷ A_energy, raw × (1+buffer) ÷ A_cap)⌉)
+Step 4:  baseFleet → +chargingDelta (from the physical battery spec)
+Step 5:  fleetSold = max(⌈raw⌉, ⌈raw ÷ (A × U)⌉) = base + charging + headroom
 ```
 
-Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, Step 5 is policy. There is no productivity factor η and no congestion multiplier, and the buffer never multiplies the energy constraint — each cause is paid exactly once.
+Each stage models a distinct cause: Step 3 is engineering, Step 4 is physics, Step 5 is policy. There is no productivity factor η and no congestion multiplier. Each cause is paid exactly once: `raw ÷ (A × U)` is a definition — one vehicle delivers `A × U` of work per staffed hour — not a stack of multipliers.
 
 ### Per-flow inputs
 
@@ -823,7 +846,7 @@ rule the pricing gate applies. Removed with it: the `energyCostUsdPerKwh` projec
 field and what-if driver, the dashboard Energy tile and `energy` KPI detail, the
 Assumptions panel's Energy group, the PDF *Annual energy* row and the deck's appendix
 *Energy — N kWh/day* row. **Charging and availability sizing are untouched** — that
-model is hours-based (`runTimeHr` + `chargeTimeMin`) and never read kWh, so `A_energy`,
+model works in hours and power, never kWh-cost, so availability,
 the SoC chart and `fleetSold` are unchanged.
 
 **Simple ROI card (`RomEconomics`):** two editable inputs — *Operators replaced per

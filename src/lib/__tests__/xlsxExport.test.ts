@@ -12,7 +12,7 @@ const project = {
   id: 'p1', createdAt: '', updatedAt: '', versionNumber: 'v1',
   step1Complete: true, step2Complete: true, step3Complete: false, step4Complete: false,
   shiftsPerDay: 2, hoursPerShift: 8, operatorsPerShift: 3,
-  operatingDaysPattern: 'Mon–Fri', bufferPct: 0.10,
+  operatingDaysPattern: 'Mon–Fri', targetUtilization: 0.9091,
   flows: [
     { id: 'f1', origin: 'A', destination: 'B', distanceFt: 590, thruPerHr: 45, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'cb18' },
   ],
@@ -21,8 +21,9 @@ const project = {
 describe('buildFleetModelSheet — live-formula fleet model', () => {
   const ws = buildFleetModelSheet(XLSX.utils, project, vehicles)
 
-  it('buffer lives in $B$3 as a fraction', () => {
-    expect(ws['B3']).toMatchObject({ t: 'n', v: 0.10 })
+  it('target utilization lives in $B$3 as a fraction — the one dial the sheet reads', () => {
+    expect(ws['B3']).toMatchObject({ t: 'n', v: 0.9091 })
+    expect((ws['A3'] as { v?: string })?.v).toBe('Target utilization')
   })
 
   it('the flow Cycle cell is a formula, not a baked value', () => {
@@ -40,38 +41,43 @@ describe('buildFleetModelSheet — live-formula fleet model', () => {
     expect((ws['G7'] as { v: number }).v).toBeGreaterThan(0)  // loaded speed
   })
 
-  it('fleet-sold formula (v3) is at col 6 and uses MAX(energy,rotation) composition referencing $B$3', () => {
-    // Fleet block sits below the flows; find the row whose column A is the vehicle name.
+  it('the fleet block is the v4 additive waterfall and references $B$3', () => {
     const range = XLSX.utils.decode_range(ws['!ref'] as string)
-    let soldCell: { f?: string } | undefined
-    let aEnergyCell: { v?: number } | undefined
-    let aCapCell: { v?: number } | undefined
+    let avail: { v?: number } | undefined, duty: { v?: number } | undefined
+    let chg: { f?: string } | undefined, head: { f?: string } | undefined, sold: { f?: string } | undefined
     for (let r = 0; r <= range.e.r; r++) {
       const a = ws[XLSX.utils.encode_cell({ c: 0, r })] as { v?: string } | undefined
-      if (a?.v === (vehicles[0].name)) {
-        // v3 layout: col 3 = Avail energy, col 4 = Avail rotation, col 5 = +Charging, col 6 = Fleet sold
-        aEnergyCell = ws[XLSX.utils.encode_cell({ c: 3, r })] as { v?: number }
-        aCapCell    = ws[XLSX.utils.encode_cell({ c: 4, r })] as { v?: number }
-        soldCell    = ws[XLSX.utils.encode_cell({ c: 6, r })] as { f?: string }
+      if (a?.v === vehicles[0].name) {
+        // v4 layout: 3 Availability · 4 Duty ratio · 5 +Charging · 6 +Headroom · 7 Fleet sold
+        avail = ws[XLSX.utils.encode_cell({ c: 3, r })] as { v?: number }
+        duty  = ws[XLSX.utils.encode_cell({ c: 4, r })] as { v?: number }
+        chg   = ws[XLSX.utils.encode_cell({ c: 5, r })] as { f?: string }
+        head  = ws[XLSX.utils.encode_cell({ c: 6, r })] as { f?: string }
+        sold  = ws[XLSX.utils.encode_cell({ c: 7, r })] as { f?: string }
         break
       }
     }
-    expect(aEnergyCell?.v).toBeGreaterThan(0)
-    expect(aCapCell?.v).toBeGreaterThan(0)
-    expect(soldCell?.f).toContain('ROUNDUP')
-    expect(soldCell?.f).toContain('$B$3')
-    expect(soldCell?.f).toContain('MAX(')
-    // v3 specific: must use the two-constraint MAX(energy, rotation) form
-    expect(soldCell?.f).toMatch(/MAX\(.*\/D.*,.*\/E.*\)/)
+    expect(avail?.v).toBeGreaterThan(0)
+    expect(duty?.v).toBeGreaterThan(0)
+    expect(duty!.v!).toBeLessThanOrEqual(avail!.v!)   // duty is the floor availability sits above
+    // Charging is costed first and does not reference the utilization dial.
+    expect(chg?.f).toContain('ROUNDUP')
+    expect(chg?.f).not.toContain('$B$3')
+    // Headroom is the only stage that moves with the dial.
+    expect(head?.f).toContain('$B$3')
+    // Sold is literally the three stages added, so the sheet shows the same story.
+    expect(sold?.f).toMatch(/^C\d+\+F\d+\+G\d+$/)
+    // v3's two-constraint MAX(energy, rotation) form must not come back.
+    expect(sold?.f).not.toMatch(/MAX\(.*\/D.*,.*\/E.*\)/)
   })
 
-  it('agrees with the app: recomputing the sheet formulas by hand equals fleetSummary (v3)', () => {
-    // Sanity that the exported inputs + formulas would yield the same sold count (v3 composition).
+  it('agrees with the app: recomputing the sheet formulas by hand equals fleetSummary', () => {
     const m = computeFleetModel(project, vehicles)
     const g = m.fleet.groups[0]
-    const aEnergy = g.charging.aEnergy ?? 1
-    const aCap    = g.charging.aCap    ?? 1
-    const handSold = Math.max(g.baseFleet, Math.ceil(Math.max(g.groupRaw / aEnergy, g.groupRaw * (1 + m.settings.bufferPct) / aCap)))
+    const A = g.charging.availability ?? 1
+    const withCharging = Math.max(g.baseFleet, Math.ceil(g.groupRaw / A))
+    const handSold = Math.max(withCharging, Math.ceil(g.groupRaw / (A * m.settings.targetUtilization)))
     expect(handSold).toBe(g.fleetSold)
+    expect(g.baseFleet + g.chargingDelta + g.utilizationDelta).toBe(g.fleetSold)
   })
 })

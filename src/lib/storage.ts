@@ -1,6 +1,6 @@
 import { partialProjectSchema, SCHEMA_VERSION, type PartialProjectFormData } from './validations/schemas'
 import { projectFilename } from './projectFilename'
-import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
+import { DEFAULT_TARGET_UTILIZATION } from '@/src/calc/types'
 
 const STORAGE_KEY = 'tal:projects'
 
@@ -70,7 +70,7 @@ const defaultFields = (): Omit<StoredProject, 'id' | 'createdAt' | 'updatedAt'> 
   flowGroups: [],
   flowGroupColors: {},
   chargeRegime: undefined,  // unset → derived from shift coverage (useFleetData)
-  bufferPct: DEFAULT_BUFFER_PCT,
+  targetUtilization: DEFAULT_TARGET_UTILIZATION,
   chargeMethods: {},
   otherAGVs: false,
   otherAGVVendor: undefined,
@@ -269,7 +269,22 @@ export function findOrCreateEntryProject(): StoredProject {
  *  failure, each provided key is validated independently and invalid keys are
  *  dropped from the patch. Returns the validated fields plus any dropped keys
  *  with their Zod messages (so callers can surface warnings). */
-function salvageParse(input: PartialProjectFormData): { valid: Record<string, unknown>; drops: SaveDrop[] } {
+/** v4 (2026-10-09) renamed the headroom field from the inverse buffer multiplier
+ *  to the utilization the engineer actually sets. Stored projects still carry
+ *  `bufferPct`; convert on read so an existing project keeps the SAME fleet.
+ *  Runs before every parse — the schema has no `bufferPct` key, so an
+ *  unmigrated project would otherwise silently fall back to the default. */
+function migrateLegacyFields(input: PartialProjectFormData): PartialProjectFormData {
+  const raw = input as Record<string, unknown>
+  if (raw.targetUtilization != null) return input
+  const legacy = raw.bufferPct
+  if (typeof legacy !== 'number' || !Number.isFinite(legacy) || legacy < 0) return input
+  const { bufferPct: _drop, ...rest } = raw
+  return { ...rest, targetUtilization: 1 / (1 + legacy) } as PartialProjectFormData
+}
+
+function salvageParse(inputRaw: PartialProjectFormData): { valid: Record<string, unknown>; drops: SaveDrop[] } {
+  const input = migrateLegacyFields(inputRaw)
   const full = partialProjectSchema.safeParse(input)
   if (full.success) return { valid: full.data as Record<string, unknown>, drops: [] }
   const valid: Record<string, unknown> = {}
@@ -473,7 +488,7 @@ export function importProjectFromJson(json: string): StoredProject {
     rawProject = parsed as Record<string, unknown>
   }
 
-  const data = partialProjectSchema.parse(rawProject)
+  const data = partialProjectSchema.parse(migrateLegacyFields(rawProject as PartialProjectFormData))
   const now = new Date().toISOString()
   const imported: StoredProject = {
     ...defaultFields(),

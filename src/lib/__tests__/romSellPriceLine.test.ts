@@ -21,8 +21,8 @@ function veh(integrationFloor: 1 | 2 | 3 = 1, softwareFloor: 1 | 2 | 3 = 1): Veh
 function group(fleetSold = 2): FleetGroup {
   return {
     vehicleId: 'a', groupRaw: fleetSold, baseFleet: fleetSold,
-    charging: { method: 'plugged', runHr: null, chargeHr: null, availability: null, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: true, reason: '' },
-    fleetWithCharging: fleetSold, demandEnergy: null, demandRotation: fleetSold,
+    charging: { method: 'plugged', runHr: null, chargeHr: null, availability: null, dutyRatio: null, offShiftCharge: null, usableKwh: null, sustainable: true, reason: '' },
+    fleetWithCharging: fleetSold, chargingDelta: 0, utilizationDelta: 0, demand: fleetSold,
     fleetSold, binding: 'utilization',
   }
 }

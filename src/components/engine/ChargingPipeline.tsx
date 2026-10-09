@@ -15,8 +15,6 @@ interface Props {
   vehicleById: Map<string, Vehicle>
   groupByVehicle: Map<string, FleetGroup>
   dailyOpHr: number
-  breakHrs: number
-  consecutiveOpDays: number
   shiftsPerDay: number
   hoursPerShift: number
   daysPerWeek: number
@@ -35,7 +33,7 @@ const fmtPct = (a: number | null | undefined) => (a == null ? '—' : `${Math.ro
  */
 export default function ChargingPipeline({
   flows, vehicleById, groupByVehicle,
-  dailyOpHr, breakHrs, consecutiveOpDays, shiftsPerDay, hoursPerShift, daysPerWeek, onPatch,
+  dailyOpHr, shiftsPerDay, hoursPerShift, daysPerWeek, onPatch,
 }: Props) {
   // Distinct vehicle pools in first-assignment order (one charging row each).
   const poolIds = [...new Set(flows.filter(f => f.vehicleId).map(f => f.vehicleId!))]
@@ -88,7 +86,7 @@ export default function ChargingPipeline({
             <option value="7">7</option>
           </select>
           {' '}days / week
-          {breakHrs > 0 ? ` · ${+breakHrs.toFixed(2)} h breaks` : ''}
+          
         </div>
       </div>
 
@@ -112,7 +110,7 @@ export default function ChargingPipeline({
               const g = groupByVehicle.get(vid)
               const c = g?.charging
               const veh = vehicleById.get(vid)
-              const delta = c?.chargingDelta ?? 0
+              const delta = g?.chargingDelta ?? 0
               const n = flowCountFor(vid)
               return (
                 <tr key={vid}>
@@ -135,7 +133,7 @@ export default function ChargingPipeline({
                   <td className="pl-math-cell" data-label="Fleet math">
                     {g && veh && (
                       <DerivTrigger
-                        derivation={() => chargingDerivation(g, veh, { dailyOpHr, breakHrs, consecutiveOpDays })}
+                        derivation={() => chargingDerivation(g, veh, { dailyOpHr })}
                         route={veh.name}
                         disabled={!c?.sustainable}
                       />

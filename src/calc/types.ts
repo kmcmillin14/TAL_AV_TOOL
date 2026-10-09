@@ -180,51 +180,60 @@ export type ChargeRegime = 'overnight' | 'continuous'
  *  inputs were insufficient — display "—", never NaN. */
 export interface ChargingResult {
   method: ChargeMethod
-  runHr: number | null        // operating hours one charge sustains
-  chargeHr: number | null     // hours to a full recharge
-  availability: number | null // final A ∈ (0,1]
-  aEnergy: number | null      // energy availability (off-shift + weekend reset)
-  aCap: number | null         // within-window battery-capacity availability
-  chargingDelta: number       // extra vehicles for charging (≥ 0)
+  runHr: number | null        // hours one charge sustains  = usable / draw
+  chargeHr: number | null     // hours to put it back       = usable / charge
+  availability: number | null // A ∈ (0,1] — share of the staffed window workable
+  dutyRatio: number | null    // charge/(charge+draw) — the floor if charging ever un-staggers
+  offShiftCharge: number | null // fraction of a full charge the off-shift delivers
+  usableKwh: number | null
   sustainable: boolean        // false when inputs invalid/zero
   reason: string              // human explanation
 }
 
-/** Which constraint set `fleetSold` (v3 max-of-constraints composition). */
-export type FleetBinding = 'energy' | 'rotation' | 'utilization'
+/** Which cause set `fleetSold`. v4: one constraint, so this says whether
+ *  charging contributed at all. */
+export type FleetBinding = 'charging' | 'utilization'
 
 export interface FleetGroup {
   vehicleId: string
-  groupRaw: number
-  baseFleet: number
+  groupRaw: number             // peak demand in vehicle-equivalents
+  baseFleet: number            // ⌈groupRaw⌉ — the physical floor
   charging: ChargingResult
-  fleetWithCharging: number   // charging-only intermediate (baseFleet + chargingDelta); can sit BELOW fleetSold when the buffer/utilization constraint binds
-  /** Weekly-energy constraint demand = groupRaw / A_energy (null when no battery data). */
-  demandEnergy: number | null
-  /** Rotation/utilization constraint demand = groupRaw × (1 + buffer) / A_cap (÷1 when no data).
-   *  The SINGLE source for the pre-ceil demand — display layers must read these
-   *  two fields, never re-derive the arithmetic. */
-  demandRotation: number
-  fleetSold: number           // max(baseFleet, ⌈max(demandEnergy, demandRotation)⌉)
-  binding: FleetBinding       // which constraint bound fleetSold
+  /** Fleet once charging downtime is covered, before utilization headroom:
+   *  max(baseFleet, ⌈raw / A⌉). Charging is costed FIRST so this stays a pure
+   *  platform property — it does not move when the utilization dial moves. */
+  fleetWithCharging: number
+  /** Pre-ceil demand = groupRaw / (availability × targetUtilization). The SINGLE
+   *  source for the constraint arithmetic — display layers read it, never
+   *  re-derive it. */
+  demand: number
+  /** fleetWithCharging − baseFleet. Vehicles bought BECAUSE of charging. */
+  chargingDelta: number
+  /** fleetSold − fleetWithCharging. Vehicles bought for headroom. */
+  utilizationDelta: number
+  fleetSold: number
+  binding: FleetBinding
 }
 
 export interface FleetSummary {
   groups: FleetGroup[]
   totalBaseFleet: number
   totalChargingDelta: number
+  totalUtilizationDelta: number
   totalFleetSold: number
-  bufferPct: number
+  targetUtilization: number
 }
 
 /** Project-level fleet settings consumed by the engine. `dailyOpHr` is derived
  *  from Step 1 (shiftsPerDay × hoursPerShift, capped at 24). */
 export interface FleetSettings {
   regime: ChargeRegime            // legacy — kept for the engine UI's display toggle only
-  bufferPct: number
-  dailyOpHr: number               // clock staffed hours/day = min(24, shifts × hours)
-  breakHrs: number                // total break hours/day
-  consecutiveOpDays: number       // C — consecutive operating days before a rest (Infinity if none)
+  /** Share of AVAILABLE working time the fleet should run at, ∈ (0,1]. Not of
+   *  the clock: charging downtime is not usable slack, so headroom sits on top
+   *  of availability. v4 renamed this from the inverse `bufferPct` so one
+   *  vocabulary runs end to end. */
+  targetUtilization: number
+  dailyOpHr: number               // H = min(24, shifts × hours)
   chargeMethods: Record<string, ChargeMethod>
 }
 
@@ -243,10 +252,11 @@ export const ROUTE_LAYOUT_FACTORS: Record<RouteLayout, number> = {
 }
 
 /**
- * Fleet headroom is set as a TARGET UTILIZATION and stored internally as the
- * equivalent buffer multiplier — two views of the same sizing policy:
- *
- *   fleetSold ≈ demand × (1 + buffer)   ⇒   utilization = 1 / (1 + buffer)
+ * Fleet headroom is a TARGET UTILIZATION, stored and computed as one number in
+ * one vocabulary (v4, 2026-10-09). It used to be stored as the inverse "buffer
+ * multiplier" and displayed as utilization, so the same field appeared on screen
+ * under three names — "target utilization", "buffer" and "headroom". "Headroom"
+ * now names only the DELTA (the +N vehicles it costs), never the dial.
  *
  * Default 90% (owner decision, 2026-10-09; was 80%). The throughput the engineer
  * enters is PEAK, not average — Step 1 says so on the field — so the fleet is
@@ -264,13 +274,6 @@ export const ROUTE_LAYOUT_FACTORS: Record<RouteLayout, number> = {
  * The UI presents utilization; the calc keeps the buffer multiplier.
  */
 export const DEFAULT_TARGET_UTILIZATION = 0.90
-/** utilization → buffer multiplier (u must be in (0, 1]). */
-export const bufferFromUtilization = (u: number) => 1 / u - 1
-/** buffer multiplier → utilization. */
-export const utilizationFromBuffer = (b: number) => 1 / (1 + b)
-
-/** Default project-level buffer, i.e. the 90% target utilization above (= 0.111). */
-export const DEFAULT_BUFFER_PCT = bufferFromUtilization(DEFAULT_TARGET_UTILIZATION)
 
 /** Usable depth-of-discharge fraction — display/ROM only (SoC chart floor, energy
  *  OPEX kW, battery-energy figures). The v3 charging calc uses cutsheet hours

@@ -12,7 +12,7 @@ const project = {
   shiftsPerDay: 2, hoursPerShift: 8,
   operatorsPerShift: 3,
   operatingDaysPattern: 'Mon–Fri',
-  bufferPct: 0.10,
+  targetUtilization: 0.9091,
   flows: [
     { id: 'f1', origin: 'A', destination: 'B', distanceFt: 590, thruPerHr: 45, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'cb18' },
   ],

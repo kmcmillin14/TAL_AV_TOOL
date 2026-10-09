@@ -9,7 +9,7 @@ import {
 
 // Sized fleet with labor economics → every takeaway computable.
 const FULL = {
-  projectName: 'Smoke', shiftsPerDay: 2, hoursPerShift: 8, bufferPct: 0.1,
+  projectName: 'Smoke', shiftsPerDay: 2, hoursPerShift: 8, targetUtilization: 0.9091,
   numberOfOperators: 4, fullyBurdenedRateUsdPerYear: 65000,
   flows: [
     { id: 'f1', origin: 'Dock', destination: 'Rack A', distanceFt: 300, thruPerHr: 20, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'cb18', transferMethodIdx: 0 },

@@ -3,7 +3,6 @@
 // deck. Each tier (Raw cycle→demand, Charging, Utilization) explains HOW its
 // number is reached: the symbolic formula, the value-substituted form, and the
 // result. Pure: composes calc outputs + vehicle specs into display strings. Imperial.
-import { utilizationFromBuffer } from '@/src/calc/types'
 import type { CycleBreakdown, FleetGroup, FleetSettings } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
@@ -88,67 +87,64 @@ export function cycleDerivation(b: CycleBreakdown, p: CycleDerivInputs): Derivat
 
 // ── Tier 2: Charging — battery runtime → availability → extra vehicles ────────
 
-/** Charging tier: cutsheet runtime & recharge hours → rotation + weekly-energy
- *  availability → ⌈demand ÷ availability⌉ → extra vehicles. Mirrors `chargingForGroup`. */
+/** Charging tier: physical battery spec → availability → extra vehicles.
+ *  Mirrors `chargingAvailability` / `chargingForGroup`. */
 export function chargingDerivation(
   group: FleetGroup, vehicle: Vehicle,
-  settings: Pick<FleetSettings, 'dailyOpHr' | 'breakHrs' | 'consecutiveOpDays'>,
+  settings: Pick<FleetSettings, 'dailyOpHr'>,
 ): Derivation {
   const c = group.charging
-  const H = Math.max(0, settings.dailyOpHr - settings.breakHrs)
-  const cDays = settings.consecutiveOpDays
-  const tag = `${c.method === 'opportunity' ? 'Opportunity' : 'Plugged'} · ${Number.isFinite(cDays) ? `${cDays} days on` : '24/7'}`
+  const H = Math.max(0, settings.dailyOpHr)
+  const cal = vehicle.calc
+  const tag = `${c.method === 'opportunity' ? 'Opportunity' : 'Plugged'} · ${n1(H)} h staffed`
 
   const steps: DerivStep[] = [
-    sec('Battery (cutsheet hours — no derates)'),
-    { label: 'Runtime per charge', expr: 'hours of work per full charge', result: c.runHr == null ? '—' : `${n1(c.runHr)} h` },
-    { label: 'Recharge time', expr: 'time to a full charge', sub: vehicle.calc.chargeTimeMin ? `${vehicle.calc.chargeTimeMin} min` : undefined, result: c.chargeHr == null ? '—' : `${n1(c.chargeHr)} h` },
+    sec('Battery (physical spec — no derates)'),
+    { label: 'Usable energy', expr: 'V × Ah ÷ 1000 × usable%', sub: `${cal.voltageV} × ${cal.ratedAh} ÷ 1000 × ${cal.usableCapacityPct ?? '—'}%`, result: c.usableKwh == null ? '—' : `${n2(c.usableKwh)} kWh` },
+    { label: 'Average draw', expr: 'power while working', result: cal.avgPowerDrawKw == null ? '—' : `${n2(cal.avgPowerDrawKw)} kW` },
+    { label: 'Charge input', expr: 'charger output', result: cal.chargerPowerKw == null ? '—' : `${n2(cal.chargerPowerKw)} kW` },
+    { label: 'Runtime per charge', expr: 'usable ÷ draw', result: c.runHr == null ? '—' : `${n1(c.runHr)} h` },
+    { label: 'Recharge time', expr: 'usable ÷ charge input', result: c.chargeHr == null ? '—' : `${n1(c.chargeHr)} h` },
     sec('Availability'),
-    { label: 'Rotation (run : charge)', expr: 'runtime ÷ (runtime + recharge), or 100% if the battery covers the window', result: c.aCap == null ? '—' : `${Math.round(c.aCap * 100)}%` },
-    { label: 'Weekly energy (off-shift + day-off reset)', expr: `charges 24 h/day vs works ${n1(H)} h/day; a day off is a free full battery`, result: c.aEnergy == null ? '—' : `${Math.round(c.aEnergy * 100)}%` },
-    { label: 'Availability', expr: 'min of the two', result: c.availability == null ? '—' : `${Math.round(c.availability * 100)}%`, emphasis: true },
+    { label: 'Duty ratio', expr: 'charge ÷ (charge + draw) — capacity cancels; this is the 24/7 floor', result: c.dutyRatio == null ? '—' : `${Math.round(c.dutyRatio * 100)}%` },
+    { label: 'Off-shift charge', expr: `${n1(Math.max(0, 24 - H))} h idle ÷ recharge time, capped at one full battery`, result: c.offShiftCharge == null ? '—' : `${Math.round(c.offShiftCharge * 100)}% of a charge` },
+    { label: 'Availability', expr: 'free hours on that charge, then the duty ratio, averaged over the staffed window', result: c.availability == null ? '—' : `${Math.round(c.availability * 100)}%`, emphasis: true },
   ]
 
-  if (c.chargingDelta === 0) {
+  const note = 'Availability assumes charging is STAGGERED across the fleet. If vehicles charged in lockstep the honest figure would be the duty ratio above. One charger per vehicle is assumed.'
+  if (group.chargingDelta === 0) {
     steps.push({ label: 'Extra vehicles', expr: 'charging fits the fleet', result: '+0', emphasis: true })
-    return { title: 'Charging — battery hours → availability', tag, steps, note: 'Off-shift and days-off charging keep the battery up, so charging steals no operating time.' }
+    return { title: 'Charging — battery spec → availability', tag, steps, note }
   }
   steps.push(
-    { label: 'Fleet with charging', expr: 'demand ÷ availability, rounded up', sub: c.availability == null ? undefined : `⌈ ${n2(group.groupRaw)} ÷ ${n2(c.availability)} ⌉`, result: String(group.baseFleet + c.chargingDelta) },
-    { label: 'Extra vehicles', expr: 'fleet with charging − base', sub: `${group.baseFleet + c.chargingDelta} − ${group.baseFleet}`, result: `+${c.chargingDelta}`, emphasis: true },
+    { label: 'Fleet with charging', expr: 'demand ÷ availability, rounded up', sub: c.availability == null ? undefined : `⌈ ${n2(group.groupRaw)} ÷ ${n2(c.availability)} ⌉`, result: String(group.fleetWithCharging) },
+    { label: 'Extra vehicles', expr: 'fleet with charging − base', sub: `${group.fleetWithCharging} − ${group.baseFleet}`, result: `+${group.chargingDelta}`, emphasis: true },
   )
-  return { title: 'Charging — battery hours → availability → +N', tag, steps, note: 'Availability is the share of the day a vehicle can work; the rest is charging. Dividing demand by it covers the downtime.' }
+  return { title: 'Charging — battery spec → availability → +N', tag, steps, note }
 }
 
 // ── Tier 3: Utilization — headroom → fleet sold ──────────────────────────────
 
 const BINDING_LABEL: Record<FleetGroup['binding'], string> = {
-  energy: 'Weekly energy', rotation: 'Charging rotation', utilization: 'Target utilization',
+  charging: 'Charging', utilization: 'Target utilization',
 }
 
-/** Utilization tier: the fleet pays the LARGER of the rotation and energy
- *  constraints (v3 overlap-aware composition), rounded up ONCE = fleet. */
-export function bufferDerivation(group: FleetGroup, bufferPct: number): Derivation {
-  const mult = (1 + bufferPct).toFixed(2)
-  // Demands are computed ONCE in fleetSummary and carried on the group.
-  const { demandRotation, demandEnergy } = group
-  const { aEnergy, aCap } = group.charging
+/** Utilization tier: the fleet build-up, whose stages are TRUE ADDENDS.
+ *  Charging is costed first so it stays a platform property that does not move
+ *  when the utilization dial moves; headroom carries the interaction term. */
+export function bufferDerivation(group: FleetGroup, targetUtilization: number): Derivation {
+  const A = group.charging.availability
   return {
-    title: 'Utilization — headroom → fleet',
-    tag: `Utilization ${Math.round(utilizationFromBuffer(bufferPct) * 100)}%`,
+    title: 'Fleet build-up — these add',
+    tag: `Utilization ${Math.round(targetUtilization * 100)}%`,
     steps: [
-      sec('Constraints — the fleet pays the larger'),
-      { label: 'Peak need with headroom', expr: aCap != null && aCap < 1 ? 'raw × (1 + buffer) ÷ rotation availability' : 'raw × (1 + buffer)', sub: `${n2(group.groupRaw)} × ${mult}${aCap != null && aCap < 1 ? ` ÷ ${n2(aCap)}` : ''}`, result: n2(demandRotation) },
-      demandEnergy != null
-        ? { label: 'Weekly energy sustain', expr: 'raw ÷ energy availability — no buffer here: idle robots charge', sub: `${n2(group.groupRaw)} ÷ ${n2(aEnergy!)}`, result: n2(demandEnergy) }
-        : { label: 'Weekly energy sustain', expr: 'battery data unavailable', result: '—', muted: true },
-      (() => {
-        const larger = Math.max(demandRotation, demandEnergy ?? 0)
-        const floored = group.baseFleet >= Math.ceil(larger)
-        return { label: 'Fleet (sold)', expr: floored ? 'base fleet is the physical floor' : 'larger constraint, rounded up once', sub: floored ? `max(${group.baseFleet} base, ⌈ ${n2(larger)} ⌉)` : `⌈ ${n2(larger)} ⌉`, result: String(group.fleetSold), emphasis: true }
-      })(),
-      { label: 'Binding constraint', expr: 'which constraint set the fleet', result: BINDING_LABEL[group.binding] },
+      sec('Every stage below sums exactly to the fleet'),
+      { label: 'Peak demand', expr: 'Σ (moves/hr × cycle) ÷ 3600, rounded up', sub: n2(group.groupRaw), result: String(group.baseFleet) },
+      { label: '+ charging', expr: 'vehicles covering charging downtime', sub: A == null ? 'no battery data — charging costs nothing' : `⌈ ${n2(group.groupRaw)} ÷ ${n2(A)} ⌉ − ${group.baseFleet}`, result: `+${group.chargingDelta}` },
+      { label: '+ headroom', expr: `target ${Math.round(targetUtilization * 100)}% of AVAILABLE time — spikes, maintenance, queueing`, sub: `⌈ ${n2(group.demand)} ⌉ − ${group.fleetWithCharging}`, result: `+${group.utilizationDelta}` },
+      { label: 'Fleet (sold)', expr: 'the three above', sub: `${group.baseFleet} + ${group.chargingDelta} + ${group.utilizationDelta}`, result: String(group.fleetSold), emphasis: true },
+      { label: 'Binding constraint', expr: 'what set the fleet', result: BINDING_LABEL[group.binding] },
     ],
-    note: 'Headroom covers demand spikes, maintenance, and queueing; energy is average-work-driven, so buffer vehicles never multiply it. Each chassis rounds up exactly once — at the end.',
+    note: 'Headroom sits on AVAILABLE time, not clock time — a vehicle on a charger cannot answer a demand spike, so charging downtime is not usable slack. Each chassis rounds up exactly once, at the end.',
   }
 }

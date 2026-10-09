@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
+import { DEFAULT_TARGET_UTILIZATION } from '@/src/calc/types'
 
 /** Bumped when the persisted project shape changes incompatibly. Lives here (not
  *  storage.ts) so the standalone questionnaire can read it without importing storage. */
@@ -167,9 +167,12 @@ export const projectSchema = z.object({
    *  regime then derives from shift coverage (useFleetData: 24 h/day schedules
    *  default to 'continuous'). An explicit choice always wins. */
   chargeRegime: z.enum(['overnight', 'continuous']).optional(),
-  /** Fleet headroom, stored as the buffer multiplier; set in the UI as a target
-   *  utilization (default 90% ⇒ 0.111). See DEFAULT_TARGET_UTILIZATION. */
-  bufferPct: z.number().min(0).max(1).default(DEFAULT_BUFFER_PCT),
+  /** Fleet headroom: the share of AVAILABLE working time the fleet should run
+   *  at. Stored as what the engineer sets — v4 (2026-10-09) retired the inverse
+   *  `bufferPct`, which made the same field appear under three names on screen.
+   *  Legacy `bufferPct` is migrated on read (see `migrateLegacyFields` in
+   *  storage.ts). Clamped 0.5–1.0 so headroom stays sane. */
+  targetUtilization: z.number().min(0.5).max(1).default(DEFAULT_TARGET_UTILIZATION),
   /** Per-vehicleId charge-method override ('opportunity' | 'plugged'). Absent →
    *  derived from the vehicle's chargerType. */
   chargeMethods: z.record(z.string(), z.enum(['opportunity', 'plugged'])).default({}),

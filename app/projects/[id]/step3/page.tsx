@@ -9,7 +9,7 @@ import { subscribeProjects, getProject, updateProject, type StoredProject } from
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
+import { DEFAULT_TARGET_UTILIZATION, type FleetSettings, type Flow, type FlowDerived } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
 import { fleetSummary, defaultChargeRegime } from '@/src/calc/fleet'
 import { consecutiveOperatingDays, defaultOperatingDaysPerYear } from '@/src/calc/romAnalytics'
@@ -86,10 +86,8 @@ export default function FleetEnginePage() {
       // Unset regime derives from shift coverage (24 h/day → continuous);
       // the toggle below writes the explicit choice, which always wins.
       regime: project?.chargeRegime ?? defaultChargeRegime(dailyOpHr),
-      bufferPct: project?.bufferPct ?? 0.10,
+      targetUtilization: project?.targetUtilization ?? DEFAULT_TARGET_UTILIZATION,
       dailyOpHr,
-      breakHrs: ((project?.breaksPerShift ?? 0) * ((project?.breakDurationMin ?? 0) / 60)) * (project?.shiftsPerDay ?? 1),
-      consecutiveOpDays: consecutiveOperatingDays(project?.operatingDaysPattern, project?.operatingDaysCustom),
       chargeMethods: project?.chargeMethods ?? {},
     }
   }, [project])
@@ -206,7 +204,7 @@ export default function FleetEnginePage() {
                   <span className="ep-op" aria-hidden="true">×</span>
                   <div className="ep-seg on">
                     <span className="ep-label">Headroom</span>
-                    <span className="ep-val mono">{(1 + settings.bufferPct).toFixed(2)}</span>
+                    <span className="ep-val mono">+{fleet.totalUtilizationDelta}</span>
                   </div>
                   <span className="ep-op" aria-hidden="true">=</span>
                   <div className="ep-seg ep-total on">
@@ -284,8 +282,6 @@ export default function FleetEnginePage() {
                 vehicleById={vehicleById}
                 groupByVehicle={groupByVehicle}
                 dailyOpHr={settings.dailyOpHr}
-                breakHrs={settings.breakHrs}
-                consecutiveOpDays={settings.consecutiveOpDays}
                 shiftsPerDay={project.shiftsPerDay ?? 1}
                 hoursPerShift={project.hoursPerShift ?? 8}
                 daysPerWeek={Math.round(defaultOperatingDaysPerYear(project.operatingDaysPattern, project.operatingDaysCustom) / 52)}
@@ -303,7 +299,7 @@ export default function FleetEnginePage() {
                 flows={flows}
                 vehicleById={vehicleById}
                 groupByVehicle={groupByVehicle}
-                bufferPct={settings.bufferPct}
+                targetUtilization={settings.targetUtilization}
                 onPatch={persistPatch}
               />
             </ScrollSection>

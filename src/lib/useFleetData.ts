@@ -5,7 +5,7 @@ import { getProject, subscribeProjects, type StoredProject } from './storage'
 import { fetchVehiclesCached } from './vehicleCache'
 import type { Vehicle } from './vehicleLibrary'
 import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
-import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
+import { DEFAULT_TARGET_UTILIZATION } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
 import { fleetSummary, defaultChargeRegime } from '@/src/calc/fleet'
 import { consecutiveOperatingDays } from '@/src/calc/romAnalytics'
@@ -65,10 +65,8 @@ export function useFleetData(id: string) {
       // charge window, so an unset regime defaults to 'continuous'. The engine
       // toggle writes the explicit choice, which always wins.
       regime: project?.chargeRegime ?? defaultChargeRegime(dailyOpHr),
-      bufferPct: project?.bufferPct ?? DEFAULT_BUFFER_PCT,
+      targetUtilization: project?.targetUtilization ?? DEFAULT_TARGET_UTILIZATION,
       dailyOpHr,
-      breakHrs: ((project?.breaksPerShift ?? 0) * ((project?.breakDurationMin ?? 0) / 60)) * (project?.shiftsPerDay ?? 1),
-      consecutiveOpDays: consecutiveOperatingDays(project?.operatingDaysPattern, project?.operatingDaysCustom),
       chargeMethods: project?.chargeMethods ?? {},
     }
   }, [project])

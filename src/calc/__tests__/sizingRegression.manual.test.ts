@@ -21,7 +21,7 @@ import { describe, it, expect } from 'vitest'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import type { Flow, FlowDerived, FleetSettings, RouteLayout } from '../types'
-import { DEFAULT_BUFFER_PCT } from '../types'
+import { DEFAULT_TARGET_UTILIZATION } from '../types'
 import { flowDerived, groupSummary } from '../flowMetrics'
 import { fleetSummary } from '../fleet'
 import { consecutiveOperatingDays } from '../romAnalytics'
@@ -53,9 +53,8 @@ const SCHEDULES = [
 ]
 function settingsFor(s: typeof SCHEDULES[number]): FleetSettings {
   return {
-    regime: 'continuous', bufferPct: DEFAULT_BUFFER_PCT,
-    dailyOpHr: Math.min(24, s.shifts * s.hours), breakHrs: 0,
-    consecutiveOpDays: consecutiveOperatingDays(s.pattern), chargeMethods: {},
+    regime: 'continuous', targetUtilization: DEFAULT_TARGET_UTILIZATION,
+    dailyOpHr: Math.min(24, s.shifts * s.hours), chargeMethods: {},
   }
 }
 

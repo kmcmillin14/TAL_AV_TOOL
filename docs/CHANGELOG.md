@@ -1,5 +1,63 @@
 # Changelog
 
+## 2026-10-09 — Charging model v4: one availability term, one vocabulary
+
+Replaces the v3 two-branch model (`A_cap` + `A_energy` + an uncapped break
+credit) with ONE availability term built from the physical battery spec, and
+retires the inverse "buffer multiplier".
+
+**Availability** (`chargingAvailability`, `src/calc/fleet.ts`):
+
+    usable kWh = V × Ah / 1000 × usable%
+    R = usable / draw        Ch = usable / charge input
+    d = charge / (charge + draw)          duty ratio — capacity CANCELS
+    z = min(1, (24 − H) / Ch)             off-shift charge
+    A = min(1, [z·R + (H − z·R)·d] / H)   H = min(24, shifts × hours)
+
+The duty ratio is a **current ratio**, so the figure dominating 24/7 sizing is
+immune to capacity and usable-% error — for a ROM tool that is where the
+precision should sit. At `H = 24`, `z = 0` and `A` collapses to exactly `d`, so
+one expression covers both regimes v3 split in two.
+
+**`A_energy` deleted as provably dominated** — `A_energy = d × (24 + Ch/C)/H ≥ d`
+for all `H ≤ 24`, so it could only bind when the break credit inflated `A_cap`
+past `d`. **Breaks and `consecutiveOpDays` left the charging model**: breaks only
+ever compensated for a term `A_cap` omitted, and the credit was uncapped (it
+handed ml2 forty hours of runtime on a twenty-four hour day). `breaksPerShift` /
+`breakDurationMin` stay as Step 1 proposal detail and no longer touch a quote.
+
+**The fleet waterfall now ADDS.** `baseFleet + chargingDelta + utilizationDelta
+= fleetSold`, exactly, asserted per group and in total. v3 printed
+`base + charging` as a waterfall that did not reach the total, because sold came
+from a separate `max()`. Charging is costed **first** so `chargingDelta` stays a
+pure platform property — it no longer shifts when the utilization dial moves.
+
+**One vocabulary.** `bufferPct` → **`targetUtilization`**: what the engineer sets
+is now what is stored. The same field used to appear under three names — *target
+utilization*, *buffer*, *headroom* — and "headroom" now names only the +N
+vehicles, never the dial. `bufferFromUtilization`, `utilizationFromBuffer` and
+`DEFAULT_BUFFER_PCT` are deleted. **Legacy `bufferPct` is migrated on read**
+(`migrateLegacyFields`, `storage.ts`), so a saved project keeps its fleet.
+
+**Gauges reconcile.** Utilization is now `raw ÷ (sold × availability)` — of
+AVAILABLE time. It was `raw ÷ sold`, which collapses to `U × availability`, so it
+silently carried charging downtime that the Charging gauge reported again, and it
+contradicted the Target utilization driver beside it. Availability + Charging now
+sum to 100%.
+
+**Assumptions are declared, not buried**: staggered charging (worth 11–16% of
+fleet), one charger per vehicle, operator breaks do not stop the fleet, and the
+full availability formula all appear in the Assumptions panel.
+
+**Surfaces updated**: derivation, `FleetMath`, `BufferPipeline`, `ChargingPipeline`,
+`RomDrivers`, `kpiDetails`, PDF appendix (gains a `+Head` column), XLSX (`$B$3`
+is now target utilization; columns are Availability · Duty ratio · +Charging ·
++Headroom · Fleet sold, and the sold cell is literally the three stages added),
+PPTX (`× HEADROOM` tile → `+ HEADROOM`; the `BUFFER` tier is now `FLEET BUILD-UP`).
+
+**19 new tests** across `chargingAvailability`, `fleet`, `targetUtilization`, the
+legacy migration, gauge reconciliation and derivation. 499 passing.
+
 ## 2026-10-09 — Default target utilization 80% → 90%
 
 **The throughput the engineer enters is peak, not average** — Step 1 says so on

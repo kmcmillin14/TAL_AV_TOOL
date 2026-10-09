@@ -26,12 +26,12 @@ function fleet(groups: Array<{ vehicleId: string; fleetSold: number }>): FleetSu
   return {
     groups: groups.map(g => ({
       vehicleId: g.vehicleId, groupRaw: g.fleetSold, baseFleet: g.fleetSold,
-      charging: { method: 'plugged', runHr: null, chargeHr: null, availability: null, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: true, reason: '' },
-      fleetWithCharging: g.fleetSold, demandEnergy: null, demandRotation: g.fleetSold,
+      charging: { method: 'plugged', runHr: null, chargeHr: null, availability: null, dutyRatio: null, offShiftCharge: null, usableKwh: null, sustainable: true, reason: '' },
+      fleetWithCharging: g.fleetSold, chargingDelta: 0, utilizationDelta: 0, demand: g.fleetSold,
       fleetSold: g.fleetSold, binding: 'utilization' as const,
     })),
-    totalBaseFleet: 0, totalChargingDelta: 0,
-    totalFleetSold: groups.reduce((s, g) => s + g.fleetSold, 0), bufferPct: 0.25,
+    totalBaseFleet: 0, totalChargingDelta: 0, totalUtilizationDelta: 0,
+    totalFleetSold: groups.reduce((s, g) => s + g.fleetSold, 0), targetUtilization: 0.8,
   }
 }
 

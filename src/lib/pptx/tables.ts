@@ -234,7 +234,7 @@ const WATERFALL_H = 1600000
 const DERIV_COL = [2600000, 3400000, 3220400, 1600000]
 
 export interface TierDerivation {
-  name: 'RAW FLEET' | 'CHARGING' | 'BUFFER'
+  name: 'RAW FLEET' | 'CHARGING' | 'FLEET BUILD-UP'
   meaning: string
   deriv: Derivation | null
   example: string
@@ -256,8 +256,8 @@ export function fillFleetSizing(zip: PizZip, model: FleetModel, names: Record<st
       desc: `vehicles to carry ${thru} moves/hr across ${flows.length} flow${flows.length === 1 ? '' : 's'}` },
     { value: chg > 0 ? `+${chg}` : '+0', label: '+ CHARGING', compact: true,
       desc: 'keeps the fleet moving while batteries recover' },
-    { value: `×${(1 + settings.bufferPct).toFixed(2)}`, label: '× HEADROOM', compact: true,
-      desc: 'target-utilization headroom for peaks and maintenance' },
+    { value: fleet.totalUtilizationDelta > 0 ? `+${fleet.totalUtilizationDelta}` : '+0', label: '+ HEADROOM', compact: true,
+      desc: `headroom to run at ${Math.round(settings.targetUtilization * 100)}% of available time` },
     { value: String(fleet.totalFleetSold), label: '= FLEET', accent: true, compact: true,
       desc: 'recommended fleet size' },
   ], { h: WATERFALL_H })
@@ -294,10 +294,10 @@ export function buildTierDerivations(
       meaning: 'Each flow’s cycle time → vehicles needed (throughput \xd7 cycle \xf7 3600), summed per chassis and rounded up = raw base fleet.',
       example: rawFlow ? `Example: ${rawVeh?.name ?? rawFlow.vehicleId} \xb7 ${rawFlow.origin || '—'} → ${rawFlow.destination || '—'}` : '' },
     { name: 'CHARGING', deriv: grp && grpVeh ? chargingDerivation(grp, grpVeh, settings) : null,
-      meaning: 'Cutsheet runtime vs recharge hours set availability; off-shift and day-off charging are credited. Dividing demand by availability adds the vehicles that cover charging downtime.',
+      meaning: 'Battery capacity, average draw and charge input set availability — the duty ratio is charge ÷ (charge + draw), and the overnight charge is credited on top. Dividing demand by availability adds the vehicles that cover charging downtime.',
       example: grpExample },
-    { name: 'BUFFER', deriv: grp ? bufferDerivation(grp, settings.bufferPct) : null,
-      meaning: 'The fleet pays the larger of two constraints — peak need with utilization headroom ÷ rotation availability, or weekly energy sustain (never buffered) — rounded up once per chassis = fleet sold.',
+    { name: 'FLEET BUILD-UP', deriv: grp ? bufferDerivation(grp, settings.targetUtilization) : null,
+      meaning: 'Fleet = raw ÷ (availability × utilization), reported as base + charging + headroom, which add exactly. Charging is costed first so it stays a platform property; headroom sits on available time, not clock time.',
       example: grpExample },
   ]
 }
@@ -375,8 +375,8 @@ export function fillMaterialFlow(
     const raw = derivedByFlowId.get(flow.id)?.rawVehicles ?? null
     const grp = flow.vehicleId ? groupByVeh.get(flow.vehicleId) : undefined
     const chg = raw != null && grp && grp.groupRaw > 0
-      ? grp.charging.chargingDelta * (raw / grp.groupRaw) : null
-    const buffered = raw != null ? (raw + (chg ?? 0)) * (1 + settings.bufferPct) : null
+      ? grp.chargingDelta * (raw / grp.groupRaw) : null
+    const buffered = raw != null ? (raw + (chg ?? 0)) / settings.targetUtilization : null
     rows.push([
       { t: String(i + 1), align: 'ctr' },
       { t: `${flow.origin || '—'} → ${flow.destination || '—'}` },

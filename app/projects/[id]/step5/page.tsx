@@ -10,7 +10,7 @@ import { useUnitSystem } from '@/src/lib/uiPrefs'
 import { computeFleetModel } from '@/src/lib/fleetModel'
 import { applyDrivers, scenarioKpis, diffKpis, type ScenarioDrivers } from '@/src/lib/scenario'
 import { effDailyOpHr, defaultOperatingDaysPerYear, type AnalyticsSchedule } from '@/src/calc/romAnalytics'
-import { DEFAULT_BUFFER_PCT } from '@/src/calc/types'
+import { DEFAULT_TARGET_UTILIZATION } from '@/src/calc/types'
 import RomKpis from '@/src/components/rom/RomKpis'
 import Icon from '@/src/design-system/components/Icon'
 import { ScenarioDelta } from '@/src/components/rom/RomDrivers'
@@ -58,7 +58,7 @@ export default function RomDashboardPage() {
     shiftsPerDay: project?.shiftsPerDay ?? 1,
     fullyBurdenedRateUsdPerYear: project?.fullyBurdenedRateUsdPerYear ?? 65000,
     annualMaintenancePctOfCapex: project?.annualMaintenancePctOfCapex ?? 0.08,
-    bufferPct: project?.bufferPct ?? DEFAULT_BUFFER_PCT,
+    targetUtilization: project?.targetUtilization ?? DEFAULT_TARGET_UTILIZATION,
     serviceLifeYears: project?.serviceLifeYears ?? 10,
   }), [project])
 

@@ -8,7 +8,7 @@ export interface EnginePatch {
   flowGroups?: string[]
   flowGroupColors?: Record<string, string>
   chargeRegime?: ChargeRegime
-  bufferPct?: number
+  targetUtilization?: number
   chargeMethods?: Record<string, ChargeMethod>
   /** Shift coverage — the same Step 1 fields, inline-editable on the Charging
    *  section (ports both directions, like flows). */

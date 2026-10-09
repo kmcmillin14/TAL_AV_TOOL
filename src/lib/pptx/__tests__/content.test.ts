@@ -20,7 +20,7 @@ const PROJECT = {
   pickDropLocationCount: 12, facilitySizeSqFt: 120000, hasAgvExperience: true,
   sharedTrafficTypes: ['None'], wmsRequired: false, storageTrackingRequired: false,
   interlocks: ['None'],
-  transferMethod: 'Lift', shiftsPerDay: 2, hoursPerShift: 8, bufferPct: 0.1,
+  transferMethod: 'Lift', shiftsPerDay: 2, hoursPerShift: 8, targetUtilization: 0.9091,
   numberOfOperators: 4, fullyBurdenedRateUsdPerYear: 65000,
   flows: [
     { id: 'f1', origin: 'Dock', destination: 'Rack A', distanceFt: 300, thruPerHr: 20, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'cb18', transferMethodIdx: 0 },

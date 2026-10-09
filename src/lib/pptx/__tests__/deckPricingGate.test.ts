@@ -18,7 +18,7 @@ import type { Vehicle } from '../../vehicleLibrary'
 
 const BASE = {
   projectName: 'Gate', maxLoadWeightLbs: 2500, typicalUnitType: 'Pallet',
-  transferMethod: 'Lift', shiftsPerDay: 2, hoursPerShift: 8, bufferPct: 0.1,
+  transferMethod: 'Lift', shiftsPerDay: 2, hoursPerShift: 8, targetUtilization: 0.9091,
   operatorsPerShift: 3, numberOfOperators: 4, fullyBurdenedRateUsdPerYear: 65000,
   loads: [{ id: 'l1', unitType: 'Pallet', lengthIn: 48, widthIn: 40, heightIn: 50, weightLbs: 2500 }],
   flows: [

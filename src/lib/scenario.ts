@@ -15,7 +15,7 @@ export interface ScenarioDrivers {
   fullyBurdenedRateUsdPerYear?: number
   annualMaintenancePctOfCapex?: number
   operatingDaysPerYear?: number
-  bufferPct?: number
+  targetUtilization?: number
   serviceLifeYears?: number
   numberOfOperators?: number
   /** Uniformly scale every flow's throughput (moves/hr) by (1 + this fraction) —
@@ -26,7 +26,7 @@ export interface ScenarioDrivers {
 
 const DRIVER_KEYS: ReadonlyArray<keyof ScenarioDrivers> = [
   'operatorsPerShift', 'shiftsPerDay', 'fullyBurdenedRateUsdPerYear',
-  'annualMaintenancePctOfCapex', 'operatingDaysPerYear', 'bufferPct', 'serviceLifeYears',
+  'annualMaintenancePctOfCapex', 'operatingDaysPerYear', 'targetUtilization', 'serviceLifeYears',
   'numberOfOperators',
 ]
 

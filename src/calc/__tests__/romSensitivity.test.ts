@@ -6,11 +6,11 @@ function fleet(rows: Array<{ vehicleId: string; groupRaw: number; fleetSold: num
   return {
     groups: rows.map(r => ({
       vehicleId: r.vehicleId, groupRaw: r.groupRaw, baseFleet: Math.ceil(r.groupRaw),
-      charging: { method: 'plugged', runHr: 5, chargeHr: 5, availability: 1, aEnergy: null, aCap: null, chargingDelta: 0, sustainable: true, reason: '' },
-      fleetWithCharging: r.fleetSold, demandEnergy: null, demandRotation: r.fleetSold, fleetSold: r.fleetSold, binding: 'utilization' as const,
+      charging: { method: 'plugged', runHr: 5, chargeHr: 5, availability: 1, dutyRatio: null, offShiftCharge: null, usableKwh: null, sustainable: true, reason: '' },
+      fleetWithCharging: r.fleetSold, chargingDelta: 0, utilizationDelta: 0, demand: r.fleetSold, fleetSold: r.fleetSold, binding: 'utilization' as const,
     })),
-    totalBaseFleet: 0, totalChargingDelta: 0,
-    totalFleetSold: rows.reduce((s, r) => s + r.fleetSold, 0), bufferPct: 0.1,
+    totalBaseFleet: 0, totalChargingDelta: 0, totalUtilizationDelta: 0,
+    totalFleetSold: rows.reduce((s, r) => s + r.fleetSold, 0), targetUtilization: 0.9091,
   }
 }
 

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { bufferFromUtilization, utilizationFromBuffer, type FleetGroup, type Flow } from '@/src/calc/types'
+import type { FleetGroup, Flow } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import DerivTrigger from '@/src/components/step3/DerivTrigger'
@@ -12,7 +12,7 @@ interface Props {
   flows: Flow[]
   vehicleById: Map<string, Vehicle>
   groupByVehicle: Map<string, FleetGroup>
-  bufferPct: number
+  targetUtilization: number
   onPatch: (patch: EnginePatch) => void
 }
 
@@ -28,21 +28,23 @@ const UTIL_PRESETS = [
   { key: 'aggressive',   label: 'Aggressive',   util: 0.95 },
 ] as const
 
-const presetFor = (bufferPct: number) =>
-  UTIL_PRESETS.find(p => Math.abs(bufferFromUtilization(p.util) - bufferPct) < 0.001)
+const presetFor = (targetUtilization: number) =>
+  UTIL_PRESETS.find(p => Math.abs(p.util - targetUtilization) < 0.001)
 
 const clampUtilPct = (v: number) => Math.min(100, Math.max(50, v))   // 50% keeps buffer ≤ 1.0 (schema max)
 
 /**
- * Target-utilization section — the per-flow vehicle waterfall base → +charging →
- * ×headroom → fleet (sold). The engineer sets a target utilization (default 80%);
- * it's stored as the equivalent buffer multiplier the calc applies. Per-flow
- * figures are the vehicle group's (pooled per vehicle type at the project level).
+ * Target-utilization section — the per-flow vehicle waterfall
+ * base → +charging → +headroom → fleet (sold). The three stages ADD exactly.
+ * One vocabulary: the engineer sets a target utilization and that is what is
+ * stored; v4 retired the inverse "buffer multiplier" that used to appear beside
+ * it. "Headroom" now names only the +N vehicles, never the dial.
+ * Per-flow figures are the vehicle group's (pooled per vehicle type).
  */
-export default function BufferPipeline({ flows, vehicleById, groupByVehicle, bufferPct, onPatch }: Props) {
+export default function BufferPipeline({ flows, vehicleById, groupByVehicle, targetUtilization, onPatch }: Props) {
   const rows = flows.filter(f => f.vehicleId)
-  const utilPct = Math.round(utilizationFromBuffer(bufferPct) * 100)
-  const preset = presetFor(bufferPct)
+  const utilPct = Math.round(targetUtilization * 100)
+  const preset = presetFor(targetUtilization)
   // Once the user picks "Custom…" the input stays visible even if they type a
   // value that happens to equal a preset.
   const [customOpen, setCustomOpen] = useState(false)
@@ -58,7 +60,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
             const choice = UTIL_PRESETS.find(p => p.key === e.target.value)
             if (choice) {
               setCustomOpen(false)
-              onPatch({ bufferPct: bufferFromUtilization(choice.util) })
+              onPatch({ targetUtilization: choice.util })
             } else {
               setCustomOpen(true)
             }
@@ -83,7 +85,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
               defaultValue={utilPct}
               onChange={e => {
                 const v = Number(e.target.value)
-                if (Number.isFinite(v) && v > 0) onPatch({ bufferPct: bufferFromUtilization(clampUtilPct(v) / 100) })
+                if (Number.isFinite(v) && v > 0) onPatch({ targetUtilization: clampUtilPct(v) / 100 })
               }}
               aria-label="Custom target utilization percentage"
             />
@@ -91,8 +93,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
           </span>
         )}
         <span className="bc-readout">
-          <span className="bc-value mono">= ×{(1 + bufferPct).toFixed(2)} fleet</span>
-          <span className="bc-hint">the sizing multiplier — 80% is the AMR standard</span>
+          <span className="bc-hint">of AVAILABLE working time — charging downtime is counted separately</span>
         </span>
       </div>
 
@@ -114,7 +115,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
             {rows.map(f => {
               const g = groupByVehicle.get(f.vehicleId!)
               const veh = vehicleById.get(f.vehicleId!)
-              const delta = g?.charging.chargingDelta ?? 0
+              const delta = g?.chargingDelta ?? 0
               return (
                 <tr key={f.id}>
                   <td>
@@ -126,9 +127,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
                   </td>
                   <td className="num mono" data-label="Base">{g?.baseFleet ?? '—'}</td>
                   <td className="num mono" data-label="+ Charging">{delta > 0 ? `+${delta}` : '—'}</td>
-                  <td className="num mono wf-mid" data-label="Sized demand">{g ? (() => {
-                    return Math.max(g.demandRotation, g.demandEnergy ?? 0).toFixed(2)
-                  })() : '—'}</td>
+                  <td className="num mono wf-mid" data-label="Sized demand">{g ? g.demand.toFixed(2) : '—'}</td>
                   <td className="num mono wf-sold" data-label="Fleet">
                     {g?.fleetSold ?? '—'}
                     {g && <span className="wf-binding mono">{g.binding}</span>}
@@ -136,7 +135,7 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, buf
                   <td className="pl-math-cell" data-label="Fleet math">
                     {g && (
                       <DerivTrigger
-                        derivation={() => bufferDerivation(g, bufferPct)}
+                        derivation={() => bufferDerivation(g, targetUtilization)}
                         route={`${f.origin || '—'} → ${f.destination || '—'}`}
                       />
                     )}

@@ -81,20 +81,21 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   const blocked = gate.blocked
   const pctChip = (n: number) => `${Math.round(n * 100)}%`
 
-  // Fleet-wide gauge aggregates (weighted by units sold).
-  const charge = chargingSeries(fleet, vehicleById)
-  let wAvail = 0, wCharge = 0
-  charge.rows.forEach((r, i) => {
-    const sold = fleet.groups[i]?.fleetSold ?? 0
-    const avail = r.availability ?? 0
-    const runHr = r.runHr ?? 0
-    const chargeHr = r.chargeHr ?? 0
-    wAvail += avail * sold
-    const frac = runHr + chargeHr > 0 ? chargeHr / (runHr + chargeHr) : 0
-    wCharge += frac * sold
-  })
+  // Fleet-wide gauge aggregates, weighted by units sold. The three gauges must
+  // PARTITION the day, not double-report it: availability + charging = 100%, and
+  // utilization is of AVAILABLE time. Before v4 the utilization gauge was
+  // raw ÷ sold, which collapses to U × availability — so it silently carried
+  // charging downtime that the Charging gauge then showed again, and it
+  // contradicted the "Target utilization" driver sitting beside it.
+  let wAvail = 0, wCapacity = 0
+  for (const g of fleet.groups) {
+    const a = g.charging.availability ?? 1
+    wAvail += a * g.fleetSold
+    wCapacity += g.fleetSold * a
+  }
   const avgAvailability = totalSold > 0 ? wAvail / totalSold : 0
-  const avgCharging = totalSold > 0 ? wCharge / totalSold : 0
+  const avgCharging = 1 - avgAvailability
+  const avgUtilOfAvailable = wCapacity > 0 ? totalRaw / wCapacity : null
 
   // Tiles rendered inside the two hero boxes (Fleet & flow · Financials). Utilization,
   // availability, charging and redundancy are shown as gauges below, not tiles here.
@@ -167,15 +168,15 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
       <div className="rom2-gauges">
         {/* Each gauge links to the chart that proves it — the conclusion and its
             evidence were a screen and a half apart with nothing joining them. */}
-        <RomGauge value={avgUtil ?? 0} label="Utilization" display={avgUtil == null ? '—' : pctChip(avgUtil)}
+        <RomGauge value={avgUtilOfAvailable ?? 0} label="Utilization" display={avgUtilOfAvailable == null ? '—' : pctChip(avgUtilOfAvailable)}
           evidenceId="rom-utilization" evidenceLabel="the utilization chart"
-          def="Raw demand ÷ provisioned fleet — how hard the fleet works. Lower means more spare headroom." />
+          def="Share of the time a vehicle COULD work that it does — charging downtime is excluded and shown separately. This is the figure the Target utilization driver sets." />
         <RomGauge value={avgAvailability} label="Availability" status
           evidenceId="rom-battery" evidenceLabel="the battery state-of-charge chart"
-          def="Share of the operating day a vehicle is available to work (not tied up recharging) — fleet uptime." />
+          def="Share of the staffed window a vehicle can be working rather than on a charger. Availability + Charging = 100%." />
         <RomGauge value={avgCharging} label="Charging" status
           evidenceId="rom-battery" evidenceLabel="the battery state-of-charge chart"
-          def="Share of each duty cycle a vehicle spends recharging instead of moving loads." />
+          def="Share of the staffed window a vehicle spends recharging instead of moving loads — the complement of Availability." />
         {/* 'Held' / a % rather than a bare tick: colour alone shouldn't carry it. */}
         <RomGauge value={res.throughputHeldWithOneDown ? 1 : res.retainedPct} label="Redundancy" status
           display={res.throughputHeldWithOneDown ? 'Held' : pctChip(res.retainedPct)}

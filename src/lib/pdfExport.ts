@@ -512,15 +512,16 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
   }
 
   if (model.fleet.groups.length > 0) {
-    renderSection('APPENDIX — FLEET BUILD-UP', `Buffer x${(1 + model.settings.bufferPct).toFixed(2)} — rounds once per vehicle pool.`, ({ table }) => {
+    renderSection('APPENDIX — FLEET BUILD-UP', `base + charging + headroom = sold, at ${Math.round(model.settings.targetUtilization * 100)}% target utilization of available time. Rounds once per vehicle pool.`, ({ table }) => {
       table(
         [
           { header: 'Vehicle', w: 150 }, { header: 'Raw', w: 60, align: 'right' }, { header: 'Base', w: 50, align: 'right' },
-          { header: '+Chg', w: 50, align: 'right' }, { header: 'Avail', w: 56, align: 'right' }, { header: 'Sold', w: 50, align: 'right' },
+          { header: '+Chg', w: 50, align: 'right' }, { header: '+Head', w: 52, align: 'right' }, { header: 'Avail', w: 56, align: 'right' }, { header: 'Sold', w: 50, align: 'right' },
         ],
         model.fleet.groups.map(g => [
           vName(g.vehicleId), g.groupRaw.toFixed(2), String(g.baseFleet),
-          g.charging.chargingDelta > 0 ? `+${g.charging.chargingDelta}` : '0',
+          g.chargingDelta > 0 ? `+${g.chargingDelta}` : '0',
+          g.utilizationDelta > 0 ? `+${g.utilizationDelta}` : '0',
           g.charging.availability == null ? '—' : `${Math.round(g.charging.availability * 100)}%`,
           String(g.fleetSold),
         ]),

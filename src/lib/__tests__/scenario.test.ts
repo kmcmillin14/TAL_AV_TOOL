@@ -13,7 +13,7 @@ const base = {
   shiftsPerDay: 2, hoursPerShift: 8,
   operatorsPerShift: 3,
   operatingDaysPattern: 'Mon–Fri',
-  bufferPct: 0.10,
+  targetUtilization: 0.9091,
   flows: [
     { id: 'f1', origin: 'A', destination: 'B', distanceFt: 590, thruPerHr: 45, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'cb18' },
   ],
@@ -23,13 +23,13 @@ describe('applyDrivers', () => {
   it('overrides only the provided keys and does not mutate the source', () => {
     const out = applyDrivers(base, { fullyBurdenedRateUsdPerYear: 90000 })
     expect(out.fullyBurdenedRateUsdPerYear).toBe(90000)
-    expect(out.bufferPct).toBe(base.bufferPct)            // untouched
+    expect(out.targetUtilization).toBe(base.targetUtilization)            // untouched
     expect(base.fullyBurdenedRateUsdPerYear).toBeUndefined() // source unchanged
   })
 
   it('ignores undefined / NaN driver values', () => {
-    const out = applyDrivers(base, { bufferPct: undefined, shiftsPerDay: NaN })
-    expect(out.bufferPct).toBe(base.bufferPct)
+    const out = applyDrivers(base, { targetUtilization: undefined, shiftsPerDay: NaN })
+    expect(out.targetUtilization).toBe(base.targetUtilization)
     expect(out.shiftsPerDay).toBe(base.shiftsPerDay)
   })
 
@@ -81,7 +81,7 @@ describe('scenario recompute (what-if)', () => {
 
   it('higher buffer never shrinks the fleet or CAPEX (buffer drives fleet size)', () => {
     const b = scenarioKpis(computeFleetModel(base, vehicles))
-    const s = scenarioKpis(computeFleetModel(applyDrivers(base, { bufferPct: 0.6 }), vehicles))
+    const s = scenarioKpis(computeFleetModel(applyDrivers(base, { targetUtilization: 0.625 }), vehicles))
     expect(s.totalFleetSold).toBeGreaterThanOrEqual(b.totalFleetSold)
     expect(s.capexMax).toBeGreaterThanOrEqual(b.capexMax)
   })

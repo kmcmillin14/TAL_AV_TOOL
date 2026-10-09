@@ -32,9 +32,9 @@ export function buildFleetModelSheet(utils: XlsxUtils, project: StoredProject, v
   // ── Title + global input ────────────────────────────────────────────────
   put(0, 0, S('TAL Fleet Calculator — Editable Fleet Model'))
   put(0, 1, S(`${project.projectName ?? 'Untitled'}${project.customerName ? ` · ${project.customerName}` : ''}`))
-  put(0, 2, S('Buffer'))
-  put(1, 2, N(settings.bufferPct, '0%'))            // $B$3 — referenced by every "Fleet sold"
-  const BUFFER = '$B$3'
+  put(0, 2, S('Target utilization'))
+  put(1, 2, N(settings.targetUtilization, '0%'))    // $B$3 — referenced by every "Fleet sold"
+  const UTIL = '$B$3'
   maxR = 2
 
   // ── FLOWS block (inputs → cycle → raw) ──────────────────────────────────
@@ -78,7 +78,7 @@ export function buildFleetModelSheet(utils: XlsxUtils, project: StoredProject, v
   const fleetNoteR = maxR + 1
   put(0, fleetNoteR, S('FLEET — by vehicle pool; both Availability cells are editable, the rest recompute'))
   const fleetHR = fleetNoteR + 1
-  const fleetHeaders = ['Vehicle', 'Raw demand', 'Base fleet', 'Avail energy', 'Avail rotation', '+ Charging', 'Fleet sold']
+  const fleetHeaders = ['Vehicle', 'Raw demand', 'Base fleet', 'Availability', 'Duty ratio', '+ Charging', '+ Headroom', 'Fleet sold']
   fleetHeaders.forEach((h, c) => put(c, fleetHR, S(h)))
 
   const firstPoolR = fleetHR + 1
@@ -86,17 +86,18 @@ export function buildFleetModelSheet(utils: XlsxUtils, project: StoredProject, v
     const r = firstPoolR + i
     const er = r + 1
     const name = vehicleById.get(g.vehicleId)?.name ?? g.vehicleId
-    const aEnergy = g.charging.aEnergy != null && g.charging.aEnergy > 0 ? g.charging.aEnergy : 1
-    const aCap = g.charging.aCap != null && g.charging.aCap > 0 ? g.charging.aCap : 1
+    const avail = g.charging.availability != null && g.charging.availability > 0 ? g.charging.availability : 1
+    const duty = g.charging.dutyRatio ?? avail
     put(0, r, S(name))
     // Raw demand pulled from the flows' Raw column by vehicle name.
     put(1, r, F(`SUMIF($D$${firstFlowR + 1}:$D$${lastFlowER},A${er},$N$${firstFlowR + 1}:$N$${lastFlowER})`, '0.000'))
     put(2, r, F(`IF(B${er}>0,ROUNDUP(B${er},0),0)`))
-    put(3, r, N(aEnergy, '0%'))
-    put(4, r, N(aCap, '0%'))
-    put(5, r, F(`MAX(0,ROUNDUP(B${er}/MIN(D${er},E${er}),0)-C${er})`))
-    // v3 composition: larger of energy (unbuffered) and rotation (buffered), floored at base.
-    put(6, r, F(`MAX(C${er},ROUNDUP(MAX(B${er}/D${er},B${er}*(1+${BUFFER})/E${er}),0))`))
+    put(3, r, N(avail, '0%'))
+    put(4, r, N(duty, '0%'))     // the 24/7 floor — what availability becomes without staggering
+    // v4: one constraint, reported as true addends that sum to the fleet.
+    put(5, r, F(`MAX(0,ROUNDUP(B${er}/D${er},0)-C${er})`))
+    put(6, r, F(`MAX(C${er}+F${er},ROUNDUP(B${er}/(D${er}*${UTIL}),0))-(C${er}+F${er})`))
+    put(7, r, F(`C${er}+F${er}+G${er}`))
   })
   const nPools = fleet.groups.length
   const totalR = firstPoolR + nPools

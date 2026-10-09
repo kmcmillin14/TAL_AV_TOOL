@@ -21,6 +21,11 @@ export type KpiId =
   | 'fleet' | 'types' | 'flows' | 'throughput' | 'capex' | 'payback'
   | 'opex' | 'offset' | 'net' | 'utilization' | 'resilience' | 'tco' | 'costPerMove'
 
+const utilOf = (g: { groupRaw: number; fleetSold: number; charging: { availability: number | null } }) => {
+  const cap = g.fleetSold * (g.charging.availability ?? 1)
+  return cap > 0 ? g.groupRaw / cap : 0
+}
+
 const bars = (items: Array<{ label: string; weight: number; display: string }>): KpiBar[] => {
   const max = Math.max(1, ...items.map(i => i.weight))
   return items.map(i => ({ label: i.label, display: i.display, frac: Math.max(0.04, i.weight / max) }))
@@ -35,8 +40,7 @@ export function kpiDetails(
 ): Record<KpiId, KpiDetail> {
   const { fleet, rom, flows, settings, costs } = model
   const nm = (id: string) => names[id] ?? id
-  const mult = (1 + settings.bufferPct).toFixed(2)
-  const throughput = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
+    const throughput = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
   const life = opts?.serviceLifeYears ?? 10
 
   // Derived economics shared by several new KPIs.
@@ -53,9 +57,9 @@ export function kpiDetails(
 
   return {
     fleet: {
-      formula: `base ${fleet.totalBaseFleet}   +charging ${fleet.totalChargingDelta}   ×headroom ${mult}   →   ${fleet.totalFleetSold}`,
+      formula: `base ${fleet.totalBaseFleet}  +charging ${fleet.totalChargingDelta}  +headroom ${fleet.totalUtilizationDelta}  =  ${fleet.totalFleetSold}`,
       bars: bars(fleet.groups.map(g => ({ label: nm(g.vehicleId), weight: g.fleetSold, display: `${g.fleetSold}` }))),
-      note: 'Fleet = max(base, ⌈max(raw ÷ A_energy, raw × (1+headroom) ÷ A_rotation)⌉) per chassis — the larger constraint wins; energy is never buffered.',
+      note: 'Fleet = max(⌈raw⌉, ⌈raw ÷ (availability × utilization)⌉) per chassis. The three stages add exactly; charging is costed first so it stays a platform property.',
     },
     types: {
       rows: fleet.groups.map(g => ({ label: nm(g.vehicleId), value: `${g.fleetSold} veh` })),
@@ -106,8 +110,10 @@ export function kpiDetails(
     utilization: {
       bars: bars(fleet.groups.map(g => ({
         label: nm(g.vehicleId),
-        weight: g.fleetSold > 0 ? g.groupRaw / g.fleetSold : 0,
-        display: `${Math.round((g.fleetSold > 0 ? g.groupRaw / g.fleetSold : 0) * 100)}%`,
+        // Utilization is of AVAILABLE time — divide out availability, or the bar
+        // silently carries charging downtime that the Charging gauge shows again.
+        weight: utilOf(g),
+        display: `${Math.round(utilOf(g) * 100)}%`,
       }))),
       note: `Fleet runs at ${Math.round(avgUtil * 100)}% of provisioned capacity.`,
     },

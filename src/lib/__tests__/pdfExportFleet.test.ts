@@ -20,7 +20,7 @@ const project = {
   id: 'p_fleet', createdAt: '2026-05-01T12:00:00.000Z', updatedAt: '', versionNumber: 'v1',
   step1Complete: true, step2Complete: true, step3Complete: true, step4Complete: false,
   projectName: 'Fleet PDF Test', customerName: 'Acme', shiftsPerDay: 2, hoursPerShift: 8,
-  operatorsPerShift: 3, operatingDaysPattern: 'Mon–Fri', bufferPct: 0.10,
+  operatorsPerShift: 3, operatingDaysPattern: 'Mon–Fri', targetUtilization: 0.9091,
   flows: [
     { id: 'f1', origin: 'Dock', destination: 'Storage', distanceFt: 590, thruPerHr: 45, routeLayout: 'medium', liftHeightFt: 0, vehicleId: 'cb18' },
   ],
