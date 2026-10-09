@@ -922,6 +922,43 @@ because it fixes arithmetic that was wrong regardless of chemistry. Chemistry is
 a v5 concern: add `batteryChemistry` and per-platform `dod` to the vehicle JSONs,
 then give swap platforms their own availability path.
 
+## Gap analysis — 2026-10-09, against the owner's battery sheet
+
+Seven holes, ordered by how far they move a fleet. **None blocks v4** — every one
+of them is equally or more wrong in v3. They are what v5 is for.
+
+| # | gap | worst case measured | status |
+|---|---|---|---|
+| 1 | `R` is decoupled from the work the flow actually does | **A@24h 69% → 59%** on cb18 | open |
+| 2 | Battery replacement is in neither CAPEX nor OPEX | m10 burns 2,000 cycles in **2.2 yr** of a 10-yr TCO | open |
+| 3 | `z` assumes ONE contiguous off-shift block | **13.7 pts** on cb18 with split shifts | open |
+| 4 | Charge curve modelled as linear; no CC/CV taper | sign unknown — errors run both ways | open |
+| 5 | Connected electrical load is never stated | fleet × charger kW, uncollected | open |
+| 6 | No temperature derate on battery capacity | freezer gates exist; battery derate does not | open |
+| 7 | `usableCapacityPct` is stored but the engine ignores it | silent no-op field | open |
+
+**Gap 1 is the structural one.** `raw` comes from a detailed per-flow cycle
+(travel loaded + travel empty + lift + handling, per platform). `A` comes from
+`runTimeHr` — one constant, identical for a 200 ft shuttle and a 1,200 ft haul.
+cb18 is the only platform with enough data to test it: `R = 80% of 27.07 kWh ÷
+1.30 kW avg draw`. But `avg = f·P_move + (1−f)·P_idle`, and the sheet never says
+what duty fraction `f` the 1.30 kW was taken at. If it was 50%, a fleet run at
+**the app's own 80% utilization target** draws ~2.0 kW and has `R ≈ 10.9 h`, not
+16.67 — and `A@24h` falls from 69% to 59%. The model would be optimistic *by
+construction*, because it sizes to a utilization the runtime was never measured
+at. v5 should derive energy per cycle from the cycle the app already computes.
+
+**Gap 2 is the commercially largest.** At two shifts, cycles/yr against a 2,000-
+cycle life (ebase7's own datasheet figure): m10 **2.2 yr** · ml2 3.6 · ebase7 4.1
+· 8TB50A/8HBC40A 7.1 · cb18 8.3. Most platforms need a pack replacement inside a
+10-year TCO horizon, and since energy OPEX was removed there is now *nothing*
+battery-related in the economics at all.
+
+**Gap 3** bites only when `Ch > 4 h`, which after the 9 Oct data is cb18 alone
+(7.47 h). Two shifts back-to-back leave one 8 h window; two shifts with a gap
+leave two 4 h windows, and a partial charge cannot be banked across them —
+`A` 100% → 86.3%.
+
 ## Open items this plan deliberately does NOT close
 
 - **Dock contention.** 1:1 chargers is an assumption, not a finding. At 71 ebase7s

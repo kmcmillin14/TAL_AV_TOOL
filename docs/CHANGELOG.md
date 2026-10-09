@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-09 — cb18 `chargeTimeMin` 564 → 448 min (band-consistent)
+
+The owner sheet's two cb18 charge times are both `pack × band ÷ 2.9 kW charger`,
+perfectly linear (5.60 and 5.64 min per SOC point) — one measurement, two derived
+figures, no CC/CV taper. Its 16.67 h Typical Runtime is `80% of 27.07 kWh ÷ 1.30
+kW avg draw` **exactly**, so the runtime describes an 80-SOC-point band — the
+sheet's own 20→100% Recommended SOC band. The stored 0→100% figure covered 100
+points, charging the vehicle for 20 points it never touches.
+
+`448 min = 27.07 kWh × 0.80 ÷ 2.9 kW` — derived from the sheet's own arithmetic,
+not chosen. Duty ratio 63.9% → 69.1%; the 8 h off-shift now fully recharges it
+(`z` 85% → 100%), so availability at two shifts goes 96% → 100% and cb18 needs no
+charging vehicles on that schedule. At 24 h a 40-equivalent peak is 73 vehicles
+rather than 79.
+
+Still unreconciled on cb18: 564 Ah vs the sheet's 28.8 kWh (implies 600 Ah), and
+"Usable Capacity 70%", which would give a 14.58 h runtime rather than 16.67.
+
 ## 2026-10-09 — Battery & charging data rebuilt from the owner's sheet
 
 **Opportunity charging on every platform.** `chargerType` is `opportunity` for

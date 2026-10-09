@@ -41,7 +41,7 @@
     "ratedAh": 564,
     "voltageV": 48,
     "runTimeHr": 16.67,
-    "chargeTimeMin": 564,
+    "chargeTimeMin": 448,
     "chargerType": "opportunity",
     "priceRange": {
       "minUsd": 165000,
@@ -61,7 +61,7 @@
     "chargerVoltage": "15-60 V DC",
     "chargerOutputA": 60,
     "chargerPowerKw": 2.9,
-    "batteryDataNote": "Sheet states 564 Ah but 28.8 kWh implies 600 Ah at 48 V; usable energy 20.16 kWh derives from 28.8. Ah vs kWh unreconciled. Usable capacity 70% also disagrees with the 20-100% SOC band (80 points)."
+    "batteryDataNote": "chargeTimeMin 448 min = the 20->100% recharge, DERIVED from the owner sheet's own arithmetic (27.07 kWh pack x 80 SOC points / 2.9 kW charger). Forced, not chosen: the sheet's 16.67 h Typical Runtime equals 80% of pack / 1.3 kW avg draw exactly, so the runtime describes an 80-point band (the sheet's own 20->100% Recommended SOC band) and the recharge paired with it must describe the same band. The sheet's stated 0->100% figure (9.4 h / 564 min) covers 100 points and charged the vehicle for 20 points it never touches. Sheet's two charge times are perfectly linear (5.60 and 5.64 min per SOC point), so no CC/CV taper is modelled and neither is an independent measurement of a charge curve -- both derive from the 2.9 kW charger power. Still unreconciled: 564 Ah vs the sheet's 28.8 kWh (implies 600 Ah); and 'Usable Capacity 70%', which would give a 14.58 h runtime, not 16.67 h."
   },
   "specs": {
     "tempMinF": 14,
