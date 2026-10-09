@@ -3,33 +3,35 @@
 import { useState } from 'react'
 import type { FleetComplexityBaseline, RomSellPriceLine, RomSellPriceOverride } from '@/src/lib/romSellPriceLine'
 import { tierName } from '@/src/lib/romComplexityLabels'
-import { ADDERS_CONFIG } from '@/src/lib/pricingContent'
-import { fullUsd } from './RomSellPriceParts'
+import { PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
+import ScrollSection from '@/src/components/ScrollSection'
+import ComplexityAxis from './ComplexityAxis'
 
 interface Props {
   baseline: FleetComplexityBaseline
   lines: RomSellPriceLine[]
   overrides: Record<string, RomSellPriceOverride | undefined>
   onOverride: (vehicleId: string, patch: Partial<RomSellPriceOverride>) => void
-  selectedAdderIds: string[]
-  onToggleAdder: (id: string) => void
+  blocked: boolean
 }
 
-/** The controls that move the quotation above: options to add, and per-vehicle
- *  tier overrides.
+/** What MOVES the total above: the complexity score and the per-vehicle tier
+ *  overrides that can change it.
  *
- *  Scoring itself moved INTO the quotation card (2026-10-02) — a tier chip on
- *  the category it multiplies, with the full point math behind one disclosure.
- *  It had been a parallel column here, which asked the reader to hold a number
- *  from one card against a number in another. This card is now only the things
- *  you can change, so the split is output above, input below.
+ *  Rebuilt 2026-10-09. This used to be "Options & adjustments", which mixed two
+ *  unlike things — warranty checkboxes (money you add) beside tier overrides
+ *  (engineering judgement that re-multiplies a category). The adders moved into
+ *  the Adders row of the quotation, where ticking one moves the subtotal it
+ *  sits under; what is left here is the scoring and the authority to override
+ *  it, which belong together.
  *
  *  A vehicle only diverges from the fleet baseline when its own floor raises it
- *  or an engineer overrides it; those cases are called out by name below. */
-export default function RomPriceDrivers({
-  baseline, lines, overrides, onOverride, selectedAdderIds, onToggleAdder,
-}: Props) {
+ *  or an engineer overrides it; those cases are called out by name. */
+export default function RomPriceDrivers({ baseline, lines, overrides, onOverride, blocked }: Props) {
   const [openAdjust, setOpenAdjust] = useState(false)
+
+  const intMultiplier = PRICING_ASSUMPTIONS.integrationMultipliers[String(baseline.integration.tier) as '1' | '2' | '3']
+  const swMultiplier = PRICING_ASSUMPTIONS.softwareMultipliers[String(baseline.software.tier) as '1' | '2' | '3']
 
   const diverged = lines.filter(
     l => l.integrationResult.tier !== baseline.integration.tier
@@ -37,26 +39,31 @@ export default function RomPriceDrivers({
   )
 
   return (
-    <section className="rom-cx rom-drivers">
-      <header className="rom-cx-head">
-        <h2 className="rom-cx-title">Options &amp; adjustments</h2>
-      </header>
-
-      <div className="rom-sp-adder-grid">
-        {ADDERS_CONFIG.adders.map(a => (
-          <label key={a.id} className="rom-sp-adder-row">
-            <input
-              type="checkbox"
-              checked={selectedAdderIds.includes(a.id)}
-              onChange={() => onToggleAdder(a.id)}
-            />
-            {a.label} <span className="mono">{fullUsd(a.amount)}</span>
-          </label>
-        ))}
-      </div>
+    <ScrollSection
+      id="rom-drivers"
+      num="02"
+      title="Price drivers"
+      // Showing tiers in the header while the body says scoring is withheld
+      // was two different stories about the same blanks.
+      sub={blocked
+        ? 'Scoring withheld until the complexity inputs are answered'
+        : `Professional services ${baseline.integration.tier} of 3 · Software ${baseline.software.tier} of 3`}
+    >
+      {blocked ? (
+        <p className="q-detail-note">
+          Scoring is withheld while pricing is blocked — an unanswered input scores as
+          &ldquo;simple&rdquo;, so the tiers would read lower than the job really is. Answer the
+          missing inputs on Step 1 and the scoring appears here.
+        </p>
+      ) : (
+        <div className="q-axes">
+          <ComplexityAxis axis="integration" label="Professional services" result={baseline.integration} multiplier={intMultiplier} />
+          <ComplexityAxis axis="software" label="Software" result={baseline.software} multiplier={swMultiplier} />
+        </div>
+      )}
 
       {diverged.length > 0 && (
-        <p className="rom-cx-diverged">
+        <p className="q-diverged">
           {diverged.map(l => {
             const parts: string[] = []
             if (l.integrationResult.tier !== baseline.integration.tier) {
@@ -72,7 +79,7 @@ export default function RomPriceDrivers({
 
       <button
         type="button"
-        className="rom-cx-adjust-toggle"
+        className="q-adjust-toggle"
         onClick={() => setOpenAdjust(o => !o)}
         aria-expanded={openAdjust}
       >
@@ -141,6 +148,6 @@ export default function RomPriceDrivers({
           })}
         </div>
       )}
-    </section>
+    </ScrollSection>
   )
 }

@@ -151,9 +151,9 @@ const SAMPLE_RFQ_GUIDE: Guide = {
     },
     {
       route: '/step4',
-      target: '.rom-quote',
+      target: '#rom-investment .form-section-header',
       title: 'The project quotation',
-      body: 'Hardware, software, professional services, and adders — each a category with its own subtotal, closed by the total project investment. Pick options below to add them, and see how the project scored underneath.',
+      body: 'The total leads, then the four categories that make it up — hardware, software, professional services and adders. Open any row for its detail; tick an adder and the subtotal moves. Section 02 shows what scored the project.',
     },
     {
       route: '/step5',

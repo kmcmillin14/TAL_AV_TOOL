@@ -5,10 +5,10 @@ import type { FleetSellPriceTotal } from '@/src/calc/fleetSellPrice'
 import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
 import type { PricingInputConfidence, PricingGate } from '@/src/lib/romComplexityFromProject'
 import type { FleetComplexityBaseline } from '@/src/lib/romSellPriceLine'
-import { ADDERS_CONFIG, PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
+import { ADDERS_CONFIG } from '@/src/lib/pricingContent'
 import Icon from '@/src/design-system/components/Icon'
+import ScrollSection from '@/src/components/ScrollSection'
 
-import ComplexityAxis, { TierCompact } from './ComplexityAxis'
 import { fullUsd } from './RomSellPriceParts'
 
 /** What the single Professional Services figure covers. Descriptive only —
@@ -27,189 +27,176 @@ interface Props {
   lines: RomSellPriceLine[]
   fleetTotal: FleetSellPriceTotal
   selectedAdderIds: string[]
+  onToggleAdder: (id: string) => void
   confidence: PricingInputConfidence
   baseline: FleetComplexityBaseline
   gate: PricingGate
 }
 
-/** One quotation category: a header row carrying the category subtotal, with
- *  its sub-lines (or descriptive items) indented underneath. */
-function QuoteCategory(
-  { name, amount, badge, withheld, children }:
-  { name: string; amount: number; badge?: ReactNode; withheld?: string[]; children?: ReactNode },
+/** One line of the breakdown: name · optional tier chip · amount, with its
+ *  detail behind a disclosure. Every category is this ONE shape — the four
+ *  used to carry four different layouts (sub-lines / nothing / a chip list /
+ *  an italic note), which is most of what made the card read as clutter. */
+function Category(
+  { name, amount, tier, withheld, detail, defaultOpen }:
+  { name: string; amount: number; tier?: number; withheld?: boolean; detail?: ReactNode; defaultOpen?: boolean },
 ) {
   // A withheld category still reads as a money row — $0, in line with the
-  // others — so the column stays scannable. The reason it is zero belongs in
-  // one place (the banner at the top of the step), not repeated on each row.
-  const isWithheld = withheld != null && withheld.length > 0
-  return (
-    <section className={`rom-quote-cat${isWithheld ? ' is-withheld' : ''}`}>
-      <div className="rom-quote-cat-head">
-        <span className="rom-quote-cat-name">{name}</span>
-        {!isWithheld && badge}
-        <span className="rom-quote-cat-amount mono">{fullUsd(isWithheld ? 0 : amount)}</span>
-      </div>
-      {children && <div className="rom-quote-cat-body">{children}</div>}
-    </section>
-  )
-}
-
-/** A priced sub-line inside a category (e.g. one chassis's hardware). */
-function QuoteLine({ label, qty, amount }: { label: string; qty?: number; amount: number }) {
-  return (
-    <div className="rom-quote-line">
-      <span className="rom-quote-line-label">
-        {label}
-        {qty !== undefined && <span className="rom-quote-line-qty mono"> × {qty}</span>}
-      </span>
-      <span className="rom-quote-line-amount mono">{fullUsd(amount)}</span>
-    </div>
-  )
-}
-
-/** ROM Configuration (Step 4), quotation view — the fleet's sell price laid
- *  out the way a quote reads: Hardware · Software · Professional services ·
- *  Adders, each a category with a subtotal and its own sub-lines, closed by
- *  the total project investment. Hardware itemizes per chassis; Software and
- *  Professional services are single fleet-wide lines (Professional services
- *  is genuinely billed once per fleet-manager platform — see
- *  src/calc/fleetSellPrice.ts). Every figure comes from the shared resolver
- *  (src/lib/romSellPriceLine.ts) that the Dashboard and the PPTX appendix
- *  also call, so the three surfaces can't drift. */
-export default function RomQuotation({ lines, fleetTotal, selectedAdderIds, confidence, baseline, gate }: Props) {
-  const selected = new Set(selectedAdderIds)
-  const selectedAdders = ADDERS_CONFIG.adders.filter(a => selected.has(a.id))
-  const sharedPlatforms = fleetTotal.integrationByPlatform.filter(g => g.vehicleIds.length > 1)
-
-  const intMultiplier = PRICING_ASSUMPTIONS.integrationMultipliers[String(baseline.integration.tier) as '1' | '2' | '3']
-  const swMultiplier = PRICING_ASSUMPTIONS.softwareMultipliers[String(baseline.software.tier) as '1' | '2' | '3']
-
-  return (
-    <section className="rom-quote">
-      <header className="rom-quote-head">
-        <h2 className="rom-quote-title">Project investment</h2>
-        <p className="rom-quote-sub">
-          {fleetTotal.totalQty} unit{fleetTotal.totalQty === 1 ? '' : 's'} across {lines.length}{' '}
-          vehicle {lines.length === 1 ? 'type' : 'types'}
-        </p>
-      </header>
-
-      <QuoteCategory name="Hardware" amount={fleetTotal.hardwareTotal}>
-        {lines.map(l => (
-          <QuoteLine key={l.vehicleId} label={l.vehicleName} qty={l.qty} amount={l.pricing.hardwareSellTotal} />
-        ))}
-      </QuoteCategory>
-
-      <QuoteCategory name="Software" amount={fleetTotal.softwareTotal}
-        badge={<TierCompact result={baseline.software} />}
-        withheld={gate.softwareReady ? undefined : gate.missingSoftware}>
-      </QuoteCategory>
-
-      <QuoteCategory name="Professional services" amount={fleetTotal.integrationTotal}
-        badge={<TierCompact result={baseline.integration} />}
-        withheld={gate.integrationReady ? undefined : gate.missingIntegration}>
-        <ul className="rom-quote-includes">
-          {PROFESSIONAL_SERVICES_INCLUDES.map(item => (
-            <li key={item}>{item}</li>
-          ))}
-        </ul>
-      </QuoteCategory>
-
-      <QuoteCategory name="Adders" amount={fleetTotal.addersTotal}>
-        {selectedAdders.length > 0 ? (
-          selectedAdders.map(a => <QuoteLine key={a.id} label={a.label} amount={a.amount} />)
-        ) : (
-          <p className="rom-quote-note">None selected — pick options below to add them here.</p>
-        )}
-      </QuoteCategory>
-
-      {/* Complexity reads as part of the quote, not a separate study: the tier
-          chips above answer "what did this cost us" at a glance, and this one
-          disclosure carries the whole audit trail for anyone who needs it. */}
-      {!gate.blocked && <details className="rom-quote-cx">
-        <summary>
-          <span className="rom-quote-cx-label">Complexity</span>
-          <span className="rom-quote-cx-summary">
-            Professional services <strong>{baseline.integration.tier} of 3</strong>
-            {' · '}Software <strong>{baseline.software.tier} of 3</strong>
-          </span>
-          <span className="rom-quote-cx-more">Scoring detail</span>
-        </summary>
-        <div className="rom-quote-cx-body">
-          <div className="rom-cx-axes">
-            <ComplexityAxis axis="integration" label="Professional services" result={baseline.integration} multiplier={intMultiplier} />
-            <ComplexityAxis axis="software" label="Software" result={baseline.software} multiplier={swMultiplier} />
-          </div>
-        </div>
-      </details>}
-
-      {gate.blocked ? (
-        <>
-          {/* No project total while a category is unpriced. A total that quietly
-              omits professional services reads as the whole job and gets quoted
-              that way, which is the failure this gate exists to prevent. */}
-          <div className="rom-quote-total is-partial">
-            <span>Hardware subtotal</span>
-            <span className="rom-quote-total-amount mono">{fullUsd(fleetTotal.hardwareTotal)}</span>
-          </div>
-          {/* The caution repeats at the total because that is the figure people
-              screenshot and quote — a reader who scrolled past the banner must
-              still see that this number is not the project. */}
-          <p className="rom-quote-blocked">
-            <Icon name="warn" size={14} />
-            <span>
-              <strong>Not the project total.</strong>{' '}
-              {gate.blockedLabels.join(' and ')} {gate.blockedLabels.length === 1 ? 'is' : 'are'}{' '}
-              unpriced, so this is hardware only.
-            </span>
-          </p>
-        </>
-      ) : (
-        <>
-          <div className="rom-quote-total">
-            <span>Total project investment</span>
-            <span className="rom-quote-total-amount mono">{fullUsd(fleetTotal.sellTotal)}</span>
-          </div>
-          <div className="rom-quote-foot">
-            <span>Per unit, blended across {fleetTotal.totalQty} unit{fleetTotal.totalQty === 1 ? '' : 's'}</span>
-            <span className="mono">{fullUsd(fleetTotal.sellPerUnit)}</span>
-          </div>
-          <div className="rom-quote-foot">
-            <span>
-              Budgetary range
-              {fleetTotal.unknownInputCount > 0 && (
-                <span className="rom-quote-range-why"> — widened for {fleetTotal.unknownInputCount} unknown
-                  {fleetTotal.unknownInputCount === 1 ? '' : 's'}</span>
-              )}
-            </span>
-            <span className="mono">
-              {fullUsd(fleetTotal.band.lowTotal)} – {fullUsd(fleetTotal.band.highTotal)}
-            </span>
-          </div>
-        </>
-      )}
-
-      {/* While a category is withheld there is no range to widen, so the strip
-          reports coverage only — promising a wider range next to a withheld
-          price was two different stories about the same blanks. */}
-      <div className={`rom-quote-confidence${confidence.missing.length > 0 ? ' is-incomplete' : ''}`}>
-        <span className="rom-quote-confidence-score mono">
-          {confidence.answered} of {confidence.total}
+  // others — so the column stays scannable. WHY it is zero is stated once, in
+  // the status line beside the total, not repeated on every row.
+  const head = (
+    <>
+      <span className="q-row-name">{name}</span>
+      {tier != null && !withheld && (
+        <span className="q-row-tier" title={`Complexity tier ${tier} of 3 — the multiplier applied to this category`}>
+          {tier} of 3
         </span>
-        {confidence.missing.length === 0 ? (
-          <span>pricing inputs confirmed — range is as tight as it gets.</span>
-        ) : gate.blocked ? (
-          <span>
-            {'pricing inputs confirmed. Still missing on Step 1: '}
-            <strong>{confidence.missing.join(', ')}</strong>
+      )}
+      <span className="q-row-amount mono">{fullUsd(withheld ? 0 : amount)}</span>
+    </>
+  )
+  if (!detail) return <div className={`q-row${withheld ? ' is-withheld' : ''}`}>{head}</div>
+  return (
+    <details className={`q-row is-expandable${withheld ? ' is-withheld' : ''}`} open={defaultOpen}>
+      <summary>
+        {head}
+        <Icon name="chevron" size={13} />
+      </summary>
+      <div className="q-row-detail">{detail}</div>
+    </details>
+  )
+}
+
+/** ROM Configuration (Step 4) — the fleet's sell price.
+ *
+ *  Rebuilt 2026-10-09 against the rest of the app: it uses the shared
+ *  `ScrollSection` that Steps 1 and 3 use, instead of the bespoke card it had
+ *  invented. The layout now LEADS with the total — it used to sit 762px down,
+ *  below four categories and a disclosure, styled identically to a category
+ *  subtotal — and the three separate "this might be incomplete" messages
+ *  (placeholder banner, blocked warning, confidence strip) are one status line
+ *  attached to the figure people actually screenshot.
+ *
+ *  Every figure comes from the shared resolver (src/lib/romSellPriceLine.ts)
+ *  that the Dashboard (via src/lib/fleetModel.ts) and the PPTX appendix also
+ *  call, so the three surfaces can't drift. Adders are a project-wide,
+ *  once-only cost and professional services is charged once per fleet-manager
+ *  platform — both handled in src/calc/fleetSellPrice.ts, never per vehicle. */
+export default function RomQuotation({
+  lines, fleetTotal, selectedAdderIds, onToggleAdder, confidence, baseline, gate,
+}: Props) {
+  const selected = new Set(selectedAdderIds)
+  const blocked = gate.blocked
+
+  return (
+    <ScrollSection
+      id="rom-investment"
+      num="01"
+      title="Project investment"
+      sub={`${fleetTotal.totalQty} unit${fleetTotal.totalQty === 1 ? '' : 's'} across ${lines.length} vehicle ${lines.length === 1 ? 'type' : 'types'}`}
+    >
+      {/* ── the figure, first ── */}
+      <div className={`q-headline${blocked ? ' is-blocked' : ''}`}>
+        <div className="q-headline-main">
+          <span className="q-headline-label">
+            {blocked ? 'Hardware subtotal — not the project total' : 'Total project investment'}
           </span>
-        ) : (
-          <span>
-            {'pricing inputs confirmed. Unknowns price as “simple”, so the range widens. Missing on Step 1: '}
-            <strong>{confidence.missing.join(', ')}</strong>
+          <span className="q-headline-amount mono">
+            {fullUsd(blocked ? fleetTotal.hardwareTotal : fleetTotal.sellTotal)}
           </span>
+        </div>
+        {!blocked && (
+          <div className="q-headline-side">
+            <span>
+              <em>Budgetary range</em>
+              <span className="mono">{fullUsd(fleetTotal.band.lowTotal)} – {fullUsd(fleetTotal.band.highTotal)}</span>
+            </span>
+            <span>
+              <em>Per unit, blended</em>
+              <span className="mono">{fullUsd(fleetTotal.sellPerUnit)}</span>
+            </span>
+          </div>
         )}
       </div>
-    </section>
+
+      {/* ── ONE status line. Was three: a permanent placeholder banner at the
+             top of the step, a blocked warning under the total, and a
+             confidence strip at the bottom — three voices saying "incomplete".
+             This has three states and sits against the number it qualifies. ── */}
+      <p className={`q-status${blocked ? ' is-blocked' : confidence.missing.length > 0 ? ' is-partial' : ''}`} role="status">
+        <Icon name={blocked ? 'warn' : confidence.missing.length > 0 ? 'warn' : 'check'} size={14} />
+        <span>
+          {blocked ? (
+            <>
+              <strong>Not priced.</strong>{' '}
+              {gate.blockedLabels.join(' and ')} show <span className="mono">$0</span>{' '}because the answers
+              that set their complexity are missing — an unanswered input scores as
+              &ldquo;simple&rdquo;, so pricing now would under-quote the job.
+              {' '}Answer on Step 1: <strong>{gate.missingAll.join(', ')}</strong>.
+            </>
+          ) : confidence.missing.length > 0 ? (
+            <>
+              <strong>Placeholder pricing</strong> — all dollar values and multipliers are pending real
+              pricing input. <span className="mono">{confidence.answered} of {confidence.total}</span>{' '}
+              pricing inputs confirmed; unknowns price as &ldquo;simple&rdquo;, so the range widens.
+              {' '}Missing on Step 1: <strong>{confidence.missing.join(', ')}</strong>.
+            </>
+          ) : (
+            <>
+              <strong>Placeholder pricing</strong> — all dollar values and multipliers are pending real
+              pricing input. All <span className="mono">{confidence.total}</span> pricing inputs
+              confirmed, so the range is as tight as it gets.
+            </>
+          )}
+        </span>
+      </p>
+
+      {/* ── the breakdown, four rows of one shape ── */}
+      <div className="q-breakdown">
+        <Category name="Hardware" amount={fleetTotal.hardwareTotal} detail={
+          <ul className="q-lines">
+            {lines.map(l => (
+              <li key={l.vehicleId}>
+                <span>{l.vehicleName} <span className="q-qty mono">× {l.qty}</span></span>
+                <span className="mono">{fullUsd(l.pricing.hardwareSellTotal)}</span>
+              </li>
+            ))}
+          </ul>
+        } />
+
+        <Category name="Software" amount={fleetTotal.softwareTotal}
+          tier={baseline.software.tier} withheld={!gate.softwareReady} />
+
+        <Category name="Professional services" amount={fleetTotal.integrationTotal}
+          tier={baseline.integration.tier} withheld={!gate.integrationReady} detail={
+            <>
+              <p className="q-detail-note">
+                Charged once per fleet-manager platform, not per vehicle. Covers:
+              </p>
+              <ul className="q-chips">
+                {PROFESSIONAL_SERVICES_INCLUDES.map(i => <li key={i}>{i}</li>)}
+              </ul>
+            </>
+          } />
+
+        {/* Adders used to live in TWO places — a $0 row here pointing at
+            "options below", and a checkbox grid in a second card. Ticking a box
+            now moves the subtotal directly above it. */}
+        <Category name="Adders" amount={fleetTotal.addersTotal}
+          defaultOpen={selected.size === 0} detail={
+            <ul className="q-adders">
+              {ADDERS_CONFIG.adders.map(a => (
+                <li key={a.id}>
+                  <label>
+                    <input type="checkbox" checked={selected.has(a.id)} onChange={() => onToggleAdder(a.id)} />
+                    <span>{a.label}</span>
+                    <span className="mono">{fullUsd(a.amount)}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          } />
+      </div>
+    </ScrollSection>
   )
 }

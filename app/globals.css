@@ -3962,96 +3962,142 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-price-table .num { text-align: right; }
 .rom-veh { display: inline-flex; align-items: center; gap: 8px; }
 
-.rom-sp-placeholder-warning {
-  font-family: var(--tal-font-family); font-size: 12px; font-weight: 600;
-  color: var(--warn); background: var(--warn-soft);
-  border-radius: 8px; padding: 8px 12px; margin-bottom: 10px;
-}
-.rom-sp-gap-flag {
-  font-family: var(--tal-font-family); font-size: 12px; color: var(--bad);
-  background: var(--bad-soft);
-  border-radius: 8px; padding: 8px 12px; margin-bottom: 16px;
-}
 .rom-sp-empty { font-family: var(--tal-font-family); font-size: 13px; color: var(--text-tertiary); font-style: italic; }
 
 /* Chevron shared with the Dashboard's ROM pricing drill-down. */
 .rom-sp-receipt-chevron { flex-shrink: 0; color: var(--text-disabled); transition: transform 0.15s ease; }
 
-/* ── The quotation ─────────────────────────────────────────────────────── */
-.rom-quote {
-  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px;
-  box-shadow: var(--shadow-card); padding: 24px 26px 20px; margin-bottom: 20px;
-}
-.rom-quote-head { margin-bottom: 18px; padding-bottom: 14px; border-bottom: 2px solid var(--border); }
-.rom-quote-title {
-  font-family: var(--tal-font-family); font-size: 18px; font-weight: 800;
-  color: var(--text-primary); margin: 0;
-}
-.rom-quote-sub {
-  font-family: var(--tal-font-numeric); font-size: 11px; letter-spacing: 0.06em;
-  text-transform: uppercase; color: var(--text-tertiary); margin: 4px 0 0;
-}
-.rom-quote-cat { margin-bottom: 16px; }
-.rom-quote-cat-head {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  padding-bottom: 6px; border-bottom: 1px solid var(--border);
-}
-.rom-quote-cat-name {
-  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-primary);
-}
-.rom-quote-cat-amount {
-  font-family: var(--tal-font-numeric); font-size: 15px; font-weight: 800; color: var(--text-primary);
-}
-.rom-quote-cat-body { padding: 8px 0 0 14px; }
+/* ── Step 4 · ROM Configuration ──────────────────────────────────────────
+   Rebuilt 2026-10-09 onto the shared `.form-section` furniture the rest of the
+   app uses. The old bespoke cards defined 56 single-use classes and their own
+   header language (18px/800 over a 2px rule), which is why the step read as a
+   different product. Everything here sits INSIDE a ScrollSection, so the frame,
+   the heading and the numbering come from the house styles for free. */
 
-.rom-sp-notpriced {
+/* The figure, first. It used to sit 762px down — below four categories and a
+   disclosure — styled identically to a category subtotal. */
+.q-headline {
+  display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap;
+  padding: 14px 0 16px; border-bottom: 1px solid var(--border);
+}
+.q-headline-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.q-headline-label {
+  font-family: var(--tal-font-numeric); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.q-headline-amount {
+  font-size: 30px; font-weight: 800; line-height: 1.05; letter-spacing: -0.015em;
+  color: var(--accent); font-variant-numeric: tabular-nums;
+}
+.q-headline.is-blocked .q-headline-amount { color: var(--text-primary); }
+.q-headline-side { display: flex; gap: 28px; flex-wrap: wrap; }
+.q-headline-side > span { display: flex; flex-direction: column; gap: 3px; }
+.q-headline-side em {
+  font-style: normal;
+  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.q-headline-side .mono { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+
+/* ONE status line. Was three — a permanent banner above the card, a blocked
+   warning under the total, and a confidence strip at the bottom. */
+.q-status {
   display: flex; align-items: flex-start; gap: 9px;
-  font-family: var(--tal-font-family); font-size: 13px; line-height: 1.5;
-  color: var(--text-primary); margin: 0 0 16px; padding: 11px 14px;
-  background: color-mix(in srgb, var(--accent) 8%, var(--bg-surface));
-  border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
-  border-radius: 8px;
+  margin: 14px 0 20px; padding: 10px 13px; border-radius: 8px;
+  font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.5;
+  color: var(--text-secondary); background: var(--bg-surface-2);
+  border: 1px solid var(--border);
 }
-.rom-sp-notpriced svg { flex: none; margin-top: 2px; color: var(--accent); }
-.rom-sp-notpriced strong { font-weight: 700; }
-.rom-sp-notpriced .mono { font-family: var(--tal-font-numeric); font-weight: 700; }
+.q-status svg { flex-shrink: 0; margin-top: 2px; color: var(--text-tertiary); }
+.q-status strong { color: var(--text-primary); font-weight: 600; }
+.q-status.is-partial { color: var(--warn); background: var(--warn-soft); border-color: transparent; }
+.q-status.is-partial svg, .q-status.is-partial strong { color: var(--warn); }
+.q-status.is-blocked { color: var(--bad); background: var(--bad-soft); border-color: transparent; }
+.q-status.is-blocked svg, .q-status.is-blocked strong { color: var(--bad); }
 
-.step-nav-warn {
-  display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;
-  color: var(--warn); cursor: help;
+/* The breakdown — four rows of ONE shape. They used to carry four different
+   internal layouts (sub-lines / nothing / a chip list / an italic note). */
+.q-breakdown { display: flex; flex-direction: column; }
+.q-row { border-top: 1px solid var(--border); }
+.q-row:last-child { border-bottom: 1px solid var(--border); }
+.q-row > summary,
+.q-row:not(.is-expandable) {
+  display: flex; align-items: center; gap: 10px;
+  padding: 13px 2px; list-style: none; cursor: default;
 }
-.step-nav-warn svg { flex: none; }
-
-.rom-export-btn:disabled { opacity: 0.45; cursor: not-allowed; }
-.rom-export-blocked {
-  display: flex; align-items: flex-start; gap: 7px; margin: 8px 0 0; flex-basis: 100%;
-  font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.45; color: var(--text-secondary);
+.q-row.is-expandable > summary { cursor: pointer; }
+.q-row > summary::-webkit-details-marker { display: none; }
+.q-row.is-expandable > summary:hover { background: var(--bg-hover); }
+.q-row-name {
+  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary);
 }
-.rom-export-blocked svg { flex: none; margin-top: 1px; color: var(--accent); }
-
-.rom-bento-notpriced {
-  display: flex; align-items: flex-start; gap: 9px; margin: 0; padding: 4px 2px;
-  font-family: var(--tal-font-family); font-size: 13px; line-height: 1.5; color: var(--text-secondary);
+.q-row-tier {
+  font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-tertiary);
+  white-space: nowrap;
 }
-.rom-bento-notpriced svg { flex: none; margin-top: 2px; color: var(--accent); }
-.rom-bento-notpriced strong { color: var(--text-primary); font-weight: 700; }
-
-/* A withheld category still shows a money figure ($0) so the amount column
-   stays scannable; it is just muted, with the reason carried once by the
-   not-priced banner at the top of the step. */
-.rom-quote-cat.is-withheld .rom-quote-cat-name,
-.rom-quote-cat.is-withheld .rom-quote-cat-amount { color: var(--text-tertiary); }
-.rom-quote-blocked {
-  display: flex; align-items: flex-start; gap: 7px; margin: 8px 0 0;
-  font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.45; color: var(--text-secondary);
+.q-row-amount {
+  margin-left: auto;
+  font-size: 15px; font-weight: 700; color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
 }
-.rom-quote-blocked svg { flex: none; margin-top: 1px; color: var(--accent); }
-.rom-quote-blocked strong { color: var(--text-primary); font-weight: 700; }
+.q-row.is-withheld .q-row-amount { color: var(--text-disabled); }
+.q-row > summary > svg { color: var(--text-disabled); transition: transform 0.15s ease; flex-shrink: 0; }
+.q-row[open] > summary > svg { transform: rotate(90deg); }
+.q-row-detail { padding: 2px 2px 16px 2px; }
 
-/* The amount stays hard right once a tier chip sits between it and the name. */
-.rom-quote-cat-amount { margin-left: auto; }
+.q-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.q-lines li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--text-secondary); }
+.q-lines .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); }
+.q-qty { font-size: 11.5px; color: var(--text-tertiary); }
 
+.q-detail-note { margin: 0 0 9px; font-size: 12.5px; color: var(--text-tertiary); line-height: 1.5; }
+.q-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.q-chips li {
+  font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-secondary);
+  background: var(--bg-surface-2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 10px;
+}
+
+/* Adders are ticked where their subtotal lives. They used to be a $0 row here
+   pointing at "options below", plus a checkbox grid in a second card. */
+.q-adders {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 18px;
+}
+@media (max-width: 1100px) { .q-adders { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 680px)  { .q-adders { grid-template-columns: 1fr; } }
+.q-adders label {
+  display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 7px;
+  font-size: 13px; color: var(--text-secondary); cursor: pointer;
+}
+.q-adders label:hover { background: var(--bg-hover); }
+.q-adders label span:nth-of-type(1) { flex: 1 1 auto; min-width: 0; }
+.q-adders label .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); font-size: 12.5px; }
+.q-adders input { accent-color: var(--accent); cursor: pointer; }
+
+/* Price drivers (section 02) */
+.q-axes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .q-axes { grid-template-columns: 1fr; } }
+.q-diverged {
+  margin: 14px 0 0; font-family: var(--tal-font-family); font-size: 12.5px;
+  line-height: 1.55; color: var(--warn);
+}
+.q-adjust-toggle {
+  margin-top: 14px; background: none; border: none; padding: 0; cursor: pointer;
+  font-family: var(--tal-font-family); font-size: 12.5px; font-weight: 600;
+  color: var(--accent); text-decoration: underline; text-underline-offset: 3px;
+}
+.q-adjust-toggle:hover { color: var(--text-primary); }
+
+@media (max-width: 640px) {
+  .q-headline { gap: 14px; }
+  .q-headline-amount { font-size: 25px; }
+  .q-headline-side { gap: 18px; }
+}
+
+/* Per-vehicle tier override editor — retained from the previous layout. */
 /* Tier on the quotation line: plain text, no tint. It sits beside a dollar
    figure, where a coloured badge reads as a warning about the money. */
 .rom-cx-compact {
@@ -4060,35 +4106,12 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-cx-compact .mono {
   font-family: var(--tal-font-numeric); font-weight: 700; color: var(--text-secondary);
 }
-
-.rom-quote-cx { margin: 18px 0 4px; border-top: 1px solid var(--border); }
-.rom-quote-cx > summary {
-  display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap;
-  padding: 10px 0 2px; cursor: pointer; list-style: none;
-}
-.rom-quote-cx > summary::-webkit-details-marker { display: none; }
-.rom-quote-cx > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
-.rom-quote-cx-label {
-  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-primary);
-}
-.rom-quote-cx-summary { font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-tertiary); }
-.rom-quote-cx-summary strong { color: var(--text-secondary); font-weight: 700; }
-.rom-quote-cx-more {
-  margin-left: auto; font-family: var(--tal-font-family); font-size: 11.5px;
-  font-weight: 600; color: var(--accent);
-}
-.rom-quote-cx-more::after { content: ' \25BE'; }
-.rom-quote-cx[open] .rom-quote-cx-more::after { content: ' \25B4'; }
-.rom-quote-cx-body { padding: 10px 0 4px; }
-
 .rom-cx-axis-tier {
   font-family: var(--tal-font-family); font-size: 13px; font-weight: 700; color: var(--text-primary);
   display: inline-flex; align-items: baseline; gap: 6px;
 }
 .rom-cx-axis-tier .mono { font-family: var(--tal-font-numeric); font-weight: 600; color: var(--text-tertiary); }
 .rom-cx-axis-mult { font-size: 11px; font-weight: 600; color: var(--text-tertiary); }
-
 /* Which score buys which tier, with the project's own score placed on it. */
 .rom-cx-scale { list-style: none; margin: 8px 0 10px; padding: 0; display: flex; flex-direction: column; gap: 1px; }
 .rom-cx-scale li {
@@ -4106,73 +4129,6 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   margin-left: auto; font-family: var(--tal-font-numeric); font-size: 10.5px;
   font-weight: 700; color: var(--accent);
 }
-.rom-quote-line {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  padding: 5px 0; font-family: var(--tal-font-family); font-size: 13px; color: var(--text-secondary);
-}
-.rom-quote-line-qty { color: var(--text-tertiary); font-size: 12px; }
-.rom-quote-line-amount { font-family: var(--tal-font-numeric); font-weight: 600; color: var(--text-secondary); }
-.rom-quote-includes {
-  margin: 2px 0 0; padding: 0; list-style: none;
-  display: flex; flex-wrap: wrap; gap: 6px 8px;
-}
-.rom-quote-includes li {
-  font-family: var(--tal-font-family); font-size: 12px; color: var(--text-secondary);
-  background: var(--bg-surface-2); border-radius: 999px; padding: 3px 10px;
-}
-.rom-quote-note {
-  font-family: var(--tal-font-family); font-size: 11.5px; font-style: italic;
-  color: var(--text-tertiary); margin: 8px 0 0;
-}
-.rom-quote-total {
-  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  margin-top: 20px; padding-top: 14px; border-top: 2px solid var(--accent);
-  font-family: var(--tal-font-family); font-size: 15px; font-weight: 800; color: var(--accent);
-}
-.rom-quote-total-amount { font-family: var(--tal-font-numeric); font-size: 22px; font-weight: 800; color: var(--accent); }
-.rom-quote-foot {
-  display: flex; justify-content: space-between; gap: 12px; padding: 5px 0;
-  font-family: var(--tal-font-family); font-size: 12.5px; color: var(--text-tertiary);
-}
-.rom-quote-foot .mono { font-family: var(--tal-font-numeric); color: var(--text-secondary); font-weight: 600; }
-.rom-quote-range-why { color: var(--text-disabled); font-size: 11.5px; }
-/* Pricing-input confidence — why the range is as wide as it is. Neutral when
-   everything is answered, warning-tinted while inputs are still missing. */
-.rom-quote-confidence {
-  display: flex; align-items: baseline; gap: 8px; margin-top: 14px;
-  padding: 9px 12px; border-radius: 8px;
-  background: var(--bg-surface-2);
-  font-family: var(--tal-font-family); font-size: 11.5px; line-height: 1.5;
-  color: var(--text-tertiary);
-}
-.rom-quote-confidence.is-incomplete { background: var(--warn-soft); color: var(--warn); }
-.rom-quote-confidence-score { flex-shrink: 0; font-family: var(--tal-font-numeric); font-weight: 800; }
-.rom-quote-confidence strong { font-weight: 700; }
-
-/* ── Price drivers: scoring beside options ─────────────────────────────── */
-/* One card holding everything that moves the quotation above — the two
-   complexity axes on the left, the option picker on the right. They were two
-   separate cards, which buried the fact that both are inputs to the same
-   total. The quote itself stays a clean, screenshot-able output. */
-.rom-sp-adder-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 4px; }
-@media (max-width: 560px) { .rom-sp-adder-grid { grid-template-columns: 1fr; } }
-.rom-sp-adder-row {
-  display: flex; align-items: center; gap: 8px;
-  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 10px;
-  padding: 9px 12px; font-family: var(--tal-font-family); font-size: 12.5px;
-  transition: border-color 0.12s ease, background 0.12s ease;
-}
-.rom-sp-adder-row:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
-.rom-sp-adder-row .mono { margin-left: auto; font-family: var(--tal-font-numeric); color: var(--text-tertiary); flex-shrink: 0; }
-
-/* ── Complexity, in plain English ──────────────────────────────────────── */
-.rom-cx {
-  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 16px;
-  box-shadow: var(--shadow-card); padding: 20px 22px 22px; margin-bottom: 20px;
-}
-.rom-cx-title { font-family: var(--tal-font-family); font-size: 15px; font-weight: 700; color: var(--text-primary); margin: 0; }
-.rom-cx-axes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-@media (max-width: 700px) { .rom-cx-axes { grid-template-columns: 1fr; } }
 .rom-cx-axis { background: var(--bg-surface-2); border-radius: 12px; padding: 14px 16px; }
 .rom-cx-axis-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
 .rom-cx-axis-name {
@@ -4185,12 +4141,6 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-cx-points dt { color: var(--text-secondary); }
 .rom-cx-points dd { margin: 0; font-family: var(--tal-font-numeric); font-weight: 700; color: var(--accent); }
 .rom-cx-not-triggered { margin: 6px 0 0; line-height: 1.5; }
-.rom-cx-diverged {
-  font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.5;
-  color: var(--text-secondary); background: var(--bg-surface-2);
-  border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0;
-  padding: 10px 12px; margin: 16px 0 0;
-}
 .rom-cx-adjust-toggle {
   margin-top: 16px; background: none; border: none; cursor: pointer; padding: 0;
   font-family: var(--tal-font-family); font-size: 12.5px; font-weight: 600;

@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-10-09 — Step 4 rebuilt onto the app's own layout
+
+Step 4 was the only step that invented its own furniture: two bespoke cards with
+their own header language (18px/800 over a 2px rule) and **56 single-use CSS
+classes**, while Steps 1 and 3 share `ScrollSection` / `.form-section` with
+numbered headers. That is why it read as a different product.
+
+It is now two numbered sections — **01 Project investment**, **02 Price
+drivers** — in the shared furniture. **All the information is unchanged.**
+
+**The total leads.** It used to sit 762 px down, below four categories and a
+disclosure, styled identically (15px/800) to a category subtotal. It is now the
+first thing in the section at 30px, with the budgetary range and per-unit figure
+beside it.
+
+**One status line, was three.** A permanent "placeholder pricing" banner above
+the card, a "Not the project total" warning under the total, and a confidence
+strip at the bottom were three voices saying "incomplete". One component now
+carries three states — *Not priced* / *Placeholder, N inputs missing* /
+*Placeholder, complete* — attached to the figure people screenshot.
+
+**Four categories, one shape.** They had four different internal layouts
+(sub-lines / nothing / a chip list / an italic note). Each is now
+`name · tier · amount` with its detail behind a disclosure.
+
+**Adders live where their subtotal does.** They were in two places — a `$0` row
+pointing at "options below", plus a checkbox grid in a second card. Ticking a box
+now moves the subtotal directly above it, and the second card is gone.
+
+**02 Price drivers** is the complexity scoring and the tier overrides that change
+it — previously "Options & adjustments", which mixed warranty checkboxes with
+engineering overrides. When pricing is blocked it says scoring is withheld
+instead of printing tiers that read lower than the job is.
+
+Type styles in the section dropped from **8 to 4**. Page height 1.52 → **1.26
+screens** with the adders open. Removed the orphaned `.rom-sp-placeholder-warning`
+and `.rom-sp-gap-flag` rules; retargeted the guided tour at `#rom-investment`.
+
 ## 2026-10-09 — Provisional battery spec for the three undocumented platforms
 
 `m10`, `8TB50A` and `8HBC40A` had no average draw and no charge input on the

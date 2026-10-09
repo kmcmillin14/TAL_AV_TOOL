@@ -10,7 +10,6 @@ import {
   resolveRomSellPriceLine, resolveFleetSellPriceTotal, resolveFleetComplexityBaseline,
   type RomSellPriceLine, type RomSellPriceOverride,
 } from '@/src/lib/romSellPriceLine'
-import Icon from '@/src/design-system/components/Icon'
 import RomQuotation from './RomQuotation'
 import RomPriceDrivers from './RomPriceDrivers'
 
@@ -20,14 +19,15 @@ interface Props {
   vehicleById: Map<string, Vehicle>
 }
 
-/** ROM Configuration (Step 4) — the fleet's internal sell price, laid out as
- *  a quotation. Two cards: RomQuotation renders the priced categories
- *  (Hardware · Software · Professional services · Adders) closed by the total
- *  project investment, deliberately kept clean enough to screenshot; below it
- *  RomPriceDrivers holds everything that MOVES that total — how the project
- *  scored (once, fleet-wide, because both complexity axes read project-level
- *  answers and total fleet size rather than anything chassis-specific) beside
- *  the options that add to it.
+/** ROM Configuration (Step 4) — the fleet's internal sell price.
+ *
+ *  Two numbered sections in the shared `ScrollSection` the rest of the app uses
+ *  (rebuilt 2026-10-09; it had its own bespoke cards): `01 Project investment`
+ *  leads with the total and breaks it into four uniform rows, with the adders
+ *  ticked inside the row they move; `02 Price drivers` carries the complexity
+ *  scoring that multiplies two of those rows and the authority to override it,
+ *  fleet-wide — both axes read project-level answers and total fleet size, not
+ *  anything chassis-specific.
  *
  *  Every figure comes from the shared resolver (src/lib/romSellPriceLine.ts)
  *  that the Dashboard (via src/lib/fleetModel.ts) and the PPTX appendix also
@@ -93,23 +93,6 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
 
   return (
     <div className="rom-sp">
-      {gate.blocked ? (
-        <p className="rom-sp-notpriced" role="status">
-          <Icon name="warn" size={16} />
-          <span>
-            <strong>Not priced.</strong>{' '}
-            {gate.blockedLabels.join(' and ')} show <span className="mono">$0</span>{' '}because the answers
-            that set their complexity are missing. An unanswered input scores as
-            &ldquo;simple&rdquo;, so pricing now would under-quote the job.
-            {' '}Answer on Step 1: <strong>{gate.missingAll.join(', ')}</strong>.
-          </span>
-        </p>
-      ) : (
-        <p className="rom-sp-placeholder-warning">
-          ROM — budgetary estimate, placeholder pricing. All dollar values and multipliers are
-          pending real pricing input.
-        </p>
-      )}
       {lines.length === 0 ? (
         <p className="rom-sp-empty">
           None of the {assignedGroups.length} assigned vehicle{assignedGroups.length === 1 ? '' : 's'} has
@@ -121,6 +104,7 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
             lines={lines}
             fleetTotal={fleetTotal}
             selectedAdderIds={selectedAdderIds}
+            onToggleAdder={toggleAdder}
             confidence={confidence}
             baseline={baseline}
             gate={gate}
@@ -131,8 +115,7 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
             lines={lines}
             overrides={overrides}
             onOverride={setOverride}
-            selectedAdderIds={selectedAdderIds}
-            onToggleAdder={toggleAdder}
+            blocked={gate.blocked}
           />
         </>
       )}
