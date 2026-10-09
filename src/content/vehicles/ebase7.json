@@ -77,7 +77,8 @@
     "chargerVoltage": null,
     "chargerOutputA": 2.5,
     "chargerPowerKw": 4.1,
-    "batteryDataNote": "runTimeHr and chargeTimeMin DERIVED from the physical chain (2026-10-09): 4.03 kWh usable / 0.82 kW draw = 4.92 h; / 4.10 kW charger = 59 min. The stored 150 min came from the Oppent datasheet, which describes a DIFFERENT pack (LiFePO4 24 V / 100 Ah / 2.4 kWh), so it does not apply to the 48 V / 120 Ah pack on the owner sheet. UNRESOLVED: the sheet's stated 7 h runtime x 0.82 kW draw = 5.74 kWh, which is 100% of the pack -- impossible for Li-ion. Capacity, draw and usable% are treated as authoritative and the runtime is derived; if instead the 7 h runtime is right, then the draw is ~0.58 kW (12 A, not the stated 17 A). One of the three is wrong."
+    "batteryDataNote": "runTimeHr and chargeTimeMin DERIVED from the physical chain (2026-10-09): 4.03 kWh usable / 0.82 kW draw = 4.92 h; / 4.10 kW charger = 59 min. The stored 150 min came from the Oppent datasheet, which describes a DIFFERENT pack (LiFePO4 24 V / 100 Ah / 2.4 kWh), so it does not apply to the 48 V / 120 Ah pack on the owner sheet. UNRESOLVED: the sheet's stated 7 h runtime x 0.82 kW draw = 5.74 kWh, which is 100% of the pack -- impossible for Li-ion. Capacity, draw and usable% are treated as authoritative and the runtime is derived; if instead the 7 h runtime is right, then the draw is ~0.58 kW (12 A, not the stated 17 A). One of the three is wrong.",
+    "batterySpecProvisional": false
   },
   "specs": {
     "tempMinF": 41,

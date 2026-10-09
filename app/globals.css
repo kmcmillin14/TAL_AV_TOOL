@@ -5003,3 +5003,19 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .help-panel-head-actions { display: flex; align-items: center; gap: 10px; }
 .help-tour-btn { display: inline-flex; align-items: center; gap: 6px; padding: 7px 12px; background: var(--accent-soft); border: 1px solid var(--accent); border-radius: 8px; color: var(--accent); font-family: var(--tal-font-family); font-size: 13px; font-weight: 600; cursor: pointer; }
 .help-tour-btn:hover { background: var(--accent); color: #fff; }
+
+/* Provisional battery spec — the draw and charge input behind this platform's
+   availability are back-derived from its own estimated hours, not measured.
+   Sizing a fleet on a guess is only acceptable if the screen says so. */
+.ct-provisional {
+  font-family: var(--tal-font-numeric);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  color: var(--warn, #9a6b10);
+  border: 1px solid currentColor;
+  white-space: nowrap;
+  margin-left: 6px;
+}

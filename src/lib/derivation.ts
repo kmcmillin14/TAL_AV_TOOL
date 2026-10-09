@@ -101,8 +101,8 @@ export function chargingDerivation(
   const steps: DerivStep[] = [
     sec('Battery (physical spec — no derates)'),
     { label: 'Usable energy', expr: 'V × Ah ÷ 1000 × usable%', sub: `${cal.voltageV} × ${cal.ratedAh} ÷ 1000 × ${cal.usableCapacityPct ?? '—'}%`, result: c.usableKwh == null ? '—' : `${n2(c.usableKwh)} kWh` },
-    { label: 'Average draw', expr: 'power while working', result: cal.avgPowerDrawKw == null ? '—' : `${n2(cal.avgPowerDrawKw)} kW` },
-    { label: 'Charge input', expr: 'charger output', result: cal.chargerPowerKw == null ? '—' : `${n2(cal.chargerPowerKw)} kW` },
+    { label: 'Average draw', expr: c.provisional ? 'back-derived from estimated runtime — PROVISIONAL' : 'power while working', result: cal.avgPowerDrawKw == null ? '—' : `${n2(cal.avgPowerDrawKw)} kW`, muted: c.provisional },
+    { label: 'Charge input', expr: c.provisional ? 'back-derived from estimated charge time — PROVISIONAL' : 'charger output', result: cal.chargerPowerKw == null ? '—' : `${n2(cal.chargerPowerKw)} kW`, muted: c.provisional },
     { label: 'Runtime per charge', expr: 'usable ÷ draw', result: c.runHr == null ? '—' : `${n1(c.runHr)} h` },
     { label: 'Recharge time', expr: 'usable ÷ charge input', result: c.chargeHr == null ? '—' : `${n1(c.chargeHr)} h` },
     sec('Availability'),
@@ -111,7 +111,10 @@ export function chargingDerivation(
     { label: 'Availability', expr: 'free hours on that charge, then the duty ratio, averaged over the staffed window', result: c.availability == null ? '—' : `${Math.round(c.availability * 100)}%`, emphasis: true },
   ]
 
-  const note = 'Availability assumes charging is STAGGERED across the fleet. If vehicles charged in lockstep the honest figure would be the duty ratio above. One charger per vehicle is assumed.'
+  const note = (c.provisional
+    ? 'PROVISIONAL — average draw and charge input were blank on the battery sheet, so they are back-derived from this platform\'s estimated runtime and charge time. The fleet still sizes, but treat these figures as placeholders. '
+    : '')
+    + 'Availability assumes charging is STAGGERED across the fleet. If vehicles charged in lockstep the honest figure would be the duty ratio above. One charger per vehicle is assumed.'
   if (group.chargingDelta === 0) {
     steps.push({ label: 'Extra vehicles', expr: 'charging fits the fleet', result: '+0', emphasis: true })
     return { title: 'Charging — battery spec → availability', tag, steps, note }

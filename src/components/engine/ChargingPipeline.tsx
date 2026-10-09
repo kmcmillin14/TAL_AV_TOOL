@@ -100,6 +100,7 @@ export default function ChargingPipeline({
               <th className="num">Demand</th>
               <th className="num">Runtime</th>
               <th className="num">Recharge</th>
+              <th className="num">Duty ratio</th>
               <th className="num">Availability</th>
               <th className="num">Charging</th>
               <th className="pl-math-col" aria-label="Fleet math"></th>
@@ -119,12 +120,16 @@ export default function ChargingPipeline({
                       <VehicleDot vehicle={veh} size="sm" />
                       {veh?.name ?? vid}
                       <span className="pl-route mono">{n} flow{n === 1 ? '' : 's'}</span>
+                      {c?.provisional && (
+                        <span className="ct-provisional" title="Average draw and charge input were blank on the battery sheet — these are back-derived from this platform's estimated runtime and charge time, not measured.">PROVISIONAL</span>
+                      )}
                     </span>
                   </td>
                   <td className="num mono" data-label="Demand">{g == null ? '—' : g.groupRaw.toFixed(2)}</td>
                   <td className="num mono" data-label="Runtime">{fmtH(c?.runHr)}</td>
                   <td className="num mono" data-label="Recharge">{fmtH(c?.chargeHr)}</td>
-                  <td className="num mono" data-label="Availability">{fmtPct(c?.availability)}</td>
+                  <td className="num mono" data-label="Duty ratio" title="charge input ÷ (charge input + draw) — the platform's own signature, and what availability becomes at 24/7. Battery capacity cancels out of it.">{fmtPct(c?.dutyRatio)}</td>
+                  <td className="num mono" data-label="Availability" title="Share of THIS project's staffed window a vehicle can work — the duty ratio plus the overnight charge credit.">{fmtPct(c?.availability)}</td>
                   <td className="num" data-label="Charging">
                     <span className={`ct-delta ct-delta-${delta > 0 ? 'warn' : 'good'}`} title={c?.reason}>
                       {delta > 0 ? `+${delta}` : '+0'}

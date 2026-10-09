@@ -17,7 +17,7 @@ function fleetWith(fleetSold: Record<string, number>): FleetSummary {
   return {
     groups: Object.entries(fleetSold).map(([vehicleId, n]) => ({
       vehicleId, groupRaw: n, baseFleet: n,
-      charging: { method: 'plugged', runHr: 5, chargeHr: 5, availability: 1, dutyRatio: null, offShiftCharge: null, usableKwh: null, sustainable: true, reason: '' },
+      charging: { method: 'plugged', runHr: 5, chargeHr: 5, availability: 1, dutyRatio: null, offShiftCharge: null, usableKwh: null, provisional: false, sustainable: true, reason: '' },
       fleetWithCharging: n, chargingDelta: 0, utilizationDelta: 0, demand: n, fleetSold: n, binding: 'utilization' as const,
     })),
     totalBaseFleet: 0, totalChargingDelta: 0, totalUtilizationDelta: 0,

@@ -81,7 +81,8 @@
     "chargerVoltage": "24 V",
     "chargerOutputA": 40,
     "chargerPowerKw": 0.96,
-    "batteryDataNote": "runTimeHr and chargeTimeMin DERIVED from the physical chain (2026-10-09): 1.21 kWh usable / 0.19 kW draw = 6.37 h; / 0.96 kW charger = 76 min. The stored 30 min was an estimate and 2.5x too fast. The sheet's stated 7 h runtime implies 88% usable against the stated 80% -- an 8% residual, within spec-sheet rounding, so the physical chain is used. Voltage corrected 48 V -> 24 V earlier the same day."
+    "batteryDataNote": "runTimeHr and chargeTimeMin DERIVED from the physical chain (2026-10-09): 1.21 kWh usable / 0.19 kW draw = 6.37 h; / 0.96 kW charger = 76 min. The stored 30 min was an estimate and 2.5x too fast. The sheet's stated 7 h runtime implies 88% usable against the stated 80% -- an 8% residual, within spec-sheet rounding, so the physical chain is used. Voltage corrected 48 V -> 24 V earlier the same day.",
+    "batterySpecProvisional": false
   },
   "specs": {
     "tempMinF": 32,

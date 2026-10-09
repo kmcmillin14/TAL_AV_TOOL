@@ -186,6 +186,8 @@ export interface ChargingResult {
   dutyRatio: number | null    // charge/(charge+draw) — the floor if charging ever un-staggers
   offShiftCharge: number | null // fraction of a full charge the off-shift delivers
   usableKwh: number | null
+  /** The draw/charge figures behind this are back-derived, not measured. */
+  provisional: boolean
   sustainable: boolean        // false when inputs invalid/zero
   reason: string              // human explanation
 }

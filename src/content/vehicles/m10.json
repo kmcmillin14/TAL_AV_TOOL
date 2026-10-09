@@ -53,8 +53,8 @@
     "liftClass": "floor",
     "batteryChemistry": "AGM",
     "usableCapacityPct": 80,
-    "avgCurrentDrawA": null,
-    "avgPowerDrawKw": null,
+    "avgCurrentDrawA": 6.4,
+    "avgPowerDrawKw": 0.154,
     "peakCurrentDrawA": null,
     "idlePowerDrawW": null,
     "minSocPct": null,
@@ -62,9 +62,10 @@
     "chargeTime20to80Min": null,
     "chargeTime0to100Hr": null,
     "chargerVoltage": null,
-    "chargerOutputA": null,
-    "chargerPowerKw": null,
-    "batteryDataNote": "Voltage corrected 48 V -> 24 V per the sheet (24 x 28 = 0.67 kWh, self-consistent). Typical runtime corrected 11.8 h -> 3.5 h, which resolves the implausible 0.057 kW implied draw."
+    "chargerOutputA": 17.9,
+    "chargerPowerKw": 0.43,
+    "batteryDataNote": "PROVISIONAL battery spec (2026-10-09). avgPowerDrawKw and chargerPowerKw were BLANK on the owner sheet, so they are BACK-DERIVED from this platform's existing [estimate] runtime and charge time: draw = usable kWh / runTimeHr, charger = usable kWh / chargeHr. They therefore inherit that estimate's uncertainty and are NOT measurements -- `batterySpecProvisional` is set so every surface can say so. Replacing them with the real figures is the whole fix: six cells across the three platforms completes the library. Chemistry is AGM, the most charge-sensitive in the library, so the provisional charge input is the least trustworthy of the three.",
+    "batterySpecProvisional": true
   },
   "specs": {
     "tempMinF": 50,

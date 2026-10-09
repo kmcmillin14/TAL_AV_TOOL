@@ -6,7 +6,7 @@ function fleet(rows: Array<{ vehicleId: string; groupRaw: number; fleetSold: num
   return {
     groups: rows.map(r => ({
       vehicleId: r.vehicleId, groupRaw: r.groupRaw, baseFleet: Math.ceil(r.groupRaw),
-      charging: { method: 'plugged', runHr: 5, chargeHr: 5, availability: 1, dutyRatio: null, offShiftCharge: null, usableKwh: null, sustainable: true, reason: '' },
+      charging: { method: 'plugged', runHr: 5, chargeHr: 5, availability: 1, dutyRatio: null, offShiftCharge: null, usableKwh: null, provisional: false, sustainable: true, reason: '' },
       fleetWithCharging: r.fleetSold, chargingDelta: 0, utilizationDelta: 0, demand: r.fleetSold, fleetSold: r.fleetSold, binding: 'utilization' as const,
     })),
     totalBaseFleet: 0, totalChargingDelta: 0, totalUtilizationDelta: 0,

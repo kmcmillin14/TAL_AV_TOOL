@@ -58,8 +58,8 @@
     "liftClass": "floor",
     "batteryChemistry": "TPPL",
     "usableCapacityPct": 70,
-    "avgCurrentDrawA": null,
-    "avgPowerDrawKw": null,
+    "avgCurrentDrawA": 27.9,
+    "avgPowerDrawKw": 0.67,
     "peakCurrentDrawA": null,
     "idlePowerDrawW": null,
     "minSocPct": null,
@@ -67,9 +67,10 @@
     "chargeTime20to80Min": null,
     "chargeTime0to100Hr": null,
     "chargerVoltage": null,
-    "chargerOutputA": null,
-    "chargerPowerKw": null,
-    "batteryDataNote": "UNVERIFIED - chemistry, voltage, capacity, energy and usable capacity are highlighted yellow on the owner sheet (not yet confirmed). TPPL (thin plate pure lead) is the lead-acid chemistry built for opportunity charging, consistent with chargerType opportunity."
+    "chargerOutputA": 260.4,
+    "chargerPowerKw": 6.25,
+    "batteryDataNote": "PROVISIONAL battery spec (2026-10-09). avgPowerDrawKw and chargerPowerKw were BLANK on the owner sheet, so they are BACK-DERIVED from this platform's existing [estimate] runtime and charge time: draw = usable kWh / runTimeHr, charger = usable kWh / chargeHr. They therefore inherit that estimate's uncertainty and are NOT measurements -- `batterySpecProvisional` is set so every surface can say so. Replacing them with the real figures is the whole fix: six cells across the three platforms completes the library. Chemistry (TPPL), voltage, capacity and usable% are ALSO unverified -- highlighted yellow on the owner sheet -- so the whole chain is provisional, not just the two derived cells.",
+    "batterySpecProvisional": true
   },
   "specs": {
     "tempMinF": 14,

@@ -61,7 +61,8 @@
     "chargerVoltage": "15-60 V DC",
     "chargerOutputA": 60,
     "chargerPowerKw": 2.9,
-    "batteryDataNote": "usableCapacityPct 70 -> 80 (2026-10-09). The platform's own three numbers force it: usable kWh = runtime x draw, so 16.67 h x 1.30 kW = 21.67 kWh = 80% of the 27.07 kWh pack, not 70%. 80% also matches the sheet's own 20->100% Recommended SOC band. runTimeHr and chargeTimeMin are now DERIVED from capacity / draw and capacity / charge input and reproduce the sheet exactly (16.66 h, 448 min). Still unreconciled: 564 Ah vs the sheet's 28.8 kWh, which would imply 600 Ah."
+    "batteryDataNote": "usableCapacityPct 70 -> 80 (2026-10-09). The platform's own three numbers force it: usable kWh = runtime x draw, so 16.67 h x 1.30 kW = 21.67 kWh = 80% of the 27.07 kWh pack, not 70%. 80% also matches the sheet's own 20->100% Recommended SOC band. runTimeHr and chargeTimeMin are now DERIVED from capacity / draw and capacity / charge input and reproduce the sheet exactly (16.66 h, 448 min). Still unreconciled: 564 Ah vs the sheet's 28.8 kWh, which would imply 600 Ah.",
+    "batterySpecProvisional": false
   },
   "specs": {
     "tempMinF": 14,

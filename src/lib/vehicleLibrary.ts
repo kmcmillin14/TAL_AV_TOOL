@@ -96,6 +96,11 @@ export interface VehicleCalc {
   chargerVoltage?: string | null
   chargerOutputA?: number | null
   chargerPowerKw?: number | null
+  /** True when `avgPowerDrawKw` / `chargerPowerKw` were BLANK on the owner sheet and
+   *  are back-derived from this platform's own [estimate] runtime and charge time.
+   *  The fleet still sizes, but every surface must say the figures are provisional —
+   *  silently sizing on a guess is worse than sizing on nothing. */
+  batterySpecProvisional?: boolean
   /** Unreconciled conflicts / unverified cells for this platform's battery data. */
   batteryDataNote?: string
   priceRange: {

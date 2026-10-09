@@ -1,5 +1,41 @@
 # Changelog
 
+## 2026-10-09 — Provisional battery spec for the three undocumented platforms
+
+`m10`, `8TB50A` and `8HBC40A` had no average draw and no charge input on the
+owner sheet, so v4 fell back to **availability = 1** — quoting them as if
+charging were free. That is the most expensive possible error, and it was
+invisible.
+
+Both cells are now **back-derived from each platform's own existing
+`[estimate]` hours** (`draw = usable / runTimeHr`, `charger = usable / chargeHr`)
+and flagged `batterySpecProvisional`. The derivation is self-consistent, so the
+duty ratios match what the hours already implied: m10 **73.6%**, 8TB50A and
+8HBC40A **90.3%**. They now cost charging vehicles like every other platform.
+
+They are marked everywhere rather than silently used: a **PROVISIONAL** badge in
+the Step 3 charging table, the word in `ChargingResult.reason`, muted rows and a
+leading warning in the charging derivation. `cb18`, `ml2` and `ebase7` are
+explicitly `batterySpecProvisional: false`.
+
+**Six cells still replace all of this with measurements** — average draw and
+charge input for those three platforms.
+
+## 2026-10-09 — Duty ratio shown beside availability
+
+The Step 3 charging table showed availability alone, which hides why a platform
+reads 100% at two shifts and 69% at 24 h. **Duty ratio** now sits beside it:
+
+- **Duty ratio** = `charge ÷ (charge + draw)` — the platform's permanent
+  signature. Does not change with the schedule, and battery capacity cancels out
+  of it. This is what availability becomes at 24/7.
+- **Availability** = what THIS project gets, once the overnight charge is
+  credited. Schedule-dependent.
+
+The gap between the two columns is exactly the overnight credit, which makes the
+"capacity wins the sprint, charge rate wins the marathon" behaviour visible
+instead of mysterious. Both carry hover definitions.
+
 ## 2026-10-09 — Charging model v4: one availability term, one vocabulary
 
 Replaces the v3 two-branch model (`A_cap` + `A_energy` + an uncapped break

@@ -16,7 +16,7 @@ const vehicle = { calc: {
 const group = (over: Partial<FleetGroup> = {}): FleetGroup => ({
   vehicleId: 'x', groupRaw: 2.4, baseFleet: 3,
   charging: { method: 'plugged', runHr: 4, chargeHr: 3.2, availability: 0.625,
-    dutyRatio: 0.5556, offShiftCharge: 1, usableKwh: 10, sustainable: true, reason: '' },
+    dutyRatio: 0.5556, offShiftCharge: 1, usableKwh: 10, provisional: false, sustainable: true, reason: '' },
   fleetWithCharging: 4, chargingDelta: 1, utilizationDelta: 2, demand: 4.224, fleetSold: 6,
   binding: 'charging', ...over,
 })
@@ -69,7 +69,7 @@ describe('chargingDerivation', () => {
   it('charging fits the fleet: +0, no fleet-with-charging row', () => {
     const d = chargingDerivation(
       group({ charging: { method: 'plugged', runHr: 18, chargeHr: 3, availability: 1,
-                          dutyRatio: 0.857, offShiftCharge: 1, usableKwh: 10, sustainable: true, reason: '' },
+                          dutyRatio: 0.857, offShiftCharge: 1, usableKwh: 10, provisional: false, sustainable: true, reason: '' },
               fleetWithCharging: 3, chargingDelta: 0, utilizationDelta: 0, binding: 'utilization' }),
       vehicle, { dailyOpHr: 16 },
     )

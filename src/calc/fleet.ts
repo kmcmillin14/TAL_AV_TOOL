@@ -116,13 +116,17 @@ export interface ChargingInput {
   battery: BatterySpec
   method: ChargeMethod        // display only (carried onto ChargingResult)
   staffedHr: number           // H — clock hours/day the operation is staffed
+  /** The battery spec is back-derived rather than measured — carried through so
+   *  every display can mark it. */
+  provisional?: boolean
 }
 
 /** Wrap `chargingAvailability` with the display fields the UI needs. */
 export function chargingForGroup(i: ChargingInput): ChargingResult {
   const invalid = (reason: string): ChargingResult => ({
     method: i.method, runHr: null, chargeHr: null, availability: null,
-    dutyRatio: null, offShiftCharge: null, usableKwh: null, sustainable: false, reason,
+    dutyRatio: null, offShiftCharge: null, usableKwh: null,
+    provisional: i.provisional ?? false, sustainable: false, reason,
   })
   const b = i.battery
   if (!(b?.voltageV > 0) || !(b?.ratedAh > 0)) return invalid('Missing battery capacity data')
@@ -139,10 +143,11 @@ export function chargingForGroup(i: ChargingInput): ChargingResult {
     method: i.method,
     runHr: a.runTimeHr, chargeHr: a.chargeHr, usableKwh: a.usableKwh,
     availability: a.availability, dutyRatio: a.dutyRatio, offShiftCharge: a.offShiftCharge,
-    sustainable: true,
-    reason: a.availability >= 1
-      ? 'The battery covers the staffed window — charging costs no vehicles'
-      : `Available ${pct} of the staffed window; the rest is charging`,
+    provisional: i.provisional ?? false, sustainable: true,
+    reason: (i.provisional ? 'PROVISIONAL — draw and charge input are back-derived, not measured. ' : '')
+      + (a.availability >= 1
+        ? 'The battery covers the staffed window — charging costs no vehicles'
+        : `Available ${pct} of the staffed window; the rest is charging`),
   }
 }
 
@@ -195,9 +200,11 @@ export function fleetSummary(
           },
           method,
           staffedHr: settings.dailyOpHr,
+          provisional: veh.calc.batterySpecProvisional ?? false,
         })
       : { method, runHr: null, chargeHr: null, availability: null, dutyRatio: null,
-          offShiftCharge: null, usableKwh: null, sustainable: false, reason: 'Vehicle not found' }
+          offShiftCharge: null, usableKwh: null, provisional: false, sustainable: false,
+          reason: 'Vehicle not found' }
 
     // No battery data → availability degrades to 1, i.e. charging costs nothing.
     // Same convention v3 used, and the data-provenance doc flags the gap.
