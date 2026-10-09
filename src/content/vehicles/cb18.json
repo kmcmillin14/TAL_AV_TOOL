@@ -40,7 +40,7 @@
     "liftSpeedFps": 0.65,
     "ratedAh": 564,
     "voltageV": 48,
-    "runTimeHr": 16.67,
+    "runTimeHr": 16.66,
     "chargeTimeMin": 448,
     "chargerType": "opportunity",
     "priceRange": {
@@ -49,7 +49,7 @@
     },
     "liftClass": "forklift",
     "batteryChemistry": "Li-ion",
-    "usableCapacityPct": 70,
+    "usableCapacityPct": 80,
     "avgCurrentDrawA": 27,
     "avgPowerDrawKw": 1.3,
     "peakCurrentDrawA": 525,
@@ -61,7 +61,7 @@
     "chargerVoltage": "15-60 V DC",
     "chargerOutputA": 60,
     "chargerPowerKw": 2.9,
-    "batteryDataNote": "chargeTimeMin 448 min = the 20->100% recharge, DERIVED from the owner sheet's own arithmetic (27.07 kWh pack x 80 SOC points / 2.9 kW charger). Forced, not chosen: the sheet's 16.67 h Typical Runtime equals 80% of pack / 1.3 kW avg draw exactly, so the runtime describes an 80-point band (the sheet's own 20->100% Recommended SOC band) and the recharge paired with it must describe the same band. The sheet's stated 0->100% figure (9.4 h / 564 min) covers 100 points and charged the vehicle for 20 points it never touches. Sheet's two charge times are perfectly linear (5.60 and 5.64 min per SOC point), so no CC/CV taper is modelled and neither is an independent measurement of a charge curve -- both derive from the 2.9 kW charger power. Still unreconciled: 564 Ah vs the sheet's 28.8 kWh (implies 600 Ah); and 'Usable Capacity 70%', which would give a 14.58 h runtime, not 16.67 h."
+    "batteryDataNote": "usableCapacityPct 70 -> 80 (2026-10-09). The platform's own three numbers force it: usable kWh = runtime x draw, so 16.67 h x 1.30 kW = 21.67 kWh = 80% of the 27.07 kWh pack, not 70%. 80% also matches the sheet's own 20->100% Recommended SOC band. runTimeHr and chargeTimeMin are now DERIVED from capacity / draw and capacity / charge input and reproduce the sheet exactly (16.66 h, 448 min). Still unreconciled: 564 Ah vs the sheet's 28.8 kWh, which would imply 600 Ah."
   },
   "specs": {
     "tempMinF": 14,

@@ -1,5 +1,53 @@
 # Changelog
 
+## 2026-10-09 — Battery model rebuilt on physical inputs (owner direction)
+
+Availability now derives from what can actually be measured — **battery capacity,
+usable %, average draw, charge input, shift hours, operating days** — instead of
+from two hours figures nobody could verify.
+
+    usable kWh = V x Ah / 1000 x usable%
+    R  = usable / draw          Ch = usable / charge input
+    d  = charge / (charge + draw)        <- capacity CANCELS
+
+`runTimeHr` and `chargeTimeMin` become DERIVED values, stored so the current
+engine stays consistent until v4 lands.
+
+**The duty ratio is a current ratio.** Capacity and usable % cancel out of it, so
+the number that dominates 24/7 sizing is immune to error in either — only the
+free-hours term is exposed. For a ROM tool that is the right place for the
+precision to sit.
+
+**cb18 `usableCapacityPct` 70% → 80%.** Forced by the platform's own numbers:
+`16.67 h x 1.30 kW = 21.67 kWh` is 80% of the 27.07 kWh pack, not 70%, and 80%
+matches the sheet's own 20→100% SOC band. At 80% the physical chain reproduces
+the sheet exactly (16.66 h, 448 min).
+
+**Derived values that contradict what was stored:**
+
+| | was | now | why |
+|---|---|---|---|
+| ml2 `chargeTimeMin` | 30 | **76** | 1.21 kWh / 0.96 kW — stored estimate was 2.5x too fast |
+| ml2 `runTimeHr` | 7.00 | **6.37** | 1.21 kWh / 0.19 kW |
+| ebase7 `chargeTimeMin` | 150 | **59** | 4.03 kWh / 4.10 kW — the 150 came from the Oppent datasheet, which describes a different pack |
+| ebase7 `runTimeHr` | 7.00 | **4.92** | 4.03 kWh / 0.82 kW |
+
+Duty ratios: cb18 **69.0%** · ml2 **83.5%** · ebase7 **83.3%**. ml2 gets worse
+(availability at 24 h 93% → 83%), ebase7 better (74% → 83%).
+
+**UNRESOLVED on ebase7** — its stated 7 h runtime x 0.82 kW draw = 5.74 kWh,
+which is 100% of the pack and impossible for Li-ion. Capacity, draw and usable %
+are treated as authoritative and the runtime derived; if the 7 h is right instead,
+the draw is ~0.58 kW (12 A, not the stated 17 A). One of the three is wrong.
+
+**m10, 8TB50A and 8HBC40A cannot be derived** — `avgPowerDrawKw` and
+`chargerPowerKw` are both blank on the sheet. They keep their prior `[estimate]`
+hours. **Six cells would complete the whole library.**
+
+**Days leave availability for good.** The daily energy balance closes on its own,
+so a weekend adds nothing; days drive cycles/year, battery life and annualisation
+instead.
+
 ## 2026-10-09 — cb18 `chargeTimeMin` 564 → 448 min (band-consistent)
 
 The owner sheet's two cb18 charge times are both `pack × band ÷ 2.9 kW charger`,

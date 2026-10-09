@@ -4,7 +4,7 @@
 
 **Goal:** Replace the two-branch charging model (`aCap` + `aEnergy` + a break credit) with one availability term derived from each platform's runtime, recharge time, and the staffed window — and make the fleet waterfall add up.
 
-**Architecture:** `A = min(1, [z·R + (H − z·R)·d] / H)` where `d = R/(R+Ch)` is the platform duty ratio and `z = min(1, (24−H)/Ch)` is how much of a full charge the off-shift delivers. Three inputs: `runTimeHr`, `chargeTimeMin`, `dailyOpHr`. Breaks and `consecutiveOpDays` leave the charging path entirely. `fleetSold` becomes a single constraint, and `baseFleet + utilizationDelta + chargingDelta = fleetSold` exactly.
+**Architecture:** availability is built from PHYSICAL inputs — battery capacity, usable %, average draw, charge input, and the staffed window (owner direction, 2026-10-09). `R = usable/draw`, `Ch = usable/charge`, and the duty ratio reduces to **`d = charge/(charge + draw)`** because capacity cancels. Then `z = min(1, (24−H)/Ch)` and `A = min(1, [z·R + (H − z·R)·d] / H)`. Breaks and `consecutiveOpDays` leave the charging path; days drive cycles/year and battery life instead. `fleetSold` becomes a single constraint, and `baseFleet + utilizationDelta + chargingDelta = fleetSold` exactly.
 
 **Tech Stack:** TypeScript strict, Vitest, pure functions in `src/calc/`.
 
@@ -158,12 +158,17 @@ In `src/calc/fleet.ts`, add above `chargingForGroup`:
 export interface AvailabilityResult {
   /** Share of the staffed window one vehicle can be WORKING, ∈ (0,1]. */
   availability: number
-  /** Steady-state duty ratio R/(R+Ch) — the floor, once the start charge is spent. */
+  /** Steady-state duty ratio = charge/(charge+draw) — the floor, once the start
+   *  charge is spent, and the whole answer at 24/7. Capacity cancels out of it. */
   dutyRatio: number
   /** Fraction of a full charge the off-shift window can deliver: 1 with a long
    *  off-shift, 0 at 24/7. This is the term v3 omitted, and the reason its break
    *  credit existed. */
   offShiftCharge: number
+  /** Derived, carried for display and for the cycles/year figure. */
+  runTimeHr: number
+  chargeHr: number
+  usableKwh: number
 }
 
 /**
@@ -195,21 +200,44 @@ export interface AvailabilityResult {
  * @param staffedHr   H — clock hours/day the operation is staffed
  * @returns null when any input is missing or non-positive (display "—", never NaN)
  */
+export interface BatterySpec {
+  /** Nominal pack voltage (V) and rated capacity (Ah). */
+  voltageV: number
+  ratedAh: number
+  /** Share of rated capacity actually usable (%), per platform. */
+  usableCapacityPct: number
+  /** Average power the vehicle draws while working (kW). */
+  avgPowerDrawKw: number
+  /** Charger output (kW). */
+  chargerPowerKw: number
+}
+
 export function chargingAvailability(
-  runTimeHr: number,
-  chargeTimeMin: number | undefined,
+  battery: BatterySpec,
   staffedHr: number,
 ): AvailabilityResult | null {
-  if (!(runTimeHr > 0)) return null
-  if (chargeTimeMin == null || !(chargeTimeMin > 0)) return null
+  const { voltageV, ratedAh, usableCapacityPct, avgPowerDrawKw, chargerPowerKw } = battery
+  if (!(voltageV > 0) || !(ratedAh > 0)) return null
+  if (!(usableCapacityPct > 0)) return null
+  if (!(avgPowerDrawKw > 0) || !(chargerPowerKw > 0)) return null
   if (!(staffedHr > 0)) return null
 
-  const chargeHr = chargeTimeMin / 60
-  const dutyRatio = runTimeHr / (runTimeHr + chargeHr)
+  const usableKwh = (voltageV * ratedAh / 1000) * (usableCapacityPct / 100)
+  const runTimeHr = usableKwh / avgPowerDrawKw
+  const chargeHr  = usableKwh / chargerPowerKw
+
+  // Capacity and usable% cancel out of the ratio — it is purely a current ratio.
+  // Written directly so the cancellation is visible, and so the floor stays exact
+  // even if capacity is wrong.
+  const dutyRatio = chargerPowerKw / (chargerPowerKw + avgPowerDrawKw)
+
   const offShiftCharge = Math.min(1, Math.max(0, 24 - staffedHr) / chargeHr)
   const freeHr = offShiftCharge * runTimeHr
   const worked = Math.min(staffedHr, freeHr + Math.max(0, staffedHr - freeHr) * dutyRatio)
-  return { availability: Math.min(1, worked / staffedHr), dutyRatio, offShiftCharge }
+  return {
+    availability: Math.min(1, worked / staffedHr),
+    dutyRatio, offShiftCharge, runTimeHr, chargeHr, usableKwh,
+  }
 }
 ```
 

@@ -60,8 +60,8 @@
     "liftSpeedFps": 0.5,
     "ratedAh": 63,
     "voltageV": 24,
-    "runTimeHr": 7,
-    "chargeTimeMin": 30,
+    "runTimeHr": 6.37,
+    "chargeTimeMin": 76,
     "chargerType": "opportunity",
     "priceRange": {
       "minUsd": 95000,
@@ -81,7 +81,7 @@
     "chargerVoltage": "24 V",
     "chargerOutputA": 40,
     "chargerPowerKw": 0.96,
-    "batteryDataNote": "Voltage corrected 48 V -> 24 V per the sheet (24 x 63 = 1.51 kWh, self-consistent). Charge times blank; the 0.96 kW charger on a 1.51 kWh pack implies ~94 min full recharge, so the stored 30 min chargeTimeMin is suspect."
+    "batteryDataNote": "runTimeHr and chargeTimeMin DERIVED from the physical chain (2026-10-09): 1.21 kWh usable / 0.19 kW draw = 6.37 h; / 0.96 kW charger = 76 min. The stored 30 min was an estimate and 2.5x too fast. The sheet's stated 7 h runtime implies 88% usable against the stated 80% -- an 8% residual, within spec-sheet rounding, so the physical chain is used. Voltage corrected 48 V -> 24 V earlier the same day."
   },
   "specs": {
     "tempMinF": 32,
