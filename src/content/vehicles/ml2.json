@@ -59,15 +59,29 @@
     "speedUnloadedFps": 5.9,
     "liftSpeedFps": 0.5,
     "ratedAh": 63,
-    "voltageV": 48,
-    "runTimeHr": 10.0,
+    "voltageV": 24,
+    "runTimeHr": 7,
     "chargeTimeMin": 30,
     "chargerType": "opportunity",
     "priceRange": {
       "minUsd": 95000,
       "maxUsd": 130000
     },
-    "liftClass": "lift_table"
+    "liftClass": "lift_table",
+    "batteryChemistry": "Li-ion",
+    "usableCapacityPct": 80,
+    "avgCurrentDrawA": 8,
+    "avgPowerDrawKw": 0.19,
+    "peakCurrentDrawA": null,
+    "idlePowerDrawW": null,
+    "minSocPct": 20,
+    "maxSocPct": 100,
+    "chargeTime20to80Min": null,
+    "chargeTime0to100Hr": null,
+    "chargerVoltage": "24 V",
+    "chargerOutputA": 40,
+    "chargerPowerKw": 0.96,
+    "batteryDataNote": "Voltage corrected 48 V -> 24 V per the sheet (24 x 63 = 1.51 kWh, self-consistent). Charge times blank; the 0.96 kW charger on a 1.51 kWh pack implies ~94 min full recharge, so the stored 30 min chargeTimeMin is suspect."
   },
   "specs": {
     "tempMinF": 32,

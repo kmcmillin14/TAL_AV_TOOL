@@ -42,15 +42,29 @@
     "speedLoadedFps": 2.72,
     "speedUnloadedFps": 2.72,
     "ratedAh": 28,
-    "voltageV": 48,
-    "runTimeHr": 11.8,
+    "voltageV": 24,
+    "runTimeHr": 3.5,
     "chargeTimeMin": 75,
     "chargerType": "opportunity",
     "priceRange": {
       "minUsd": 85000,
       "maxUsd": 115000
     },
-    "liftClass": "floor"
+    "liftClass": "floor",
+    "batteryChemistry": "AGM",
+    "usableCapacityPct": 80,
+    "avgCurrentDrawA": null,
+    "avgPowerDrawKw": null,
+    "peakCurrentDrawA": null,
+    "idlePowerDrawW": null,
+    "minSocPct": null,
+    "maxSocPct": null,
+    "chargeTime20to80Min": null,
+    "chargeTime0to100Hr": null,
+    "chargerVoltage": null,
+    "chargerOutputA": null,
+    "chargerPowerKw": null,
+    "batteryDataNote": "Voltage corrected 48 V -> 24 V per the sheet (24 x 28 = 0.67 kWh, self-consistent). Typical runtime corrected 11.8 h -> 3.5 h, which resolves the implausible 0.057 kW implied draw."
   },
   "specs": {
     "tempMinF": 50,

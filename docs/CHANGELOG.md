@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-10-09 — Battery & charging data rebuilt from the owner's sheet
+
+**Opportunity charging on every platform.** `chargerType` is `opportunity` for
+all six; `8TB50A`/`8HBC40A` were wrongly `shift_swap`. Their TPPL (thin plate
+pure lead) chemistry is built for opportunity charging, so data and method now
+agree. No swap path is modelled.
+
+**`calc` gained the full battery/charging spec** — `batteryChemistry`,
+`usableCapacityPct`, `avgCurrentDrawA`, `avgPowerDrawKw`, `peakCurrentDrawA`,
+`idlePowerDrawW`, `minSocPct`, `maxSocPct`, `chargeTime20to80Min`,
+`chargeTime0to100Hr`, `chargerVoltage`, `chargerOutputA`, `chargerPowerKw`,
+`batteryDataNote`. **`null` = blank on the owner sheet = placeholder**, never a
+measured zero. 44 placeholder cells across the six platforms.
+
+**Corrections:** ml2 and m10 voltage 48 V → 24 V (the sheet's own kWh confirms
+24 V). ebase7 24 V/100 Ah → 48 V/120 Ah. cb18 533 → 564 Ah.
+
+**Every `runTimeHr` changed** — it was `[estimate]` on all six and is now the
+sheet's Typical Runtime: cb18 8→16.67, ml2 10→7, **m10 11.8→3.5**, 8tb50a 8→14,
+8hbc40a 6→14, ebase7 6→7. The m10 figure resolves a standing defect: 11.8 h on a
+0.67 kWh AGM pack implied 0.057 kW of draw, and ranked the smallest pack in the
+library as the 2nd-best platform.
+
+**`chargeTimeMin`**: only cb18 had a sheet figure (9.4 h → 564 min). Every other
+platform keeps its prior value and stays `[estimate]` — nothing was invented.
+
+**Fleet impact** (peak demand 40, 80% target utilization, charging model v4):
+
+      2 shifts   8hbc40a −7 · 8tb50a −4 · ebase7 −3 · cb18 −2 · ml2 +1 · m10 +11
+      3 shifts   8hbc40a −7 · 8tb50a −4 · ebase7 −3 · ml2 +1 · m10 +12 · cb18 +19
+
+The Toyota platforms get materially cheaper, m10 materially more expensive, and
+cb18 swings on one open question (see provenance §2 — the stored 0→100% recharge
+vs the band-consistent 20→100% figure is 79 vs 73 vehicles at 3 shifts).
+
+Seven unresolved conflicts are recorded in `docs/VEHICLE-DATA-PROVENANCE.md` and
+on the placeholder checklist.
+
 ## 2026-10-04 — Energy removed from the ROM model (owner decision)
 
 **Annual OPEX is now maintenance alone.** The energy term is gone, not hidden.

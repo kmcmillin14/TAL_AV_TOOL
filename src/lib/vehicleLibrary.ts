@@ -61,12 +61,43 @@ export interface VehicleCalc {
   /** Battery rated capacity (amp-hours) and nominal voltage. Energy kWh = voltageV × ratedAh / 1000. */
   ratedAh: number
   voltageV: number
-  /** Hours of operation per full charge (cutsheet). The v3 charging calc and
-   *  ROM energy both derive from this — no amp fields. */
+  /** Hours of operation per full charge. THE single most sensitive input in the
+   *  charging model — fleet size moves further on this than on any modelling
+   *  choice. Source: the owner's battery/charging sheet ("Typical Runtime"). */
   runTimeHr: number
   /** Time to a full charge (min). When present, the authoritative recharge time. */
   chargeTimeMin?: number
   chargerType?: ChargerType
+
+  // ── Battery & charging spec (owner sheet, 2026-10-09) ────────────────────
+  // `null` means the cell was BLANK on the sheet — a placeholder to be filled,
+  // never a measured zero. See docs/VEHICLE-DATA-PROVENANCE.md for per-field
+  // provenance and the open-questions list.
+
+  /** Determines the charging profile and usable capacity. */
+  batteryChemistry?: 'Li-ion' | 'TPPL' | 'AGM' | null
+  /** Share of rated capacity actually usable (%). Per platform — this is what
+   *  `DEFAULT_DOD` was standing in for with one global 80%. */
+  usableCapacityPct?: number | null
+  avgCurrentDrawA?: number | null
+  avgPowerDrawKw?: number | null
+  /** Worst-case loading. */
+  peakCurrentDrawA?: number | null
+  idlePowerDrawW?: number | null
+  /** Charge-start threshold (%). */
+  minSocPct?: number | null
+  /** Charge-stop target (%). */
+  maxSocPct?: number | null
+  /** Opportunity-charging window, 20→80% SOC (min). */
+  chargeTime20to80Min?: number | null
+  /** Full recharge, 0→100% SOC (hours). */
+  chargeTime0to100Hr?: number | null
+  /** Charger spec as written on the sheet — a range for some platforms, so a string. */
+  chargerVoltage?: string | null
+  chargerOutputA?: number | null
+  chargerPowerKw?: number | null
+  /** Unreconciled conflicts / unverified cells for this platform's battery data. */
+  batteryDataNote?: string
   priceRange: {
     minUsd: number
     maxUsd: number
