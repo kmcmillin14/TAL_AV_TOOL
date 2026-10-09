@@ -14,13 +14,30 @@ import { fullUsd } from './RomSellPriceParts'
 /** What the single Professional Services figure covers. Descriptive only —
  *  there is ONE underlying amount (each vehicle's `romInputs`
  *  .baseIntegrationSellPrice, charged once per fleet-manager platform), not
- *  four separately-priced lines, so these render without their own amounts.
- *  When real pricing lands, that one number has to be sized for all four. */
+ *  five separately-priced lines, so these render without their own amounts.
+ *  When real pricing lands, that one number has to be sized for all five.
+ *
+ *  `Training` here is the base handover training that ships with the project.
+ *  The `Extended Training Session` adder is additional sessions ON TOP of it —
+ *  they are not the same line billed twice. */
 const PROFESSIONAL_SERVICES_INCLUDES = [
   'Integration',
   'Commissioning',
   'Startup support',
   'Project management',
+  'Training',
+]
+
+/** The fleet-management software the Software figure licenses. Descriptive, for
+ *  the same reason as the list above: one amount, not two priced lines.
+ *
+ *  Not derived from `vehicle.display.fleetSoftware` — every vehicle in the
+ *  library currently reads "BlueBotics ANT", so deriving would silently drop
+ *  T-One from the quote. If per-platform software pricing ever lands, this
+ *  becomes real lines off `fleetTotal.integrationByPlatform` and the list goes. */
+const SOFTWARE_INCLUDES = [
+  'BlueBotics ANT',
+  'T-One',
 ]
 
 interface Props {
@@ -186,7 +203,14 @@ export default function RomQuotation({
         } />
 
         <Category name="Software" amount={fleetTotal.softwareTotal}
-          tier={baseline.software.tier} withheld={!gate.softwareReady} />
+          tier={baseline.software.tier} withheld={!gate.softwareReady} detail={
+            <>
+              <p className="q-detail-note">Fleet-management software licensed with the project:</p>
+              <ul className="q-chips">
+                {SOFTWARE_INCLUDES.map(i => <li key={i}>{i}</li>)}
+              </ul>
+            </>
+          } />
 
         <Category name="Professional services" amount={fleetTotal.integrationTotal}
           tier={baseline.integration.tier} withheld={!gate.integrationReady} detail={

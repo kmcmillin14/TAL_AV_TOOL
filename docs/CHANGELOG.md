@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-10-09 — Step 4: Software names its platforms, Professional services names Training
+
+**Software** now lists what it licenses — **BlueBotics ANT** and **T-One** —
+in the same descriptive form Professional services already used. It is one
+amount, not two priced lines, so the names render without their own figures.
+
+Deliberately NOT derived from `vehicle.display.fleetSoftware`: every vehicle in
+the library currently reads "BlueBotics ANT", so deriving would silently drop
+T-One from the quote. If per-platform software pricing ever lands this becomes
+real lines off `fleetTotal.integrationByPlatform` and the static list goes.
+
+**Professional services** gains **Training** alongside Integration,
+Commissioning, Startup support and Project management. That is the base handover
+training included in the project — the existing *Extended Training Session*
+adder is additional sessions on top of it, not the same line billed twice.
+
+Both are descriptive only. The underlying amounts are unchanged, so no quoted
+figure moves.
+
 ## 2026-10-09 — Step 4 follow-up: adders stay open, status line moves out
 
 **BUG: the Adders list slammed shut the moment you ticked an adder.** Its open
