@@ -886,6 +886,42 @@ git add -A && git commit -m "docs: charging model v4 — one availability term"
 
 ---
 
+## Battery chemistry — found in the cutsheets 2026-10-09, NOT in the app
+
+The cutsheets state chemistry; `src/content/vehicles/*.json` stores none of it.
+v4 is chemistry-agnostic **by construction** — it works in cutsheet hours, which
+is why it needs no DOD or efficiency derate. That is a feature and a blind spot.
+
+| platform | chemistry (cutsheet) | pack | DOD | opportunity charging valid? |
+|---|---|---|---|---|
+| ml2 | Li-ion, 63 Ah 48 V | 3.02 kWh | 80% norm | **yes** |
+| cb18 | Li-ion, 48 V | 25.58 kWh | 80% norm | **yes** |
+| ebase7 | LiFePO4, 100 Ah 24 V | 2.40 kWh | **70% STATED** | **yes** |
+| m10 | **AGM lead-acid**, 28 Ah 48 V | 1.34 kWh | ~50% AGM norm | **marginal** — partial-SOC cycling sulfates plates |
+| 8tb50a | Lead-acid, 750 Ah 24 V, swap compartment | 18.0 kWh | 80% norm | **no — it swaps** |
+| 8hbc40a | Lead-acid, 750 Ah 24 V, swap compartment | 18.0 kWh | 80% norm | **no — it swaps** |
+
+Two consequences for this plan, both deferred rather than silently absorbed:
+
+1. **The duty-ratio model is a lithium model.** `d = R/(R+Ch)` assumes a vehicle
+   can cycle work/charge indefinitely at partial state of charge. True for Li-ion
+   and LiFePO4. For the AGM m10 it is optimistic and hides a cycle-life cost. For
+   the two swap platforms it is the wrong question entirely.
+2. **The swap platforms are charged for spare VEHICLES when the real answer is
+   spare BATTERIES.** 8hbc40a at H=16 takes `+8` vehicles for charging under v4;
+   a swap model would take ~10 battery packs and `+0` vehicles. Vehicle price vs
+   pack price is roughly an order of magnitude, so v4 always reaches for the
+   expensive asset because it cannot express a swap.
+
+`ebase7`'s stated 70% DOD is also overridden by the global `DEFAULT_DOD = 0.80`.
+This no longer touches pricing (energy OPEX was removed 2026-10-04) but it still
+sets the SoC chart floor, so ebase7's chart shows a floor 10 points too deep.
+
+**None of this blocks v4.** v4 is strictly better than v3 for all three regimes
+because it fixes arithmetic that was wrong regardless of chemistry. Chemistry is
+a v5 concern: add `batteryChemistry` and per-platform `dod` to the vehicle JSONs,
+then give swap platforms their own availability path.
+
 ## Open items this plan deliberately does NOT close
 
 - **Dock contention.** 1:1 chargers is an assumption, not a finding. At 71 ebase7s
