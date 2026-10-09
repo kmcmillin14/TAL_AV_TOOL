@@ -10,7 +10,7 @@ import {
   resolveRomSellPriceLine, resolveFleetSellPriceTotal, resolveFleetComplexityBaseline,
   type RomSellPriceLine, type RomSellPriceOverride,
 } from '@/src/lib/romSellPriceLine'
-import RomQuotation from './RomQuotation'
+import RomQuotation, { RomPricingStatus } from './RomQuotation'
 import RomPriceDrivers from './RomPriceDrivers'
 
 interface Props {
@@ -100,12 +100,15 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
         </p>
       ) : (
         <>
+          {/* Above the sections, not inside one: between the total and the
+              breakdown it read as a row OF the breakdown. */}
+          <RomPricingStatus confidence={confidence} gate={gate} />
+
           <RomQuotation
             lines={lines}
             fleetTotal={fleetTotal}
             selectedAdderIds={selectedAdderIds}
             onToggleAdder={toggleAdder}
-            confidence={confidence}
             baseline={baseline}
             gate={gate}
           />

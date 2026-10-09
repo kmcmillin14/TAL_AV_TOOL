@@ -1,6 +1,6 @@
 'use client'
 
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 import type { FleetSellPriceTotal } from '@/src/calc/fleetSellPrice'
 import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
 import type { PricingInputConfidence, PricingGate } from '@/src/lib/romComplexityFromProject'
@@ -28,42 +28,53 @@ interface Props {
   fleetTotal: FleetSellPriceTotal
   selectedAdderIds: string[]
   onToggleAdder: (id: string) => void
-  confidence: PricingInputConfidence
   baseline: FleetComplexityBaseline
   gate: PricingGate
 }
 
-/** One line of the breakdown: name · optional tier chip · amount, with its
- *  detail behind a disclosure. Every category is this ONE shape — the four
- *  used to carry four different layouts (sub-lines / nothing / a chip list /
- *  an italic note), which is most of what made the card read as clutter. */
+/** One category of the breakdown: a header band carrying name · tier · amount,
+ *  with its detail beneath. Every category is this ONE shape — the four used to
+ *  carry four different internal layouts (sub-lines / nothing / a chip list /
+ *  an italic note), which is most of what made the card read as clutter.
+ *
+ *  Open state is LOCAL, initialised open. It was derived from a prop, which
+ *  made the Adders row slam shut the moment you ticked an adder: the prop
+ *  flipped, React re-applied `open={false}`, and the list you were using
+ *  collapsed under the cursor. */
 function Category(
-  { name, amount, tier, withheld, detail, defaultOpen }:
-  { name: string; amount: number; tier?: number; withheld?: boolean; detail?: ReactNode; defaultOpen?: boolean },
+  { name, amount, tier, withheld, detail }:
+  { name: string; amount: number; tier?: number; withheld?: boolean; detail?: ReactNode },
 ) {
+  const [open, setOpen] = useState(true)
   // A withheld category still reads as a money row — $0, in line with the
   // others — so the column stays scannable. WHY it is zero is stated once, in
-  // the status line beside the total, not repeated on every row.
+  // the status line above the section, not repeated on every row.
   const head = (
     <>
-      <span className="q-row-name">{name}</span>
+      <span className="q-cat-name">{name}</span>
       {tier != null && !withheld && (
-        <span className="q-row-tier" title={`Complexity tier ${tier} of 3 — the multiplier applied to this category`}>
+        <span className="q-cat-tier" title={`Complexity tier ${tier} of 3 — the multiplier applied to this category`}>
           {tier} of 3
         </span>
       )}
-      <span className="q-row-amount mono">{fullUsd(withheld ? 0 : amount)}</span>
+      <span className="q-cat-amount mono">{fullUsd(withheld ? 0 : amount)}</span>
     </>
   )
-  if (!detail) return <div className={`q-row${withheld ? ' is-withheld' : ''}`}>{head}</div>
+  if (!detail) {
+    return (
+      <section className={`q-cat${withheld ? ' is-withheld' : ''}`}>
+        <div className="q-cat-head">{head}</div>
+      </section>
+    )
+  }
   return (
-    <details className={`q-row is-expandable${withheld ? ' is-withheld' : ''}`} open={defaultOpen}>
-      <summary>
+    <section className={`q-cat is-expandable${withheld ? ' is-withheld' : ''}${open ? ' is-open' : ''}`}>
+      <button type="button" className="q-cat-head" onClick={() => setOpen(o => !o)} aria-expanded={open}>
         {head}
         <Icon name="chevron" size={13} />
-      </summary>
-      <div className="q-row-detail">{detail}</div>
-    </details>
+      </button>
+      {open && <div className="q-cat-body">{detail}</div>}
+    </section>
   )
 }
 
@@ -82,8 +93,50 @@ function Category(
  *  call, so the three surfaces can't drift. Adders are a project-wide,
  *  once-only cost and professional services is charged once per fleet-manager
  *  platform — both handled in src/calc/fleetSellPrice.ts, never per vehicle. */
+/** The one "is this number trustworthy" line. Rendered ABOVE section 01 by
+ *  RomFleetSellPrice, not inside it: sitting between the total and the
+ *  breakdown it read as a row OF the breakdown. Three states — Not priced /
+ *  Placeholder with gaps / Placeholder complete — replacing the three separate
+ *  messages this step used to carry (a permanent banner, a blocked warning
+ *  under the total, and a confidence strip at the bottom). */
+export function RomPricingStatus(
+  { confidence, gate }: { confidence: PricingInputConfidence; gate: PricingGate },
+) {
+  const blocked = gate.blocked
+  const partial = !blocked && confidence.missing.length > 0
+  return (
+    <p className={`q-status${blocked ? ' is-blocked' : partial ? ' is-partial' : ''}`} role="status">
+      <Icon name={blocked || partial ? 'warn' : 'check'} size={14} />
+      <span>
+        {blocked ? (
+          <>
+            <strong>Not priced.</strong>{' '}
+            {gate.blockedLabels.join(' and ')} show <span className="mono">$0</span>{' '}because the answers
+            that set their complexity are missing — an unanswered input scores as
+            &ldquo;simple&rdquo;, so pricing now would under-quote the job.
+            {' '}Answer on Step 1: <strong>{gate.missingAll.join(', ')}</strong>.
+          </>
+        ) : partial ? (
+          <>
+            <strong>Placeholder pricing</strong> — all dollar values and multipliers are pending real
+            pricing input. <span className="mono">{confidence.answered} of {confidence.total}</span>{' '}
+            pricing inputs confirmed; unknowns price as &ldquo;simple&rdquo;, so the range widens.
+            {' '}Missing on Step 1: <strong>{confidence.missing.join(', ')}</strong>.
+          </>
+        ) : (
+          <>
+            <strong>Placeholder pricing</strong> — all dollar values and multipliers are pending real
+            pricing input. All <span className="mono">{confidence.total}</span> pricing inputs
+            confirmed, so the range is as tight as it gets.
+          </>
+        )}
+      </span>
+    </p>
+  )
+}
+
 export default function RomQuotation({
-  lines, fleetTotal, selectedAdderIds, onToggleAdder, confidence, baseline, gate,
+  lines, fleetTotal, selectedAdderIds, onToggleAdder, baseline, gate,
 }: Props) {
   const selected = new Set(selectedAdderIds)
   const blocked = gate.blocked
@@ -119,38 +172,6 @@ export default function RomQuotation({
         )}
       </div>
 
-      {/* ── ONE status line. Was three: a permanent placeholder banner at the
-             top of the step, a blocked warning under the total, and a
-             confidence strip at the bottom — three voices saying "incomplete".
-             This has three states and sits against the number it qualifies. ── */}
-      <p className={`q-status${blocked ? ' is-blocked' : confidence.missing.length > 0 ? ' is-partial' : ''}`} role="status">
-        <Icon name={blocked ? 'warn' : confidence.missing.length > 0 ? 'warn' : 'check'} size={14} />
-        <span>
-          {blocked ? (
-            <>
-              <strong>Not priced.</strong>{' '}
-              {gate.blockedLabels.join(' and ')} show <span className="mono">$0</span>{' '}because the answers
-              that set their complexity are missing — an unanswered input scores as
-              &ldquo;simple&rdquo;, so pricing now would under-quote the job.
-              {' '}Answer on Step 1: <strong>{gate.missingAll.join(', ')}</strong>.
-            </>
-          ) : confidence.missing.length > 0 ? (
-            <>
-              <strong>Placeholder pricing</strong> — all dollar values and multipliers are pending real
-              pricing input. <span className="mono">{confidence.answered} of {confidence.total}</span>{' '}
-              pricing inputs confirmed; unknowns price as &ldquo;simple&rdquo;, so the range widens.
-              {' '}Missing on Step 1: <strong>{confidence.missing.join(', ')}</strong>.
-            </>
-          ) : (
-            <>
-              <strong>Placeholder pricing</strong> — all dollar values and multipliers are pending real
-              pricing input. All <span className="mono">{confidence.total}</span> pricing inputs
-              confirmed, so the range is as tight as it gets.
-            </>
-          )}
-        </span>
-      </p>
-
       {/* ── the breakdown, four rows of one shape ── */}
       <div className="q-breakdown">
         <Category name="Hardware" amount={fleetTotal.hardwareTotal} detail={
@@ -182,8 +203,7 @@ export default function RomQuotation({
         {/* Adders used to live in TWO places — a $0 row here pointing at
             "options below", and a checkbox grid in a second card. Ticking a box
             now moves the subtotal directly above it. */}
-        <Category name="Adders" amount={fleetTotal.addersTotal}
-          defaultOpen={selected.size === 0} detail={
+        <Category name="Adders" amount={fleetTotal.addersTotal} detail={
             <ul className="q-adders">
               {ADDERS_CONFIG.adders.map(a => (
                 <li key={a.id}>

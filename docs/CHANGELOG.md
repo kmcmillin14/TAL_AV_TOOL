@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-10-09 — Step 4 follow-up: adders stay open, status line moves out
+
+**BUG: the Adders list slammed shut the moment you ticked an adder.** Its open
+state was derived from a prop (`defaultOpen={selected.size === 0}`), so the
+first tick flipped the prop, React re-applied `open={false}`, and the list
+collapsed under the cursor mid-task. Open state is now local to each category
+and initialised open, so nothing can close it but a click on its header.
+
+**The status line moved above the sections.** Sitting between the total and the
+breakdown it read as a row OF the breakdown. It is now page-level, above
+`01 Project investment` — still one line with three states, just no longer
+inside the table it qualifies.
+
+**Every category starts expanded, and reads as its own block.** They were flat
+rows separated by hairlines, which scanned as a single list. Each is now a
+bordered block with a header band (name · tier · amount) over its own body, with
+10px between blocks. This step is a worksheet, not a summary — nothing hides by
+default, and the four categories look like four things.
+
 ## 2026-10-09 — Step 4 rebuilt onto the app's own layout
 
 Step 4 was the only step that invented its own furniture: two bespoke cards with

@@ -4004,7 +4004,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
    warning under the total, and a confidence strip at the bottom. */
 .q-status {
   display: flex; align-items: flex-start; gap: 9px;
-  margin: 14px 0 20px; padding: 10px 13px; border-radius: 8px;
+  margin: 0 0 16px; padding: 11px 14px; border-radius: 8px;
   font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.5;
   color: var(--text-secondary); background: var(--bg-surface-2);
   border: 1px solid var(--border);
@@ -4016,38 +4016,45 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .q-status.is-blocked { color: var(--bad); background: var(--bad-soft); border-color: transparent; }
 .q-status.is-blocked svg, .q-status.is-blocked strong { color: var(--bad); }
 
-/* The breakdown — four rows of ONE shape. They used to carry four different
-   internal layouts (sub-lines / nothing / a chip list / an italic note). */
-.q-breakdown { display: flex; flex-direction: column; }
-.q-row { border-top: 1px solid var(--border); }
-.q-row:last-child { border-bottom: 1px solid var(--border); }
-.q-row > summary,
-.q-row:not(.is-expandable) {
-  display: flex; align-items: center; gap: 10px;
-  padding: 13px 2px; list-style: none; cursor: default;
+/* The breakdown — four CATEGORIES of one shape, each its own bounded block.
+   They were flat rows separated by hairlines, which read as a single list; as
+   blocks with their own header band they read as four things. All start open —
+   the step is a worksheet, not a summary, so nothing hides by default. */
+.q-breakdown { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.q-cat {
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg-surface); overflow: hidden;
 }
-.q-row.is-expandable > summary { cursor: pointer; }
-.q-row > summary::-webkit-details-marker { display: none; }
-.q-row.is-expandable > summary:hover { background: var(--bg-hover); }
-.q-row-name {
+.q-cat-head {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  padding: 12px 16px; margin: 0; text-align: left;
+  background: var(--bg-surface-2); border: none;
+  border-bottom: 1px solid transparent;
+  font: inherit; color: inherit;
+}
+.q-cat.is-open .q-cat-head { border-bottom-color: var(--border); }
+button.q-cat-head { cursor: pointer; }
+button.q-cat-head:hover { background: var(--bg-hover); }
+button.q-cat-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.q-cat-name {
   font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary);
+  letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-secondary);
 }
-.q-row-tier {
+.q-cat-tier {
   font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-tertiary);
   white-space: nowrap;
 }
-.q-row-amount {
+.q-cat-amount {
   margin-left: auto;
-  font-size: 15px; font-weight: 700; color: var(--text-primary);
+  font-size: 16px; font-weight: 700; color: var(--text-primary);
   font-variant-numeric: tabular-nums;
 }
-.q-row.is-withheld .q-row-amount { color: var(--text-disabled); }
-.q-row > summary > svg { color: var(--text-disabled); transition: transform 0.15s ease; flex-shrink: 0; }
-.q-row[open] > summary > svg { transform: rotate(90deg); }
-.q-row-detail { padding: 2px 2px 16px 2px; }
+.q-cat.is-withheld .q-cat-amount { color: var(--text-disabled); }
+.q-cat-head > svg { color: var(--text-disabled); transition: transform 0.15s ease; flex-shrink: 0; }
+.q-cat.is-open .q-cat-head > svg { transform: rotate(90deg); }
+.q-cat-body { padding: 14px 16px 16px; }
 
-.q-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.q-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .q-lines li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--text-secondary); }
 .q-lines .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); }
 .q-qty { font-size: 11.5px; color: var(--text-tertiary); }
@@ -4073,7 +4080,7 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   font-size: 13px; color: var(--text-secondary); cursor: pointer;
 }
 .q-adders label:hover { background: var(--bg-hover); }
-.q-adders label span:nth-of-type(1) { flex: 1 1 auto; min-width: 0; }
+.q-adders label span:first-of-type { flex: 1 1 auto; min-width: 0; }
 .q-adders label .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); font-size: 12.5px; }
 .q-adders input { accent-color: var(--accent); cursor: pointer; }
 
