@@ -797,6 +797,15 @@ hurts (per-metric desirable direction). Below, a **gauge strip** (`RomGauge`, SV
 a hover definition): Utilization · Availability · Charging · **Redundancy** (the resilience
 metric, renamed) — availability/charging weighted across the fleet from the charging series.
 
+**Step 4 ledger (2026-10-09).** `01 Project investment` leads with the total,
+then four sections on one spine — Hardware · Software · Professional services ·
+Adders — each stating its **share of the quote** (rounded whole; `<1%` rather
+than `0%` for a real but tiny amount; blank for nothing). The complexity point
+tables sit **inside the section they multiply**, not in a separate card. A gated
+section reads **NOT PRICED** rather than a dimmed `$0`. Type runs on a four-step
+scale declared as tokens (`--q-type-hero|figure|body|label`). `02 Adjustments`
+holds the per-vehicle tier overrides only.
+
 **ROM pricing card** (`RomPricingTable.tsx`, customer-facing): leads with a **Total ROM
 CAPEX** headline (range + planning midpoint), the per-vehicle-type line-item table collapsed
 by default behind a `<details>` drill-down ("N vehicle types — click to expand") — same

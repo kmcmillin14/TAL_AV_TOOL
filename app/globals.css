@@ -3992,6 +3992,17 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
    different product. Everything here sits INSIDE a ScrollSection, so the frame,
    the heading and the numbering come from the house styles for free. */
 
+/* FOUR steps. There were nine, four of them within 1.5px of each other, which
+   is an accumulation rather than a scale. Declared here so the next edit picks
+   a step instead of inventing a tenth size. */
+.q-breakdown, .q-headline, .q-status {
+  --q-type-hero:   30px;   /* the grand total, once per page */
+  --q-type-figure: 17px;   /* a section's money */
+  --q-type-body:   13px;   /* item rows, prose */
+  --q-type-label:  11px;   /* tracked uppercase names, captions, chips */
+}
+
+
 /* The figure, first. It used to sit 762px down — below four categories and a
    disclosure — styled identically to a category subtotal. */
 .q-headline {
@@ -4001,11 +4012,11 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 .q-headline-main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .q-headline-label {
-  font-family: var(--tal-font-numeric); font-size: 10.5px; font-weight: 700;
+  font-family: var(--tal-font-numeric); font-size: var(--q-type-label); font-weight: 700;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
 }
 .q-headline-amount {
-  font-size: 30px; font-weight: 800; line-height: 1.05; letter-spacing: -0.015em;
+  font-size: var(--q-type-hero); font-weight: 800; line-height: 1.05; letter-spacing: -0.015em;
   color: var(--accent); font-variant-numeric: tabular-nums;
 }
 .q-headline.is-blocked .q-headline-amount { color: var(--text-primary); }
@@ -4013,17 +4024,17 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .q-headline-side > span { display: flex; flex-direction: column; gap: 3px; }
 .q-headline-side em {
   font-style: normal;
-  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
+  font-family: var(--tal-font-numeric); font-size: var(--q-type-label); font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
 }
-.q-headline-side .mono { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.q-headline-side .mono { font-size: var(--q-type-body); font-weight: 600; color: var(--text-primary); }
 
 /* ONE status line. Was three — a permanent banner above the card, a blocked
    warning under the total, and a confidence strip at the bottom. */
 .q-status {
   display: flex; align-items: flex-start; gap: 9px;
   margin: 0 0 16px; padding: 11px 14px; border-radius: 8px;
-  font-family: var(--tal-font-family); font-size: 12.5px; line-height: 1.5;
+  font-family: var(--tal-font-family); font-size: var(--q-type-label); line-height: 1.5;
   color: var(--text-secondary); background: var(--bg-surface-2);
   border: 1px solid var(--border);
 }
@@ -4077,19 +4088,19 @@ button.q-sec-head { cursor: pointer; }
   position: absolute; left: -38px; top: -2px;
   width: 27px; padding: 3px 0; text-align: center;
   background: var(--bg-surface);
-  font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
+  font-size: var(--q-type-label); font-weight: 700; letter-spacing: 0.02em;
   color: var(--accent); font-variant-numeric: tabular-nums;
 }
 .q-sec.is-elective .q-sec-num { color: var(--text-tertiary); }
 
 .q-sec-name {
-  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
+  font-family: var(--tal-font-numeric); font-size: var(--q-type-label); font-weight: 700;
   letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-primary);
   white-space: nowrap;
 }
 .q-sec.is-elective .q-sec-name { color: var(--text-secondary); }
 .q-sec-tier {
-  font-family: var(--tal-font-family); font-size: 11.5px;
+  font-family: var(--tal-font-family); font-size: var(--q-type-label);
   color: var(--text-tertiary); white-space: nowrap;
 }
 
@@ -4103,13 +4114,29 @@ button.q-sec-head { cursor: pointer; }
 .q-sec.is-elective .q-sec-rule { border-bottom-style: dashed; border-bottom-color: var(--border); }
 
 .q-sec-amount {
-  font-size: 17px; font-weight: 700; color: var(--text-primary);
+  font-size: var(--q-type-figure); font-weight: 700; color: var(--text-primary);
   font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+/* A refusal to price, said in words. It was $0 in --text-disabled (2.3:1 on
+   the light surface), which read as an amount that happened to be zero. */
+.q-sec-withheld-tag {
+  font-family: var(--tal-font-family);
+  font-size: var(--q-type-label); font-weight: 700;
+  letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--bad); background: var(--bad-soft);
+  border-radius: 5px; padding: 3px 9px; white-space: nowrap;
 }
 .q-sec.is-withheld .q-sec-amount,
 .q-sec.is-elective .q-sec-amount { color: var(--text-disabled); }
 .q-sec.is-elective.has-picks .q-sec-amount { color: var(--text-primary); }
 
+/* Share of the quote. A fixed width so the column aligns down the ledger even
+   when a section renders blank. */
+.q-sec-share {
+  width: 38px; text-align: right;
+  font-size: var(--q-type-label); font-weight: 600;
+  color: var(--text-tertiary); font-variant-numeric: tabular-nums;
+}
 .q-sec-head > svg { color: var(--text-disabled); transition: transform 0.15s ease; flex-shrink: 0; }
 .q-sec.is-open .q-sec-head > svg { transform: rotate(90deg); }
 button.q-sec-head:hover .q-sec-name { color: var(--accent); }
@@ -4121,17 +4148,17 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .q-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .q-lines li {
   display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
-  padding: 6px 0; font-size: 13.5px; color: var(--text-secondary);
+  padding: 6px 0; font-size: var(--q-type-body); color: var(--text-secondary);
 }
 .q-lines .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); }
-.q-qty { font-size: 11.5px; color: var(--text-tertiary); }
+.q-qty { font-size: var(--q-type-label); color: var(--text-tertiary); }
 
-.q-detail-note { margin: 0 0 8px; font-size: 12.5px; color: var(--text-tertiary); line-height: 1.5; }
+.q-detail-note { margin: 0 0 8px; font-size: var(--q-type-label); color: var(--text-tertiary); line-height: 1.5; }
 
 /* What a section covers, as a tracked inline list rather than pills — pills
    read as interactive, and none of these are. */
 .q-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
-.q-chips li { font-size: 12px; color: var(--text-secondary); }
+.q-chips li { font-size: var(--q-type-label); color: var(--text-secondary); }
 .q-chips li + li::before {
   content: '·'; margin: 0 8px; color: var(--text-disabled);
 }
@@ -4144,11 +4171,11 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 @media (max-width: 680px)  { .q-adders { grid-template-columns: 1fr; } }
 .q-adders label {
   display: flex; align-items: center; gap: 9px; padding: 6px 0;
-  font-size: 13px; color: var(--text-secondary); cursor: pointer;
+  font-size: var(--q-type-body); color: var(--text-secondary); cursor: pointer;
 }
 .q-adders label:hover { color: var(--text-primary); }
 .q-adders label span:first-of-type { flex: 1 1 auto; min-width: 0; }
-.q-adders label .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); font-size: 12.5px; }
+.q-adders label .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); font-size: var(--q-type-label); }
 .q-adders input { accent-color: var(--accent); cursor: pointer; }
 
 @media (max-width: 560px) {

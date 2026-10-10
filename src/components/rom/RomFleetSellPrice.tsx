@@ -118,7 +118,6 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
             lines={lines}
             overrides={overrides}
             onOverride={setOverride}
-            blocked={gate.blocked}
           />
         </>
       )}

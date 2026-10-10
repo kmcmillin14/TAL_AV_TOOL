@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-10-09 — Step 4 ledger refinement (plan 2026-10-09, Tasks 2–6)
+
+Four of the five defects the plan measured. **No quoted figure moves** — every
+change is presentation.
+
+**Nine type styles became four.** Four of the nine sat within 1.5px of each
+other and carried no distinction a reader could perceive. The Step 4 block now
+declares `--q-type-hero | figure | body | label` and every rule uses one, so the
+next edit picks a step instead of inventing a tenth. Measured in the browser:
+`11px · 13px · 17px · 30px`.
+
+**Each section states its share of the quote.** Hardware is ~90% and the page
+said nothing; the reader had to do the arithmetic against a total 300px away.
+Rounded whole on purpose — these are placeholder dollars. `<1%` rather than
+`0%` for a real but tiny amount; blank for nothing. While the gate blocks, the
+denominator is the hardware subtotal, so sharing against a total the page
+refuses to state cannot leak it back out.
+
+**The complexity scoring moved beside the figure it multiplies.** The point
+tables behind `2 of 3` / `3 of 3` lived in section 02 — a 148px card holding the
+explanation for chips rendered 647px above it. Each axis now sits inside the
+disclosure of the section it multiplies. Section 02 becomes **Adjustments** and
+holds the per-vehicle tier overrides only, which is a different job
+(engineering authority, not scoring) and reads honestly at that size.
+
+**A withheld section says NOT PRICED.** It rendered `$0` in `--text-disabled` —
+`#a1a1aa`, 2.3:1 on the light surface — so a refusal to price read as an amount
+that happened to be zero.
+
+**Not done, by owner decision:** Task 1, which would have resolved the two
+numbering systems now on screen — the ledger's spine numbers `01–04` sit 6px
+from the page's own `01.` / `02.` ScrollSection numbers, interleaved. The defect
+stands; see `docs/superpowers/plans/2026-10-09-step4-ledger-refinement.md` §D1.
+
+The plan's own Task 2 test had a bug, caught while executing it:
+`/font-size:\s*(?!var\()/` does not work — `\s*` backtracks to zero and the
+lookahead then passes on `" var("`. The test captures the value and checks it
+instead.
+
 ## 2026-10-09 — Step 2 "Active Requirements" now shows what is actually gating
 
 The strip named **four hand-picked fields** — Transfer, Pattern, Load, Aisle.

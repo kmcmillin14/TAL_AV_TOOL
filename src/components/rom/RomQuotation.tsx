@@ -5,9 +5,10 @@ import type { FleetSellPriceTotal } from '@/src/calc/fleetSellPrice'
 import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
 import type { PricingInputConfidence, PricingGate } from '@/src/lib/romComplexityFromProject'
 import type { FleetComplexityBaseline } from '@/src/lib/romSellPriceLine'
-import { ADDERS_CONFIG } from '@/src/lib/pricingContent'
+import { ADDERS_CONFIG, PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
 import Icon from '@/src/design-system/components/Icon'
 import ScrollSection from '@/src/components/ScrollSection'
+import ComplexityAxis from './ComplexityAxis'
 
 import { fullUsd } from './RomSellPriceParts'
 
@@ -55,6 +56,16 @@ interface Props {
   gate: PricingGate
 }
 
+/** A section's share of the quote, rounded hard. These are placeholder dollars,
+ *  so a decimal would promise precision the inputs do not have. Empty string
+ *  for zero or an empty quote — a section carrying nothing should say nothing,
+ *  not "0%". */
+export function shareOfTotal(amount: number, total: number): string {
+  if (!(total > 0) || !(amount > 0)) return ''
+  const pct = amount / total * 100
+  return pct < 1 ? '<1%' : `${Math.round(pct)}%`
+}
+
 /** One section of the ledger.
  *
  *  Four near-identical bordered blocks with grey header bands was the problem:
@@ -75,10 +86,10 @@ interface Props {
  *  flipped, React re-applied `open={false}`, and the list you were using
  *  collapsed under the cursor. */
 function Category(
-  { num, name, amount, tier, withheld, elective, detail }:
+  { num, name, amount, tier, withheld, elective, share, detail }:
   {
     num: string; name: string; amount: number; tier?: number
-    withheld?: boolean; elective?: boolean; detail?: ReactNode
+    withheld?: boolean; elective?: boolean; share?: string; detail?: ReactNode
   },
 ) {
   const [open, setOpen] = useState(true)
@@ -95,7 +106,10 @@ function Category(
         </span>
       )}
       <span className="q-sec-rule" aria-hidden="true" />
-      <span className="q-sec-amount mono">{fullUsd(withheld ? 0 : amount)}</span>
+      {withheld
+        ? <span className="q-sec-withheld-tag">Not priced</span>
+        : <span className="q-sec-amount mono">{fullUsd(amount)}</span>}
+      <span className="q-sec-share mono">{share}</span>
       {detail && <Icon name="chevron" size={12} />}
     </>
   )
@@ -159,6 +173,14 @@ export default function RomQuotation({
 }: Props) {
   const selected = new Set(selectedAdderIds)
   const blocked = gate.blocked
+  // One denominator for every section. While the gate blocks, the quote IS the
+  // hardware subtotal — sharing against a total the page refuses to state would
+  // leak it back out.
+  const quoteTotal = blocked ? fleetTotal.hardwareTotal : fleetTotal.sellTotal
+  // The point tables explain the tier chips a few pixels away, so they live
+  // inside the section they multiply rather than in a separate card below.
+  const intMultiplier = PRICING_ASSUMPTIONS.integrationMultipliers[String(baseline.integration.tier) as '1' | '2' | '3']
+  const swMultiplier = PRICING_ASSUMPTIONS.softwareMultipliers[String(baseline.software.tier) as '1' | '2' | '3']
 
   return (
     <ScrollSection
@@ -193,7 +215,8 @@ export default function RomQuotation({
 
       {/* ── the breakdown, four rows of one shape ── */}
       <div className="q-breakdown">
-        <Category num="01" name="Hardware" amount={fleetTotal.hardwareTotal} detail={
+        <Category num="01" name="Hardware" amount={fleetTotal.hardwareTotal}
+          share={shareOfTotal(fleetTotal.hardwareTotal, quoteTotal)} detail={
           <ul className="q-lines">
             {lines.map(l => (
               <li key={l.vehicleId}>
@@ -205,17 +228,22 @@ export default function RomQuotation({
         } />
 
         <Category num="02" name="Software" amount={fleetTotal.softwareTotal}
-          tier={baseline.software.tier} withheld={!gate.softwareReady} detail={
+          tier={baseline.software.tier} withheld={!gate.softwareReady}
+          share={shareOfTotal(gate.softwareReady ? fleetTotal.softwareTotal : 0, quoteTotal)} detail={
             <>
               <p className="q-detail-note">Fleet-management software licensed with the project:</p>
               <ul className="q-chips">
                 {softwareIncludes(lines).map(i => <li key={i}>{i}</li>)}
               </ul>
+              {gate.softwareReady && (
+                <ComplexityAxis axis="software" label="Software" result={baseline.software} multiplier={swMultiplier} />
+              )}
             </>
           } />
 
         <Category num="03" name="Professional services" amount={fleetTotal.integrationTotal}
-          tier={baseline.integration.tier} withheld={!gate.integrationReady} detail={
+          tier={baseline.integration.tier} withheld={!gate.integrationReady}
+          share={shareOfTotal(gate.integrationReady ? fleetTotal.integrationTotal : 0, quoteTotal)} detail={
             <>
               <p className="q-detail-note">
                 Charged once per fleet-manager platform, not per vehicle. Covers:
@@ -223,13 +251,17 @@ export default function RomQuotation({
               <ul className="q-chips">
                 {PROFESSIONAL_SERVICES_INCLUDES.map(i => <li key={i}>{i}</li>)}
               </ul>
+              {gate.integrationReady && (
+                <ComplexityAxis axis="integration" label="Professional services" result={baseline.integration} multiplier={intMultiplier} />
+              )}
             </>
           } />
 
         {/* Adders used to live in TWO places — a $0 row here pointing at
             "options below", and a checkbox grid in a second card. Ticking a box
             now moves the subtotal directly above it. */}
-        <Category num="04" name="Adders" elective amount={fleetTotal.addersTotal} detail={
+        <Category num="04" name="Adders" elective amount={fleetTotal.addersTotal}
+          share={shareOfTotal(fleetTotal.addersTotal, quoteTotal)} detail={
             <ul className="q-adders">
               {ADDERS_CONFIG.adders.map(a => (
                 <li key={a.id}>

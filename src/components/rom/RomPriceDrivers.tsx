@@ -3,20 +3,21 @@
 import { useState } from 'react'
 import type { FleetComplexityBaseline, RomSellPriceLine, RomSellPriceOverride } from '@/src/lib/romSellPriceLine'
 import { tierName } from '@/src/lib/romComplexityLabels'
-import { PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
 import ScrollSection from '@/src/components/ScrollSection'
-import ComplexityAxis from './ComplexityAxis'
 
 interface Props {
   baseline: FleetComplexityBaseline
   lines: RomSellPriceLine[]
   overrides: Record<string, RomSellPriceOverride | undefined>
   onOverride: (vehicleId: string, patch: Partial<RomSellPriceOverride>) => void
-  blocked: boolean
 }
 
-/** What MOVES the total above: the complexity score and the per-vehicle tier
- *  overrides that can change it.
+/** Per-vehicle tier overrides — the authority to say the score is wrong for a
+ *  particular chassis.
+ *
+ *  The complexity SCORING moved out 2026-10-09, into the disclosure of each
+ *  section it multiplies. It had sat here, a full ledger's height from the tier
+ *  chips it explains, in a card 23% the size of the one above it.
  *
  *  Rebuilt 2026-10-09. This used to be "Options & adjustments", which mixed two
  *  unlike things — warranty checkboxes (money you add) beside tier overrides
@@ -27,11 +28,9 @@ interface Props {
  *
  *  A vehicle only diverges from the fleet baseline when its own floor raises it
  *  or an engineer overrides it; those cases are called out by name. */
-export default function RomPriceDrivers({ baseline, lines, overrides, onOverride, blocked }: Props) {
+export default function RomPriceDrivers({ baseline, lines, overrides, onOverride }: Props) {
   const [openAdjust, setOpenAdjust] = useState(false)
 
-  const intMultiplier = PRICING_ASSUMPTIONS.integrationMultipliers[String(baseline.integration.tier) as '1' | '2' | '3']
-  const swMultiplier = PRICING_ASSUMPTIONS.softwareMultipliers[String(baseline.software.tier) as '1' | '2' | '3']
 
   const diverged = lines.filter(
     l => l.integrationResult.tier !== baseline.integration.tier
@@ -42,26 +41,9 @@ export default function RomPriceDrivers({ baseline, lines, overrides, onOverride
     <ScrollSection
       id="rom-drivers"
       num="02"
-      title="Price drivers"
-      // Showing tiers in the header while the body says scoring is withheld
-      // was two different stories about the same blanks.
-      sub={blocked
-        ? 'Scoring withheld until the complexity inputs are answered'
-        : `Professional services ${baseline.integration.tier} of 3 · Software ${baseline.software.tier} of 3`}
+      title="Adjustments"
+      sub="Override a vehicle's tier when the score does not reflect the job"
     >
-      {blocked ? (
-        <p className="q-detail-note">
-          Scoring is withheld while pricing is blocked — an unanswered input scores as
-          &ldquo;simple&rdquo;, so the tiers would read lower than the job really is. Answer the
-          missing inputs on Step 1 and the scoring appears here.
-        </p>
-      ) : (
-        <div className="q-axes">
-          <ComplexityAxis axis="integration" label="Professional services" result={baseline.integration} multiplier={intMultiplier} />
-          <ComplexityAxis axis="software" label="Software" result={baseline.software} multiplier={swMultiplier} />
-        </div>
-      )}
-
       {diverged.length > 0 && (
         <p className="q-diverged">
           {diverged.map(l => {
