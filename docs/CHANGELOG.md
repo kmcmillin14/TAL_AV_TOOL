@@ -23,6 +23,14 @@ checked against it. Severity takes the strictest any vehicle reports, since
 spec. Two tests pin it — Pallet Entry must show while only some chassis declare
 compatibility, and the result must not depend on fleet order.
 
+**The severity colours came back off the tags.** Red/amber/green are the vehicle
+STATUS language in this app — they say how a vehicle *did*. This row only states
+what is being *checked*, and colouring it in the same hues made a list of
+requirements read as a list of failures. Hard vs soft lives in the tooltip,
+where it is a detail rather than an alarm; the verdict stays on the vehicle
+cards, which already carry it. Severity is still computed and still correct —
+it just no longer shouts.
+
 ## 2026-10-10 — Active Requirements fits one line, always
 
 Nine live gates ran to **1,870px of content in a 1,536px row** and wrapped to

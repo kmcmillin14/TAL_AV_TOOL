@@ -1032,12 +1032,13 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .req-tag.muted { color: var(--text-tertiary); border: none; background: none; padding: 0; }
 
-/* Severity, said by a left edge rather than a fill — the previous aisle tag was
-   a solid red block, which read as "this vehicle FAILED" on a row that is only
-   stating what is being checked. Hard = RED if it fails · soft = YELLOW. */
-.req-tag.is-hard { box-shadow: inset 2px 0 0 var(--accent); }
-.req-tag.is-soft { box-shadow: inset 2px 0 0 var(--warn); }
-.req-tag.is-info { box-shadow: inset 2px 0 0 var(--border-strong); color: var(--text-tertiary); }
+/* NO severity colour. Red/amber/green are the vehicle STATUS language in this
+   app — they say how a vehicle did. This row only states what is being
+   CHECKED, and colouring it in the same hues made a list of requirements read
+   as a list of failures. Hard vs soft lives in the tooltip, where it is a
+   detail rather than an alarm; the verdict belongs on the vehicle cards, which
+   already carry it. */
+.req-tag.is-info { color: var(--text-tertiary); }
 .req-info {
   color: var(--text-tertiary);
   font-family: var(--tal-font-numeric); font-size: 9px; font-weight: 700;
