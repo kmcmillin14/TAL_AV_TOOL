@@ -55,67 +55,63 @@ interface Props {
   gate: PricingGate
 }
 
-/** One category of the breakdown: a header band carrying name · tier · amount,
- *  with its detail beneath. Every category is this ONE shape — the four used to
- *  carry four different internal layouts (sub-lines / nothing / a chip list /
- *  an italic note), which is most of what made the card read as clutter.
+/** One section of the ledger.
+ *
+ *  Four near-identical bordered blocks with grey header bands was the problem:
+ *  the repetition WAS the monotony — nothing said which section you were in,
+ *  how far down the document you were, or carried the eye from a name across to
+ *  its money. Three devices replace the card chrome:
+ *
+ *  1. a NUMBERED SPINE in the left gutter — one continuous hairline with four
+ *     nodes, so the sections read as one document and you always know where you
+ *     are. It echoes the `01.` numbering ScrollSection already gives the page;
+ *  2. a LEADER RULE from the name across to the amount, the device every
+ *     printed quotation uses to carry an eye over a gap;
+ *  3. WEIGHT, not colour, for role — Adders is elective and says so with a
+ *     dashed leader and dimmer type, before you read a word of it.
  *
  *  Open state is LOCAL, initialised open. It was derived from a prop, which
  *  made the Adders row slam shut the moment you ticked an adder: the prop
  *  flipped, React re-applied `open={false}`, and the list you were using
  *  collapsed under the cursor. */
 function Category(
-  { name, amount, tier, withheld, detail }:
-  { name: string; amount: number; tier?: number; withheld?: boolean; detail?: ReactNode },
+  { num, name, amount, tier, withheld, elective, detail }:
+  {
+    num: string; name: string; amount: number; tier?: number
+    withheld?: boolean; elective?: boolean; detail?: ReactNode
+  },
 ) {
   const [open, setOpen] = useState(true)
-  // A withheld category still reads as a money row — $0, in line with the
+  // A withheld section still reads as a money row — $0, in line with the
   // others — so the column stays scannable. WHY it is zero is stated once, in
   // the status line above the section, not repeated on every row.
   const head = (
     <>
-      <span className="q-cat-name">{name}</span>
+      <span className="q-sec-num mono" aria-hidden="true">{num}</span>
+      <span className="q-sec-name">{name}</span>
       {tier != null && !withheld && (
-        <span className="q-cat-tier" title={`Complexity tier ${tier} of 3 — the multiplier applied to this category`}>
+        <span className="q-sec-tier" title={`Complexity tier ${tier} of 3 — the multiplier applied to this section`}>
           {tier} of 3
         </span>
       )}
-      <span className="q-cat-amount mono">{fullUsd(withheld ? 0 : amount)}</span>
+      <span className="q-sec-rule" aria-hidden="true" />
+      <span className="q-sec-amount mono">{fullUsd(withheld ? 0 : amount)}</span>
+      {detail && <Icon name="chevron" size={12} />}
     </>
   )
-  if (!detail) {
-    return (
-      <section className={`q-cat${withheld ? ' is-withheld' : ''}`}>
-        <div className="q-cat-head">{head}</div>
-      </section>
-    )
-  }
+  const cls = `q-sec${withheld ? ' is-withheld' : ''}${elective ? ' is-elective' : ''}`
+    + `${elective && amount > 0 ? ' has-picks' : ''}${open ? ' is-open' : ''}`
+  if (!detail) return <section className={cls}><div className="q-sec-head">{head}</div></section>
   return (
-    <section className={`q-cat is-expandable${withheld ? ' is-withheld' : ''}${open ? ' is-open' : ''}`}>
-      <button type="button" className="q-cat-head" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+    <section className={`${cls} is-expandable`}>
+      <button type="button" className="q-sec-head" onClick={() => setOpen(o => !o)} aria-expanded={open}>
         {head}
-        <Icon name="chevron" size={13} />
       </button>
-      {open && <div className="q-cat-body">{detail}</div>}
+      {open && <div className="q-sec-body">{detail}</div>}
     </section>
   )
 }
 
-/** ROM Configuration (Step 4) — the fleet's sell price.
- *
- *  Rebuilt 2026-10-09 against the rest of the app: it uses the shared
- *  `ScrollSection` that Steps 1 and 3 use, instead of the bespoke card it had
- *  invented. The layout now LEADS with the total — it used to sit 762px down,
- *  below four categories and a disclosure, styled identically to a category
- *  subtotal — and the three separate "this might be incomplete" messages
- *  (placeholder banner, blocked warning, confidence strip) are one status line
- *  attached to the figure people actually screenshot.
- *
- *  Every figure comes from the shared resolver (src/lib/romSellPriceLine.ts)
- *  that the Dashboard (via src/lib/fleetModel.ts) and the PPTX appendix also
- *  call, so the three surfaces can't drift. Adders are a project-wide,
- *  once-only cost and professional services is charged once per fleet-manager
- *  platform — both handled in src/calc/fleetSellPrice.ts, never per vehicle. */
 /** The one "is this number trustworthy" line. Rendered ABOVE section 01 by
  *  RomFleetSellPrice, not inside it: sitting between the total and the
  *  breakdown it read as a row OF the breakdown. Three states — Not priced /
@@ -197,7 +193,7 @@ export default function RomQuotation({
 
       {/* ── the breakdown, four rows of one shape ── */}
       <div className="q-breakdown">
-        <Category name="Hardware" amount={fleetTotal.hardwareTotal} detail={
+        <Category num="01" name="Hardware" amount={fleetTotal.hardwareTotal} detail={
           <ul className="q-lines">
             {lines.map(l => (
               <li key={l.vehicleId}>
@@ -208,7 +204,7 @@ export default function RomQuotation({
           </ul>
         } />
 
-        <Category name="Software" amount={fleetTotal.softwareTotal}
+        <Category num="02" name="Software" amount={fleetTotal.softwareTotal}
           tier={baseline.software.tier} withheld={!gate.softwareReady} detail={
             <>
               <p className="q-detail-note">Fleet-management software licensed with the project:</p>
@@ -218,7 +214,7 @@ export default function RomQuotation({
             </>
           } />
 
-        <Category name="Professional services" amount={fleetTotal.integrationTotal}
+        <Category num="03" name="Professional services" amount={fleetTotal.integrationTotal}
           tier={baseline.integration.tier} withheld={!gate.integrationReady} detail={
             <>
               <p className="q-detail-note">
@@ -233,7 +229,7 @@ export default function RomQuotation({
         {/* Adders used to live in TWO places — a $0 row here pointing at
             "options below", and a checkbox grid in a second card. Ticking a box
             now moves the subtotal directly above it. */}
-        <Category name="Adders" amount={fleetTotal.addersTotal} detail={
+        <Category num="04" name="Adders" elective amount={fleetTotal.addersTotal} detail={
             <ul className="q-adders">
               {ADDERS_CONFIG.adders.map(a => (
                 <li key={a.id}>

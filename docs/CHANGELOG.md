@@ -1,5 +1,35 @@
 # Changelog
 
+## 2026-10-09 — Step 4 investment summary reads as one ledger
+
+The four sections were near-identical bordered blocks with grey header bands,
+and **the repetition was the monotony**: nothing said which section you were in,
+how far down the document you were, or carried the eye from a name across to its
+money. Three devices replace the card chrome.
+
+**A numbered spine.** `01 02 03 04` in the left gutter on one continuous
+hairline, so four sections read as one document. It echoes the `01.` numbering
+`ScrollSection` already gives the page, so it is native rather than imported.
+The spine was first drawn in `--border`, which is ~1.1:1 on the surface —
+invisible, failing the one job it has; it matches the leader rules now so spine
+and leaders read as a single drawing weight.
+
+**Leader rules.** A dotted hairline runs from each section name across to its
+amount — the device a printed quotation uses to carry an eye over a gap.
+Dotted for committed money, **dashed for elective**, so the rule itself says
+what kind of section it is.
+
+**Weight, not colour, for role.** Adders is elective and reads that way before
+you get to a word of it: grey spine number, dashed leader, dimmed `$0`. It picks
+up full-strength type the moment something is actually ticked.
+
+Also: the "covers" lists under Software and Professional services were pills,
+which read as interactive when none of them are. They are now a tracked inline
+list separated by middots.
+
+Red appears exactly twice — the spine numbers and the grand total. No new
+tokens, no new colours, both themes on the existing variables.
+
 ## 2026-10-09 — T-Hive and T-One unified; T-One ties to BlueBotics, not the chassis
 
 **One name.** T-Hive and T-One are the same product. The app carried both — the

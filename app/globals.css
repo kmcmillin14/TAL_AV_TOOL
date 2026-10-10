@@ -4016,73 +4016,129 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .q-status.is-blocked { color: var(--bad); background: var(--bad-soft); border-color: transparent; }
 .q-status.is-blocked svg, .q-status.is-blocked strong { color: var(--bad); }
 
-/* The breakdown — four CATEGORIES of one shape, each its own bounded block.
-   They were flat rows separated by hairlines, which read as a single list; as
-   blocks with their own header band they read as four things. All start open —
-   the step is a worksheet, not a summary, so nothing hides by default. */
-.q-breakdown { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
-.q-cat {
-  border: 1px solid var(--border); border-radius: 10px;
-  background: var(--bg-surface); overflow: hidden;
+/* The investment ledger — four numbered sections on one continuous spine.
+   They were four bordered blocks with grey header bands, and the repetition was
+   the monotony: nothing said which section you were in, how far down you were,
+   or carried the eye from a name across to its money.
+
+   Three devices replace the card chrome: a NUMBERED SPINE in the left gutter
+   (one hairline, four nodes — the sections read as one document); a LEADER RULE
+   from each name across to its amount, as a printed quotation does; and WEIGHT
+   rather than colour for role, so Adders reads as elective before you read it.
+
+   ONE accent: red on the spine numbers and the grand total. Nothing else. */
+.q-breakdown {
+  position: relative;
+  margin-top: 6px;
+  padding-left: 38px;
 }
-.q-cat-head {
-  display: flex; align-items: center; gap: 10px; width: 100%;
-  padding: 12px 16px; margin: 0; text-align: left;
-  background: var(--bg-surface-2); border: none;
-  border-bottom: 1px solid transparent;
-  font: inherit; color: inherit;
+/* The spine. Inset top and bottom so it starts and ends ON the first and last
+   node rather than floating past them. */
+.q-breakdown::before {
+  content: '';
+  position: absolute; left: 13px; top: 10px; bottom: 14px; width: 1px;
+  /* --border is ~1.1:1 on the surface — invisible, which fails the one job this
+     line has. Matched to the leader rules so spine and leaders read as one
+     drawing weight. */
+  background: var(--border-strong);
 }
-.q-cat.is-open .q-cat-head { border-bottom-color: var(--border); }
-button.q-cat-head { cursor: pointer; }
-button.q-cat-head:hover { background: var(--bg-hover); }
-button.q-cat-head:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
-.q-cat-name {
+
+.q-sec { position: relative; padding-bottom: 26px; }
+.q-sec:last-child { padding-bottom: 0; }
+
+.q-sec-head {
+  display: flex; align-items: baseline; gap: 10px; width: 100%;
+  padding: 0; margin: 0; text-align: left;
+  background: none; border: none; font: inherit; color: inherit;
+}
+button.q-sec-head { cursor: pointer; }
+
+/* A node ON the spine: the number sits in the gutter over a surface-coloured
+   pad, so the hairline appears to pass behind it. */
+.q-sec-num {
+  position: absolute; left: -38px; top: -2px;
+  width: 27px; padding: 3px 0; text-align: center;
+  background: var(--bg-surface);
+  font-size: 10.5px; font-weight: 700; letter-spacing: 0.02em;
+  color: var(--accent); font-variant-numeric: tabular-nums;
+}
+.q-sec.is-elective .q-sec-num { color: var(--text-tertiary); }
+
+.q-sec-name {
   font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
-  letter-spacing: 0.09em; text-transform: uppercase; color: var(--text-secondary);
-}
-.q-cat-tier {
-  font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-tertiary);
+  letter-spacing: 0.16em; text-transform: uppercase; color: var(--text-primary);
   white-space: nowrap;
 }
-.q-cat-amount {
-  margin-left: auto;
-  font-size: 16px; font-weight: 700; color: var(--text-primary);
-  font-variant-numeric: tabular-nums;
+.q-sec.is-elective .q-sec-name { color: var(--text-secondary); }
+.q-sec-tier {
+  font-family: var(--tal-font-family); font-size: 11.5px;
+  color: var(--text-tertiary); white-space: nowrap;
 }
-.q-cat.is-withheld .q-cat-amount { color: var(--text-disabled); }
-.q-cat-head > svg { color: var(--text-disabled); transition: transform 0.15s ease; flex-shrink: 0; }
-.q-cat.is-open .q-cat-head > svg { transform: rotate(90deg); }
-.q-cat-body { padding: 14px 16px 16px; }
 
-.q-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
-.q-lines li { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; font-size: 13px; color: var(--text-secondary); }
+/* The leader. Dotted for committed money, dashed for elective — the rule
+   itself says which kind of section this is. */
+.q-sec-rule {
+  flex: 1 1 auto; min-width: 16px;
+  border-bottom: 1px dotted var(--border-strong);
+  transform: translateY(-4px);
+}
+.q-sec.is-elective .q-sec-rule { border-bottom-style: dashed; border-bottom-color: var(--border); }
+
+.q-sec-amount {
+  font-size: 17px; font-weight: 700; color: var(--text-primary);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.q-sec.is-withheld .q-sec-amount,
+.q-sec.is-elective .q-sec-amount { color: var(--text-disabled); }
+.q-sec.is-elective.has-picks .q-sec-amount { color: var(--text-primary); }
+
+.q-sec-head > svg { color: var(--text-disabled); transition: transform 0.15s ease; flex-shrink: 0; }
+.q-sec.is-open .q-sec-head > svg { transform: rotate(90deg); }
+button.q-sec-head:hover .q-sec-name { color: var(--accent); }
+button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+
+.q-sec-body { padding-top: 10px; }
+
+/* Priced items — tabular, right-aligned on one edge all the way down. */
+.q-lines { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.q-lines li {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  padding: 6px 0; font-size: 13.5px; color: var(--text-secondary);
+}
 .q-lines .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); }
 .q-qty { font-size: 11.5px; color: var(--text-tertiary); }
 
-.q-detail-note { margin: 0 0 9px; font-size: 12.5px; color: var(--text-tertiary); line-height: 1.5; }
-.q-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
-.q-chips li {
-  font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-secondary);
-  background: var(--bg-surface-2); border: 1px solid var(--border);
-  border-radius: 999px; padding: 3px 10px;
+.q-detail-note { margin: 0 0 8px; font-size: 12.5px; color: var(--text-tertiary); line-height: 1.5; }
+
+/* What a section covers, as a tracked inline list rather than pills — pills
+   read as interactive, and none of these are. */
+.q-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
+.q-chips li { font-size: 12px; color: var(--text-secondary); }
+.q-chips li + li::before {
+  content: '·'; margin: 0 8px; color: var(--text-disabled);
 }
 
-/* Adders are ticked where their subtotal lives. They used to be a $0 row here
-   pointing at "options below", plus a checkbox grid in a second card. */
 .q-adders {
   list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px 18px;
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px;
 }
 @media (max-width: 1100px) { .q-adders { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 680px)  { .q-adders { grid-template-columns: 1fr; } }
 .q-adders label {
-  display: flex; align-items: center; gap: 9px; padding: 7px 8px; border-radius: 7px;
+  display: flex; align-items: center; gap: 9px; padding: 6px 0;
   font-size: 13px; color: var(--text-secondary); cursor: pointer;
 }
-.q-adders label:hover { background: var(--bg-hover); }
+.q-adders label:hover { color: var(--text-primary); }
 .q-adders label span:first-of-type { flex: 1 1 auto; min-width: 0; }
 .q-adders label .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); font-size: 12.5px; }
 .q-adders input { accent-color: var(--accent); cursor: pointer; }
+
+@media (max-width: 560px) {
+  .q-breakdown { padding-left: 30px; }
+  .q-breakdown::before { left: 9px; }
+  .q-sec-num { left: -30px; width: 21px; }
+  .q-sec-name { letter-spacing: 0.1em; }
+}
 
 /* Price drivers (section 02) */
 .q-axes { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
