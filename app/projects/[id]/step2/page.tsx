@@ -12,6 +12,27 @@ import Icon from '@/src/design-system/components/Icon'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
 import { qualifyVehicle } from '@/src/calc/trafficLight'
 import { activeRequirements } from '@/src/calc/gates'
+
+/** Short labels for the Active Requirements strip. The gate NAMES are written
+ *  for the compatibility matrix, where there is room — "Operating Environment"
+ *  alone was a 104px tag. With nine gates live the strip ran to 1,870px of
+ *  content in a 1,536px row and wrapped to two lines.
+ *
+ *  Keyed by gate id with a fallback to the full name, so a gate added later
+ *  degrades to its long label rather than disappearing. `reqShortNames.test.ts`
+ *  asserts every gate currently in the registry has an entry. */
+const REQ_SHORT: Record<string, string> = {
+  weight: 'Weight',
+  payload_type: 'Payload',
+  transfer_method: 'Transfer',
+  lift_height: 'Lift',
+  outdoor: 'Env',
+  temperature_env: 'Temp',
+  ramp: 'Ramp',
+  pallet_entry: 'Pallet',
+  pallet_stacking: 'Stacking',
+  certifications: 'Certs',
+}
 import type { ApplicationRequirements } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
@@ -248,20 +269,22 @@ export default function Step2Page() {
           </span>
           {activeReqs.map(r => (
             <span key={r.id} className={`req-tag is-${r.severity}`}
-              title={`${r.name} — ${r.severity === 'hard' ? 'hard gate: a vehicle that fails this is RED' : 'soft gate: a vehicle that fails this is YELLOW'}`}>
-              {r.name}: <strong>{r.value}</strong>
+              title={`${r.name}: ${r.value} — ${r.severity === 'hard' ? 'hard gate: a vehicle that fails this is RED' : 'soft gate: a vehicle that fails this is YELLOW'}`}>
+              <span className="req-k">{REQ_SHORT[r.id] ?? r.name}</span>
+              <strong>{r.value}</strong>
             </span>
           ))}
           {/* Aisle width is informational, never a gate (ARCHITECTURE.md §3).
               It used to sit in this row looking like one. */}
           {(project.minAisleWidthFt ?? 0) > 0 && (
-            <span className="req-tag is-info">
-              Aisle: <strong>
+            <span className="req-tag is-info" title="Aisle width is informational — it is not a gate and never changes a vehicle's status">
+              <span className="req-k">Aisle</span>
+              <strong>
                 {unitSystem === 'metric'
                   ? `${((project.minAisleWidthFt ?? 0) * 0.3048).toFixed(1)} m`
                   : `${project.minAisleWidthFt} ft`}
               </strong>
-              <span className="req-info">info only</span>
+              <span className="req-info">info</span>
             </span>
           )}
           {!hasRequirements && (

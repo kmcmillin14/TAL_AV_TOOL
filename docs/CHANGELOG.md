@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-10-10 — Active Requirements fits one line, always
+
+Nine live gates ran to **1,870px of content in a 1,536px row** and wrapped to
+two lines (92px tall). Three changes, measured after: **one row, 47px.**
+
+**The gate name is demoted to a prefix.** It sat at the same size and weight as
+its value, so `Operating Environment: Indoor` spent most of a 104px tag on the
+label. Names shorten against a map keyed by gate id — Weight · Payload ·
+Transfer · Lift · Env · Temp · Ramp · Pallet · Stacking · Certs — and render at
+9px tracked uppercase in tertiary, so the VALUE is what gets scanned. The map
+falls back to the full gate name, so a gate added later degrades rather than
+disappearing; a test asserts none currently relies on that fallback.
+
+**`nowrap` + `overflow-x` is the guarantee.** Short labels keep it from needing
+to scroll on a normal desktop, but the row can no longer take a second line
+whatever fires. Verified at the worst case — eleven tags, one more than the real
+maximum: still one row, 47px, scrolling.
+
+**The mobile rule no longer centres it.** `justify-content: center` on an
+overflowing flex row makes the leading items unreachable by scrolling; the strip
+is now `flex-start` under the phone breakpoint. Verified at 375px.
+
 ## 2026-10-09 — Step 4 ledger refinement (plan 2026-10-09, Tasks 2–6)
 
 Four of the five defects the plan measured. **No quoted figure moves** — every

@@ -371,7 +371,10 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   .page-title h1, .page-title .desc, .page-title .step-num { text-align: center; }
   .engine-head, .eh-text { text-align: center; }
   .page-title .desc { margin-left: auto; margin-right: auto; }
-  .status-pills, .req-summary { justify-content: center; }
+  .status-pills { justify-content: center; }
+  /* NOT centered: the requirements strip is nowrap + overflow-x, and centering
+     an overflowing flex row makes the first items unreachable by scrolling. */
+  .req-summary { justify-content: flex-start; padding-left: 16px; padding-right: 16px; }
   /* The page-header's absolutely-pinned action row (save/units chip) returns to
      normal flow, centered under the title, so it doesn't overlap on a phone. */
   .page-header > .row { position: static; justify-content: center; }
@@ -994,22 +997,39 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* ============================================ VEHICLE GRID ============================================ */
 
 /* Requirements summary bar */
+/* ONE LINE, always. Nine live gates ran to 1,870px of content in a 1,536px
+   row and wrapped; the worst case (all ten, aisle included) is worse still.
+   `nowrap` + `overflow-x` is the guarantee — short labels below keep it from
+   actually needing to scroll on a normal desktop. */
 .req-summary {
-  display: flex; align-items: center; gap: 14px; padding: 12px 40px;
+  display: flex; align-items: center; gap: 8px; padding: 10px 40px;
   background: var(--bg-surface-2); border-bottom: 1px solid var(--border);
-  flex-wrap: wrap; min-height: 44px;
+  flex-wrap: nowrap; overflow-x: auto; min-height: 42px;
+  scrollbar-width: thin;
 }
+.req-summary > * { flex: 0 0 auto; }
 .req-summary-label {
   font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
   display: flex; align-items: center; gap: 6px; margin-right: 4px;
 }
 .req-tag {
-  font-size: 13px; color: var(--text-secondary);
-  padding: 3px 10px; background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: 4px;
+  display: inline-flex; align-items: baseline; gap: 6px;
+  font-size: 12.5px; color: var(--text-secondary);
+  padding: 3px 9px; background: var(--bg-surface); border: 1px solid var(--border);
+  border-radius: 4px; white-space: nowrap;
 }
-.req-tag strong { color: var(--text-primary); font-weight: 600; }
+/* The gate name, demoted. It used to sit at the same size and weight as its
+   value, so "Operating Environment: Indoor" spent most of its width on the
+   label. Small, tracked and tertiary — the VALUE is what gets scanned. */
+.req-k {
+  font-family: var(--tal-font-numeric); font-size: 9px; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
+}
+.req-tag strong {
+  color: var(--text-primary); font-weight: 600;
+  max-width: 190px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .req-tag.muted { color: var(--text-tertiary); border: none; background: none; padding: 0; }
 
 /* Severity, said by a left edge rather than a fill — the previous aisle tag was
@@ -1019,8 +1039,8 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .req-tag.is-soft { box-shadow: inset 2px 0 0 var(--warn); }
 .req-tag.is-info { box-shadow: inset 2px 0 0 var(--border-strong); color: var(--text-tertiary); }
 .req-info {
-  color: var(--text-tertiary); margin-left: 6px;
-  font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700;
+  color: var(--text-tertiary);
+  font-family: var(--tal-font-numeric); font-size: 9px; font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase;
 }
 /* How many gates are live — the strip never said, so there was no way to tell
