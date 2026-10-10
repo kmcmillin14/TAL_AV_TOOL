@@ -1,5 +1,44 @@
 # Changelog
 
+## 2026-10-09 — Step 2 "Active Requirements" now shows what is actually gating
+
+The strip named **four hand-picked fields** — Transfer, Pattern, Load, Aisle.
+Audited against the nine gates in `src/calc/gates.ts`, that list was wrong three
+ways:
+
+- **It missed almost everything.** Of the nine gates it showed one: Weight. Every
+  other hard gate — payload type, transfer method, lift height, outdoor,
+  temperature — and every soft gate — ramp, pallet entry, pallet stacking,
+  certifications — was invisible.
+- **It advertised a non-gate.** Aisle width is informational by architecture
+  rule, and sat in the row styled like a requirement.
+- **Its Transfer tag was dead.** It read the legacy `transferMethod`, which the
+  Step 1 form stopped writing when `transferType` replaced it — so on every
+  current project the tag silently never rendered *while the transfer gate was
+  live*. The sample project showed 2 tags where 8 requirements were being
+  checked.
+
+**It now derives from the gate registry itself** (`activeRequirements` in
+`src/calc/gates.ts`). A gate skips when its requirement is absent and that
+decision is vehicle-independent, so running GATES against any one vehicle yields
+exactly the live set — the strip cannot drift from the gates again. A test
+asserts every gate in the registry is reachable.
+
+Each tag carries its gate's name, its required value, and a left edge in the
+severity's colour (red = RED if it fails, amber = YELLOW), with the count beside
+the label so a short list is distinguishable from a truncated one. Aisle stays,
+marked **INFO ONLY** on a neutral edge — it was previously a solid red block,
+which read as a failure on a row that only states what is being checked.
+
+## 2026-10-09 — Step 3: Import flows moves beside + Group
+
+The trigger sat on its own row below the flows header while `+ Group` sat in the
+header's actions. Both are "add flows to this table", so both now live in the
+actions row. The paste panel still renders full-width below the header — open
+state moved to `FlowsTable` so the trigger and the panel can sit in different
+places; rendering both from one component would have put the paste area inside a
+flex row of buttons.
+
 ## 2026-10-09 — Step 4 investment summary reads as one ledger
 
 The four sections were near-identical bordered blocks with grey header bands,

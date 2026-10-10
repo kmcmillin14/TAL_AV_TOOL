@@ -87,6 +87,8 @@ export default function FlowsTable({
   const metric = unitSystem === 'metric'
   const narrow = useIsNarrow()
   const [focusGroup, setFocusGroup] = useState<string | null>(null)
+  // Trigger lives in the header actions beside "+ Group"; the panel renders below it.
+  const [importOpen, setImportOpen] = useState(false)
 
   // ---- Fit-to-width: scale the fixed-width table down so the whole thing
   // (incl. full AGV names) fits, instead of horizontal scroll. `zoom` keeps it
@@ -343,13 +345,19 @@ export default function FlowsTable({
           )}
         </span>
         <div className="flows-actions">
+          <button
+            type="button" className="btn ghost"
+            onClick={() => setImportOpen(o => !o)} aria-expanded={importOpen}
+          >
+            <Icon name="download" size={13} /> Import flows
+          </button>
           <button type="button" className="btn ghost" onClick={addGroup}>
             <Icon name="plus" size={13} /> Group
           </button>
         </div>
       </div>
 
-      <FlowImportPanel onAdd={addImported} />
+      <FlowImportPanel onAdd={addImported} open={importOpen} onClose={() => setImportOpen(false)} />
 
       {flows.length === 0 && !hasGroups ? (
         <div className="flows-empty">

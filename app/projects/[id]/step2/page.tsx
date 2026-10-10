@@ -11,6 +11,7 @@ import ComparisonModal from '@/src/components/step2/ComparisonModal'
 import Icon from '@/src/design-system/components/Icon'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
 import { qualifyVehicle } from '@/src/calc/trafficLight'
+import { activeRequirements } from '@/src/calc/gates'
 import type { ApplicationRequirements } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
@@ -151,6 +152,17 @@ export default function Step2Page() {
   const filterKey = `${statusFilter}|${search}|${categoryFilter}|${manufacturerFilter}`
 
   // Comparison set — preserve selection order; drop ids no longer in the library.
+  /** What is ACTUALLY gating, derived from the gate registry rather than a
+   *  hand-picked list. The old strip named four fields and was wrong three
+   *  ways — it missed every hard gate but Weight and every soft gate, it
+   *  advertised Aisle (explicitly not a gate), and its Transfer tag read the
+   *  legacy `transferMethod` the Step 1 form stopped writing, so it never
+   *  rendered on a current project while the gate was live. */
+  const activeReqs = useMemo(
+    () => (vehicles.length > 0 ? activeRequirements(appReq, vehicles[0]) : []),
+    [appReq, vehicles],
+  )
+
   const compareEntries = useMemo(
     () => compareIds
       .map(id => qualifiedVehicles.find(qv => qv.vehicle.id === id))
@@ -188,7 +200,7 @@ export default function Step2Page() {
     step2Complete: project.step2Complete,
   }
 
-  const hasRequirements = project.transferMethod || (project.maxLoadWeightLbs ?? 0) > 0
+  const hasRequirements = activeReqs.length > 0
 
   return (
     <div className="app-shell">
@@ -227,34 +239,29 @@ export default function Step2Page() {
           </div>
         </div>
 
-        {/* Requirements summary */}
+        {/* Requirements summary — every live gate, derived from GATES so the
+            strip cannot drift from what is actually being checked. */}
         <div className="req-summary">
           <span className="req-summary-label">
             <Icon name="info" size={12} /> Active Requirements
+            {activeReqs.length > 0 && <span className="req-count mono">{activeReqs.length}</span>}
           </span>
-          {project.transferMethod && (
-            <span className="req-tag">Transfer: <strong>{project.transferMethod}</strong></span>
-          )}
-          {project.deliveryPattern && (
-            <span className="req-tag">Pattern: <strong>{project.deliveryPattern}</strong></span>
-          )}
-          {(project.maxLoadWeightLbs ?? 0) > 0 && (
-            <span className="req-tag">
-              Load: <strong>
-                {unitSystem === 'metric'
-                  ? `${((project.maxLoadWeightLbs ?? 0) * 0.453592).toFixed(0)} kg`
-                  : `${(project.maxLoadWeightLbs ?? 0).toLocaleString()} lbs`}
-              </strong>
+          {activeReqs.map(r => (
+            <span key={r.id} className={`req-tag is-${r.severity}`}
+              title={`${r.name} — ${r.severity === 'hard' ? 'hard gate: a vehicle that fails this is RED' : 'soft gate: a vehicle that fails this is YELLOW'}`}>
+              {r.name}: <strong>{r.value}</strong>
             </span>
-          )}
+          ))}
+          {/* Aisle width is informational, never a gate (ARCHITECTURE.md §3).
+              It used to sit in this row looking like one. */}
           {(project.minAisleWidthFt ?? 0) > 0 && (
-            <span className="req-tag">
+            <span className="req-tag is-info">
               Aisle: <strong>
                 {unitSystem === 'metric'
                   ? `${((project.minAisleWidthFt ?? 0) * 0.3048).toFixed(1)} m`
                   : `${project.minAisleWidthFt} ft`}
               </strong>
-              <span className="req-info">(info only)</span>
+              <span className="req-info">info only</span>
             </span>
           )}
           {!hasRequirements && (

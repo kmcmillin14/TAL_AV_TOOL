@@ -1,11 +1,16 @@
 'use client'
 
 import { useMemo, useRef, useState } from 'react'
-import Icon from '@/src/design-system/components/Icon'
 import { parseFlowImport, type ParsedFlowRow } from '@/src/lib/flowImport'
 
 interface Props {
   onAdd: (rows: ParsedFlowRow[]) => void
+  /** Open state is OWNED BY THE PARENT (2026-10-09): the trigger button moved
+   *  up into the header's actions row beside "+ Group", while the panel itself
+   *  must still render full-width BELOW the header. One component rendering
+   *  both would have put the paste area inside a flex row of buttons. */
+  open: boolean
+  onClose: () => void
 }
 
 const PLACEHOLDER =
@@ -13,23 +18,20 @@ const PLACEHOLDER =
 
 /** Inline paste-import panel (no modal — app convention is inline editing).
  *  Pure parsing lives in src/lib/flowImport.ts; this only previews + confirms. */
-export default function FlowImportPanel({ onAdd }: Props) {
-  const [open, setOpen] = useState(false)
+export default function FlowImportPanel({ onAdd, open, onClose }: Props) {
   const [text, setText] = useState('')
   const fileRef = useRef<HTMLInputElement>(null)
   const parsed = useMemo(() => (text.trim() ? parseFlowImport(text) : null), [text])
 
-  const close = () => { setOpen(false); setText('') }
+  const close = () => { setText(''); onClose() }
   const readFile = async (f: File | undefined) => {
     if (!f) return
     setText(await f.text())
   }
 
+  if (!open) return null
   return (
     <>
-      <button type="button" className="btn ghost" onClick={() => setOpen(o => !o)} aria-expanded={open}>
-        <Icon name="download" size={13} /> Import flows
-      </button>
       {open && (
         <div className="flow-import-panel">
           <textarea

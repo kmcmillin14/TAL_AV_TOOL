@@ -481,3 +481,34 @@ export const GATES: readonly GateSpec[] = [
       }
     } },
 ]
+
+/** The requirements that are ACTUALLY GATING this project, derived from the
+ *  gate registry itself rather than from a hand-maintained list.
+ *
+ *  Step 2's "Active Requirements" strip used to name four fields chosen by
+ *  hand: Transfer, Pattern, Load and Aisle. Audited 2026-10-09 against the nine
+ *  gates in GATES, that list was wrong three ways — it missed every hard gate
+ *  except Weight (payload type, transfer method, lift height, outdoor,
+ *  temperature) and every soft one (ramp, pallet entry, pallet stacking,
+ *  certifications); it advertised Aisle, which is explicitly NOT a gate; and
+ *  its Transfer tag read the legacy `transferMethod` field, which the Step 1
+ *  form stopped writing when `transferType` replaced it — so on every current
+ *  project the tag silently never rendered while the gate was live.
+ *
+ *  A gate skips itself when its requirement is absent, and that decision is
+ *  vehicle-independent, so running the registry against any one vehicle yields
+ *  the set of live requirements. Pass the first vehicle in the library.
+ *
+ *  Pure — no React, no I/O. */
+export function activeRequirements(
+  app: ApplicationRequirements,
+  sampleVehicle: Vehicle,
+): Array<{ id: string; name: string; severity: Severity; value: string }> {
+  const out: Array<{ id: string; name: string; severity: Severity; value: string }> = []
+  for (const gate of GATES) {
+    const r = gate.run(sampleVehicle, app)
+    if (r.skipped) continue
+    out.push({ id: r.gateId, name: r.name, severity: r.severity, value: r.requiredValue })
+  }
+  return out
+}

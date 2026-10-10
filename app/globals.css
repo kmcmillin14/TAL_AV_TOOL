@@ -1011,7 +1011,25 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 }
 .req-tag strong { color: var(--text-primary); font-weight: 600; }
 .req-tag.muted { color: var(--text-tertiary); border: none; background: none; padding: 0; }
-.req-info { color: var(--info); margin-left: 4px; font-size: 11px; }
+
+/* Severity, said by a left edge rather than a fill — the previous aisle tag was
+   a solid red block, which read as "this vehicle FAILED" on a row that is only
+   stating what is being checked. Hard = RED if it fails · soft = YELLOW. */
+.req-tag.is-hard { box-shadow: inset 2px 0 0 var(--accent); }
+.req-tag.is-soft { box-shadow: inset 2px 0 0 var(--warn); }
+.req-tag.is-info { box-shadow: inset 2px 0 0 var(--border-strong); color: var(--text-tertiary); }
+.req-info {
+  color: var(--text-tertiary); margin-left: 6px;
+  font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+/* How many gates are live — the strip never said, so there was no way to tell
+   a short list from a truncated one. */
+.req-count {
+  color: var(--text-secondary); background: var(--bg-surface);
+  border: 1px solid var(--border); border-radius: 3px;
+  padding: 0 5px; font-size: 10px; letter-spacing: 0;
+}
 
 /* Status pills row */
 .status-pills { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
