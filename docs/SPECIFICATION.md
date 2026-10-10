@@ -797,14 +797,36 @@ hurts (per-metric desirable direction). Below, a **gauge strip** (`RomGauge`, SV
 a hover definition): Utilization · Availability · Charging · **Redundancy** (the resilience
 metric, renamed) — availability/charging weighted across the fleet from the charging series.
 
-**Step 4 ledger (2026-10-09).** `01 Project investment` leads with the total,
-then four sections on one spine — Hardware · Software · Professional services ·
-Adders — each stating its **share of the quote** (rounded whole; `<1%` rather
-than `0%` for a real but tiny amount; blank for nothing). The complexity point
-tables sit **inside the section they multiply**, not in a separate card. A gated
-section reads **NOT PRICED** rather than a dimmed `$0`. Type runs on a four-step
-scale declared as tokens (`--q-type-hero|figure|body|label`). `02 Adjustments`
-holds the per-vehicle tier overrides only.
+**Step 4 ledger (2026-10-09, refined 2026-10-10).** `01 Project investment`
+leads with the total, then four sections on one spine — Hardware · Software ·
+Professional services · Adders — each stating its **share of the quote**
+(rounded whole; `<1%` rather than `0%` for a real but tiny amount; blank for
+nothing). All four sections render **open**; what shrank is what each one says.
+The complexity point tables sit **inside the section they multiply**, not in a
+separate card. A gated section reads **NOT PRICED** rather than a dimmed `$0`.
+Type runs on a four-step scale declared as tokens
+(`--q-type-hero|figure|body|label`). `02 Adjustments` holds the per-vehicle tier
+overrides only.
+
+Three rules keep the ledger from re-crowding:
+
+- **The complexity SCORE is always visible; the arithmetic is not.** A section's
+  tier renders in its header as a three-segment meter (`TierMeter`, filled to
+  the tier) drawn in type colours — never tinted, since it sits inches from a
+  dollar figure where a red or amber chip reads as a warning about the money.
+  The scale, the driver sentence and the point table live behind a second
+  disclosure inside the section, closed by default (`ComplexityAxis`).
+- **No explanatory sub-prose on a working screen** (CLAUDE.md "explain through
+  structure, not prose"). A section body lists what it covers and nothing else;
+  the sentences that used to introduce those lists are gone, and the reasoning
+  behind the pricing status moved to that row's tooltip. `RomPricingStatus` is
+  **one line in every state** and still names the state, the confirmed/total
+  count and the missing Step 1 fields.
+- **Adders are tags, not checkboxes.** They are the only thing on the quotation
+  a reader can change, so they are the only thing drawn as a control: a wrapping
+  row of toggle tags (`aria-pressed`), hollow ring unpicked and filled accent
+  disc picked, amount inline. The row wraps to content rather than holding a
+  fixed three-column grid open over empty cells.
 
 **ROM pricing card** (`RomPricingTable.tsx`, customer-facing): leads with a **Total ROM
 CAPEX** headline (range + planning midpoint), the per-vehicle-type line-item table collapsed
@@ -1142,6 +1164,18 @@ Closes on outside-click, `Escape`, or the × in the header.
 
 Three-column card grid (2 at 1000 px, 1 at 600 px). Each card is one vehicle from
 `src/content/vehicles/*.json`. The grid updates live as Step 1 fields change.
+
+**Status tally (2026-10-10).** The Compatible / Review / Incompatible counts in
+the page header double as the status filter — one control that reports and acts
+— and are set as a **numeral rule**: a large tabular figure over a tracked-caps
+label, cells divided by hairlines, speaking the same number language as the hero
+KPI row. It replaced soft-tinted rounded capsules (`.pill`, now removed), which
+were the app's only fill-tinted pills and put its loudest colour on its least
+detailed row, directly above a requirements strip that had just been
+de-coloured. Colour survives as **one 7 px square swatch** per cell — the same
+shape `TrafficLight` uses on every card below, since two shapes for one meaning
+read as two meanings. A count of zero dims its figure and swatch but stays
+clickable. The active filter is marked by a 2 px accent underline, never a fill.
 
 ### Card visual design
 

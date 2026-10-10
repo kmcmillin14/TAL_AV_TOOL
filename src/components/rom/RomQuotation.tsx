@@ -8,7 +8,7 @@ import type { FleetComplexityBaseline } from '@/src/lib/romSellPriceLine'
 import { ADDERS_CONFIG, PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
 import Icon from '@/src/design-system/components/Icon'
 import ScrollSection from '@/src/components/ScrollSection'
-import ComplexityAxis from './ComplexityAxis'
+import ComplexityAxis, { TierMeter } from './ComplexityAxis'
 
 import { fullUsd } from './RomSellPriceParts'
 
@@ -100,11 +100,7 @@ function Category(
     <>
       <span className="q-sec-num mono" aria-hidden="true">{num}</span>
       <span className="q-sec-name">{name}</span>
-      {tier != null && !withheld && (
-        <span className="q-sec-tier" title={`Complexity tier ${tier} of 3 — the multiplier applied to this section`}>
-          {tier} of 3
-        </span>
-      )}
+      {tier != null && !withheld && <TierMeter tier={tier} />}
       <span className="q-sec-rule" aria-hidden="true" />
       {withheld
         ? <span className="q-sec-withheld-tag">Not priced</span>
@@ -126,41 +122,52 @@ function Category(
   )
 }
 
+/** Why an unanswered pricing input is not harmless, and therefore why this
+ *  page either widens its range or refuses to price. It is the same fact in
+ *  all three states, it is one sentence, and nobody needs it twice — so it
+ *  lives on the row as a tooltip rather than on screen as a clause. */
+const UNSCORED_WHY =
+  'An unanswered pricing input scores as "simple", which under-states complexity: '
+  + 'with gaps the range widens, and with a whole axis missing the page refuses to price it.'
+
 /** The one "is this number trustworthy" line. Rendered ABOVE section 01 by
  *  RomFleetSellPrice, not inside it: sitting between the total and the
  *  breakdown it read as a row OF the breakdown. Three states — Not priced /
  *  Placeholder with gaps / Placeholder complete — replacing the three separate
  *  messages this step used to carry (a permanent banner, a blocked warning
- *  under the total, and a confidence strip at the bottom). */
+ *  under the total, and a confidence strip at the bottom).
+ *
+ *  Kept to ONE line in every state. It used to run to three sentences, which
+ *  made the wordiest thing on the quotation the thing standing between the
+ *  total and the money. Nothing was dropped: the state, the count and the
+ *  field names are all still here; only the reasoning moved to the tooltip,
+ *  per CLAUDE.md "explain through structure, not prose". */
 export function RomPricingStatus(
   { confidence, gate }: { confidence: PricingInputConfidence; gate: PricingGate },
 ) {
   const blocked = gate.blocked
   const partial = !blocked && confidence.missing.length > 0
   return (
-    <p className={`q-status${blocked ? ' is-blocked' : partial ? ' is-partial' : ''}`} role="status">
+    <p
+      className={`q-status${blocked ? ' is-blocked' : partial ? ' is-partial' : ''}`}
+      role="status" title={UNSCORED_WHY}
+    >
       <Icon name={blocked || partial ? 'warn' : 'check'} size={14} />
       <span>
         {blocked ? (
           <>
-            <strong>Not priced.</strong>{' '}
-            {gate.blockedLabels.join(' and ')} show <span className="mono">$0</span>{' '}because the answers
-            that set their complexity are missing — an unanswered input scores as
-            &ldquo;simple&rdquo;, so pricing now would under-quote the job.
-            {' '}Answer on Step 1: <strong>{gate.missingAll.join(', ')}</strong>.
+            <strong>Not priced</strong> — {gate.blockedLabels.join(' and ')} need{' '}
+            <strong>{gate.missingAll.join(', ')}</strong> on Step 1.
           </>
         ) : partial ? (
           <>
-            <strong>Placeholder pricing</strong> — all dollar values and multipliers are pending real
-            pricing input. <span className="mono">{confidence.answered} of {confidence.total}</span>{' '}
-            pricing inputs confirmed; unknowns price as &ldquo;simple&rdquo;, so the range widens.
-            {' '}Missing on Step 1: <strong>{confidence.missing.join(', ')}</strong>.
+            <strong>Placeholder pricing</strong> — <span className="mono">{confidence.answered} of {confidence.total}</span>{' '}
+            inputs confirmed. Missing on Step 1: <strong>{confidence.missing.join(', ')}</strong>.
           </>
         ) : (
           <>
-            <strong>Placeholder pricing</strong> — all dollar values and multipliers are pending real
-            pricing input. All <span className="mono">{confidence.total}</span> pricing inputs
-            confirmed, so the range is as tight as it gets.
+            <strong>Placeholder pricing</strong> — all{' '}
+            <span className="mono">{confidence.total}</span> inputs confirmed.
           </>
         )}
       </span>
@@ -231,12 +238,11 @@ export default function RomQuotation({
           tier={baseline.software.tier} withheld={!gate.softwareReady}
           share={shareOfTotal(gate.softwareReady ? fleetTotal.softwareTotal : 0, quoteTotal)} detail={
             <>
-              <p className="q-detail-note">Fleet-management software licensed with the project:</p>
               <ul className="q-chips">
                 {softwareIncludes(lines).map(i => <li key={i}>{i}</li>)}
               </ul>
               {gate.softwareReady && (
-                <ComplexityAxis axis="software" label="Software" result={baseline.software} multiplier={swMultiplier} />
+                <ComplexityAxis axis="software" result={baseline.software} multiplier={swMultiplier} />
               )}
             </>
           } />
@@ -245,14 +251,11 @@ export default function RomQuotation({
           tier={baseline.integration.tier} withheld={!gate.integrationReady}
           share={shareOfTotal(gate.integrationReady ? fleetTotal.integrationTotal : 0, quoteTotal)} detail={
             <>
-              <p className="q-detail-note">
-                Charged once per fleet-manager platform, not per vehicle. Covers:
-              </p>
               <ul className="q-chips">
                 {PROFESSIONAL_SERVICES_INCLUDES.map(i => <li key={i}>{i}</li>)}
               </ul>
               {gate.integrationReady && (
-                <ComplexityAxis axis="integration" label="Professional services" result={baseline.integration} multiplier={intMultiplier} />
+                <ComplexityAxis axis="integration" result={baseline.integration} multiplier={intMultiplier} />
               )}
             </>
           } />
@@ -263,15 +266,21 @@ export default function RomQuotation({
         <Category num="04" name="Adders" elective amount={fleetTotal.addersTotal}
           share={shareOfTotal(fleetTotal.addersTotal, quoteTotal)} detail={
             <ul className="q-adders">
-              {ADDERS_CONFIG.adders.map(a => (
-                <li key={a.id}>
-                  <label>
-                    <input type="checkbox" checked={selected.has(a.id)} onChange={() => onToggleAdder(a.id)} />
-                    <span>{a.label}</span>
-                    <span className="mono">{fullUsd(a.amount)}</span>
-                  </label>
-                </li>
-              ))}
+              {ADDERS_CONFIG.adders.map(a => {
+                const on = selected.has(a.id)
+                return (
+                  <li key={a.id}>
+                    <button
+                      type="button" className={`q-adder${on ? ' is-on' : ''}`}
+                      aria-pressed={on} onClick={() => onToggleAdder(a.id)}
+                    >
+                      <span className="q-adder-mark" aria-hidden="true" />
+                      <span className="q-adder-label">{a.label}</span>
+                      <span className="q-adder-amt mono">{fullUsd(a.amount)}</span>
+                    </button>
+                  </li>
+                )
+              })}
             </ul>
           } />
       </div>

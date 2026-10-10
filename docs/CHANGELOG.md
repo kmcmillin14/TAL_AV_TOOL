@@ -1,5 +1,55 @@
 # Changelog
 
+## 2026-10-10 — Colour retreats to a swatch; the quotation stops explaining itself
+
+Owner review of two screens: the Step 2 status counts "don't match the rest of
+the app theme", and the Step 4 investment summary is "too crowded and word
+heavy" — the complexity score should show, the detail should hide, and the
+options should read as pills.
+
+**Step 2 — the counts become a tally rule.** `.pill` was the only soft-filled,
+fully-rounded, colour-tinted component in the app, and the three capsules put
+the page's loudest colour on its least detailed row — sitting directly above the
+requirements strip whose severity colours we had removed the day before. The
+counts now render as a numeral rule: a 22 px tabular figure over a 10 px
+tracked-caps label, cells divided by hairlines, matching the hero KPI row.
+Colour is one 7 px **square** swatch per cell, the shape `TrafficLight` already
+uses on every card below. Zero counts dim but stay clickable. The active filter
+is a 2 px accent underline instead of an inset fill. `.pill` and `.status-pills`
+are deleted — nothing else used them.
+
+**Step 4 — the score shows, the arithmetic hides.** The tier chip `2 of 3` in a
+section header is replaced by `TierMeter`, three segments filled to the tier,
+drawn in type colours rather than tinted: it sits inches from a dollar figure,
+where a coloured chip reads as a warning about the money, and three blocks give
+the reader the ceiling that a bare numeral does not. `ComplexityAxis` keeps the
+scale, the driver sentence and the point table but puts them behind a **second
+disclosure, closed by default** — that content matters to one reader in ten and
+cost four paragraphs of page to everyone else. `TierCompact` was dead and is
+gone.
+
+**Step 4 — the prose goes.** Per CLAUDE.md "explain through structure, not
+prose": the sentences introducing the Software and Professional-services lists
+("Charged once per fleet-manager platform, not per vehicle. Covers:") are
+deleted — the lists say what they are. `RomPricingStatus` ran to three sentences
+in two of its three states, which made the wordiest thing on the quotation the
+thing standing between the total and the money; it is now **one line in every
+state**, still naming the state, the confirmed/total count and the missing
+Step 1 fields. The reasoning it used to spell out — an unanswered input scores
+as "simple", so gaps widen the range and a missing axis blocks pricing — is the
+same fact in all three states and moved to the row's tooltip.
+
+**Step 4 — adders become toggle tags.** They are the only thing on the whole
+quotation a reader can change, so they are now the only thing drawn as a
+control: a wrapping row of `aria-pressed` tags, hollow ring unpicked and filled
+accent disc picked, amount inline. Selection reads from the mark's shape, not
+only its colour. The row wraps to its content instead of holding a fixed
+three-column grid open over empty cells.
+
+Verified in-browser, both themes: tally filters and underlines correctly,
+adders toggle and move the subtotal without collapsing, meter resolves its
+filled/hollow segments. `tsc` clean · 534 tests pass · `check:arch` passes.
+
 ## 2026-10-10 — Active Requirements unions the fleet instead of sampling one vehicle
 
 Audit of all ten gates against the strip. **Every hard gate displays correctly**

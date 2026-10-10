@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { TierResult } from '@/src/calc/scoreTier'
 import { PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
 import type { GateAxis } from '@/src/lib/romComplexityFromProject'
@@ -14,15 +15,24 @@ function driverSentence(result: TierResult): string {
   return `Driven by ${phrases.slice(0, -1).join(', ')}, and ${phrases[phrases.length - 1]}.`
 }
 
-/** Where a category landed on the three-step scale, and nothing else.
- *  Deliberately plain text rather than a coloured badge: on the quotation this
- *  sits beside a dollar figure, and a tinted pill there reads as a status
- *  warning about the money. The tier name, the multiplier and the point math
- *  all live one disclosure away, where there is room to explain them. */
-export function TierCompact({ result }: { result: TierResult }) {
+/** Where a category landed on the three-step scale, as three segments.
+ *
+ *  It rides in the ledger's section header, inches from a dollar figure, so it
+ *  is drawn in the type colour rather than tinted: a red or amber chip there
+ *  reads as a warning about the money. Three filled-or-empty blocks say "2 of
+ *  3" without spending a word or a numeral next to the amount column, and the
+ *  reader gets the ceiling for free — a bare "2" does not say out of what. */
+export function TierMeter({ tier }: { tier: number }) {
   return (
-    <span className="rom-cx-compact">
-      Complexity <span className="mono">{result.tier} of 3</span>
+    <span
+      className="cx-meter"
+      role="img"
+      aria-label={`Complexity tier ${tier} of 3`}
+      title={`Complexity tier ${tier} of 3 — the multiplier applied to this section. Open the section to see how it scored.`}
+    >
+      {[1, 2, 3].map(i => (
+        <span key={i} className={i <= tier ? 'is-on' : undefined} />
+      ))}
     </span>
   )
 }
@@ -57,15 +67,22 @@ function TierScale({ result, thresholds }: { result: TierResult; thresholds: { t
   )
 }
 
-/** One complexity axis in full: where it landed on the scale, what drove it,
- *  what it multiplies, and the points for anyone auditing the number.
+/** The audit trail for one complexity axis: the scale, what drove it, and the
+ *  points, behind a disclosure of its own.
+ *
+ *  The score itself is NOT here — it rides in the section header as a
+ *  `TierMeter`, visible without opening anything. What is here is only the
+ *  arithmetic behind it, which matters to one reader in ten and cost four
+ *  paragraphs of the page to everyone else. Closed by default: this is the
+ *  second level of a disclosure that is already one level down.
  *
  *  Both axes score from project-level answers and the program's total fleet
  *  size — nothing vehicle-specific — so this is ONE fleet-wide result, never
  *  repeated per chassis. */
 export default function ComplexityAxis({
-  axis, label, result, multiplier,
-}: { axis: GateAxis; label: string; result: TierResult; multiplier: number }) {
+  axis, result, multiplier,
+}: { axis: GateAxis; result: TierResult; multiplier: number }) {
+  const [open, setOpen] = useState(false)
   // Keyed on the axis id, never the visible heading — renaming the heading used
   // to silently swap in the other axis's thresholds with no type error.
   const thresholds = axis === 'software'
@@ -73,33 +90,37 @@ export default function ComplexityAxis({
     : PRICING_ASSUMPTIONS.integrationScoring.thresholds
 
   return (
-    <div className="rom-cx-axis">
-      <div className="rom-cx-axis-head">
-        <span className="rom-cx-axis-name">{label}</span>
-        <span className="rom-cx-axis-tier">
-          {tierName(result.tier)} <span className="mono">{result.tier} of 3</span>
-          <span className="rom-cx-axis-mult mono">{multiplier}× base rate</span>
+    <div className={`rom-cx-axis${open ? ' is-open' : ''}`}>
+      <button type="button" className="rom-cx-toggle" onClick={() => setOpen(o => !o)} aria-expanded={open}>
+        <span className="rom-cx-toggle-name">
+          {tierName(result.tier)} complexity
         </span>
-      </div>
+        <span className="rom-cx-toggle-mult mono">{multiplier}× base rate</span>
+        <span className="rom-cx-toggle-more">How this scored</span>
+      </button>
 
-      <TierScale result={result} thresholds={thresholds} />
+      {open && (
+        <div className="rom-cx-detail">
+          <TierScale result={result} thresholds={thresholds} />
 
-      <p className="rom-cx-driver">{driverSentence(result)}</p>
+          <p className="rom-cx-driver">{driverSentence(result)}</p>
 
-      {result.reasons.length > 0 && (
-        <dl className="rom-cx-points">
-          {result.reasons.map(r => (
-            <div key={r.label}>
-              <dt>{complexityLabel(r.label)}</dt>
-              <dd className="mono">+{r.points}</dd>
-            </div>
-          ))}
-        </dl>
-      )}
-      {result.notTriggered.length > 0 && (
-        <p className="rom-cx-not-triggered">
-          Not triggered: {result.notTriggered.map(complexityLabel).join(', ')}.
-        </p>
+          {result.reasons.length > 0 && (
+            <dl className="rom-cx-points">
+              {result.reasons.map(r => (
+                <div key={r.label}>
+                  <dt>{complexityLabel(r.label)}</dt>
+                  <dd className="mono">+{r.points}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+          {result.notTriggered.length > 0 && (
+            <p className="rom-cx-not-triggered">
+              Not triggered: {result.notTriggered.map(complexityLabel).join(', ')}.
+            </p>
+          )}
+        </div>
       )}
     </div>
   )

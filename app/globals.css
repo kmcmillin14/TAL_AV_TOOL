@@ -161,11 +161,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 /* ============================================ HERO BAR ============================================ */
 
 /* Unset header field: quiet, still obviously clickable. */
-/* Status pills double as the status filter — one control that reports and acts. */
-.status-pills .pill { border: 1px solid transparent; cursor: pointer; font: inherit; }
-.status-pills .pill:hover { border-color: currentColor; }
-.status-pills .pill.is-active { border-color: currentColor; box-shadow: inset 0 0 0 1px currentColor; }
-.status-pills .pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .hero-meta-item .value.is-empty { color: var(--text-disabled); font-style: italic; }
 .hero-meta-item:hover .value.is-empty { color: var(--text-tertiary); }
@@ -371,7 +366,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   .page-title h1, .page-title .desc, .page-title .step-num { text-align: center; }
   .engine-head, .eh-text { text-align: center; }
   .page-title .desc { margin-left: auto; margin-right: auto; }
-  .status-pills { justify-content: center; }
+  .status-tally { justify-content: center; }
   /* NOT centered: the requirements strip is nowrap + overflow-x, and centering
      an overflowing flex row makes the first items unreachable by scrolling. */
   .req-summary { justify-content: flex-start; padding-left: 16px; padding-right: 16px; }
@@ -966,16 +961,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 
 /* ============================================ PILLS / BADGES ============================================ */
 
-.pill {
-  display: inline-flex; align-items: center; gap: 5px; padding: 3px 8px;
-  border-radius: 100px; font-size: 11px; font-weight: 600;
-}
-.pill.neutral { background: var(--bg-surface-3); color: var(--text-secondary); border: 1px solid var(--border); }
-.pill.good { background: var(--good-soft); color: var(--good); }
-.pill.warn { background: var(--warn-soft); color: var(--warn); }
-.pill.bad { background: var(--bad-soft); color: var(--bad); }
-.pill .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex-shrink: 0; }
-
 .badge {
   display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px;
   border-radius: 3px; font-size: 10px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase;
@@ -1052,8 +1037,50 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   padding: 0 5px; font-size: 10px; letter-spacing: 0;
 }
 
-/* Status pills row */
-.status-pills { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+/* ---- Status tally ----
+   The vehicle counts, which double as the status filter: one control that
+   reports and acts. Set as a numeral rule — big tabular figure over a tracked
+   caps label — so it speaks the same number language as the hero KPI row,
+   instead of the tinted capsules it replaced. Those capsules were the app's
+   only soft-filled rounded pills and they carried its loudest colour on its
+   least detailed row. Colour is now one square swatch, the shape TrafficLight
+   already uses on every card below; the active filter is marked by an accent
+   underline, not by a fill. */
+.status-tally { display: flex; align-items: stretch; flex-wrap: wrap; }
+.status-tally .tally {
+  display: flex; flex-direction: column; align-items: flex-start; gap: 2px;
+  padding: 2px 16px 6px; border: none; background: none; font: inherit;
+  cursor: pointer; text-align: left;
+  border-bottom: 2px solid transparent;
+}
+.status-tally .tally + .tally { border-left: 1px solid var(--border); }
+.status-tally .tally:first-child { padding-left: 0; }
+.status-tally .tally:last-child { padding-right: 0; }
+.tally-n {
+  font-family: var(--tal-font-numeric); font-size: 22px; font-weight: 700;
+  line-height: 1; color: var(--text-primary); font-variant-numeric: tabular-nums;
+}
+.tally-k {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-tertiary); white-space: nowrap;
+}
+/* 7px square, not a dot: the traffic light on the cards below is a square, and
+   two shapes for one meaning read as two meanings. */
+.tally-dot { width: 7px; height: 7px; flex-shrink: 0; background: currentColor; }
+.status-tally .tally.good .tally-dot { color: var(--good); }
+.status-tally .tally.warn .tally-dot { color: var(--warn); }
+.status-tally .tally.bad  .tally-dot { color: var(--bad); }
+.status-tally .tally.neutral .tally-dot { color: var(--text-disabled); }
+/* A zero count is not news. It stays legible and stays clickable, but it does
+   not compete with the counts that have something in them. */
+.status-tally .tally.is-zero .tally-n { color: var(--text-disabled); }
+.status-tally .tally.is-zero .tally-dot { opacity: 0.4; }
+.status-tally .tally:hover .tally-k { color: var(--text-secondary); }
+.status-tally .tally:hover { border-bottom-color: var(--border-strong); }
+.status-tally .tally.is-active { border-bottom-color: var(--accent); }
+.status-tally .tally.is-active .tally-k { color: var(--text-primary); }
+.status-tally .tally:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* Filter toolbar */
 .veh-filter-toolbar {
@@ -4120,10 +4147,17 @@ button.q-sec-head { cursor: pointer; }
   white-space: nowrap;
 }
 .q-sec.is-elective .q-sec-name { color: var(--text-secondary); }
-.q-sec-tier {
-  font-family: var(--tal-font-family); font-size: var(--q-type-label);
-  color: var(--text-tertiary); white-space: nowrap;
+/* ---- Complexity meter ----
+   Three segments in the ledger's section header: filled to the tier, hollow
+   above it. Drawn in type colours, never tinted — it sits inches from a dollar
+   figure, where a red or amber chip reads as a warning about the money. */
+.cx-meter { display: inline-flex; gap: 2px; align-items: center; flex-shrink: 0; transform: translateY(-1px); }
+.cx-meter > span {
+  width: 9px; height: 7px;
+  border: 1px solid var(--text-disabled); background: transparent;
 }
+.cx-meter > span.is-on { background: var(--text-secondary); border-color: var(--text-secondary); }
+button.q-sec-head:hover .cx-meter > span.is-on { background: var(--accent); border-color: var(--accent); }
 
 /* The leader. Dotted for committed money, dashed for elective — the rule
    itself says which kind of section this is. */
@@ -4174,8 +4208,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .q-lines .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); }
 .q-qty { font-size: var(--q-type-label); color: var(--text-tertiary); }
 
-.q-detail-note { margin: 0 0 8px; font-size: var(--q-type-label); color: var(--text-tertiary); line-height: 1.5; }
-
 /* What a section covers, as a tracked inline list rather than pills — pills
    read as interactive, and none of these are. */
 .q-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; }
@@ -4184,20 +4216,32 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
   content: '·'; margin: 0 8px; color: var(--text-disabled);
 }
 
-.q-adders {
-  list-style: none; margin: 0; padding: 0;
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 24px;
+/* ---- Adders ----
+   Selectable tags, not a checkbox grid. These are the only things on the whole
+   quotation a reader can change, so they are the only things drawn as controls
+   — and a tag that fills when picked shows the current selection at a glance,
+   which a column of ticks three abreast did not. The row wraps to its content
+   instead of holding a fixed three-column grid open over empty cells. */
+.q-adders { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 7px; }
+.q-adder {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 5px 12px 5px 10px; border-radius: 100px;
+  border: 1px solid var(--border-strong); background: none;
+  font-family: inherit; font-size: var(--q-type-body); color: var(--text-secondary);
+  cursor: pointer; transition: border-color 0.12s ease, color 0.12s ease;
 }
-@media (max-width: 1100px) { .q-adders { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-@media (max-width: 680px)  { .q-adders { grid-template-columns: 1fr; } }
-.q-adders label {
-  display: flex; align-items: center; gap: 9px; padding: 6px 0;
-  font-size: var(--q-type-body); color: var(--text-secondary); cursor: pointer;
+.q-adder:hover { border-color: var(--text-tertiary); color: var(--text-primary); }
+.q-adder:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* The mark is the state. Hollow ring unpicked, solid accent disc picked — so
+   selection reads from the shape, not only from the border colour. */
+.q-adder-mark {
+  width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
+  border: 1px solid var(--text-disabled); background: transparent;
 }
-.q-adders label:hover { color: var(--text-primary); }
-.q-adders label span:first-of-type { flex: 1 1 auto; min-width: 0; }
-.q-adders label .mono { font-variant-numeric: tabular-nums; color: var(--text-primary); font-size: var(--q-type-label); }
-.q-adders input { accent-color: var(--accent); cursor: pointer; }
+.q-adder-amt { font-variant-numeric: tabular-nums; font-size: var(--q-type-label); color: var(--text-tertiary); }
+.q-adder.is-on { border-color: var(--accent); color: var(--text-primary); }
+.q-adder.is-on .q-adder-mark { border-color: var(--accent); background: var(--accent); }
+.q-adder.is-on .q-adder-amt { color: var(--text-primary); }
 
 @media (max-width: 560px) {
   .q-breakdown { padding-left: 30px; }
@@ -4227,20 +4271,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 }
 
 /* Per-vehicle tier override editor — retained from the previous layout. */
-/* Tier on the quotation line: plain text, no tint. It sits beside a dollar
-   figure, where a coloured badge reads as a warning about the money. */
-.rom-cx-compact {
-  font-family: var(--tal-font-family); font-size: 11.5px; color: var(--text-tertiary);
-}
-.rom-cx-compact .mono {
-  font-family: var(--tal-font-numeric); font-weight: 700; color: var(--text-secondary);
-}
-.rom-cx-axis-tier {
-  font-family: var(--tal-font-family); font-size: 13px; font-weight: 700; color: var(--text-primary);
-  display: inline-flex; align-items: baseline; gap: 6px;
-}
-.rom-cx-axis-tier .mono { font-family: var(--tal-font-numeric); font-weight: 600; color: var(--text-tertiary); }
-.rom-cx-axis-mult { font-size: 11px; font-weight: 600; color: var(--text-tertiary); }
 /* Which score buys which tier, with the project's own score placed on it. */
 .rom-cx-scale { list-style: none; margin: 8px 0 10px; padding: 0; display: flex; flex-direction: column; gap: 1px; }
 .rom-cx-scale li {
@@ -4258,12 +4288,29 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
   margin-left: auto; font-family: var(--tal-font-numeric); font-size: 10.5px;
   font-weight: 700; color: var(--accent);
 }
-.rom-cx-axis { background: var(--bg-surface-2); border-radius: 12px; padding: 14px 16px; }
-.rom-cx-axis-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
-.rom-cx-axis-name {
-  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
+/* The scoring audit trail: a second disclosure inside a section that is
+   already one level down. The tier itself is NOT in here — it is in the
+   section header as a meter — so this line only ever has to offer the
+   arithmetic, which is what one reader in ten actually opens. */
+.rom-cx-axis { border-top: 1px solid var(--border); margin-top: 10px; }
+.rom-cx-toggle {
+  display: flex; align-items: baseline; gap: 8px; width: 100%;
+  padding: 9px 0 0; background: none; border: none; font: inherit;
+  color: var(--text-secondary); cursor: pointer; text-align: left;
 }
+.rom-cx-toggle-name {
+  font-family: var(--tal-font-numeric); font-size: var(--q-type-label); font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary);
+}
+.rom-cx-toggle-mult { font-variant-numeric: tabular-nums; font-size: var(--q-type-label); color: var(--text-tertiary); }
+.rom-cx-toggle-more {
+  margin-left: auto; font-size: var(--q-type-label); color: var(--text-tertiary);
+}
+.rom-cx-toggle-more::after { content: ' +'; }
+.rom-cx-axis.is-open .rom-cx-toggle-more::after { content: ' \2212'; }
+.rom-cx-toggle:hover .rom-cx-toggle-more { color: var(--accent); }
+.rom-cx-toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 3px; }
+.rom-cx-detail { padding-top: 2px; }
 .rom-cx-driver { font-family: var(--tal-font-family); font-size: 13px; line-height: 1.5; color: var(--text-primary); margin: 0 0 6px; }
 .rom-cx-points { margin: 0 0 6px; font-size: 12px; }
 .rom-cx-points div { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent); }

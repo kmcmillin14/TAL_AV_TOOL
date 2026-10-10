@@ -240,7 +240,13 @@ export default function Step2Page() {
             <h1>Vehicle Compatibility</h1>
             <div className="desc">Every vehicle, checked against your requirements.</div>
           </div>
-          <div className="status-pills">
+          {/* The counts, as a tally rule rather than tinted capsules. The
+              capsules were the only soft-filled rounded pills in the app, and
+              they put the page's loudest colour on its least detailed row —
+              directly above a requirements strip we had just de-coloured.
+              Colour survives as the status square alone, which is the same
+              shape TrafficLight uses on every card below. */}
+          <div className="status-tally">
             {([
               ['GREEN', 'good', counts.green, 'Compatible'],
               ['GREEN+YELLOW', 'warn', counts.yellow, 'Review'],
@@ -249,12 +255,13 @@ export default function Step2Page() {
             ] as const).map(([filter, tone, n, label]) => (
               <button
                 key={label} type="button"
-                className={`pill ${tone}${statusFilter === filter ? ' is-active' : ''}`}
+                className={`tally ${tone}${n === 0 ? ' is-zero' : ''}${statusFilter === filter ? ' is-active' : ''}`}
                 aria-pressed={statusFilter === filter}
                 onClick={() => setStatusFilter(statusFilter === filter ? 'ALL' : filter)}
                 title={statusFilter === filter ? 'Show all vehicles' : `Show only ${label.toLowerCase()}`}
               >
-                <span className="dot" /> {n} {label}
+                <span className="tally-n mono">{n}</span>
+                <span className="tally-k"><span className="tally-dot" aria-hidden="true" />{label}</span>
               </button>
             ))}
           </div>
