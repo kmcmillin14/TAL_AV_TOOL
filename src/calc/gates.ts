@@ -486,7 +486,7 @@ export const GATES: readonly GateSpec[] = [
  *  gate registry itself rather than from a hand-maintained list.
  *
  *  Step 2's "Active Requirements" strip used to name four fields chosen by
- *  hand: Transfer, Pattern, Load and Aisle. Audited 2026-10-09 against the nine
+ *  hand: Transfer, Pattern, Load and Aisle. Audited 2026-10-09 against the ten
  *  gates in GATES, that list was wrong three ways — it missed every hard gate
  *  except Weight (payload type, transfer method, lift height, outdoor,
  *  temperature) and every soft one (ramp, pallet entry, pallet stacking,
@@ -495,20 +495,33 @@ export const GATES: readonly GateSpec[] = [
  *  form stopped writing when `transferType` replaced it — so on every current
  *  project the tag silently never rendered while the gate was live.
  *
- *  A gate skips itself when its requirement is absent, and that decision is
- *  vehicle-independent, so running the registry against any one vehicle yields
- *  the set of live requirements. Pass the first vehicle in the library.
+ *  Takes the WHOLE fleet, not a sample. Most gates skip on the requirement
+ *  alone, but `pallet_entry` also skips on the vehicle — it needs
+ *  `palletEntryCompatibility`, which only three of the six chassis declare. A
+ *  single-vehicle sample therefore showed or hid Pallet Entry depending on
+ *  which chassis happened to be first in the library (audit, 2026-10-10). A
+ *  requirement is active if ANY vehicle is being checked against it, so this
+ *  unions across the fleet.
+ *
+ *  Severity takes the STRICTEST a gate reports. `pallet_stacking` and
+ *  `temperature_env` set severity per ANSWER rather than per spec, so a gate
+ *  declared soft can legitimately come back hard.
  *
  *  Pure — no React, no I/O. */
 export function activeRequirements(
   app: ApplicationRequirements,
-  sampleVehicle: Vehicle,
+  fleet: readonly Vehicle[],
 ): Array<{ id: string; name: string; severity: Severity; value: string }> {
   const out: Array<{ id: string; name: string; severity: Severity; value: string }> = []
   for (const gate of GATES) {
-    const r = gate.run(sampleVehicle, app)
-    if (r.skipped) continue
-    out.push({ id: r.gateId, name: r.name, severity: r.severity, value: r.requiredValue })
+    let hit: { id: string; name: string; severity: Severity; value: string } | null = null
+    for (const vehicle of fleet) {
+      const r = gate.run(vehicle, app)
+      if (r.skipped) continue
+      if (!hit) hit = { id: r.gateId, name: r.name, severity: r.severity, value: r.requiredValue }
+      else if (r.severity === 'hard') hit.severity = 'hard'
+    }
+    if (hit) out.push(hit)
   }
   return out
 }

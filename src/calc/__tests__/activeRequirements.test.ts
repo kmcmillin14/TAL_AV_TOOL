@@ -12,11 +12,11 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
  *   - its Transfer tag read the legacy `transferMethod`, which the Step 1 form
  *     stopped writing, so the tag never rendered while the gate was live.
  *  Deriving from GATES means the strip cannot drift from the gates again. */
-let veh: Vehicle
+let veh: Vehicle[]
 beforeAll(() => {
   const dir = join(process.cwd(), 'src/content/vehicles')
-  const f = readdirSync(dir).filter(x => x.endsWith('.json')).sort()[0]
-  veh = JSON.parse(readFileSync(join(dir, f), 'utf8')) as Vehicle
+  veh = readdirSync(dir).filter(x => x.endsWith('.json'))
+    .map(f => JSON.parse(readFileSync(join(dir, f), 'utf8')) as Vehicle)
 })
 
 const EMPTY = {

@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-10-10 — Active Requirements unions the fleet instead of sampling one vehicle
+
+Audit of all ten gates against the strip. **Every hard gate displays correctly**
+— weight, payload type, transfer method, lift height, outdoor, temperature —
+and **pallet stacking correctly escalates to HARD** for pin-and-post and
+cup-and-cap while staying soft for flat/other, which is the answer-driven
+severity working end to end.
+
+**One bug: the strip depended on which vehicle it sampled.** `activeRequirements`
+took a single vehicle, and most gates skip on the requirement alone — but
+`pallet_entry` also skips on the VEHICLE: it needs `palletEntryCompatibility`,
+which only three of the six chassis declare. So the strip showed ten
+requirements for `8hbc40a`/`cb18`/`ebase7` and nine for `8tb50a`/`m10`/`ml2`.
+The component passed `vehicles[0]`, so **whether Pallet Entry appeared at all
+came down to which chassis sorted first in the library** — reorder or remove one
+and a live gate silently vanishes from the strip.
+
+It now takes the whole fleet: a requirement is active if ANY vehicle is being
+checked against it. Severity takes the strictest any vehicle reports, since
+`pallet_stacking` and `temperature_env` set theirs per answer rather than per
+spec. Two tests pin it — Pallet Entry must show while only some chassis declare
+compatibility, and the result must not depend on fleet order.
+
 ## 2026-10-10 — Active Requirements fits one line, always
 
 Nine live gates ran to **1,870px of content in a 1,536px row** and wrapped to

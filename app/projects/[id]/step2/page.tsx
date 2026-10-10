@@ -180,7 +180,7 @@ export default function Step2Page() {
    *  legacy `transferMethod` the Step 1 form stopped writing, so it never
    *  rendered on a current project while the gate was live. */
   const activeReqs = useMemo(
-    () => (vehicles.length > 0 ? activeRequirements(appReq, vehicles[0]) : []),
+    () => activeRequirements(appReq, vehicles),
     [appReq, vehicles],
   )
 
