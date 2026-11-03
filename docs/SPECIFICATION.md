@@ -844,9 +844,10 @@ Three rules keep the ledger from re-crowding:
   count and the missing Step 1 fields.
 - **Adders are tags, not checkboxes.** They are the only thing on the quotation
   a reader can change, so they are the only thing drawn as a control: a wrapping
-  row of toggle tags (`aria-pressed`), hollow ring unpicked and filled accent
-  disc picked, amount inline. The row wraps to content rather than holding a
-  fixed three-column grid open over empty cells.
+  row of toggle tags (`aria-pressed`), a **`+` unpicked and filled accent disc
+  picked** (2026-11-02; was a hollow ring unpicked), amount inline. The row
+  wraps to content rather than holding a fixed three-column grid open over
+  empty cells. Shared by Accessories via the same `TogglePill`.
 
 **ROM pricing card** (`RomPricingTable.tsx`, customer-facing): leads with a **Total ROM
 CAPEX** headline (range + planning midpoint), the per-vehicle-type line-item table collapsed

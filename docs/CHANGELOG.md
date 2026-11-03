@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-02 — Adder/accessory mark: `+` unpicked instead of a hollow ring
+
+Owner feedback on the pill control in Adders/Accessories: the unpicked mark should
+read as "add this" rather than an empty ring. `.q-adder-mark` now renders a `+`
+(`::before`, sized from the existing `--q-type-label` token — no new literal) when
+unpicked; picked state is unchanged, the same filled accent disc.
+
 ## 2026-11-02 — Step 4 sections close by default; ML2 conveyor becomes a priced accessory
 
 Apple-lens usability review of the whole app, plus an owner request to make Step 4

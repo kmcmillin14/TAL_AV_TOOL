@@ -4236,15 +4236,21 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 }
 .q-adder:hover { border-color: var(--text-tertiary); color: var(--text-primary); }
 .q-adder:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-/* The mark is the state. Hollow ring unpicked, solid accent disc picked — so
-   selection reads from the shape, not only from the border colour. */
+/* The mark is the state. A "+" unpicked (reads as "add this"), a solid
+   accent disc picked — so selection reads from the shape, not only from the
+   border colour (2026-11-02: was a hollow ring unpicked). */
 .q-adder-mark {
   width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0;
-  border: 1px solid var(--text-disabled); background: transparent;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: transparent;
+}
+.q-adder-mark::before {
+  content: '+'; font-size: var(--q-type-label); line-height: 1; color: var(--text-disabled);
 }
 .q-adder-amt { font-variant-numeric: tabular-nums; font-size: var(--q-type-label); color: var(--text-tertiary); }
 .q-adder.is-on { border-color: var(--accent); color: var(--text-primary); }
-.q-adder.is-on .q-adder-mark { border-color: var(--accent); background: var(--accent); }
+.q-adder.is-on .q-adder-mark { background: var(--accent); }
+.q-adder.is-on .q-adder-mark::before { content: ''; }
 .q-adder.is-on .q-adder-amt { color: var(--text-primary); }
 
 @media (max-width: 560px) {
