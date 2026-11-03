@@ -120,6 +120,14 @@ export interface VehicleCalc {
   }
 }
 
+export interface VehicleAccessory {
+  id: string
+  label: string
+  /** PLACEHOLDER USD pending real pricing — see each vehicle JSON's own note. */
+  amount: number
+  note?: string
+}
+
 export interface VehicleSpecs {
   tempMinF: number
   tempMaxF: number
@@ -155,6 +163,12 @@ export interface Vehicle {
    *  sell-price UI ("pricing not configured") rather than failing to load. See
    *  `src/calc/sellPriceRom.ts` and `src/lib/validations/pricingSchemas.ts`. */
   romInputs?: RomInputs
+  /** Optional, vehicle-specific equipment priced alongside this chassis
+   *  (e.g. ML2's conveyor interface). Elective — the engineer selects which
+   *  apply, same interaction as a program-level adder — but the dollar
+   *  amount folds into the Hardware subtotal, not the Adders bucket, since
+   *  it IS hardware. Absent for any vehicle that needs none. */
+  accessories?: VehicleAccessory[]
 }
 
 export async function loadVehicleLibrary(): Promise<Vehicle[]> {

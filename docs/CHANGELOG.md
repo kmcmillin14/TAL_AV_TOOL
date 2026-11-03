@@ -1,5 +1,39 @@
 # Changelog
 
+## 2026-11-02 — Step 4 sections close by default; ML2 conveyor becomes a priced accessory
+
+Apple-lens usability review of the whole app, plus an owner request to make Step 4
+read as a proposal/investment summary: "there's a bunch of numbers everywhere."
+The 2026-10-09/10 rebuild had already built the right structure — four buckets,
+a complexity meter in each header, the scoring rationale behind its own
+disclosure — but every `Category` section still mounted **open**
+(`useState(true)`), so Hardware's per-vehicle lines, Software/Professional
+Services' descriptive chips, and every Adder all rendered expanded on first
+load regardless. That was the actual source of the clutter.
+
+**Collapse by default.** `Category`'s local open state now keys off `elective`
+(`useState(elective === true)`): Hardware, Software, and Professional Services
+start closed to their one-line headline; Adders — the only section with
+something to *do*, not just read — still starts open, unchanged. Nothing about
+the detail content, the chevron, or manual toggling changed; only the initial
+state per page load.
+
+**Vehicle accessories — general concept, launched with ML2's conveyor.**
+`ml2.json` has listed `Conveyor` as a transfer method since the vehicle was
+added, with no cost anywhere for the physical conveyor equipment a Conveyor
+deployment needs — a real pricing gap, not a cosmetic one. Any vehicle JSON may
+now declare an `accessories` array (`Vehicle.accessories`); a new
+`romSellPriceSelectedAccessoryIds` project field selects which apply, mirroring
+`romSellPriceSelectedAdderIds`'s shape exactly. Selected accessory amounts fold
+into **`hardwareTotal`** (`src/calc/fleetSellPrice.ts`) — accessories are
+hardware, not a fifth bucket — and render inside Hardware's own detail panel
+using the same toggle-tag control Adders already has. A fleet with no vehicle
+declaring accessories shows nothing extra; `ml2.json`'s conveyor entry is
+flagged as placeholder pricing pending real numbers, same convention as
+`content/pricing/adders.json`.
+
+Design doc: `docs/superpowers/specs/2026-11-02-step4-investment-summary-design.md`.
+
 ## 2026-10-10 — Colour retreats to a swatch; the quotation stops explaining itself
 
 Owner review of two screens: the Step 2 status counts "don't match the rest of

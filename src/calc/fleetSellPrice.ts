@@ -28,9 +28,14 @@ import type { AddersConfig, PricingAssumptions } from '@/src/lib/validations/pri
 import { roundTo, type RomPricingBand, type RomPricingResult } from './sellPriceRom'
 
 export interface FleetSellPriceTotal {
+  /** Includes accessoriesTotal — accessories ARE hardware, not a separate bucket. */
   hardwareTotal: number
   integrationTotal: number
   softwareTotal: number
+  /** Selected vehicle-accessory amounts, already folded into hardwareTotal.
+   *  Broken out here so the UI can show "which part of Hardware is accessories"
+   *  without re-deriving it. */
+  accessoriesTotal: number
   addersTotal: number
   /** hardwareTotal + integrationTotal + softwareTotal + addersTotal. */
   sellTotal: number
@@ -68,6 +73,9 @@ export interface FleetSellPriceLineInput {
   qty: number
   fleetManagerPlatform: string
   integrationTier: number
+  /** This vehicle's available accessories (Vehicle.accessories), if any —
+   *  not yet filtered by selection; aggregateFleetSellPrice does that. */
+  accessories?: { id: string; amount: number }[]
 }
 
 /** Sums Hardware/Software across every line's own components, charges
@@ -84,16 +92,31 @@ export interface FleetSellPriceLineInput {
  *  project. The widening is one-sided on purpose: an unknown can only mean
  *  MORE complexity than that default assumed, never less. Defaults to 0 so
  *  callers that genuinely have no project context keep the base band. */
+/** Sum of `amount` for every item in `catalog` whose `id` is in `selectedIds`
+ *  — the one shape both Adders (one shared catalog) and Accessories (each
+ *  vehicle's own list, flattened by the caller first) reduce to. */
+function sumSelected(catalog: { id: string; amount: number }[], selectedIds: string[]): number {
+  const selected = new Set(selectedIds)
+  return catalog.filter(item => selected.has(item.id)).reduce((sum, item) => sum + item.amount, 0)
+}
+
 export function aggregateFleetSellPrice(
   lines: FleetSellPriceLineInput[],
   selectedAdderIds: string[],
   adders: AddersConfig,
   assumptions: PricingAssumptions,
-  unknownInputCount = 0
+  unknownInputCount = 0,
+  selectedAccessoryIds: string[] = []
 ): FleetSellPriceTotal {
   const totalQty = lines.reduce((s, l) => s + l.qty, 0)
-  const hardwareTotal = lines.reduce((s, l) => s + l.pricing.hardwareSellTotal, 0)
+  const vehicleHardwareTotal = lines.reduce((s, l) => s + l.pricing.hardwareSellTotal, 0)
   const softwareTotal = lines.reduce((s, l) => s + l.pricing.softwareSellTotal, 0)
+
+  // Each vehicle's own accessories, flattened into one catalog — then the
+  // same sumSelected() shape Adders uses below, just sourced from the fleet
+  // instead of one shared config file.
+  const accessoriesTotal = sumSelected(lines.flatMap(l => l.accessories ?? []), selectedAccessoryIds)
+  const hardwareTotal = vehicleHardwareTotal + accessoriesTotal
 
   const platformGroups = new Map<string, FleetSellPriceLineInput[]>()
   for (const line of lines) {
@@ -118,10 +141,7 @@ export function aggregateFleetSellPrice(
   )
   const integrationTotal = integrationByPlatform.reduce((s, g) => s + g.amount, 0)
 
-  const selected = new Set(selectedAdderIds)
-  const addersTotal = adders.adders
-    .filter(a => selected.has(a.id))
-    .reduce((sum, a) => sum + a.amount, 0)
+  const addersTotal = sumSelected(adders.adders, selectedAdderIds)
 
   const sellTotal = hardwareTotal + integrationTotal + softwareTotal + addersTotal
   const sellPerUnit = totalQty > 0 ? sellTotal / totalQty : 0
@@ -140,6 +160,7 @@ export function aggregateFleetSellPrice(
     hardwareTotal,
     integrationTotal,
     softwareTotal,
+    accessoriesTotal,
     addersTotal,
     sellTotal,
     totalQty,

@@ -155,6 +155,7 @@ export function resolveAllRomSellPriceLines(
  *  the PPTX appendix call this — never sum `line.pricing` fields directly. */
 export function resolveFleetSellPriceTotal(project: StoredProject, lines: RomSellPriceLine[]): FleetSellPriceTotal {
   const selectedAdderIds = project.romSellPriceSelectedAdderIds ?? []
+  const selectedAccessoryIds = project.romSellPriceSelectedAccessoryIds ?? []
   const aggregatorLines = lines.map(l => ({
     vehicleId: l.vehicleId,
     pricing: l.pricing,
@@ -165,11 +166,12 @@ export function resolveFleetSellPriceTotal(project: StoredProject, lines: RomSel
     // groups with (and rides free on) a configured one.
     fleetManagerPlatform: l.vehicle.display.fleetSoftware ?? `unknown:${l.vehicleId}`,
     integrationTier: l.integrationResult.tier,
+    accessories: l.vehicle.accessories,
   }))
   // Unanswered pricing inputs widen the band's high side — see
   // pricingInputConfidence and aggregateFleetSellPrice's note.
   const { missing } = pricingInputConfidence(project)
   return aggregateFleetSellPrice(
-    aggregatorLines, selectedAdderIds, ADDERS_CONFIG, PRICING_ASSUMPTIONS, missing.length
+    aggregatorLines, selectedAdderIds, ADDERS_CONFIG, PRICING_ASSUMPTIONS, missing.length, selectedAccessoryIds
   )
 }

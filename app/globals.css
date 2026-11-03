@@ -4223,6 +4223,10 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
    which a column of ticks three abreast did not. The row wraps to its content
    instead of holding a fixed three-column grid open over empty cells. */
 .q-adders { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 7px; }
+/* Accessories reuse the Adders tag styling exactly (same interaction, same
+   visual language) — only a top gap is added, since they follow the Hardware
+   per-vehicle lines in the same detail panel rather than opening a fresh one. */
+.q-accessories { margin-top: 10px; }
 .q-adder {
   display: inline-flex; align-items: center; gap: 8px;
   padding: 5px 12px 5px 10px; border-radius: 100px;

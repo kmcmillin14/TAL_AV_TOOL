@@ -311,6 +311,11 @@ export const projectSchema = z.object({
   /** Selected adder ids from content/pricing/adders.json, shared across the
    *  project's ROM (not per-vehicle — adders are a program-level menu). */
   romSellPriceSelectedAdderIds: z.array(z.string()).max(50).default([]),
+  /** Selected vehicle-accessory ids (e.g. "ml2-conveyor"), sourced from each
+   *  vehicle's own `accessories` list rather than a shared catalog — see
+   *  Vehicle.accessories in src/lib/vehicleLibrary.ts. Folded into the
+   *  Hardware subtotal, not a separate bucket. */
+  romSellPriceSelectedAccessoryIds: z.array(z.string()).max(50).default([]),
   /** Per-vehicleId tier overrides + reason, keyed by the vehicle id the
    *  engineer is viewing ROM sell-price for. Absent tier → the scored tier
    *  (floored by the vehicle's romInputs floor, and still clamped to that

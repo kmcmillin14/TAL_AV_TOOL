@@ -19,6 +19,12 @@ interface Props {
   vehicleById: Map<string, Vehicle>
 }
 
+/** Adders and Accessories are both "a selected-id list the engineer toggles" —
+ *  one toggle shape for both rather than two copies of the same in/out check. */
+function toggleId(ids: string[], id: string): string[] {
+  return ids.includes(id) ? ids.filter(x => x !== id) : [...ids, id]
+}
+
 /** ROM Configuration (Step 4) — the fleet's internal sell price.
  *
  *  Two numbered sections in the shared `ScrollSection` the rest of the app uses
@@ -37,11 +43,13 @@ interface Props {
 export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props) {
   const assignedGroups = useMemo(() => fleet.groups.filter(g => g.fleetSold > 0), [fleet.groups])
   const [selectedAdderIds, setSelectedAdderIds] = useState<string[]>(project.romSellPriceSelectedAdderIds ?? [])
+  const [selectedAccessoryIds, setSelectedAccessoryIds] = useState<string[]>(project.romSellPriceSelectedAccessoryIds ?? [])
   const [overrides, setOverrides] = useState(project.romSellPriceOverrides ?? {})
 
-  const persist = (next: { selectedAdderIds?: string[]; overrides?: typeof overrides }) => {
+  const persist = (next: { selectedAdderIds?: string[]; selectedAccessoryIds?: string[]; overrides?: typeof overrides }) => {
     updateProject(project.id, {
       romSellPriceSelectedAdderIds: next.selectedAdderIds ?? selectedAdderIds,
+      romSellPriceSelectedAccessoryIds: next.selectedAccessoryIds ?? selectedAccessoryIds,
       romSellPriceOverrides: next.overrides ?? overrides,
     })
   }
@@ -66,9 +74,13 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
   }, [assignedGroups, vehicleById, fleet.totalFleetSold, answers, overrides])
 
   const fleetTotal = useMemo(() => {
-    const projectForTotal: StoredProject = { ...project, romSellPriceSelectedAdderIds: selectedAdderIds }
+    const projectForTotal: StoredProject = {
+      ...project,
+      romSellPriceSelectedAdderIds: selectedAdderIds,
+      romSellPriceSelectedAccessoryIds: selectedAccessoryIds,
+    }
     return resolveFleetSellPriceTotal(projectForTotal, lines)
-  }, [project, selectedAdderIds, lines])
+  }, [project, selectedAdderIds, selectedAccessoryIds, lines])
 
   const setOverride = (vehicleId: string, patch: Partial<RomSellPriceOverride>) => {
     const next = { ...overrides, [vehicleId]: { ...overrides[vehicleId], ...patch } }
@@ -77,9 +89,15 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
   }
 
   const toggleAdder = (id: string) => {
-    const next = selectedAdderIds.includes(id) ? selectedAdderIds.filter(a => a !== id) : [...selectedAdderIds, id]
+    const next = toggleId(selectedAdderIds, id)
     setSelectedAdderIds(next)
     persist({ selectedAdderIds: next })
+  }
+
+  const toggleAccessory = (id: string) => {
+    const next = toggleId(selectedAccessoryIds, id)
+    setSelectedAccessoryIds(next)
+    persist({ selectedAccessoryIds: next })
   }
 
   if (assignedGroups.length === 0) {
@@ -109,6 +127,8 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
             fleetTotal={fleetTotal}
             selectedAdderIds={selectedAdderIds}
             onToggleAdder={toggleAdder}
+            selectedAccessoryIds={selectedAccessoryIds}
+            onToggleAccessory={toggleAccessory}
             baseline={baseline}
             gate={gate}
           />

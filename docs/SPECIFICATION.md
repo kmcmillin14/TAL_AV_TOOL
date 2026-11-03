@@ -797,16 +797,36 @@ hurts (per-metric desirable direction). Below, a **gauge strip** (`RomGauge`, SV
 a hover definition): Utilization · Availability · Charging · **Redundancy** (the resilience
 metric, renamed) — availability/charging weighted across the fleet from the charging series.
 
-**Step 4 ledger (2026-10-09, refined 2026-10-10).** `01 Project investment`
-leads with the total, then four sections on one spine — Hardware · Software ·
-Professional services · Adders — each stating its **share of the quote**
-(rounded whole; `<1%` rather than `0%` for a real but tiny amount; blank for
-nothing). All four sections render **open**; what shrank is what each one says.
+**Step 4 ledger (2026-10-09, refined 2026-10-10, collapse default fixed 2026-11-02).**
+`01 Project investment` leads with the total, then four sections on one spine —
+Hardware · Software · Professional services · Adders — each stating its **share
+of the quote** (rounded whole; `<1%` rather than `0%` for a real but tiny
+amount; blank for nothing). **Only Adders (the elective section) renders open
+by default; Hardware/Software/Professional Services render closed** to their
+one-line headline (name · complexity meter when applicable · amount · share%)
+— the detail (per-vehicle lines, descriptive chips, the complexity breakdown)
+is a click away, not forced on every page load. This was the one place the
+2026-10-09 rebuild's own intent ("the score is always visible; the arithmetic
+is not") hadn't reached yet — every `Category` still mounted open regardless.
 The complexity point tables sit **inside the section they multiply**, not in a
 separate card. A gated section reads **NOT PRICED** rather than a dimmed `$0`.
 Type runs on a four-step scale declared as tokens
 (`--q-type-hero|figure|body|label`). `02 Adjustments` holds the per-vehicle tier
 overrides only.
+
+**Vehicle accessories (2026-11-02).** Any vehicle JSON may declare an optional
+`accessories` array (`Vehicle.accessories` in `src/lib/vehicleLibrary.ts` —
+`{ id, label, amount, note? }`) — equipment specific to that chassis, priced
+alongside it rather than fleet-wide. Launched with `ml2.json`'s conveyor
+interface equipment (ML2 lists `Conveyor` as a transfer method but had no cost
+for the physical equipment it implies). Selected via
+`romSellPriceSelectedAccessoryIds` (mirrors `romSellPriceSelectedAdderIds`
+exactly), rendered as the same toggle-tag control as Adders, but nested inside
+Hardware's own detail panel and summed into **`hardwareTotal`**
+(`src/calc/fleetSellPrice.ts`), not a separate bucket — accessories ARE
+hardware. A fleet containing no vehicle with declared accessories shows nothing
+extra. Amounts ship flagged as placeholders, same convention as
+`content/pricing/adders.json`.
 
 Three rules keep the ledger from re-crowding:
 

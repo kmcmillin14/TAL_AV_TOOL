@@ -210,3 +210,35 @@ describe('aggregateFleetSellPrice — shared fleet-manager-platform integration 
     ])
   })
 })
+
+describe('aggregateFleetSellPrice — vehicle accessories (2026-11-02)', () => {
+  it('a vehicle with no accessories behaves identically to before (regression guard)', () => {
+    const lines = [line('cb18', 750_000, 90_000, 24_000, 4)]
+    const t = aggregateFleetSellPrice(lines, [], adders, assumptions, 0, ['anything'])
+    expect(t.hardwareTotal).toBe(750_000)
+    expect(t.accessoriesTotal).toBe(0)
+  })
+
+  it('an unselected accessory contributes nothing', () => {
+    const ml2 = { ...line('ml2', 400_000, 39_000, 12_000, 4), accessories: [{ id: 'ml2-conveyor', amount: 25_000 }] }
+    const t = aggregateFleetSellPrice([ml2], [], adders, assumptions)
+    expect(t.hardwareTotal).toBe(400_000)
+    expect(t.accessoriesTotal).toBe(0)
+  })
+
+  it('a selected accessory folds into hardwareTotal, not a separate bucket', () => {
+    const ml2 = { ...line('ml2', 400_000, 39_000, 12_000, 4), accessories: [{ id: 'ml2-conveyor', amount: 25_000 }] }
+    const t = aggregateFleetSellPrice([ml2], [], adders, assumptions, 0, ['ml2-conveyor'])
+    expect(t.accessoriesTotal).toBe(25_000)
+    expect(t.hardwareTotal).toBe(425_000)
+    // sellTotal must not double-count — hardwareTotal already includes it.
+    expect(t.sellTotal).toBe(425_000 + 39_000 + 12_000)
+  })
+
+  it('sums selected accessories across multiple vehicles', () => {
+    const ml2 = { ...line('ml2', 400_000, 39_000, 12_000, 4), accessories: [{ id: 'ml2-conveyor', amount: 25_000 }] }
+    const cb18 = { ...line('cb18', 750_000, 90_000, 24_000, 4, 'other'), accessories: [{ id: 'cb18-fork-kit', amount: 5_000 }] }
+    const t = aggregateFleetSellPrice([ml2, cb18], [], adders, assumptions, 0, ['ml2-conveyor', 'cb18-fork-kit'])
+    expect(t.accessoriesTotal).toBe(30_000)
+  })
+})

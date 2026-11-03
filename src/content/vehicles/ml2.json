@@ -101,5 +101,13 @@
     "baseIntegrationSellPrice": 39000,
     "baseSoftwareSellPrice": 12000,
     "_placeholder": "ALL romInputs values are PLACEHOLDERS pending real pricing from Kyle. baseIntegrationSellPrice includes commissioning (owner: commissioning and integration are the same cost bucket)."
-  }
+  },
+  "accessories": [
+    {
+      "id": "ml2-conveyor",
+      "label": "Conveyor interface equipment",
+      "amount": 25000,
+      "note": "PLACEHOLDER pricing pending real cost from Kyle — do not quote a customer. Physical conveyor equipment for ML2's Conveyor transfer method; not included unless the site needs new conveyor infrastructure."
+    }
+  ]
 }

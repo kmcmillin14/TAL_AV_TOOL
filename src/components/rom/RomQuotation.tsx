@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, type ReactNode } from 'react'
+import { useMemo, useState, type ReactNode } from 'react'
 import type { FleetSellPriceTotal } from '@/src/calc/fleetSellPrice'
 import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
 import type { PricingInputConfidence, PricingGate } from '@/src/lib/romComplexityFromProject'
@@ -10,7 +10,7 @@ import Icon from '@/src/design-system/components/Icon'
 import ScrollSection from '@/src/components/ScrollSection'
 import ComplexityAxis, { TierMeter } from './ComplexityAxis'
 
-import { fullUsd } from './RomSellPriceParts'
+import { fullUsd, TogglePill } from './RomSellPriceParts'
 
 /** What the single Professional Services figure covers. Descriptive only —
  *  there is ONE underlying amount (each vehicle's `romInputs`
@@ -52,6 +52,8 @@ interface Props {
   fleetTotal: FleetSellPriceTotal
   selectedAdderIds: string[]
   onToggleAdder: (id: string) => void
+  selectedAccessoryIds: string[]
+  onToggleAccessory: (id: string) => void
   baseline: FleetComplexityBaseline
   gate: PricingGate
 }
@@ -81,18 +83,29 @@ export function shareOfTotal(amount: number, total: number): string {
  *  3. WEIGHT, not colour, for role — Adders is elective and says so with a
  *     dashed leader and dimmer type, before you read a word of it.
  *
- *  Open state is LOCAL, initialised open. It was derived from a prop, which
- *  made the Adders row slam shut the moment you ticked an adder: the prop
+ *  Open state is LOCAL, not derived from a prop — it was once, which made
+ *  the Adders row slam shut the moment you ticked an adder: the prop
  *  flipped, React re-applied `open={false}`, and the list you were using
- *  collapsed under the cursor. */
+ *  collapsed under the cursor.
+ *
+ *  Initial state is open for the elective section (Adders) — that's the one
+ *  row with something to DO on first look — OR when the caller explicitly
+ *  says so via `defaultOpen` (Hardware, when this fleet's vehicles carry any
+ *  Accessories: those are ALSO something to do, nested a level deeper, and
+ *  defaulting Hardware closed regardless would hide them — caught in review,
+ *  2026-11-02). Otherwise (Hardware with nothing to pick, Software,
+ *  Professional Services) sections start closed — their headline (name,
+ *  tier meter, amount, share%) already says what a reader needs; the
+ *  breakdown is one click away rather than forced on every page load. */
 function Category(
-  { num, name, amount, tier, withheld, elective, share, detail }:
+  { num, name, amount, tier, withheld, elective, share, detail, defaultOpen }:
   {
     num: string; name: string; amount: number; tier?: number
     withheld?: boolean; elective?: boolean; share?: string; detail?: ReactNode
+    defaultOpen?: boolean
   },
 ) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(defaultOpen ?? elective === true)
   // A withheld section still reads as a money row — $0, in line with the
   // others — so the column stays scannable. WHY it is zero is stated once, in
   // the status line above the section, not repeated on every row.
@@ -176,9 +189,19 @@ export function RomPricingStatus(
 }
 
 export default function RomQuotation({
-  lines, fleetTotal, selectedAdderIds, onToggleAdder, baseline, gate,
+  lines, fleetTotal, selectedAdderIds, onToggleAdder, selectedAccessoryIds, onToggleAccessory, baseline, gate,
 }: Props) {
   const selected = new Set(selectedAdderIds)
+  const selectedAccessories = useMemo(() => new Set(selectedAccessoryIds), [selectedAccessoryIds])
+  // Every accessory any vehicle in this fleet defines, de-duplicated by id —
+  // one vehicle type per accessory in practice, but a shared id would
+  // otherwise double-list it. Keyed on `lines`, which only changes when the
+  // assigned fleet itself changes, not on every adder/override tweak.
+  const availableAccessories = useMemo(() => {
+    const byId = new Map<string, { id: string; label: string; amount: number; note?: string }>()
+    for (const l of lines) for (const a of l.vehicle.accessories ?? []) if (!byId.has(a.id)) byId.set(a.id, a)
+    return Array.from(byId.values())
+  }, [lines])
   const blocked = gate.blocked
   // One denominator for every section. While the gate blocks, the quote IS the
   // hardware subtotal — sharing against a total the page refuses to state would
@@ -223,15 +246,30 @@ export default function RomQuotation({
       {/* ── the breakdown, four rows of one shape ── */}
       <div className="q-breakdown">
         <Category num="01" name="Hardware" amount={fleetTotal.hardwareTotal}
+          defaultOpen={availableAccessories.length > 0}
           share={shareOfTotal(fleetTotal.hardwareTotal, quoteTotal)} detail={
-          <ul className="q-lines">
-            {lines.map(l => (
-              <li key={l.vehicleId}>
-                <span>{l.vehicleName} <span className="q-qty mono">× {l.qty}</span></span>
-                <span className="mono">{fullUsd(l.pricing.hardwareSellTotal)}</span>
-              </li>
-            ))}
-          </ul>
+          <>
+            <ul className="q-lines">
+              {lines.map(l => (
+                <li key={l.vehicleId}>
+                  <span>{l.vehicleName} <span className="q-qty mono">× {l.qty}</span></span>
+                  <span className="mono">{fullUsd(l.pricing.hardwareSellTotal)}</span>
+                </li>
+              ))}
+            </ul>
+            {/* Accessories — vehicle-specific optional equipment (e.g. ML2's
+                conveyor). Hidden entirely when no vehicle in this fleet
+                defines any, so most projects see no change here at all. */}
+            {availableAccessories.length > 0 && (
+              <ul className="q-adders q-accessories">
+                {availableAccessories.map(a => (
+                  <li key={a.id}>
+                    <TogglePill {...a} on={selectedAccessories.has(a.id)} onToggle={onToggleAccessory} />
+                  </li>
+                ))}
+              </ul>
+            )}
+          </>
         } />
 
         <Category num="02" name="Software" amount={fleetTotal.softwareTotal}
@@ -266,21 +304,11 @@ export default function RomQuotation({
         <Category num="04" name="Adders" elective amount={fleetTotal.addersTotal}
           share={shareOfTotal(fleetTotal.addersTotal, quoteTotal)} detail={
             <ul className="q-adders">
-              {ADDERS_CONFIG.adders.map(a => {
-                const on = selected.has(a.id)
-                return (
-                  <li key={a.id}>
-                    <button
-                      type="button" className={`q-adder${on ? ' is-on' : ''}`}
-                      aria-pressed={on} onClick={() => onToggleAdder(a.id)}
-                    >
-                      <span className="q-adder-mark" aria-hidden="true" />
-                      <span className="q-adder-label">{a.label}</span>
-                      <span className="q-adder-amt mono">{fullUsd(a.amount)}</span>
-                    </button>
-                  </li>
-                )
-              })}
+              {ADDERS_CONFIG.adders.map(a => (
+                <li key={a.id}>
+                  <TogglePill {...a} on={selected.has(a.id)} onToggle={onToggleAdder} />
+                </li>
+              ))}
             </ul>
           } />
       </div>
