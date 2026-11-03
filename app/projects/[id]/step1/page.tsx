@@ -22,6 +22,29 @@ export default function Step1Page() {
     setLoading(false)
   }, [id])
 
+  // Scroll to a #section-NN hash once the form has actually rendered (e.g.
+  // Step 4's "jump to what's missing" links). The browser's own hash-scroll
+  // fires at navigation time, before `project` has loaded and ApplicationForm
+  // has mounted its sections — by then the target id doesn't exist yet, so
+  // the native scroll silently does nothing and nothing re-triggers it.
+  // `loading` turning false only means React has scheduled the form's render,
+  // not that it's painted, so this polls a few frames rather than assuming
+  // one is enough.
+  useEffect(() => {
+    if (loading) return
+    const hash = window.location.hash.slice(1)
+    if (!hash) return
+    let frame = 0
+    let raf = 0
+    const tryScroll = () => {
+      const el = document.getElementById(hash)
+      if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); return }
+      if (++frame < 20) raf = requestAnimationFrame(tryScroll)
+    }
+    raf = requestAnimationFrame(tryScroll)
+    return () => cancelAnimationFrame(raf)
+  }, [loading])
+
   // Undo and programmatic value injections (pallet auto-fill, flow duplicate) write
   // to storage in place; re-read and remount the form so uncontrolled inputs pick
   // up the corrected values through their unit-aware `defaultValue`.

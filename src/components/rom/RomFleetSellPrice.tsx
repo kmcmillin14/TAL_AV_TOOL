@@ -120,7 +120,7 @@ export default function RomFleetSellPrice({ project, fleet, vehicleById }: Props
         <>
           {/* Above the sections, not inside one: between the total and the
               breakdown it read as a row OF the breakdown. */}
-          <RomPricingStatus confidence={confidence} gate={gate} />
+          <RomPricingStatus confidence={confidence} gate={gate} projectId={project.id} />
 
           <RomQuotation
             lines={lines}

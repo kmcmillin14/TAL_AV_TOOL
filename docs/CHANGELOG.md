@@ -1,5 +1,37 @@
 # Changelog
 
+## 2026-11-03 — Step 4 headline simplified to ROM price + range; missing inputs link to Step 1
+
+Owner feedback: the headline showed three equal-weight stats (total, budgetary range,
+per-unit) and felt busy; the goal was "show the range and the ROM price." Also: the
+"what's missing" status line named fields but gave no way to jump to them.
+
+**Headline restructured.** `RomQuotation.tsx` now leads with the ROM price and its
+band inline (e.g. "$2,271,200 ±20%" when fully confirmed, "−20% / +25%" once Step 1
+gaps have widened the high side), the dollar range as the one supporting stat, and
+per-unit blended folded into a small trailing line rather than a stat of its own.
+Nothing was removed — only the hierarchy changed.
+
+**ROM band is now symmetric ±20%** (owner decision; was −10%/+25%).
+`src/content/pricing/global-assumptions.json` `romBand.low`/`.high`. The one-sided
+widening for unanswered Step 1 inputs is unchanged — it still only ever pushes the
+high side further out.
+
+**Missing-field names are now links.** Each name in the "Not priced" / "Placeholder
+pricing — missing: …" status line jumps straight to the Step 1 section that answers
+it, instead of just naming it. `FIELD_SECTION_ID`
+(`src/lib/romComplexityFromProject.ts`) derives label → section id from
+`FORM_SECTIONS.requiredFields` (`src/lib/constants/sections.ts`) — not hand-mapped,
+so moving a field between sections can't produce a stale link; a drift-guard test
+runs the real `pricingInputConfidence`/`pricingGate` functions and confirms every
+label they can produce resolves to a real section. Step 1
+(`app/projects/[id]/step1/page.tsx`) gained a bounded scroll-retry effect, since the
+browser's native hash-scroll fires before the project has loaded and the form has
+mounted — without it, a `#section-NN` link silently lands at the top of the page.
+
+Scoped directly with the owner rather than a separate written spec, given its small,
+well-bounded size.
+
 ## 2026-11-02 — Adder/accessory mark: `+` unpicked instead of a hollow ring
 
 Owner feedback on the pill control in Adders/Accessories: the unpicked mark should

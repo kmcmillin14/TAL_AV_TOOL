@@ -4063,19 +4063,32 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   font-family: var(--tal-font-numeric); font-size: var(--q-type-label); font-weight: 700;
   letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary);
 }
+.q-headline-amount-row { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .q-headline-amount {
   font-size: var(--q-type-hero); font-weight: 800; line-height: 1.05; letter-spacing: -0.015em;
   color: var(--accent); font-variant-numeric: tabular-nums;
 }
 .q-headline.is-blocked .q-headline-amount { color: var(--text-primary); }
-.q-headline-side { display: flex; gap: 28px; flex-wrap: wrap; }
-.q-headline-side > span { display: flex; flex-direction: column; gap: 3px; }
+/* The band's spread, inline with the figure it qualifies rather than a
+   separate stat — "±20%" reads as one fact about the number beside it, not a
+   fourth thing to parse on its own (2026-11-03). */
+.q-headline-pct {
+  font-size: var(--q-type-body); font-weight: 600; color: var(--text-tertiary);
+}
+/* ONE stat now (the dollar range) — per-unit used to be a second, equal-weight
+   stat beside it; folded into a small trailing line instead (2026-11-03). */
+.q-headline-side { display: flex; flex-direction: column; gap: 3px; }
 .q-headline-side em {
   font-style: normal;
   font-family: var(--tal-font-numeric); font-size: var(--q-type-label); font-weight: 700;
   letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
 }
 .q-headline-side .mono { font-size: var(--q-type-body); font-weight: 600; color: var(--text-primary); }
+/* Own class rather than a nested ".mono" override — ".q-headline-side .mono"
+   above and a nested rule here would share specificity, so which one "wins"
+   would depend on source order alone (caught in review, 2026-11-03). */
+.q-headline-perunit { font-size: var(--q-type-label); color: var(--text-tertiary); }
+.q-headline-perunit-amt { font-size: var(--q-type-label); font-weight: 600; color: var(--text-tertiary); }
 
 /* ONE status line. Was three — a permanent banner above the card, a blocked
    warning under the total, and a confidence strip at the bottom. */
@@ -4088,6 +4101,11 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 .q-status svg { flex-shrink: 0; margin-top: 2px; color: var(--text-tertiary); }
 .q-status strong { color: var(--text-primary); font-weight: 600; }
+/* Each missing field name jumps to the Step 1 section that answers it
+   (2026-11-03) — underlined so it reads as a link, inheriting `strong`'s
+   colour per state rather than the browser default blue. */
+.q-status a { color: inherit; text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+.q-status a:hover { text-decoration-thickness: 2px; }
 .q-status.is-partial { color: var(--warn); background: var(--warn-soft); border-color: transparent; }
 .q-status.is-partial svg, .q-status.is-partial strong { color: var(--warn); }
 .q-status.is-blocked { color: var(--bad); background: var(--bad-soft); border-color: transparent; }

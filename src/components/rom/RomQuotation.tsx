@@ -1,9 +1,10 @@
 'use client'
 
 import { useMemo, useState, type ReactNode } from 'react'
+import Link from 'next/link'
 import type { FleetSellPriceTotal } from '@/src/calc/fleetSellPrice'
 import type { RomSellPriceLine } from '@/src/lib/romSellPriceLine'
-import type { PricingInputConfidence, PricingGate } from '@/src/lib/romComplexityFromProject'
+import { FIELD_SECTION_ID, type PricingInputConfidence, type PricingGate } from '@/src/lib/romComplexityFromProject'
 import type { FleetComplexityBaseline } from '@/src/lib/romSellPriceLine'
 import { ADDERS_CONFIG, PRICING_ASSUMPTIONS } from '@/src/lib/pricingContent'
 import Icon from '@/src/design-system/components/Icon'
@@ -66,6 +67,17 @@ export function shareOfTotal(amount: number, total: number): string {
   if (!(total > 0) || !(amount > 0)) return ''
   const pct = amount / total * 100
   return pct < 1 ? '<1%' : `${Math.round(pct)}%`
+}
+
+/** The band as a percentage, next to the headline figure instead of making
+ *  the reader infer it from two dollar amounts. `±20%` when the band is
+ *  symmetric (the common case — nothing on Step 1 is unanswered); once an
+ *  unknown widens the high side past the low side's magnitude, it reads as
+ *  the true asymmetric split instead of a misleading "±". */
+export function bandPctLabel(lowPct: number, highPct: number): string {
+  const lowAbs = Math.round(Math.abs(lowPct) * 100)
+  const high = Math.round(highPct * 100)
+  return lowAbs === high ? `±${high}%` : `−${lowAbs}% / +${high}%`
 }
 
 /** One section of the ledger.
@@ -155,8 +167,36 @@ const UNSCORED_WHY =
  *  total and the money. Nothing was dropped: the state, the count and the
  *  field names are all still here; only the reasoning moved to the tooltip,
  *  per CLAUDE.md "explain through structure, not prose". */
+/** One missing-input name, linked straight to the Step 1 section that answers
+ *  it — e.g. "AGV/AMR experience" jumps to section 09 — rather than naming a
+ *  field the reader then has to go hunt for. Falls back to plain text for any
+ *  label FIELD_SECTION_ID doesn't cover (shouldn't happen — see the drift-guard
+ *  test — but a dead link is worse than an unlinked name). */
+function MissingField({ projectId, label }: { projectId: string; label: string }) {
+  const sectionId = FIELD_SECTION_ID[label]
+  if (!sectionId) return <>{label}</>
+  return <Link href={`/projects/${projectId}/step1#${sectionId}`}>{label}</Link>
+}
+
+function MissingList({ projectId, labels }: { projectId: string; labels: string[] }) {
+  // Oxford comma only kicks in at 3+ items — "A and B" at exactly two, never
+  // "A, and B" (caught in review: the unconditional ', and ' on the last item
+  // also fired at length 2, which is the single most common missing-count).
+  const last = labels.length - 1
+  return (
+    <>
+      {labels.map((label, i) => (
+        <span key={label}>
+          {i > 0 && (i === last ? (labels.length > 2 ? ', and ' : ' and ') : ', ')}
+          <MissingField projectId={projectId} label={label} />
+        </span>
+      ))}
+    </>
+  )
+}
+
 export function RomPricingStatus(
-  { confidence, gate }: { confidence: PricingInputConfidence; gate: PricingGate },
+  { confidence, gate, projectId }: { confidence: PricingInputConfidence; gate: PricingGate; projectId: string },
 ) {
   const blocked = gate.blocked
   const partial = !blocked && confidence.missing.length > 0
@@ -170,12 +210,12 @@ export function RomPricingStatus(
         {blocked ? (
           <>
             <strong>Not priced</strong> — {gate.blockedLabels.join(' and ')} need{' '}
-            <strong>{gate.missingAll.join(', ')}</strong> on Step 1.
+            <strong><MissingList projectId={projectId} labels={gate.missingAll} /></strong> on Step 1.
           </>
         ) : partial ? (
           <>
             <strong>Placeholder pricing</strong> — <span className="mono">{confidence.answered} of {confidence.total}</span>{' '}
-            inputs confirmed. Missing on Step 1: <strong>{confidence.missing.join(', ')}</strong>.
+            inputs confirmed. Missing on Step 1: <strong><MissingList projectId={projectId} labels={confidence.missing} /></strong>.
           </>
         ) : (
           <>
@@ -219,25 +259,31 @@ export default function RomQuotation({
       title="Project investment"
       sub={`${fleetTotal.totalQty} unit${fleetTotal.totalQty === 1 ? '' : 's'} across ${lines.length} vehicle ${lines.length === 1 ? 'type' : 'types'}`}
     >
-      {/* ── the figure, first ── */}
+      {/* ── the figure, first — ROM price + its spread in one line, the
+          actual dollar range as the one supporting stat, per-unit folded in
+          small rather than given its own block (2026-11-03: was three
+          equal-weight stats; "show the range and the ROM price" was getting
+          lost in the third one). ── */}
       <div className={`q-headline${blocked ? ' is-blocked' : ''}`}>
         <div className="q-headline-main">
           <span className="q-headline-label">
             {blocked ? 'Hardware subtotal — not the project total' : 'Total project investment'}
           </span>
-          <span className="q-headline-amount mono">
-            {fullUsd(blocked ? fleetTotal.hardwareTotal : fleetTotal.sellTotal)}
+          <span className="q-headline-amount-row">
+            <span className="q-headline-amount mono">
+              {fullUsd(blocked ? fleetTotal.hardwareTotal : fleetTotal.sellTotal)}
+            </span>
+            {!blocked && (
+              <span className="q-headline-pct mono">{bandPctLabel(PRICING_ASSUMPTIONS.romBand.low, fleetTotal.bandHighPct)}</span>
+            )}
           </span>
         </div>
         {!blocked && (
           <div className="q-headline-side">
-            <span>
-              <em>Budgetary range</em>
-              <span className="mono">{fullUsd(fleetTotal.band.lowTotal)} – {fullUsd(fleetTotal.band.highTotal)}</span>
-            </span>
-            <span>
-              <em>Per unit, blended</em>
-              <span className="mono">{fullUsd(fleetTotal.sellPerUnit)}</span>
+            <em>Budgetary range</em>
+            <span className="mono">{fullUsd(fleetTotal.band.lowTotal)} – {fullUsd(fleetTotal.band.highTotal)}</span>
+            <span className="q-headline-perunit">
+              <span className="mono q-headline-perunit-amt">{fullUsd(fleetTotal.sellPerUnit)}</span> per unit, blended
             </span>
           </div>
         )}

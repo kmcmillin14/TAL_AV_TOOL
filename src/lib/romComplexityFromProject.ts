@@ -4,6 +4,8 @@
 // project schema).
 import type { StoredProject } from '@/src/lib/storage'
 import type { ComplexityAnswers } from '@/src/calc/complexityInputs'
+import { FORM_SECTIONS } from '@/src/lib/constants/sections'
+import type { ProjectFormData } from '@/src/lib/validations/schemas'
 
 export function complexityAnswersFromProject(project: StoredProject): ComplexityAnswers {
   const trafficType: ComplexityAnswers['trafficType'] = []
@@ -37,15 +39,21 @@ export function complexityAnswersFromProject(project: StoredProject): Complexity
  *  array is genuinely ambiguous: it means either "answered: none apply" or
  *  "never asked", and the schema can't tell them apart. Counting them would
  *  report confident projects as incomplete, so they're left out rather than
- *  guessed at. */
-const PRICING_INPUTS: Array<{ label: string; unanswered: (p: StoredProject) => boolean }> = [
-  { label: 'WMS integration', unanswered: p => p.wmsRequired === undefined },
-  { label: 'Storage tracking', unanswered: p => p.storageTrackingRequired === undefined },
-  { label: 'Barcode scanning', unanswered: p => p.barcodeScanningRequired === undefined },
-  { label: 'Ramps', unanswered: p => p.rampRequired === undefined },
-  { label: 'AGV/AMR experience', unanswered: p => p.hasAgvExperience === undefined },
-  { label: 'Facility size', unanswered: p => p.facilitySizeSqFt === undefined || p.facilitySizeSqFt === null },
-  { label: 'Pick/drop locations', unanswered: p => p.pickDropLocationCount === undefined || p.pickDropLocationCount === null },
+ *  guessed at.
+ *
+ *  `field` is the ProjectFormData key the label reports on — used only to
+ *  derive FIELD_SECTION_ID (below) from FORM_SECTIONS, so Step 4's "jump to
+ *  what's missing" links can never point at the wrong Step 1 section: moving
+ *  a field between sections in sections.ts moves the link with it, with
+ *  nothing to keep in sync by hand. */
+const PRICING_INPUTS: Array<{ label: string; field: keyof ProjectFormData; unanswered: (p: StoredProject) => boolean }> = [
+  { label: 'WMS integration', field: 'wmsRequired', unanswered: p => p.wmsRequired === undefined },
+  { label: 'Storage tracking', field: 'storageTrackingRequired', unanswered: p => p.storageTrackingRequired === undefined },
+  { label: 'Barcode scanning', field: 'barcodeScanningRequired', unanswered: p => p.barcodeScanningRequired === undefined },
+  { label: 'Ramps', field: 'rampRequired', unanswered: p => p.rampRequired === undefined },
+  { label: 'AGV/AMR experience', field: 'hasAgvExperience', unanswered: p => p.hasAgvExperience === undefined },
+  { label: 'Facility size', field: 'facilitySizeSqFt', unanswered: p => p.facilitySizeSqFt === undefined || p.facilitySizeSqFt === null },
+  { label: 'Pick/drop locations', field: 'pickDropLocationCount', unanswered: p => p.pickDropLocationCount === undefined || p.pickDropLocationCount === null },
 ]
 
 export interface PricingInputConfidence {
@@ -103,27 +111,47 @@ export type GateAxis = 'integration' | 'software'
 interface GateInput {
   label: string
   axes: GateAxis[]
+  /** See PRICING_INPUTS' `field` doc — same purpose, same derivation. */
+  field: keyof ProjectFormData
   unanswered: (p: StoredProject) => boolean
 }
 
 const PRICING_GATE_INPUTS: GateInput[] = [
-  { label: 'Pick/drop locations', axes: ['integration'],
+  { label: 'Pick/drop locations', axes: ['integration'], field: 'pickDropLocationCount',
     unanswered: p => p.pickDropLocationCount == null },
-  { label: 'Facility size', axes: ['integration'],
+  { label: 'Facility size', axes: ['integration'], field: 'facilitySizeSqFt',
     unanswered: p => p.facilitySizeSqFt == null },
-  { label: 'AGV/AMR experience', axes: ['integration'],
+  { label: 'AGV/AMR experience', axes: ['integration'], field: 'hasAgvExperience',
     unanswered: p => p.hasAgvExperience === undefined },
   // Empty is genuinely "never asked" for both of these: each list carries an
   // explicit 'None' option, so an answered project is never empty.
-  { label: 'Shared traffic in the area', axes: ['integration', 'software'],
+  { label: 'Shared traffic in the area', axes: ['integration', 'software'], field: 'sharedTrafficTypes',
     unanswered: p => (p.sharedTrafficTypes ?? []).length === 0 },
-  { label: 'WMS integration', axes: ['software'],
+  { label: 'WMS integration', axes: ['software'], field: 'wmsRequired',
     unanswered: p => p.wmsRequired === undefined },
-  { label: 'Storage tracking', axes: ['software'],
+  { label: 'Storage tracking', axes: ['software'], field: 'storageTrackingRequired',
     unanswered: p => p.storageTrackingRequired === undefined },
-  { label: 'Automation interlocks', axes: ['software'],
+  { label: 'Automation interlocks', axes: ['software'], field: 'interlocks',
     unanswered: p => (p.interlocks ?? []).length === 0 },
 ]
+
+/** label → owning Step 1 section id, derived from FORM_SECTIONS.requiredFields
+ *  (src/lib/constants/sections.ts) via each input's `field` — not hand-typed,
+ *  so moving a field between sections moves this link with it automatically.
+ *  Covers every label either PRICING_INPUTS or PRICING_GATE_INPUTS can
+ *  produce (the two lists overlap but aren't identical — see each list's own
+ *  comment for why). A test (romComplexityFromProject.test.ts) asserts every
+ *  label either list can produce resolves to a real section id, so a field
+ *  moved to a section with no requiredFields entry fails loudly instead of
+ *  silently producing a dead link. */
+const SECTION_ID_BY_FIELD = new Map<keyof ProjectFormData, string>(
+  FORM_SECTIONS.flatMap(s => s.requiredFields.map(f => [f, s.id] as const))
+)
+export const FIELD_SECTION_ID: Record<string, string> = Object.fromEntries(
+  [...PRICING_INPUTS, ...PRICING_GATE_INPUTS]
+    .map(i => [i.label, SECTION_ID_BY_FIELD.get(i.field)] as const)
+    .filter((entry): entry is [string, string] => entry[1] !== undefined)
+)
 
 /** Quotation category names, as the gate reports them. Same strings the
  *  quotation renders as category headings, so a surface naming a blocked

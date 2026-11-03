@@ -636,7 +636,10 @@ payback). Lives in `src/calc/sellPriceRom.ts` (per-vehicle) + `src/calc/fleetSel
    fleet-wide line, rendered with a descriptive "includes" list — Integration ·
    Commissioning · Startup support · Project management — and a note when it's shared
    across a fleet-manager platform), and **Adders** (the selected options, itemized).
-   Closed by **Total project investment**, then per-unit blended and the budgetary range.
+   Closed by **Total project investment** — the figure with its ±band inline
+   (2026-11-03: e.g. "$2,271,200 ±20%", asymmetric once Step 1 gaps have widened the
+   high side) — then the budgetary range as the one supporting stat, with per-unit
+   blended folded into a small trailing line rather than a stat of its own.
    *Professional services is ONE dollar figure* (`romInputs.baseIntegrationSellPrice`,
    charged once per platform) — the four items are descriptive scope, not separately
    priced lines, so that single number must be sized to cover all four when real pricing
@@ -688,7 +691,8 @@ fleet (see the complexity note below for why the breakdown is genuinely fleet-wi
   (`src/calc/fleetSellPrice.ts`), in the **Fleet total** section only.
 - **Total project investment** = Σ every vehicle's Hardware + Σ (once-per-platform-group)
   Professional services + Σ every vehicle's Software + Adders (once) → a **ROM band**
-  (`romBand.low`/`.high` in the assumptions file, e.g. −10%/+25%) applied ONCE on that
+  (`romBand.low`/`.high` in the assumptions file, symmetric ±20% as of 2026-11-03 —
+  was −10%/+25%) applied ONCE on that
   fleet-wide sum — not summed from each vehicle's own rounded band, which would compound
   rounding error — rounded to the nearest `rounding` ($5,000 today), and shown as the
   **budgetary range** under the total.
@@ -841,7 +845,14 @@ Three rules keep the ledger from re-crowding:
   the sentences that used to introduce those lists are gone, and the reasoning
   behind the pricing status moved to that row's tooltip. `RomPricingStatus` is
   **one line in every state** and still names the state, the confirmed/total
-  count and the missing Step 1 fields.
+  count and the missing Step 1 fields. Each missing field name is a link
+  (2026-11-03) to the Step 1 section that answers it — `FIELD_SECTION_ID`
+  (`src/lib/romComplexityFromProject.ts`) derives label → section id from
+  `FORM_SECTIONS.requiredFields`, so naming "what's missing" and navigating to
+  it can't drift apart. Step 1 itself (`app/projects/[id]/step1/page.tsx`)
+  polls for the target section on mount and scrolls to it once rendered —
+  needed because the browser's own hash-scroll fires before the project has
+  loaded and the form has mounted its sections.
 - **Adders are tags, not checkboxes.** They are the only thing on the quotation
   a reader can change, so they are the only thing drawn as a control: a wrapping
   row of toggle tags (`aria-pressed`), a **`+` unpicked and filled accent disc

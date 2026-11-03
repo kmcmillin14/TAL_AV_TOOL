@@ -27,6 +27,7 @@ export const pricingAssumptionsSchema = z.object({
   softwareMultipliers: strictlyIncreasingTierMap('softwareMultipliers'),
   integrationScoring: tierPointTableSchema,
   softwareScoring: tierPointTableSchema,
+  _romBandNote: z.string().optional(),
   romBand: z
     .object({ low: z.number(), high: z.number() })
     .refine(b => b.low < 0 && b.high > 0, {

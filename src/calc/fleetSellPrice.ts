@@ -49,7 +49,11 @@ export interface FleetSellPriceTotal {
   integrationByPlatform: IntegrationPlatformCharge[]
   /** The high-side band percentage actually used, AFTER widening for
    *  unanswered pricing inputs (equals `assumptions.romBand.high` when
-   *  nothing is unknown). Exposed so the UI can say why the range is wide. */
+   *  nothing is unknown). Exposed so the UI can say why the range is wide.
+   *  The low side has no equivalent field: unknowns only ever widen the high
+   *  side (see module note), so it's always flat `assumptions.romBand.low`
+   *  — a caller that needs it can read that constant directly rather than
+   *  this type carrying a field that's just a passthrough. */
   bandHighPct: number
   /** How many unanswered pricing inputs widened the band. */
   unknownInputCount: number
