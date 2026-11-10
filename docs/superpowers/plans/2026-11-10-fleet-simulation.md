@@ -198,7 +198,7 @@ no results).
 - [ ] Repeat a charger ×6 at 5 ft, then undo once
 - [ ] Narrow an aisle and read the B56.5 callouts: 6 in / 0.5 m, shared between vehicles
 - [ ] Export the revision, re-import it: the drawing comes back
-- [ ] Interim check: Halfway check: drawing, scale, points, routes and flows, before curves and clearances are built.
+- [ ] Interim check: Halfway check — ready now: draw a small site in the preview (drawing, scale, points, routes, flows) and check Sizing reads the distance "from layout". 622 tests; walked through in the browser.
 - **Sign-off question:** Can you draw a real site in about 30 minutes, and are the clearance callouts right?
 - **You receive:** Preview link, a drawn example site, and the clearance numbers on a measured aisle
 
