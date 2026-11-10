@@ -438,8 +438,8 @@ Numbering follows the owner prompt §7 so tests can cite it.
 8. 24 h, one type with battery data, busy demand → charging share ≈ `1 − dutyRatio` from
    `chargingAvailability` (±3 pts).
 9. A constructed single-lane head-on conflict → **Gridlock**, not passing. Sample layout,
-   fleets 3–6, seeds 1–6, demand 100/130%, random arrivals, 16 h → zero *cycle* gridlocks; the 4
-   stub stalls the POC hid are reported as *stall* (O-11) until the junction rule is decided.
+   fleets 3–6, seeds 1–6, demand 100/130%, random arrivals, 16 h → zero gridlocks (with D-11; the
+   POC itself froze, unreported, in 4 of these 48 runs).
 10. Points can be placed off-route and show "Not connected"; Run lists them.
 11. Flow tool refuses Drop→Pick; created flows appear in Sizing with "from layout" distance.
 12. Direction indicator readable at min and max zoom; legend present.
@@ -525,6 +525,7 @@ mulberry32 generator so seeds stay comparable).
 | D-7 | CB18 overall length **9.63 ft** (body 6.13 + 42 in forks), engineer assumption to confirm (§4.3). |
 | D-9 | Verdict **based on utilization** against the project's `targetUtilization` (§6.7); charging defaults `minSocPct + 10` / `+ 30`. |
 | D-10 | Simulate is an **un-numbered page opened from Sizing**; the step ribbon is unchanged. |
+| D-11 | **Stub junction rule — exiting vehicle first** (owner, 2026-11-10; fixes POC stalls). A spur zone, one-segment stubs included, is held until the leaving vehicle is out of the spur and released at the gate; a vehicle waiting for a zone gives way at the junction to the vehicle holding it (it still blocks when in the holder's lane ahead, same direction — the queue the handover rule serves); a ring of following-blocks of any size releases its lowest-index vehicle (the POC's pair rule, extended). Plus a **stall check**: no vehicle with work moves or handles for 120 s while orders wait → Gridlock (stall). |
 
 **Still open — fallbacks in use, none blocks Milestone 1:**
 - O-2b: which B56.5 edition to cite.
@@ -533,15 +534,12 @@ mulberry32 generator so seeds stay comparable).
   tugger train data — per vehicle (BlueBotics ANT configuration or Bastian engineering).
 - O-7b: overall length incl. attachments for the other five vehicles.
 - O-8: top-down sprites for the other five vehicles; `cb18-top.png`, `app.js` and the icon sheet.
-- **O-11 (found in Milestone 1):** the POC releases a spur zone while the vehicle is still inside a
-  *one-segment* stub (its spur rule exempts branches of size 1). On the POC sample this freezes
-  the fleet at the Wrapper Outfeed stub in 4 of 48 acceptance-9 runs; the POC's detector missed it
-  (no wait-for cycle) and scored the runs "Falls short". The port keeps the POC rule and adds a
-  **stall** check (no vehicle with work moves or handles for 120 s while orders wait → Gridlock,
-  kind *stall*), so the freeze is reported. Holding the zone until the vehicle leaves the stub was
-  tried and makes waiting vehicles block the stub exit at the gate (every run gridlocked). A real
-  fix needs a junction rule — e.g. waiting vehicles yield the gate to a vehicle leaving the stub —
-  which is a traffic-behaviour change for the owner to approve.
+- **O-12 (found in Milestone 1):** two spur zones close together on one aisle (30 ft on the POC sample)
+  can still deadlock: vehicles waiting for one spur queue in the exit lane of the other while each
+  spur's leaving vehicle needs that lane. 1 run in 144 (fleet 6, seed 10, 100%); it is reported as
+  Gridlock (cycle), never hidden. A fleet manager holds such waiters back at the previous junction
+  (segment reservation) — to design with the layout editor (Milestone 4), where these layouts can
+  be drawn and tested.
 
 ## 13. Out of scope (this branch)
 

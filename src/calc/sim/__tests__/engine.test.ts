@@ -110,24 +110,35 @@ describe('acceptance 9 — gridlock is reported, never driven through', () => {
     const S = runFor(sim(headOn('two'), flows, { fleet: { cb18: 2 } }), 3600)
     expect(S.gridlock).toBeNull()
   })
-  // The POC baseline reported "0 gridlocks" because its detector only saw wait-for cycles. Four runs
-  // actually freeze at the Wrapper Outfeed stub (zone released inside a one-segment stub — POC rule,
-  // kept pending owner decision O-11). They are now reported as stalls instead of scoring "Falls short".
-  // This pins the set, so any new deadlock fails here.
-  it('proof-of-concept sample: fleets 3–6, seeds 1–6, demand 100/130%, random, 16 h → no cycle gridlocks; known stalls reported', () => {
+  // O-11 (owner decision: exiting vehicle first). The POC froze in 4 of these 48 runs at a stub gate
+  // without reporting it; with the stub rule, waiting vehicles yielding at the junction and rings of
+  // following-blocks resolved, all 48 run clean.
+  it('proof-of-concept sample: fleets 3–6, seeds 1–6, demand 100/130%, random, 16 h → zero gridlocks', () => {
     const { layout, flows: f } = sampleLayout()
     const hits: string[] = []
     for (const n of [3, 4, 5, 6]) for (const seed of [1, 2, 3, 4, 5, 6]) for (const demandPct of [100, 130]) {
       const S = runFor(sim(layout, f, { fleet: { cb18: n }, seed, demandPct, arrivals: 'random' }), 16 * 3600)
       if (S.gridlock) hits.push(`fleet ${n} seed ${seed} ${demandPct}%: ${S.gridlock.kind} ${S.gridlock.where}`)
     }
-    expect(hits).toEqual([
-      'fleet 4 seed 3 100%: stall near Wrapper Outfeed',
-      'fleet 5 seed 2 100%: stall near Wrapper Outfeed',
-      'fleet 5 seed 3 130%: stall near Wrapper Outfeed',
-      'fleet 6 seed 3 130%: stall near Wrapper Outfeed',
-    ])
+    expect(hits).toEqual([])
   }, 600_000)
+
+  it('O-11 — the POC stub stall (fleet 5, seed 2, 100%) now delivers instead of freezing', () => {
+    const { layout, flows: f } = sampleLayout()
+    const S = runFor(sim(layout, f, { fleet: { cb18: 5 }, seed: 2, arrivals: 'random' }), 16 * 3600)
+    expect(S.gridlock).toBeNull()
+    expect(results(S).types[0].delivered).toBeGreaterThan(0.98)
+  }, 60_000)
+
+  it('a fleet that stops moving while orders wait is reported as Gridlock (stall), never hidden', () => {
+    const S = sim(corridor(200), flowAB(60))
+    runFor(S, 120)                                       // a job is under way
+    expect(S.veh.some(v => v.job)).toBe(true)
+    const p = S.profiles.get('cb18')!
+    p.speedLoaded = 0; p.speedEmpty = 0                  // nothing can move any more
+    runFor(S, 600)
+    expect(S.gridlock?.kind).toBe('stall')
+  })
 })
 
 describe('acceptance 23 — the reference point stays on the path', () => {

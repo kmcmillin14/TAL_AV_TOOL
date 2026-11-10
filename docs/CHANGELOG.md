@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-10 — Fleet simulation: stub junction rule, exiting vehicle first (O-11 → D-11)
+
+Owner decision after Milestone 1. Traffic-behaviour change inside `src/calc/sim/engine.ts`
+only; no app or quote change.
+
+- A zone at the end of a spur — one-segment stubs included — is held until the leaving vehicle is
+  out of the spur, then released at the gate. The POC exempted one-segment stubs, which let the
+  zone go while the vehicle was still inside.
+- A vehicle waiting for a zone gives way at the junction to the vehicle holding it, instead of
+  passing the zone back and forth every step (the cause of the frozen fleets). It still blocks the
+  holder when it sits in the holder's lane ahead, going the same way.
+- A ring of following-blocks of any size releases its lowest-index vehicle: the POC's pair rule
+  ("lower index proceeds") extended to three-way junctions.
+
+**Result on the POC sample:** 48 acceptance-9 runs → 0 gridlocks, 0 stalls (the POC froze,
+unreported, in 4). 96 more runs on seeds 7–18 → 1 reported gridlock where two stubs sit 30 ft
+apart (O-12, to design with the layout editor). Moves/h and wait otherwise unchanged.
+
 ## 2026-11-10 — Fleet simulation Milestone 1: engine port (`src/calc/sim/`, branch `feature/fleet-simulation`)
 
 No user-facing change yet — the engine has no screen until Milestone 3, and nothing reads it.

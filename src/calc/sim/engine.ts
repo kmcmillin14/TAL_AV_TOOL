@@ -27,6 +27,8 @@ export const STALL_S = 120
 export const HEADING_TOL_RAD = (5 * Math.PI) / 180
 /** Same-direction test for following: cos(angle) above this counts as "same way". */
 const SAME_WAY_COS = -0.3
+/** In-lane test: the other vehicle heads within ~45° of the path at that point. */
+const IN_LANE_COS = Math.SQRT1_2
 
 type Mode = 'home' | 'free' | 'toHome' | 'toCharge' | 'toPick' | 'toDrop' | 'pick' | 'drop' | 'charging'
 const MOVING = new Set<Mode>(['toPick', 'toDrop', 'toHome', 'toCharge'])
@@ -452,14 +454,23 @@ export function step(S: SimState) {
       if (Math.abs(u.x - v.x) > look + rad || Math.abs(u.y - v.y) > look + rad) continue
       if (u.atNode && G.zone[u.node]) continue          // parked/handling on a zone: zones handle it
       pts = pts ?? ahead(S, v, (v.prof.lengthFt + longest) / 2 + P.safetyFt)
-      const hit = pts.find(p => p[4] <= look && (p[0] - u.x) ** 2 + (p[1] - u.y) ** 2 < rad2 && (p[3] || Math.cos(u.th - p[2]) > SAME_WAY_COS))
+      // O-11: a vehicle waiting for a zone v holds gives way at the junction. It blocks v only when it
+      // is in v's lane ahead going the same way — the queue case the handover rule below serves.
+      const yields = u.waitZone != null && v.held.has(u.waitZone)
+      const hit = pts.find(p => p[4] <= look && (p[0] - u.x) ** 2 + (p[1] - u.y) ** 2 < rad2
+        && (yields ? Math.cos(u.th - p[2]) > IN_LANE_COS : (p[3] || Math.cos(u.th - p[2]) > SAME_WAY_COS)))
       if (hit) { v.blockedBy = u; v.headOn = hit[3] && Math.cos(u.th - hit[2]) <= SAME_WAY_COS; break }
     }
   }
-  // mutual block → lower index proceeds (POC rule); a head-on block on a single-lane segment stays
+  // A ring of following-blocks (A blocked by B blocked by … A) → the lowest index proceeds: the POC's
+  // mutual-block rule ("lower index proceeds") extended from pairs to rings of any size, so a
+  // three-way junction can't freeze. A head-on block on a single-lane segment is never released.
   for (const v of S.veh) {
-    const u = v.blockedBy
-    if (u && u.blockedBy === v && v.i < u.i && !v.headOn && !u.headOn) v.blockedBy = null
+    const ring: SimVehicle[] = []
+    let u: SimVehicle | null = v
+    while (u && !ring.includes(u) && ring.length <= S.veh.length) { ring.push(u); u = u.blockedBy }
+    if (u !== v || ring.some(x => x.headOn)) continue
+    if (ring.every(x => x.i >= v.i)) v.blockedBy = null
   }
   // handover: a holder queued behind a vehicle that waits for the holder's zone passes it forward
   for (const v of S.veh) {
@@ -492,12 +503,14 @@ export function step(S: SimState) {
       const onRoute = MOVING.has(v.mode) && v.nodes.indexOf(node, v.atNode ? v.pi - 1 : v.pi) >= 0
       const here = v.atNode && v.node === node
       const next = v.pi < v.nodes.length ? v.nodes[v.pi] : -1
-      // POC rule, kept as-is: one-segment stubs (branch size 1) are exempt, so a vehicle can release
-      // the zone while still inside the stub. That lets a rare deadlock form at the stub's gate,
-      // which the stall check below reports (spec §12, open item O-11).
-      const onSpur = br.size > 1 && ((v.atNode && br.has(v.node)) || br.has(next) || (!v.atNode && br.has(v.node)))
+      // O-11 (owner: exiting vehicle first): a zone at the end of a spur — one-segment stubs included —
+      // is held until the vehicle is out of the spur, then released at the gate. (The POC exempted
+      // one-segment stubs and released inside them, which froze the fleet at the gate.) Zones on an
+      // aisle keep the POC distance rule.
+      const spurZone = gate !== node
+      const onSpur = spurZone && ((v.atNode && br.has(v.node)) || br.has(next) || (!v.atNode && br.has(v.node)))
       if (onRoute || here || onSpur) continue
-      if (Math.hypot(G.points[gate].x - v.x, G.points[gate].y - v.y) < v.prof.lengthFt + 1) continue
+      if (!spurZone && Math.hypot(G.points[gate].x - v.x, G.points[gate].y - v.y) < v.prof.lengthFt + 1) continue
       v.held.delete(z); if (S.locks.get(z) === v.i) S.locks.delete(z)
     }
   }
