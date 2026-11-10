@@ -288,7 +288,7 @@ function dispatch(S: SimState) {
       if (v.prof.vehicle.id !== vid) continue
       if (!(v.mode === 'home' || v.mode === 'toHome' || v.mode === 'free')) continue
       if (v.mustCharge || needsCharge(v)) continue
-      if (inJunction(S, v)) continue   // D-12: no new job mid-crossing; eligible once it has cleared
+      if (v.mode === 'toHome' && inJunction(S, v)) continue   // D-12: no new job mid-crossing; a parked vehicle stays eligible
       const d = distToStart(S, v) + pathLen(S.G, startNode(v), F.from)
       if (d < bd) { bd = d; best = v }
     }
@@ -297,11 +297,34 @@ function dispatch(S: SimState) {
     best.job = o; best.mode = 'toPick'; setRoute(S, best, F.from)
   }
 }
+/** Half the vehicle plus clearance: where it stops short of a junction or stub gate it may not enter. */
+const bodyClear = (v: SimVehicle) => v.prof.lengthFt / 2 + JUNCTION_CLEAR_FT
+
+function releaseJunction(S: SimState, v: SimVehicle, n: number) {
+  v.heldJ.delete(n); if (S.jlocks.get(n) === v.i) S.jlocks.delete(n)
+}
+
+/** The vehicle's body reaches junction n — one test for dispatch and release. */
+function overJunction(S: SimState, v: SimVehicle, n: number) {
+  const q = S.G.points[n]
+  return Math.hypot(q.x - v.x, q.y - v.y) <= bodyClear(v)
+}
+
 /** True while the vehicle's body is over a junction it holds permission for. */
 function inJunction(S: SimState, v: SimVehicle) {
-  for (const n of v.heldJ) { const q = S.G.points[n]; if (Math.hypot(q.x - v.x, q.y - v.y) < v.prof.lengthFt / 2 + JUNCTION_CLEAR_FT) return true }
+  for (const n of v.heldJ) if (overJunction(S, v, n)) return true
   return false
 }
+
+/** How far past its stop point a junction must already be decided: one step of travel, or the
+ *  braking distance when the vehicle JSON gives a deceleration. */
+function horizon(v: SimVehicle, target: number) {
+  const brake = v.prof.decel ? (target * target) / (2 * v.prof.decel) : 0
+  return Math.max(target * DT + 1, brake + target * DT)
+}
+
+/** Junctions less than one vehicle length + clearances apart are taken and kept as one block. */
+const blockSpan = (v: SimVehicle) => v.prof.lengthFt + 2 * JUNCTION_CLEAR_FT
 
 /** Body heading the vehicle needs at a point, from the point's approach heading and the
  *  transfer orientation (spec §6.4). */
@@ -378,12 +401,11 @@ function claimPoint(S: SimState, v: SimVehicle, accs: number[], i: number, z: st
   return { dist: accs[i], atGate: false }
 }
 /** Distance to v's next claim point — an unheld zone or junction — so the nearest claims first. */
-function nextClaimDist(S: SimState, v: SimVehicle) {
-  if (!MOVING.has(v.mode) || v.pi >= v.nodes.length) return Infinity
-  const accs = pathAccs(S, v)
+function nextClaimDist(S: SimState, v: SimVehicle, accs: number[] | null) {
+  if (!accs) return Infinity
   for (let i = v.pi; i < v.nodes.length; i++) {
     const n = v.nodes[i], z = S.G.zone[n]
-    if (S.G.junction[n] && !v.heldJ.has(n)) return accs[i] - (v.prof.lengthFt / 2 + JUNCTION_CLEAR_FT)
+    if (S.G.junction[n] && !v.heldJ.has(n)) return accs[i] - bodyClear(v)
     if (z && !v.held.has(z)) return claimPoint(S, v, accs, i, z).dist
   }
   return Infinity
@@ -429,12 +451,13 @@ export function step(S: SimState) {
   for (const v of S.veh) if (v.mustCharge && v.mode === 'home' && G.points[v.node].type !== 'charger') goCharge(S, v)
 
   // plan: zone and junction permissions limit how far each vehicle may go; nearest claims first
-  const order = S.veh.map(v => [v, nextClaimDist(S, v)] as const)
+  const accsOf = S.veh.map(v => (MOVING.has(v.mode) && v.pi < v.nodes.length ? pathAccs(S, v) : null))
+  const order = S.veh.map(v => [v, nextClaimDist(S, v, accsOf[v.i])] as const)
     .sort((a, b) => a[1] - b[1] || a[0].i - b[0].i).map(e => e[0])
   for (const v of order) {
     v.want = 0; v.waitFor = null; v.waitZone = null; v.blockedBy = null; v.headOn = false
-    if (!MOVING.has(v.mode) || v.pi >= v.nodes.length) continue
-    const accs = pathAccs(S, v)
+    const accs = accsOf[v.i]
+    if (!accs) continue
     let limit = Infinity, stopAt = accs[v.nodes.length - 1]
     const gap = v.prof.lengthFt + 2
     for (let i = v.pi; i < v.nodes.length; i++) {
@@ -444,36 +467,41 @@ export function step(S: SimState) {
       if (dist > gap + P.safetyFt + 12) break
       const h = S.locks.get(z)
       if (h == null) { S.locks.set(z, v.i); v.held.add(z); continue }
-      limit = atGate ? dist - (v.prof.lengthFt / 2 + 2) : dist - gap
+      limit = atGate ? dist - bodyClear(v) : dist - gap
       v.waitZone = z; v.waitFor = h; break
     }
     // intersection permission (D-12): a junction holds one vehicle. Take it — with any junction less
     // than a vehicle length + clearance after it, as one block — before reaching the stop point, or
     // stop clear of it. Never enter a junction while still waiting for a zone just beyond it.
     const target = cruise(S, v)
-    const stopOff = v.prof.lengthFt / 2 + JUNCTION_CLEAR_FT
-    // permission it can't use yet goes back: a junction still ahead (body not over it) while the
-    // vehicle waits for a zone, or one no longer imminent (e.g. after a re-route)
-    for (const n of v.heldJ) {
-      const idx = v.nodes.indexOf(n, v.pi)
-      if (idx < 0 || accs[idx] < v.prof.lengthFt / 2) continue
-      if (v.waitZone != null || accs[idx] - stopOff > target * DT + 1) { v.heldJ.delete(n); if (S.jlocks.get(n) === v.i) S.jlocks.delete(n) }
+    const stopOff = bodyClear(v)
+    const reach = horizon(v, target)
+    // Permission it can't use yet goes back, in path order. Kept: a junction past its stop point
+    // (committed), one in the same block as the previous kept one, or one still imminent while the
+    // vehicle is not waiting for a zone. Junctions off the new path are released in the move phase.
+    if (v.heldJ.size) {
+      let prevKept = -Infinity
+      for (let i = v.pi; i < v.nodes.length; i++) {
+        const n = v.nodes[i]
+        if (!v.heldJ.has(n)) continue
+        const keep = accs[i] < stopOff || accs[i] - prevKept <= blockSpan(v) || (v.waitZone == null && accs[i] - stopOff <= reach)
+        if (keep) prevKept = accs[i]; else releaseJunction(S, v, n)
+      }
     }
     for (let i = v.pi; i < v.nodes.length; i++) {
-      const n = v.nodes[i]
+      const n = v.nodes[i], dist = accs[i]
+      if (dist - stopOff > reach || dist - stopOff > limit) break   // nothing further is needed this step
       if (!G.junction[n] || v.heldJ.has(n)) continue
-      const dist = accs[i]
-      if (dist - stopOff > target * DT + 1 || dist - stopOff > limit) break   // not needed this step
       let k = i
-      for (let j = i + 1; j < v.nodes.length && accs[j] - accs[k] <= v.prof.lengthFt + 2 * JUNCTION_CLEAR_FT; j++) if (G.junction[v.nodes[j]]) k = j
+      for (let j = i + 1; j < v.nodes.length && accs[j] - accs[k] <= blockSpan(v); j++) if (G.junction[v.nodes[j]]) k = j
       let holder: number | null = null
       for (let j = i; j <= k; j++) {
         const h = S.jlocks.get(v.nodes[j])
-        if (G.junction[v.nodes[j]] && h != null && h !== v.i) { holder = h; break }
+        if (h != null && h !== v.i) { holder = h; break }
       }
       if (holder != null || v.waitZone != null) {
         limit = Math.min(limit, dist - stopOff)
-        if (v.waitFor == null) v.waitFor = holder
+        v.waitFor ??= holder
         break
       }
       for (let j = i; j <= k; j++) if (G.junction[v.nodes[j]]) { S.jlocks.set(v.nodes[j], v.i); v.heldJ.add(v.nodes[j]) }
@@ -501,7 +529,7 @@ export function step(S: SimState) {
       if (Math.abs(u.x - v.x) > look + rad || Math.abs(u.y - v.y) > look + rad) continue
       if (u.atNode && G.zone[u.node]) continue          // parked/handling on a zone: zones handle it
       pts = pts ?? ahead(S, v, (v.prof.lengthFt + longest) / 2 + P.safetyFt)
-      // O-11: a vehicle waiting for a zone v holds gives way at the junction. It blocks v only when it
+      // a vehicle waiting for a zone v holds gives way to v (D-11). It blocks v only when it
       // is in v's lane ahead going the same way — the queue case the handover rule below serves.
       const yields = u.waitZone != null && v.held.has(u.waitZone)
       // judge direction at the sample nearest u — around a corner the first sample within reach can
@@ -512,7 +540,7 @@ export function step(S: SimState) {
         const d2 = (p[0] - u.x) ** 2 + (p[1] - u.y) ** 2
         if (d2 < best) { best = d2; hit = p }
       }
-      if (hit && !(yields ? Math.cos(u.th - hit[2]) > IN_LANE_COS : (hit[3] || Math.cos(u.th - hit[2]) > SAME_WAY_COS))) hit = undefined
+      if (hit && !(hit[3] || (yields ? Math.cos(u.th - hit[2]) > IN_LANE_COS : Math.cos(u.th - hit[2]) > SAME_WAY_COS))) hit = undefined
       if (hit) { v.blockedBy = u; v.headOn = hit[3] && Math.cos(u.th - hit[2]) <= SAME_WAY_COS; break }
     }
   }
@@ -550,11 +578,9 @@ export function step(S: SimState) {
     if (v.moved > 0 && v.job) S.lastProgress = S.t
     if (MOVING.has(v.mode) && v.pi >= v.nodes.length && v.atNode) arrive(S, v)
     // release junction permission once the vehicle's body has cleared the junction
-    for (const n of v.heldJ) {
-      if (v.nodes.indexOf(n, v.atNode ? v.pi - 1 : v.pi) >= 0 && MOVING.has(v.mode)) continue
-      const q = G.points[n]
-      if (Math.hypot(q.x - v.x, q.y - v.y) <= v.prof.lengthFt / 2 + JUNCTION_CLEAR_FT) continue
-      v.heldJ.delete(n); if (S.jlocks.get(n) === v.i) S.jlocks.delete(n)
+    if (v.heldJ.size) for (const n of v.heldJ) {
+      if (MOVING.has(v.mode) && v.nodes.indexOf(n, v.atNode ? v.pi - 1 : v.pi) >= 0) continue
+      if (!overJunction(S, v, n)) releaseJunction(S, v, n)
     }
     // release zones left behind
     for (const z of v.held) {   // deleting the current entry inside a Set loop is safe
@@ -563,13 +589,13 @@ export function step(S: SimState) {
       const here = v.atNode && v.node === node
       const next = v.pi < v.nodes.length ? v.nodes[v.pi] : -1
       // O-11 (owner: exiting vehicle first): a zone at the end of a spur — one-segment stubs included —
-      // is held until the vehicle is out of the spur, then released at the gate. (The POC exempted
+      // is held until the vehicle's body is out of the spur and clear of the gate. (The POC exempted
       // one-segment stubs and released inside them, which froze the fleet at the gate.) Zones on an
       // aisle keep the POC distance rule.
       const spurZone = gate !== node
       const onSpur = spurZone && ((v.atNode && br.has(v.node)) || br.has(next) || (!v.atNode && br.has(v.node)))
       if (onRoute || here || onSpur) continue
-      if (!spurZone && Math.hypot(G.points[gate].x - v.x, G.points[gate].y - v.y) < v.prof.lengthFt + 1) continue
+      if (Math.hypot(G.points[gate].x - v.x, G.points[gate].y - v.y) < (spurZone ? bodyClear(v) : v.prof.lengthFt + 1)) continue
       v.held.delete(z); if (S.locks.get(z) === v.i) S.locks.delete(z)
     }
   }

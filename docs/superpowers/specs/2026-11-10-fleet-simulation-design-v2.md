@@ -526,7 +526,7 @@ mulberry32 generator so seeds stay comparable).
 | D-7 | CB18 overall length **9.63 ft** (body 6.13 + 42 in forks), engineer assumption to confirm (§4.3). |
 | D-9 | Verdict **based on utilization** against the project's `targetUtilization` (§6.7); charging defaults `minSocPct + 10` / `+ 30`. |
 | D-10 | Simulate is an **un-numbered page opened from Sizing**; the step ribbon is unchanged. |
-| D-12 | **Intersection permission, no pass-through** (owner, 2026-11-10). A junction (3+ routes) holds one vehicle: a vehicle takes it — with any junction less than a vehicle length + 2 ft after it, as one block — before it is within half a vehicle length + 2 ft, or stops there. It never enters a junction while waiting for a zone just beyond, gives back permission it cannot use yet, and is not dispatched while its body is over a junction. Release once the body has cleared. "Nearest claims first" covers junctions. The only remaining mutual-block rule is **two-lane passing**: two vehicles that each have the other on their path ahead on a two-lane route are in opposite lanes, so the lower index proceeds (the POC pair rule; never on single-lane, never for crossing traffic). The three-vehicle "ring" pass-through added under D-11 was removed. |
+| D-12 | **Intersection permission, no pass-through** (owner, 2026-11-10). A junction (3+ routes) holds one vehicle: a vehicle takes it — with any junction less than a vehicle length + 2 ft after it, as one block — before it is within half a vehicle length + 2 ft, or stops there. It never enters a junction while waiting for a zone just beyond, gives back permission it cannot use yet (never one it is already past the stop point of, and never one half of a held block), and is not dispatched while driving across a junction (a parked vehicle stays dispatchable). Permission is decided one step of travel ahead, or the braking distance when the vehicle JSON gives a deceleration. Release once the body has cleared. A stub zone is likewise held until the leaving vehicle's body has cleared the gate. "Nearest claims first" covers junctions. The only remaining mutual-block rule is **two-lane passing**: two vehicles that each have the other on their path ahead on a two-lane route are in opposite lanes, so the lower index proceeds (the POC pair rule; never on single-lane, never for crossing traffic). The three-vehicle "ring" pass-through added under D-11 was removed. |
 | D-11 | **Stub junction rule — exiting vehicle first** (owner, 2026-11-10; fixes POC stalls). A spur zone, one-segment stubs included, is held until the leaving vehicle is out of the spur and released at the gate; a vehicle waiting for a zone gives way at the junction to the vehicle holding it (it still blocks when in the holder's lane ahead, same direction — the queue the handover rule serves); plus a **stall check**: no vehicle with work moves or handles for 120 s while orders wait → Gridlock (stall). |
 
 **Still open — fallbacks in use, none blocks Milestone 1:**
@@ -541,7 +541,12 @@ mulberry32 generator so seeds stay comparable).
   stub's leaving vehicle needs that segment. With D-12 this happens in 3 of the 48 acceptance-9
   runs, all at the highest density (6 vehicles, 130%), and is reported as Gridlock (cycle). A fleet
   manager holds such waiters back before entering the short segment (segment reservation). Decide
-  whether to add it now or with the layout editor (Milestone 4).
+  **Owner, 2026-11-10: with the layout editor (Milestone 4).** Until then, reported. The same class
+  also appears in the charger aisle (junctions every 12–24 ft). Design notes from the `/simplify`
+  altitude review, to settle at the same time: zones and junctions are two parallel lock systems —
+  a single reservation mechanism (zone = node set, junction = node, segment = node set) would carry
+  segment reservation too; the D-11 yield rule may then be redundant; and tying permission to where
+  the body physically is would remove the no-dispatch-mid-crossing guard.
 
 ## 13. Out of scope (this branch)
 

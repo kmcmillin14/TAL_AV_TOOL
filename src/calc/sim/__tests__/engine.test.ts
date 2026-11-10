@@ -112,7 +112,7 @@ describe('acceptance 9 — gridlock is reported, never driven through', () => {
   })
   // D-11 (exiting vehicle first) + D-12 (junction permission, two-lane passing only). The POC froze,
   // unreported, in 4 of these 48 runs. Three runs remain at the highest density (6 vehicles, 130%):
-  // the O-12 pattern — six vehicles queued in the 40 ft between two stubs. They are real deadlocks
+  // the O-12 pattern — vehicles in both directions queued in a short segment between two junctions. They are real deadlocks
   // for a centreline model without segment reservation and are reported. Pinned so any new one fails.
   it('proof-of-concept sample: fleets 3–6, seeds 1–6, demand 100/130%, random, 16 h → only the known O-12 gridlocks', () => {
     const { layout, flows: f } = sampleLayout()
@@ -120,20 +120,16 @@ describe('acceptance 9 — gridlock is reported, never driven through', () => {
     for (const n of [3, 4, 5, 6]) for (const seed of [1, 2, 3, 4, 5, 6]) for (const demandPct of [100, 130]) {
       const S = runFor(sim(layout, f, { fleet: { cb18: n }, seed, demandPct, arrivals: 'random' }), 16 * 3600)
       if (S.gridlock) hits.push(`fleet ${n} seed ${seed} ${demandPct}%: ${S.gridlock.kind} ${S.gridlock.where}`)
+      // the run the POC froze in (O-11) now delivers
+      if (n === 5 && seed === 2 && demandPct === 100) expect(results(S).types[0].delivered).toBeGreaterThan(0.98)
     }
     expect(hits).toEqual([
       'fleet 6 seed 3 130%: cycle near Wrapper Outfeed',
-      'fleet 6 seed 5 130%: cycle near Warehouse Infeed',
+      'fleet 6 seed 5 130%: cycle near Charger 4',
       'fleet 6 seed 6 130%: cycle near Warehouse Infeed',
     ])
   }, 600_000)
 
-  it('O-11 — the POC stub stall (fleet 5, seed 2, 100%) now delivers instead of freezing', () => {
-    const { layout, flows: f } = sampleLayout()
-    const S = runFor(sim(layout, f, { fleet: { cb18: 5 }, seed: 2, arrivals: 'random' }), 16 * 3600)
-    expect(S.gridlock).toBeNull()
-    expect(results(S).types[0].delivered).toBeGreaterThan(0.98)
-  }, 60_000)
 
   it('a fleet that stops moving while orders wait is reported as Gridlock (stall), never hidden', () => {
     const S = sim(corridor(200), flowAB(60))
@@ -266,4 +262,94 @@ describe('review fixes — inputs the engine must refuse or flag, never guess', 
     // busy ÷ (busy + idle): with the vehicle never idle, utilization stays at 1, charge trips excluded
     expect(r.utilization).toBeGreaterThan(0.99)
   }, 60_000)
+})
+
+describe('D-12 — intersection permission', () => {
+  // + crossing: W→E and S→N flows cross at X (0,0); each arm 60 ft; chargers off the far ends
+  const cross = (): SimLayout => ({
+    points: [
+      { id: 'X', x: 0, y: 0, type: 'junction' },
+      { id: 'W', x: -60, y: 0, type: 'stand', role: 'pick' }, { id: 'E', x: 60, y: 0, type: 'stand', role: 'drop' },
+      { id: 'S', x: 0, y: 60, type: 'stand', role: 'pick' }, { id: 'N', x: 0, y: -60, type: 'stand', role: 'drop' },
+      { id: 'JW', x: -80, y: 0, type: 'junction' }, { id: 'CW', x: -80, y: 20, type: 'charger' },
+      { id: 'JS', x: 0, y: 80, type: 'junction' }, { id: 'CS', x: 20, y: 80, type: 'charger' },
+    ],
+    segments: [
+      { id: 'a', a: 'W', b: 'X', dir: 'two' }, { id: 'b', a: 'X', b: 'E', dir: 'two' },
+      { id: 'c', a: 'S', b: 'X', dir: 'two' }, { id: 'd', a: 'X', b: 'N', dir: 'two' },
+      { id: 'e', a: 'JW', b: 'W', dir: 'two' }, { id: 'f', a: 'JW', b: 'CW', dir: 'two' },
+      { id: 'g', a: 'JS', b: 'S', dir: 'two' }, { id: 'h', a: 'JS', b: 'CS', dir: 'two' },
+    ],
+  })
+  const crossFlows: SimFlow[] = [
+    { id: 'we', fromPointId: 'W', toPointId: 'E', thruPerHr: 60, vehicleId: 'cb18' },
+    { id: 'sn', fromPointId: 'S', toPointId: 'N', thruPerHr: 60, vehicleId: 'cb18' },
+  ]
+
+  it('a junction never has two vehicles over it, and crossing traffic waits rather than passing through', () => {
+    const S = sim(cross(), crossFlows, { fleet: { cb18: 2 } })
+    const X = S.G.points.find(p => p.id === 'X')!
+    let crossings = 0
+    for (let i = 0; i < 3600 / 0.25; i++) {
+      step(S)
+      const over = S.veh.filter(v => Math.hypot(v.x - X.x, v.y - X.y) < v.prof.lengthFt / 2)
+      expect(over.length).toBeLessThanOrEqual(1)
+      if (over.length) crossings++
+    }
+    expect(crossings).toBeGreaterThan(0)
+    expect(S.gridlock).toBeNull()
+    expect(results(S).types[0].done).toBeGreaterThan(50)
+  })
+
+  it('junctions closer than a vehicle length are held together until the vehicle is through', () => {
+    // A — J1 — J2 — B along x, with side stubs making J1 and J2 junctions 6 ft apart
+    const L: SimLayout = {
+      points: [
+        { id: 'A', x: 0, y: 0, type: 'stand', role: 'pick' }, { id: 'B', x: 120, y: 0, type: 'stand', role: 'drop' },
+        { id: 'J1', x: 60, y: 0, type: 'junction' }, { id: 'J2', x: 66, y: 0, type: 'junction' },
+        { id: 'P1', x: 60, y: 30, type: 'parking' }, { id: 'P2', x: 66, y: -30, type: 'parking' },
+        { id: 'C', x: -20, y: 0, type: 'charger' },
+      ],
+      segments: [
+        { id: 's1', a: 'A', b: 'J1', dir: 'two' }, { id: 's2', a: 'J1', b: 'J2', dir: 'two' }, { id: 's3', a: 'J2', b: 'B', dir: 'two' },
+        { id: 's4', a: 'J1', b: 'P1', dir: 'two' }, { id: 's5', a: 'J2', b: 'P2', dir: 'two' }, { id: 's6', a: 'C', b: 'A', dir: 'two' },
+      ],
+    }
+    const S = sim(L, flowAB(20))
+    const j1 = S.G.idx.get('J1')!, j2 = S.G.idx.get('J2')!
+    let together = 0
+    for (let i = 0; i < 1800 / 0.25; i++) {
+      step(S)
+      for (const v of S.veh) {
+        const aheadJ2 = v.nodes.indexOf(j2, v.pi) >= 0
+        if (v.heldJ.has(j1) && aheadJ2 && v.loaded) { expect(v.heldJ.has(j2)).toBe(true); together++ }
+      }
+    }
+    expect(together).toBeGreaterThan(0)
+  })
+
+  it('a vehicle parked close to a junction is still dispatched', () => {
+    // the charger stub (3 ft) is shorter than half a vehicle + clearance: parked, the body is over J
+    const L = corridor(200)
+    L.points.find(p => p.id === 'C1')!.y = 3
+    L.points.find(p => p.id === 'C2')!.y = -3
+    const S = runFor(sim(L, flowAB(20)), 1800)
+    expect(results(S).types[0].done).toBeGreaterThan(5)
+  })
+
+  it('a stub zone is held until the leaving vehicle has cleared the gate', () => {
+    const L = corridor(200)
+    const S = sim(L, flowAB(30), { fleet: { cb18: 1 } })
+    const J = S.G.points.find(p => p.id === 'J')!, z = 'C1'
+    let checked = 0
+    for (let i = 0; i < 3600 / 0.25; i++) {
+      step(S)
+      const v = S.veh[0]
+      const gateDist = Math.hypot(v.x - J.x, v.y - J.y)
+      const inStub = v.x === J.x && v.y > J.y   // on the stub J → C1
+      if ((inStub || gateDist < v.prof.lengthFt / 2 + 2) && S.locks.get(z) === v.i) checked++
+      if (inStub && v.mode !== 'home' && v.mode !== 'charging') expect(v.held.has(z)).toBe(true)
+    }
+    expect(checked).toBeGreaterThan(0)
+  })
 })

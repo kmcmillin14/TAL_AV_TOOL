@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-11-10 — Fleet simulation: review fixes to the junction rules (D-11, D-12)
+
+`/simplify` and `/code-review` over the D-11 / D-12 changes (they had not been run after those
+commits). Engine-only; no app or quote change.
+
+- A junction block (two junctions closer than a vehicle length) is now held together; the far one
+  was being given back the next step.
+- On a single-lane segment a vehicle waiting for a zone still blocks the zone's holder head-on (the
+  yield rule had skipped the single-lane check).
+- A vehicle parked close to a junction stays dispatchable; only a vehicle driving across a junction
+  is held back from a new job. Before, it could be lost to the fleet without a word.
+- Permission is decided one step ahead, or the braking distance when the JSON has a deceleration;
+  a vehicle past its stop point keeps its junction; a stub zone is held until the body clears the gate.
+- Cleanups with no result change: one helper each for the stop distance, junction release and
+  "over a junction"; path distances computed once per step; empty-set loops skipped.
+- New direct tests: one vehicle per junction, block claim, parked-near-junction dispatch, stub
+  release at the gate. 577 tests pass.
+
+POC sample: results essentially unchanged (largest move: one wait 939 → 943 s). The 3 high-density
+gridlocks remain (O-12, now including one in the charger aisle) — segment reservation is planned
+with the layout editor (Milestone 4), owner decision.
+
 ## 2026-11-10 — Fleet simulation: intersection permission, no pass-through (D-12)
 
 Owner decision (option A). Traffic change inside `src/calc/sim/` only; no app or quote change.
