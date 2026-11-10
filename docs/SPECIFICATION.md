@@ -657,7 +657,14 @@ step ribbon is unchanged.
   simulation code lives in `src/calc/sim/` (pure).
 - **Reproducible:** same inputs and seed give identical results; playback speed never changes
   them. Gridlock is reported, never hidden.
-- **Never changes the sized fleet or the ROM price by itself.**
+- **Verdict is utilization-based**, measured against the project's own target utilization
+  (Step 3, default 90%): *Meets* needs ≥ 98% of moves delivered and utilization at or under the
+  target. B56.5 clearance: 6 in per side below 1.2 m/s, 0.5 m per side at or above, shared
+  between two vehicles on a bidirectional segment.
+- **Never changes the sized fleet or the ROM price by itself.** A raise-only **Use N in
+  pricing** action lets the engineer apply a higher simulated fleet; pricing never drops below
+  the Fleet Engine's figure, and every surface labels it "simulated (engine N)".
+- **Background drawing** travels in the exported revision file, never in browser storage.
 
 ---
 

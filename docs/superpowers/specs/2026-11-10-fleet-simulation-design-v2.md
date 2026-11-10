@@ -1,7 +1,7 @@
 # Fleet Simulation ("Simulate") — design v2
 
 **Date:** 2026-11-10
-**Status:** Design — awaiting owner approval of the plan
+**Status:** Design — owner decisions recorded 2026-11-10 (§12); awaiting approval of the plan
 (`docs/superpowers/plans/2026-11-10-fleet-simulation.md`) before Milestone 1.
 **Branch:** `feature/fleet-simulation` (from `main` 1ce33f7). Never pushed without owner approval.
 **Owner:** Kyle (AV Systems Manager, TAL).
@@ -24,8 +24,8 @@ project's **flows** and the **vehicles** through time, and answer one question:
 **It is:** ROM-level validation of the Step 3 (Sizing) fleet.
 **It is not:** a controls / fleet-manager simulator, a layout design tool, or a quote engine.
 
-- It **never changes the sized fleet or the ROM price by itself** (see open decision O-1 for an
-  explicit engineer action).
+- It **never changes the sized fleet or the ROM price by itself.** The engineer may apply a
+  simulated fleet with an explicit, **raise-only** "Use simulated fleet" action (§9, decision D-1).
 - Every number traces to something the engineer drew or entered, a vehicle JSON value, a Step 1
   answer, or a visible, editable assumption with a source chip.
 
@@ -126,8 +126,10 @@ Every value `null` until sourced; `calc.sim.dataNote` carries provenance (like
 | `tugger` | `{ maxCarts, cartLengthFt, couplingSec, trainLengthFt }` | tugger trains (later branch) | single-unit + "tugger train not modelled" |
 | `spriteAsset`, `spriteRefPx` | path, `{ x, y }` px | top-down image + reference pixel | footprint shape + category glyph |
 
-CB18 gets `spriteAsset: "/vehicles/cb18-top.png"` once the image is supplied; every other value
-stays `null` until the owner provides it (§12).
+CB18 gets `overallLengthFt: 9.63` (6.13 ft body + 42 in standard forks — **engineer assumption,
+owner 2026-11-10, confirm against the cutsheet**; `forkLengthFt: 3.5`) and
+`spriteAsset: "/vehicles/cb18-top.png"` once the image is supplied. Every other value stays
+`null` until the owner provides it (§12).
 
 ### 4.4 Existing project data the simulation uses (no change)
 
@@ -142,8 +144,8 @@ stays `null` until the owner provides it (§12).
 
 - `flows[]`: `fromPointId?`, `toPointId?`, `distanceSource?: 'layout'`,
   `hourlyProfile?: number[24]`, `batchSize?`, `priority?`.
-- `simLayout?`: `ftPerPx`, `background` (kind, page, scale points — **not the image bytes**,
-  see O-4), `points[]` (id, x, y, type, role, name, positions, heightFt, footprintFt,
+- `simLayout?`: `ftPerPx`, `background` (kind, file name, page, fingerprint, scale points —
+  the image bytes are **never** written to `localStorage`; see D-4), `points[]` (id, x, y, type, role, name, positions, heightFt, footprintFt,
   approachHeadingDeg, handshakeSec), `segments[]` (a, b, dir, lane, speedLimitFps, curve:
   `none | arc | bezier` + handles), `areas[]` (rack | lanes config), `objects[]`,
   `chargers[]`, `parking[]`.
@@ -153,6 +155,11 @@ stays `null` until the owner provides it (§12).
   `clearance: { thresholdFps: 3.94, lowSpeedIn: 6, fullSpeedIn: null, edition }`.
 - Existing projects load unchanged; JSON export/import round-trips the new fields; legacy
   imports without them are valid.
+- **Background drawing (D-4):** kept in memory while the page is open; **embedded in the exported
+  `.json` revision file** (`simLayout.background.data`, base64, the rendered page or image) so a
+  colleague who imports the revision gets it. On import it is held in memory only, never in
+  `localStorage`; after a reload the engineer re-selects the file (fingerprint check) or
+  re-imports the revision. An export without a loaded drawing simply omits `data`.
 
 ## 5. Layout mode
 
@@ -259,15 +266,19 @@ name suggests a type in the palette; the engineer confirms it.
   segment). Turns use the true swept path from the path reference point, so forks and pallet
   overhang swing out. Clearance is measured **from the widest point**.
 - **Rule** (Assumptions → Safety; source chip "Engineer rule — ANSI/ITSDF B56.5", edition
-  selectable): below **1.2 m/s (3.94 ft/s)** → minimum **6 in**; at/above → **full-speed
-  clearance** (value open, O-2).
+  selectable; owner-specified 2026-11-10, D-2): below **1.2 m/s (3.94 ft/s)** → minimum **6 in**
+  per side; at/above → **0.5 m (19.69 in) per side**, measured from the widest point of vehicle
+  or payload. **Between two vehicles on a bidirectional (two-lane) segment the middle clearance
+  is shared** — one clearance between the two envelopes, not two. Stored imperial:
+  `clearance: { thresholdFps: 3.94, lowSpeedIn: 6, fullSpeedIn: 19.69, sharedBetweenVehicles:
+  true, edition }`.
 - **Effect per segment** (smallest clearance to any object or opposing-lane envelope):
   - ≥ full-speed clearance → full speed.
   - ≥ 6 in and < full-speed → speed **capped below 1.2 m/s**, shown as a slow zone with reason
     "B56.5 reduced clearance".
   - < 6 in → **violation**: red, listed in *Ready to run?*, segment blocked for that vehicle type.
-  - Two-lane segment where both envelopes + clearances don't fit → flagged; one click switches
-    it to single-lane.
+  - Two-lane segment where `clearance + envelope + shared clearance + envelope + clearance`
+    doesn't fit → flagged; one click switches it to single-lane.
 - **Display** (toggle "B56.5 clearances", Layout and Run): envelope fill, clearance band
   outline, dimension callouts at the tightest point per segment and at every object within
   2 × full-speed clearance. Neutral / amber (capped) / red (violation). In Run, the followed
@@ -336,8 +347,24 @@ derived B56.5 caps.
 Per vehicle type: moves/h vs target, average order wait, busy %, **vehicle time per move**
 (busy vehicle-seconds ÷ moves — directly comparable to the engine cycle), time split
 (travel · handle · reverse/approach · wait · charge · idle), SOC, charge trips.
-Verdict: **Warming up** (< 30 min) · **Meets** (≥ 98% delivered, backlog not growing, busy ≤ 85%)
-· **Tight** · **Falls short** · **Gridlock**. Thresholds are named constants (POC `VERDICT`).
+**Verdict — utilization-based (D-9).** No published standard sets an AGV utilization cap: the
+VDI 2710 family (Blatt 3, AGV simulation; Blatt 5, acceptance/availability) harmonises inputs and
+results but fixes no threshold in the material available, and practice is to pick the smallest
+fleet that meets throughput and wait targets with a reserve (typically 70–90% utilization). The
+verdict therefore uses the **project's own `targetUtilization`** (Step 3, default 90%) as its one
+source, with utilization defined as the Fleet Engine defines it — busy time ÷ time not charging:
+
+| Verdict | Rule |
+|---|---|
+| **Warming up** | < 30 min simulated |
+| **Meets** | ≥ 98% delivered, backlog not growing, utilization ≤ target |
+| **Tight** | utilization > target and ≤ 95%, or backlog growing < 1 move/h |
+| **Falls short** | < 98% delivered, or backlog growing ≥ 1 move/h, or utilization > 95% |
+| **Gridlock** | §6.5.6 |
+
+98%, 95% and the backlog rate are named constants (Assumptions → Run). Utilization is shown
+beside every verdict, so the reader sees the number, not only the word. Charging defaults stay
+`minSocPct + 10` / `+ 30` (D-9).
 
 ## 7. Run mode
 
@@ -386,7 +413,14 @@ Verdict: **Warming up** (< 30 min) · **Meets** (≥ 98% delivered, backlog not 
 - **Engine comparison:** the "Engine sized N" figure is `fleetSummary(...).fleetSold` from
   `src/calc/fleet.ts`; per-flow comparison uses `cycleBreakdown` from `src/calc/flowMetrics.ts`.
   The simulation never copies those formulas.
-- The simulation never writes `fleetSold`, `targetUtilization` or any pricing input (O-1).
+- **Use simulated fleet (D-1), raise-only:** when a vehicle type's simulated fleet (the smallest
+  stepper value that *Meets*) is higher than the engine's, the verdict row offers **Use N in
+  pricing**. It stores `simSettings.appliedFleet[vehicleId]`; pricing then uses
+  `max(fleetSold, appliedFleet)` per type — never lower than the engine. Sizing, Step 4, the
+  Dashboard and the deck mark the figure "simulated (engine N)"; **Back to engine** clears it.
+  Changing flows, layout or vehicles marks an applied fleet stale until re-run. This **moves
+  quoted numbers** when used, so the milestone that builds it carries before/after figures.
+- Nothing else is written: not `fleetSold`, not `targetUtilization`, not any other pricing input.
 
 ## 10. Acceptance criteria
 
@@ -446,6 +480,14 @@ Numbering follows the owner prompt §7 so tests can cite it.
 37. No modal dialogs except destructive confirmations; the inspector works identically in Layout
     and Run.
 
+38. **Use N in pricing** appears only when the simulated fleet that Meets exceeds the engine's;
+    applying it never lowers any vehicle type below `fleetSold`; Back to engine restores the
+    engine figures exactly; pricing, Dashboard and deck show "simulated (engine N)".
+39. An exported revision with a loaded drawing contains it; importing that revision shows the
+    drawing; `localStorage` never contains image data (asserted in a storage test).
+40. The verdict bands follow the project's `targetUtilization` (changing it from 90% to 80%
+    re-classifies a run at 85% utilization from Meets to Tight).
+
 Plus the standing gates: `npx tsc --noEmit`, `npx vitest run`, `npm run check:arch`,
 `npm run build`; existing tests stay green.
 
@@ -471,20 +513,26 @@ mulberry32 generator so seeds stay comparable).
 | single location kind per point | points with role, positions, height, approach heading; rack/lane areas |
 | no clearance | B56.5 envelope, speed caps, violations |
 
-## 12. Open decisions (ask the owner — defaults used until answered)
+## 12. Decisions (owner, 2026-11-10) and what is still open
 
-| # | Question | Default until answered |
-|---|---|---|
-| O-1 | May the engineer explicitly apply the simulated fleet to pricing (e.g. "Use simulated fleet", raise-only)? | **No** — the simulation never changes the sized fleet or price; Sizing shows the verdict only. |
-| O-2 | B56.5 **full-speed clearance** above 1.2 m/s, the edition to cite, and whether clearance is per side from the widest point | Full-speed value unset → segments are **not** capped; each shows "full-speed clearance not set — check incomplete" (the 6 in low-speed rule still applies). |
-| O-3 | CB18 and other vehicles' acceleration, deceleration, turn speed, approach speed/distance (BlueBotics ANT config or Bastian engineering) | Pace % fallback (70%), flagged. |
-| O-4 | Store the background drawing in the project? Images exceed `localStorage` quota quickly. | Store only scale + page + extents; the image stays in memory and is re-selected after reload (file fingerprint check). No new storage. |
-| O-5 | Per vehicle: path reference point, travel direction, preferred travel loaded/empty, reverse speed, transfer orientation, reorientation time; `doubleDeep`; tugger train length + coupling | Fallbacks in §4.3, flagged. |
-| O-6 | `ml2` / `ebase7` `turningRadiusFt: 0` — turns in place, or blank? | Treated as **turns in place** (no rounding), flagged "turning radius 0 — confirm". |
-| O-7 | `overallLengthFt` / fork length per vehicle (CB18 `lengthFt` 6.13 is body only) | `lengthFt`, flagged "overall length not specified". |
-| O-8 | Top-down sprites for the other five vehicles; the `cb18-top.png`, `app.js` and icon sheet files | Footprint shape + category glyph. |
-| O-9 | Pace fallback value; charge-below / charge-until; 24/7 start state; verdict thresholds 98% / 85% | Values above, as named constants. |
-| O-10 | The Simulate page as an un-numbered route from Sizing (this spec) vs a numbered step | Un-numbered route; step ribbon unchanged. |
+| # | Decision |
+|---|---|
+| D-1 | **Raise-only "Use simulated fleet"** button; pricing uses `max(engine, applied)` per type (§9). |
+| D-2 | B56.5: **6 in** per side below 1.2 m/s; **0.5 m (19.69 in)** per side at/above; on bidirectional segments the clearance **between** two vehicles is shared (§5.9). Edition still to cite. |
+| D-3 | Pace fallback **70%** until JSON kinematics exist, flagged on results. |
+| D-4 | Background drawing **embedded in the exported revision file**, never in `localStorage` (§4.5). |
+| D-6 | `turningRadiusFt: 0` on `ml2` / `ebase7` = **turns in place** (no corner rounding). |
+| D-7 | CB18 overall length **9.63 ft** (body 6.13 + 42 in forks), engineer assumption to confirm (§4.3). |
+| D-9 | Verdict **based on utilization** against the project's `targetUtilization` (§6.7); charging defaults `minSocPct + 10` / `+ 30`. |
+| D-10 | Simulate is an **un-numbered page opened from Sizing**; the step ribbon is unchanged. |
+
+**Still open — fallbacks in use, none blocks Milestone 1:**
+- O-2b: which B56.5 edition to cite.
+- O-3 / O-5: acceleration, deceleration, turn/approach/reverse speeds, path reference point,
+  travel direction, preferred travel, transfer orientation, reorientation time, `doubleDeep`,
+  tugger train data — per vehicle (BlueBotics ANT configuration or Bastian engineering).
+- O-7b: overall length incl. attachments for the other five vehicles.
+- O-8: top-down sprites for the other five vehicles; `cb18-top.png`, `app.js` and the icon sheet.
 
 ## 13. Out of scope (this branch)
 

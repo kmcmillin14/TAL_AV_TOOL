@@ -23,7 +23,15 @@ The TAL proof of concept is kept as reference in
 sample: 48 runs (fleets 3–6, seeds 1–6, demand 100/130%, random arrivals, 16 h), **0
 gridlocks**. The vehicle-data audit found the gaps listed in the spec §4.2, including
 `maxLoadHeightIn` missing on `m10`/`8tb50a` and an ambiguous `turningRadiusFt: 0` on
-`ml2`/`ebase7`. Ten open decisions (spec §12) await the owner.
+`ml2`/`ebase7`.
+
+**Owner decisions (spec §12):** raise-only "Use simulated fleet in pricing"; B56.5 clearance
+6 in per side below 1.2 m/s and 0.5 m per side above, shared between two vehicles on a
+bidirectional segment; pace fallback 70%; background drawing embedded in the export file, never
+in browser storage; `turningRadiusFt: 0` = turns in place; CB18 overall length 9.63 ft (body +
+42 in forks, to confirm); verdict based on utilization against the project's target utilization
+(no published AGV utilization cap — VDI 2710 Blatt 3/5 harmonise simulation and acceptance but
+fix no threshold); Simulate is a page opened from Sizing.
 
 ## 2026-11-03 — Step 4 headline simplified to ROM price + range; missing inputs link to Step 1
 

@@ -53,7 +53,8 @@ the existing `ChartKit`. No new runtime dependencies without owner approval.
 - [x] Audit vehicle JSON against spec §4.2.
 - [x] Write spec v2 (v1 never committed — v2 is authoritative), this plan, the SPECIFICATION
       section and the CHANGELOG entry.
-- [ ] **Stop. Summarize for the owner; wait for approval and answers to spec §12 (O-1…O-10).**
+- [x] Owner answered the decision questions (spec §12, D-1…D-10).
+- [ ] **Stop. Summarize for the owner; wait for plan approval.**
 
 **Done when:** owner approves the plan.
 
@@ -99,11 +100,13 @@ no results).
 - Modify: `src/lib/vehicleLibrary.ts` (`VehicleCalc.sim?: VehicleSimData`,
   `TransferMethod.orientation?`)
 - Modify: `src/content/vehicles/*.json` (add `calc.sim` with all values `null`, `dataNote`,
-  `provisional: true` — no invented values)
+  `provisional: true`; CB18 `overallLengthFt: 9.63`, `forkLengthFt: 3.5` as the owner's
+  engineer assumption D-7 with provenance)
 - Modify: `src/lib/storage.ts` (round-trip; no migration needed — all optional)
 - Modify: `docs/SPECIFICATION.md`, `docs/CHANGELOG.md`, `docs/VEHICLE-DATA-PROVENANCE.md`
 
-- [ ] Failing tests: every existing sample and fixture project parses unchanged; a project with
+- [ ] Failing tests: acceptance 39 storage half (no image data in `localStorage`); every existing
+      sample and fixture project parses unchanged; a project with
       the new fields round-trips through JSON export/import; legacy projects without them load;
       vehicle JSONs with `calc.sim: null` values validate; `enumAlignment` still passes.
 - [ ] Add schema fields (all `.optional()`; arrays `.default([])` only where existing patterns
@@ -146,8 +149,9 @@ no results).
 - Modify: `docs/SPECIFICATION.md`, `docs/CHANGELOG.md`
 
 - [ ] Use `/frontend-design` for the editor UI (Toyota Type, tokens, hero pattern).
-- [ ] Drawing & scale (PDF page via `pdfjs-dist`, PNG/JPG, blank grid); image kept in memory per
-      O-4 default; unscaled drawing blocks Run.
+- [ ] Drawing & scale (PDF page via `pdfjs-dist`, PNG/JPG, blank grid); image in memory,
+      embedded in the exported revision, never in `localStorage` (D-4, acceptance 39); unscaled
+      drawing blocks Run.
 - [ ] Points + icons + roles; Not connected badge (10); routes with snapping; Direction tool and
       indicator (12); flows from points with refusal toast and "from layout" in Sizing (11).
 - [ ] Rounded corners from `turningRadiusFt`, bend arcs, Bézier splines (13).
@@ -156,7 +160,7 @@ no results).
       single-lane (29–33). Engine following switches to envelope distance (§6.5.5).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
-**Done when:** acceptance 10–14 and 28–33 pass.
+**Done when:** acceptance 10–14, 28–33 and 39 pass.
 
 ---
 
@@ -173,9 +177,14 @@ no results).
 - [ ] Path to origin/destination (15); flow/point route highlight; all active routes toggle.
 - [ ] Tables per vehicle / type / flow / point with CSV copy; totals reconcile (16); charts via
       `ChartKit`.
+- [ ] Utilization-based verdict against `targetUtilization` (40).
+- [ ] **Use N in pricing** (D-1, raise-only): `simSettings.appliedFleet`, `max(fleetSold, applied)`
+      in the shared fleet model so Step 4, Dashboard and deck follow; "simulated (engine N)"
+      labels; Back to engine; stale marker (38). Quoted numbers move when used → SPECIFICATION +
+      CHANGELOG first, before/after on the Company A sample in the owner summary.
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
-**Done when:** acceptance 15–17 and 24 pass.
+**Done when:** acceptance 15–17, 24, 38 and 40 pass.
 
 ---
 
