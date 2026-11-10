@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { DEFAULT_TARGET_UTILIZATION } from '@/src/calc/types'
+import { simLayoutSchema, simSettingsSchema } from './simSchemas'
 
 /** Bumped when the persisted project shape changes incompatibly. Lives here (not
  *  storage.ts) so the standalone questionnaire can read it without importing storage. */
@@ -27,6 +28,17 @@ export const flowSchema = z.object({
   /** Per-flow distance semantics (questionnaire §07). Display/intake only —
    *  Step 3 sizing continues to use the flow's distanceFt directly. */
   distanceType: z.enum(['one_way', 'round_trip']).optional(),
+  // ---- Fleet Simulation (spec v2 §3.4, §4.5) — all optional ----
+  /** Pick and Drop points on the simulation layout. A flow linked to both measures its
+   *  distance from the drawn routes (`distanceSource: 'layout'`). */
+  fromPointId: z.string().optional(),
+  toPointId: z.string().optional(),
+  distanceSource: z.literal('layout').optional(),
+  /** Share of the day's moves in each hour, 24 values (demand profile). */
+  hourlyProfile: z.array(z.number().min(0)).length(24)
+    .refine(h => h.some(x => x > 0), 'At least one hour needs demand').optional(),
+  batchSize: z.number().int().min(1).max(100).optional(),
+  priority: z.number().int().min(0).max(9).optional(),
 })
 
 /** One load the application moves — its own unit type, dims, and optional
@@ -334,6 +346,11 @@ export const projectSchema = z.object({
       })
     )
     .default({}),
+
+  // ---- Fleet Simulation (spec v2 §4.5) — optional, no defaults, so projects without a
+  // simulation parse and export exactly as before ----
+  simLayout: simLayoutSchema.optional(),
+  simSettings: simSettingsSchema.optional(),
 })
 
 export type ProjectFormData = z.infer<typeof projectSchema>

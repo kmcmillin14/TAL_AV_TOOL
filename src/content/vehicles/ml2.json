@@ -82,7 +82,28 @@
     "chargerOutputA": 40,
     "chargerPowerKw": 0.96,
     "batteryDataNote": "runTimeHr and chargeTimeMin DERIVED from the physical chain (2026-10-09): 1.21 kWh usable / 0.19 kW draw = 6.37 h; / 0.96 kW charger = 76 min. The stored 30 min was an estimate and 2.5x too fast. The sheet's stated 7 h runtime implies 88% usable against the stated 80% -- an 8% residual, within spec-sheet rounding, so the physical chain is used. Voltage corrected 48 V -> 24 V earlier the same day.",
-    "batterySpecProvisional": false
+    "batterySpecProvisional": false,
+    "sim": {
+      "overallLengthFt": null,
+      "forkLengthFt": null,
+      "pathRefPointFt": null,
+      "accelFps2": null,
+      "decelFps2": null,
+      "turnSpeedFps": null,
+      "approachSpeedFps": null,
+      "approachDistanceFt": null,
+      "reverseSpeedFps": null,
+      "travelDirection": null,
+      "preferredTravel": null,
+      "reorientSec": null,
+      "doubleDeep": null,
+      "availabilityPct": null,
+      "tugger": null,
+      "spriteAsset": null,
+      "spriteRefPx": null,
+      "provisional": true,
+      "dataNote": "Not yet sourced — every value is null, so the simulation uses its stated fallbacks and flags them (body length for the footprint, pace % for motion, not double-deep capable). Source: BlueBotics ANT configuration or the OEM."
+    }
   },
   "specs": {
     "tempMinF": 32,

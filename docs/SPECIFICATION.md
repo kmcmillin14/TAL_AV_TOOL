@@ -665,6 +665,12 @@ step ribbon is unchanged.
   pricing** action lets the engineer apply a higher simulated fleet; pricing never drops below
   the Fleet Engine's figure, and every surface labels it "simulated (engine N)".
 - **Background drawing** travels in the exported revision file, never in browser storage.
+- **Data (built, Milestone 2).** Projects gain optional `simLayout` (points, segments, drawing),
+  `simSettings` (fleet per type, demand %, seed, replications, overrides, B56.5 clearance rule) and
+  per-flow `fromPointId` / `toPointId` / `distanceSource` / `hourlyProfile` / `batchSize` /
+  `priority` — all optional with no defaults, so existing projects load and export unchanged. Each
+  vehicle JSON carries a `calc.sim` block (every value `null` until sourced; CB18 overall length
+  9.63 ft as an owner assumption) and transfer methods may state an `orientation`.
 
 ---
 

@@ -5,14 +5,11 @@
 import cb18Json from '@/src/content/vehicles/cb18.json'
 import hbc40aJson from '@/src/content/vehicles/8hbc40a.json'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import type { SimFlow, SimLayout, SimPoint, SimSegment, SimSettings, VehicleSimData } from '../types'
+import type { SimFlow, SimLayout, SimPoint, SimSegment, SimSettings } from '../types'
 
 export const cb18 = cb18Json as unknown as Vehicle
 export const hbc40a = hbc40aJson as unknown as Vehicle
 export const LIBRARY = [cb18, hbc40a]
-
-/** CB18 overall length incl. forks — owner engineer assumption D-7 (body 6.13 ft + 42 in forks). */
-export const CB18_SIM: VehicleSimData = { overallLengthFt: 9.63 }
 
 export function settings(over: Partial<SimSettings> = {}): SimSettings {
   return {

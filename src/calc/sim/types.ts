@@ -59,26 +59,8 @@ export interface SimFlow {
   transferSecOverride?: number
 }
 
-/** Per-vehicle simulation data (vehicle JSON `calc.sim`, Milestone 2). All optional; null = not specified. */
-export interface VehicleSimData {
-  overallLengthFt?: number | null
-  forkLengthFt?: number | null
-  pathRefPointFt?: { x: number; y: number } | null
-  accelFps2?: number | null
-  decelFps2?: number | null
-  turnSpeedFps?: number | null
-  approachSpeedFps?: number | null
-  approachDistanceFt?: number | null
-  reverseSpeedFps?: number | null
-  travelDirection?: 'single' | 'bi' | null
-  preferredTravel?: { loaded: TravelEnd; empty: TravelEnd } | null
-  reorientSec?: number | null
-  doubleDeep?: boolean | null
-  availabilityPct?: number | null
-}
-
-export type TravelEnd = 'forksLeading' | 'forksTrailing' | 'any'
-export type TransferOrientation = 'rear' | 'front' | 'left' | 'right' | 'under'
+// Vehicle simulation data is part of the vehicle data model (vehicle JSON `calc.sim`).
+export type { TransferOrientation, TravelEnd, VehicleSimData } from '@/src/lib/vehicleLibrary'
 
 export interface SimSettings {
   /** Vehicles per vehicleId. */

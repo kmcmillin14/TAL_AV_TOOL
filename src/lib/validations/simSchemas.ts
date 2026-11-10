@@ -1,0 +1,80 @@
+// Fleet Simulation project data (spec v2 §4.5). Every field is optional and nothing has a
+// default, so a project without a simulation parses — and round-trips — exactly as before.
+// Units: feet, seconds, ft/s, degrees. Fixed objects arrive with the layout editor (Milestone 4)
+// and rack/lane areas with Milestone 7, each with the code that reads them.
+import { z } from 'zod'
+
+const xy = z.object({ x: z.number(), y: z.number() })
+
+export const simPointSchema = z.object({
+  id: z.string(),
+  x: z.number(),
+  y: z.number(),
+  type: z.enum(['junction', 'stand', 'conveyor', 'machine', 'dock', 'charger', 'parking']),
+  role: z.enum(['pick', 'drop', 'pickDrop']).optional(),
+  name: z.string().max(80).optional(),
+  heightFt: z.number().min(0).max(100).optional(),
+  /** Equipment footprint, ft (width across the approach × length along it). */
+  footprintFt: z.object({ w: z.number().positive(), l: z.number().positive() }).optional(),
+  /** Direction a vehicle travels into the position, degrees; absent → along its route. */
+  approachHeadingDeg: z.number().optional(),
+  handshakeSec: z.number().min(0).max(3600).optional(),
+})
+
+export const simSegmentSchema = z.object({
+  id: z.string(),
+  a: z.string(),
+  b: z.string(),
+  dir: z.enum(['two', 'ab', 'ba']),
+  lane: z.enum(['single', 'two']).optional(),
+  speedLimitFps: z.number().positive().optional(),
+  curve: z.discriminatedUnion('kind', [
+    z.object({ kind: z.literal('arc'), mid: xy }),
+    z.object({ kind: z.literal('bezier'), c1: xy, c2: xy }),
+  ]).optional(),
+})
+
+/** The background drawing. The image itself (`data`) only ever travels in an exported revision
+ *  file — browser storage keeps the rest (D-4); see `src/lib/storage.ts`. */
+export const simBackgroundSchema = z.object({
+  kind: z.enum(['pdf', 'image']),
+  fileName: z.string().max(260),
+  /** PDF page number (1-based). */
+  page: z.number().int().min(1).optional(),
+  /** Fingerprint of the source file, to recognise it when re-selected after a reload. */
+  fingerprint: z.string().max(128),
+  widthPx: z.number().positive().optional(),
+  heightPx: z.number().positive().optional(),
+  /** Two clicked points (drawing pixels) and the real length between them. */
+  scale: z.object({ a: xy, b: xy, lengthFt: z.number().positive() }).optional(),
+  /** data: URL of the rendered page or image — export files only. */
+  data: z.string().max(12_000_000).optional(),
+})
+
+export const simLayoutSchema = z.object({
+  points: z.array(simPointSchema).max(2000),
+  segments: z.array(simSegmentSchema).max(5000),
+  background: simBackgroundSchema.optional(),
+})
+
+export const simSettingsSchema = z.object({
+  /** Vehicles per vehicle id. */
+  fleet: z.record(z.string(), z.number().int().min(0).max(500)).optional(),
+  demandPct: z.number().min(1).max(500).optional(),
+  seed: z.number().int().min(1).optional(),
+  replications: z.number().int().min(1).max(50).optional(),
+  /** Inspector overrides in one place: `vehicleId.field` / `pointId.field` → value (source chip "Override"). */
+  overrides: z.record(z.string(), z.union([z.number(), z.string(), z.boolean(), z.null()])).optional(),
+  /** ANSI/ITSDF B56.5 clearance rule (D-2): 6 in per side below 1.2 m/s, 0.5 m at or above,
+   *  shared between two vehicles on a two-way segment. */
+  clearance: z.object({
+    thresholdFps: z.number().positive(),
+    lowSpeedIn: z.number().min(0),
+    fullSpeedIn: z.number().min(0).nullable(),
+    sharedBetweenVehicles: z.boolean(),
+    edition: z.string().optional(),
+  }).optional(),
+})
+
+export type SimLayoutData = z.infer<typeof simLayoutSchema>
+export type SimSettingsData = z.infer<typeof simSettingsSchema>

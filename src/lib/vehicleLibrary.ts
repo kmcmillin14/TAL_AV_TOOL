@@ -12,6 +12,42 @@ export interface TransferMethod {
    *  derives an additional lift time from the per-flow `liftHeightFt` and the
    *  vehicle's `calc.liftSpeedFps`. Defaults to false. */
   lifts?: boolean
+  /** How the vehicle meets a pick/drop with this method (Fleet Simulation, spec §4.3).
+   *  Absent → the simulation uses the method default (Lift→rear, Conveyor→left, Pin→under) and flags it. */
+  orientation?: TransferOrientation
+}
+
+export type TransferOrientation = 'rear' | 'front' | 'left' | 'right' | 'under'
+export type TravelEnd = 'forksLeading' | 'forksTrailing' | 'any'
+
+/** Fleet Simulation data (`calc.sim`, spec §4.3). Every value is `null` until it is sourced —
+ *  `null` means "not specified in vehicle data", never zero; the simulation uses a stated,
+ *  flagged fallback. Provenance goes in `dataNote`, as for the battery block. */
+export interface VehicleSimData {
+  /** Footprint length including forks/attachments, ft. */
+  overallLengthFt?: number | null
+  forkLengthFt?: number | null
+  /** Point that stays on the path, ft from the footprint centre (+x = body, −x = forks). */
+  pathRefPointFt?: { x: number; y: number } | null
+  accelFps2?: number | null
+  decelFps2?: number | null
+  turnSpeedFps?: number | null
+  approachSpeedFps?: number | null
+  approachDistanceFt?: number | null
+  reverseSpeedFps?: number | null
+  travelDirection?: 'single' | 'bi' | null
+  preferredTravel?: { loaded: TravelEnd; empty: TravelEnd } | null
+  reorientSec?: number | null
+  /** Can work double-deep racking. Null → treated as NOT capable. */
+  doubleDeep?: boolean | null
+  availabilityPct?: number | null
+  tugger?: { maxCarts: number; cartLengthFt: number; couplingSec: number; trainLengthFt: number } | null
+  spriteAsset?: string | null
+  spriteRefPx?: { x: number; y: number } | null
+  /** True while any value is an assumption rather than measured/sourced. */
+  provisional?: boolean
+  /** Where the values came from; open items. */
+  dataNote?: string
 }
 
 export type Partnership = 'TAL Integrated' | 'TAL 3rd Party' | 'OEM' | '3rd Party'
@@ -114,6 +150,8 @@ export interface VehicleCalc {
   batterySpecProvisional?: boolean
   /** Unreconciled conflicts / unverified cells for this platform's battery data. */
   batteryDataNote?: string
+  /** Fleet Simulation data — see {@link VehicleSimData}. */
+  sim?: VehicleSimData
   priceRange: {
     minUsd: number
     maxUsd: number

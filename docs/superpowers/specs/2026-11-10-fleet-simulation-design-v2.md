@@ -144,15 +144,18 @@ owner 2026-11-10, confirm against the cutsheet**; `forkLengthFt: 3.5`) and
 
 - `flows[]`: `fromPointId?`, `toPointId?`, `distanceSource?: 'layout'`,
   `hourlyProfile?: number[24]`, `batchSize?`, `priority?`.
-- `simLayout?`: `ftPerPx`, `background` (kind, file name, page, fingerprint, scale points —
-  the image bytes are **never** written to `localStorage`; see D-4), `points[]` (id, x, y, type, role, name, positions, heightFt, footprintFt,
-  approachHeadingDeg, handshakeSec), `segments[]` (a, b, dir, lane, speedLimitFps, curve:
-  `none | arc | bezier` + handles), `areas[]` (rack | lanes config), `objects[]`,
-  `chargers[]`, `parking[]`.
+- `simLayout?` (Milestone 2, `src/lib/validations/simSchemas.ts`): `points[]` (id, x, y in ft, type,
+  role, name, heightFt, footprintFt, approachHeadingDeg, handshakeSec — chargers and parking are point
+  types, not separate lists), `segments[]` (a, b, dir, lane, speedLimitFps, curve: arc | bezier) and
+  `background` (kind, fileName, page, fingerprint, size, two-click scale; the image `data` only in
+  export files, D-4). The scale lives in `background.scale`, so there is no separate `ftPerPx`.
+  `objects[]` arrive with the layout editor (Milestone 4) and `areas[]` with racking (Milestone 7),
+  each with the code that reads them.
 - `simSettings?`: `fleet` per vehicleId, `demandPct`, `seed`, `replications`, and `overrides`
+  (`appliedFleet` for D-1 arrives with Milestone 5, where it is used)
   (`vehicleId.field → value`, `pointId.field → value`) so every inspector override lives in one
   place (source chip `Override`). Safety rule:
-  `clearance: { thresholdFps: 3.94, lowSpeedIn: 6, fullSpeedIn: null, edition }`.
+  `clearance: { thresholdFps: 3.94, lowSpeedIn: 6, fullSpeedIn: 19.69, sharedBetweenVehicles: true, edition }` (D-2).
 - Existing projects load unchanged; JSON export/import round-trips the new fields; legacy
   imports without them are valid.
 - **Background drawing (D-4):** kept in memory while the page is open; **embedded in the exported

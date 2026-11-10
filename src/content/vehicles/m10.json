@@ -65,7 +65,28 @@
     "chargerOutputA": 17.9,
     "chargerPowerKw": 0.43,
     "batteryDataNote": "PROVISIONAL battery spec (2026-10-09). avgPowerDrawKw and chargerPowerKw were BLANK on the owner sheet, so they are BACK-DERIVED from this platform's existing [estimate] runtime and charge time: draw = usable kWh / runTimeHr, charger = usable kWh / chargeHr. They therefore inherit that estimate's uncertainty and are NOT measurements -- `batterySpecProvisional` is set so every surface can say so. Replacing them with the real figures is the whole fix: six cells across the three platforms completes the library. Chemistry is AGM, the most charge-sensitive in the library, so the provisional charge input is the least trustworthy of the three.",
-    "batterySpecProvisional": true
+    "batterySpecProvisional": true,
+    "sim": {
+      "overallLengthFt": null,
+      "forkLengthFt": null,
+      "pathRefPointFt": null,
+      "accelFps2": null,
+      "decelFps2": null,
+      "turnSpeedFps": null,
+      "approachSpeedFps": null,
+      "approachDistanceFt": null,
+      "reverseSpeedFps": null,
+      "travelDirection": null,
+      "preferredTravel": null,
+      "reorientSec": null,
+      "doubleDeep": null,
+      "availabilityPct": null,
+      "tugger": null,
+      "spriteAsset": null,
+      "spriteRefPx": null,
+      "provisional": true,
+      "dataNote": "Not yet sourced — every value is null, so the simulation uses its stated fallbacks and flags them (body length for the footprint, pace % for motion, not double-deep capable). Source: BlueBotics ANT configuration or the OEM."
+    }
   },
   "specs": {
     "tempMinF": 50,

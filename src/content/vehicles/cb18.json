@@ -62,7 +62,28 @@
     "chargerOutputA": 60,
     "chargerPowerKw": 2.9,
     "batteryDataNote": "usableCapacityPct 70 -> 80 (2026-10-09). The platform's own three numbers force it: usable kWh = runtime x draw, so 16.67 h x 1.30 kW = 21.67 kWh = 80% of the 27.07 kWh pack, not 70%. 80% also matches the sheet's own 20->100% Recommended SOC band. runTimeHr and chargeTimeMin are now DERIVED from capacity / draw and capacity / charge input and reproduce the sheet exactly (16.66 h, 448 min). Still unreconciled: 564 Ah vs the sheet's 28.8 kWh, which would imply 600 Ah.",
-    "batterySpecProvisional": false
+    "batterySpecProvisional": false,
+    "sim": {
+      "overallLengthFt": 9.63,
+      "forkLengthFt": 3.5,
+      "pathRefPointFt": null,
+      "accelFps2": null,
+      "decelFps2": null,
+      "turnSpeedFps": null,
+      "approachSpeedFps": null,
+      "approachDistanceFt": null,
+      "reverseSpeedFps": null,
+      "travelDirection": null,
+      "preferredTravel": null,
+      "reorientSec": null,
+      "doubleDeep": null,
+      "availabilityPct": null,
+      "tugger": null,
+      "spriteAsset": null,
+      "spriteRefPx": null,
+      "provisional": true,
+      "dataNote": "overallLengthFt / forkLengthFt: engineer assumption (owner, 2026-11-10) — 6.13 ft body + 42 in standard forks; confirm against the cutsheet. Every other value is not yet sourced (null): the simulation uses its stated fallbacks and flags them. Kinematics source: BlueBotics ANT configuration or Bastian engineering."
+    }
   },
   "specs": {
     "tempMinF": 14,

@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-11-10 — Fleet simulation Milestone 2: project and vehicle data
+
+Data model only — no screen reads it yet, and **no quote, gate or export changes**.
+
+- **Project schema** (`src/lib/validations/simSchemas.ts`, wired into `schemas.ts`): optional
+  `simLayout` (points, segments, drawing), `simSettings` (fleet, demand %, seed, replications,
+  overrides, B56.5 clearance rule) and per-flow `fromPointId`, `toPointId`, `distanceSource`,
+  `hourlyProfile`, `batchSize`, `priority`. No defaults: the Company A and Michelin samples parse
+  with no new keys and survive export → import identically (tested).
+- **Vehicle data**: `calc.sim` on all six vehicle JSONs, every value `null` except CB18's overall
+  length 9.63 ft / forks 3.5 ft (owner assumption, D-7); `TransferMethod.orientation` added. A
+  test pins "nothing invented". The engine now reads both straight from the JSON.
+- **Drawing (D-4)**: `storage.ts` keeps the drawing image in memory only. It is written into the
+  exported revision file and restored when one is imported; localStorage never holds it (tested
+  against the actual stored text). The image is held against the drawing it came from (file
+  fingerprint + PDF page), so undo, clear or a page change can never export one drawing's image
+  under another's background and scale.
+- **Review fixes** (`/simplify`, `/code-review`): Step 1's form no longer re-saves `simLayout` /
+  `simSettings` on every edit (it carried them only because its defaults are the whole project);
+  an empty per-project override no longer hides a JSON value; an all-zero hourly profile is
+  rejected; the vehicle-data test reads the whole library, so a new vehicle file is checked
+  automatically. Simulation results unchanged (POC comparison rerun).
+
 ## 2026-11-10 — Fleet simulation: review fixes to the junction rules (D-11, D-12)
 
 `/simplify` and `/code-review` over the D-11 / D-12 changes (they had not been run after those

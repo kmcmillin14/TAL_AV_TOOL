@@ -301,15 +301,54 @@ function salvageParse(inputRaw: PartialProjectFormData): { valid: Record<string,
   return { valid, drops }
 }
 
+// ---- Simulation drawing (D-4) -------------------------------------------------------------
+// The background drawing can be megabytes, so its image (`simLayout.background.data`) is never
+// written to localStorage: it is held here in memory, written into an exported revision file and
+// restored from one on import. After a reload the engineer re-selects the file (the fingerprint
+// recognises it) or re-imports the revision.
+type Background = { data?: string; fingerprint?: string; page?: number }
+/** Which drawing an image is: the source file and, for a PDF, the rendered page. */
+const drawingKey = (bg: Background | undefined) => (bg ? `${bg.fingerprint ?? ''}#${bg.page ?? 1}` : null)
+const drawings = new Map<string, { key: string; data: string }>()
+
+/** A project's in-memory image, only while it is the drawing its layout names — so undo, clear or
+ *  a page change can never pair one drawing's background with another drawing's image. */
+function drawingFor(project: Pick<StoredProject, 'id' | 'simLayout'> | null): string | undefined {
+  const held = project && drawings.get(project.id)
+  return held && held.key === drawingKey(project.simLayout?.background) ? held.data : undefined
+}
+
+/** The in-memory drawing image for a project, if one is loaded this session. */
+export function getDrawingData(id: string): string | undefined { return drawingFor(getProject(id)) }
+
+/** Remove the image from validated project data and hold it in memory under its drawing key. */
+function stashDrawing(id: string, data: Record<string, unknown>): void {
+  const layout = data.simLayout as { background?: Background } | undefined
+  const background = layout?.background
+  if (background?.data === undefined) return
+  const { data: image, ...rest } = background
+  data.simLayout = { ...layout, background: rest }
+  drawings.set(id, { key: drawingKey(rest)!, data: image })
+}
+
+/** The project as written to a revision file: with its drawing image, when one is loaded. */
+function withDrawing(project: StoredProject): StoredProject {
+  const image = drawingFor(project)
+  if (!image) return project
+  return { ...project, simLayout: { ...project.simLayout!, background: { ...project.simLayout!.background!, data: image } } }
+}
+
 export function createProject(input: PartialProjectFormData): StoredProject {
   const { valid } = salvageParse(input)
+  const id = generateId()
+  stashDrawing(id, valid)
   const data = valid as PartialProjectFormData
   const now = new Date().toISOString()
   const project: StoredProject = {
     ...defaultFields(),
     ...data,
     projectName: data.projectName ?? '',
-    id: generateId(),
+    id,
     createdAt: now,
     updatedAt: now,
   }
@@ -334,6 +373,7 @@ export function updateProject(
   const idx = all.findIndex(p => p.id === id)
   if (idx === -1) return null
   const existing = all[idx]
+  stashDrawing(id, validated)
   // Capture the pre-change state for single-level undo, coalescing bursts of
   // rapid edits (e.g. typing in a field) into one snapshot so Undo reverts the
   // whole burst rather than a single keystroke.
@@ -373,6 +413,7 @@ export function deleteProject(id: string): boolean {
   const next = all.filter(p => p.id !== id)
   if (next.length === all.length) return false
   lastSnapshotAt.delete(id)
+  drawings.delete(id)
   writeAll(next)
   return true
 }
@@ -435,14 +476,14 @@ export function clearProject(id: string): StoredProject | null {
 export function exportProjectJson(id: string): string | null {
   const project = getProject(id)
   if (!project) return null
-  return JSON.stringify(project, null, 2)
+  return JSON.stringify(withDrawing(project), null, 2)
 }
 
 export function downloadProject(id: string): void {
   const project = getProject(id)
   if (!project) return
   const filename = projectFilename(project, 'json')
-  const blob = new Blob([JSON.stringify(project, null, 2)], { type: 'application/json' })
+  const blob = new Blob([JSON.stringify(withDrawing(project), null, 2)], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -489,6 +530,8 @@ export function importProjectFromJson(json: string): StoredProject {
   }
 
   const data = partialProjectSchema.parse(migrateLegacyFields(rawProject as PartialProjectFormData))
+  const id = generateId()
+  stashDrawing(id, data as Record<string, unknown>)
   const now = new Date().toISOString()
   const imported: StoredProject = {
     ...defaultFields(),
@@ -501,7 +544,7 @@ export function importProjectFromJson(json: string): StoredProject {
       ? rawProject.versionNumber
       : '',
     projectName: data.projectName ?? '',
-    id: generateId(),
+    id,
     createdAt: now,
     updatedAt: now,
   }

@@ -1,5 +1,22 @@
 # Vehicle Data Provenance
 
+## 2026-11-10 — `calc.sim` block (Fleet Simulation)
+
+Every vehicle now carries `calc.sim` — the simulation's kinematic and footprint data
+(spec v2 §4.3). **Every value is `null` until it is sourced**; `null` means "not specified in
+vehicle data", and the simulation uses a stated fallback and flags it on results. Nothing was
+estimated to fill a cell; a test (`src/calc/sim/__tests__/vehicleSimData.test.ts`) fails if a
+value appears without being added to its list of sourced values.
+
+| vehicle | sourced values | status |
+|---|---|---|
+| cb18 | `overallLengthFt` 9.63, `forkLengthFt` 3.5 | **[owner assumption]** 6.13 ft body + 42 in standard forks — confirm against the cutsheet |
+| all six | everything else | `null` — to source from BlueBotics ANT configuration, Bastian engineering or the OEM |
+
+Open: acceleration, deceleration, turn / approach / reverse speeds, path reference point,
+travel direction, preferred travel loaded/empty, transfer orientation per method, reorientation
+time, double-deep capability, availability, tugger train data, top-down sprites.
+
 ## 2026-10-09 — Battery & charging rebuilt from the owner's sheet
 
 The owner supplied a battery/charging spec sheet. `calc` now carries the full

@@ -110,6 +110,11 @@ function initialFlowRows(initialData?: Partial<ProjectFormData>): ProjectFormDat
 // becomes undefined so the flowSchema `.default(0)` fills it — otherwise one
 // half-typed distance would make the whole flows array fail validation and be
 // dropped from that keystroke's save.
+// The simulation layout and settings belong to the Simulate page. The form carries them only because
+// its defaults are the whole stored project, so they are left out of what Step 1 saves — otherwise
+// every blur would re-validate the layout and could write an old copy over a newer one.
+const NOT_STEP1 = new Set(['simLayout', 'simSettings'])
+
 export function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFormData> {
   const cleanValue = (v: unknown): unknown => {
     if (typeof v === 'number' && Number.isNaN(v)) return undefined
@@ -117,7 +122,7 @@ export function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFo
     return v
   }
   return Object.fromEntries(
-    Object.entries(data).map(([k, v]) => {
+    Object.entries(data).filter(([k]) => !NOT_STEP1.has(k)).map(([k, v]) => {
       if ((k === 'flows' || k === 'loads') && Array.isArray(v)) {
         return [k, v.map(row =>
           Object.fromEntries(

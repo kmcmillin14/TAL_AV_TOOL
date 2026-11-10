@@ -5,10 +5,10 @@ import { createSim, layoutReady, runFor, step, type SimState } from '../engine'
 import { angleDiff, distanceToGeometry } from '../geometry'
 import { results } from '../results'
 import type { SimFlow, SimLayout, VehicleSimData } from '../types'
-import { CB18_SIM, LIBRARY, cb18, corridor, sampleLayout, settings } from './fixtures'
+import { LIBRARY, cb18, corridor, sampleLayout, settings } from './fixtures'
 
 const flowAB = (thru: number): SimFlow[] => [{ id: 'f', fromPointId: 'A', toPointId: 'B', thruPerHr: thru, vehicleId: 'cb18' }]
-const sim = (layout: SimLayout, flows: SimFlow[], over = {}, simData: Record<string, VehicleSimData> = { cb18: CB18_SIM }) =>
+const sim = (layout: SimLayout, flows: SimFlow[], over = {}, simData: Record<string, VehicleSimData> = {}) =>
   createSim(layout, flows, LIBRARY, settings(over), simData)!
 
 describe('acceptance 1 — no layout, no simulation', () => {
@@ -174,7 +174,7 @@ describe('acceptance 25–27 — heading, orientation and fallbacks', () => {
   const handled = (S: SimState) => S.veh.flatMap(v => v.handlingLog)
 
   it('25 — heading matches the required approach at every pick/drop; a mismatch adds reverse + reorient time', () => {
-    const data = { cb18: { ...CB18_SIM, approachDistanceFt: 6, reverseSpeedFps: 2, reorientSec: 4 } }
+    const data = { cb18: { approachDistanceFt: 6, reverseSpeedFps: 2, reorientSec: 4 } }
     const S = runFor(sim(corridor(200), flowAB(10), {}, data), 3600)
     const log = handled(S)
     expect(log.length).toBeGreaterThan(10)
@@ -189,7 +189,7 @@ describe('acceptance 25–27 — heading, orientation and fallbacks', () => {
   })
 
   it('25 — arriving already at the required heading costs no reposition time', () => {
-    const data = { cb18: { ...CB18_SIM, preferredTravel: { loaded: 'forksLeading' as const, empty: 'forksLeading' as const }, approachDistanceFt: 6, reverseSpeedFps: 2, reorientSec: 4 } }
+    const data = { cb18: { preferredTravel: { loaded: 'forksLeading' as const, empty: 'forksLeading' as const }, approachDistanceFt: 6, reverseSpeedFps: 2, reorientSec: 4 } }
     const S = runFor(sim(corridor(200), flowAB(10), {}, data), 3600)
     const log = handled(S)
     expect(log.length).toBeGreaterThan(10)
@@ -197,13 +197,13 @@ describe('acceptance 25–27 — heading, orientation and fallbacks', () => {
   })
 
   it('26 — bi vehicles never reverse in', () => {
-    const data = { cb18: { ...CB18_SIM, travelDirection: 'bi' as const, approachDistanceFt: 6, reverseSpeedFps: 2, reorientSec: 4 } }
+    const data = { cb18: { travelDirection: 'bi' as const, approachDistanceFt: 6, reverseSpeedFps: 2, reorientSec: 4 } }
     const S = runFor(sim(corridor(200), flowAB(10), {}, data), 3600)
     expect(handled(S).every(h => h.repoSec === 0)).toBe(true)
   })
 
   it('26 — single vehicles travel with the preferred end leading', () => {
-    const data = { cb18: { ...CB18_SIM, preferredTravel: { loaded: 'forksLeading' as const, empty: 'forksTrailing' as const } } }
+    const data = { cb18: { preferredTravel: { loaded: 'forksLeading' as const, empty: 'forksTrailing' as const } } }
     const S = sim(corridor(200), flowAB(10), {}, data)
     let checked = 0
     for (let i = 0; i < 3600 / 0.25; i++) {
@@ -218,7 +218,8 @@ describe('acceptance 25–27 — heading, orientation and fallbacks', () => {
   })
 
   it('27 — missing kinematics run on the stated fallback and are flagged', () => {
-    const S = sim(corridor(200), flowAB(10), { pacePct: 70 }, {})
+    const bare = { ...cb18, calc: { ...cb18.calc, sim: undefined } }   // a vehicle with no calc.sim data
+    const S = createSim(corridor(200), flowAB(10), [bare], settings({ pacePct: 70 }))!
     const fields = S.flags.filter(f => f.vehicleId === 'cb18').map(f => f.field)
     expect(fields).toEqual(expect.arrayContaining(['motion', 'transferOrientation', 'overallLengthFt', 'turnSpeedFps', 'reverseSpeedFps', 'travelDirection', 'preferredTravel', 'reorientSec', 'approachDistanceFt', 'pathRefPointFt']))
     expect(S.profiles.get('cb18')!.speedLoaded).toBeCloseTo(cb18.calc.speedLoadedFps * 0.7, 9)
@@ -252,7 +253,7 @@ describe('review fixes — inputs the engine must refuse or flag, never guess', 
   })
   it('treats a 0% minimum SOC as data, not as missing', () => {
     const v = { ...cb18, calc: { ...cb18.calc, minSocPct: 0 } }
-    const S = createSim(corridor(100), flowAB(10), [v], settings(), { cb18: CB18_SIM })!
+    const S = createSim(corridor(100), flowAB(10), [v], settings())!
     expect(S.profiles.get('cb18')!.battery?.chargeBelowPct).toBe(10)
   })
   it('a trip to a charger counts as charging, not as busy', () => {

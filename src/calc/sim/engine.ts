@@ -131,9 +131,14 @@ export function layoutReady(layout: SimLayout): boolean {
 const canPick = (p: SimPoint) => p.role === 'pick' || p.role === 'pickDrop'
 const canDrop = (p: SimPoint) => p.role === 'drop' || p.role === 'pickDrop'
 
+/** An override's set values only: an empty (null/undefined) override never hides the JSON value. */
+const definedOnly = <T extends object>(o: T | null | undefined): Partial<T> =>
+  Object.fromEntries(Object.entries(o ?? {}).filter(([, x]) => x != null)) as Partial<T>
+
 /**
  * Build a simulation. Returns null when there is no layout to run.
- * `vehicles` is the library; `simData` holds each vehicle's optional `calc.sim` block.
+ * `vehicles` is the library (each vehicle's `calc.sim` block is read from its JSON); `simData` holds
+ * per-project overrides laid over that block, field by field.
  */
 export function createSim(
   layout: SimLayout,
@@ -154,7 +159,7 @@ export function createSim(
   }
   const profileFor = (vid: string) => {
     let p = profiles.get(vid)
-    if (!p) { const v = byId.get(vid); if (!v) return null; p = resolveProfile(v, simData[vid], P.pacePct); profiles.set(vid, p); S.flags.push(...p.flags) }
+    if (!p) { const v = byId.get(vid); if (!v) return null; p = resolveProfile(v, { ...v.calc.sim, ...definedOnly(simData[vid]) }, P.pacePct); profiles.set(vid, p); S.flags.push(...p.flags) }
     return p
   }
 
@@ -174,8 +179,8 @@ export function createSim(
     const prof = profileFor(f.vehicleId)!
     const transfer = prof.vehicle.transferMethods[f.transferMethodIdx ?? 0]
     const { loadSec, unloadSec } = transferSeconds(transfer, f.transferSecOverride)
-    const orientation = defaultOrientation(transfer.method)
-    S.flags.push({ vehicleId: f.vehicleId, field: 'transferOrientation', message: `${transfer.method} on flow ${f.id}: transfer orientation not specified — ${orientation}` })
+    const orientation = transfer.orientation ?? defaultOrientation(transfer.method)
+    if (!transfer.orientation) S.flags.push({ vehicleId: f.vehicleId, field: 'transferOrientation', message: `${transfer.method} on flow ${f.id}: transfer orientation not specified — ${orientation}` })
     const pa = G.points[a!], pb = G.points[b!]
     const lift = (p: SimPoint) => liftSeconds(p.heightFt ?? 0, transfer, prof.vehicle.calc.liftSpeedFps)
     const rate = f.thruPerHr * P.demandPct / 100
