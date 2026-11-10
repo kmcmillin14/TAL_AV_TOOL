@@ -56,6 +56,12 @@ the existing `ChartKit`. No new runtime dependencies without owner approval.
 - [x] Owner answered the decision questions (spec §12, D-1…D-10).
 - [ ] **Stop. Summarize for the owner; wait for plan approval.**
 
+**Owner check (you):**
+- [ ] Read spec v2 §12 (decisions) and §10 (acceptance tests 1–40)
+- [ ] Skim this page: is anything missing or in the wrong order?
+- **Sign-off question:** Approve the plan so Milestone 1 can start?
+- **You receive:** This page and the spec on the branch
+
 **Done when:** owner approves the plan.
 
 ---
@@ -87,6 +93,13 @@ the existing `ChartKit`. No new runtime dependencies without owner approval.
 - [ ] Performance check: POC sample, 16 h, one run < 1.5 s in Node; record the figure.
 - [ ] Gates; `/simplify`; `/code-review`; CHANGELOG; commit; **owner summary**.
 
+**Owner check (you):**
+- [ ] Compare the side-by-side table: proof of concept vs port, on your sample layout, fleets 3–6
+- [ ] Confirm zero gridlocks across 48 runs, as in your proof of concept
+- [ ] Confirm a single vehicle on one flow matches the Sizing cycle time within 2%
+- **Sign-off question:** Does the port behave like your proof of concept?
+- **You receive:** Results table (verdict, moves/h, busy %, wait per fleet size) and the test list
+
 **Done when:** acceptance 1–9, 23, 25–27 pass (1 is asserted at the engine level: empty layout →
 no results).
 
@@ -114,6 +127,13 @@ no results).
 - [ ] Add `VehicleSimData` type and the null-filled `calc.sim` blocks.
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
+**Owner check (you):**
+- [ ] Open the Company A sample and a Michelin import: everything looks and prices exactly as before
+- [ ] Save revision → re-import: the project comes back intact
+- [ ] Read the vehicle data notes: nothing has been filled in that you didn't give
+- **Sign-off question:** Are existing projects untouched, and are the vehicle placeholders right?
+- **You receive:** Before/after confirmation that no quote moved, and the vehicle-file diff
+
 **Done when:** existing projects load unchanged and all tests pass.
 
 ---
@@ -132,6 +152,12 @@ no results).
 - [ ] Sizing → Simulate → back preserves state; persistent header unchanged.
 - [ ] ARCHITECTURE.md updated; `check:arch` passes with the new folders.
 - [ ] Gates incl. `npm run build`; `/simplify`; `/code-review`; commit; owner summary.
+
+**Owner check (you):**
+- [ ] On Step 3, click Simulate: the page opens with Run disabled
+- [ ] Go back to Sizing: nothing changed; step ribbon still 0–5
+- **Sign-off question:** Is the entry point where an engineer would look for it?
+- **You receive:** Screenshots and the preview link
 
 **Done when:** navigation works and the architecture gate passes.
 
@@ -160,6 +186,15 @@ no results).
       single-lane (29–33). Engine following switches to envelope distance (§6.5.5).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
+**Owner check (you):**
+- [ ] Draw one of your real sites from a PDF: scale, stands, conveyors, chargers, routes, flows
+- [ ] Repeat a charger ×6 at 5 ft, then undo once
+- [ ] Narrow an aisle and read the B56.5 callouts: 6 in / 0.5 m, shared between vehicles
+- [ ] Export the revision, re-import it: the drawing comes back
+- [ ] Interim check: Halfway check: drawing, scale, points, routes and flows, before curves and clearances are built.
+- **Sign-off question:** Can you draw a real site in about 30 minutes, and are the clearance callouts right?
+- **You receive:** Preview link, a drawn example site, and the clearance numbers on a measured aisle
+
 **Done when:** acceptance 10–14, 28–33 and 39 pass.
 
 ---
@@ -184,6 +219,14 @@ no results).
       CHANGELOG first, before/after on the Company A sample in the owner summary.
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
+**Owner check (you):**
+- [ ] Run your drawn site: do the verdicts and utilization look believable?
+- [ ] Follow one vehicle and watch its empty and loaded legs
+- [ ] Click "Use N in pricing", then open Step 4, Dashboard and the deck: they show "simulated (engine N)"
+- [ ] Click "Back to engine": every figure returns exactly
+- **Sign-off question:** Are the verdicts believable, and is the pricing change shown clearly enough?
+- **You receive:** Before/after quote figures on the Company A sample (this milestone can move quotes)
+
 **Done when:** acceptance 15–17, 24, 38 and 40 pass.
 
 ---
@@ -203,6 +246,13 @@ no results).
       two-click reachability (34); overrides (36); no modals (37).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
+**Owner check (you):**
+- [ ] Click a point, a route, a vehicle: everything you'd change is within two clicks
+- [ ] Override a speed, see the dot and count, then Reset all
+- [ ] Is the screen still clean, Apple-level, with nothing explained in paragraphs?
+- **Sign-off question:** Clean enough, and is anything missing or too much?
+- **You receive:** Preview link and the full list of editable assumptions
+
 **Done when:** acceptance 34–37 pass.
 
 ---
@@ -218,6 +268,13 @@ no results).
       initial fill.
 - [ ] Floor lanes: drive-in/through, lane depth travel, one vehicle per lane (20); stacking gate.
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
+
+**Owner check (you):**
+- [ ] Draw a rack with a level above CB18 reach: those flows turn red with the reason
+- [ ] Make it double-deep: refused, "not specified in vehicle data"
+- [ ] Watch vehicles queue at the aisle entry
+- **Sign-off question:** Do racks and lanes behave the way they do on site?
+- **You receive:** Preview link and a rack example
 
 **Done when:** acceptance 18–20 pass.
 
@@ -235,6 +292,12 @@ no results).
 - [ ] Tuggers as single units, flagged; footprint-shape sprites with category glyphs.
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
+**Owner check (you):**
+- [ ] Mix CB18, 8HBC40A and M10 on one site
+- [ ] Point a floor-only vehicle at a raised stand: excluded, reason shown
+- **Sign-off question:** Are mixed fleets and the exclusions right?
+- **You receive:** Preview link and a mixed-fleet example
+
 **Done when:** acceptance 21–22 pass.
 
 ---
@@ -250,5 +313,11 @@ no results).
 - [ ] All gates green; final summary for approval: behaviour, anything whose output moves
       (none for quotes — the simulation never writes pricing inputs), files touched, known
       issues, open decisions still pending.
+
+**Owner check (you):**
+- [ ] Take the tour as a new engineer would
+- [ ] Read the final summary: what changed, what moves quotes, what's still open
+- **Sign-off question:** Approve pushing the branch and opening a pull request?
+- **You receive:** Final summary and the complete test report
 
 **Done when:** all gates are green and the owner approves.
