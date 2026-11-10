@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-11-10 — Fleet simulation: design v2 and plan (branch `feature/fleet-simulation`, not built)
+
+Docs only — no app behaviour, data or quote changes.
+
+An optional **Simulate** page is planned: it runs the engineer-drawn layout, the project's
+flows and the library vehicles through time and reports whether the Step 3 fleet holds the
+throughput on that layout, and where it breaks if not. Design:
+`docs/superpowers/specs/2026-11-10-fleet-simulation-design-v2.md` (supersedes the uncommitted
+v1 of 2026-11-09 and the exploratory `prototype/fleet-sim` branch). Plan:
+`docs/superpowers/plans/2026-11-10-fleet-simulation.md`, nine milestones, each committed
+locally and approved before the next.
+
+Fixed by the design: nothing is invented (no automatic layout, missing vehicle data flagged,
+never estimated); flows stay one list shared with Sizing; charging, gates and the engine cycle
+are imported, not copied; all engine code is pure in `src/calc/sim/`; the simulation never
+changes the sized fleet or the ROM price. New fields (`simLayout`, `simSettings`, flow point
+links, vehicle `calc.sim`) are all optional, so existing projects load unchanged.
+
+The TAL proof of concept is kept as reference in
+`docs/superpowers/reference/fleet-simulation-poc/` (`engine.js`, `sample.js`). Baseline on its
+sample: 48 runs (fleets 3–6, seeds 1–6, demand 100/130%, random arrivals, 16 h), **0
+gridlocks**. The vehicle-data audit found the gaps listed in the spec §4.2, including
+`maxLoadHeightIn` missing on `m10`/`8tb50a` and an ambiguous `turningRadiusFt: 0` on
+`ml2`/`ebase7`. Ten open decisions (spec §12) await the owner.
+
 ## 2026-11-03 — Step 4 headline simplified to ROM price + range; missing inputs link to Step 1
 
 Owner feedback: the headline showed three equal-weight stats (total, budgetary range,

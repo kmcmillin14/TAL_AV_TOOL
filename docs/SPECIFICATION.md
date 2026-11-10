@@ -619,6 +619,48 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 
 ---
 
+## Simulate (optional, after Sizing) — in development
+
+> **Status:** designed, not built. Branch `feature/fleet-simulation`; full design in
+> `docs/superpowers/specs/2026-11-10-fleet-simulation-design-v2.md`, plan in
+> `docs/superpowers/plans/2026-11-10-fleet-simulation.md`. This section states the behaviour
+> the branch must deliver; it moves to "shipped" when Milestone 9 is approved.
+
+An optional page (`app/projects/[id]/simulate/`), reached from Sizing, that runs the
+**engineer-drawn layout**, the project's **flows** and the library **vehicles** through time and
+answers: *does the Step 3 fleet hold the throughput on this layout — and if not, where does it
+break?* It is ROM-level validation, not a fleet-manager simulator or a layout design tool. The
+step ribbon is unchanged.
+
+- **Nothing is invented.** Routes, points, areas, chargers, parking and objects are drawn by the
+  engineer; vehicle figures come only from the vehicle JSON; missing data is flagged and its
+  fallback named. No layout → no simulation (Run disabled, no numbers).
+- **Layout mode:** optional background drawing (PDF page or image, scaled by two clicks and a
+  typed length), points with an equipment type and a role (Pick / Drop / Pick & drop), routes
+  with direction and lane type, rounded corners from `turningRadiusFt`, arcs and splines, racking
+  and floor-lane areas, fixed objects, and flows created by connecting a Pick point to a Drop
+  point. Everything is drawn to true scale in feet.
+- **One flow list.** Flows created in Simulate are the same `flows[]` Sizing uses, linked to
+  points (`fromPointId`, `toPointId`); a linked flow's distance comes from the layout and is
+  read-only in Sizing.
+- **ANSI/ITSDF B56.5 clearance:** the swept envelope of the vehicle or payload (whichever is
+  wider) is measured against objects and opposing traffic; below the low-speed clearance a
+  segment is blocked, between the low- and full-speed clearances its speed is capped below
+  1.2 m/s. Clearance values are engineer-editable assumptions.
+- **Run mode:** one verdict row per vehicle type — fleet stepper, *Meets / Tight / Falls short /
+  Gridlock*, moves/h vs target, wait, busy % — beside "Engine sized N" from the Fleet Engine.
+  Demand % and fleet per type are the only on-screen controls; everything else is in a
+  right-hand inspector (Summary → Settings → Advanced, every field with a source chip and reset)
+  and an Assumptions view.
+- **Same formulas, one source:** charging availability, payload/lift gates and the engine cycle
+  are imported from `src/calc/fleet.ts`, `src/calc/gates.ts` and `src/calc/flowMetrics.ts`. All
+  simulation code lives in `src/calc/sim/` (pure).
+- **Reproducible:** same inputs and seed give identical results; playback speed never changes
+  them. Gridlock is reported, never hidden.
+- **Never changes the sized fleet or the ROM price by itself.**
+
+---
+
 ## Step 4 — ROM Configuration
 
 The internal sell-price build-up — Hardware + Integration + Software + Adders — distinct
