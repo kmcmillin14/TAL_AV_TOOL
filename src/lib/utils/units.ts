@@ -28,6 +28,10 @@ export const units = {
   },
 }
 
+/** A length stored in feet, in the user's units (ft or m) — and a typed value back to feet. */
+export const lengthToDisplay = (ft: number, s: UnitSystem) => (s === 'metric' ? units.distance.toMetric(ft) : ft)
+export const lengthFromDisplay = (v: number, s: UnitSystem) => (s === 'metric' ? units.distance.toImperial(v) : v)
+
 export function parseImperialInput(
   value: string,
   storedUnit: 'lbs' | 'in' | 'ft' | 'F',

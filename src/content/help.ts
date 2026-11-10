@@ -25,7 +25,7 @@ export interface HelpExample {
 }
 
 export interface HelpSection {
-  id: 'app' | 'step0' | 'step1' | 'step2' | 'step3' | 'step4' | 'step5'
+  id: 'app' | 'step0' | 'step1' | 'step2' | 'step3' | 'simulate' | 'step4' | 'step5'
   /** Small label above the title, e.g. "Step 01". */
   eyebrow?: string
   title: string
@@ -164,6 +164,26 @@ export const HELP: HelpSection[] = [
     tips: [
       'Vehicles are pooled per type across the whole project — grouping rows is just for organisation.',
       'Assigning a vehicle here is what “selects” it; Step 02 never picks for you.',
+    ],
+  },
+  {
+    id: 'simulate',
+    eyebrow: 'Sizing · Simulate',
+    title: 'Simulate',
+    summary:
+      'An optional check of the Sizing fleet on a drawn layout. You draw the site — points, routes and flows — and the simulation runs the vehicles through it to show whether the fleet keeps up and where it gets stuck. Nothing is invented: what is not drawn or not in the vehicle data is flagged.',
+    howTo: [
+      'Drawing (optional): load a PDF page or a PNG/JPG, then Set scale — click both ends of a known dimension and type its length.',
+      'Points (P): choose a type and a role (Pick, Drop, or both) and click to place it. Clicking on a route places it on the route.',
+      'Routes (R): click from point to point to draw a route; Esc ends the route. Routes snap to points and to other routes.',
+      'Direction (D): click a route to step through two-way, one-way either way, and single-lane (no passing).',
+      'Flows (F): click a Pick point, then a Drop point. Give the flow its moves per hour and vehicle on the right.',
+      'Select (V): click anything to edit it; drag a point to move it; Delete removes it. ⌘Z / ⌘⇧Z undo and redo.',
+    ],
+    tips: [
+      'A flow drawn here is the same flow Sizing uses: its distance and lift height now come from the layout, so the Sizing fleet can change.',
+      'Sizing flows not yet on the layout are listed under “Link to points” — a name match is offered as one click.',
+      'The drawing image is kept in the exported project file, not in the browser. After a reload, re-select the same file to bring it back.',
     ],
   },
   {

@@ -128,6 +128,9 @@ export interface Flow {
    *  this flow. Absent → the vehicle method's loadTimeSec + unloadTimeSec. */
   transferSecOverride?: number
   sectionName?: string         // optional engineer-named section for visual grouping
+  /** 'layout' when the flow is drawn on the Simulate layout: `distanceFt` and `liftHeightFt` are
+   *  then measured there (route distance; pick + drop height) and read-only in Sizing. */
+  distanceSource?: 'layout'
 }
 
 export interface CycleBreakdown {

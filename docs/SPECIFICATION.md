@@ -621,7 +621,7 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 
 ## Simulate (optional, after Sizing) — in development
 
-> **Status:** being built — engine, data model and page frame done (Milestones 1–3). Branch `feature/fleet-simulation`; full design in
+> **Status:** being built — engine, data model, page frame and the first half of the layout editor done (Milestones 1–3, 4a). Branch `feature/fleet-simulation`; full design in
 > `docs/superpowers/specs/2026-11-10-fleet-simulation-design-v2.md`, plan in
 > `docs/superpowers/plans/2026-11-10-fleet-simulation.md`. This section states the behaviour
 > the branch must deliver; it moves to "shipped" when Milestone 9 is approved.
@@ -681,6 +681,31 @@ step ribbon is unchanged.
   `src/calc/sim/readiness.ts`), so Run never offers a run that simulates nothing. Until the run view
   exists (Milestone 5) Run stays disabled even when ready. Below 700 px the page says *Open on a
   desktop to edit the layout*.
+- **Layout editor, first half (built, Milestone 4a).** Toolbar *Select (V) · Points (P) · Routes (R) ·
+  Flows (F) · Direction (D)*, Undo/Redo (⌘Z / ⌘⇧Z, many steps; typing in one field is one step).
+  - *Drawing card:* load a PDF page (page picker while the file is loaded) or PNG/JPG; *Set scale* =
+    click both ends of a known dimension, type its length (ft, or m in metric); what was already
+    drawn is rescaled with it. Extents read out. Unscaled drawing → Run waits. The image lives in
+    memory and the exported file only; after a reload the card asks to re-select the file (same
+    file → its scale is kept).
+  - *Points:* palette Stand · Conveyor · Machine · Dock (flow points, with role Pick / Drop /
+    Pick & drop) and Charger · Parking (vehicle points), the approved icons and role colours
+    (`--sim-pick`, `--sim-drop`). Placed on a route, a point joins it. A point off every route reads
+    *Not connected* and is listed in the panel (acceptance 10).
+  - *Routes:* click point to point (or onto a route, which splits it with a junction; or empty floor,
+    which adds a junction); Esc ends. New routes are two-way, two-lane.
+  - *Direction:* click a route to step two-way → one-way → other way → single-lane. Chevrons are
+    spaced in screen pixels, legible at every zoom; legend in the corner (acceptance 12).
+  - *Flows:* click a Pick point, then a Drop point; anything else is refused with a message
+    (acceptance 11). The flow joins the project's `flows[]` with its points linked; moves/h and
+    vehicle are set in the panel. Sizing flows not on the layout are listed under *Link to points*,
+    with a one-click link when their origin and destination names match a Pick and a Drop point.
+  - *Linked flows in Sizing:* distance = route distance on the layout, lift height = pick height +
+    drop height; both read-only in Sizing (marked *from layout*) and re-measured on every layout
+    edit. **This moves the Sizing fleet, and so the quote, for a flow the engineer links.**
+  - The panel (right) edits the selected point (name, equipment, role, transfer height), route
+    (direction, lanes) or flow (moves/h, vehicle; *Unlink from points*). Delete removes a point or
+    route; on a flow it unlinks it (Sizing keeps the flow). Help (?) opens a Simulate section.
 
 ---
 

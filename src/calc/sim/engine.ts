@@ -12,6 +12,7 @@
 import { liftSeconds, transferSeconds } from '../flowMetrics'
 import { angleDiff, headingOf, type Pose } from './geometry'
 import { buildGraph, pathLen, route, type Edge, type Graph } from './graph'
+import { canDrop, canPick } from './layoutEdit'
 import { rng } from './rng'
 import type { Gridlock, SimFlag, SimFlow, SimLayout, SimPoint, SimSettings, TimeSplit, TransferOrientation, VehicleSimData } from './types'
 import { defaultOrientation, resolveProfile, type VehicleProfile } from './vehicle'
@@ -128,8 +129,6 @@ export function layoutReady(layout: SimLayout): boolean {
   return layout.segments.length > 0
 }
 
-const canPick = (p: SimPoint) => p.role === 'pick' || p.role === 'pickDrop'
-const canDrop = (p: SimPoint) => p.role === 'drop' || p.role === 'pickDrop'
 
 /** Why a flow cannot run on this layout, or `null` when it can. The one rule shared by the engine
  *  and the Run button (`readiness.ts`), so the button never offers a run that simulates nothing. */

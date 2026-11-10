@@ -56,6 +56,7 @@ export default function FlowSheet({ flow, index, vehicles, groups, derived, unit
 
   // One-way distance (2026-07-22) — display stored value directly; calc doubles it.
   const distDisplay = metric ? units.distance.toMetric(flow.distanceFt).toFixed(0) : String(Math.round(flow.distanceFt * 10) / 10)
+  const fromLayout = flow.distanceSource === 'layout'   // measured on the Simulate layout, read-only here
   const setDistance = (input: string) => {
     const n = clampNum(input)
     const oneWay = metric ? units.distance.toImperial(n) : n
@@ -129,8 +130,8 @@ export default function FlowSheet({ flow, index, vehicles, groups, derived, unit
             <input className="m-input" value={flow.destination} placeholder="e.g. Storage 1" onChange={e => onChange({ ...flow, destination: e.target.value })} /></div>
         </div>
         <div className="m-two">
-          <div className="m-field"><label className="m-field-label">{metric ? 'Distance (m, one-way)' : 'Distance (ft, one-way)'}</label>
-            <input className="m-input mono" type="number" min="0" inputMode="decimal" value={distDisplay} onChange={e => setDistance(e.target.value)} /></div>
+          <div className="m-field"><label className="m-field-label">{metric ? 'Distance (m, one-way)' : 'Distance (ft, one-way)'}{fromLayout ? ' · from layout' : ''}</label>
+            <input className="m-input mono" type="number" min="0" inputMode="decimal" value={distDisplay} readOnly={fromLayout} onChange={e => setDistance(e.target.value)} /></div>
           <div className="m-field"><label className="m-field-label">Moves / hr</label>
             <input className="m-input mono" type="number" min="0" inputMode="decimal" value={flow.thruPerHr} onChange={e => onChange({ ...flow, thruPerHr: clampNum(e.target.value) })} /></div>
         </div>
@@ -188,7 +189,7 @@ export default function FlowSheet({ flow, index, vehicles, groups, derived, unit
               value={flow.transferSecOverride ?? ''} onChange={e => onOverride(e.target.value)} /></div>
           {isLifting && (
             <div className="m-field"><label className="m-field-label">Lift height ({metric ? 'm' : 'ft'})</label>
-              <input className="m-input mono" type="number" min="0" inputMode="decimal" value={heightValue} onChange={e => onHeight(e.target.value)} /></div>
+              <input className="m-input mono" type="number" min="0" inputMode="decimal" value={heightValue} readOnly={fromLayout} title={fromLayout ? 'From layout — pick height + drop height' : undefined} onChange={e => onHeight(e.target.value)} /></div>
           )}
         </div>
       </BottomSheet>

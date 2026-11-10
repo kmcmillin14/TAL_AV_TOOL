@@ -14,6 +14,7 @@ import { APP_VERSION } from '@/src/content/appVersions'
 import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import PptxSectionPicker from './rom/PptxSectionPicker'
 import type { HeaderData } from '@/src/lib/projectHeader'
+import type { HelpSection } from '@/src/content/help'
 
 type StepId = 0 | 1 | 2 | 3 | 4 | 5
 
@@ -22,6 +23,8 @@ interface PersistentHeaderProps {
   currentStep: StepId
   unitSystem: UnitSystem
   onUnitToggle: () => void
+  /** Help section to open, when the page is not a step of its own (Simulate opens 'simulate'). */
+  helpTopic?: HelpSection['id']
 }
 
 type EditField = 'projectName' | 'customerName' | 'facilityLocation' | 'bastianRep' | 'opportunityNumber' | 'versionNumber' | 'createdAt'
@@ -43,6 +46,7 @@ export default function PersistentHeader({
   currentStep,
   unitSystem,
   onUnitToggle,
+  helpTopic,
 }: PersistentHeaderProps) {
   const router = useRouter()
   const [editing, setEditing] = useState<EditField | null>(null)
@@ -219,6 +223,7 @@ export default function PersistentHeader({
   // Cmd/Ctrl+Z → app undo, EXCEPT inside text fields where native text undo wins.
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return   // a page's own undo (Simulate's layout editor) took it
       if (!(e.metaKey || e.ctrlKey) || e.shiftKey || e.key.toLowerCase() !== 'z') return
       const t = e.target as HTMLElement | null
       if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)) return
@@ -519,7 +524,7 @@ export default function PersistentHeader({
         </div>
       </nav>
     </header>
-    <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} currentStep={currentStep} />
+    <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} currentStep={currentStep} topic={helpTopic} />
     <GuidedTour />
     {pptxProject && <PptxSectionPicker project={pptxProject} onClose={() => setPptxProject(null)} />}
     {versionLogOpen && <AppVersionLog onClose={() => setVersionLogOpen(false)} />}

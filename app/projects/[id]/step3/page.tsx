@@ -6,8 +6,9 @@ import Link from 'next/link'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import { headerFromProject } from '@/src/lib/projectHeader'
 import Icon from '@/src/design-system/components/Icon'
-import { subscribeProjects, getProject, updateProject, type StoredProject } from '@/src/lib/storage'
+import { getProject, updateProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
+import { useProjectSync } from '@/src/lib/useProjectSync'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { DEFAULT_TARGET_UTILIZATION, type FleetSettings, type Flow, type FlowDerived } from '@/src/calc/types'
@@ -46,19 +47,8 @@ export default function FleetEnginePage() {
       .catch(() => { setError('Failed to load vehicle library.'); setLoading(false) })
   }, [id])
 
-  useEffect(() => {
-    const refresh = () => { const proj = getProject(id); if (proj) setProject(proj) }
-    // subscribeProjects covers SAME-TAB mutations (header Undo/Cmd+Z, meta edits) —
-    // without it, Undo on this page looked like a no-op until a tab switch.
-    const unsub = subscribeProjects(refresh)
-    window.addEventListener('storage', refresh)
-    window.addEventListener('focus', refresh)
-    return () => {
-      unsub()
-      window.removeEventListener('storage', refresh)
-      window.removeEventListener('focus', refresh)
-    }
-  }, [id])
+  // Same-tab mutations (header Undo/Cmd+Z, meta edits), other tabs and focus return.
+  useProjectSync(id, setProject)
 
   const vehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
 

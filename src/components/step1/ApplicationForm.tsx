@@ -16,6 +16,7 @@ import { mirrorFirstLoad } from '@/src/lib/mirrorFirstLoad'
 import { PALLET_ENTRY_LABELS } from '@/src/lib/palletEntry'
 import SubQuestions, { FollowUpMarker } from '@/src/components/SubQuestions'
 import SectionNav from './SectionNav'
+import { newFlowId } from '@/src/lib/ids'
 
 
 
@@ -58,7 +59,6 @@ function toDateInput(iso?: string): string {
   return d.toISOString().slice(0, 10)
 }
 
-const newFlowId = () => 'f_' + Math.random().toString(36).slice(2, 10)
 const newLoadId = () => 'l_' + Math.random().toString(36).slice(2, 10)
 
 type LoadRow = NonNullable<ProjectFormData['loads']>[number]
@@ -1187,7 +1187,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                     />
                   </div>
                   <div className="fld">
-                    <label>Distance ({dLabel}, one-way)</label>
+                    <label>Distance ({dLabel}, one-way){f.distanceSource === 'layout' ? ' · from layout' : ''}</label>
                     <div className="input-with-unit">
                       <input
                         type="number"
@@ -1195,6 +1195,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                         min="0"
                         className="mono"
                         placeholder="200"
+                        readOnly={f.distanceSource === 'layout'}
                         defaultValue={dispFt(f.distanceFt)}
                         {...register(`flows.${i}.distanceFt`, {
                           setValueAs: v => v === '' ? 0 : parseImperialInput(String(v), 'ft', unitSystem),

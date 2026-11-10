@@ -14,6 +14,8 @@ interface Props {
   unitSystem: 'imperial' | 'metric'
   onMethodChange: (idx: number) => void
   onLiftChange: (ft: number) => void
+  /** The flow's lift height comes from the Simulate layout: shown, not edited, here. */
+  liftFromLayout?: boolean
   onOverrideChange: (sec: number | undefined) => void
 }
 
@@ -47,6 +49,7 @@ export default function MethodSelect({
   unitSystem,
   onMethodChange,
   onLiftChange,
+  liftFromLayout,
   onOverrideChange,
 }: Props) {
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -150,12 +153,13 @@ export default function MethodSelect({
                 min="0"
                 inputMode="decimal"
                 value={heightValue}
+                readOnly={liftFromLayout}
                 onChange={e => onHeight(e.target.value)}
                 aria-label="Lift height"
               />
               <span className="lift-panel-unit">{metric ? 'm' : 'ft'}</span>
             </div>
-            <div className="lift-panel-note mono">Adds {liftTimeSec.toFixed(1)}s to the cycle</div>
+            <div className="lift-panel-note mono">Adds {liftTimeSec.toFixed(1)}s to the cycle{liftFromLayout ? ' · from layout' : ''}</div>
           </>
         )}
       </FloatingPanel>

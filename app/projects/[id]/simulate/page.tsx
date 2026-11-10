@@ -8,7 +8,8 @@ import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import { headerFromProject } from '@/src/lib/projectHeader'
 import SimulateShell from '@/src/components/simulate/SimulateShell'
-import { getProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
+import { getProject, type StoredProject } from '@/src/lib/storage'
+import { useProjectSync } from '@/src/lib/useProjectSync'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
@@ -22,14 +23,8 @@ export default function SimulatePage() {
 
   useEffect(() => { fetchVehiclesCached().then(setVehicles, () => setVehicleError(true)) }, [])
 
-  useEffect(() => {
-    const refresh = () => setProject(getProject(id))
-    refresh()
-    // subscribeProjects also covers other tabs: storage.ts merges their writes and notifies.
-    const unsub = subscribeProjects(refresh)
-    window.addEventListener('focus', refresh)
-    return () => { unsub(); window.removeEventListener('focus', refresh) }
-  }, [id])
+  useEffect(() => { setProject(getProject(id)) }, [id])
+  useProjectSync(id, setProject)
 
   if (project === undefined || (project && !vehicles && !vehicleError)) {
     return <div className="app-shell"><div className="step2-loading">Loading simulation…</div></div>
@@ -53,11 +48,12 @@ export default function SimulatePage() {
       <PersistentHeader
         project={headerFromProject(project)}
         currentStep={3}
+        helpTopic="simulate"
         unitSystem={unitSystem}
         onUnitToggle={toggleUnitSystem}
       />
       <div className="workspace">
-        <SimulateShell project={project} vehicles={vehicles} />
+        <SimulateShell project={project} vehicles={vehicles} unitSystem={unitSystem} />
       </div>
     </div>
   )

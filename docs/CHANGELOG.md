@@ -1,5 +1,38 @@
 # Changelog
 
+## 2026-11-10 — Fleet simulation Milestone 4 (first half): drawing, points, routes, flows
+
+The Simulate page gets its layout editor (halfway check before curves, repeat, objects and B56.5).
+
+- **Editor** (`src/components/simulate/layout/`): Select · Points · Routes · Flows · Direction, undo/redo;
+  drawing card (PDF page or image, two-click scale, re-select after reload); right-hand panel for the
+  selected point, route or flow; layout totals, *Not connected* and *Link to points* when nothing is
+  selected. Pure edits in `src/calc/sim/layoutEdit.ts` (tested): place, split, join, hit-test,
+  route distance, flow refusal, link suggestions, rescale.
+- **Flows drawn on the layout are Sizing's flows.** A linked flow's distance (along the routes)
+  and lift height (pick + drop height) come from the layout and are read-only in Sizing, marked
+  *from layout*. **Quote impact:** none until an engineer links a flow; then its Sizing cycle and
+  the fleet follow the drawn distance. Existing projects are unchanged (no flow is linked).
+- **Data model:** `Flow.distanceSource?: 'layout'` in `src/calc/types.ts` (mirrors the schema field
+  added in Milestone 2).
+- **Shared code:** `src/lib/pdfjs.ts` (pdf.js loader, used by project import and the drawing);
+  `src/lib/drawingImport.ts`; `useProjectSync` replaces the project refresh effect copied in Steps 2–3,
+  `useFleetData` and Simulate; the 11 approved point icons in `Icon.tsx`; `--sim-pick` /
+  `--sim-drop` tokens (light and dark).
+- **Header:** Help on Simulate opens its own section (`helpTopic`); the header's ⌘Z steps aside when
+  a page handles it (the layout editor's own undo).
+- **Drawing data:** `background.unscaledFtPerPx` (a replaced drawing appears at about the old size)
+  and `background.layoutPredates` (routes drawn before the drawing are in true feet and are not
+  resized by its first scale); image cap lowered 12 M → 7 M characters so an exported file always
+  imports again (8 M import limit). Step 1's flow distance is read-only for a linked flow too.
+- **Review fixes** (`/simplify`, `/code-review`): one Pick/Drop rule shared with the engine; one graph
+  per re-measure, and none for a moves/h edit; layout edits keep the drawing's details by type (no
+  casts); the drawing file is read once and the PDF released; undo/redo drops a half-drawn route;
+  keys reach the editor only when aimed at it (not dialogs or the tour); a slow drawing load no
+  longer overwrites edits made meanwhile; re-selecting a PDF after a reload opens its stored page.
+- **Known, left for the second half:** the editor's undo restores the flows as they were, so a
+  Sizing edit made in another tab in between is undone with it.
+
 ## 2026-11-10 — Fleet simulation Milestone 3: Simulate page and Sizing button
 
 A new optional page; **no quote, gate or export changes**, and existing steps behave as before.

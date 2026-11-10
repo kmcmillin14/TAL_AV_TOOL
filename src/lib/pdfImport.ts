@@ -1,4 +1,5 @@
 import { importProjectFromJson, type StoredProject } from './storage'
+import { loadPdfjs, MAX_PDF_BYTES } from './pdfjs'
 
 const ATTACHMENT_NAME = 'project.json'
 
@@ -14,10 +15,6 @@ interface PdfAttachment {
  * Throws user-facing error strings for each failure mode so the caller
  * can surface them as-is.
  */
-/** Reject oversized uploads before pdf.js loads the whole file into memory and
- *  parses it on the main thread (a giant/malformed PDF could freeze the tab). */
-const MAX_PDF_BYTES = 25 * 1024 * 1024
-
 export async function parseProjectPdf(file: File): Promise<StoredProject> {
   if (!file.type.includes('pdf') && !file.name.toLowerCase().endsWith('.pdf')) {
     throw new Error('Selected file is not a PDF.')
@@ -28,18 +25,7 @@ export async function parseProjectPdf(file: File): Promise<StoredProject> {
 
   const buf = new Uint8Array(await file.arrayBuffer())
 
-  // Lazy import — keeps pdfjs-dist (~700KB) out of the default bundle
-  // until a user actually imports a PDF.
-  const pdfjsLib = await import('pdfjs-dist/legacy/build/pdf.mjs')
-
-  // pdf.js needs a worker in the browser. v5 dropped the old `disableWorker`
-  // option, and the default workerSrc ("./pdf.worker.mjs") 404s under the app
-  // bundler — so point it at the version-matched worker copied into public/ by
-  // scripts/copy-pdf-worker.mjs (predev/prebuild). Only in the browser: in
-  // Node/tests there's no `window` and pdf.js uses an in-process worker.
-  if (typeof window !== 'undefined' && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs'
-  }
+  const pdfjsLib = await loadPdfjs()
 
   let doc: { getAttachments(): Promise<Record<string, PdfAttachment> | undefined | null> }
   try {

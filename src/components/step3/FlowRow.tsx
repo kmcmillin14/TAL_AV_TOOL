@@ -82,6 +82,7 @@ export default function FlowRow({
     // raw string would show a decimal tail like 7545.931758…
     : String(Math.round(flow.distanceFt * 10) / 10)
 
+  const fromLayout = flow.distanceSource === 'layout'
   const setDistance = (input: string) => {
     const n = clampNum(input)
     const oneWay = metric ? units.distance.toImperial(n) : n
@@ -163,6 +164,7 @@ export default function FlowRow({
           unitSystem={unitSystem}
           onMethodChange={idx => onChange({ ...flow, transferMethodIdx: idx, transferSecOverride: undefined })}
           onLiftChange={ft => onChange({ ...flow, liftHeightFt: ft })}
+          liftFromLayout={fromLayout}
           onOverrideChange={sec => onChange({ ...flow, transferSecOverride: sec })}
         />
       </td>
@@ -194,14 +196,18 @@ export default function FlowRow({
       </td>
 
       <td className="flow-cell-wrap">
+        {/* A flow drawn on the Simulate layout measures its distance there (read-only here). */}
         <input
-          className="flow-cell mono"
+          className={`flow-cell mono${fromLayout ? ' from-layout' : ''}`}
           type="number"
           min="0"
           inputMode="decimal"
           value={distDisplay}
+          readOnly={fromLayout}
+          title={fromLayout ? 'From layout — measured along the drawn routes on Simulate' : undefined}
           onChange={e => setDistance(e.target.value)}
         />
+        {fromLayout && <span className="flow-from-layout">from layout</span>}
       </td>
       <td className="flow-cell-wrap">
         <input

@@ -34,6 +34,18 @@ const paths = {
   clock:    <><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>,
   formula:  <path d="M16 5H8l5 7-5 7h8"/>,
   mail:     <><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></>,
+  // Fleet Simulation point icons — approved set (owner prompt §3.2, spec v2 §5.2)
+  pick:     <><path d="M12 12V3"/><path d="M8 7l4-4 4 4"/><path d="M3 16h18M5 16v5M12 16v5M19 16v5"/></>,
+  drop:     <><path d="M12 3v9"/><path d="M8 8l4 4 4-4"/><path d="M3 16h18M5 16v5M12 16v5M19 16v5"/></>,
+  pickDrop: <><path d="M7 3v9"/><path d="M4 9l3 3 3-3"/><path d="M17 12V3"/><path d="M14 6l3-3 3 3"/><path d="M3 16h18M5 16v5M12 16v5M19 16v5"/></>,
+  stand:    <><path d="M3 9h18"/><path d="M5 9v11M19 9v11"/><path d="M5 15h14"/></>,
+  conveyor: <><path d="M2 8h20M2 16h20"/><circle cx="6" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="18" cy="12" r="2"/></>,
+  machine:  <><path d="M3 20h18"/><path d="M4 20v-9l5 3v-3l5 3v-3l5 3V5h2v15"/></>,
+  racking:  <><path d="M4 3v18M20 3v18"/><path d="M4 8h16M4 13.5h16M4 19h16"/><path d="M12 8v11"/></>,
+  lanes:    <><path d="M3 3v18M12 3v18M21 3v18"/><path d="M5.5 5h4v4h-4zM5.5 11h4v4h-4zM14.5 5h4v4h-4z"/></>,
+  dock:     <><path d="M3 21V8l9-5 9 5v13"/><path d="M7 21v-9h10v9"/><path d="M7 15.5h10"/></>,
+  charger:  <><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M13 7l-3 5h4l-3 5"/></>,
+  parking:  <><circle cx="12" cy="12" r="9"/><path d="M10 17V8h3.5a2.5 2.5 0 0 1 0 5H10"/></>,
 } as const
 
 export default function Icon({ name, size = 14, className }: IconProps) {

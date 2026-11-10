@@ -1,8 +1,9 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { getProject, subscribeProjects, type StoredProject } from './storage'
+import { getProject, type StoredProject } from './storage'
 import { fetchVehiclesCached } from './vehicleCache'
+import { useProjectSync } from './useProjectSync'
 import type { Vehicle } from './vehicleLibrary'
 import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
 import { DEFAULT_TARGET_UTILIZATION } from '@/src/calc/types'
@@ -28,17 +29,7 @@ export function useFleetData(id: string) {
       .catch(() => { setError('Failed to load vehicle library.'); setLoading(false) })
   }, [id])
 
-  useEffect(() => {
-    const refresh = () => { const p = getProject(id); if (p) setProject(p) }
-    window.addEventListener('storage', refresh)   // cross-tab writes
-    window.addEventListener('focus', refresh)
-    const unsub = subscribeProjects(refresh)       // same-tab writes (e.g. undo)
-    return () => {
-      window.removeEventListener('storage', refresh)
-      window.removeEventListener('focus', refresh)
-      unsub()
-    }
-  }, [id])
+  useProjectSync(id, setProject)
 
   const vehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
   const flows: Flow[] = useMemo(() => project?.flows ?? [], [project])

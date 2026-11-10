@@ -45,10 +45,16 @@ export const simBackgroundSchema = z.object({
   fingerprint: z.string().max(128),
   widthPx: z.number().positive().optional(),
   heightPx: z.number().positive().optional(),
+  /** Feet per pixel to show an unscaled drawing at — carried over when a scaled drawing is replaced,
+   *  so the new one appears at about the right size until its scale is set. */
+  unscaledFtPerPx: z.number().positive().optional(),
+  /** The layout already held routes when this drawing was loaded: they are in true feet, so setting
+   *  this drawing's first scale does not resize them. */
+  layoutPredates: z.boolean().optional(),
   /** Two clicked points (drawing pixels) and the real length between them. */
   scale: z.object({ a: xy, b: xy, lengthFt: z.number().positive() }).optional(),
   /** data: URL of the rendered page or image — export files only. */
-  data: z.string().max(12_000_000).optional(),
+  data: z.string().max(7_000_000).optional(),
 })
 
 export const simLayoutSchema = z.object({

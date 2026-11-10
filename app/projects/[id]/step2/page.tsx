@@ -37,8 +37,9 @@ const REQ_SHORT: Record<string, string> = {
 import type { ApplicationRequirements } from '@/src/calc/types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
-import { getProject, subscribeProjects, type StoredProject } from '@/src/lib/storage'
+import { getProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
+import { useProjectSync } from '@/src/lib/useProjectSync'
 
 type ProjectData = StoredProject
 
@@ -90,22 +91,8 @@ export default function Step2Page() {
       })
   }, [id])
 
-  // Re-read storage on cross-tab writes ('storage'), focus return, and same-tab
-  // mutations (subscribeProjects — e.g. an undo, or PersistentHeader meta edits).
-  useEffect(() => {
-    const refresh = () => {
-      const proj = getProject(id)
-      if (proj) setProject(proj)
-    }
-    window.addEventListener('storage', refresh)
-    window.addEventListener('focus', refresh)
-    const unsub = subscribeProjects(refresh)
-    return () => {
-      window.removeEventListener('storage', refresh)
-      window.removeEventListener('focus', refresh)
-      unsub()
-    }
-  }, [id])
+  // Re-read storage on same-tab mutations (undo, header meta edits), other tabs and focus return.
+  useProjectSync(id, setProject)
 
   const appReq = useMemo((): ApplicationRequirements => ({
     maxLoadWeightLbs: project?.maxLoadWeightLbs ?? 0,
