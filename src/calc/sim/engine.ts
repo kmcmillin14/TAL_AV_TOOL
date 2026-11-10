@@ -131,6 +131,21 @@ export function layoutReady(layout: SimLayout): boolean {
 const canPick = (p: SimPoint) => p.role === 'pick' || p.role === 'pickDrop'
 const canDrop = (p: SimPoint) => p.role === 'drop' || p.role === 'pickDrop'
 
+/** Why a flow cannot run on this layout, or `null` when it can. The one rule shared by the engine
+ *  and the Run button (`readiness.ts`), so the button never offers a run that simulates nothing. */
+export function flowExclusion(G: Graph, f: SimFlow, byId: Map<string, Vehicle>, demandPct: number): string | null {
+  const a = G.idx.get(f.fromPointId), b = G.idx.get(f.toPointId)
+  return a == null || b == null ? 'Point not on the layout'
+    : !canPick(G.points[a]) ? 'From point is not a Pick point'
+    : !canDrop(G.points[b]) ? 'To point is not a Drop point'
+    : !(f.thruPerHr > 0) ? 'No moves per hour'
+    : !(demandPct > 0) ? 'Demand is 0%'
+    : !byId.has(f.vehicleId) ? 'Vehicle not in the library'
+    : !byId.get(f.vehicleId)!.transferMethods?.[f.transferMethodIdx ?? 0] ? 'Transfer method not on this vehicle'
+    : !isFinite(pathLen(G, a, b)) ? 'No route'
+    : null
+}
+
 /** An override's set values only: an empty (null/undefined) override never hides the JSON value. */
 const definedOnly = <T extends object>(o: T | null | undefined): Partial<T> =>
   Object.fromEntries(Object.entries(o ?? {}).filter(([, x]) => x != null)) as Partial<T>
@@ -164,18 +179,9 @@ export function createSim(
   }
 
   for (const f of flows) {
-    const a = G.idx.get(f.fromPointId), b = G.idx.get(f.toPointId)
-    const why =
-      a == null || b == null ? 'Point not on the layout'
-      : !canPick(G.points[a]) ? 'From point is not a Pick point'
-      : !canDrop(G.points[b]) ? 'To point is not a Drop point'
-      : !(f.thruPerHr > 0) ? 'No moves per hour'
-      : !(P.demandPct > 0) ? 'Demand is 0%'
-      : !byId.has(f.vehicleId) ? 'Vehicle not in the library'
-      : !byId.get(f.vehicleId)!.transferMethods?.[f.transferMethodIdx ?? 0] ? 'Transfer method not on this vehicle'
-      : !isFinite(pathLen(G, a, b)) ? 'No route'
-      : null
+    const why = flowExclusion(G, f, byId, P.demandPct)
     if (why) { S.excluded.push({ flowId: f.id, why }); continue }
+    const a = G.idx.get(f.fromPointId)!, b = G.idx.get(f.toPointId)!
     const prof = profileFor(f.vehicleId)!
     const transfer = prof.vehicle.transferMethods[f.transferMethodIdx ?? 0]
     const { loadSec, unloadSec } = transferSeconds(transfer, f.transferSecOverride)

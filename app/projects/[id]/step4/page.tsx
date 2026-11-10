@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
+import { headerFromProject } from '@/src/lib/projectHeader'
 import Icon from '@/src/design-system/components/Icon'
 import { useFleetData } from '@/src/lib/useFleetData'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
@@ -29,19 +30,7 @@ export default function RomConfigurationPage() {
     )
   }
 
-  const headerData = {
-    id: project.id,
-    projectName: project.projectName ?? '',
-    customerName: project.customerName ?? '',
-    facilityLocation: project.facilityLocation,
-    versionNumber: project.versionNumber,
-    bastianRep: project.bastianRep,
-    opportunityNumber: project.opportunityNumber,
-    opportunityType: project.opportunityType,
-    createdAt: project.createdAt,
-    step1Complete: project.step1Complete,
-    step2Complete: project.step2Complete,
-  }
+  const headerData = headerFromProject(project)
 
   return (
     <div className="app-shell">

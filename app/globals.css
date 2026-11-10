@@ -3194,6 +3194,21 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
   margin-left: auto;   /* pin to the page's right edge */
 }
 .eh-actions .btn { height: 34px; padding: 0 14px; font-size: 12.5px; white-space: nowrap; display: inline-flex; align-items: center; gap: 6px; }
+/* Simulate page canvas (Fleet Simulation, spec v2 §5): a surface with a faint grid that the
+   layout editor draws on. Until there is a layout it holds the next-step prompt. */
+.sim-canvas {
+  min-height: 420px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--bg-surface);
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+.sim-canvas .empty-state { background: var(--bg-surface); border-radius: 6px; padding: 28px 32px; }
+@media (max-width: 700px) { .sim-canvas { min-height: 220px; } }
 /* Compact, low-key page actions (ROM Save / Export) — smaller + lighter than the
    old full-width Save Revision / Export to Customer pair. */
 .eh-actions-compact { gap: 8px; }

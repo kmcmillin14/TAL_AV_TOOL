@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import PersistentHeader from '@/src/components/PersistentHeader'
+import { headerFromProject } from '@/src/lib/projectHeader'
 import Icon from '@/src/design-system/components/Icon'
 import { subscribeProjects, getProject, updateProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
@@ -121,19 +122,7 @@ export default function FleetEnginePage() {
     )
   }
 
-  const headerData = {
-    id: project.id,
-    projectName: project.projectName ?? '',
-    customerName: project.customerName ?? '',
-    facilityLocation: project.facilityLocation,
-    versionNumber: project.versionNumber,
-    bastianRep: project.bastianRep,
-    opportunityNumber: project.opportunityNumber,
-    opportunityType: project.opportunityType,
-    createdAt: project.createdAt,
-    step1Complete: project.step1Complete,
-    step2Complete: project.step2Complete,
-  }
+  const headerData = headerFromProject(project)
 
   const groupByVehicle = new Map(fleet.groups.map(g => [g.vehicleId, g]))
   // Hero KPIs — the inputs that drive the fleet: how many flows, total demand.
@@ -157,9 +146,17 @@ export default function FleetEnginePage() {
       />
 
       <div className="workspace">
-        <div className="engine-head">
-          <span className="eh-eyebrow mono">Step 03 / 05</span>
-          <h1 className="eh-title">Fleet Engine</h1>
+        <div className="engine-head with-actions">
+          <div className="eh-text">
+            <span className="eh-eyebrow mono">Step 03 / 05</span>
+            <h1 className="eh-title">Fleet Engine</h1>
+          </div>
+          {/* Optional check of this fleet on a drawn layout (Fleet Simulation, spec v2 §9). */}
+          <div className="eh-actions">
+            <Link href={`/projects/${id}/simulate`} className="btn ghost">
+              Simulate <Icon name="arrowR" size={13} />
+            </Link>
+          </div>
         </div>
 
         <div className="form-with-nav engine-layout">

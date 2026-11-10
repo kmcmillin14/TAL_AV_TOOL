@@ -59,6 +59,7 @@ the existing `ChartKit`. No new runtime dependencies without owner approval.
 
 
 
+
 **Owner check (you):**
 - [ ] Read spec v2 §12 (decisions) and §10 (acceptance tests 1–40)
 - [ ] Skim this page: is anything missing or in the wrong order?
@@ -95,6 +96,7 @@ the existing `ChartKit`. No new runtime dependencies without owner approval.
       point/tangent at distance (needed by 23 now, by the editor later).
 - [ ] Performance check: POC sample, 16 h, one run < 1.5 s in Node; record the figure.
 - [ ] Gates; `/simplify`; `/code-review`; CHANGELOG; commit; **owner summary**.
+
 
 
 
@@ -136,6 +138,7 @@ no results).
 
 
 
+
 **Owner check (you):**
 - [ ] Open the Company A sample and a Michelin import: everything looks and prices exactly as before
 - [ ] Save revision → re-import: the project comes back intact
@@ -152,15 +155,17 @@ no results).
 **Files:**
 - Read first: `node_modules/next/dist/docs/` (App Router routing, dynamic segments)
 - Create: `app/projects/[id]/simulate/page.tsx`, `src/components/simulate/SimulateShell.tsx`
-- Modify: Sizing page/components (Simulate button, verdict chip, "from layout" distance,
-  From/To link suggestions), `ARCHITECTURE.md` (§3 rule list, §4 table, §5 folder map),
+- Modify: Sizing page (Simulate button), `ARCHITECTURE.md` (§3 rule list, §4 table, §5 folder map),
   `scripts/check-architecture*` if the module-boundary check needs the new folder
 - Modify: `docs/SPECIFICATION.md`, `docs/CHANGELOG.md`
 
+- Moved (2026-11-10): the Sizing verdict chip → Task 5 (it needs a run); "from layout" distance
+  and From/To link suggestions → Task 4 (they need flows linked to points).
 - [ ] Page opens in Layout with "Draw the routes to simulate"; Run disabled (acceptance 1, UI).
 - [ ] Sizing → Simulate → back preserves state; persistent header unchanged.
 - [ ] ARCHITECTURE.md updated; `check:arch` passes with the new folders.
 - [ ] Gates incl. `npm run build`; `/simplify`; `/code-review`; commit; owner summary.
+
 
 
 
@@ -184,6 +189,12 @@ no results).
   speed caps, violations
 - Modify: `src/design-system/components/Icon.tsx` (11 approved icons), `app/globals.css`
   (role colour tokens light/dark), `src/content/help.ts`
+- Modify (from Task 3): Sizing flow rows — a linked flow's distance reads "from layout"
+  (read-only there); Link-to-points list with name-match suggestions (spec §5.4)
+- From the Task 3 review: the shell becomes head + (canvas | inspector) with the empty state as
+  one child of the canvas; the header gets a help-topic prop so Simulate opens its own help
+  instead of Sizing's (today it passes `currentStep={3}`); one shared `useProject(id)` hook for
+  the load/refresh effect now copied in Simulate, Steps 2–3 and `useFleetData`.
 - Modify: `docs/SPECIFICATION.md`, `docs/CHANGELOG.md`
 
 - [ ] Use `/frontend-design` for the editor UI (Toyota Type, tokens, hero pattern).
@@ -197,6 +208,7 @@ no results).
 - [ ] True scale (28); Object tool; B56.5 envelope, caps, violations, callouts, one-click
       single-lane (29–33). Engine following switches to envelope distance (§6.5.5).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
+
 
 
 
@@ -219,6 +231,7 @@ no results).
 **Files:**
 - Create: `src/components/simulate/run/*` (verdict rows, map playback, follow card, tables,
   charts), `src/lib/simWorker.ts` (Web Worker wrapper for variability runs)
+- Modify (from Task 3): Sizing page head — verdict chip per vehicle type once a run exists (spec §9)
 - Modify: `docs/SPECIFICATION.md`, `docs/CHANGELOG.md`
 
 - [ ] Verdict row per type with stepper, Engine sized N (`fleetSummary`), Reset to engine,
@@ -233,6 +246,7 @@ no results).
       labels; Back to engine; stale marker (38). Quoted numbers move when used → SPECIFICATION +
       CHANGELOG first, before/after on the Company A sample in the owner summary.
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
+
 
 
 
@@ -267,6 +281,7 @@ no results).
 
 
 
+
 **Owner check (you):**
 - [ ] Click a point, a route, a vehicle: everything you'd change is within two clicks
 - [ ] Override a speed, see the dot and count, then Reset all
@@ -289,6 +304,7 @@ no results).
       initial fill.
 - [ ] Floor lanes: drive-in/through, lane depth travel, one vehicle per lane (20); stacking gate.
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
+
 
 
 
@@ -319,6 +335,7 @@ no results).
 
 
 
+
 **Owner check (you):**
 - [ ] Mix CB18, 8HBC40A and M10 on one site
 - [ ] Point a floor-only vehicle at a raised stand: excluded, reason shown
@@ -340,6 +357,7 @@ no results).
 - [ ] All gates green; final summary for approval: behaviour, anything whose output moves
       (none for quotes — the simulation never writes pricing inputs), files touched, known
       issues, open decisions still pending.
+
 
 
 

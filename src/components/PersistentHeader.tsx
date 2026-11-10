@@ -13,20 +13,7 @@ import AppVersionLog from './AppVersionLog'
 import { APP_VERSION } from '@/src/content/appVersions'
 import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import PptxSectionPicker from './rom/PptxSectionPicker'
-
-interface HeaderData {
-  id: string
-  projectName: string
-  customerName: string
-  facilityLocation?: string | null
-  versionNumber: string
-  bastianRep?: string | null
-  opportunityNumber?: string | null
-  opportunityType?: 'opp' | 'lead'
-  createdAt?: string
-  step1Complete: boolean
-  step2Complete: boolean
-}
+import type { HeaderData } from '@/src/lib/projectHeader'
 
 type StepId = 0 | 1 | 2 | 3 | 4 | 5
 

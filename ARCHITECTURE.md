@@ -90,7 +90,7 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
 
 - **Price is a range** (`minUsd` / `maxUsd`), never a single value. *Why:* real quotes vary by dealer, configuration, and contract terms; a single number would be false precision.
 
-- **Steps are independent and modular.** Each step's page lives at `app/projects/[id]/stepN/page.tsx`; step-specific subcomponents live at `src/components/stepN/`. A step page may import its **own** step's subcomponents plus any shared module (`src/components/PersistentHeader.tsx`, `src/lib/*`, `src/calc/*`); it must **not** import another step's internals. *Exception (2026-06-04):* the **Fleet Engine** (step 3) deliberately unifies the former Flows + Charging + Buffer steps into one page with internal **sub-tabs** (`src/components/engine/`), because the sizing waterfall (`base → +charging → ×buffer → total`) must flow through a single recompute. Nav steps are now `0 Start · 1 Intake · 2 Compatibility · 3 Sizing · 4 Pricing · 5 Dashboard` (2026-09-10: step labels shortened for concision; each step's page still carries its own fuller descriptive `<h1>` — see `docs/CHANGELOG.md`). The Engine's Flows sub-tab reuses `src/components/step3/*`; new charging/buffer UI lives in `src/components/engine/*`. Shared **mobile primitives** live in `src/components/mobile/` (peer to `PersistentHeader.tsx`) and may be imported by any step's page or subcomponents.
+- **Steps are independent and modular.** Each step's page lives at `app/projects/[id]/stepN/page.tsx`; step-specific subcomponents live at `src/components/stepN/`. A step page may import its **own** step's subcomponents plus any shared module (`src/components/PersistentHeader.tsx`, `src/lib/*`, `src/calc/*`); it must **not** import another step's internals. *Exception (2026-06-04):* the **Fleet Engine** (step 3) deliberately unifies the former Flows + Charging + Buffer steps into one page with internal **sub-tabs** (`src/components/engine/`), because the sizing waterfall (`base → +charging → ×buffer → total`) must flow through a single recompute. Nav steps are now `0 Start · 1 Intake · 2 Compatibility · 3 Sizing · 4 Pricing · 5 Dashboard` (2026-09-10: step labels shortened for concision; each step's page still carries its own fuller descriptive `<h1>` — see `docs/CHANGELOG.md`). The Engine's Flows sub-tab reuses `src/components/step3/*`; new charging/buffer UI lives in `src/components/engine/*`. Shared **mobile primitives** live in `src/components/mobile/` (peer to `PersistentHeader.tsx`) and may be imported by any step's page or subcomponents. **Simulate** (Fleet Simulation, 2026-11-10) is an optional, un-numbered page at `app/projects/[id]/simulate/page.tsx`, opened from Sizing; the step ribbon is unchanged. Its subcomponents live in `src/components/simulate/` and its engine in `src/calc/sim/` (pure, like the rest of `src/calc/`). It imports only shared modules — never a step's internals — and no step imports it; Sizing only links to the route. `npm run check:arch` enforces both directions.
 
 - **Typography: Toyota Type is the only intentional font.** Body/heading uses `var(--tal-font-family)`, numerics use `var(--tal-font-numeric)`. The CSS variable definitions include a system-font fallback chain (`-apple-system`, `sans-serif`, etc.) for graceful degradation if the bundled font fails to load — that fallback chain is **not** a license to reference system fonts elsewhere. Never use Inter, Roboto, Arial, etc. as primary `font-family` values in components or new CSS.
 
@@ -103,6 +103,7 @@ Each rule is followed by **why** so edge cases can be reasoned about, not just m
 | `src/lib/storage.ts` | `localStorage`, Zod schemas | `fs`, React |
 | `src/components/*` | calc, lib, design-system | direct `fs` or `localStorage` (always go through `storage.ts`) |
 | `src/components/mobile/*` | React, calc, lib, design-system | direct `fs`/`localStorage` (go through `storage.ts`) |
+| `src/components/simulate/*`, `app/projects/[id]/simulate/` | shared components, `mobile/`, calc (incl. `calc/sim/`), lib, design-system | any `stepN/`, `engine/`, `rom/` internals; direct `localStorage` |
 | `app/**/page.tsx` | components, lib, calc | new inline calculation code (push to `src/calc/`) |
 
 ## 5. Folder map
@@ -112,13 +113,15 @@ tal-fleet-calculator/
 ├── app/                          # Next.js App Router
 │   ├── page.tsx                  # entry redirect → the entry project's step0
 │   ├── projects/[id]/step0..5/   # six step pages (Start · Intake · Compatibility · Sizing · Pricing · Dashboard)
+│   ├── projects/[id]/simulate/   # optional Simulate page, opened from Sizing (not a numbered step)
 │   ├── questionnaire/            # standalone customer-facing questionnaire route
 │   ├── api/vehicles/route.ts     # only API route; reads bundled JSON
 │   └── globals.css               # all design-system CSS lives here
 ├── proxy.ts                      # Next 16 middleware: QUESTIONNAIRE_ONLY deployment gate (LIVE — not dead code)
 ├── src/
 │   ├── calc/                     # pure calculation engine
-│   ├── components/               # shared UI + per-step subcomponents (stepN/, engine/, rom/, questionnaire/)
+│   │   └── sim/                  # Fleet Simulation engine (pure; time-stepped, seeded)
+│   ├── components/               # shared UI + per-step subcomponents (stepN/, engine/, rom/, questionnaire/, simulate/)
 │   │   └── mobile/               # shared phone-native primitives (BottomSheet, SheetSelect, MobileHeader)
 │   ├── content/vehicles/*.json   # canonical vehicle library (6 records today)
 │   ├── content/samples/*.json    # bundled sample data (Company A project, Michelin questionnaire)

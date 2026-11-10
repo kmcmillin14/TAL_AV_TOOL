@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
+import { headerFromProject } from '@/src/lib/projectHeader'
 import ApplicationForm from '@/src/components/step1/ApplicationForm'
 import { getProject, type StoredProject } from '@/src/lib/storage'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
@@ -89,19 +90,7 @@ export default function Step1Page() {
   return (
     <div className="app-shell">
       <PersistentHeader
-        project={{
-          id: project.id,
-          projectName: project.projectName ?? '',
-          customerName: project.customerName ?? '',
-          facilityLocation: project.facilityLocation,
-          versionNumber: project.versionNumber,
-          bastianRep: project.bastianRep,
-          opportunityNumber: project.opportunityNumber,
-          opportunityType: project.opportunityType,
-          createdAt: project.createdAt,
-          step1Complete: project.step1Complete,
-          step2Complete: project.step2Complete,
-        }}
+        project={headerFromProject(project)}
         currentStep={1}
         unitSystem={unitSystem}
         onUnitToggle={toggleUnitSystem}

@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-11-10 — Fleet simulation Milestone 3: Simulate page and Sizing button
+
+A new optional page; **no quote, gate or export changes**, and existing steps behave as before.
+
+- **Sizing → Simulate:** the Fleet Engine page head gains a **Simulate** button. The new page
+  (`app/projects/[id]/simulate/`, `src/components/simulate/SimulateShell.tsx`) shows the
+  persistent header with Sizing current — the step ribbon is unchanged — plus **Back to Sizing**
+  and a **Run** button.
+- **Run is disabled until the project can run** (acceptance 1): routes drawn, any loaded drawing
+  scaled, and at least one flow the engine would run (Pick → Drop, connected, with a vehicle and
+  moves/h). The canvas shows the next step in plain words. The engine's flow checks are now one
+  exported `flowExclusion`, read by both the engine and `runBlocker`
+  (`src/calc/sim/readiness.ts`, tested), so the two can never disagree. Run stays disabled until
+  the run view exists (Milestone 5). Phones get *Open on a desktop to edit the layout*.
+- **Architecture:** ARCHITECTURE.md §3/§4/§5 list the Simulate page, `src/components/simulate/`
+  and `src/calc/sim/`. `npm run check:arch` now enforces that Simulate imports no step internals
+  and no step imports Simulate (static and dynamic imports).
+- **Cleanup:** the persistent header's project mapping, copied on all six step pages, is one
+  shared `headerFromProject` in `src/lib/projectHeader.ts`.
+- **Moved in the plan:** the Sizing verdict chip needs a run, so it comes with the run view
+  (Milestone 5); "from layout" distances and the Link-to-points suggestions need flows linked to
+  points, so they come with the layout editor (Milestone 4).
+
 ## 2026-11-10 — Fleet simulation Milestone 2: project and vehicle data
 
 Data model only — no screen reads it yet, and **no quote, gate or export changes**.

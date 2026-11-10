@@ -621,7 +621,7 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 
 ## Simulate (optional, after Sizing) — in development
 
-> **Status:** designed, not built. Branch `feature/fleet-simulation`; full design in
+> **Status:** being built — engine, data model and page frame done (Milestones 1–3). Branch `feature/fleet-simulation`; full design in
 > `docs/superpowers/specs/2026-11-10-fleet-simulation-design-v2.md`, plan in
 > `docs/superpowers/plans/2026-11-10-fleet-simulation.md`. This section states the behaviour
 > the branch must deliver; it moves to "shipped" when Milestone 9 is approved.
@@ -671,6 +671,16 @@ step ribbon is unchanged.
   `priority` — all optional with no defaults, so existing projects load and export unchanged. Each
   vehicle JSON carries a `calc.sim` block (every value `null` until sourced; CB18 overall length
   9.63 ft as an owner assumption) and transfer methods may state an `orientation`.
+- **Page (built, Milestone 3).** Sizing's page head has a **Simulate** button that opens
+  `/projects/[id]/simulate`. The page keeps the persistent header with Sizing current, a **Back to
+  Sizing** link and a **Run** button. Run stays disabled — and the canvas names the next step —
+  until the project has routes (*Draw the routes to simulate*), a scale on any loaded drawing
+  (*Set the drawing's scale*) and at least one flow the engine would run — linked from a Pick point
+  to a Drop point that routes connect, with a vehicle and moves per hour (*Create a flow*). The
+  button and the engine share one rule (`flowExclusion` in `src/calc/sim/engine.ts`, read by
+  `src/calc/sim/readiness.ts`), so Run never offers a run that simulates nothing. Until the run view
+  exists (Milestone 5) Run stays disabled even when ready. Below 700 px the page says *Open on a
+  desktop to edit the layout*.
 
 ---
 

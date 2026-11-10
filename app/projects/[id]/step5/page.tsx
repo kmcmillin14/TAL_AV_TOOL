@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
+import { headerFromProject } from '@/src/lib/projectHeader'
 import ExportActions from '@/src/components/ExportActions'
 import { useFleetData } from '@/src/lib/useFleetData'
 import { updateProject } from '@/src/lib/storage'
@@ -108,19 +109,7 @@ export default function RomDashboardPage() {
   return (
     <div className="app-shell">
       <PersistentHeader
-        project={{
-          id: project.id,
-          projectName: project.projectName ?? '',
-          customerName: project.customerName ?? '',
-          facilityLocation: project.facilityLocation,
-          versionNumber: project.versionNumber,
-          bastianRep: project.bastianRep,
-          opportunityNumber: project.opportunityNumber,
-          opportunityType: project.opportunityType,
-          createdAt: project.createdAt,
-          step1Complete: project.step1Complete,
-          step2Complete: project.step2Complete,
-        }}
+        project={headerFromProject(project)}
         currentStep={5}
         unitSystem={unitSystem}
         onUnitToggle={toggleUnitSystem}

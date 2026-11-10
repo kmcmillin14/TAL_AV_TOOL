@@ -70,6 +70,18 @@ for (const f of walk('app', ['.tsx'])) {
   }
 }
 
+// Simulate (Fleet Simulation, ARCHITECTURE.md §4) is its own module: its page and components use
+// only shared modules, and no step reaches into it (Sizing links to the route, nothing more).
+// Static and dynamic imports, to a module's files or to the module folder itself.
+const MODULE_IMPORT = /(?:from|import\()\s*['"][^'"]*(?:components\/|\.\.\/)(step\d|engine|rom|questionnaire|simulate)(?:\/[^'"]*)?['"]/g
+const isSim = f => /src\/components\/simulate\/|projects\/\[id\]\/simulate\//.test(f)
+for (const f of walk('src/components', ['.ts', '.tsx']).concat(walk('app', ['.tsx']))) {
+  for (const m of read(f).matchAll(MODULE_IMPORT)) {
+    if (isSim(f) && m[1] !== 'simulate') fail('module-boundary', `${f} imports ${m[1]} (Simulate uses shared modules only)`)
+    if (!isSim(f) && m[1] === 'simulate') fail('module-boundary', `${f} imports simulate (no step reaches into Simulate)`)
+  }
+}
+
 // ── 3. Typography: no forbidden fonts as a font-family value (fallback chains in
 //      the CSS-variable definitions are allowed; flagged names never appear there).
 for (const f of walk('app', ['.css']).concat(walk('src', ['.ts', '.tsx', '.css']))) {
