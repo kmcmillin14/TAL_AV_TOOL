@@ -57,6 +57,7 @@ the existing `ChartKit`. No new runtime dependencies without owner approval.
 - [ ] **Stop. Summarize for the owner; wait for plan approval.**
 
 
+
 **Owner check (you):**
 - [ ] Read spec v2 §12 (decisions) and §10 (acceptance tests 1–40)
 - [ ] Skim this page: is anything missing or in the wrong order?
@@ -95,6 +96,7 @@ the existing `ChartKit`. No new runtime dependencies without owner approval.
 - [ ] Gates; `/simplify`; `/code-review`; CHANGELOG; commit; **owner summary**.
 
 
+
 **Owner check (you):**
 - [ ] Compare the side-by-side table: proof of concept vs port, on your sample layout, fleets 3–6
 - [ ] Confirm zero gridlocks across 48 runs, as in your proof of concept
@@ -130,6 +132,7 @@ no results).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
 
+
 **Owner check (you):**
 - [ ] Open the Company A sample and a Michelin import: everything looks and prices exactly as before
 - [ ] Save revision → re-import: the project comes back intact
@@ -155,6 +158,7 @@ no results).
 - [ ] Sizing → Simulate → back preserves state; persistent header unchanged.
 - [ ] ARCHITECTURE.md updated; `check:arch` passes with the new folders.
 - [ ] Gates incl. `npm run build`; `/simplify`; `/code-review`; commit; owner summary.
+
 
 
 **Owner check (you):**
@@ -191,6 +195,7 @@ no results).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
 
+
 **Owner check (you):**
 - [ ] Draw one of your real sites from a PDF: scale, stands, conveyors, chargers, routes, flows
 - [ ] Repeat a charger ×6 at 5 ft, then undo once
@@ -225,6 +230,7 @@ no results).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
 
+
 **Owner check (you):**
 - [ ] Run your drawn site: do the verdicts and utilization look believable?
 - [ ] Follow one vehicle and watch its empty and loaded legs
@@ -253,6 +259,7 @@ no results).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
 
+
 **Owner check (you):**
 - [ ] Click a point, a route, a vehicle: everything you'd change is within two clicks
 - [ ] Override a speed, see the dot and count, then Reset all
@@ -275,6 +282,7 @@ no results).
       initial fill.
 - [ ] Floor lanes: drive-in/through, lane depth travel, one vehicle per lane (20); stacking gate.
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
+
 
 
 **Owner check (you):**
@@ -301,6 +309,7 @@ no results).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
 
+
 **Owner check (you):**
 - [ ] Mix CB18, 8HBC40A and M10 on one site
 - [ ] Point a floor-only vehicle at a raised stand: excluded, reason shown
@@ -322,6 +331,7 @@ no results).
 - [ ] All gates green; final summary for approval: behaviour, anything whose output moves
       (none for quotes — the simulation never writes pricing inputs), files touched, known
       issues, open decisions still pending.
+
 
 
 **Owner check (you):**
