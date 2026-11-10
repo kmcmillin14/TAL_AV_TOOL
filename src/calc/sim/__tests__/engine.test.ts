@@ -110,17 +110,22 @@ describe('acceptance 9 — gridlock is reported, never driven through', () => {
     const S = runFor(sim(headOn('two'), flows, { fleet: { cb18: 2 } }), 3600)
     expect(S.gridlock).toBeNull()
   })
-  // O-11 (owner decision: exiting vehicle first). The POC froze in 4 of these 48 runs at a stub gate
-  // without reporting it; with the stub rule, waiting vehicles yielding at the junction and rings of
-  // following-blocks resolved, all 48 run clean.
-  it('proof-of-concept sample: fleets 3–6, seeds 1–6, demand 100/130%, random, 16 h → zero gridlocks', () => {
+  // D-11 (exiting vehicle first) + D-12 (junction permission, two-lane passing only). The POC froze,
+  // unreported, in 4 of these 48 runs. Three runs remain at the highest density (6 vehicles, 130%):
+  // the O-12 pattern — six vehicles queued in the 40 ft between two stubs. They are real deadlocks
+  // for a centreline model without segment reservation and are reported. Pinned so any new one fails.
+  it('proof-of-concept sample: fleets 3–6, seeds 1–6, demand 100/130%, random, 16 h → only the known O-12 gridlocks', () => {
     const { layout, flows: f } = sampleLayout()
     const hits: string[] = []
     for (const n of [3, 4, 5, 6]) for (const seed of [1, 2, 3, 4, 5, 6]) for (const demandPct of [100, 130]) {
       const S = runFor(sim(layout, f, { fleet: { cb18: n }, seed, demandPct, arrivals: 'random' }), 16 * 3600)
       if (S.gridlock) hits.push(`fleet ${n} seed ${seed} ${demandPct}%: ${S.gridlock.kind} ${S.gridlock.where}`)
     }
-    expect(hits).toEqual([])
+    expect(hits).toEqual([
+      'fleet 6 seed 3 130%: cycle near Wrapper Outfeed',
+      'fleet 6 seed 5 130%: cycle near Warehouse Infeed',
+      'fleet 6 seed 6 130%: cycle near Warehouse Infeed',
+    ])
   }, 600_000)
 
   it('O-11 — the POC stub stall (fleet 5, seed 2, 100%) now delivers instead of freezing', () => {

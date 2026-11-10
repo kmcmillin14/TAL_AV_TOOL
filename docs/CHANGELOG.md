@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-10 — Fleet simulation: intersection permission, no pass-through (D-12)
+
+Owner decision (option A). Traffic change inside `src/calc/sim/` only; no app or quote change.
+
+- **Junctions hold one vehicle.** A point where 3+ routes meet needs permission before a vehicle
+  is within half its length + 2 ft; junctions closer together than a vehicle length + 4 ft are
+  taken as one block. No entering a junction while waiting for a stub just beyond; permission that
+  can't be used yet is given back; no new job while the body is over a junction.
+- **Pass-through removed.** The ring rule added with D-11 is gone. The POC pair rule remains only
+  as **two-lane passing** — two vehicles meeting head-on on a two-lane route are in opposite lanes.
+  Direction is now judged at the look-ahead point nearest the other vehicle, so traffic in the
+  opposite lane around a corner is no longer mistaken for crossing traffic.
+
+**Effect on the POC sample:** junction waits now count — average order wait +1–5 s at normal load
+(664 → 939 s for an already overloaded 3-vehicle fleet at 130%). Gridlocks: 3 of 48 acceptance-9
+runs, all at 6 vehicles / 130% between two stubs 40 ft apart, reported (O-12, segment
+reservation). The POC froze, unreported, in 4.
+
 ## 2026-11-10 — Fleet simulation: stub junction rule, exiting vehicle first (O-11 → D-11)
 
 Owner decision after Milestone 1. Traffic-behaviour change inside `src/calc/sim/engine.ts`

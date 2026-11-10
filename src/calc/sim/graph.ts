@@ -26,6 +26,8 @@ export interface Graph {
   parking: number[]
   /** Points that no segment touches ("Not connected"). */
   unconnected: string[]
+  /** Junctions: points where 3 or more routes meet. A junction holds one vehicle at a time. */
+  junction: boolean[]
   sp: Map<number, { dist: Float64Array; prev: Int32Array; prevEdge: (Edge | null)[] }>
 }
 
@@ -73,8 +75,9 @@ export function buildGraph(L: SimLayout): Graph {
     zoneGate.set(z, gate); zoneBranch.set(z, branch)
   }
   const unconnected = L.points.filter((p, i) => degree[i] === 0 && p.type !== 'junction').map(p => p.id)
+  const junction = und.map(s => s.size >= 3)
   return { n, points: L.points, idx, adj, geo, singleLane, speedLimit, zone, zoneNode, zoneGate, zoneBranch,
-    chargers, parking, unconnected, sp: new Map() }
+    chargers, parking, unconnected, junction, sp: new Map() }
 }
 
 /** Shortest-path tree from `src` (Dijkstra, binary heap), cached per source. */

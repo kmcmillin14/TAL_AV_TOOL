@@ -29,6 +29,8 @@ export const HEADING_TOL_RAD = (5 * Math.PI) / 180
 const SAME_WAY_COS = -0.3
 /** In-lane test: the other vehicle heads within ~45° of the path at that point. */
 const IN_LANE_COS = Math.SQRT1_2
+/** Clearance between a waiting vehicle's body and a junction it has no permission for, ft (D-12). */
+export const JUNCTION_CLEAR_FT = 2
 
 type Mode = 'home' | 'free' | 'toHome' | 'toCharge' | 'toPick' | 'toDrop' | 'pick' | 'drop' | 'charging'
 const MOVING = new Set<Mode>(['toPick', 'toDrop', 'toHome', 'toCharge'])
@@ -77,6 +79,8 @@ export interface SimVehicle {
   loaded: boolean
   soc: number
   held: Set<string>
+  /** Junction nodes this vehicle has permission for (D-12). */
+  heldJ: Set<number>
   tl: number
   repo: number
   want: number
@@ -106,6 +110,8 @@ export interface SimState {
   waiting: number
   veh: SimVehicle[]
   locks: Map<string, number>
+  /** Junction node → vehicle index holding permission for it (D-12). */
+  jlocks: Map<number, number>
   flows: FlowState[]
   excluded: { flowId: string; why: string }[]
   /** [t, waiting orders] per vehicle type, sampled every 60 s. */
@@ -143,7 +149,7 @@ export function createSim(
   const byId = new Map(vehicles.map(v => [v.id, v]))
   const profiles = new Map<string, VehicleProfile>()
   const S: SimState = {
-    G, P, t: 0, rand, orders: [], waiting: 0, veh: [], locks: new Map(), flows: [], excluded: [],
+    G, P, t: 0, rand, orders: [], waiting: 0, veh: [], locks: new Map(), jlocks: new Map(), flows: [], excluded: [],
     series: new Map(), gridlock: null, lastProgress: 0, flags: [], profiles,
   }
   const profileFor = (vid: string) => {
@@ -200,7 +206,7 @@ export function createSim(
       S.veh.push({
         i, id: `${vid}-${j + 1}`, prof, node, atNode: true, nodes: [node], edges: [], pi: 1, s: 0,
         x: p.x, y: p.y, th: -Math.PI / 2, h: -Math.PI / 2, speed: 0, mode: 'home', job: null, loaded: false,
-        soc, held: new Set([z]), tl: 0, repo: 0, want: 0, moved: 0, waitFor: null, waitZone: null, blockedBy: null, headOn: false,
+        soc, held: new Set([z]), heldJ: new Set(), tl: 0, repo: 0, want: 0, moved: 0, waitFor: null, waitZone: null, blockedBy: null, headOn: false,
         cycT: 0, parkT: 0, mustCharge: false, chargeTrips: 0, socMin: soc,
         tm: emptySplit(), handlingLog: [],
       })
@@ -282,6 +288,7 @@ function dispatch(S: SimState) {
       if (v.prof.vehicle.id !== vid) continue
       if (!(v.mode === 'home' || v.mode === 'toHome' || v.mode === 'free')) continue
       if (v.mustCharge || needsCharge(v)) continue
+      if (inJunction(S, v)) continue   // D-12: no new job mid-crossing; eligible once it has cleared
       const d = distToStart(S, v) + pathLen(S.G, startNode(v), F.from)
       if (d < bd) { bd = d; best = v }
     }
@@ -290,6 +297,12 @@ function dispatch(S: SimState) {
     best.job = o; best.mode = 'toPick'; setRoute(S, best, F.from)
   }
 }
+/** True while the vehicle's body is over a junction it holds permission for. */
+function inJunction(S: SimState, v: SimVehicle) {
+  for (const n of v.heldJ) { const q = S.G.points[n]; if (Math.hypot(q.x - v.x, q.y - v.y) < v.prof.lengthFt / 2 + JUNCTION_CLEAR_FT) return true }
+  return false
+}
+
 /** Body heading the vehicle needs at a point, from the point's approach heading and the
  *  transfer orientation (spec §6.4). */
 function requiredHeading(v: SimVehicle, p: SimPoint, F: FlowState) {
@@ -364,11 +377,13 @@ function claimPoint(S: SimState, v: SimVehicle, accs: number[], i: number, z: st
   if (gate !== S.G.zoneNode.get(z)) for (let j = i; j >= v.pi; j--) if (v.nodes[j] === gate) return { dist: accs[j], atGate: true }
   return { dist: accs[i], atGate: false }
 }
-function nextZoneDist(S: SimState, v: SimVehicle) {
+/** Distance to v's next claim point — an unheld zone or junction — so the nearest claims first. */
+function nextClaimDist(S: SimState, v: SimVehicle) {
   if (!MOVING.has(v.mode) || v.pi >= v.nodes.length) return Infinity
   const accs = pathAccs(S, v)
   for (let i = v.pi; i < v.nodes.length; i++) {
-    const z = S.G.zone[v.nodes[i]]
+    const n = v.nodes[i], z = S.G.zone[n]
+    if (S.G.junction[n] && !v.heldJ.has(n)) return accs[i] - (v.prof.lengthFt / 2 + JUNCTION_CLEAR_FT)
     if (z && !v.held.has(z)) return claimPoint(S, v, accs, i, z).dist
   }
   return Infinity
@@ -413,8 +428,8 @@ export function step(S: SimState) {
   for (const v of S.veh) if (v.mode === 'free') goHome(S, v)
   for (const v of S.veh) if (v.mustCharge && v.mode === 'home' && G.points[v.node].type !== 'charger') goCharge(S, v)
 
-  // plan: zone reservations limit how far each vehicle may go; nearest to a free zone claims first
-  const order = S.veh.map(v => [v, nextZoneDist(S, v)] as const)
+  // plan: zone and junction permissions limit how far each vehicle may go; nearest claims first
+  const order = S.veh.map(v => [v, nextClaimDist(S, v)] as const)
     .sort((a, b) => a[1] - b[1] || a[0].i - b[0].i).map(e => e[0])
   for (const v of order) {
     v.want = 0; v.waitFor = null; v.waitZone = null; v.blockedBy = null; v.headOn = false
@@ -430,10 +445,42 @@ export function step(S: SimState) {
       const h = S.locks.get(z)
       if (h == null) { S.locks.set(z, v.i); v.held.add(z); continue }
       limit = atGate ? dist - (v.prof.lengthFt / 2 + 2) : dist - gap
-      stopAt = Math.min(stopAt, Math.max(0, limit)); v.waitZone = z; v.waitFor = h; break
+      v.waitZone = z; v.waitFor = h; break
     }
-    // speed: instant to cruise without motion data; accel / decel-to-stop when the JSON has them
+    // intersection permission (D-12): a junction holds one vehicle. Take it — with any junction less
+    // than a vehicle length + clearance after it, as one block — before reaching the stop point, or
+    // stop clear of it. Never enter a junction while still waiting for a zone just beyond it.
     const target = cruise(S, v)
+    const stopOff = v.prof.lengthFt / 2 + JUNCTION_CLEAR_FT
+    // permission it can't use yet goes back: a junction still ahead (body not over it) while the
+    // vehicle waits for a zone, or one no longer imminent (e.g. after a re-route)
+    for (const n of v.heldJ) {
+      const idx = v.nodes.indexOf(n, v.pi)
+      if (idx < 0 || accs[idx] < v.prof.lengthFt / 2) continue
+      if (v.waitZone != null || accs[idx] - stopOff > target * DT + 1) { v.heldJ.delete(n); if (S.jlocks.get(n) === v.i) S.jlocks.delete(n) }
+    }
+    for (let i = v.pi; i < v.nodes.length; i++) {
+      const n = v.nodes[i]
+      if (!G.junction[n] || v.heldJ.has(n)) continue
+      const dist = accs[i]
+      if (dist - stopOff > target * DT + 1 || dist - stopOff > limit) break   // not needed this step
+      let k = i
+      for (let j = i + 1; j < v.nodes.length && accs[j] - accs[k] <= v.prof.lengthFt + 2 * JUNCTION_CLEAR_FT; j++) if (G.junction[v.nodes[j]]) k = j
+      let holder: number | null = null
+      for (let j = i; j <= k; j++) {
+        const h = S.jlocks.get(v.nodes[j])
+        if (G.junction[v.nodes[j]] && h != null && h !== v.i) { holder = h; break }
+      }
+      if (holder != null || v.waitZone != null) {
+        limit = Math.min(limit, dist - stopOff)
+        if (v.waitFor == null) v.waitFor = holder
+        break
+      }
+      for (let j = i; j <= k; j++) if (G.junction[v.nodes[j]]) { S.jlocks.set(v.nodes[j], v.i); v.heldJ.add(v.nodes[j]) }
+      i = k
+    }
+    stopAt = Math.min(stopAt, Math.max(0, limit))
+    // speed: instant to cruise without motion data; accel / decel-to-stop when the JSON has them
     let spd = target
     if (v.prof.accel != null && v.prof.decel != null) {
       spd = Math.min(target, v.speed + v.prof.accel * DT, Math.sqrt(2 * v.prof.decel * Math.max(0, stopAt)))
@@ -457,20 +504,25 @@ export function step(S: SimState) {
       // O-11: a vehicle waiting for a zone v holds gives way at the junction. It blocks v only when it
       // is in v's lane ahead going the same way — the queue case the handover rule below serves.
       const yields = u.waitZone != null && v.held.has(u.waitZone)
-      const hit = pts.find(p => p[4] <= look && (p[0] - u.x) ** 2 + (p[1] - u.y) ** 2 < rad2
-        && (yields ? Math.cos(u.th - p[2]) > IN_LANE_COS : (p[3] || Math.cos(u.th - p[2]) > SAME_WAY_COS)))
+      // judge direction at the sample nearest u — around a corner the first sample within reach can
+      // look perpendicular to traffic that is really in the opposite lane
+      let hit: (typeof pts)[number] | undefined, best = rad2
+      for (const p of pts) {
+        if (p[4] > look) break
+        const d2 = (p[0] - u.x) ** 2 + (p[1] - u.y) ** 2
+        if (d2 < best) { best = d2; hit = p }
+      }
+      if (hit && !(yields ? Math.cos(u.th - hit[2]) > IN_LANE_COS : (hit[3] || Math.cos(u.th - hit[2]) > SAME_WAY_COS))) hit = undefined
       if (hit) { v.blockedBy = u; v.headOn = hit[3] && Math.cos(u.th - hit[2]) <= SAME_WAY_COS; break }
     }
   }
-  // A ring of following-blocks (A blocked by B blocked by … A) → the lowest index proceeds: the POC's
-  // mutual-block rule ("lower index proceeds") extended from pairs to rings of any size, so a
-  // three-way junction can't freeze. A head-on block on a single-lane segment is never released.
+  // Two-lane passing (D-12). Routes are centrelines, so two vehicles meeting on a two-lane route —
+  // each with the other on its path ahead — are in opposite lanes: the lower index proceeds (the POC
+  // pair rule). Never on a single-lane head-on, and never for crossing traffic, which junction
+  // permission keeps apart; whatever else blocks is a real gridlock and is reported.
   for (const v of S.veh) {
-    const ring: SimVehicle[] = []
-    let u: SimVehicle | null = v
-    while (u && !ring.includes(u) && ring.length <= S.veh.length) { ring.push(u); u = u.blockedBy }
-    if (u !== v || ring.some(x => x.headOn)) continue
-    if (ring.every(x => x.i >= v.i)) v.blockedBy = null
+    const u = v.blockedBy
+    if (u && u.blockedBy === v && v.i < u.i && !v.headOn && !u.headOn) v.blockedBy = null
   }
   // handover: a holder queued behind a vehicle that waits for the holder's zone passes it forward
   for (const v of S.veh) {
@@ -497,6 +549,13 @@ export function step(S: SimState) {
     if (v.moved > 0 && v.pi < v.nodes.length) faceTravel(S, v)
     if (v.moved > 0 && v.job) S.lastProgress = S.t
     if (MOVING.has(v.mode) && v.pi >= v.nodes.length && v.atNode) arrive(S, v)
+    // release junction permission once the vehicle's body has cleared the junction
+    for (const n of v.heldJ) {
+      if (v.nodes.indexOf(n, v.atNode ? v.pi - 1 : v.pi) >= 0 && MOVING.has(v.mode)) continue
+      const q = G.points[n]
+      if (Math.hypot(q.x - v.x, q.y - v.y) <= v.prof.lengthFt / 2 + JUNCTION_CLEAR_FT) continue
+      v.heldJ.delete(n); if (S.jlocks.get(n) === v.i) S.jlocks.delete(n)
+    }
     // release zones left behind
     for (const z of v.held) {   // deleting the current entry inside a Set loop is safe
       const node = G.zoneNode.get(z)!, br = G.zoneBranch.get(z)!, gate = G.zoneGate.get(z)!

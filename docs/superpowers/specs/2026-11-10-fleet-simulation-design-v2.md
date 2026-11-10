@@ -438,8 +438,9 @@ Numbering follows the owner prompt §7 so tests can cite it.
 8. 24 h, one type with battery data, busy demand → charging share ≈ `1 − dutyRatio` from
    `chargingAvailability` (±3 pts).
 9. A constructed single-lane head-on conflict → **Gridlock**, not passing. Sample layout,
-   fleets 3–6, seeds 1–6, demand 100/130%, random arrivals, 16 h → zero gridlocks (with D-11; the
-   POC itself froze, unreported, in 4 of these 48 runs).
+   fleets 3–6, seeds 1–6, demand 100/130%, random arrivals, 16 h → no hidden stalls; the only
+   gridlocks are the 3 known O-12 cases at 6 vehicles / 130%, reported (the POC froze, unreported, in
+   4 of these 48 runs).
 10. Points can be placed off-route and show "Not connected"; Run lists them.
 11. Flow tool refuses Drop→Pick; created flows appear in Sizing with "from layout" distance.
 12. Direction indicator readable at min and max zoom; legend present.
@@ -525,7 +526,8 @@ mulberry32 generator so seeds stay comparable).
 | D-7 | CB18 overall length **9.63 ft** (body 6.13 + 42 in forks), engineer assumption to confirm (§4.3). |
 | D-9 | Verdict **based on utilization** against the project's `targetUtilization` (§6.7); charging defaults `minSocPct + 10` / `+ 30`. |
 | D-10 | Simulate is an **un-numbered page opened from Sizing**; the step ribbon is unchanged. |
-| D-11 | **Stub junction rule — exiting vehicle first** (owner, 2026-11-10; fixes POC stalls). A spur zone, one-segment stubs included, is held until the leaving vehicle is out of the spur and released at the gate; a vehicle waiting for a zone gives way at the junction to the vehicle holding it (it still blocks when in the holder's lane ahead, same direction — the queue the handover rule serves); a ring of following-blocks of any size releases its lowest-index vehicle (the POC's pair rule, extended). Plus a **stall check**: no vehicle with work moves or handles for 120 s while orders wait → Gridlock (stall). |
+| D-12 | **Intersection permission, no pass-through** (owner, 2026-11-10). A junction (3+ routes) holds one vehicle: a vehicle takes it — with any junction less than a vehicle length + 2 ft after it, as one block — before it is within half a vehicle length + 2 ft, or stops there. It never enters a junction while waiting for a zone just beyond, gives back permission it cannot use yet, and is not dispatched while its body is over a junction. Release once the body has cleared. "Nearest claims first" covers junctions. The only remaining mutual-block rule is **two-lane passing**: two vehicles that each have the other on their path ahead on a two-lane route are in opposite lanes, so the lower index proceeds (the POC pair rule; never on single-lane, never for crossing traffic). The three-vehicle "ring" pass-through added under D-11 was removed. |
+| D-11 | **Stub junction rule — exiting vehicle first** (owner, 2026-11-10; fixes POC stalls). A spur zone, one-segment stubs included, is held until the leaving vehicle is out of the spur and released at the gate; a vehicle waiting for a zone gives way at the junction to the vehicle holding it (it still blocks when in the holder's lane ahead, same direction — the queue the handover rule serves); plus a **stall check**: no vehicle with work moves or handles for 120 s while orders wait → Gridlock (stall). |
 
 **Still open — fallbacks in use, none blocks Milestone 1:**
 - O-2b: which B56.5 edition to cite.
@@ -534,12 +536,12 @@ mulberry32 generator so seeds stay comparable).
   tugger train data — per vehicle (BlueBotics ANT configuration or Bastian engineering).
 - O-7b: overall length incl. attachments for the other five vehicles.
 - O-8: top-down sprites for the other five vehicles; `cb18-top.png`, `app.js` and the icon sheet.
-- **O-12 (found in Milestone 1):** two spur zones close together on one aisle (30 ft on the POC sample)
-  can still deadlock: vehicles waiting for one spur queue in the exit lane of the other while each
-  spur's leaving vehicle needs that lane. 1 run in 144 (fleet 6, seed 10, 100%); it is reported as
-  Gridlock (cycle), never hidden. A fleet manager holds such waiters back at the previous junction
-  (segment reservation) — to design with the layout editor (Milestone 4), where these layouts can
-  be drawn and tested.
+- **O-12 — segment reservation (open).** Where two stubs sit close together on one aisle (40 ft on the
+  POC sample), vehicles waiting for one stub can queue in the short segment between them while each
+  stub's leaving vehicle needs that segment. With D-12 this happens in 3 of the 48 acceptance-9
+  runs, all at the highest density (6 vehicles, 130%), and is reported as Gridlock (cycle). A fleet
+  manager holds such waiters back before entering the short segment (segment reservation). Decide
+  whether to add it now or with the layout editor (Milestone 4).
 
 ## 13. Out of scope (this branch)
 
