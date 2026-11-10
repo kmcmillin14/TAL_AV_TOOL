@@ -1,4 +1,4 @@
-import type { Vehicle } from '@/src/lib/vehicleLibrary'
+import type { TransferMethod, Vehicle } from '@/src/lib/vehicleLibrary'
 import { ROUTE_LAYOUT_FACTORS } from './types'
 import type {
   Flow,
@@ -11,6 +11,33 @@ import type {
 
 export function routeLayoutFactor(layout: RouteLayout): number {
   return ROUTE_LAYOUT_FACTORS[layout]
+}
+
+/**
+ * Load / unload seconds for one transfer method — the single rule shared by the
+ * Fleet Engine cycle and the simulation's pick/drop handling.
+ *
+ * An engineer override replaces the method's total load+unload and is split
+ * 50/50. The 'Custom' method is engineer-defined by design: it contributes 0 s
+ * until the engineer supplies the time (the UI flags the missing input).
+ */
+export function transferSeconds(
+  transfer: TransferMethod,
+  transferSecOverride?: number,
+): { loadSec: number; unloadSec: number; overridden: boolean } {
+  const overridden = transferSecOverride != null && transferSecOverride > 0
+  const isCustom = transfer.method === 'Custom'
+  return {
+    loadSec: overridden ? transferSecOverride / 2 : isCustom ? 0 : transfer.loadTimeSec,
+    unloadSec: overridden ? transferSecOverride / 2 : isCustom ? 0 : transfer.unloadTimeSec,
+    overridden,
+  }
+}
+
+/** Lift seconds for a vertical travel — 0 unless the method lifts and the vehicle
+ *  declares a positive `liftSpeedFps`. Shared by the Fleet Engine and the simulation. */
+export function liftSeconds(heightFt: number, transfer: TransferMethod, liftSpeedFps?: number): number {
+  return transfer.lifts && liftSpeedFps && liftSpeedFps > 0 ? heightFt / liftSpeedFps : 0
 }
 
 /**
@@ -50,18 +77,8 @@ export function cycleBreakdown(
   const effectiveEmpty = sEmpty * factor
   const travelLoadedSec = distanceFt / effectiveLoaded
   const travelEmptySec = distanceFt / effectiveEmpty
-  // Engineer override replaces the method's total load+unload; split 50/50 for
-  // the breakdown display so load and unload rows still render. The 'Custom'
-  // method is engineer-defined by design: it contributes 0s until the engineer
-  // supplies the time (the UI flags the missing input).
-  const isCustom = transfer.method === 'Custom'
-  const overridden = transferSecOverride != null && transferSecOverride > 0
-  const loadSec = overridden ? transferSecOverride / 2 : isCustom ? 0 : transfer.loadTimeSec
-  const unloadSec = overridden ? transferSecOverride / 2 : isCustom ? 0 : transfer.unloadTimeSec
-  const liftSpeed = vehicle.calc.liftSpeedFps
-  const liftTimeSec = transfer.lifts && liftSpeed && liftSpeed > 0
-    ? liftHeightFt / liftSpeed
-    : 0
+  const { loadSec, unloadSec, overridden } = transferSeconds(transfer, transferSecOverride)
+  const liftTimeSec = liftSeconds(liftHeightFt, transfer, vehicle.calc.liftSpeedFps)
   const totalSec =
     travelLoadedSec + travelEmptySec +
     loadSec + unloadSec +

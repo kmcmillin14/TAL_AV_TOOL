@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-11-10 — Fleet simulation Milestone 1: engine port (`src/calc/sim/`, branch `feature/fleet-simulation`)
+
+No user-facing change yet — the engine has no screen until Milestone 3, and nothing reads it.
+
+**Engine.** The TAL proof of concept is ported to pure TypeScript in `src/calc/sim/`
+(`types`, `rng`, `geometry`, `graph`, `vehicle`, `engine`, `results`). Traffic rules are kept
+behaviour-for-behaviour; on the POC sample (fleets 3–6, seeds 1–6, demand 100/130%, random, 16 h)
+moves/h and order wait match the POC in all 16 configurations. New: vehicle per flow from the
+library, curved segments (arcs, Béziers), single-lane segments (head-on → gridlock), heading and
+approach rules with a reposition bucket, a flag for every value taken from a fallback, and the
+utilization verdict against the project's target (D-9). One 16 h run with 6 vehicles: ~0.7 s.
+
+**One rule, two engines.** `transferSeconds` and `liftSeconds` were extracted from
+`cycleBreakdown` in `src/calc/flowMetrics.ts`; the Fleet Engine and the simulation now share
+them. Sizing output is unchanged (all existing tests pass).
+
+**Found: hidden stalls in the POC (open item O-11).** The POC releases a zone while a vehicle is
+still inside a one-segment stub; in 4 of 48 sample runs the fleet freezes at the Wrapper Outfeed
+stub and the POC scored it "Falls short". The port keeps the POC rule and adds a stall check, so
+these runs now read **Gridlock (stall)**. The fix needs a junction rule and waits for the owner.
+
+**Verification:** acceptance 1–9, 23, 25–27 pass (27 simulation tests); `tsc`, all tests,
+`check:arch` and `next build` pass.
+
 ## 2026-11-10 — Fleet simulation: design v2 and plan (branch `feature/fleet-simulation`, not built)
 
 Docs only — no app behaviour, data or quote changes.
