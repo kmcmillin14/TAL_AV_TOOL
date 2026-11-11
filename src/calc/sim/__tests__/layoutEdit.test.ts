@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addObject, convertPoint, copyPoints, snapToObjects, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
+  addObject, convertPoint, copyPoints, mergePoints, snapDraw, snapToObjects, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
   addPoint, addSegment, emptyLayout, flowRefusal, flowStartRefusal, hitTest, linkFlow, linkSuggestions, measureFlows, notConnected,
   placeOnSegment, removePoint, rescaleLayout, routeDistanceFt, splitSegment, updatePoint, updateSegment, withLayoutDistance,
 } from '../layoutEdit'
@@ -242,5 +242,57 @@ describe('routes snap to objects', () => {
     const J = addPoint(line0, { x: 0, y: 50 }, 'junction')
     const s = addSegment(J.layout, line0.points[0].id, J.id, { dir: 'ab', lane: 'single' })
     expect(s.layout.segments.at(-1)).toMatchObject({ dir: 'ab', lane: 'single' })
+  })
+})
+
+describe('snapDraw — one rule for the preview, the click and a dragged point', () => {
+  // A route (0,0)–(100,0); one object far away. 1 screen px = 0.1 ft.
+  const base = (): SimLayout => {
+    const A = addPoint(emptyLayout(), { x: 0, y: 0 }, 'junction')
+    const B = addPoint(A.layout, { x: 100, y: 0 }, 'junction')
+    return addSegment(B.layout, A.id, B.id).layout
+  }
+  const px = 0.1
+  it('joins a point within reach — a click near an end lands on it', () => {
+    const L = base()
+    expect(snapDraw(L, { x: 1.5, y: 1.2 }, { px })).toMatchObject({ kind: 'point', id: L.points[0].id, at: { x: 0, y: 0 } })
+  })
+  it('a point wins over the route it ends', () => {
+    expect(snapDraw(base(), { x: 99, y: 0.5 }, { px }).kind).toBe('point')
+  })
+  it('else the route, at the nearest spot on it', () => {
+    expect(snapDraw(base(), { x: 50, y: 0.8 }, { px })).toMatchObject({ kind: 'route', at: { x: 50, y: 0 } })
+  })
+  it('on open floor: squared to the last point, lined up with existing points, else whole feet', () => {
+    const L = base()
+    // From (100,0) going down: x stays 100, y free → rounded.
+    expect(snapDraw(L, { x: 103, y: 40.4 }, { px, from: { x: 100, y: 0 } })).toMatchObject({ kind: 'free', at: { x: 100, y: 40 } })
+    // Free floor near x = 0: lines up with the point at (0,0), with a guide back to it.
+    const s = snapDraw(L, { x: 0.6, y: 30.3 }, { px })
+    expect(s).toMatchObject({ kind: 'free', at: { x: 0, y: 30 } })
+    expect(s.kind === 'free' && s.guides).toEqual([{ x: 0, y: 0 }])
+  })
+  it('Shift leaves the angle free; excluded points are ignored', () => {
+    const L = base()
+    expect(snapDraw(L, { x: 33.4, y: 12.6 }, { px, from: { x: 0, y: 50 }, shift: true }).at).toEqual({ x: 33, y: 13 })
+    expect(snapDraw(L, { x: 0.5, y: 0.5 }, { px, exclude: new Set([L.points[0].id]), routes: false }).kind).toBe('free')
+  })
+})
+
+describe('mergePoints — a dragged end dropped on another point joins it', () => {
+  it('re-wires routes, drops a route to itself and duplicates, keeps the named point', () => {
+    let L = emptyLayout()
+    const A = addPoint(L, { x: 0, y: 0 }, 'stand', 'pick'); L = A.layout
+    const J = addPoint(L, { x: 50, y: 0 }, 'junction'); L = J.layout
+    const K = addPoint(L, { x: 52, y: 1 }, 'junction'); L = K.layout
+    const B = addPoint(L, { x: 50, y: 50 }, 'conveyor', 'drop'); L = B.layout
+    L = addSegment(L, A.id, J.id).layout
+    L = addSegment(L, J.id, K.id).layout          // becomes K→K: dropped
+    L = addSegment(L, K.id, B.id).layout
+    const M = mergePoints(L, K.id, J.id)
+    expect(M.points.map(p => p.id)).not.toContain(K.id)
+    expect(M.segments.map(s => [s.a, s.b])).toEqual([[A.id, J.id], [J.id, B.id]])
+    const named = mergePoints(L, A.id, J.id).points.find(p => p.id === J.id)
+    expect(named).toMatchObject({ type: 'stand', role: 'pick', x: 50, y: 0 })
   })
 })

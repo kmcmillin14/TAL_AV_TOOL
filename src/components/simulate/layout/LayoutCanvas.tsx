@@ -10,7 +10,7 @@ import { memo, useEffect, useMemo, useRef, useState, type PointerEvent as RPoint
 import Icon from '@/src/design-system/components/Icon'
 import { laneWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { segmentGeometry } from '@/src/calc/sim/geometry'
-import { hitTest, objectCorners, snapToObjects } from '@/src/calc/sim/layoutEdit'
+import { hitTest, objectCorners, type DrawSnap } from '@/src/calc/sim/layoutEdit'
 import type { SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/types'
 import type { ProjectFlow } from './useLayoutEditor'
 
@@ -32,7 +32,6 @@ export interface CanvasPointer {
 }
 
 /** Snap distance for routes to objects, screen pixels. */
-const SNAP_PX = 12
 /** Fit margins for the editor's floating controls: tool column, options bar and name pills, hint. */
 const EDITOR_INSET = { top: 84, right: 24, bottom: 64, left: 72 }
 
@@ -64,9 +63,11 @@ interface Props {
   /** Shown over an empty layout. */
   emptyPrompt?: string
   /** Route tool: the preview snaps square to the last point unless Shift is held. */
-  snapSquare?: boolean
-  /** Half the aisle a new route would be, ft — routes snap that far off objects (see `routeCorner`). */
-  snapOffsetFt?: number
+  /** Where the next drawing click lands (the editor's `snapDraw`): drawn as a marker — a ring on a
+   *  point, a diamond on a route, guides to lined-up points — with the route preview from `rubberFrom`. */
+  snap?: DrawSnap | null
+  /** The pointer left the canvas. */
+  onLeave?: () => void
   /** Room kept clear of floating controls when fitting, px. Default: the editor's tool column and bar. */
   fitInset?: { top: number; right: number; bottom: number; left: number }
   /** The legend, only while it explains something on screen (direction tool, B56.5 overlay). */
@@ -103,7 +104,6 @@ export default function LayoutCanvas(props: Props) {
   const [size, setSize] = useState({ w: 800, h: 520 })
   const [measured, setMeasured] = useState(false)      // the first real size is known: fit then, not at 800×520
   const [view, setView] = useState({ x: -20, y: -20, ppf: 4 })      // top-left (ft) and pixels per foot
-  const [cursor, setCursor] = useState<{ at: XY; shift: boolean } | null>(null)
   const pan = useRef<{ sx: number; sy: number; vx: number; vy: number } | null>(null)
 
   useEffect(() => {
@@ -181,7 +181,6 @@ export default function LayoutCanvas(props: Props) {
   }
   const move = (e: RPointerEvent<HTMLDivElement>) => {
     const at = toFt(e)
-    if (rubberFrom) setCursor({ at, shift: e.shiftKey })   // only the route preview follows the pointer
     if (pan.current) {
       const p = pan.current
       setView(v => ({ ...v, x: p.vx - (e.clientX - p.sx) / v.ppf, y: p.vy - (e.clientY - p.sy) / v.ppf }))
@@ -226,7 +225,7 @@ export default function LayoutCanvas(props: Props) {
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
-      onPointerLeave={() => setCursor(null)}
+      onPointerLeave={() => props.onLeave?.()}
       onDoubleClick={props.onDoubleClick}
     >
       <svg
@@ -268,24 +267,7 @@ export default function LayoutCanvas(props: Props) {
             selected={selected('flow', f.id)} onClick={onFlowClick} />
         })}
 
-        {rubberFrom && cursor && (() => {
-          // Where the click would land: an existing point, a route (joined), else routeCorner — as the editor does.
-          const hit = props.snapSquare ? hitTest(layout, cursor.at, POINT_PX * px, SEG_PX * px) : null
-          const end = !props.snapSquare ? cursor.at
-            : hit?.kind === 'point' ? pts.get(hit.id) ?? cursor.at
-            : hit?.kind === 'segment' ? { x: hit.x, y: hit.y }
-            : routeCorner(layout, rubberFrom, cursor.at, cursor.shift, px, props.snapOffsetFt)
-          const len = Math.hypot(end.x - rubberFrom.x, end.y - rubberFrom.y)
-          return (
-            <g>
-              <line x1={rubberFrom.x} y1={rubberFrom.y} x2={end.x} y2={end.y} className="sim-rubber" vectorEffect="non-scaling-stroke" />
-              <g transform={`translate(${end.x} ${end.y}) scale(${px})`} className="sim-rubber-end">
-                <circle r={5} />
-                <text x={10} y={-10} className="sim-rubber-len">{len.toFixed(1)} ft</text>
-              </g>
-            </g>
-          )
-        })()}
+        {props.snap && <SnapMark snap={props.snap} from={rubberFrom} px={px} />}
 
         {[...pts.values()].map(p => (
           <PointMarker key={p.id} p={p} px={px} selected={selected('point', p.id)} loose={notConnected.has(p.id)} cross={(degree.get(p.id) ?? 0) >= 3}
@@ -323,24 +305,23 @@ export function shortName(name: string): string {
 }
 
 /** The point square to `from` — the route keeps to the aisle direction it is closest to. */
-function squareTo(from: XY, to: XY): XY {
-  return Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? { x: to.x, y: from.y } : { x: from.x, y: to.y }
-}
-
-/**
- * Where a route's next corner lands on open floor. Square to the last corner unless Shift; then onto a
- * wall, column or rack face within `SNAP_PX`, `offsetFt` out from it (exact), when that keeps the line
- * square; else whole feet, as in the proof of concept — only the free axis is rounded, so a square
- * line stays square from a corner that was not on whole feet.
- */
-export function routeCorner(L: SimLayout, last: XY | null | undefined, at: XY, shift: boolean, px: number, offsetFt = 0): XY {
-  const from = last && !shift ? last : null
-  const q = from ? squareTo(from, at) : at
-  const square = (p: XY) => !from || Math.abs(p.x - from.x) < 1e-6 || Math.abs(p.y - from.y) < 1e-6
-  const snap = snapToObjects(L, q, SNAP_PX * px, offsetFt, square)
-  if (snap.snapped) return snap.at
-  const r = { x: Math.round(q.x), y: Math.round(q.y) }
-  return from ? (q.y === from.y ? { ...r, y: from.y } : { ...r, x: from.x }) : r
+/** The snap target under the pointer, and the route preview to it. Sizes in screen pixels. */
+function SnapMark({ snap, from, px }: { snap: DrawSnap; from: XY | null; px: number }) {
+  const { x, y } = snap.at
+  const len = from ? Math.hypot(x - from.x, y - from.y) : 0
+  return (
+    <g className={`sim-snap is-${snap.kind}`}>
+      {'guides' in snap && snap.guides.map((g, i) => <line key={i} x1={g.x} y1={g.y} x2={x} y2={y} className="sim-snap-guide" vectorEffect="non-scaling-stroke" />)}
+      {from && <line x1={from.x} y1={from.y} x2={x} y2={y} className="sim-rubber" vectorEffect="non-scaling-stroke" />}
+      <g transform={`translate(${x} ${y}) scale(${px})`}>
+        {snap.kind === 'point' ? <circle r={12} className="sim-snap-ring" />
+          : snap.kind === 'route' ? <rect x={-6} y={-6} width={12} height={12} transform="rotate(45)" className="sim-snap-ring" />
+          : snap.kind === 'object' ? <rect x={-6} y={-6} width={12} height={12} className="sim-snap-ring" />
+          : <circle r={5} className="sim-snap-dot" />}
+        {from && len > 0 && <text x={14} y={-12} className="sim-rubber-len">{len.toFixed(1)} ft</text>}
+      </g>
+    </g>
+  )
 }
 
 /** A grid step (ft) that lands 30–150 px apart on screen. */

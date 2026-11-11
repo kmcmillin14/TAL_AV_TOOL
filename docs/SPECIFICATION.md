@@ -716,10 +716,14 @@ step ribbon is unchanged.
     two-way, solid with arrowheads one-way, ticks for single-lane; point tiles with name pills;
     amber dots at intersections; rounded corners where the vehicle turns.
   - *Floating tools:* Select V · Route R · One-way D · Place P · Flow F · Scale S, Undo/Redo; routes
-    snap square (Shift = any angle) and then to fixed objects — the aisle centreline lands half a
-    lane off the face, so the lane keeps its B56.5 clearance (a corner first, else the nearest edge,
-    within 12 screen px, and only where the line stays square); the preview shows exactly where the
-    click lands with a live length; a Route options bar sets **Bidirectional / One-way** and
+    snap by one rule (`snapDraw`, `src/calc/sim/layoutEdit.ts`) shared by the marker under the pointer,
+    the click and a dragged point: an existing point within 22 screen px (joined — a ring marks it),
+    else a route within 12 px (split and joined — a diamond), else open floor squared to the last
+    point (Shift = any angle), onto a fixed object's aisle line half a lane off the face so the lane
+    keeps its B56.5 clearance (a square marks it; only where the line stays square), lined up with
+    any existing point's x or y within 12 px (a dashed guide), else whole feet. The Place tool uses
+    the same rule. Dragging one point (Select) snaps the same way, and dropping it on another point
+    joins them (`mergePoints`; flows linked to it follow) with a live length; a Route options bar sets **Bidirectional / One-way** and
     **Two lanes / Single lane** for new routes (one-way routes are stored single-lane); Enter or double-click finishes; hint pill
     and messages on the canvas; Flows / B56.5 / Fit top right.
   - *Side cards:* Drawing & scale · **Place on routes** (each Sizing location name with a suggested

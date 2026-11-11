@@ -3321,7 +3321,6 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-pill text { font-size: 11px; font-weight: 700; text-anchor: middle; fill: #fff; }
 .sim-pt-loose { font-size: 11px; text-anchor: middle; fill: var(--warn); font-weight: 700; paint-order: stroke; stroke: var(--scene-bg); stroke-width: 3px; }
 .sim-rubber { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; }
-.sim-rubber-end circle { fill: none; stroke: var(--accent); stroke-width: 2; }
 .sim-rubber-len { font-size: 13px; font-weight: 600; font-family: var(--tal-font-numeric); fill: var(--text-primary); paint-order: stroke; stroke: var(--scene-bg); stroke-width: 3px; }
 .sim-empty-prompt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; pointer-events: none; color: var(--text-secondary); font-size: 13px; }
 
@@ -3365,6 +3364,11 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 @container (max-width: 900px) { .sim-tool kbd { display: none; } .sim-palette { left: 10px; top: auto; bottom: 50px; max-width: calc(100% - 20px); } }
 
 /* Second half of the editor: objects, footprints, handles, box select, B56.5 overlay. */
+/* Drawing snaps: what the next click joins — ring = point, diamond = route, square = object face. */
+.sim-snap { pointer-events: none; }
+.sim-snap-ring { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: var(--accent); stroke-width: 2; }
+.sim-snap-dot { fill: var(--accent); }
+.sim-snap-guide { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.7; }
 .sim-object { fill: url(#sim-hatch); stroke: var(--text-secondary); stroke-width: 1.5; }
 .sim-object.is-selected { stroke: var(--accent); stroke-width: 2.5; }
 .sim-hatch-line { stroke: var(--text-tertiary); stroke-width: 1; }

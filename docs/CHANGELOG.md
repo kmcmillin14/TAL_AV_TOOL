@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation: drawing that snaps to endpoints
+
+Owner: "the drawing tools are not working or snapping to the endpoints. this needs to be smooth and
+easy." A click a few pixels from an end made a new, unconnected junction (13 px reach, no cue).
+
+- **One snap rule** (`snapDraw`) for the marker, the click and a dragged point: points within 22 px
+  (ring), routes within 12 px (diamond), object aisle lines (square), alignment with existing points
+  (dashed guide), else whole feet. The Place tool uses it too.
+- **Drag an end onto a point to join them** (`mergePoints`): routes re-wired, flows follow.
+- Drawing only — layouts already drawn and simulation results are unchanged.
+
 ## 2026-11-11 — Fleet simulation Milestone 5: simulated fleet in pricing, Sizing verdict chip
 
 **Quoted numbers can move** — only when an engineer clicks *Use N in pricing* and confirms, and only

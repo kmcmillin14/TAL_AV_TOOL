@@ -405,3 +405,92 @@ export function updateObject<T extends SimLayout>(L: T, id: string, patch: Parti
 export function removeObject<T extends SimLayout>(L: T, id: string): T {
   return { ...L, objects: (L.objects ?? []).filter(o => o.id !== id) }
 }
+
+// ---- Drawing snaps (owner, 2026-11-11: "snapping to the endpoints … needs to be smooth and easy") ----
+
+/** Snap reach in screen pixels: generous for points (a click near an end joins it), tighter for the rest. */
+export const SNAP_PX = { point: 22, route: 12, object: 12, align: 12 }
+
+/** Square to `from`: horizontal or vertical, whichever is closer. */
+export function squareTo(from: XY, to: XY): XY {
+  return Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? { x: to.x, y: from.y } : { x: from.x, y: to.y }
+}
+
+export type DrawSnap =
+  | { kind: 'point'; id: string; at: XY }
+  | { kind: 'route'; id: string; at: XY }
+  /** Open floor: on an object's aisle line, lined up with existing points (`guides`), else whole feet. */
+  | { kind: 'object' | 'free'; at: XY; guides: XY[] }
+
+/**
+ * Where a drawing click lands — the one rule for the preview, the click and a dragged point:
+ * an existing point within reach (joined), else a route (split there), else open floor — squared to
+ * `from` unless Shift, onto an object's aisle line `offsetFt` out (only where the line stays square),
+ * lined up with any existing point's x or y, and otherwise whole feet (only the free axis is rounded).
+ */
+export function snapDraw(
+  L: SimLayout, at: XY,
+  o: { px: number; from?: XY | null; shift?: boolean; offsetFt?: number; exclude?: Set<string>; routes?: boolean },
+): DrawSnap {
+  const skip = o.exclude ?? new Set<string>()
+  let best: { id: string; d: number } | null = null
+  for (const p of L.points) {
+    if (skip.has(p.id)) continue
+    const d = Math.hypot(p.x - at.x, p.y - at.y)
+    if (d <= SNAP_PX.point * o.px && (!best || d < best.d)) best = { id: p.id, d }
+  }
+  if (best) { const p = L.points.find(q => q.id === best!.id)!; return { kind: 'point', id: p.id, at: { x: p.x, y: p.y } } }
+
+  if (o.routes !== false) {
+    const byId = pointById(L)
+    let seg: { id: string; d: number; at: XY } | null = null
+    for (const s of L.segments) {
+      if (skip.has(s.a) || skip.has(s.b)) continue
+      const on = projectOnSegment(L, s.id, at, byId)
+      if (on && on.dist <= SNAP_PX.route * o.px && (!seg || on.dist < seg.d)) seg = { id: s.id, d: on.dist, at: { x: on.x, y: on.y } }
+    }
+    if (seg) return { kind: 'route', id: seg.id, at: seg.at }
+  }
+
+  const from = o.from && !o.shift ? o.from : null
+  const q = from ? squareTo(from, at) : at
+  const square = (p: XY) => !from || Math.abs(p.x - from.x) < 1e-6 || Math.abs(p.y - from.y) < 1e-6
+  const obj = snapToObjects(L, q, SNAP_PX.object * o.px, o.offsetFt ?? 0, square)
+  if (obj.snapped) return { kind: 'object', at: obj.at, guides: [] }
+
+  // Free axes: both on open floor; only the one along the line when squared.
+  const freeX = !from || q.y === from.y, freeY = !from || q.x === from.x
+  const reach = SNAP_PX.align * o.px
+  const near = (axis: 'x' | 'y') => {
+    let g: SimPoint | null = null
+    for (const p of L.points) if (!skip.has(p.id) && Math.abs(p[axis] - q[axis]) <= reach && (!g || Math.abs(p[axis] - q[axis]) < Math.abs(g[axis] - q[axis]))) g = p
+    return g
+  }
+  const gx = freeX ? near('x') : null, gy = freeY ? near('y') : null
+  const r = {
+    x: gx ? gx.x : freeX ? Math.round(q.x) : q.x,
+    y: gy ? gy.y : freeY ? Math.round(q.y) : q.y,
+  }
+  return { kind: 'free', at: r, guides: [gx, gy].flatMap(g => (g ? [{ x: g.x, y: g.y }] : [])) }
+}
+
+/**
+ * Join point `from` into point `into` (a dragged end dropped on another point): routes are re-wired,
+ * a route that would join a point to itself or repeat another is dropped. A junction dropped onto, or
+ * receiving, a named point keeps the named point's type, name and role.
+ */
+export function mergePoints<T extends SimLayout>(L: T, from: string, into: string): T {
+  const a = L.points.find(p => p.id === from), b = L.points.find(p => p.id === into)
+  if (!a || !b || from === into) return L
+  const { id: _a, x: _x, y: _y, ...aFields } = a
+  const kept: SimPoint = b.type === 'junction' && a.type !== 'junction' ? { ...aFields, id: b.id, x: b.x, y: b.y } : b
+  const seen = new Set<string>()
+  const segments = L.segments.flatMap(s => {
+    const t = { ...s, a: s.a === from ? into : s.a, b: s.b === from ? into : s.b }
+    const pair = [t.a, t.b].sort().join('|')
+    if (t.a === t.b || seen.has(pair)) return []
+    seen.add(pair)
+    return [t]
+  })
+  return { ...L, points: L.points.flatMap(p => (p.id === from ? [] : p.id === into ? [kept] : [p])), segments }
+}
