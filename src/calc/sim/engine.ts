@@ -680,12 +680,12 @@ export function step(S: SimState) {
     }
   }
   // run-view statistics: who occupies and who waits for each zone (wait heat is counted with the time split)
-  const queue = new Map<string, number>()
+  let queue: Map<string, number> | null = null
   for (const v of S.veh) {
     if (v.atNode && G.zone[v.node]) zoneStat(S, G.zone[v.node]!).occT += DT
-    if (v.waitZone != null) { zoneStat(S, v.waitZone).waitT += DT; queue.set(v.waitZone, (queue.get(v.waitZone) ?? 0) + 1) }
+    if (v.waitZone != null) { zoneStat(S, v.waitZone).waitT += DT; queue ??= new Map(); queue.set(v.waitZone, (queue.get(v.waitZone) ?? 0) + 1) }
   }
-  for (const [z, n] of queue) { const st = zoneStat(S, z); st.maxQ = Math.max(st.maxQ, n) }
+  if (queue) for (const [z, n] of queue) { const st = zoneStat(S, z); st.maxQ = Math.max(st.maxQ, n) }
   // gridlock: a wait-for cycle that persists, or a route blocked by a parked vehicle
   for (const v of S.veh) {
     let u = v.waitFor, k = 0, cyc = false

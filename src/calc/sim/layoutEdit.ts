@@ -218,14 +218,13 @@ export function measureFlows<F extends LayoutFlow & { vehicleId?: string }>(L: S
   })
 }
 
+/** Names match regardless of case and surrounding spaces — one rule for placing and linking. */
+export const sameName = (a?: string, b?: string) => !!a?.trim() && a.trim().toLowerCase() === (b ?? '').trim().toLowerCase()
+
 /** Sizing flows not yet on the layout, each with the points whose names match its origin and
  *  destination (one-click linking, spec §5.4). A suggestion needs both ends and a Pick → Drop pair. */
 export function linkSuggestions(L: SimLayout, flows: LayoutFlow[]): { flowId: string; from?: string; to?: string }[] {
-  const norm = (s?: string) => (s ?? '').trim().toLowerCase()
-  const match = (name: string | undefined, ok: (p: SimPoint) => boolean) => {
-    const n = norm(name)
-    return n ? L.points.find(p => ok(p) && norm(p.name) === n)?.id : undefined
-  }
+  const match = (name: string | undefined, ok: (p: SimPoint) => boolean) => L.points.find(p => ok(p) && sameName(p.name, name))?.id
   return flows
     .filter(f => !(f.fromPointId && f.toPointId))
     .map(f => {

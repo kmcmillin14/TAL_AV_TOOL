@@ -722,9 +722,16 @@ step ribbon is unchanged.
   - *Flows — from Sizing* table: Sizing distance, distance on the layout, Δ, and the Fleet Engine;
     **Use layout distances** links name-matched flows after a confirmation showing Fleet Engine
     before → after (it moves the quote).
-  - *Head:* Layout | Run (Run only when nothing is red), Load sample (the proof-of-concept site; its
-    flows are prefixed `sample-` and removed by "Clear and draw your own"), Clear layout, Back to
-    Sizing.
+  - *Head (apple-ui-design pass):* one primary action — **Run** (red) once "Ready to run?" has no red
+    item, the reason beside it when not; **Edit layout** in Run mode. A ⋯ menu holds **Load sample**
+    (offered only on a project with no flows, so it can never change a real quote; its flows are
+    prefixed `sample-` and removed by "Clear and draw your own") and **Clear layout…**. Back to Sizing
+    is a link beside the step label.
+  - *Quiet chrome:* icon-only tools (name and key on hover); the hint fades 4 s after a tool change;
+    the legend shows only with One-way or the B56.5 overlay; crowded names shorten (C1, P2…) with the
+    full name on hover; Place on routes folds to "All N placed ✓"; the flows table shows "On the
+    layout" and Δ only when a link would change a distance. Type scale 11 / 13 / 15 / 30, spacing
+    4 / 8 / 16 / 24, two shadow levels, targets 36–44 px; stronger tape and lanes in light mode.
 - **Second half of the editor:** curves (bend handle, spline), Repeat ×N with names, copy/paste,
   Shift-drag box select, fixed objects (walls, columns), footprints to scale, the B56.5 overlay with
   callouts and one-click single-lane; undo keeps only what each step changed.
@@ -742,6 +749,9 @@ step ribbon is unchanged.
     target, orders waiting), Locations (visits, occupied, max queue, wait), B56.5 effect, Assumptions
     (pace, safety, demand, arrivals, seed; shift from Step 1) with the vehicle data and every
     fallback the engine used.
+  - Run details open collapsed with a one-line summary ("4 flows · all within 2% of target");
+    variability is a "Met in k/10" chip that opens to the ranges. Assumptions (pace, safety, demand,
+    arrivals, seed) are saved with the project (`simSettings`).
   - Nothing here changes the sized fleet or the quote; **Use N in pricing** remains Milestone 5.
 
 ---

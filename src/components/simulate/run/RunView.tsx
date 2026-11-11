@@ -7,10 +7,9 @@
 // Nothing here changes the sized fleet or the quote ("Use N in pricing" is a separate, approved step).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { B56_5_RULE } from '@/src/calc/sim/clearance'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results } from '@/src/calc/sim/results'
-import { runInputs } from '@/src/calc/sim/runInputs'
+import { clearanceRule, payloadFt, runFleet, runInputs } from '@/src/calc/sim/runInputs'
 import type { SimResults, SimSettings, Verdict } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import { updateProject, type StoredProject } from '@/src/lib/storage'
@@ -18,11 +17,11 @@ import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutCanvas from '../layout/LayoutCanvas'
 import RunDetails, { type Assumptions } from './RunDetails'
-import { RunScene, STATE_LABEL } from './RunScene'
+import { RunScene, STATES } from './RunScene'
 
 const VERDICT_TXT: Record<Verdict, string> = { meets: 'Meets', tight: 'Tight', short: 'Falls short', gridlock: 'Gridlock', warming: 'Warming up' }
-/** Run assumptions with no project field yet (spec D-3 pace; the engine's following gap). */
-export const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as SimSettings['arrivals'] }
+/** Run assumption defaults (spec D-3 pace; the engine's following gap); the project's values win. */
+const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as SimSettings['arrivals'], demandPct: 100, seed: 1 }
 const SLICE_MS = 30
 const VARIABILITY_RUNS = 10
 
@@ -54,22 +53,19 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 export default function RunView({ project, vehicles, vehicleById, settings, fleet, unitSystem }: Props) {
   const simSettings = project.simSettings ?? {}
   const engineFleet = useMemo(() => Object.fromEntries(fleet.groups.map(g => [g.vehicleId, g.fleetSold])), [fleet])
-  const fleetBy = useMemo(() => ({ ...engineFleet, ...(simSettings.fleet ?? {}) }), [engineFleet, simSettings.fleet])
-  const [assume, setAssume] = useState({ ...RUN_DEFAULTS, demandPct: simSettings.demandPct ?? 100, seed: simSettings.seed ?? 1 })
+
+  const assume: Assumptions = useMemo(() => ({
+    pacePct: simSettings.pacePct ?? RUN_DEFAULTS.pacePct, safetyFt: simSettings.safetyFt ?? RUN_DEFAULTS.safetyFt,
+    arrivals: simSettings.arrivals ?? RUN_DEFAULTS.arrivals, demandPct: simSettings.demandPct ?? RUN_DEFAULTS.demandPct, seed: simSettings.seed ?? RUN_DEFAULTS.seed,
+  }), [simSettings.pacePct, simSettings.safetyFt, simSettings.arrivals, simSettings.demandPct, simSettings.seed])
   const shiftH = project.hoursPerShift ?? 8
-  const rule = useMemo(() => {
-    const c = simSettings.clearance
-    return c ? { thresholdFps: c.thresholdFps, lowSpeedIn: c.lowSpeedIn, fullSpeedIn: c.fullSpeedIn ?? B56_5_RULE.fullSpeedIn, sharedBetweenVehicles: c.sharedBetweenVehicles } : B56_5_RULE
-  }, [simSettings.clearance])
-  const payload = useMemo(() => {
-    const loads = project.loads ?? []
-    const l = Math.max(0, ...loads.map(x => (x.lengthIn ?? 0) / 12)), w = Math.max(0, ...loads.map(x => (x.widthIn ?? 0) / 12))
-    return l > 0 && w > 0 ? { length: l, width: w } : undefined
-  }, [project.loads])
+  const rule = useMemo(() => clearanceRule(simSettings.clearance), [simSettings.clearance])
+  const payload = useMemo(() => payloadFt(project.loads), [project.loads])
   const inputs = useMemo(
     () => runInputs(project.simLayout ?? { points: [], segments: [] }, project.flows ?? [], vehicleById, rule, payload?.width ?? 0),
     [project.simLayout, project.flows, vehicleById, rule, payload],
   )
+  const fleetBy = useMemo(() => runFleet(engineFleet, simSettings.fleet, inputs.flows.map(f => f.vehicleId)), [engineFleet, simSettings.fleet, inputs.flows])
   const simConfig = useCallback((seed: number): SimSettings => ({
     fleet: fleetBy, demandPct: assume.demandPct, seed, arrivals: assume.arrivals, pacePct: assume.pacePct, safetyFt: assume.safetyFt,
     staffedHr: settings.dailyOpHr, targetUtilization: settings.targetUtilization, ...(payload ? { payloadFt: payload } : {}),
@@ -107,7 +103,9 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
   const [follow, setFollow] = useState(-1)
   const [labels, setLabels] = useState(true)
   const [busyFF, setBusyFF] = useState(false)
-  const restart = useCallback(() => { live.current = createSim(inputs.layout, inputs.flows, vehicles, simConfig(assume.seed)); setRunning(true); frame(n => n + 1) }, [inputs, vehicles, simConfig, assume.seed])
+  const ffToken = useRef(0)
+  useEffect(() => () => { ffToken.current++ }, [])
+  const restart = useCallback(() => { ffToken.current++; setBusyFF(false); live.current = createSim(inputs.layout, inputs.flows, vehicles, simConfig(assume.seed)); setRunning(true); frame(n => n + 1) }, [inputs, vehicles, simConfig, assume.seed])
   useEffect(() => { restart() }, [restart])
   useEffect(() => {
     let raf = 0, last = performance.now(), acc = 0
@@ -130,16 +128,23 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
     const S = live.current
     if (!S || busyFF) return
     setBusyFF(true)
-    runInSlices(S, endT, () => { setBusyFF(false); frame(x => x + 1) }, () => true)
+    const tok = ++ffToken.current
+    runInSlices(S, endT, () => { if (tok === ffToken.current) { setBusyFF(false); frame(x => x + 1) } }, () => tok === ffToken.current)
   }
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (e.key !== ' ' || (e.target as HTMLElement)?.closest?.('input,select,textarea,button')) return
+      if (e.key !== ' ' || (e.target as HTMLElement)?.closest?.('input,select,textarea,button,summary')) return
       e.preventDefault(); setRunning(r => !r)
     }
     document.addEventListener('keydown', onKey)
     return () => document.removeEventListener('keydown', onKey)
   }, [])
+
+  /** Run assumptions are the project's (Run → Assumptions); a change restarts the run. */
+  const onAssume = useCallback((patch: Partial<Assumptions>) => {
+    const ss = project.simSettings ?? {}
+    updateProject(project.id, { simSettings: { ...ss, ...patch } })
+  }, [project.id, project.simSettings])
 
   const setFleet = (vid: string, n: number) => {
     const next = { ...(simSettings.fleet ?? {}), [vid]: Math.max(1, Math.min(50, n)) }
@@ -149,34 +154,34 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
 
   const S = live.current
   const followed = S && follow >= 0 ? S.veh[follow] : null
-  const total = (res: SimResults) => res.types.reduce((a, t) => a + t.target, 0)
 
   return (
     <div className="sim-run">
       {/* Verdict — the one figure acted on, per vehicle type. */}
       <section className="sim-verdict" aria-label="Verdict">
-        {Object.keys(fleetBy).filter(vid => inputs.flows.some(f => f.vehicleId === vid)).map(vid => {
+        {Object.keys(fleetBy).map(vid => {
           const v = vehicleById.get(vid)
           const n = fleetBy[vid] ?? 0
           const res = R?.res.types.find(x => x.vehicleId === vid) ?? null
-          const t = { vehicleId: vid }
           return (
-            <div key={t.vehicleId} className="sim-vrow">
+            <div key={vid} className="sim-vrow">
               <div className="sim-vveh">
                 {v?.display.heroImage && <img src={v.display.heroImage} alt="" />}
-                <div><div className="nm">{v?.name ?? t.vehicleId}</div><div className="mf">{v?.display.manufacturer}</div></div>
+                <div><div className="nm">{v?.name ?? vid}</div><div className="mf">{v?.display.manufacturer}</div></div>
               </div>
               <div className="sim-stepper" role="group" aria-label={`${v?.name ?? 'Vehicle'} fleet`}>
-                <button type="button" aria-label="Fewer vehicles" onClick={() => setFleet(t.vehicleId, n - 1)}>−</button>
+                <button type="button" aria-label="Fewer vehicles" onClick={() => setFleet(vid, n - 1)}>−</button>
                 <span className="num">{n}</span>
-                <button type="button" aria-label="More vehicles" onClick={() => setFleet(t.vehicleId, n + 1)}>+</button>
+                <button type="button" aria-label="More vehicles" onClick={() => setFleet(vid, n + 1)}>+</button>
               </div>
               {R?.res.gridlock
                 ? <><span className="sim-chip gridlock">Gridlock</span><span className="sim-vstats">Stopped at <b>{clock(R.res.gridlock.t)}</b> · {R.res.gridlock.where} · {R.res.gridlock.vehicle}{R.res.gridlock.blockedBy ? ` waits on ${R.res.gridlock.blockedBy}` : ''}</span></>
                 : res
                   ? <><span className={`sim-chip ${res.verdict}`}>{VERDICT_TXT[res.verdict]}</span>
                       <span className="sim-vstats"><b className="num">{res.perHr.toFixed(1)}</b> / {res.target.toFixed(0)} moves/h · <b className="num">{Math.round(res.avgWait)} s</b> wait · <b className="num">{Math.round(res.utilization * 100)}%</b> busy</span></>
-                  : <><span className="sim-chip">Simulating</span><span className="sim-vstats">Running a full {shiftH} h shift…</span></>}
+                  : R
+                    ? <><span className="sim-chip short">Not run</span><span className="sim-vstats">{R.res.excluded.map(x => x.why).filter((w, i, a) => a.indexOf(w) === i).join(' · ') || 'No flow of this vehicle could run'}</span></>
+                    : <><span className="sim-chip">Simulating</span><span className="sim-vstats">Running a full {shiftH} h shift…</span></>}
             </div>
           )
         })}
@@ -185,36 +190,15 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
           <span>Full {shiftH} h shift · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
           <span className="grow" />
           {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}
-          {vari && vari.k >= VARIABILITY_RUNS && (() => {
-            const rng = (f: (r: SimResults) => number) => [Math.min(...vari.out.map(f)), Math.max(...vari.out.map(f))]
-            const ph = rng(r => r.types.reduce((a, t) => a + t.perHr, 0)), wt = rng(r => Math.max(0, ...r.types.map(t => t.avgWait))), bz = rng(r => Math.max(0, ...r.types.map(t => t.utilization)))
-            const met = vari.out.filter(r => r.verdict === 'meets' || r.verdict === 'tight').length, gl = vari.out.filter(r => r.verdict === 'gridlock').length
-            return <span>{VARIABILITY_RUNS} runs: <b className="num">{ph[0].toFixed(1)}–{ph[1].toFixed(1)}</b> moves/h · <b className="num">{Math.round(wt[0])}–{Math.round(wt[1])} s</b> wait · <b className="num">{Math.round(bz[0] * 100)}–{Math.round(bz[1] * 100)}%</b> busy · met in <b className="num">{met}/{VARIABILITY_RUNS}</b>{gl ? <span className="bad"> · {gl} gridlock</span> : null}{assume.arrivals === 'regular' ? <span className="sim-card-note"> · regular arrivals only vary start times — set Random in Assumptions</span> : null}</span>
-          })()}
-          <button type="button" className="btn btn-sm ghost" disabled={!!vari && vari.k < VARIABILITY_RUNS} onClick={runVariability}>Check variability</button>
+          {vari && vari.k >= VARIABILITY_RUNS && <VariabilityChip out={vari.out} arrivals={assume.arrivals} />}
+          {!vari && <button type="button" className="btn btn-sm ghost" onClick={runVariability}>Check variability</button>}
         </div>
       </section>
 
       {/* The map, playing the same run. */}
       <LayoutCanvas
         layout={inputs.layout}
-        driven={inputs.layout}
-        flows={[]}
-        image={null}
-        selection={null}
-        notConnected={new Set()}
-        showFlows={false}
-        clearances={null}
-        panOnEmpty
         panAlways
-        rubberFrom={null}
-        box={null}
-        marks={[]}
-        offset={null}
-        onPointer={() => {}}
-        onFlowClick={() => {}}
-        fitKey={0}
-        snapSquare={false}
         showLabels={labels}
         follow={followed ? { x: followed.x, y: followed.y } : null}
         scene={S ? (px => <RunScene S={S} follow={follow} labels={labels} px={px} />) : undefined}
@@ -237,18 +221,36 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
           <span className="sim-clock num">{S ? clock(S.t) : '—'}</span>
           {S?.gridlock && <span className="sim-chip gridlock">Gridlock — see the red ring</span>}
           <span className="grow" />
-          <span className="sim-states">{(['travel', 'handle', 'wait', 'charge', 'idle'] as const).map(k => <span key={k}><i className={`st-${k}`} />{STATE_LABEL[k]}</span>)}</span>
+          <span className="sim-states">{STATES.map(([k, l]) => <span key={k}><i className={`st-${k}`} />{l}</span>)}</span>
         </div>
       </LayoutCanvas>
 
       <RunDetails
         R={R?.res ?? null} S={R?.S ?? null} project={project} vehicleById={vehicleById} unitSystem={unitSystem}
-        inputs={inputs} assume={assume} shiftH={shiftH} total={R ? total(R.res) : 0}
-        onAssume={(patch: Partial<Assumptions>) => {
-          setAssume(a => ({ ...a, ...patch }))
-          if ('demandPct' in patch || 'seed' in patch) updateProject(project.id, { simSettings: { ...simSettings, ...('demandPct' in patch ? { demandPct: patch.demandPct } : {}), ...('seed' in patch ? { seed: patch.seed } : {}) } })
-        }}
+        inputs={inputs} assume={assume} shiftH={shiftH} onAssume={onAssume}
       />
     </div>
+  )
+}
+
+/** "Met in k/10" — the ranges one click away. */
+function VariabilityChip({ out, arrivals }: { out: SimResults[]; arrivals: SimSettings['arrivals'] }) {
+  const [open, setOpen] = useState(false)
+  const rng = (f: (r: SimResults) => number) => [Math.min(...out.map(f)), Math.max(...out.map(f))]
+  const met = out.filter(r => r.verdict === 'meets' || r.verdict === 'tight').length
+  const gl = out.filter(r => r.verdict === 'gridlock').length
+  const ph = rng(r => r.types.reduce((a, t) => a + t.perHr, 0)), wt = rng(r => Math.max(0, ...r.types.map(t => t.avgWait))), bz = rng(r => Math.max(0, ...r.types.map(t => t.utilization)))
+  return (
+    <span className="sim-vari">
+      <button type="button" className={`sim-chip ${met === out.length ? 'meets' : met >= out.length * 0.8 ? 'tight' : 'short'}`} aria-expanded={open} onClick={() => setOpen(o => !o)}>
+        Met in {met}/{out.length}{gl ? ` · ${gl} gridlock` : ''}
+      </button>
+      {open && (
+        <span className="sim-vari-detail">
+          <b className="num">{ph[0].toFixed(1)}–{ph[1].toFixed(1)}</b> moves/h · <b className="num">{Math.round(wt[0])}–{Math.round(wt[1])} s</b> wait · <b className="num">{Math.round(bz[0] * 100)}–{Math.round(bz[1] * 100)}%</b> busy
+          {arrivals === 'regular' && <span className="sim-card-note"> · regular arrivals — set Random in Assumptions for real spread</span>}
+        </span>
+      )}
+    </span>
   )
 }

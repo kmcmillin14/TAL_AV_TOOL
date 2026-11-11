@@ -1,5 +1,26 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation: apple-ui-design pass and cleanup
+
+Owner review with apple-ui-design (TAL fonts and colours kept); all twelve suggestions applied, with
+the cleanup review's fixes.
+
+- **Design:** Run as the one primary action, ⋯ menu for Load sample / Clear layout, Back to Sizing as
+  a link; icon-only tools, fading hint, legend only when relevant; short names when crowded; light-
+  mode tape and lanes darkened for contrast; one type scale (11/13/15/30), 4/8/16/24 spacing, two
+  shadow levels, 36–44 px targets; collapsed Run details with a summary line, "Met in k/10" chip;
+  Place on routes folds when done; explanatory notes moved to Help.
+- **Load sample** is offered only on a project with no flows — it can no longer change a real quote.
+- **Data:** `simSettings.pacePct`, `safetyFt`, `arrivals` (optional) — Run assumptions are kept with
+  the project instead of only for the session.
+- **One source:** `clearanceRule` and `payloadFt` (`src/calc/sim/runInputs.ts`) for the editor and
+  the run — the two had computed the payload width differently; `sameName` for placing and linking;
+  `fmtLength` in `units.ts`; one ordered list of vehicle states.
+- **Efficiency:** Run details no longer re-render every frame; wait heat recomputed once per simulated
+  minute; "Ready to run?" builds one graph; the flows table measures only the flows a link would change.
+- **Not done:** the hour chart stays hand-drawn — the app's ChartKit lives in `components/rom`, which
+  Simulate may not import (module boundary); moving ChartKit to a shared folder is a follow-up.
+
 ## 2026-11-11 — Fleet simulation: proof-of-concept look and features, Run mode
 
 Owner direction: restyle Simulate to the CB18 proof of concept and bring all its features, keeping

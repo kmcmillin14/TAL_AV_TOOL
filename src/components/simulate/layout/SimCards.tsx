@@ -8,16 +8,15 @@
 
 import { useMemo, useState } from 'react'
 import { fleetFromFlows } from '@/src/calc/fleet'
-import { linkFlow, linkSuggestions, measureFlows } from '@/src/calc/sim/layoutEdit'
+import { linkFlow, linkSuggestions, measureFlows, sameName } from '@/src/calc/sim/layoutEdit'
 import type { ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimLayout, SimPointType, SimRole } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
-import { lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
+import { fmtLength, lengthToDisplay, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { POINT_LABEL } from './labels'
 import type { ProjectFlow } from './useLayoutEditor'
 
-const norm = (s?: string) => (s ?? '').trim().toLowerCase()
 /** A name suggests a type (proof of concept); the engineer confirms it in the list. */
 const suggestType = (name: string): SimPointType => (/conveyor|infeed|outfeed|wrapper/i.test(name) ? 'conveyor' : 'stand')
 const PLACEABLE: SimPointType[] = ['stand', 'conveyor', 'machine', 'dock']
@@ -33,26 +32,37 @@ export function PlaceCard({ layout, flows, armed, onArm, onArmHome }: {
   onArmHome: (type: 'charger' | 'parking') => void
 }) {
   const [types, setTypes] = useState<Record<string, SimPointType>>({})
+  const [open, setOpen] = useState(false)
   const names = useMemo(() => {
     const m = new Map<string, { name: string; from: boolean; to: boolean }>()
     for (const f of flows) for (const [n, end] of [[f.origin, 'from'], [f.destination, 'to']] as const) {
       if (!n?.trim()) continue
-      const k = norm(n), e = m.get(k) ?? { name: n.trim(), from: false, to: false }
+      const k = n.trim().toLowerCase(), e = m.get(k) ?? { name: n.trim(), from: false, to: false }
       e[end] = true; m.set(k, e)
     }
     return [...m.values()]
   }, [flows])
-  const placed = (n: string) => layout.points.filter(p => norm(p.name) === norm(n))
+  const placed = (n: string) => layout.points.filter(p => sameName(p.name, n))
   const count = (t: SimPointType) => layout.points.filter(p => p.type === t).length
+  const allPlaced = names.length > 0 && names.every(n => placed(n.name).length > 0)
+  if (allPlaced && !open && !armed) {
+    return (
+      <section className="sim-card is-done" aria-label="Place on routes">
+        <h3>Place on routes</h3>
+        <p className="sim-done">All {names.length} placed ✓ · {count('charger')} charger{count('charger') === 1 ? '' : 's'} · {count('parking')} parking
+          <button type="button" className="link-btn" onClick={() => setOpen(true)}>Show</button></p>
+      </section>
+    )
+  }
   return (
     <section className="sim-card" aria-label="Place on routes">
-      <h3>Place on routes</h3>
+      <h3>Place on routes{allPlaced && <button type="button" className="link-btn sim-h3-action" onClick={() => setOpen(false)}>Hide</button>}</h3>
       {!names.length && <p className="sim-card-note">No Sizing flows yet — add them on Sizing, or draw flows with the Flow tool.</p>}
       {names.map(({ name, from, to }) => {
         const ps = placed(name)
-        const type = ps[0]?.type ?? types[norm(name)] ?? suggestType(name)
+        const type = ps[0]?.type ?? types[name.toLowerCase()] ?? suggestType(name)
         const role: SimRole = from && to ? 'pickDrop' : from ? 'pick' : 'drop'
-        const on = armed && norm(armed.name) === norm(name)
+        const on = armed && sameName(armed.name, name)
         return (
           <div key={name} className="sim-check-item">
             <span className={`sim-dot role-${role}${ps.length ? ' is-placed' : ''}`} />
@@ -61,7 +71,7 @@ export function PlaceCard({ layout, flows, armed, onArm, onArmHome }: {
               {ps.length
                 ? <div className="meta">{POINT_LABEL[type]} · {ps.length} position{ps.length > 1 ? 's' : ''}</div>
                 : <select className="sim-sel" value={type} title="Type — suggested from the name; confirm before placing"
-                    onChange={e => setTypes({ ...types, [norm(name)]: e.target.value as SimPointType })}>
+                    onChange={e => setTypes({ ...types, [name.toLowerCase()]: e.target.value as SimPointType })}>
                     {PLACEABLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}
                   </select>}
             </div>
@@ -105,43 +115,47 @@ export function FlowsTable({ layout, flows, vehicleById, settings, fleet, unitSy
   onSelect: (flowId: string) => void
 }) {
   const [confirm, setConfirm] = useState(false)
-  const unit = units.distance.label(unitSystem)
-  const fmt = (ft?: number) => (ft == null || !isFinite(ft) ? '—' : `${lengthToDisplay(ft, unitSystem).toFixed(0)} ${unit}`)
+  const fmt = (ft?: number) => fmtLength(ft, unitSystem)
   const name = (id?: string) => layout.points.find(p => p.id === id)?.name ?? '—'
-  // Flows a name match can link, measured as they would be once linked.
+  // Flows a name match can link, measured as they would be once linked — only those.
   const matches = useMemo(() => linkSuggestions(layout, flows).filter(s => s.from && s.to), [layout, flows])
-  const linkedAll = useMemo(() => {
-    const pick = new Map(matches.map(m => [m.flowId, m]))
-    return measureFlows(layout, flows.map(f => (pick.has(f.id) ? linkFlow(layout, f, pick.get(f.id)!.from!, pick.get(f.id)!.to!) : f)), radiusFor)
+  const pending = useMemo(() => {
+    const byId = new Map(flows.map(f => [f.id, f]))
+    const linked = matches.map(m => linkFlow(layout, byId.get(m.flowId)!, m.from!, m.to!))
+    return new Map(measureFlows(layout, linked, radiusFor).map(f => [f.id, f]))
   }, [layout, flows, matches, radiusFor])
+  const linkedAll = useMemo(() => flows.map(f => pending.get(f.id) ?? f), [flows, pending])
   const after = useMemo(() => (confirm ? fleetFromFlows(linkedAll, vehicleById, settings).totalFleetSold : null), [confirm, linkedAll, vehicleById, settings])
   const raw = fleet.groups.reduce((t, g) => t + g.groupRaw, 0)
+  const showPending = pending.size > 0
 
   return (
     <section className="sim-card sim-flows" aria-label="Flows from Sizing">
       <h3>Flows — from Sizing</h3>
       <div className="sim-tbl-wrap">
         <table className="sim-tbl">
-          <thead><tr><th className="l">#</th><th className="l">From → To</th><th>Moves/h</th><th className="l">Vehicle</th><th>Sizing distance</th><th className="band">On the layout</th><th className="band">Δ</th></tr></thead>
+          <thead><tr><th className="l">#</th><th className="l">From → To</th><th>Moves/h</th><th className="l">Vehicle</th><th>Distance</th>
+            {showPending && <><th className="band">On the layout</th><th className="band">Δ</th></>}</tr></thead>
           <tbody>
             {flows.map((f, i) => {
               const linked = f.fromPointId && f.toPointId
-              const would = linkedAll.find(q => q.id === f.id)
-              const onLayout = linked ? f.distanceFt : would?.distanceSource === 'layout' ? would.distanceFt : undefined
-              const d = onLayout != null && !linked ? onLayout - f.distanceFt : null
+              const would = pending.get(f.id)
+              const d = would ? (would.distanceFt ?? 0) - f.distanceFt : null
               return (
                 <tr key={f.id} onClick={() => linked && onSelect(f.id)} className={linked ? 'is-linked' : ''}>
                   <td className="dim">{i + 1}</td>
                   <td className="l">{linked ? `${name(f.fromPointId)} → ${name(f.toPointId)}` : `${f.origin || '—'} → ${f.destination || '—'}`}</td>
                   <td>{f.thruPerHr || 0}</td>
                   <td className="l">{(f.vehicleId && vehicleById.get(f.vehicleId)?.name) || <span className="dim">—</span>}</td>
-                  <td>{fmt(f.distanceFt)}{linked && <span className="sim-tag">layout</span>}</td>
-                  <td className={`band${onLayout == null ? ' dim' : ''}`}>{onLayout == null ? 'Not placed' : fmt(onLayout)}</td>
-                  <td className={`band${d != null && Math.abs(d) >= 0.5 ? ' warn' : ' dim'}`}>{d == null ? '—' : `${d > 0 ? '+' : ''}${lengthToDisplay(d, unitSystem).toFixed(0)}`}</td>
+                  <td>{fmt(f.distanceFt)}{linked ? <span className="sim-tag">layout</span> : !would && <span className="sim-tag is-off">not placed</span>}</td>
+                  {showPending && <>
+                    <td className={`band${would ? '' : ' dim'}`}>{would ? fmt(would.distanceFt) : '—'}</td>
+                    <td className={`band${d != null && Math.abs(d) >= 0.5 ? ' warn' : ' dim'}`}>{d == null ? '—' : `${d > 0 ? '+' : ''}${lengthToDisplay(d, unitSystem).toFixed(0)}`}</td>
+                  </>}
                 </tr>
               )
             })}
-            {!flows.length && <tr><td className="dim l" colSpan={7}>No flows yet.</td></tr>}
+            {!flows.length && <tr><td className="dim l" colSpan={showPending ? 7 : 5}>No flows yet.</td></tr>}
           </tbody>
         </table>
       </div>

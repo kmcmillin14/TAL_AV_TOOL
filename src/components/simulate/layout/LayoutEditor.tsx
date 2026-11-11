@@ -7,10 +7,11 @@
 // palette's Object draws walls and columns; "B56.5 clearances" shows the clearance path (§5.9).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { B56_5_RULE, envelopes, segmentClearances, type ClearanceRule } from '@/src/calc/sim/clearance'
+import { linkedFlows } from '@/src/calc/sim/readiness'
+import { clearanceRule, payloadFt, runInputs } from '@/src/calc/sim/runInputs'
 import { roundCorners } from '@/src/calc/sim/corners'
 import {
-  addObject, addPoint, addSegment, copyPoints, flowRefusal, flowStartRefusal, FLOW_POINT_TYPES, linkFlow, linkSuggestions, movePoints,
+  addObject, addPoint, addSegment, copyPoints, flowRefusal, flowStartRefusal, FLOW_POINT_TYPES, linkFlow, movePoints,
   notConnected, placeOnSegment, pointsInBox, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
   splineHandles, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
@@ -108,6 +109,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
   const [showFlows, setShowFlows] = useState(true)
   const [showClearance, setShowClearance] = useState(false)
   const [fitKey, setFitKey] = useState(0)
+  /** The tool hint shows for a few seconds after the tool changes, then fades (it stays while a
+   *  route, flow, scale or armed placement is under way). */
+  const [hintFresh, setHintFresh] = useState(true)
+  useEffect(() => { setHintFresh(true); const t = window.setTimeout(() => setHintFresh(false), 4000); return () => window.clearTimeout(t) }, [tool])
   /** Place tool armed from "Place on routes": the next point gets this name, type and role. */
   const [armed, setArmed] = useState<Armed | null>(null)
   const clipboard = useRef<string[]>([])
@@ -116,25 +121,18 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
   const image = getDrawingData(project.id)
   const scale = ftPerPx(bg)
   const loose = useMemo(() => new Set(notConnected(layout).map(p => p.id)), [layout])
-  const suggestions = useMemo(() => linkSuggestions(layout, flows), [layout, flows])
   const byId = useMemo(() => new Map(layout.points.map(p => [p.id, p])), [layout])
-  const linked = useMemo(() => flows.flatMap(f => (f.fromPointId && f.toPointId ? [{ ...f, fromPointId: f.fromPointId, toPointId: f.toPointId }] : [])), [flows])
+  const linked = useMemo(() => linkedFlows(flows), [flows])
 
   // The layout as driven: corners rounded to the largest turning radius among the flows' vehicles.
   const driven = useMemo(() => roundCorners(layout, Math.max(0, ...linked.map(f => radiusFor(f.vehicleId)))), [layout, linked, radiusFor])
 
-  // B56.5 clearances (§5.9): envelope = vehicle or payload (Step 1 loads), whichever is wider.
-  const rule: ClearanceRule = useMemo(() => {
-    const c = project.simSettings?.clearance
-    return c ? { thresholdFps: c.thresholdFps, lowSpeedIn: c.lowSpeedIn, fullSpeedIn: c.fullSpeedIn ?? B56_5_RULE.fullSpeedIn, sharedBetweenVehicles: c.sharedBetweenVehicles } : B56_5_RULE
-  }, [project.simSettings?.clearance])
-  const clearances = useMemo(() => {
-    if (!showClearance) return null
-    const payloadWidthFt = Math.max(0, ...(project.loads ?? []).map(l => (l.widthIn ?? 0) / 12))
-    const widthOf = (id?: string) => (id && vehicleById.get(id)?.calc.widthFt) || 0
-    const env = envelopes(layout, linked.map(f => ({ ...f, vehicleWidthFt: widthOf(f.vehicleId) })), payloadWidthFt)
-    return segmentClearances(layout, env, rule)
-  }, [showClearance, layout, linked, project.loads, vehicleById, rule])
+  // B56.5 clearances (§5.9) — the same rule and payload a run uses (src/calc/sim/runInputs.ts).
+  const rule = useMemo(() => clearanceRule(project.simSettings?.clearance), [project.simSettings?.clearance])
+  const clearances = useMemo(
+    () => (showClearance ? runInputs(layout, flows, vehicleById, rule, payloadFt(project.loads)?.width ?? 0).clearances : null),
+    [showClearance, layout, flows, vehicleById, rule, project.loads],
+  )
 
   const setLayout = (next: EditorLayout, merge?: string) => commit({ layout: next, flows }, merge)
   const setFlows = (next: ProjectFlow[], merge?: string) => commit({ layout, flows: next }, merge)
@@ -354,6 +352,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
             fitKey={fitKey}
             emptyPrompt={emptyPrompt}
             snapSquare={tool === 'routes'}
+            showLegend={tool === 'direction' || showClearance}
             onDoubleClick={() => { if (tool === 'routes') cancel() }}
           >
             {/* Floating tool bar (proof-of-concept look): tools, then undo/redo. */}
@@ -362,14 +361,14 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
                 const off = t.id === 'scale' && !bg
                 return (
                   <button key={t.id} type="button" className={`sim-tool${(t.id === 'scale' ? !!marks : tool === t.id && !marks) ? ' on' : ''}`} aria-pressed={tool === t.id}
-                    disabled={off} title={off ? 'Load a drawing first — the blank grid is already in feet' : `${t.label} (${t.key})`} onClick={() => chooseTool(t.id)}>
-                    <ToolIcon name={t.id} />{t.label}<kbd>{t.key}</kbd>
+                    disabled={off} title={off ? 'Load a drawing first — the blank grid is already in feet' : `${t.label} (${t.key})`} aria-label={t.label} onClick={() => chooseTool(t.id)}>
+                    <ToolIcon name={t.id} />
                   </button>
                 )
               })}
               <div className="sim-tool-sep" />
-              <button type="button" className="sim-tool" disabled={!canUndo} onClick={undo}><ToolIcon name="undo" />Undo<kbd>⌘Z</kbd></button>
-              <button type="button" className="sim-tool" disabled={!canRedo} onClick={redo}><ToolIcon name="redo" />Redo<kbd>⇧⌘Z</kbd></button>
+              <button type="button" className="sim-tool" disabled={!canUndo} onClick={undo} title="Undo (⌘Z)" aria-label="Undo"><ToolIcon name="undo" /></button>
+              <button type="button" className="sim-tool" disabled={!canRedo} onClick={redo} title="Redo (⇧⌘Z)" aria-label="Redo"><ToolIcon name="redo" /></button>
             </div>
             {tool === 'points' && !marks && (
               <div className="sim-palette" aria-label="Point type" onPointerDown={e => e.stopPropagation()}>
@@ -387,7 +386,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
               <button type="button" className={`btn btn-sm${showClearance ? ' on' : ''}`} aria-pressed={showClearance} onClick={() => setShowClearance(v => !v)}>B56.5</button>
               <button type="button" className="btn btn-sm" onClick={() => setFitKey(k => k + 1)}>Fit</button>
             </div>
-            <p className="sim-hint" aria-live="polite">{hint}</p>
+            <p className={`sim-hint${hintFresh || marks || chainFrom || armed ? '' : ' is-faded'}`} aria-live="polite">{hint}</p>
             {message && <p className="sim-toast" role="status">{message}</p>}
           </LayoutCanvas>
         </div>

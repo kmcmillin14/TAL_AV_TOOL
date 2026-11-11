@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { B56_5_RULE } from '../clearance'
 import { routeDistanceFt } from '../layoutEdit'
-import { runInputs } from '../runInputs'
+import { clearanceRule, payloadFt, runFleet, runInputs } from '../runInputs'
 import type { SimLayout } from '../types'
 import { LIBRARY } from './fixtures'
 
@@ -27,5 +27,23 @@ describe('runInputs', () => {
     const r = runInputs(walled, [flow], byId, B56_5_RULE, 0)
     expect(r.clearances.find(c => c.segId === 's1')?.status).toBe('violation')
     expect(routeDistanceFt(r.layout, 'A', 'B')).toBe(Infinity)
+  })
+})
+
+describe('clearanceRule and payloadFt', () => {
+  it('uses the stored rule, else the owner rule; a null full-speed value falls back', () => {
+    expect(clearanceRule()).toBe(B56_5_RULE)
+    expect(clearanceRule({ thresholdFps: 3, lowSpeedIn: 8, fullSpeedIn: null, sharedBetweenVehicles: false })).toEqual({ thresholdFps: 3, lowSpeedIn: 8, fullSpeedIn: 19.69, sharedBetweenVehicles: false })
+  })
+  it('takes the longest and widest load, each on its own', () => {
+    expect(payloadFt([{ lengthIn: 48, widthIn: 40 }, { widthIn: 60 }])).toEqual({ length: 4, width: 5 })
+    expect(payloadFt([])).toBeNull()
+  })
+})
+
+describe('runFleet', () => {
+  it('places only types with a linked flow, the stepper value winning over the engine', () => {
+    expect(runFleet({ cb18: 3, '8hbc40a': 2 }, { cb18: 5 }, ['cb18', 'cb18'])).toEqual({ cb18: 5 })
+    expect(runFleet({ cb18: 3 }, {}, ['cb18', 'm10'])).toEqual({ cb18: 3, m10: 0 })
   })
 })

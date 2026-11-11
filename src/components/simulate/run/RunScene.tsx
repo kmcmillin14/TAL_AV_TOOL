@@ -6,14 +6,15 @@
 //               loaded, a state dot, and "#n · SOC %" (labels on); a ring on the followed vehicle
 //   gridlock  — a pulsing red ring where the run stopped
 
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import type { SimState } from '@/src/calc/sim/engine'
 
-export type VehicleState = 'travel' | 'handle' | 'wait' | 'charge' | 'idle'
-export const STATE_LABEL: Record<VehicleState, string> = { travel: 'Travelling', handle: 'Pick / drop', wait: 'Waiting', charge: 'Charging', idle: 'Idle' }
+type VehicleState = 'travel' | 'handle' | 'wait' | 'charge' | 'idle'
+/** The vehicle states, in legend order — the one list for the map, its legend and the time split. */
+export const STATES: [VehicleState, string][] = [['travel', 'Travelling'], ['handle', 'Pick / drop'], ['wait', 'Waiting'], ['charge', 'Charging'], ['idle', 'Idle']]
 
 type V = SimState['veh'][number]
-export function vehicleState(v: V): VehicleState {
+function vehicleState(v: V): VehicleState {
   if (v.mode === 'pick' || v.mode === 'drop') return 'handle'
   if (v.mode === 'charging' || v.mode === 'toCharge') return 'charge'
   if (v.mode === 'toPick' || v.mode === 'toDrop') return v.moved > 0 ? 'travel' : 'wait'
@@ -26,18 +27,25 @@ const LANE_OFFSET_FT = 2.6
 export function RunScene({ S, follow, labels, px }: { S: SimState; follow: number; labels: boolean; px: number }) {
   // Display-only easing per vehicle (heading and lane offset), kept out of the engine's state.
   const ease = useRef(new Map<number, { off: number; h: number }>())
-  let maxHeat = 0
-  for (const h of S.heat) maxHeat = Math.max(maxHeat, h)
   const pts = S.G.points
+  // Heat changes slowly: rebuild the halos once per simulated minute, not every frame.
+  const minute = Math.floor(S.t / 60)
+  const halos = useMemo(() => {
+    let max = 0
+    for (const h of S.heat) max = Math.max(max, h)
+    if (max <= 30) return []
+    const out: { i: number; k: number }[] = []
+    S.heat.forEach((h, i) => { if (h >= max * 0.08) out.push({ i, k: h / max }) })
+    return out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [S, minute])
   const gl = S.gridlock && pts.find(p => p.id === S.gridlock!.nodeId)
   return (
     <g className="sim-scene">
       <defs>
         <radialGradient id="sim-heat"><stop offset="0" stopColor="var(--bad)" stopOpacity="0.55" /><stop offset="1" stopColor="var(--bad)" stopOpacity="0" /></radialGradient>
       </defs>
-      {maxHeat > 30 && Array.from(S.heat, (h, i) => (h < maxHeat * 0.08 ? null : (
-        <circle key={i} cx={pts[i].x} cy={pts[i].y} r={14 * (0.4 + h / maxHeat)} fill="url(#sim-heat)" opacity={0.25 + 0.75 * (h / maxHeat)} />
-      )))}
+      {halos.map(({ i, k }) => <circle key={i} cx={pts[i].x} cy={pts[i].y} r={14 * (0.4 + k)} fill="url(#sim-heat)" opacity={0.25 + 0.75 * k} />)}
       {S.veh.map(v => {
         const e = ease.current.get(v.i) ?? { off: 0, h: v.h }
         const moving = (v.mode === 'toPick' || v.mode === 'toDrop' || v.mode === 'toHome' || v.mode === 'toCharge') && !v.atNode
@@ -47,7 +55,8 @@ export function RunScene({ S, follow, labels, px }: { S: SimState; follow: numbe
         const L = v.prof.lengthFt, W = v.prof.vehicle.calc.widthFt
         const x = v.x - Math.sin(e.h) * e.off, y = v.y + Math.cos(e.h) * e.off
         const deg = (e.h * 180) / Math.PI
-        const pay = v.loaded ? (v.payload ?? { length: Math.min(4, L * 0.45), width: Math.min(4, W) }) : null
+        // The pallet is drawn only from the Step 1 load size — no size is made up for the picture.
+        const pay = v.loaded && v.payload && v.payload.length > 0 && v.payload.width > 0 ? v.payload : null
         return (
           <g key={v.i} className={`sim-veh st-${vehicleState(v)}${follow === v.i ? ' is-followed' : ''}`}>
             <g transform={`translate(${x} ${y}) rotate(${deg})`}>
@@ -58,7 +67,7 @@ export function RunScene({ S, follow, labels, px }: { S: SimState; follow: numbe
               {pay && <rect x={-L / 2 - 0.1} y={-pay.width / 2} width={pay.length} height={pay.width} className="sim-veh-pallet" />}
               <circle cx={L * 0.22} cy={0} r={Math.max(0.45, W * 0.16)} className="sim-veh-dot" />
             </g>
-            {labels && <g transform={`translate(${x} ${y + W / 2}) scale(${px})`}><text y={14} className="sim-veh-label">{v.id} · {Math.round(v.soc)}%</text></g>}
+            {labels && <g transform={`translate(${x} ${y + W / 2}) scale(${px})`}><text y={14} className="sim-veh-label">{v.id} · {Math.round(v.soc)}%{v.loaded && !pay ? ' · loaded' : ''}</text></g>}
           </g>
         )
       })}

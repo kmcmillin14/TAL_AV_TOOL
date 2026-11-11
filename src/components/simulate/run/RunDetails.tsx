@@ -5,12 +5,14 @@
 // with the vehicle data behind them. Fallbacks the engine used for missing data are listed — nothing
 // is silently invented.
 
+import { memo } from 'react'
 import type { SimState } from '@/src/calc/sim/engine'
 import type { RunInputs } from '@/src/calc/sim/runInputs'
 import type { SimResults, SimSettings, TimeSplit } from '@/src/calc/sim/types'
 import { flowDerived } from '@/src/calc/flowMetrics'
 import type { StoredProject } from '@/src/lib/storage'
-import { lengthFromDisplay, lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
+import { fmtLength, lengthFromDisplay, lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
+import { STATES } from './RunScene'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
 export interface Assumptions { pacePct: number; safetyFt: number; demandPct: number; arrivals: SimSettings['arrivals']; seed: number }
@@ -24,17 +26,17 @@ interface Props {
   inputs: RunInputs
   assume: Assumptions
   shiftH: number
-  total: number
   onAssume: (patch: Partial<Assumptions>) => void
 }
 
-const SPLIT: [keyof TimeSplit, string][] = [['travel', 'Travelling'], ['handle', 'Pick / drop'], ['wait', 'Waiting'], ['charge', 'Charging'], ['idle', 'Idle']]
+const SPLIT = STATES as [keyof TimeSplit, string][]
 const pct = (x: number) => `${Math.round(x * 100)}%`
 const secs = (s: number | null | undefined) => (s == null || !isFinite(s) ? '—' : `${Math.round(s)} s`)
 
-export default function RunDetails({ R, S, project, vehicleById, unitSystem, inputs, assume, shiftH, total, onAssume }: Props) {
+export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem, inputs, assume, shiftH, onAssume }: Props) {
   const unit = units.distance.label(unitSystem)
-  const len = (ft?: number) => (ft == null || !isFinite(ft) ? '—' : `${lengthToDisplay(ft, unitSystem).toFixed(0)} ${unit}`)
+  const len = (ft?: number) => fmtLength(ft, unitSystem)
+  const total = R ? R.types.reduce((a, t) => a + t.target, 0) : 0
   const flows = project.flows ?? []
   const name = (id?: string) => project.simLayout?.points.find(p => p.id === id)?.name ?? '—'
   const time = R ? R.types.reduce((acc, t) => { for (const [k] of SPLIT) acc[k] += t.time[k]; acc.reposition += t.time.reposition; return acc },
@@ -43,8 +45,8 @@ export default function RunDetails({ R, S, project, vehicleById, unitSystem, inp
 
   return (
     <section className="sim-below">
-      <details className="sim-disc" open>
-        <summary>Flows — engine vs simulated<span className="meta">{R ? `${(R.t / 3600).toFixed(0)} h · ${R.orders.delivered} moves` : 'simulating…'}</span></summary>
+      <details className="sim-disc">
+        <summary>Flows — engine vs simulated<span className="meta">{R ? flowSummary(R, flows.filter(f => f.fromPointId && f.toPointId).length, assume.demandPct, flows) : 'simulating…'}</span></summary>
         <div className="sim-disc-body">
           <div className="sim-tbl-wrap">
             <table className="sim-tbl">
@@ -74,7 +76,6 @@ export default function RunDetails({ R, S, project, vehicleById, unitSystem, inp
               </tbody>
             </table>
           </div>
-          <p className="sim-card-note">Engine cycle is Sizing’s: Sizing distance and route tier, a full loaded-out, empty-back cycle. Sim mission runs the driven routes at {assume.pacePct}% pace with traffic, stations and charging, from dispatch to drop-off — its empty leg starts wherever the vehicle is.</p>
           {time && (
             <div className="sim-split-wrap">
               <div className="sim-splitleg">{SPLIT.map(([k, l]) => <span key={k}><i className={`st-${k}`} />{l} {pct(time[k] / tot)}</span>)}</div>
@@ -126,7 +127,7 @@ export default function RunDetails({ R, S, project, vehicleById, unitSystem, inp
                 const seg = project.simLayout?.segments.find(s => s.id === c.segId)
                 return <li key={c.segId}>{name(seg?.a)} – {name(seg?.b)}: {c.tightestIn?.toFixed(1)} in · {c.reason}</li>
               })}</ul>
-            : <p className="sim-card-note">No route is slowed or blocked. Draw walls, columns and rack faces as objects for the rule to measure against.</p>}
+            : <p className="sim-card-note">No route is slowed or blocked.</p>}
         </div>
       </details>
 
@@ -170,6 +171,12 @@ export default function RunDetails({ R, S, project, vehicleById, unitSystem, inp
       </details>
     </section>
   )
+})
+
+/** "4 flows · all within 2% of target" — the line under the collapsed flows table. */
+function flowSummary(R: SimResults, n: number, demandPct: number, flows: { id: string; thruPerHr: number }[]): string {
+  const short = R.flows.filter(x => { const f = flows.find(q => q.id === x.flowId); return f && x.perHr < f.thruPerHr * demandPct / 100 * 0.98 }).length
+  return `${n} flow${n === 1 ? '' : 's'} · ${short ? `${short} below target` : 'all within 2% of target'} · ${R.orders.delivered} moves`
 }
 
 function Num({ label, unit, value, min, max, step, onChange }: { label: string; unit: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void }) {

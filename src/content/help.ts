@@ -184,6 +184,9 @@ export const HELP: HelpSection[] = [
       'A flow drawn here is the same flow Sizing uses: its distance and lift height now come from the layout, so the Sizing fleet can change.',
       'Sizing flows not yet on the layout are listed under “Link to points” — a name match is offered as one click.',
       'The drawing image is kept in the exported project file, not in the browser. After a reload, re-select the same file to bring it back.',
+      'Run compares Sizing’s engine cycle (Sizing distance and route tier, a full loaded-out, empty-back cycle) with the simulated mission (the driven routes at the pace in Assumptions, with traffic, stations and charging, from dispatch to drop-off — its empty leg starts wherever the vehicle is).',
+      'Check variability runs 10 seeds. With Regular arrivals only the start times change; set Random in Assumptions for real spread.',
+      'B56.5 measures against fixed objects: draw walls, columns and rack faces with Place → Object for the rule to slow or block routes.',
     ],
   },
   {

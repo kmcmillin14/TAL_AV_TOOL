@@ -32,6 +32,10 @@ export const units = {
 export const lengthToDisplay = (ft: number, s: UnitSystem) => (s === 'metric' ? units.distance.toMetric(ft) : ft)
 export const lengthFromDisplay = (v: number, s: UnitSystem) => (s === 'metric' ? units.distance.toImperial(v) : v)
 
+/** A length stored in feet, written in the user's units — "235 ft" / "71.6 m"; "—" when unknown. */
+export const fmtLength = (ft: number | null | undefined, s: UnitSystem, digits = 0) =>
+  ft == null || !isFinite(ft) ? '—' : `${lengthToDisplay(ft, s).toFixed(s === 'metric' ? Math.max(digits, 1) : digits)} ${units.distance.label(s)}`
+
 export function parseImperialInput(
   value: string,
   storedUnit: 'lbs' | 'in' | 'ft' | 'F',

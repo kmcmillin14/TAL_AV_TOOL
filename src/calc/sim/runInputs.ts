@@ -4,7 +4,7 @@
 // is under the minimum (§5.9). Flows are the project's flows linked to points.
 
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import { applyClearance, envelopes, segmentClearances, type ClearanceRule, type SegmentClearance } from './clearance'
+import { applyClearance, B56_5_RULE, envelopes, segmentClearances, type ClearanceRule, type SegmentClearance } from './clearance'
 import { roundCorners } from './corners'
 import { linkedFlows, type ProjectFlowLike } from './readiness'
 import type { SimFlow, SimLayout } from './types'
@@ -29,4 +29,22 @@ export function runInputs(
   const clearances = segmentClearances(drawn, env, rule)
   const radius = Math.max(0, ...linked.map(f => veh(f.vehicleId)?.calc.turningRadiusFt ?? 0))
   return { layout: roundCorners(applyClearance(drawn, clearances), radius), flows: linked, clearances }
+}
+
+/** The project's B56.5 rule: its stored values, else the owner rule (D-2). */
+export function clearanceRule(c?: { thresholdFps: number; lowSpeedIn: number; fullSpeedIn: number | null; sharedBetweenVehicles: boolean } | null): ClearanceRule {
+  return c ? { thresholdFps: c.thresholdFps, lowSpeedIn: c.lowSpeedIn, fullSpeedIn: c.fullSpeedIn ?? B56_5_RULE.fullSpeedIn, sharedBetweenVehicles: c.sharedBetweenVehicles } : B56_5_RULE
+}
+
+/** The handled load from Step 1, ft: the longest and widest of the project's loads (each from its own
+ *  dimension — a load with a width but no length still sets the width). Null when none is entered. */
+export function payloadFt(loads: { lengthIn?: number | null; widthIn?: number | null }[] = []): { length: number; width: number } | null {
+  const length = Math.max(0, ...loads.map(l => (l.lengthIn ?? 0) / 12)), width = Math.max(0, ...loads.map(l => (l.widthIn ?? 0) / 12))
+  return length > 0 || width > 0 ? { length, width } : null
+}
+
+/** The fleet a run places: per vehicle type with a flow on the layout, the stepper's value if set,
+ *  else the Fleet Engine's. Types with no linked flow are left out — they would only take homes. */
+export function runFleet(engine: Record<string, number>, overrides: Record<string, number> = {}, linkedVehicleIds: string[]): Record<string, number> {
+  return Object.fromEntries([...new Set(linkedVehicleIds)].map(vid => [vid, overrides[vid] ?? engine[vid] ?? 0]))
 }

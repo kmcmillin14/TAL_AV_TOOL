@@ -8,7 +8,8 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import Icon from '@/src/design-system/components/Icon'
-import { readinessChecks } from '@/src/calc/sim/readiness'
+import { linkedFlows, readinessChecks } from '@/src/calc/sim/readiness'
+import { clearanceRule, payloadFt, runFleet, runInputs } from '@/src/calc/sim/runInputs'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import sample from '@/src/content/samples/simulate-sample.json'
 import { updateProject, type StoredProject } from '@/src/lib/storage'
@@ -34,16 +35,24 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const narrow = useIsNarrow()
   const [mode, setMode] = useState<'layout' | 'run'>('layout')
   const { simLayout, flows = [] } = project
-  const checks = useMemo(
-    () => readinessChecks({ layout: simLayout, flows, vehicles, fleetNeeded: fleet.totalFleetSold }),
-    [simLayout, flows, vehicles, fleet.totalFleetSold],
-  )
+  // Checked against what a run will place and drive: the run fleet (linked types, stepper value) on
+  // the driven layout (B56.5 applied), so "Ready" never offers a run that cannot place or route.
+  const checks = useMemo(() => {
+    const engine = Object.fromEntries(fleet.groups.map(g => [g.vehicleId, g.fleetSold]))
+    const placed = runFleet(engine, project.simSettings?.fleet, linkedFlows(flows).map(f => f.vehicleId))
+    const driven = simLayout && runInputs(simLayout, flows, vehicleById, clearanceRule(project.simSettings?.clearance), payloadFt(project.loads)?.width ?? 0).layout
+    return readinessChecks({ layout: simLayout, flows, vehicles, driven, fleetNeeded: Object.values(placed).reduce((a, b) => a + b, 0) })
+  }, [simLayout, flows, vehicles, vehicleById, fleet.groups, project.simSettings?.fleet, project.simSettings?.clearance, project.loads])
   const blockers = checks.filter(c => c.level === 'bad')
   const canRun = blockers.length === 0
+  // Run mode is shown only while the run can happen; a new red item drops back to the layout.
+  const running = mode === 'run' && canRun
   const empty = !simLayout?.points.length
   const sampleOn = flows.some(f => isSample(f.id))
+  // The sample brings its own flows, so it is offered only where it cannot change a real quote.
+  const canSample = empty && flows.length === 0
 
-  const loadSample = () => updateProject(project.id, { simLayout: sample.layout as StoredProject['simLayout'], flows: [...flows, ...(sample.flows as typeof flows)] })
+  const loadSample = () => updateProject(project.id, { simLayout: sample.layout as StoredProject['simLayout'], flows: sample.flows as typeof flows })
   /** Clear the layout; flows stay in Sizing, unlinked (their last measured distance kept). Sample flows go. */
   const clearLayout = () => {
     if (!window.confirm('Clear the layout? Flows stay in Sizing with their current distances. The header’s Undo brings it back.')) return
@@ -58,25 +67,31 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     <>
       <div className="engine-head with-actions sim-head">
         <div className="eh-text">
-          <span className="eh-eyebrow mono">Step 03 · Sizing</span>
+          <span className="eh-eyebrow mono">
+            Step 03 · Sizing <Link href={`/projects/${project.id}/step3`} className="sim-back"><Icon name="arrowL" size={11} /> Back to Sizing</Link>
+          </span>
           <h1 className="eh-title">Simulate</h1>
-          <span className="sim-subtitle">Checks the Sizing fleet on a drawn layout · vehicle data from the vehicle files</span>
         </div>
         <div className="eh-actions">
-          <div className="seg-toggle" role="tablist" aria-label="Mode">
-            <button type="button" role="tab" aria-selected={mode === 'layout'} className={`seg-btn${mode === 'layout' ? ' on' : ''}`} onClick={() => setMode('layout')}>Layout</button>
-            <button type="button" role="tab" aria-selected={mode === 'run'} className={`seg-btn${mode === 'run' ? ' on' : ''}`} disabled={!canRun}
-              title={canRun ? '' : `Finish the layout first: ${blockers.map(b => b.text).join(' ')}`} onClick={() => setMode('run')}>Run</button>
-          </div>
-          {empty && <button type="button" className="btn ghost" onClick={loadSample}>Load sample</button>}
-          {!empty && <button type="button" className="btn ghost" onClick={clearLayout}>Clear layout</button>}
-          <Link href={`/projects/${project.id}/step3`} className="btn ghost"><Icon name="arrowL" size={13} /> Back to Sizing</Link>
+          {running
+            ? <button type="button" className="btn ghost" onClick={() => setMode('layout')}><Icon name="arrowL" size={13} /> Edit layout</button>
+            : <button type="button" className="btn primary" disabled={!canRun} aria-describedby="sim-run-why" onClick={() => setMode('run')}>Run <Icon name="arrowR" size={13} /></button>}
+          {!canRun && <span id="sim-run-why" className="sim-run-why">{blockers[0]?.text}</span>}
+          {(canSample || !empty) && (
+            <details className="sim-more-menu" onClick={e => { if ((e.target as HTMLElement).closest('[role=menuitem]')) e.currentTarget.open = false }}>
+              <summary className="btn ghost" aria-label="More actions">⋯</summary>
+              <div className="sim-menu" role="menu">
+                {canSample && <button type="button" role="menuitem" onClick={loadSample}>Load sample</button>}
+                {!empty && <button type="button" role="menuitem" className="danger" onClick={clearLayout}>Clear layout…</button>}
+              </div>
+            </details>
+          )}
         </div>
       </div>
 
       {sampleOn && (
         <div className="sim-banner">
-          <b>Sample layout</b> — the CB18 proof-of-concept site, so there is something to run. Its flows are added to Sizing while it is loaded.
+          <b>Sample layout</b> — the CB18 proof-of-concept site.
           <button type="button" className="link-btn" onClick={clearLayout}>Clear and draw your own</button>
         </div>
       )}
@@ -85,7 +100,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
         <section className="sim-canvas" aria-label="Simulation layout">
           <div className="empty-state"><h3>Open on a desktop to edit the layout</h3></div>
         </section>
-      ) : mode === 'run' && canRun ? (
+      ) : running ? (
         <RunView project={project} vehicles={vehicles} vehicleById={vehicleById} settings={settings} fleet={fleet} unitSystem={unitSystem} />
       ) : (
         <LayoutEditor

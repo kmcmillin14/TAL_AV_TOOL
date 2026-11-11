@@ -6,7 +6,7 @@
 // are drawn to true scale (§5.8). Tools are handled by the editor — the canvas reports where the
 // pointer is and what is under it.
 
-import { memo, useEffect, useRef, useState, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
+import { memo, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
 import Icon from '@/src/design-system/components/Icon'
 import type { SegmentClearance } from '@/src/calc/sim/clearance'
 import { segmentGeometry } from '@/src/calc/sim/geometry'
@@ -32,33 +32,35 @@ export interface CanvasPointer {
 
 interface Props {
   layout: SimLayout
-  /** The layout a vehicle drives (corners rounded) — drawn under the routes as drawn. */
-  driven: SimLayout
-  flows: ProjectFlow[]
-  image: { href: string; widthFt: number; heightFt: number } | null
-  selection: Selection
-  notConnected: Set<string>
-  showFlows: boolean
+  /** The layout a vehicle drives (corners rounded) — drawn under the routes as drawn. Default: as drawn. */
+  driven?: SimLayout
+  flows?: ProjectFlow[]
+  image?: { href: string; widthFt: number; heightFt: number } | null
+  selection?: Selection
+  notConnected?: Set<string>
+  showFlows?: boolean
   /** B56.5 results per route, when the overlay is on. */
-  clearances: SegmentClearance[] | null
+  clearances?: SegmentClearance[] | null
   /** Dragging empty space pans (Select tool, no Shift); otherwise a press on empty space goes to the tool. */
-  panOnEmpty: boolean
+  panOnEmpty?: boolean
   /** A line from here to the pointer (route or flow being drawn). */
-  rubberFrom: XY | null
+  rubberFrom?: XY | null
   /** A rectangle being dragged out (marquee or new object), ft. */
-  box: { a: XY; b: XY; kind: 'marquee' | 'object' } | null
+  box?: { a: XY; b: XY; kind: 'marquee' | 'object' } | null
   /** Scale marks (two clicks on the drawing), ft. */
-  marks: XY[]
+  marks?: XY[]
   /** Points being dragged, shown at their new spots until the drop is committed. */
-  offset: { ids: Set<string>; d: XY } | null
-  onPointer: (e: CanvasPointer) => void
-  onFlowClick: (id: string) => void
+  offset?: { ids: Set<string>; d: XY } | null
+  onPointer?: (e: CanvasPointer) => void
+  onFlowClick?: (id: string) => void
   /** Bump to fit the view to the layout and drawing. */
-  fitKey: number
+  fitKey?: number
   /** Shown over an empty layout. */
   emptyPrompt?: string
   /** Route tool: the preview snaps square to the last point unless Shift is held. */
-  snapSquare: boolean
+  snapSquare?: boolean
+  /** The legend, only while it explains something on screen (direction tool, B56.5 overlay). */
+  showLegend?: boolean
   /** Controls floated over the canvas (tool bar, palette, view buttons, hint). */
   children?: ReactNode
   /** A double-click finishes the route being drawn. */
@@ -74,11 +76,17 @@ interface Props {
   showLabels?: boolean
 }
 
+const NONE = new Set<string>()
+const noop = () => {}
+
 const POINT_PX = 13, SEG_PX = 8, CHEVRON_PX = 90, HANDLE_PX = 6
 const ROLE_ICON = { pick: 'pick', drop: 'drop', pickDrop: 'pickDrop' } as const
 
 export default function LayoutCanvas(props: Props) {
-  const { layout, driven, flows, image, selection, notConnected, showFlows, clearances, rubberFrom, marks, offset } = props
+  const {
+    layout, driven = layout, flows = [], image = null, selection = null, notConnected = NONE, showFlows = false, clearances = null,
+    rubberFrom = null, marks = [], offset = null, onPointer = noop, onFlowClick = noop, fitKey = 0, panOnEmpty = true,
+  } = props
   const box = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 800, h: 520 })
   const [measured, setMeasured] = useState(false)      // the first real size is known: fit then, not at 800×520
@@ -107,7 +115,7 @@ export default function LayoutCanvas(props: Props) {
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2
     setView({ x: cx - size.w / 2 / ppf, y: cy - (top + (size.h - top - bottom) / 2) / ppf, ppf })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.fitKey, image?.href, measured])
+  }, [fitKey, image?.href, measured])
 
   // Run mode: ease the view toward a followed vehicle.
   useEffect(() => {
@@ -148,15 +156,15 @@ export default function LayoutCanvas(props: Props) {
 
   const down = (e: RPointerEvent<HTMLDivElement>) => {
     const at = toFt(e), hit = hitAt(at, e.target)
-    if (props.panAlways || e.button === 1 || (e.button === 0 && !hit && props.panOnEmpty && !e.shiftKey)) {
+    if (props.panAlways || e.button === 1 || (e.button === 0 && !hit && panOnEmpty && !e.shiftKey)) {
       pan.current = { sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y }
       e.currentTarget.setPointerCapture(e.pointerId)
-      if (e.button === 0 && !props.panAlways) props.onPointer({ type: 'down', at, hit: null, shift: false })   // a click on empty space clears the selection
+      if (e.button === 0 && !props.panAlways) onPointer({ type: 'down', at, hit: null, shift: false })   // a click on empty space clears the selection
       return
     }
     if (e.button !== 0) return
     e.currentTarget.setPointerCapture(e.pointerId)
-    props.onPointer({ type: 'down', at, hit, shift: e.shiftKey })
+    onPointer({ type: 'down', at, hit, shift: e.shiftKey })
   }
   const move = (e: RPointerEvent<HTMLDivElement>) => {
     const at = toFt(e)
@@ -166,11 +174,11 @@ export default function LayoutCanvas(props: Props) {
       setView(v => ({ ...v, x: p.vx - (e.clientX - p.sx) / v.ppf, y: p.vy - (e.clientY - p.sy) / v.ppf }))
       return
     }
-    props.onPointer({ type: 'move', at, hit: null, shift: e.shiftKey })   // moves need no hit-test (drags only)
+    onPointer({ type: 'move', at, hit: null, shift: e.shiftKey })   // moves need no hit-test (drags only)
   }
   const up = (e: RPointerEvent<HTMLDivElement>) => {
     if (pan.current) { pan.current = null; return }
-    props.onPointer({ type: 'up', at: toFt(e), hit: null, shift: e.shiftKey })
+    onPointer({ type: 'up', at: toFt(e), hit: null, shift: e.shiftKey })
   }
 
   const shown = (p: SimPoint) => (offset?.ids.has(p.id) ? { ...p, x: p.x + offset.d.x, y: p.y + offset.d.y } : p)
@@ -179,6 +187,18 @@ export default function LayoutCanvas(props: Props) {
   const selected = (kind: 'point' | 'segment' | 'flow' | 'object', id: string) =>
     (selection?.kind === kind && selection.id === id) || (kind === 'point' && selection?.kind === 'points' && selection.ids.includes(id))
   const px = 1 / view.ppf                       // one screen pixel, in feet
+  // Names collide when two pills would overlap on screen: those show a short form (C1, P2…). Worked
+  // out per layout and zoom, not per frame (Run mode re-renders every frame).
+  const crowded = useMemo(() => {
+    const named = layout.points.filter(p => p.name && p.type !== 'junction')
+    const out = new Set<string>()
+    for (let i = 0; i < named.length; i++) for (let j = i + 1; j < named.length; j++) {
+      const a = named[i], b = named[j]
+      const wPx = (a.name!.length + b.name!.length) * 3.3 + 16
+      if (Math.abs(a.x - b.x) / px < wPx && Math.abs(a.y - b.y) / px < 22) { out.add(a.id); out.add(b.id) }
+    }
+    return out
+  }, [layout.points, px])
   const degree = new Map<string, number>()
   for (const q of layout.segments) { degree.set(q.a, (degree.get(q.a) ?? 0) + 1); degree.set(q.b, (degree.get(q.b) ?? 0) + 1) }
   const grid = gridStep(view.ppf)
@@ -231,7 +251,7 @@ export default function LayoutCanvas(props: Props) {
           const a = f.fromPointId && pts.get(f.fromPointId), b = f.toPointId && pts.get(f.toPointId)
           if (!a || !b) return null
           return <FlowArrow key={f.id} id={f.id} a={a} b={b} label={`${f.thruPerHr || 0}/h`} px={px}
-            selected={selected('flow', f.id)} onClick={props.onFlowClick} />
+            selected={selected('flow', f.id)} onClick={onFlowClick} />
         })}
 
         {rubberFrom && cursor && (() => {
@@ -249,7 +269,8 @@ export default function LayoutCanvas(props: Props) {
         })()}
 
         {[...pts.values()].map(p => (
-          <PointMarker key={p.id} p={p} px={px} selected={selected('point', p.id)} loose={notConnected.has(p.id)} cross={(degree.get(p.id) ?? 0) >= 3} label={props.showLabels !== false} />
+          <PointMarker key={p.id} p={p} px={px} selected={selected('point', p.id)} loose={notConnected.has(p.id)} cross={(degree.get(p.id) ?? 0) >= 3}
+            label={props.showLabels === false ? null : crowded.has(p.id) ? shortName(p.name ?? '') : p.name ?? null} />
         ))}
 
         {props.scene?.(px)}
@@ -269,10 +290,17 @@ export default function LayoutCanvas(props: Props) {
       </svg>
       {props.emptyPrompt && !layout.points.length && <div className="sim-empty-prompt">{props.emptyPrompt}</div>}
       {props.children}
-      <Legend clearances={!!clearances} />
+      {props.showLegend && <Legend clearances={!!clearances} />}
       <span className="sim-zoom num">{grid >= 1 ? `grid ${grid} ft` : `grid ${grid * 12} in`}</span>
     </div>
   )
+}
+
+/** A short label for a crowded name: "Charger 3" → "C3", "Wrapper Infeed" → "WI", "Line 1 EOL" → "L1E". */
+export function shortName(name: string): string {
+  const m = name.match(/^(\S+).*?\s(\d+)$/)
+  if (m) return m[1][0].toUpperCase() + m[2]
+  return name.split(/\s+/).map(w => (/^\d+$/.test(w) ? w : w[0]?.toUpperCase() ?? '')).join('')
 }
 
 /** The point square to `from` — the route keeps to the aisle direction it is closest to. */
@@ -348,7 +376,7 @@ function CurveHandles({ s, a, b, px }: { s: SimSegment; a?: SimPoint; b?: SimPoi
  *  parking — with the approved type icon, its name in a dark pill above, and the role badge. Grows
  *  with zoom like a floor marking, never smaller than legible. Junctions are dots: amber where three
  *  or more routes meet. */
-const PointMarker = memo(function PointMarker({ p, px, selected, loose, cross, label }: { p: SimPoint; px: number; selected: boolean; loose: boolean; cross: boolean; label: boolean }) {
+const PointMarker = memo(function PointMarker({ p, px, selected, loose, cross, label }: { p: SimPoint; px: number; selected: boolean; loose: boolean; cross: boolean; label: string | null }) {
   if (p.type === 'junction') {
     return <g transform={`translate(${p.x} ${p.y}) scale(${px})`} className={`sim-pt-junction${cross ? ' is-cross' : ''}${selected ? ' is-selected' : ''}`}><circle r={selected ? 5 : cross ? 4 : 3} /></g>
   }
@@ -372,7 +400,8 @@ const PointMarker = memo(function PointMarker({ p, px, selected, loose, cross, l
             <Icon name={ROLE_ICON[p.role]} size={10} />
           </g>
         )}
-        {p.name && label && <NamePill y={-half - 6} text={p.name} />}
+        {label && <NamePill y={-half - 6} text={label} />}
+        {p.name && <title>{p.name}</title>}
         {loose && <text y={half + 14} className="sim-pt-loose">Not connected</text>}
       </g>
     </>
