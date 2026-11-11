@@ -814,6 +814,24 @@ step ribbon is unchanged.
     it. It replaces the inputs that were in Run details › Assumptions; that disclosure keeps the
     vehicle data and the fallbacks used.
   - *Same in Layout and Run.* No modal dialogs except the destructive confirmations (acceptance 37).
+  - *Drawing, taken as ideas from a comparable layout tool (owner, 2026-11-11; no vendor code or
+    assets):*
+    - **Two-way street look.** A two-way, two-lane route is drawn as a street: the aisle band, a
+      dashed centre line and one travel path per direction, each with its own arrows, traffic
+      keeping right. A two-way single-lane route is one path with arrows alternating both ways; a
+      one-way route is one path with arrows one way. When the aisle is too narrow on screen for two
+      paths, only the centre line is drawn.
+    - **Direction on the aisle.** The selected route shows a badge beside its middle with its
+      direction and length; clicking the badge steps two-way → one-way → the other way (key D does
+      the same). This replaces the separate One-way tool; lanes (two / single) stay in the panel and
+      the Route options.
+    - **Stations connect themselves.** With the Place tool, a point placed on open floor within
+      40 ft of a route is joined to it by a short two-way, single-lane spur to the nearest spot on
+      that route (`placeWithSpur`, `spurTarget`); the dashed preview shows the spur before the
+      click. Shift places it without a spur. A click on a route still places the point on it.
+    - **Zoom control** (fit, −, %, +) in the canvas corner, in Layout and Run; 100% is 4 px per ft.
+    - **Hand tool (H)** pans; holding Space pans in any tool.
+    - **Badges:** the selected object shows its size (W × H); the selected route its length.
 - **Simulated fleet in pricing (built, Milestone 5; D-1, raise-only).** Quoted numbers can move.
   - *Use N in pricing:* a verdict row offers it only when the stepper value **Meets** and is above
     the Fleet Engine's figure for that type. While it is offered, the run also checks one vehicle

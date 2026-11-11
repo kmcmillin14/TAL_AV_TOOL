@@ -435,8 +435,9 @@ function squareTo(from: XY, to: XY): XY {
 export type DrawSnap =
   | { kind: 'point'; id: string; at: XY }
   | { kind: 'route'; id: string; at: XY }
-  /** Open floor: on an object's aisle line, lined up with existing points (`guides`), else on the grid. */
-  | { kind: 'object' | 'free'; at: XY; guides: XY[] }
+  /** Open floor: on an object's aisle line, lined up with existing points (`guides`), else on the grid.
+   *  `spur`: where a point placed here would join a route (Place tool, `spurTarget`). */
+  | { kind: 'object' | 'free'; at: XY; guides: XY[]; spur?: { id: string; at: XY } | null }
 
 /** The grid a free click lands on, ft: whole feet, finer as you zoom in (6 in, 3 in, 1 in) so the
  *  landing spot is never more than ~4 screen pixels from the cursor. */
@@ -511,4 +512,32 @@ export function mergePoints<T extends SimLayout>(L: T, from: string, into: strin
 /** A flow with its layout links removed — back to a Sizing-only flow (its last distance kept). */
 export function unlinked<F extends { fromPointId?: string; toPointId?: string; distanceSource?: 'layout' }>(f: F): F {
   return { ...f, fromPointId: undefined, toPointId: undefined, distanceSource: undefined }
+}
+
+// ---- Stations connect themselves (owner, 2026-11-11) ---------------------------------------------
+
+/** A point placed within this distance of a route is joined to it by a spur, ft. */
+export const SPUR_REACH_FT = 40
+
+/** Where a point placed at `at` would join the network: the nearest spot on the nearest route within
+ *  `SPUR_REACH_FT`, or null when no route is that close. */
+export function spurTarget(L: SimLayout, at: XY): { id: string; at: XY } | null {
+  return nearestRoute(L, at, SPUR_REACH_FT)
+}
+
+/**
+ * Place a point on open floor and join it to a route with a short spur (two-way, single-lane — one
+ * vehicle in the stub at a time): the route is split at `join.at` and the spur runs from there to the
+ * point. Falls back to a plain placement when the route is gone.
+ */
+export function placeWithSpur<T extends SimLayout>(L: T, at: XY, type: SimPointType, role: SimRole | undefined, join: { id: string; at: XY }): { layout: T; id: string } {
+  const placed = addPoint(L, at, type, role)
+  const split = splitSegment(placed.layout, join.id, join.at)
+  if (!split) return placed
+  return { layout: addSegment(split.layout, split.id, placed.id, { dir: 'two', lane: 'single' }).layout, id: placed.id }
+}
+
+/** The next direction for a route when its badge is clicked: two-way → one-way → the other way. */
+export function nextDirection(dir: SimSegment['dir']): SimSegment['dir'] {
+  return dir === 'two' ? 'ab' : dir === 'ab' ? 'ba' : 'two'
 }

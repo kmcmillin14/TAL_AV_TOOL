@@ -16,7 +16,7 @@ import type { ProjectFlow } from './useLayoutEditor'
 
 export type XY = { x: number; y: number }
 export type Handle = 'mid' | 'c1' | 'c2'
-export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle }
+export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string }
 export type Selection =
   | { kind: 'point' | 'segment' | 'flow' | 'object'; id: string }
   | { kind: 'points'; ids: string[] }
@@ -81,6 +81,8 @@ interface Props {
   /** A tool that points at things (not Select): crosshair cursor. While `snap` is shown the system
    *  cursor is hidden and the crosshair is drawn at the landing spot instead. */
   aim?: boolean
+  /** A length for the badges and the route preview, in the user's units. Default: feet. */
+  fmtLen?: (ft: number) => string
   onContextMenu?: (e: MouseEvent<HTMLDivElement>) => void
   /** Room kept clear of floating controls when fitting, px. Default: the editor's tool column and bar. */
   fitInset?: { top: number; right: number; bottom: number; left: number }
@@ -117,6 +119,7 @@ export default function LayoutCanvas(props: Props) {
   const box = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 800, h: 520 })
   const [measured, setMeasured] = useState(false)      // the first real size is known: fit then, not at 800×520
+  const [fitTick, setFitTick] = useState(0)            // the Fit button in the zoom control
   const [view, setView] = useState({ x: -20, y: -20, ppf: 4 })      // top-left (ft) and pixels per foot
   const pan = useRef<{ sx: number; sy: number; vx: number; vy: number } | null>(null)
 
@@ -142,7 +145,14 @@ export default function LayoutCanvas(props: Props) {
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2
     setView({ x: cx - (left + (size.w - left - right) / 2) / ppf, y: cy - (top + (size.h - top - bottom) / 2) / ppf, ppf })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fitKey, image?.href, measured])
+  }, [fitKey, fitTick, image?.href, measured])
+  /** Zoom about the middle of the canvas (the zoom control's − and +). */
+  const zoomBy = (f: number) => setView(v => {
+    const ppf = Math.min(400, Math.max(0.05, v.ppf * f))
+    const cx = v.x + size.w / 2 / v.ppf, cy = v.y + size.h / 2 / v.ppf
+    return { x: cx - size.w / 2 / ppf, y: cy - size.h / 2 / ppf, ppf }
+  })
+  const fmtLen = props.fmtLen ?? FEET
 
   // Run mode: ease the view toward a followed vehicle.
   useEffect(() => {
@@ -180,6 +190,8 @@ export default function LayoutCanvas(props: Props) {
   const hitAt = (at: XY, px: number, target: EventTarget): Hit => {
     const h = (target as Element).closest?.('[data-handle]')
     if (h) return { kind: 'handle', id: h.getAttribute('data-seg')!, which: h.getAttribute('data-handle') as Handle }
+    const d = (target as Element).closest?.('[data-dir]')
+    if (d) return { kind: 'dir', id: d.getAttribute('data-dir')! }
     return hitTest(layout, at, POINT_PX * px, SEG_PX * px)
   }
 
@@ -234,6 +246,7 @@ export default function LayoutCanvas(props: Props) {
   for (const q of layout.segments) { degree.set(q.a, (degree.get(q.a) ?? 0) + 1); degree.set(q.b, (degree.get(q.b) ?? 0) + 1) }
   const grid = gridStep(view.ppf)
   const selSeg = selection?.kind === 'segment' ? layout.segments.find(s => s.id === selection.id) : undefined
+  const selObj = selection?.kind === 'object' ? layout.objects?.find(o => o.id === selection.id) : undefined
   const rect = props.box && { x: Math.min(props.box.a.x, props.box.b.x), y: Math.min(props.box.a.y, props.box.b.y), w: Math.abs(props.box.b.x - props.box.a.x), h: Math.abs(props.box.b.y - props.box.a.y) }
 
   return (
@@ -276,7 +289,7 @@ export default function LayoutCanvas(props: Props) {
 
         {driven.segments.map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} />)}
         {driven.segments.map(s => (
-          <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} selected={selected('segment', s.id.split('~')[0])} />
+          <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} selected={selected('segment', s.id.split('~')[0])} />
         ))}
 
         {showFlows && flows.map(f => {
@@ -286,7 +299,7 @@ export default function LayoutCanvas(props: Props) {
             selected={selected('flow', f.id)} onClick={onFlowClick} />
         })}
 
-        {props.snap && <SnapMark snap={props.snap} from={rubberFrom} px={px} />}
+        {props.snap && <SnapMark snap={props.snap} from={rubberFrom} px={px} fmtLen={fmtLen} />}
 
         {[...pts.values()].map(p => (
           <PointMarker key={p.id} p={p} px={px} selected={selected('point', p.id)} loose={notConnected.has(p.id)} cross={(degree.get(p.id) ?? 0) >= 3}
@@ -296,6 +309,8 @@ export default function LayoutCanvas(props: Props) {
         {props.scene?.(px)}
 
         {selSeg && <CurveHandles s={selSeg} a={pts.get(selSeg.a)} b={pts.get(selSeg.b)} px={px} />}
+        {selSeg && <RouteBadge s={selSeg} a={pts.get(selSeg.a)} b={pts.get(selSeg.b)} px={px} widthFt={lanes[selSeg.id]} fmtLen={fmtLen} />}
+        {selObj && <SizeBadge o={selObj} px={px} fmtLen={fmtLen} />}
 
         {rect && <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h} className={props.box!.kind === 'object' ? 'sim-object-draft' : 'sim-marquee'} vectorEffect="non-scaling-stroke" />}
 
@@ -311,7 +326,13 @@ export default function LayoutCanvas(props: Props) {
       {props.emptyPrompt && !layout.points.length && <div className="sim-empty-prompt">{props.emptyPrompt}</div>}
       {props.children}
       {props.showLegend && <Legend clearances={!!clearances} />}
-      <span className="sim-zoom num">{grid >= 1 ? `grid ${grid} ft` : `grid ${grid * 12} in`}</span>
+      <div className="sim-zoomctl" onPointerDown={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()}>
+        <span className="sim-zoom num">{grid >= 1 ? `grid ${grid} ft` : `grid ${grid * 12} in`}</span>
+        <button type="button" onClick={() => setFitTick(n => n + 1)} title="Fit the layout to the window">Fit</button>
+        <button type="button" onClick={() => zoomBy(1 / 1.25)} aria-label="Zoom out">−</button>
+        <span className="num" aria-label="Zoom">{Math.round((view.ppf / 4) * 100)}%</span>
+        <button type="button" onClick={() => zoomBy(1.25)} aria-label="Zoom in">+</button>
+      </div>
     </div>
   )
 }
@@ -324,13 +345,20 @@ export function shortName(name: string): string {
 }
 
 /** The snap target under the pointer, and the route preview to it. Sizes in screen pixels. */
-function SnapMark({ snap, from, px }: { snap: DrawSnap; from: XY | null; px: number }) {
+function SnapMark({ snap, from, px, fmtLen }: { snap: DrawSnap; from: XY | null; px: number; fmtLen: (ft: number) => string }) {
   const { x, y } = snap.at
   const len = from ? Math.hypot(x - from.x, y - from.y) : 0
   return (
     <g className={`sim-snap is-${snap.kind}`}>
       {'guides' in snap && snap.guides.map((g, i) => <line key={i} x1={g.x} y1={g.y} x2={x} y2={y} className="sim-snap-guide" vectorEffect="non-scaling-stroke" />)}
       {from && <line x1={from.x} y1={from.y} x2={x} y2={y} className="sim-rubber" vectorEffect="non-scaling-stroke" />}
+      {/* A station placed here joins the route by this spur. */}
+      {'spur' in snap && snap.spur && (
+        <>
+          <line x1={x} y1={y} x2={snap.spur.at.x} y2={snap.spur.at.y} className="sim-rubber" vectorEffect="non-scaling-stroke" />
+          <circle cx={snap.spur.at.x} cy={snap.spur.at.y} r={4 * px} className="sim-snap-dot" />
+        </>
+      )}
       <g transform={`translate(${x} ${y}) scale(${px})`}>
         {/* The crosshair is drawn where the click will land — the system cursor is hidden meanwhile. */}
         <path d="M-13 0H-4M4 0H13M0 -13V-4M0 4V13" className="sim-snap-cross" />
@@ -338,7 +366,7 @@ function SnapMark({ snap, from, px }: { snap: DrawSnap; from: XY | null; px: num
           : snap.kind === 'route' ? <rect x={-6} y={-6} width={12} height={12} transform="rotate(45)" className="sim-snap-ring" />
           : snap.kind === 'object' ? <rect x={-6} y={-6} width={12} height={12} className="sim-snap-ring" />
           : <circle r={2.5} className="sim-snap-dot" />}
-        {from && len > 0 && <text x={14} y={-12} className="sim-rubber-len">{len.toFixed(1)} ft</text>}
+        {from && len > 0 && <text x={14} y={-12} className="sim-rubber-len">{fmtLen(len)}</text>}
       </g>
     </g>
   )
@@ -367,25 +395,95 @@ const Lane = memo(function Lane({ s, a, b, px, widthFt }: { s: SimSegment; a?: S
 
 /** Floor tape down the lane: dashed for two-way, solid with arrowheads for one-way, solid with
  *  "no passing" ticks for a single-lane two-way route. Spaced in screen pixels (acceptance 12). */
-const Segment = memo(function Segment({ s, a, b, px, selected }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number; selected: boolean }) {
+const FEET = (ft: number) => `${ft.toFixed(1)} ft`
+/** The least width on screen for a two-lane aisle to show both travel paths, px. */
+const STREET_PX = 18
+
+/**
+ * A route's floor marking. Two-way, two-lane: a street — dashed centre line and one travel path per
+ * direction with its own arrows, traffic keeping right (as the vehicles drive it). Two-way,
+ * single-lane: one path, arrows alternating both ways. One-way: one path, arrows one way.
+ */
+const Segment = memo(function Segment({ s, a, b, px, selected, widthFt }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number; selected: boolean; widthFt?: number }) {
   if (!a || !b) return null
   const g = segmentGeometry(a, b, s.curve)
-  const single = s.lane === 'single'
-  const n = Math.max(1, Math.floor(g.length / ((s.dir === 'two' ? CHEVRON_PX : 34) * px)))
+  const single = s.lane === 'single', twoLane = s.dir === 'two' && !single
+  const w = widthFt ?? laneWidthFt(s)
+  const street = twoLane && w / px >= STREET_PX
+  const d = w / 4                                                    // each lane's centre, off the centre line
+  /** An arrowhead `at` ft along, `side` lanes off the centre (+1 = right of a→b), pointing a→b or back. */
+  const arrow = (key: string, at: number, side: number, back: boolean, small = false) => {
+    const c = g.at(at), ang = (Math.atan2(c.ty, c.tx) * 180) / Math.PI + (back ? 180 : 0)
+    return (
+      <g key={key} transform={`translate(${c.x - c.ty * d * side} ${c.y + c.tx * d * side}) rotate(${ang}) scale(${px * (small ? 0.8 : 1)})`} className="sim-arrow">
+        <path d="M6 0L-4 -5L-4 5Z" />
+      </g>
+    )
+  }
+  /** The route's line moved `off` ft to the right of a→b. */
+  const offsetPath = (off: number) => {
+    const m = g.curved ? Math.max(8, Math.ceil(g.length / 2)) : 1
+    return Array.from({ length: m + 1 }, (_, i) => { const c = g.at((g.length * i) / m); return `${i ? 'L' : 'M'}${c.x - c.ty * off} ${c.y + c.tx * off}` }).join('')
+  }
+  const n = Math.max(1, Math.floor(g.length / ((twoLane ? CHEVRON_PX : single && s.dir === 'two' ? 56 : 34) * px)))
   return (
-    <g className={`sim-seg${selected ? ' is-selected' : ''}${s.dir === 'two' && !single ? ' is-two' : ''}`}>
+    <g className={`sim-seg${selected ? ' is-selected' : ''}${twoLane ? ' is-two' : ''}`}>
       <path d={pathOf(a, b, s)} className="sim-tape" vectorEffect="non-scaling-stroke" />
-      {(s.dir !== 'two' || single) && Array.from({ length: n }, (_, i) => {
-        const c = g.at((g.length * (i + 0.5)) / n), ang = (Math.atan2(c.ty, c.tx) * 180) / Math.PI + (s.dir === 'ba' ? 180 : 0)
-        return (
-          <g key={i} transform={`translate(${c.x} ${c.y}) rotate(${ang}) scale(${px})`} className="sim-arrow">
-            {s.dir === 'two' ? <path d="M0 -5V5" className="sim-no-pass" /> : <path d="M6 0L-4 -5L-4 5Z" />}
-          </g>
-        )
-      })}
+      {street && (
+        <>
+          <path d={offsetPath(d)} className="sim-lane-path" vectorEffect="non-scaling-stroke" />
+          <path d={offsetPath(-d)} className="sim-lane-path" vectorEffect="non-scaling-stroke" />
+          {Array.from({ length: n }, (_, i) => [
+            arrow(`f${i}`, (g.length * (i + 0.3)) / n, 1, false, true),
+            arrow(`b${i}`, (g.length * (i + 0.7)) / n, -1, true, true),
+          ])}
+        </>
+      )}
+      {/* single-lane two-way: one path shared — arrows alternate; a lone arrow would read one-way */}
+      {s.dir === 'two' && single && (n === 1
+        ? [arrow('f', g.length * 0.35, 0, true), arrow('b', g.length * 0.65, 0, false)]
+        : Array.from({ length: n }, (_, i) => arrow(`${i}`, (g.length * (i + 0.5)) / n, 0, i % 2 === 1)))}
+      {s.dir !== 'two' && Array.from({ length: n }, (_, i) => arrow(`${i}`, (g.length * (i + 0.5)) / n, 0, s.dir === 'ba'))}
     </g>
   )
 })
+
+/** Beside the middle of the selected route: its direction (click to step two-way → one-way → other
+ *  way) and its length. Sits off the aisle so it never covers the bend handle. */
+function RouteBadge({ s, a, b, px, widthFt, fmtLen }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number; widthFt?: number; fmtLen: (ft: number) => string }) {
+  if (!a || !b) return null
+  const g = segmentGeometry(a, b, s.curve), c = g.at(g.length / 2)
+  // Always on the upper / left side of the route, so the text never hangs under the aisle.
+  const side = c.tx > 0 || (c.tx === 0 && c.ty < 0) ? -1 : 1
+  const off = (widthFt ?? laneWidthFt(s)) / 2 + 20 * px
+  const x = c.x - c.ty * off * side, y = c.y + c.tx * off * side
+  const ang = (Math.atan2(c.ty, c.tx) * 180) / Math.PI + (s.dir === 'ba' ? 180 : 0)
+  const label = fmtLen(g.length), w = 34 + label.length * 6.6
+  return (
+    <g transform={`translate(${x} ${y}) scale(${px})`} className="sim-rbadge" data-dir={s.id} role="button" aria-label="Change direction">
+      <title>{s.dir === 'two' ? 'Two-way — click for one-way' : 'One-way — click to change'}</title>
+      <rect x={-w / 2} y={-13} width={w} height={26} rx={13} />
+      <g transform={`translate(${-w / 2 + 15} 0) rotate(${ang})`} className="sim-rbadge-dir">
+        {s.dir === 'two'
+          ? <path d="M-7 -3H5M2 -6L6 -3L2 0M7 3H-5M-2 0L-6 3L-2 6" />
+          : <path d="M-7 0H6M2 -4L7 0L2 4" />}
+      </g>
+      <text x={-w / 2 + 28} y={4}>{label}</text>
+    </g>
+  )
+}
+
+/** Under the selected object: its size, W × H. */
+function SizeBadge({ o, px, fmtLen }: { o: SimObject; px: number; fmtLen: (ft: number) => string }) {
+  const c = objectCorners(o), y = Math.max(...c.map(q => q.y)), x = (Math.min(...c.map(q => q.x)) + Math.max(...c.map(q => q.x))) / 2
+  const label = `${fmtLen(o.w)} × ${fmtLen(o.h)}`, w = 16 + label.length * 6.6
+  return (
+    <g transform={`translate(${x} ${y}) scale(${px})`} className="sim-rbadge is-size">
+      <rect x={-w / 2} y={8} width={w} height={24} rx={12} />
+      <text x={0} y={24} textAnchor="middle">{label}</text>
+    </g>
+  )
+}
 
 /** Bend handle at the middle of the selected route; spline handles with their guide lines. */
 function CurveHandles({ s, a, b, px }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number }) {
@@ -507,8 +605,8 @@ function Legend({ clearances }: { clearances: boolean }) {
   return (
     <div className="sim-legend" aria-label="Legend">
       <span><svg width="26" height="10"><path d="M2 5H24" className="lg-tape" /><path d="M17 5L11 2V8Z" className="lg-arrow" /></svg>One-way</span>
-      <span><svg width="26" height="10"><path d="M2 5H24" className="lg-tape is-two" /></svg>Two-way</span>
-      <span><svg width="26" height="10"><path d="M2 5H24M13 1V9" className="lg-tape" /></svg>Single-lane</span>
+      <span><svg width="26" height="14"><path d="M2 7H24" className="lg-tape is-two" /><path d="M2 3H24M2 11H24" className="lg-path" /><path d="M16 3L11 0.8V5.2Z" className="lg-arrow" /><path d="M10 11L15 8.8V13.2Z" className="lg-arrow" /></svg>Two-way, two lanes</span>
+      <span><svg width="26" height="10"><path d="M2 5H24" className="lg-tape" /><path d="M9 5L4 2.5V7.5Z" className="lg-arrow" /><path d="M17 5L22 2.5V7.5Z" className="lg-arrow" /></svg>Two-way, one lane</span>
       <span><i className="sw pick" />Pick</span>
       <span><i className="sw drop" />Drop</span>
       {clearances && <><span><i className="sw clr-full" />Full speed</span><span><i className="sw clr-capped" />Below 1.2 m/s</span><span><i className="sw clr-violation" />Blocked</span></>}

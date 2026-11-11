@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addObject, convertPoint, copyPoints, drawGridFt, mergePoints, snapDraw, snapToObjects, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
+  addObject, convertPoint, copyPoints, drawGridFt, mergePoints, nextDirection, placeWithSpur, snapDraw, snapToObjects, spurTarget, SPUR_REACH_FT, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
   addPoint, addSegment, emptyLayout, flowRefusal, flowStartRefusal, hitTest, linkFlow, linkSuggestions, measureFlows, notConnected,
   placeOnSegment, rescaleLayout, routeDistanceFt, splitSegment, updatePoint, updateSegment, withLayoutDistance,
 } from '../layoutEdit'
@@ -320,5 +320,27 @@ describe('review fixes', () => {
     const names = r.layout.points.map(p => p.name)
     expect(new Set(names).size).toBe(names.length)
     expect(names).toEqual(['Charger 1', 'Charger 2', 'Charger 3', 'Charger 4'])
+  })
+})
+
+describe('stations connect themselves', () => {
+  it('a point placed near a route is joined by a single-lane spur to the nearest spot on it', () => {
+    const { L, a, b } = line()                               // (0,0) → (400,0)
+    const join = spurTarget(L, { x: 150, y: 25 })!
+    expect(join.at).toEqual({ x: 150, y: 0 })
+    const r = placeWithSpur(L, { x: 150, y: 25 }, 'conveyor', 'drop', join)
+    const p = r.layout.points.find(q => q.id === r.id)!
+    expect(p).toMatchObject({ x: 150, y: 25, type: 'conveyor', role: 'drop' })
+    const spur = r.layout.segments.find(s => s.a === r.id || s.b === r.id)!
+    expect(spur).toMatchObject({ dir: 'two', lane: 'single' })
+    expect(routeDistanceFt(r.layout, a, r.id)).toBeCloseTo(175, 6)      // 150 along the aisle + 25 up the spur
+    expect(routeDistanceFt(r.layout, a, b)).toBeCloseTo(400, 6)         // the aisle is still whole
+  })
+  it('no route within 40 ft → no spur', () => {
+    const { L } = line()
+    expect(spurTarget(L, { x: 150, y: SPUR_REACH_FT + 1 })).toBeNull()
+  })
+  it('the direction badge steps two-way → one-way → the other way', () => {
+    expect(['two', 'ab', 'ba'].map(d => nextDirection(d as 'two' | 'ab' | 'ba'))).toEqual(['ab', 'ba', 'two'])
   })
 })

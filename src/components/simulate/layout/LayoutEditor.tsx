@@ -14,7 +14,7 @@ import { roundCorners } from '@/src/calc/sim/corners'
 import {
   addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowStartRefusal, FLOW_POINT_TYPES, linkFlow, movePoints,
   notConnected, placeOnSegment, pointsInBox, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
-  mergePoints, pointById, snapDraw, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
+  mergePoints, nextDirection, placeWithSpur, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import type { ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
@@ -23,7 +23,7 @@ import Icon from '@/src/design-system/components/Icon'
 import type { LoadedDrawing } from '@/src/lib/drawingImport'
 import { newFlowId } from '@/src/lib/ids'
 import { getDrawingData, type StoredProject } from '@/src/lib/storage'
-import type { UnitSystem } from '@/src/lib/utils/units'
+import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import DrawingCard from './DrawingCard'
 import { ChecksCard, FlowsTable, PlaceCard, type Armed } from './SimCards'
@@ -32,20 +32,21 @@ import LayoutCanvas, { type CanvasPointer, type Handle, type Selection, type XY 
 import LayoutPanel, { Segmented } from './LayoutPanel'
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
-type Tool = 'select' | 'points' | 'routes' | 'flows' | 'direction' | 'scale'
+type Tool = 'select' | 'hand' | 'points' | 'routes' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
 const DRAG_PX = 8
 const TOOLS: { id: Tool; label: string; key: string; hint: string }[] = [
-  { id: 'select', label: 'Select', key: 'V', hint: 'Click to select · drag to move · drag empty space to pan · Shift-drag to select several · Delete removes' },
+  { id: 'select', label: 'Select', key: 'V', hint: 'Click to select · drag to move · drag empty space to pan · Shift-drag to select several · a route’s badge (or D) changes its direction' },
+  { id: 'hand', label: 'Hand', key: 'H', hint: 'Drag to move around · hold Space to pan in any tool' },
   { id: 'routes', label: 'Route', key: 'R', hint: 'Click or drag to draw a route · the + shows where it lands · start on a route to branch from it' },
-  { id: 'direction', label: 'One-way', key: 'D', hint: 'Click a route: two-way → one-way → other way → single-lane' },
-  { id: 'points', label: 'Place', key: 'P', hint: 'Click to place · on a route, the point joins it' },
+  { id: 'points', label: 'Place', key: 'P', hint: 'Click to place · it joins the nearest route (dashed) · Shift places it unconnected' },
   { id: 'flows', label: 'Flow', key: 'F', hint: 'Click a Pick point, then a Drop point' },
   { id: 'scale', label: 'Scale', key: 'S', hint: 'Click both ends of a known dimension' },
 ]
 /** Tool icons — the proof of concept's set, plus Flow. */
 const TOOL_ICON: Record<Tool | 'undo' | 'redo', string> = {
-  select: 'M5 3l14 8-6 2-2 6z', routes: 'M4 20V8h8v8h8V4', direction: 'M4 12h14M13 6l6 6-6 6',
+  select: 'M5 3l14 8-6 2-2 6z', routes: 'M4 20V8h8v8h8V4',
+  hand: 'M8 13V5.5a1.5 1.5 0 013 0V12M11 11.5v-7a1.5 1.5 0 013 0V12M14 6.5a1.5 1.5 0 013 0V13M17 9.5a1.5 1.5 0 013 0V15a6 6 0 01-6 6h-2a6 6 0 01-4.9-2.5L4.5 14a1.5 1.5 0 012.4-1.8L8 13.5',
   points: 'M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z',
   flows: 'M4 18c6 0 9-12 16-12M15 3l5 3-5 3', scale: 'M3 17L17 3l4 4L7 21zM7 13l2 2M10 10l2 2M13 7l2 2',
   undo: 'M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3', redo: 'M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3',
@@ -55,10 +56,6 @@ function ToolIcon({ name }: { name: keyof typeof TOOL_ICON }) {
 }
 type Placeable = SimPointType | 'object'
 const PALETTE: Placeable[] = [...FLOW_POINT_TYPES, ...VEHICLE_POINT_TYPES, 'object']
-/** Direction tool order: two-way → one-way A→B → one-way B→A → single-lane two-way → two-way. */
-const DIRECTION_CYCLE: Pick<SimSegment, 'dir' | 'lane'>[] = [
-  { dir: 'two', lane: 'two' }, { dir: 'ab', lane: 'two' }, { dir: 'ba', lane: 'two' }, { dir: 'two', lane: 'single' },
-]
 /** An unscaled drawing with nothing to inherit is shown at this size until its scale is set. */
 const UNSCALED_FT_PER_PX = 0.05
 /** Pasted points land this far from the originals, ft. */
@@ -174,7 +171,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   }
   /** Where the Route tool was pressed — a release more than a few pixels away draws to there. */
   const press = useRef<XY | null>(null)
-  const placeSnap = (at: XY, px: number) => snapDraw(layout, at, { px })
+  /** Where a placed point lands — and, on open floor, the route it joins by a spur (Shift: none). */
+  const placeSnap = (at: XY, px: number, shift: boolean): DrawSnap => {
+    const snap = snapDraw(layout, at, { px })
+    return (snap.kind === 'free' || snap.kind === 'object') && !shift ? { ...snap, spur: spurTarget(layout, snap.at) } : snap
+  }
   const [hover, setHover] = useState<DrawSnap | null>(null)
   /** A point id to draw from or to: the point it snapped to, a new junction on a route, or one on open floor. */
   const anchor = (snap: DrawSnap): { layout: EditorLayout; id: string } =>
@@ -246,7 +247,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
         setDrag({ ...drag, at: { x: drag.from.x + snap.at.x - p0.x, y: drag.from.y + snap.at.y - p0.y }, snap })
       } else if (drag) setDrag({ ...drag, at })
       else if (tool === 'routes' && !marks) setHover(routeSnap(at, shift, px))
-      else if (tool === 'points' && placeType !== 'object' && !marks) setHover(placeSnap(at, px))
+      else if (tool === 'points' && placeType !== 'object' && !marks) setHover(placeSnap(at, px, shift))
       return
     }
     if (type === 'up') {
@@ -256,14 +257,17 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       setDrag(null)
       return
     }
+    if (hit?.kind === 'dir') { stepDirection(hit.id); return }
     if (tool === 'select') { onSelectPress(at, hit, shift); return }
     if (tool === 'points') {
       if (placeType === 'object') { setDrag({ kind: 'box', box: 'object', from: at, at }); return }
       // The same snap as routes: onto a route within reach (it joins), an existing point selects it.
-      const snap = placeSnap(at, px)
+      const snap = placeSnap(at, px, shift)
       if (snap.kind === 'point') { setSelection({ kind: 'point', id: snap.id }); return }
       const role = FLOW_POINT_TYPES.includes(placeType) ? placeRole : undefined
-      const placed = (snap.kind === 'route' && placeOnSegment(layout, snap.id, snap.at, placeType, role)) || addPoint(layout, snap.at, placeType, role)
+      const placed = (snap.kind === 'route' && placeOnSegment(layout, snap.id, snap.at, placeType, role))
+        || ('spur' in snap && snap.spur ? placeWithSpur(layout, snap.at, placeType, role, snap.spur) : addPoint(layout, snap.at, placeType, role))
+      setHover(null)
       // Armed from "Place on routes": the point takes the Sizing name, so the flows link by it.
       setLayout(armed ? updatePoint(placed.layout, placed.id, { name: armed.name }) : placed.layout)
       setSelection({ kind: 'point', id: placed.id })
@@ -281,12 +285,13 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       setFlows([...flows, flow])
       setSelection({ kind: 'flow', id: flow.id })
       setChainFrom(null)
-    } else if (tool === 'direction' && hit?.kind === 'segment') {
-      const s = layout.segments.find(q => q.id === hit.id)!
-      const i = DIRECTION_CYCLE.findIndex(c => c.dir === s.dir && c.lane === (s.lane ?? 'two'))
-      setLayout(updateSegment(layout, s.id, DIRECTION_CYCLE[(i + 1) % DIRECTION_CYCLE.length]))
-      setSelection({ kind: 'segment', id: s.id })
     }
+  }
+
+  /** The route badge (or D): two-way → one-way → the other way. Lanes stay as set. */
+  const stepDirection = (segId: string) => {
+    const s = layout.segments.find(q => q.id === segId)
+    if (s) setLayout(updateSegment(layout, s.id, { dir: nextDirection(s.dir) }), `dir:${s.id}`)
   }
 
   const deleteSelection = () => {
@@ -314,6 +319,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
 
   // Keyboard: tools, Esc, Delete, copy/paste, undo/redo — captured before the header's app-level ⌘Z,
   // which steps aside (PersistentHeader checks defaultPrevented). Bound once; calls the latest handler.
+  /** Space held: pan in any tool (as in most drawing apps). */
+  const [spaceHeld, setSpaceHeld] = useState(false)
   const onKey = useRef<(e: KeyboardEvent) => void>(() => {})
   onKey.current = (e: KeyboardEvent) => {
     // Only keys aimed at the editor (or nowhere in particular) — never a field, dialog or the tour.
@@ -328,6 +335,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     if (mod && k === 'c' && selectedPoints.length) { e.preventDefault(); clipboard.current = selectedPoints; return }
     if (mod && k === 'v' && clipboard.current.length) { e.preventDefault(); paste(); return }
     if (mod || e.altKey) return
+    if (k === ' ') { e.preventDefault(); if (!e.repeat) setSpaceHeld(true); return }
+    if (k === 'd' && selection?.kind === 'segment') { stepDirection(selection.id); return }
     const t = TOOLS.find(x => x.key.toLowerCase() === k)
     if (t) chooseTool(t.id)
     else if (e.key === 'Escape' || e.key === 'Enter') { if (chainFrom || marks) cancel(); else if (e.key === 'Escape') setSelection(null) }
@@ -335,9 +344,14 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   }
   useEffect(() => {
     const listener = (e: KeyboardEvent) => onKey.current(e)
+    const release = (e: KeyboardEvent) => { if (e.key === ' ') setSpaceHeld(false) }
+    const blur = () => setSpaceHeld(false)
     document.addEventListener('keydown', listener, true)
-    return () => document.removeEventListener('keydown', listener, true)
+    document.addEventListener('keyup', release, true)
+    window.addEventListener('blur', blur)
+    return () => { document.removeEventListener('keydown', listener, true); document.removeEventListener('keyup', release, true); window.removeEventListener('blur', blur) }
   }, [])
+
 
   const onLoaded = (d: LoadedDrawing) => {
     // The file took a while to read: build on what is stored now, not on the render that asked.
@@ -399,6 +413,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             showFlows={showFlows}
             clearances={clearances}
             panOnEmpty={tool === 'select' && !marks}
+            panAlways={tool === 'hand' || spaceHeld}
+            fmtLen={ft => fmtLength(ft, unitSystem, 1)}
             rubberFrom={chainFrom ? byId.get(chainFrom) ?? null : null}
             box={drag?.kind === 'box' ? { a: drag.from, b: drag.at, kind: drag.box } : null}
             marks={marks ?? []}
@@ -407,11 +423,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             onFlowClick={id => { if (tool === 'select' || tool === 'flows') setSelection({ kind: 'flow', id }) }}
             fitKey={fitKey}
             emptyPrompt={tool === 'select' ? emptyPrompt : undefined}
-            aim={tool !== 'select'}
+            aim={tool !== 'select' && tool !== 'hand'}
             onContextMenu={e => { if (chainFrom || marks) { e.preventDefault(); cancel() } }}
-            snap={drag?.kind === 'points' ? drag.snap ?? null : (tool === 'routes' || (tool === 'points' && placeType !== 'object')) && !marks ? hover : null}
+            snap={spaceHeld ? null : drag?.kind === 'points' ? drag.snap ?? null : (tool === 'routes' || (tool === 'points' && placeType !== 'object')) && !marks ? hover : null}
             onLeave={() => setHover(null)}
-            showLegend={tool === 'direction' || showClearance}
+            showLegend={showClearance || selection?.kind === 'segment'}
             laneWidths={inputs.laneWidths}
             onDoubleClick={() => { if (tool === 'routes') cancel() }}
           >

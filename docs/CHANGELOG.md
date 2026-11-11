@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation Milestone 6, step 1: drawing made easier
+
+Ideas from a comparable layout tool the owner shared (screenshots only — no vendor code or assets).
+
+- **Two-way street look:** two-way, two-lane routes show both travel paths with their own arrows
+  either side of a dashed centre line; single-lane two-way routes show alternating arrows.
+- **Direction on the aisle:** the selected route's badge steps two-way → one-way → other way (also
+  key D). The separate One-way tool is folded into it.
+- **Stations connect themselves:** the Place tool joins a point placed within 40 ft of a route to it
+  with a short spur (`placeWithSpur`, `spurTarget` in `src/calc/sim/layoutEdit.ts`); Shift places
+  without one.
+- **Zoom control** (fit, −, %, +), **Hand tool (H)** and Space-drag to pan; **size and length badges**
+  on the selection.
+- Drawing only — simulation results and stored layouts are unchanged.
+
 ## 2026-11-11 — Fleet simulation: clicks land where the cursor is
 
 Owner: "the cursor for clicking routes is not accurate and where the + is isn't where it clicks."

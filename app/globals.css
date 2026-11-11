@@ -3239,7 +3239,8 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-canvas-wrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .sim-stage svg { display: block; }
 .sim-legend span { display: inline-flex; align-items: center; gap: 4px; }
-.sim-legend .lg-tape { fill: none; stroke: var(--tape); stroke-width: 1.5; }
+.sim-legend .lg-path { fill: none; stroke: var(--tape); stroke-width: 1; opacity: 0.5; }
+.lg-tape { fill: none; stroke: var(--tape); stroke-width: 1.5; }
 .sim-legend .lg-tape.is-two { stroke-dasharray: 5 3; }
 .sim-legend .lg-arrow { fill: var(--tape); stroke: none; }
 .sim-legend .sw { width: 10px; height: 10px; border-radius: 3px; border: 2px solid; }
@@ -3369,7 +3370,22 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
   position: absolute; left: 10px; bottom: 50px; display: flex; flex-direction: column; gap: 4px; padding: 8px 8px;
   border: 1px solid var(--border); border-radius: 5px; background: var(--bg-surface); font-size: 11px; color: var(--text-secondary); pointer-events: none;
 }
-.sim-zoom { position: absolute; right: 10px; bottom: 16px; font-size: 11px; color: var(--text-tertiary); pointer-events: none; }
+/* Zoom control in the canvas corner: grid size, Fit, −, %, +. */
+.sim-zoomctl { position: absolute; right: 10px; bottom: 10px; display: flex; align-items: center; gap: 2px; padding: 2px; background: var(--bg-surface); border: 1px solid var(--border); border-radius: 7px; box-shadow: var(--sim-shadow-rest); cursor: default; font-size: 11px; color: var(--text-secondary); }
+.sim-zoomctl button { min-width: 32px; height: 32px; padding: 0 8px; border: 0; border-radius: 5px; background: none; font: inherit; font-size: 13px; color: var(--text-primary); cursor: pointer; }
+.sim-zoomctl button:hover { background: var(--bg-hover); }
+.sim-zoomctl > span { min-width: 40px; text-align: center; }
+.sim-zoom { color: var(--text-tertiary); padding: 0 8px; }
+/* Two-way street: one faint travel path per direction, either side of the dashed centre line. */
+.sim-lane-path { fill: none; stroke: var(--tape); stroke-width: 1; opacity: 0.45; }
+/* The selected route's badge (direction — click to change — and length); the selected object's size. */
+.sim-rbadge { cursor: pointer; }
+.sim-rbadge rect { fill: var(--bg-surface); stroke: var(--accent); stroke-width: 1.5; }
+.sim-rbadge text { font: 600 12px var(--tal-font-numeric); fill: var(--text-primary); }
+.sim-rbadge-dir path { fill: none; stroke: var(--accent); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.sim-rbadge:hover rect { fill: var(--accent-soft); }
+.sim-rbadge.is-size { cursor: default; pointer-events: none; }
+.sim-rbadge.is-size rect { stroke: var(--border-strong); }
 @container (max-width: 900px) { .sim-tool kbd { display: none; } .sim-palette { left: 10px; top: auto; bottom: 50px; max-width: calc(100% - 20px); } }
 
 /* Second half of the editor: objects, footprints, handles, box select, B56.5 overlay. */
@@ -5470,6 +5486,7 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .st-travel { --st: var(--good); } .st-handle { --st: var(--warn); } .st-wait { --st: var(--bad); } .st-charge { --st: var(--info); } .st-idle { --st: var(--text-tertiary); }
 .sim-states i, .sim-splitleg i, .sim-split span { background: var(--st); }
 .sim-run .sim-legend, .sim-run .sim-zoom { display: none; }
+.sim-run .sim-zoomctl { bottom: 62px; }
 .sim-veh-body { fill: var(--bg-surface); stroke: var(--text-primary); stroke-width: 0.15; }
 .sim-veh-forks { stroke: var(--text-secondary); stroke-width: 0.35; stroke-linecap: round; }
 .sim-veh-pallet { fill: #b08850; stroke: #d9cfb5; stroke-width: 0.2; }
