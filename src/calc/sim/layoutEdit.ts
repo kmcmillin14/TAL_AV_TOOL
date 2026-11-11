@@ -352,29 +352,40 @@ function insideObject(o: SimObject, p: XY): boolean {
   return Math.abs(lx) <= o.w / 2 && Math.abs(ly) <= o.h / 2
 }
 
-/** Snap a spot to the fixed objects: an object corner within `radiusFt`, else the nearest point on an
- *  object's edge within `radiusFt`; otherwise the spot unchanged. Routes drawn along walls and rack
- *  faces then meet them exactly. */
-export function snapToObjects(L: SimLayout, at: XY, radiusFt: number): { at: XY; snapped: 'corner' | 'edge' | null } {
-  let best: { at: XY; d: number; kind: 'corner' | 'edge' } | null = null
+/**
+ * Snap a route point to the fixed objects (owner, 2026-11-11). A route is an aisle centreline, so it
+ * snaps to each object's outline grown by `offsetFt` — half the aisle — which leaves the B56.5
+ * clearance between the lane and the face. A corner within `radiusFt` wins over an edge; `accept`
+ * can refuse a candidate (e.g. one that would bend a squared line), and the next one is tried.
+ */
+export function snapToObjects(
+  L: SimLayout, at: XY, radiusFt: number, offsetFt = 0, accept: (q: XY) => boolean = () => true,
+): { at: XY; snapped: 'corner' | 'edge' | null } {
+  const corners: XY[] = [], edges: XY[] = []
   for (const o of L.objects ?? []) {
-    const c = objectCorners(o)
-    for (const q of c) {
-      const d = Math.hypot(q.x - at.x, q.y - at.y)
-      if (d <= radiusFt && (!best || best.kind !== 'corner' || d < best.d)) best = { at: q, d, kind: 'corner' }
-    }
-  }
-  if (best) return { at: best.at, snapped: 'corner' }
-  for (const o of L.objects ?? []) {
-    const c = objectCorners(o)
+    const c = objectCorners({ ...o, x: o.x - offsetFt, y: o.y - offsetFt, w: o.w + 2 * offsetFt, h: o.h + 2 * offsetFt })
+    corners.push(...c)
     for (let i = 0; i < 4; i++) {
       const a = c[i], b = c[(i + 1) % 4], dx = b.x - a.x, dy = b.y - a.y
       const t = Math.max(0, Math.min(1, ((at.x - a.x) * dx + (at.y - a.y) * dy) / (dx * dx + dy * dy || 1)))
-      const q = { x: a.x + t * dx, y: a.y + t * dy }, d = Math.hypot(q.x - at.x, q.y - at.y)
-      if (d <= radiusFt && (!best || d < best.d)) best = { at: q, d, kind: 'edge' }
+      edges.push({ x: a.x + t * dx, y: a.y + t * dy })
     }
   }
-  return best ? { at: best.at, snapped: 'edge' } : { at, snapped: null }
+  const nearest = (qs: XY[]) => qs
+    .map(q => ({ q, d: Math.hypot(q.x - at.x, q.y - at.y) }))
+    .filter(c => c.d <= radiusFt && accept(c.q))
+    .sort((m, n) => m.d - n.d)[0]?.q
+  const corner = nearest(corners)
+  if (corner) return { at: corner, snapped: 'corner' }
+  const edge = nearest(edges)
+  return edge ? { at: edge, snapped: 'edge' } : { at, snapped: null }
+}
+
+/** Turn a point into another type, named and given a role as a new point of that type would be. */
+export function convertPoint<T extends SimLayout>(L: T, id: string, type: SimPointType, role?: SimRole): T {
+  const others = { ...L, points: L.points.filter(p => p.id !== id) }
+  const { id: _id, x: _x, y: _y, ...fields } = addPoint(others, { x: 0, y: 0 }, type, role).layout.points.at(-1)!
+  return { ...L, points: L.points.map(p => (p.id === id ? { id, x: p.x, y: p.y, ...fields } : p)) }
 }
 
 /** Add a rectangle between two corners (drawn with the Object tool). Tiny drags are ignored. */

@@ -50,6 +50,9 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
   setTimeout(slice, 0)
 }
 
+/** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
+const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
+
 export default function RunView({ project, vehicles, vehicleById, settings, fleet, unitSystem }: Props) {
   const simSettings = project.simSettings ?? {}
   const engineFleet = useMemo(() => Object.fromEntries(fleet.groups.map(g => [g.vehicleId, g.fleetSold])), [fleet])
@@ -199,6 +202,7 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
       <LayoutCanvas
         layout={inputs.layout}
         laneWidths={inputs.laneWidths}
+        fitInset={RUN_INSET}
         panAlways
         showLabels={labels}
         follow={followed ? { x: followed.x, y: followed.y } : null}

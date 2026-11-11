@@ -8,14 +8,13 @@
 
 import { memo, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
 import Icon from '@/src/design-system/components/Icon'
-import type { SegmentClearance } from '@/src/calc/sim/clearance'
+import { laneWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { segmentGeometry } from '@/src/calc/sim/geometry'
 import { hitTest, objectCorners, snapToObjects } from '@/src/calc/sim/layoutEdit'
 import type { SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/types'
 import type { ProjectFlow } from './useLayoutEditor'
 
 export type XY = { x: number; y: number }
-export { squareTo }
 export type Handle = 'mid' | 'c1' | 'c2'
 export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle }
 export type Selection =
@@ -33,7 +32,9 @@ export interface CanvasPointer {
 }
 
 /** Snap distance for routes to objects, screen pixels. */
-export const SNAP_PX = 12
+const SNAP_PX = 12
+/** Fit margins for the editor's floating controls: tool column, options bar and name pills, hint. */
+const EDITOR_INSET = { top: 84, right: 24, bottom: 64, left: 72 }
 
 interface Props {
   layout: SimLayout
@@ -64,6 +65,10 @@ interface Props {
   emptyPrompt?: string
   /** Route tool: the preview snaps square to the last point unless Shift is held. */
   snapSquare?: boolean
+  /** Half the aisle a new route would be, ft — routes snap that far off objects (see `routeCorner`). */
+  snapOffsetFt?: number
+  /** Room kept clear of floating controls when fitting, px. Default: the editor's tool column and bar. */
+  fitInset?: { top: number; right: number; bottom: number; left: number }
   /** The legend, only while it explains something on screen (direction tool, B56.5 overlay). */
   showLegend?: boolean
   /** Controls floated over the canvas (tool bar, palette, view buttons, hint). */
@@ -116,11 +121,12 @@ export default function LayoutCanvas(props: Props) {
     if (image) { xs.push(0, image.widthFt); ys.push(0, image.heightFt) }
     if (!xs.length) { setView({ x: -20, y: -20, ppf: 4 }); return }
     const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
-    // Leave room for the floating controls: labels above the top row, the bar along the bottom.
-    const top = 40, bottom = 64, side = 24
-    const ppf = Math.min((size.w - 2 * side) / Math.max(x1 - x0, 20), (size.h - top - bottom) / Math.max(y1 - y0, 20)) * 0.95
+    // Leave room for the floating controls: the tool column (left), the options bar and name pills
+    // (top), the hint (bottom).
+    const { top, right, bottom, left } = props.fitInset ?? EDITOR_INSET
+    const ppf = Math.min((size.w - left - right) / Math.max(x1 - x0, 20), (size.h - top - bottom) / Math.max(y1 - y0, 20)) * 0.95
     const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2
-    setView({ x: cx - size.w / 2 / ppf, y: cy - (top + (size.h - top - bottom) / 2) / ppf, ppf })
+    setView({ x: cx - (left + (size.w - left - right) / 2) / ppf, y: cy - (top + (size.h - top - bottom) / 2) / ppf, ppf })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitKey, image?.href, measured])
 
@@ -194,10 +200,7 @@ export default function LayoutCanvas(props: Props) {
   const selected = (kind: 'point' | 'segment' | 'flow' | 'object', id: string) =>
     (selection?.kind === kind && selection.id === id) || (kind === 'point' && selection?.kind === 'points' && selection.ids.includes(id))
   const px = 1 / view.ppf                       // one screen pixel, in feet
-  // A rounded corner (`J~arc`) or trimmed route keeps the width of the route it came from.
   const lanes = props.laneWidths ?? {}
-  const widest = Math.max(0, ...Object.values(lanes))
-  const laneOf = (id: string) => lanes[id] ?? (id.includes('~') ? widest || undefined : undefined)
   // Names collide when two pills would overlap on screen: those show a short form (C1, P2…). Worked
   // out per layout and zoom, not per frame (Run mode re-renders every frame).
   const crowded = useMemo(() => {
@@ -253,7 +256,7 @@ export default function LayoutCanvas(props: Props) {
 
         {clearances && <ClearanceOverlay layout={layout} results={clearances} px={px} />}
 
-        {driven.segments.map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={laneOf(s.id)} />)}
+        {driven.segments.map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} />)}
         {driven.segments.map(s => (
           <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} selected={selected('segment', s.id.split('~')[0])} />
         ))}
@@ -266,8 +269,12 @@ export default function LayoutCanvas(props: Props) {
         })}
 
         {rubberFrom && cursor && (() => {
-          const square = props.snapSquare && !cursor.shift ? squareTo(rubberFrom, cursor.at) : cursor.at
-          const end = props.snapSquare ? snapToObjects(layout, square, SNAP_PX * px).at : square
+          // Where the click would land: an existing point, a route (joined), else routeCorner — as the editor does.
+          const hit = props.snapSquare ? hitTest(layout, cursor.at, POINT_PX * px, SEG_PX * px) : null
+          const end = !props.snapSquare ? cursor.at
+            : hit?.kind === 'point' ? pts.get(hit.id) ?? cursor.at
+            : hit?.kind === 'segment' ? { x: hit.x, y: hit.y }
+            : routeCorner(layout, rubberFrom, cursor.at, cursor.shift, px, props.snapOffsetFt)
           const len = Math.hypot(end.x - rubberFrom.x, end.y - rubberFrom.y)
           return (
             <g>
@@ -320,6 +327,22 @@ function squareTo(from: XY, to: XY): XY {
   return Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? { x: to.x, y: from.y } : { x: from.x, y: to.y }
 }
 
+/**
+ * Where a route's next corner lands on open floor. Square to the last corner unless Shift; then onto a
+ * wall, column or rack face within `SNAP_PX`, `offsetFt` out from it (exact), when that keeps the line
+ * square; else whole feet, as in the proof of concept — only the free axis is rounded, so a square
+ * line stays square from a corner that was not on whole feet.
+ */
+export function routeCorner(L: SimLayout, last: XY | null | undefined, at: XY, shift: boolean, px: number, offsetFt = 0): XY {
+  const from = last && !shift ? last : null
+  const q = from ? squareTo(from, at) : at
+  const square = (p: XY) => !from || Math.abs(p.x - from.x) < 1e-6 || Math.abs(p.y - from.y) < 1e-6
+  const snap = snapToObjects(L, q, SNAP_PX * px, offsetFt, square)
+  if (snap.snapped) return snap.at
+  const r = { x: Math.round(q.x), y: Math.round(q.y) }
+  return from ? (q.y === from.y ? { ...r, y: from.y } : { ...r, x: from.x }) : r
+}
+
 /** A grid step (ft) that lands 30–150 px apart on screen. */
 function gridStep(ppf: number): number {
   const steps = [0.5, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
@@ -337,7 +360,7 @@ function pathOf(a: XY, b: XY, s: SimSegment): string {
  *  route's vehicle is known, else 10 ft two-way / 6 ft one-way as in the proof of concept. */
 const Lane = memo(function Lane({ s, a, b, px, widthFt }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number; widthFt?: number }) {
   if (!a || !b) return null
-  const w = widthFt ?? (s.dir === 'two' && s.lane !== 'single' ? 10 : 6)
+  const w = widthFt ?? laneWidthFt(s)
   return <path d={pathOf(a, b, s)} className="sim-lane" strokeWidth={Math.max(w, 4 * px)} />
 })
 

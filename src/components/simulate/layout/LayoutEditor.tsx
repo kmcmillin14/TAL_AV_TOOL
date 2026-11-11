@@ -8,12 +8,13 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { linkedFlows } from '@/src/calc/sim/readiness'
+import { laneWidthFt } from '@/src/calc/sim/clearance'
 import { clearanceRule, payloadFt, runInputs } from '@/src/calc/sim/runInputs'
 import { roundCorners } from '@/src/calc/sim/corners'
 import {
-  addObject, addPoint, addSegment, copyPoints, flowRefusal, flowStartRefusal, FLOW_POINT_TYPES, linkFlow, movePoints,
+  addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowStartRefusal, FLOW_POINT_TYPES, linkFlow, movePoints,
   notConnected, placeOnSegment, pointsInBox, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
-  snapToObjects, splineHandles, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
+  splineHandles, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import type { ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
@@ -27,7 +28,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import DrawingCard from './DrawingCard'
 import { ChecksCard, FlowsTable, PlaceCard, type Armed } from './SimCards'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
-import LayoutCanvas, { SNAP_PX, squareTo, type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
+import LayoutCanvas, { routeCorner, type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
 import LayoutPanel, { Segmented } from './LayoutPanel'
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
@@ -137,6 +138,9 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
   const clearances = showClearance ? inputs.clearances : null
   /** Direction and lanes for the routes drawn next (Route tool options). One-way runs the way it is drawn. */
   const [routeKind, setRouteKind] = useState<Pick<SimSegment, 'dir' | 'lane'>>({ dir: 'two', lane: 'two' })
+  // New routes snap half their aisle off an object, so the lane keeps its B56.5 clearance (rounded up
+  // to 0.1 ft so the clearance check never lands a hair short).
+  const snapOffsetFt = Math.ceil((laneWidthFt(routeKind, inputs.envelopeFt, rule) / 2) * 10) / 10
 
   const setLayout = (next: EditorLayout, merge?: string) => commit({ layout: next, flows }, merge)
   const setFlows = (next: ProjectFlow[], merge?: string) => commit({ layout, flows: next }, merge)
@@ -156,12 +160,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
   const anchor = (at: XY, hit: CanvasPointer['hit'], shift: boolean, px: number): { layout: EditorLayout; id: string } => {
     if (hit?.kind === 'point') return { layout, id: hit.id }
     if (hit?.kind === 'segment') return splitSegment(layout, hit.id, at) ?? addPoint(layout, at, 'junction')
-    // A new corner: square to the last point unless Shift, on whole feet (as in the proof of concept).
-    // …and onto a wall, column or rack face when one is within reach (exact, not rounded).
-    const last = chainFrom ? byId.get(chainFrom) : undefined
-    const q = last && !shift ? squareTo(last, at) : at
-    const snap = snapToObjects(layout, q, SNAP_PX * px)
-    return addPoint(layout, snap.snapped ? snap.at : { x: Math.round(q.x), y: Math.round(q.y) }, 'junction')
+    return addPoint(layout, routeCorner(layout, chainFrom ? byId.get(chainFrom) : undefined, at, shift, px, snapOffsetFt), 'junction')
   }
 
   const onSelectPress = (at: XY, hit: CanvasPointer['hit'], shift: boolean) => {
@@ -358,6 +357,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
             fitKey={fitKey}
             emptyPrompt={emptyPrompt}
             snapSquare={tool === 'routes'}
+            snapOffsetFt={snapOffsetFt}
             showLegend={tool === 'direction' || showClearance}
             laneWidths={inputs.laneWidths}
             onDoubleClick={() => { if (tool === 'routes') cancel() }}
@@ -437,6 +437,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
             clearances={clearances}
             rule={rule}
             onPoint={(id, patch) => setLayout(updatePoint(layout, id, patch), `point:${id}:${Object.keys(patch).join()}`)}
+            onConvert={(id, type) => setLayout(convertPoint(layout, id, type, FLOW_POINT_TYPES.includes(type) ? placeRole : undefined))}
             onPoints={(ids, patch) => setLayout(ids.reduce((L, id) => updatePoint(L, id, patch), layout), `points:${Object.keys(patch).join()}`)}
             onSegment={(id, patch) => setLayout(updateSegment(layout, id, patch))}
             onCurve={(id, kind) => setLayout(setCurve(layout, id, kind === 'spline' ? splineHandles(layout, id) ?? undefined : undefined))}

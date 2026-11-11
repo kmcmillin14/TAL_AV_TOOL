@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addObject, copyPoints, snapToObjects, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
+  addObject, convertPoint, copyPoints, snapToObjects, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
   addPoint, addSegment, emptyLayout, flowRefusal, flowStartRefusal, hitTest, linkFlow, linkSuggestions, measureFlows, notConnected,
   placeOnSegment, removePoint, rescaleLayout, routeDistanceFt, splitSegment, updatePoint, updateSegment, withLayoutDistance,
 } from '../layoutEdit'
@@ -211,12 +211,31 @@ describe('fixed objects (spec §5.8)', () => {
   })
 })
 
+describe('convertPoint', () => {
+  it('turns a junction into a numbered point with the given role', () => {
+    let L = addPoint(emptyLayout(), { x: 0, y: 0 }, 'conveyor', 'drop').layout
+    const J = addPoint(L, { x: 5, y: 5 }, 'junction'); L = J.layout
+    const P = convertPoint(L, J.id, 'conveyor', 'drop').points.find(p => p.id === J.id)
+    expect(P).toMatchObject({ x: 5, y: 5, type: 'conveyor', role: 'drop', name: 'Conveyor 2' })
+    expect(convertPoint(L, J.id, 'charger').points.find(p => p.id === J.id)?.role).toBeUndefined()
+  })
+})
+
 describe('routes snap to objects', () => {
   const L = { points: [], segments: [], objects: [{ id: 'o', x: 10, y: 10, w: 20, h: 4 }] }
   it('snaps to a corner first, then to an edge, else leaves the spot', () => {
     expect(snapToObjects(L, { x: 10.6, y: 9.5 }, 1)).toEqual({ at: { x: 10, y: 10 }, snapped: 'corner' })
     expect(snapToObjects(L, { x: 20, y: 9.4 }, 1)).toEqual({ at: { x: 20, y: 10 }, snapped: 'edge' })
     expect(snapToObjects(L, { x: 50, y: 50 }, 1)).toEqual({ at: { x: 50, y: 50 }, snapped: null })
+  })
+  it('snaps to the outline grown by the offset — the aisle centreline, half a lane off the face', () => {
+    expect(snapToObjects(L, { x: 20, y: 6.5 }, 1, 4)).toEqual({ at: { x: 20, y: 6 }, snapped: 'edge' })
+    expect(snapToObjects(L, { x: 6.2, y: 6.3 }, 1, 4)).toEqual({ at: { x: 6, y: 6 }, snapped: 'corner' })
+  })
+  it('a refused corner falls through to an edge that is accepted', () => {
+    // Drawing along y = 9.6 toward the left face: the corner (10,10) would bend the line, the edge keeps it.
+    const r = snapToObjects(L, { x: 9.6, y: 10.3 }, 1, 0, q => Math.abs(q.y - 10.3) < 1e-6)
+    expect(r).toEqual({ at: { x: 10, y: 10.3 }, snapped: 'edge' })
   })
   it('new routes take the chosen direction and lanes', () => {
     const { L: line0 } = line()

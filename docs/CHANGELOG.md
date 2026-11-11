@@ -6,9 +6,14 @@ Owner: "Routes need to snap to objects, nodes editable, single and bidirectional
 in lane generation."
 
 - **Snap to objects:** route points snap to a fixed object's corner, else its nearest edge, within
-  12 screen px (`snapToObjects`, `src/calc/sim/layoutEdit.ts`); the preview shows the snapped point.
+  12 screen px — offset half the aisle out from the face so the lane keeps its B56.5 clearance, and
+  only where a squared line stays square (`snapToObjects`, `src/calc/sim/layoutEdit.ts`;
+  `routeCorner`, `LayoutCanvas.tsx`). The preview and the click use the same rule; a squared line from
+  an off-grid corner stays square (only the free axis is rounded to whole feet).
+- **Rounded corners** are drawn as wide as the routes they join; the run map keeps its own fit margins.
 - **Editable nodes:** the selected point's x / y can be typed (display unit); a junction can be
-  turned into a pick, drop, charger or parking point.
+  turned into a pick, drop, charger or parking point, numbered and given the palette's role as a new
+  point would be (`convertPoint`).
 - **Single / bidirectional:** a Route options bar sets direction and lanes for new routes
   (`addSegment(..., kind)`); one-way routes are stored single-lane.
 - **Pallet-sized lanes:** lane width = envelope (wider of vehicle and pallet) + B56.5 clearance each

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { applyClearance, B56_5_RULE, envelopes, laneWidthFt, REDUCED_CLEARANCE, segmentClearances } from '../clearance'
+import { snapToObjects } from '../layoutEdit'
 import type { SimLayout, SimSegment } from '../types'
 
 const ENV = 4                                     // ft envelope width
@@ -95,6 +96,22 @@ describe('lane width from the pallet (owner 2026-11-11)', () => {
   it('two lanes: two envelopes, outer clearances and one shared clearance', () => {
     expect(laneWidthFt({ dir: 'two', lane: 'two' }, 4.5)).toBeCloseTo(9 + 3 * c, 6)
     expect(laneWidthFt({ dir: 'two', lane: 'two' }, 4.5, { ...B56_5_RULE, sharedBetweenVehicles: false })).toBeCloseTo(9 + 4 * c, 6)
+  })
+  it('a route snapped beside a face keeps full-speed clearance (single and two-lane)', () => {
+    for (const seg of [{ dir: 'ab', lane: 'single' }, { dir: 'two', lane: 'two' }] as const) {
+      const wall = { id: 'w', x: 0, y: 20, w: 100, h: 1 }
+      const off = Math.ceil((laneWidthFt(seg, ENV) / 2) * 10) / 10
+      const y = snapToObjects({ points: [], segments: [], objects: [wall] }, { x: 50, y: 20 - off + 0.3 }, 1, off).at.y
+      const L: SimLayout = {
+        points: [{ id: 'A', x: 0, y, type: 'junction' }, { id: 'B', x: 100, y, type: 'junction' }],
+        segments: [{ id: 's', a: 'A', b: 'B', ...seg }], objects: [wall],
+      }
+      expect(segmentClearances(L, () => ENV)[0].status).toBe('full')
+    }
+  })
+  it('with no envelope yet: 10 ft two-lane, 6 ft single-lane', () => {
+    expect(laneWidthFt({ dir: 'two' })).toBe(10)
+    expect(laneWidthFt({ dir: 'ba' })).toBe(6)
   })
   it('a wider pallet widens the lane', () => {
     expect(laneWidthFt({ dir: 'ab' }, 5)).toBeGreaterThan(laneWidthFt({ dir: 'ab' }, 4.19))

@@ -27,6 +27,8 @@ interface Props {
   clearances: SegmentClearance[] | null
   rule: ClearanceRule
   onPoint: (id: string, patch: Partial<SimPoint>) => void
+  /** Turn a junction into a pick, drop, charger or parking point (named as a new one would be). */
+  onConvert: (id: string, type: SimPointType) => void
   onPoints: (ids: string[], patch: Partial<SimPoint>) => void
   onCurve: (id: string, kind: 'spline' | 'straight') => void
   onObject: (id: string, patch: Partial<SimObject>) => void
@@ -72,7 +74,7 @@ export default function LayoutPanel(p: Props) {
           <label className="sim-field"><span>Turn into</span>
             <select value="" onChange={e => {
               const type = e.target.value as SimPointType
-              if (type) p.onPoint(pt.id, { type, name: POINT_LABEL[type], role: FLOW_POINT_TYPES.includes(type) ? 'pick' : undefined })
+              if (type) p.onConvert(pt.id, type)
             }}>
               <option value="">A junction (route node)</option>
               <optgroup label="Flow points">{FLOW_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>

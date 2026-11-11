@@ -14,9 +14,11 @@ export interface RunInputs {
   flows: SimFlow[]
   /** B56.5 result per drawn route (what was slowed or blocked, and why). */
   clearances: SegmentClearance[]
-  /** Aisle width to draw per route, ft — envelope (vehicle or pallet) plus B56.5 clearances. Absent
-   *  when no vehicle is known for the route yet. */
+  /** Aisle width to draw per route of `layout`, ft — envelope (vehicle or pallet) plus B56.5
+   *  clearances; a rounded corner takes the wider of the two routes it joins. */
   laneWidths: Record<string, number>
+  /** Envelope a new route would carry, ft — the widest on the layout (0 when no vehicle is linked). */
+  envelopeFt: number
 }
 
 export function runInputs(
@@ -32,8 +34,13 @@ export function runInputs(
   const clearances = segmentClearances(drawn, env, rule)
   const radius = Math.max(0, ...linked.map(f => veh(f.vehicleId)?.calc.turningRadiusFt ?? 0))
   const laneWidths: Record<string, number> = {}
-  for (const s of drawn.segments) { const e = env(s.id); if (e > 0) laneWidths[s.id] = laneWidthFt(s, e, rule) }
-  return { layout: roundCorners(applyClearance(drawn, clearances), radius), flows: linked, clearances, laneWidths }
+  for (const s of drawn.segments) {
+    const w = laneWidthFt(s, env(s.id), rule)
+    laneWidths[s.id] = w
+    for (const j of [s.a, s.b]) laneWidths[`${j}~arc`] = Math.max(laneWidths[`${j}~arc`] ?? 0, w)   // corner at j (corners.ts)
+  }
+  const envelopeFt = Math.max(0, ...drawn.segments.map(s => env(s.id)))
+  return { layout: roundCorners(applyClearance(drawn, clearances), radius), flows: linked, clearances, laneWidths, envelopeFt }
 }
 
 /** The project's B56.5 rule: its stored values, else the owner rule (D-2). */

@@ -22,6 +22,15 @@ describe('runInputs', () => {
     expect(routeDistanceFt(r.layout, 'A', 'B')).toBeLessThan(200)
   })
 
+  it('lane widths per route, a rounded corner as wide as the routes it joins', () => {
+    const r = runInputs(L, [flow], byId, B56_5_RULE, 0)
+    const cb18 = byId.get('cb18')!.calc.widthFt
+    expect(r.envelopeFt).toBe(cb18)
+    expect(r.laneWidths.s1).toBeCloseTo(cb18 + 2 * (19.69 / 12), 6)
+    expect(r.layout.segments.some(s => s.id === 'J~arc')).toBe(true)
+    expect(r.laneWidths['J~arc']).toBe(r.laneWidths.s1)
+  })
+
   it('applies the B56.5 rule: a wall inside the envelope blocks the route', () => {
     const walled = { ...L, objects: [{ id: 'w', x: 20, y: 1, w: 60, h: 1 }] }
     const r = runInputs(walled, [flow], byId, B56_5_RULE, 0)
