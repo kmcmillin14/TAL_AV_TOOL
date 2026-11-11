@@ -7,6 +7,7 @@
     "tOne": true,
     "fleetSoftware": "BlueBotics ANT",
     "heroImage": "/images/vehicles/cb18.png",
+    "topImage": "/images/sprites/cb18.png",
     "typicalLoad": "Standard Pallet",
     "category": "AGF",
     "navigationType": "lidar_slam",

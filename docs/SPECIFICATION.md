@@ -832,6 +832,10 @@ step ribbon is unchanged.
     - **Zoom control** (fit, −, %, +) in the canvas corner, in Layout and Run; 100% is 4 px per ft.
     - **Hand tool (H)** pans; holding Space pans in any tool.
     - **Badges:** the selected object shows its size (W × H); the selected route its length.
+  - *Vehicle artwork in Run:* each vehicle with a top-down image (`display.topImage` in its JSON —
+    ML2, M10, 8TB50A, 8HBC40A, CB18; owner artwork in `public/images/sprites/`, load end facing left)
+    is drawn from it at its true length × width and turned to its heading, with the state dot and the
+    pallet (when loaded) on top. A vehicle without one (eBase7) keeps the plain outline.
 - **Simulated fleet in pricing (built, Milestone 5; D-1, raise-only).** Quoted numbers can move.
   - *Use N in pricing:* a verdict row offers it only when the stepper value **Meets** and is above
     the Fleet Engine's figure for that type. While it is offered, the run also checks one vehicle

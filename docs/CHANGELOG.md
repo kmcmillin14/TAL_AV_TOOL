@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation: vehicle artwork in Run mode
+
+- The owner's top-down artwork for ML2, M10, 8TB50A, 8HBC40A and CB18 is in
+  `public/images/sprites/` (cut out from one sheet onto a transparent background, load end facing
+  left). Each vehicle JSON points to its file with the new optional `display.topImage`.
+- Run mode draws each vehicle from its artwork at its true length × width, turned to its heading;
+  the state dot and the pallet stay on top. eBase7 has no artwork and keeps the plain outline.
+- Display only — no calculation or result changes.
+
 ## 2026-11-11 — Fleet simulation Milestone 6, step 1: drawing made easier
 
 Ideas from a comparable layout tool the owner shared (screenshots only — no vendor code or assets).

@@ -71,6 +71,9 @@ export interface VehicleDisplay {
   tOne: boolean
   fleetSoftware: string
   heroImage: string
+  /** Top-down artwork for the Fleet Simulation map (Run mode), load end facing left (the forks /
+   *  tow hitch trail). Drawn at the vehicle's true length × width; without it, a plain outline. */
+  topImage?: string
   typicalLoad: string
   category: string
   navigationType?: NavigationType

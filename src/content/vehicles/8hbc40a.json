@@ -7,6 +7,7 @@
     "tOne": true,
     "fleetSoftware": "BlueBotics ANT",
     "heroImage": "/images/vehicles/8hbc40a.png",
+    "topImage": "/images/sprites/8hbc40a.png",
     "typicalLoad": "Standard Pallet",
     "category": "Automated Pallet Truck",
     "navigationType": "natural",

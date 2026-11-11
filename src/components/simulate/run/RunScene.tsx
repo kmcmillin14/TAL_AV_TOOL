@@ -53,7 +53,7 @@ export function RunScene({ S, follow, labels, px }: { S: SimState; follow: numbe
         e.off += ((moving ? LANE_OFFSET_FT : 0) - e.off) * 0.2
         e.h += Math.atan2(Math.sin(v.h - e.h), Math.cos(v.h - e.h)) * 0.35
         ease.current.set(v.i, e)
-        const L = v.prof.lengthFt, W = v.prof.vehicle.calc.widthFt
+        const L = v.prof.lengthFt, W = v.prof.vehicle.calc.widthFt, sprite = v.prof.vehicle.display.topImage
         const x = v.x - Math.sin(e.h) * e.off, y = v.y + Math.cos(e.h) * e.off
         const deg = (e.h * 180) / Math.PI
         // The pallet is drawn only from the Step 1 load size — no size is made up for the picture.
@@ -62,9 +62,14 @@ export function RunScene({ S, follow, labels, px }: { S: SimState; follow: numbe
           <g key={v.i} className={`sim-veh st-${vehicleState(v)}${follow === v.i ? ' is-followed' : ''}`}>
             <g transform={`translate(${x} ${y}) rotate(${deg})`}>
               {follow === v.i && <ellipse rx={L * 0.65} ry={W * 0.9} className="sim-veh-follow" />}
-              <rect x={-L / 2} y={-W / 2} width={L} height={W} rx={Math.min(0.6, W / 6)} className="sim-veh-body" />
-              {/* forks / load end at the rear */}
-              <path d={`M${-L / 2} ${-W * 0.28}H${-L / 2 + L * 0.38}M${-L / 2} ${W * 0.28}H${-L / 2 + L * 0.38}`} className="sim-veh-forks" />
+              {sprite
+                // The vehicle's own top-down artwork (JSON `display.topImage`), at true length × width.
+                ? <image href={sprite} x={-L / 2} y={-W / 2} width={L} height={W} preserveAspectRatio="none" className="sim-veh-sprite" />
+                : <>
+                    <rect x={-L / 2} y={-W / 2} width={L} height={W} rx={Math.min(0.6, W / 6)} className="sim-veh-body" />
+                    {/* forks / load end at the rear */}
+                    <path d={`M${-L / 2} ${-W * 0.28}H${-L / 2 + L * 0.38}M${-L / 2} ${W * 0.28}H${-L / 2 + L * 0.38}`} className="sim-veh-forks" />
+                  </>}
               {pay && <rect x={-L / 2 - 0.1} y={-pay.width / 2} width={pay.length} height={pay.width} className="sim-veh-pallet" />}
               <circle cx={L * 0.22} cy={0} r={Math.max(0.45, W * 0.16)} className="sim-veh-dot" />
             </g>

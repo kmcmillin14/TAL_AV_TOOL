@@ -5487,6 +5487,8 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-states i, .sim-splitleg i, .sim-split span { background: var(--st); }
 .sim-run .sim-legend, .sim-run .sim-zoom { display: none; }
 .sim-run .sim-zoomctl { bottom: 62px; }
+/* Vehicle artwork: a soft shadow lifts it off the floor in both themes; the state dot stays on top. */
+.sim-veh-sprite { filter: drop-shadow(0 0.15px 0.3px rgba(0, 0, 0, 0.35)); }
 .sim-veh-body { fill: var(--bg-surface); stroke: var(--text-primary); stroke-width: 0.15; }
 .sim-veh-forks { stroke: var(--text-secondary); stroke-width: 0.35; stroke-linecap: round; }
 .sim-veh-pallet { fill: #b08850; stroke: #d9cfb5; stroke-width: 0.2; }
