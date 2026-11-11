@@ -195,12 +195,14 @@ no results).
 
 **Owner check (you):**
 - [ ] Draw one of your real sites from a PDF: scale, stands, conveyors, chargers, routes, flows
+- [ ] Close a loop and branch off a route: the ring / diamond shows the join before you click
+- [ ] Drag a loose end onto a point: they join
 - [ ] Repeat a charger ×6 at 5 ft, then undo once
 - [ ] Narrow an aisle and read the B56.5 callouts: 6 in / 0.5 m, shared between vehicles
 - [ ] Export the revision, re-import it: the drawing comes back
-- [ ] Interim check: Halfway check — ready now: draw a small site in the preview (drawing, scale, points, routes, flows) and check Sizing reads the distance "from layout". 622 tests; walked through in the browser.
-- **Sign-off question:** Can you draw a real site in about 30 minutes, and are the clearance callouts right?
-- **You receive:** Preview link, a drawn example site, and the clearance numbers on a measured aisle
+- [ ] Interim check: Latest: drawing snaps reworked after "not snapping to the endpoints" — see the drawing example in the chat. Pushed to feature/fleet-simulation (Vercel preview).
+- **Sign-off question:** Is drawing now smooth enough to draw a real site in about 30 minutes?
+- **You receive:** Vercel preview of the branch and the drawing example
 
 **Done when:** acceptance 10–14, 28–33 and 39 pass.
 
@@ -229,11 +231,12 @@ no results).
 
 **Owner check (you):**
 - [ ] Run your drawn site: do the verdicts and utilization look believable?
-- [ ] Follow one vehicle and watch its empty and loaded legs
-- [ ] Click "Use N in pricing", then open Step 4, Dashboard and the deck: they show "simulated (engine N)"
+- [ ] Sample layout at 130% demand: step 3 → 4, "Use 4 in pricing", confirm
+- [ ] Open Sizing, Step 4, Dashboard and the deck: they show "simulated (engine 3)"
 - [ ] Click "Back to engine": every figure returns exactly
+- [ ] Interim check: Use N in pricing is built: Company A with CB18 3 → 4 moves the fleet 14 → 15, ROM $1.82M–$3.18M → $1.97M–$3.44M, payback 1.75 → 1.89 yrs. Nothing moves unless an engineer confirms.
 - **Sign-off question:** Are the verdicts believable, and is the pricing change shown clearly enough?
-- **You receive:** Before/after quote figures on the Company A sample (this milestone can move quotes)
+- **You receive:** Before/after quote figures on Company A (above) and the confirmation screenshot
 
 **Done when:** acceptance 15–17, 24, 38 and 40 pass.
 
