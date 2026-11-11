@@ -127,7 +127,7 @@ export function FlowsTable({ layout, flows, vehicleById, settings, fleet, unitSy
   const linkedAll = useMemo(() => flows.map(f => pending.get(f.id) ?? f), [flows, pending])
   // The Fleet Engine's own figures — without a simulated fleet applied to pricing (D-1).
   const engineTotal = engineFleetTotal(fleet)
-  const after = useMemo(() => (confirm ? fleetFromFlows(linkedAll, vehicleById, { ...settings, appliedFleet: undefined }).totalFleetSold : null), [confirm, linkedAll, vehicleById, settings])
+  const after = useMemo(() => (confirm ? fleetFromFlows(linkedAll, vehicleById, { ...settings, appliedFleet: undefined }).fleet.totalFleetSold : null), [confirm, linkedAll, vehicleById, settings])
   const raw = fleet.groups.reduce((t, g) => t + g.groupRaw, 0)
   const showPending = pending.size > 0
 

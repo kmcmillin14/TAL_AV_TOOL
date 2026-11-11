@@ -1,24 +1,28 @@
 import { describe, expect, it } from 'vitest'
-import { readinessChecks, runBlocker } from '../readiness'
+import { readinessChecks } from '../readiness'
 import { LIBRARY, corridor } from './fixtures'
 
 const ok = { id: 'f', fromPointId: 'A', toPointId: 'B', thruPerHr: 10, vehicleId: 'cb18' }
-const ready = (flows: object[], layout = corridor(100)) => runBlocker({ layout, flows: flows as never, vehicles: LIBRARY })
+type Input = Parameters<typeof readinessChecks>[0]
+/** What blocks Run (the "bad" checks), with no fleet to place. */
+const blocked = (i: Omit<Input, 'vehicles' | 'fleetNeeded'>) => readinessChecks({ ...i, vehicles: LIBRARY, fleetNeeded: 0 }).filter(c => c.level === 'bad').map(c => c.text)
+const ready = (flows: object[], layout = corridor(100)) => blocked({ layout, flows: flows as never })
+const NO_FLOW = expect.arrayContaining([expect.stringMatching(/^No flow runs yet/)])
 
-describe('runBlocker (acceptance 1: no layout → Run disabled)', () => {
+describe('Run is blocked until a flow can run (acceptance 1: no layout → Run disabled)', () => {
   it('no layout, or a layout without routes, asks for routes first', () => {
-    expect(runBlocker({ vehicles: LIBRARY })).toBe('noRoutes')
-    expect(ready([ok], { points: corridor(100).points, segments: [] })).toBe('noRoutes')
+    expect(blocked({})).toEqual([expect.stringMatching(/^Draw routes/)])
+    expect(ready([ok], { points: corridor(100).points, segments: [] })).toEqual([expect.stringMatching(/^Draw routes/)])
   })
 
   it('a loaded drawing must be scaled before running', () => {
     const layout = { ...corridor(100), background: {} }
-    expect(runBlocker({ layout, flows: [ok], vehicles: LIBRARY })).toBe('unscaled')
-    expect(runBlocker({ layout: { ...layout, background: { scale: {} } }, flows: [ok], vehicles: LIBRARY })).toBeNull()
+    expect(blocked({ layout, flows: [ok] })).toEqual([expect.stringMatching(/not scaled/)])
+    expect(blocked({ layout: { ...layout, background: { scale: {} } }, flows: [ok] })).toEqual([])
   })
 
   it('a flow the engine can run enables Run', () => {
-    expect(ready([ok])).toBeNull()
+    expect(ready([ok])).toEqual([])
   })
 
   it.each([
@@ -30,13 +34,13 @@ describe('runBlocker (acceptance 1: no layout → Run disabled)', () => {
     ['no moves per hour', [{ ...ok, thruPerHr: 0 }]],
     ['no vehicle', [{ ...ok, vehicleId: undefined }]],
   ])('the engine would skip it (%s) → still blocked', (_why, flows) => {
-    expect(ready(flows)).toBe('noFlows')
+    expect(ready(flows)).toEqual(NO_FLOW)
   })
 
   it('points with no route between them do not count', () => {
     const layout = corridor(100)
     layout.points.push({ id: 'D', x: 500, y: 500, type: 'stand', role: 'drop' })
-    expect(ready([{ ...ok, toPointId: 'D' }], layout)).toBe('noFlows')
+    expect(ready([{ ...ok, toPointId: 'D' }], layout)).toEqual(NO_FLOW)
   })
 })
 

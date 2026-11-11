@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   addObject, convertPoint, copyPoints, mergePoints, snapDraw, snapToObjects, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
   addPoint, addSegment, emptyLayout, flowRefusal, flowStartRefusal, hitTest, linkFlow, linkSuggestions, measureFlows, notConnected,
-  placeOnSegment, removePoint, rescaleLayout, routeDistanceFt, splitSegment, updatePoint, updateSegment, withLayoutDistance,
+  placeOnSegment, rescaleLayout, routeDistanceFt, splitSegment, updatePoint, updateSegment, withLayoutDistance,
 } from '../layoutEdit'
 import type { SimLayout } from '../types'
 
@@ -66,7 +66,7 @@ describe('placing points and routes', () => {
 
   it('removing a point removes its routes', () => {
     const { L, a } = line()
-    expect(removePoint(L, a).segments).toHaveLength(0)
+    expect(removePoints(L, [a]).segments).toHaveLength(0)
   })
 
   it('hit-tests points before routes', () => {
@@ -294,5 +294,20 @@ describe('mergePoints — a dragged end dropped on another point joins it', () =
     expect(M.segments.map(s => [s.a, s.b])).toEqual([[A.id, J.id], [J.id, B.id]])
     const named = mergePoints(L, A.id, J.id).points.find(p => p.id === J.id)
     expect(named).toMatchObject({ type: 'stand', role: 'pick', x: 50, y: 0 })
+  })
+})
+
+describe('review fixes', () => {
+  it('setting the drawing scale moves fixed objects with the routes', () => {
+    const L = { ...emptyLayout(), objects: [{ id: 'o', x: 10, y: 20, w: 4, h: 2 }] }
+    expect(rescaleLayout(L, 2).objects).toEqual([{ id: 'o', x: 20, y: 40, w: 8, h: 4 }])
+  })
+  it('Repeat never reuses a name already on the layout', () => {
+    let L = addPoint(emptyLayout(), { x: 0, y: 0 }, 'charger').layout          // Charger 1
+    L = addPoint(L, { x: 50, y: 0 }, 'charger').layout                          // Charger 2
+    const r = repeatPoint(L, L.points[0].id, 3, 5, { x: 0, y: 1 })
+    const names = r.layout.points.map(p => p.name)
+    expect(new Set(names).size).toBe(names.length)
+    expect(names).toEqual(['Charger 1', 'Charger 2', 'Charger 3', 'Charger 4'])
   })
 })

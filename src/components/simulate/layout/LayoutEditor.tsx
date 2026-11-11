@@ -14,7 +14,7 @@ import { roundCorners } from '@/src/calc/sim/corners'
 import {
   addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowStartRefusal, FLOW_POINT_TYPES, linkFlow, movePoints,
   notConnected, placeOnSegment, pointsInBox, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
-  mergePoints, snapDraw, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
+  mergePoints, pointById, snapDraw, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import type { ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
@@ -74,7 +74,6 @@ const isTyping = (t: EventTarget | null) =>
   t instanceof HTMLElement && ((t instanceof HTMLInputElement && !NOT_TEXT.has(t.type)) || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)
 
 /** Clear a flow's point links: it keeps its values and goes back to a typed distance in Sizing. */
-const unlinked = (f: ProjectFlow): ProjectFlow => ({ ...f, fromPointId: undefined, toPointId: undefined, distanceSource: undefined })
 
 /** What a press-and-drag is doing until the pointer is released. */
 type Drag =
@@ -123,7 +122,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
   const image = getDrawingData(project.id)
   const scale = ftPerPx(bg)
   const loose = useMemo(() => new Set(notConnected(layout).map(p => p.id)), [layout])
-  const byId = useMemo(() => new Map(layout.points.map(p => [p.id, p])), [layout])
+  const byId = useMemo(() => pointById(layout), [layout])
   const linked = useMemo(() => linkedFlows(flows), [flows])
 
   // The layout as driven: corners rounded to the largest turning radius among the flows' vehicles.
@@ -157,7 +156,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
   const redo = () => { cancel(); setSelection(null); editor.redo() }
   const selectedPoints = selection?.kind === 'points' ? selection.ids : selection?.kind === 'point' ? [selection.id] : []
 
-  /** A point id to draw from or to: the point under the pointer, a new junction on a route, or one on empty floor. */
   /** Where a route click lands — the same `snapDraw` the canvas marks under the pointer. */
   const routeSnap = (at: XY, shift: boolean, px: number) =>
     snapDraw(layout, at, { px, from: chainFrom ? byId.get(chainFrom) : null, shift, offsetFt: snapOffsetFt })
@@ -189,9 +187,19 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
     const dx = d.at.x - (d.kind === 'handle' ? d.at.x : d.from.x), dy = d.at.y - (d.kind === 'handle' ? d.at.y : d.from.y)
     if (d.kind === 'points' && d.snap?.kind === 'point') {
       // An end dropped on another point joins it; flows linked to the dropped point follow.
+      // Refused (nothing changes) when a flow on the dropped point would no longer be a valid
+      // Pick → Drop — e.g. a flow's pick dropped on its own drop, or on a charger.
       const [id] = d.ids, into = d.snap.id
       const re = (pid?: string) => (pid === id ? into : pid)
-      commit({ layout: mergePoints(movePoints(layout, d.ids, { x: dx, y: dy }), id, into), flows: flows.map(f => (f.fromPointId === id || f.toPointId === id ? { ...f, fromPointId: re(f.fromPointId), toPointId: re(f.toPointId) } : f)) })
+      const merged = mergePoints(movePoints(layout, d.ids, { x: dx, y: dy }), id, into)
+      const touches = (f: ProjectFlow) => f.fromPointId === id || f.toPointId === id
+      const moved = flows.map(f => (touches(f) ? { ...f, fromPointId: re(f.fromPointId), toPointId: re(f.toPointId) } : f))
+      const why = flows.flatMap((f, i) => {
+        const m = moved[i]
+        return touches(f) && m.fromPointId && m.toPointId ? [flowRefusal(merged, m.fromPointId, m.toPointId)] : []
+      }).find(Boolean)
+      if (why) { say(`Not joined — ${why.toLowerCase()}`); return }
+      commit({ layout: merged, flows: moved })
       setSelection({ kind: 'point', id: into })
     } else if (d.kind === 'points' && (dx || dy)) setLayout(movePoints(layout, d.ids, { x: dx, y: dy }))
     else if (d.kind === 'object' && (dx || dy)) {

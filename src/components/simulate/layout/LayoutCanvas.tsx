@@ -31,7 +31,6 @@ export interface CanvasPointer {
   px: number
 }
 
-/** Snap distance for routes to objects, screen pixels. */
 /** Fit margins for the editor's floating controls: tool column, options bar and name pills, hint. */
 const EDITOR_INSET = { top: 84, right: 24, bottom: 64, left: 72 }
 
@@ -62,7 +61,6 @@ interface Props {
   fitKey?: number
   /** Shown over an empty layout. */
   emptyPrompt?: ReactNode
-  /** Route tool: the preview snaps square to the last point unless Shift is held. */
   /** Where the next drawing click lands (the editor's `snapDraw`): drawn as a marker — a ring on a
    *  point, a diamond on a route, guides to lined-up points — with the route preview from `rubberFrom`. */
   snap?: DrawSnap | null
@@ -304,7 +302,6 @@ export function shortName(name: string): string {
   return name.split(/\s+/).map(w => (/^\d+$/.test(w) ? w : w[0]?.toUpperCase() ?? '')).join('')
 }
 
-/** The point square to `from` — the route keeps to the aisle direction it is closest to. */
 /** The snap target under the pointer, and the route preview to it. Sizes in screen pixels. */
 function SnapMark({ snap, from, px }: { snap: DrawSnap; from: XY | null; px: number }) {
   const { x, y } = snap.at

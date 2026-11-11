@@ -7,6 +7,7 @@ import type {
   ChargeRegime,
   ChargingResult,
   FleetBinding,
+  FlowDerived,
   FleetGroup,
   FleetSettings,
   FleetSummary,
@@ -238,6 +239,8 @@ export function fleetSummary(
 
 /** What the Fleet Engine sized, before any simulated fleet raised it (D-1). */
 export const engineFleetSold = (g: FleetGroup): number => g.engineFleetSold ?? g.fleetSold
+/** What the Fleet Engine sized per vehicle type — the stepper's default and the D-1 comparison. */
+export const engineFleetByType = (f: FleetSummary): Record<string, number> => Object.fromEntries(f.groups.map(g => [g.vehicleId, engineFleetSold(g)]))
 /** Σ what the Fleet Engine sized across types, before any simulated fleet (D-1). */
 export const engineFleetTotal = (f: FleetSummary): number => f.totalEngineFleetSold ?? f.totalFleetSold
 /** "+k simulated" — vehicles added by an applied simulated fleet (0 when none). */
@@ -251,9 +254,11 @@ export function simulatedNote(f: FleetGroup | FleetSummary): string | null {
 }
 
 /** The Fleet Engine for a list of flows: per-flow cycle → per-vehicle groups → fleet. The one chain
- *  Sizing (useFleetData) and Simulate (before/after a layout distance) both use. */
-export function fleetFromFlows(flows: Flow[], vehiclesById: Map<string, Vehicle>, settings: FleetSettings): FleetSummary {
-  const derived = new Map(flows.map(f => [f.id, flowDerived(f, f.vehicleId ? vehiclesById.get(f.vehicleId) : undefined)]))
+ *  Sizing, `useFleetData`, the exporters (`computeFleetModel`) and Simulate all use. Groups are in
+ *  first-flow order. */
+export function fleetFromFlows(flows: Flow[], vehiclesById: Map<string, Vehicle>, settings: FleetSettings): { derivedByFlowId: Map<string, FlowDerived>; groups: GroupSummary[]; fleet: FleetSummary } {
+  const derivedByFlowId = new Map(flows.map(f => [f.id, flowDerived(f, f.vehicleId ? vehiclesById.get(f.vehicleId) : undefined)]))
   const ids = [...new Set(flows.flatMap(f => (f.vehicleId ? [f.vehicleId] : [])))]
-  return fleetSummary(ids.map(vid => groupSummary(vid, flows, derived)), vehiclesById, settings)
+  const groups = ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
+  return { derivedByFlowId, groups, fleet: fleetSummary(groups, vehiclesById, settings) }
 }

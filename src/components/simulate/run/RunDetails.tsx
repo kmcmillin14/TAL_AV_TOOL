@@ -7,7 +7,7 @@
 
 import { memo } from 'react'
 import { Bar, CartesianGrid, ComposedChart, Line, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts'
-import { AXIS_STROKE, ChartCaption, ChartFrame, ChartTooltip, GRID_STROKE, TICK } from '@/src/components/charts/ChartKit'
+import { AXIS_STROKE, ChartCaption, ChartFrame, ChartTooltip, GRID_STROKE, pct, TICK } from '@/src/components/charts/ChartKit'
 import DataTable, { type Cell, type Col } from './DataTable'
 import type { SimState } from '@/src/calc/sim/engine'
 import type { RunInputs } from '@/src/calc/sim/runInputs'
@@ -50,7 +50,6 @@ const VEH_COLS: Col[] = [
 const LOC_COLS: Col[] = [
   { label: 'Location', left: true }, { label: 'Type', left: true }, { label: 'Visits' }, { label: 'Occupied' }, { label: 'Max queue' }, { label: 'Avg wait / visit' },
 ]
-const pct = (x: number) => `${Math.round(x * 100)}%`
 const secs = (s: number | null | undefined) => (s == null || !isFinite(s) ? '—' : `${Math.round(s)} s`)
 
 export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem, inputs, assume, shiftH, onAssume }: Props) {
@@ -145,7 +144,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
       </details>
 
       <details className="sim-disc">
-        <summary>Assumptions<span className="meta">pace {assume.pacePct}% · safety {lengthToDisplay(assume.safetyFt, unitSystem).toFixed(1)} {unit} · demand {assume.demandPct}%</span></summary>
+        <summary>Assumptions<span className="meta">pace {assume.pacePct}% · safety {fmtLength(assume.safetyFt, unitSystem, 1)} · demand {assume.demandPct}%</span></summary>
         <div className="sim-disc-body">
           <div className="sim-assume">
             <Num label="Pace (% of rated speed)" unit="%" value={assume.pacePct} min={10} max={100} step={5} onChange={v => onAssume({ pacePct: v })} />

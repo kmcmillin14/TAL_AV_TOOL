@@ -5,6 +5,7 @@
 // fleet and ROM before → after, from the same model Step 4, the Dashboard and the deck use.
 
 import { useMemo, useState } from 'react'
+import { appliedFleetStatus } from '@/src/calc/sim/runInputs'
 import type { Verdict } from '@/src/calc/sim/types'
 import { computeFleetModel } from '@/src/lib/fleetModel'
 import type { StoredProject } from '@/src/lib/storage'
@@ -45,7 +46,8 @@ export default function PricingAction({ project, vehicles, vehicleId, n, engineN
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [confirm, project, vehicles, vehicleId, n, inputsKey])
 
-  if (applied && applied.fleet <= engineN) {
+  const status = applied && appliedFleetStatus(applied, engineN, inputsKey)
+  if (applied && status === 'unused') {
     // The engine has since sized as many or more: raise-only pricing uses the engine's figure.
     return (
       <span className="sim-vact">
@@ -55,7 +57,7 @@ export default function PricingAction({ project, vehicles, vehicleId, n, engineN
     )
   }
   if (applied) {
-    const stale = applied.key !== inputsKey
+    const stale = status === 'stale'
     return (
       <span className="sim-vact">
         <span className={`sim-tag${stale ? ' stale' : ''}`}>In pricing: {applied.fleet}{stale ? ' · stale — re-run' : ''}</span>

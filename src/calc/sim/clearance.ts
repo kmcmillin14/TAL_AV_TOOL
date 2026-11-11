@@ -10,10 +10,10 @@
 // and a two-lane route where clearance + envelope + shared + envelope + clearance does not fit is
 // flagged (one click makes it single-lane).
 
-import { segmentGeometry } from './geometry'
+import { closestOnLine, segmentGeometry } from './geometry'
 import { buildGraph, route } from './graph'
 import { objectCorners, pointById } from './layoutEdit'
-import type { SimLayout, SimObject } from './types'
+import type { SimLayout } from './types'
 
 type XY = { x: number; y: number }
 
@@ -55,24 +55,28 @@ const IN = 12
 const REACH_FT = 20
 const SAMPLE_FT = 0.25
 
-function nearestOnObject(o: SimObject, p: XY): { q: XY; d: number } {
-  const c = objectCorners(o)
+/** Nearest spot on an object's outline (its four corners) to `p`. */
+function nearestOnObject(c: XY[], p: XY): { q: XY; d: number } {
   let best = { q: c[0], d: Infinity }
   for (let i = 0; i < 4; i++) {
-    const a = c[i], b = c[(i + 1) % 4], dx = b.x - a.x, dy = b.y - a.y
-    const t = Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / (dx * dx + dy * dy || 1)))
-    const q = { x: a.x + t * dx, y: a.y + t * dy }, d = Math.hypot(p.x - q.x, p.y - q.y)
-    if (d < best.d) best = { q, d }
+    const q = closestOnLine(c[i], c[(i + 1) % 4], p)
+    if (q.dist < best.d) best = { q: { x: q.x, y: q.y }, d: q.dist }
   }
   return best
 }
+
+type Box = { x0: number; y0: number; x1: number; y1: number }
+const box = (ps: XY[]): Box => ({ x0: Math.min(...ps.map(p => p.x)), y0: Math.min(...ps.map(p => p.y)), x1: Math.max(...ps.map(p => p.x)), y1: Math.max(...ps.map(p => p.y)) })
+/** Gap between two boxes, ft (0 when they overlap) — objects further than the reach are skipped whole. */
+const boxGap = (a: Box, b: Box) => Math.hypot(Math.max(0, a.x0 - b.x1, b.x0 - a.x1), Math.max(0, a.y0 - b.y1, b.y0 - a.y1))
 
 /**
  * Clearance per route. `envelopeFt(segId)` is the envelope width on that route (see `envelopes`).
  * Changing the rule re-derives every cap and violation at once (acceptance 33).
  */
 export function segmentClearances(L: SimLayout, envelopeFt: (segId: string) => number, rule: ClearanceRule = B56_5_RULE): SegmentClearance[] {
-  const byId = pointById(L), objects = L.objects ?? []
+  const byId = pointById(L)
+  const objects = (L.objects ?? []).map(o => { const c = objectCorners(o); return { c, box: box(c) } })
   const low = rule.lowSpeedIn / IN, full = rule.fullSpeedIn / IN
   const middle = (c: number) => (rule.sharedBetweenVehicles ? c : 2 * c)   // between the two lanes
   return L.segments.flatMap((s): SegmentClearance[] => {
@@ -81,15 +85,19 @@ export function segmentClearances(L: SimLayout, envelopeFt: (segId: string) => n
     const env = envelopeFt(s.id)
     const lanes: 1 | 2 = s.dir === 'two' && s.lane !== 'single' ? 2 : 1
     // How far the outer envelope edge sits from the centreline, for a middle clearance `c`.
-    const edge = (c: number) => (lanes === 2 ? middle(c) / 2 + env : env / 2)
+    const edgeAt = (c: number, l: 1 | 2) => (l === 2 ? middle(c) / 2 + env : env / 2)
     const g = segmentGeometry(a, b, s.curve)
     const n = Math.max(1, Math.ceil(g.length / SAMPLE_FT))
     // Nearest object on each side of the centreline: distance from the centreline, and where.
     const side = [{ d: Infinity, p: a as XY, q: a as XY, nx: 0, ny: 0 }, { d: Infinity, p: a as XY, q: a as XY, nx: 0, ny: 0 }]
+    // Objects whose box is beyond reach of the route's box cannot be nearest — skip them whole
+    // (1 ft margin covers a curve's bulge between the 9 box samples).
+    const segBox = box(Array.from({ length: 9 }, (_, i) => g.at((g.length * i) / 8)))
     for (const o of objects) {
+      if (boxGap(segBox, o.box) - env / 2 - 1 > REACH_FT + full) continue
       for (let i = 0; i <= n; i++) {
         const at = g.at((g.length * i) / n)
-        const { q, d } = nearestOnObject(o, at)
+        const { q, d } = nearestOnObject(o.c, at)
         if (d - env / 2 > REACH_FT + full) continue
         const k = at.tx * (q.y - at.y) - at.ty * (q.x - at.x) >= 0 ? 0 : 1   // left or right of travel
         if (d < side[k].d) side[k] = { d, p: { x: at.x, y: at.y }, q, nx: k === 0 ? -at.ty : at.ty, ny: k === 0 ? at.tx : -at.tx }
@@ -97,7 +105,12 @@ export function segmentClearances(L: SimLayout, envelopeFt: (segId: string) => n
     }
     const near = side.filter(x => isFinite(x.d))
     if (!near.length) return [{ segId: s.id, envelopeFt: env, lanes, tightestIn: null, callout: null, status: 'clear', twoLaneFits: lanes === 2 ? true : null }]
-    const at = (c: number) => Math.min(...near.map(x => x.d - edge(c)))          // tightest outer clearance, ft
+    const clearAt = (c: number, l: 1 | 2) => Math.min(...near.map(x => x.d - edgeAt(c, l)))   // tightest outer clearance, ft
+    // A two-lane route too narrow for two envelopes is judged — and driven — as single-lane, flagged
+    // so one click makes it single-lane (acceptance 32), never blocked for the second lane alone.
+    const twoLaneFits = lanes === 2 ? clearAt(low, 2) >= low : null
+    const judged: 1 | 2 = twoLaneFits === false ? 1 : lanes
+    const at = (c: number) => clearAt(c, judged), edge = (c: number) => edgeAt(c, judged)
     const tight = near.reduce((m, x) => (x.d < m.d ? x : m))
     const tightFt = at(full) >= full ? at(full) : at(low)
     const status: SegmentClearance['status'] = at(full) >= full ? 'full' : at(low) >= low ? 'capped' : 'violation'
@@ -109,7 +122,7 @@ export function segmentClearances(L: SimLayout, envelopeFt: (segId: string) => n
       status,
       ...(status === 'capped' ? { capFps: Math.floor(rule.thresholdFps * 100 - 1) / 100, reason: REDUCED_CLEARANCE } : {}),
       ...(status === 'violation' ? { reason: `Under ${rule.lowSpeedIn} in clearance — blocked` } : {}),
-      twoLaneFits: lanes === 2 ? at(low) >= low : null,
+      twoLaneFits,
     }]
   })
 }
@@ -122,8 +135,9 @@ export function applyClearance<T extends SimLayout>(L: T, results: SegmentCleara
     segments: L.segments.flatMap(s => {
       const r = by.get(s.id)
       if (r?.status === 'violation') return []
-      if (r?.capFps != null) return [{ ...s, speedLimitFps: Math.min(s.speedLimitFps ?? Infinity, r.capFps) }]
-      return [s]
+      const lane = r?.twoLaneFits === false ? { lane: 'single' as const } : {}
+      if (r?.capFps != null) return [{ ...s, ...lane, speedLimitFps: Math.min(s.speedLimitFps ?? Infinity, r.capFps) }]
+      return [{ ...s, ...lane }]
     }),
   }
 }

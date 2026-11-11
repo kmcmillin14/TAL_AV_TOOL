@@ -7,8 +7,8 @@
 
 import { useMemo } from 'react'
 import { VERDICT_LABEL } from '@/src/calc/sim/results'
-import { simInputsKey } from '@/src/calc/sim/runInputs'
-import { engineFleetSold } from '@/src/calc/fleet'
+import { appliedFleetStatus, simInputsKey } from '@/src/calc/sim/runInputs'
+import { engineFleetByType } from '@/src/calc/fleet'
 import type { FleetSummary } from '@/src/calc/types'
 import { patchSimSettings, type StoredProject } from '@/src/lib/storage'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
@@ -21,13 +21,15 @@ interface Props {
 
 export default function SimVerdictChips({ project, vehicleById, fleet }: Props) {
   const ss = project.simSettings
-  const key = useMemo(() => simInputsKey(project, vehicleById), [project, vehicleById])
   const types = Object.entries(ss?.lastRun?.types ?? {})
   const applied = Object.entries(ss?.appliedFleet ?? {})
-  if (!types.length && !applied.length) return null
+  const any = types.length > 0 || applied.length > 0
+  // Hashing the inputs is only worth it when there is a result to compare against.
+  const key = useMemo(() => (any ? simInputsKey(project, vehicleById) : ''), [any, project, vehicleById])
+  if (!any) return null
   const stale = ss?.lastRun?.key !== key
   const name = (vid: string) => vehicleById.get(vid)?.name ?? vid
-  const engine = (vid: string) => { const g = fleet.groups.find(x => x.vehicleId === vid); return g ? engineFleetSold(g) : null }
+  const engineBy = engineFleetByType(fleet)
   const backToEngine = () => patchSimSettings(project.id, { appliedFleet: {} })
 
   return (
@@ -40,10 +42,10 @@ export default function SimVerdictChips({ project, vehicleById, fleet }: Props) 
       {applied.length > 0 && (
         <span className="sim-sizing-applied">
           {applied.map(([vid, a]) => {
-            const e = engine(vid)
-            return e != null && a.fleet <= e
+            const e = engineBy[vid] ?? 0, status = appliedFleetStatus(a, e, key)
+            return status === 'unused'
               ? `${name(vid)}: engine now sizes ${e} — applied ${a.fleet} not used`
-              : `In pricing: ${name(vid)} ${a.fleet} (engine ${e ?? '—'})${a.key !== key ? ' · stale — re-run' : ''}`
+              : `In pricing: ${name(vid)} ${a.fleet} (engine ${e})${status === 'stale' ? ' · stale — re-run' : ''}`
           }).join(' · ')}
           {' '}<button type="button" className="link-btn" onClick={backToEngine}>Back to engine</button>
         </span>

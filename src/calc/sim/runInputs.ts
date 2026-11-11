@@ -91,3 +91,12 @@ export function simInputsKey(p: SimInputsLike, vehicles?: Map<string, Vehicle>):
   for (let i = 0; i < json.length; i++) { h ^= json.charCodeAt(i); h = Math.imul(h, 0x01000193) }
   return (h >>> 0).toString(36)
 }
+
+/**
+ * Where an applied simulated fleet stands (D-1): `unused` — the engine now sizes as many or more, so
+ * raise-only pricing uses the engine; `stale` — the run's inputs changed since it was applied;
+ * `current` — in pricing and up to date. One rule for Sizing and Simulate.
+ */
+export function appliedFleetStatus(applied: { fleet: number; key: string }, engineN: number, inputsKey: string): 'unused' | 'stale' | 'current' {
+  return applied.fleet <= engineN ? 'unused' : applied.key !== inputsKey ? 'stale' : 'current'
+}

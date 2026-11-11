@@ -117,3 +117,12 @@ export function angleDiff(a: number, b: number): number {
   const d = ((a - b) % (2 * Math.PI) + 3 * Math.PI) % (2 * Math.PI) - Math.PI
   return Math.abs(d)
 }
+
+/** The closest spot on the straight line a–b to `p`: position, how far along (0–1), distance. One
+ *  rule for routes, object edges and clearance checks. */
+export function closestOnLine(a: { x: number; y: number }, b: { x: number; y: number }, p: { x: number; y: number }): { x: number; y: number; t: number; dist: number } {
+  const dx = b.x - a.x, dy = b.y - a.y, len2 = dx * dx + dy * dy
+  const t = len2 === 0 ? 0 : clamp(((p.x - a.x) * dx + (p.y - a.y) * dy) / len2, 0, 1)
+  const x = a.x + t * dx, y = a.y + t * dy
+  return { x, y, t, dist: Math.hypot(p.x - x, p.y - y) }
+}

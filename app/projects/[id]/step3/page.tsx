@@ -11,9 +11,8 @@ import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { useProjectSync } from '@/src/lib/useProjectSync'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import { type FleetSettings, type Flow, type FlowDerived } from '@/src/calc/types'
-import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
-import { fleetSummary, simulatedDelta, simulatedNote } from '@/src/calc/fleet'
+import { type FleetSettings, type Flow } from '@/src/calc/types'
+import { fleetFromFlows, simulatedDelta, simulatedNote } from '@/src/calc/fleet'
 import { consecutiveOperatingDays, defaultOperatingDaysPerYear } from '@/src/calc/romAnalytics'
 import type { EnginePatch } from '@/src/components/engine/types'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
@@ -58,27 +57,8 @@ export default function FleetEnginePage() {
   const flowGroups: string[] = useMemo(() => project?.flowGroups ?? [], [project])
   const flowGroupColors: Record<string, string> = useMemo(() => project?.flowGroupColors ?? {}, [project])
 
-  const derivedByFlowId = useMemo(() => {
-    const m = new Map<string, FlowDerived>()
-    for (const f of flows) {
-      const veh = f.vehicleId ? vehicleById.get(f.vehicleId) : undefined
-      m.set(f.id, flowDerived(f, veh))
-    }
-    return m
-  }, [flows, vehicleById])
-
-  const groups = useMemo(() => {
-    const ids: string[] = []
-    for (const f of flows) if (f.vehicleId && !ids.includes(f.vehicleId)) ids.push(f.vehicleId)
-    return ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
-  }, [flows, derivedByFlowId])
-
   const settings: FleetSettings = useMemo(() => projectFleetSettings(project ?? {}), [project])
-
-  const fleet = useMemo(
-    () => fleetSummary(groups, vehicleById, settings),
-    [groups, vehicleById, settings],
-  )
+  const { derivedByFlowId, fleet } = useMemo(() => fleetFromFlows(flows, vehicleById, settings), [flows, vehicleById, settings])
 
   // Whether Step 4 will actually be able to price this project.
   const gate = useMemo(() => (project ? pricingGate(project) : null), [project])

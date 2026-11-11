@@ -9,8 +9,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
-import { clearanceRule, payloadFt, runFleet, runInputs, simInputsKey } from '@/src/calc/sim/runInputs'
-import { engineFleetSold, engineFleetTotal } from '@/src/calc/fleet'
+import { runFleet, simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
+import { useByValue } from '@/src/lib/useByValue'
+import { engineFleetByType, engineFleetTotal } from '@/src/calc/fleet'
 import type { SimResults, SimSettings, Verdict } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import { getProject, patchSimSettings, type StoredProject } from '@/src/lib/storage'
@@ -23,7 +24,8 @@ import { RunScene, STATES } from './RunScene'
 
 /** Run assumption defaults (spec D-3 pace; the engine's following gap); the project's values win. */
 const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as SimSettings['arrivals'], demandPct: 100, seed: 1 }
-const SLICE_MS = 30
+/** Background run slices stay under half a 60 fps frame, so playback keeps its pace. */
+const SLICE_MS = 8
 const VARIABILITY_RUNS = 10
 
 interface Props {
@@ -33,6 +35,9 @@ interface Props {
   settings: FleetSettings
   fleet: FleetSummary
   unitSystem: UnitSystem
+  /** What the run drives — built once by SimulateShell and shared with "Ready to run?". */
+  inputs: RunInputs
+  payload: { length: number; width: number } | null
 }
 
 const clock = (t: number) => {
@@ -51,23 +56,12 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
   setTimeout(slice, 0)
 }
 
-/**
- * The same reference while the value is unchanged. The project is re-read from storage on every save
- * and window focus (new objects each time); the run must not restart for that. Serialises only when
- * the reference changes — not per frame.
- */
-function useByValue<T>(v: T): T {
-  const json = useMemo(() => JSON.stringify(v), [v])
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  return useMemo(() => v, [json])
-}
-
 /** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ project, vehicles, vehicleById, settings, fleet, unitSystem }: Props) {
+export default function RunView({ project, vehicles, vehicleById, settings, fleet, unitSystem, inputs, payload }: Props) {
   const simSettings = project.simSettings ?? {}
-  const engineFleet = useByValue(useMemo(() => Object.fromEntries(fleet.groups.map(g => [g.vehicleId, engineFleetSold(g)])), [fleet]))
+  const engineFleet = useByValue(useMemo(() => engineFleetByType(fleet), [fleet]))
   const inputsKey = useMemo(() => simInputsKey(project, vehicleById), [project, vehicleById])
 
   const assume: Assumptions = useMemo(() => ({
@@ -75,14 +69,7 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
     arrivals: simSettings.arrivals ?? RUN_DEFAULTS.arrivals, demandPct: simSettings.demandPct ?? RUN_DEFAULTS.demandPct, seed: simSettings.seed ?? RUN_DEFAULTS.seed,
   }), [simSettings.pacePct, simSettings.safetyFt, simSettings.arrivals, simSettings.demandPct, simSettings.seed])
   const shiftH = project.hoursPerShift ?? 8
-  const clearance = useByValue(simSettings.clearance), loads = useByValue(project.loads)
-  const layout = useByValue(project.simLayout), flows = useByValue(project.flows), stepper = useByValue(simSettings.fleet)
-  const rule = useMemo(() => clearanceRule(clearance), [clearance])
-  const payload = useMemo(() => payloadFt(loads), [loads])
-  const inputs = useMemo(
-    () => runInputs(layout ?? { points: [], segments: [] }, flows ?? [], vehicleById, rule, payload?.width ?? 0),
-    [layout, flows, vehicleById, rule, payload],
-  )
+  const stepper = useByValue(simSettings.fleet)
   const fleetBy = useByValue(useMemo(() => runFleet(engineFleet, stepper, inputs.flows.map(f => f.vehicleId)), [engineFleet, stepper, inputs.flows]))
   const simConfig = useCallback((seed: number): SimSettings => ({
     fleet: fleetBy, demandPct: assume.demandPct, seed, arrivals: assume.arrivals, pacePct: assume.pacePct, safetyFt: assume.safetyFt,
@@ -92,10 +79,15 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
   // ---- the verdict: one full shift off-screen; restarted whenever an input changes ----
   const [R, setR] = useState<{ res: SimResults; S: SimState } | null>(null)
   const token = useRef(0)
+  // Nothing the run can place or drive (e.g. every route blocked): say so instead of "Simulating…".
+  const [unrunnable, setUnrunnable] = useState(false)
+  // Leaving Run mode stops every off-screen run (verdict, one-fewer checks, variability).
+  useEffect(() => () => { token.current++ }, [])
   useEffect(() => {
     const tok = ++token.current
     setR(null)
     const S = createSim(inputs.layout, inputs.flows, vehicles, simConfig(assume.seed))
+    setUnrunnable(!S)
     if (!S) return
     runInSlices(S, shiftH * 3600, () => setR({ res: results(S), S }), () => tok === token.current)
   }, [inputs, vehicles, simConfig, assume.seed, shiftH])
@@ -146,7 +138,8 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
     const tok = token.current, out: SimResults[] = []
     const next = (k: number) => {
       if (k >= VARIABILITY_RUNS || tok !== token.current) return
-      const S = createSim(inputs.layout, inputs.flows, vehicles, simConfig(assume.seed + k))!
+      const S = createSim(inputs.layout, inputs.flows, vehicles, simConfig(assume.seed + k))
+      if (!S) return
       runInSlices(S, shiftH * 3600, () => { out.push(results(S)); setVari({ k: k + 1, out: [...out] }); next(k + 1) }, () => tok === token.current)
     }
     setVari({ k: 0, out }); next(0)
@@ -201,7 +194,7 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
   const onAssume = useCallback((patch: Partial<Assumptions>) => patchSimSettings(project.id, patch), [project.id])
 
   const setFleet = (vid: string, n: number) => {
-    const next = { ...(simSettings.fleet ?? {}), [vid]: Math.max(1, Math.min(50, n)) }
+    const next = { ...(simSettings.fleet ?? {}), [vid]: Math.max(1, Math.min(500, n)) }
     if (next[vid] === engineFleet[vid]) delete next[vid]
     patchSimSettings(project.id, { fleet: next })
   }
@@ -235,7 +228,9 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
                       <span className="sim-vstats"><b className="num">{res.perHr.toFixed(1)}</b> / {res.target.toFixed(0)} moves/h · <b className="num">{Math.round(res.avgWait)} s</b> wait · <b className="num">{Math.round(res.utilization * 100)}%</b> busy</span></>
                   : R
                     ? <><span className="sim-chip short">Not run</span><span className="sim-vstats">{R.res.excluded.map(x => x.why).filter((w, i, a) => a.indexOf(w) === i).join(' · ') || 'No flow of this vehicle could run'}</span></>
-                    : <><span className="sim-chip">Simulating</span><span className="sim-vstats">Running a full {shiftH} h shift…</span></>}
+                    : unrunnable
+                      ? <><span className="sim-chip short">Not run</span><span className="sim-vstats">Nothing the run can place or drive — check Ready to run in Edit layout</span></>
+                      : <><span className="sim-chip">Simulating</span><span className="sim-vstats">Running a full {shiftH} h shift…</span></>}
               {R && (
                 <PricingAction
                   project={project} vehicles={vehicles} vehicleId={vid} n={n} engineN={engineFleet[vid] ?? 0}

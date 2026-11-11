@@ -44,7 +44,9 @@ describe('B56.5 clearance per route (spec §5.9)', () => {
     const two = run(L)
     expect(two.lanes).toBe(2)
     expect(two.twoLaneFits).toBe(false)
-    expect(two.status).toBe('violation')
+    // Flagged, not blocked: judged and driven as single-lane until the engineer makes it so.
+    expect(two.status).toBe('full')
+    expect(applyClearance(L, [two]).segments[0].lane).toBe('single')
     const one = run({ ...L, segments: [{ ...L.segments[0], lane: 'single' }] })
     expect(one.lanes).toBe(1)
     expect(one.status).toBe('full')

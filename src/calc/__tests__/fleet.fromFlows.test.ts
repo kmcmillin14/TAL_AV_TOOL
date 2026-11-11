@@ -17,6 +17,6 @@ describe('fleetFromFlows', () => {
   it('is exactly the Sizing chain: flowDerived → groupSummary → fleetSummary', () => {
     const derived = new Map(flows.map(f => [f.id, flowDerived(f, V)]))
     const byHand = fleetSummary([groupSummary('cb18', flows, derived)], byId, settings)
-    expect(fleetFromFlows(flows, byId, settings)).toEqual(byHand)
+    expect(fleetFromFlows(flows, byId, settings).fleet).toEqual(byHand)
   })
 })

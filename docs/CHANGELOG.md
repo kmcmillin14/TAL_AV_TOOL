@@ -1,5 +1,43 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation: cleanup and code review of Milestones 4–5
+
+**Cleanup (no behaviour change):**
+- One fleet chain, `fleetFromFlows` (`src/calc/fleet.ts`). Sizing, `useFleetData`, the exporters and
+  Simulate all use it.
+- Run inputs are built once in the Simulate page and shared by "Ready to run?" and the run.
+- One rule for whether an applied fleet is current, stale or unused (`appliedFleetStatus`), used by
+  Sizing and Simulate. One engine-fleet-by-type map (`engineFleetByType`).
+- Shared geometry: `closestOnLine` (`geometry.ts`), one nearest-point/nearest-route rule for clicks
+  and snaps, `mapCurve`.
+- Removed dead code (`runBlocker`, `removePoint`) and ported its tests to `readinessChecks`.
+- Shared formatters and helpers (`pct`, `fmtLength`, `unlinked`, `emptyLayout`, `pointById`).
+  `useByValue` moved to `src/lib`.
+- Faster B56.5 check: objects out of reach of a route are skipped whole, and corners are computed
+  once per object.
+- Background runs yield every 8 ms, so playback keeps its pace.
+
+**Review fixes:**
+- **Two-lane aisles that are too narrow:** a two-lane route too narrow for two envelopes is now
+  flagged and driven single-lane. Before, it was blocked, which turned every flow through it into
+  "No route" (acceptance 32).
+- **Drawing scale:** setting the scale now moves fixed objects too, not just routes and points.
+- **Repeat names:** Repeat never reuses an existing name, so Charger 2 can't be created twice.
+- **Joining points:** dropping a point on another is refused when it would leave a flow without a
+  valid Pick → Drop (for example, a flow's pick dropped on its own drop, or on a charger).
+- **Fleet stepper:** the limit is now 500, matching the data model. It was 50, so pressing + could
+  lower a large fleet.
+- **Leaving Run mode** stops its off-screen runs.
+- **Nothing to run:** a run with nothing to place or drive reads "Not run" instead of "Simulating…"
+  forever, and Check variability no longer crashes on it.
+- **Deck wording:** the "+ SIMULATED" tile now reads "added after a full-shift simulation" instead of
+  "confirmed by" — the applied figure may be stale.
+
+**Not changed:**
+- A stale applied fleet still prices (spec §9: pricing keeps it until the engineer acts).
+- Mixed fleets round corners at the largest turning radius. That belongs to Milestone 8.
+- The editor keeps its own run inputs for the layout being edited.
+
 ## 2026-11-11 — Fleet simulation Milestone 5 completed: job legs, tables with CSV, shared charts
 
 - **Follow a vehicle** shows its empty leg to the pick and loaded leg to the drop (acceptance 15,

@@ -2,7 +2,7 @@
 // Every function returns a new layout; the editor keeps the old one for undo. Units: feet.
 
 import { roundCorners } from './corners'
-import { segmentGeometry } from './geometry'
+import { closestOnLine, segmentGeometry } from './geometry'
 import { buildGraph, pathLen } from './graph'
 import type { SimCurve, SimLayout, SimObject, SimPoint, SimPointType, SimRole, SimSegment } from './types'
 
@@ -50,11 +50,6 @@ export function updatePoint<T extends SimLayout>(L: T, id: string, patch: Partia
   return { ...L, points: L.points.map(p => (p.id === id ? { ...p, ...patch } : p)) }
 }
 
-/** Remove a point and every route touching it. */
-export function removePoint<T extends SimLayout>(L: T, id: string): T {
-  return { ...L, points: L.points.filter(p => p.id !== id), segments: L.segments.filter(s => s.a !== id && s.b !== id) }
-}
-
 /** Connect two points with a two-way, two-lane route. No route to itself, no duplicates. */
 export function addSegment<T extends SimLayout>(L: T, a: string, b: string, kind: Pick<SimSegment, 'dir' | 'lane'> = { dir: 'two', lane: 'two' }): { layout: T; id: string | null } {
   if (a === b || L.segments.some(s => (s.a === a && s.b === b) || (s.a === b && s.b === a))) return { layout: L, id: null }
@@ -77,8 +72,12 @@ export const pointById = (L: SimLayout) => new Map(L.points.map(p => [p.id, p]))
  *  searched along their length; straight routes are solved exactly. */
 export function projectOnSegment(L: SimLayout, segId: string, p: XY, byId = pointById(L)): { x: number; y: number; t: number; dist: number } | null {
   const s = L.segments.find(q => q.id === segId)
-  const a = s && byId.get(s.a), b = s && byId.get(s.b)
-  if (!s || !a || !b) return null
+  return s ? projectOn(s, byId, p) : null
+}
+
+function projectOn(s: SimSegment, byId: Map<string, SimPoint>, p: XY): { x: number; y: number; t: number; dist: number } | null {
+  const a = byId.get(s.a), b = byId.get(s.b)
+  if (!a || !b) return null
   if (s.curve) {
     const g = segmentGeometry(a, b, s.curve)
     const n = Math.max(16, Math.ceil(g.length / 0.5))
@@ -89,10 +88,34 @@ export function projectOnSegment(L: SimLayout, segId: string, p: XY, byId = poin
     }
     return best
   }
-  const dx = b.x - a.x, dy = b.y - a.y, len2 = dx * dx + dy * dy
-  const t = len2 === 0 ? 0 : Math.max(0, Math.min(1, ((p.x - a.x) * dx + (p.y - a.y) * dy) / len2))
-  const x = a.x + t * dx, y = a.y + t * dy
-  return { x, y, t, dist: Math.hypot(p.x - x, p.y - y) }
+  return closestOnLine(a, b, p)
+}
+
+/** The nearest point within `reach` ft (skipping `skip`), and the nearest route within `reach` — the
+ *  one "what is under the cursor" rule for clicks (`hitTest`) and snaps (`snapDraw`). */
+function nearestPoint(L: SimLayout, at: XY, reach: number, skip?: Set<string>): SimPoint | null {
+  let best: SimPoint | null = null, bd = Infinity
+  for (const p of L.points) {
+    if (skip?.has(p.id)) continue
+    const d = Math.hypot(p.x - at.x, p.y - at.y)
+    if (d <= reach && d < bd) { best = p; bd = d }
+  }
+  return best
+}
+function nearestRoute(L: SimLayout, at: XY, reach: number, skip?: Set<string>): { id: string; at: XY } | null {
+  const byId = pointById(L)
+  let best: { id: string; at: XY } | null = null, bd = Infinity
+  for (const s of L.segments) {
+    if (skip && (skip.has(s.a) || skip.has(s.b))) continue
+    const on = projectOn(s, byId, at)
+    if (on && on.dist <= reach && on.dist < bd) { best = { id: s.id, at: { x: on.x, y: on.y } }; bd = on.dist }
+  }
+  return best
+}
+
+/** A curve with `f` applied to its handles (move, copy, rescale). */
+function mapCurve(c: SimCurve, f: (p: XY) => XY): SimCurve {
+  return c.kind === 'arc' ? { kind: 'arc', mid: f(c.mid) } : { kind: 'bezier', c1: f(c.c1), c2: f(c.c2) }
 }
 
 /** Join a new junction into a route at `at`: the route becomes two, keeping its direction and lane. */
@@ -115,19 +138,10 @@ export function hitTest(L: SimLayout, at: XY, pointFt: number, segFt: number):
   | { kind: 'segment'; id: string; x: number; y: number }
   | { kind: 'object'; id: string }
   | null {
-  let best: { id: string; d: number } | null = null
-  for (const p of L.points) {
-    const d = Math.hypot(p.x - at.x, p.y - at.y)
-    if (d <= pointFt && (!best || d < best.d)) best = { id: p.id, d }
-  }
-  if (best) return { kind: 'point', id: best.id }
-  let seg: { id: string; d: number; x: number; y: number } | null = null
-  const byId = pointById(L)
-  for (const s of L.segments) {
-    const on = projectOnSegment(L, s.id, at, byId)
-    if (on && on.dist <= segFt && (!seg || on.dist < seg.d)) seg = { id: s.id, d: on.dist, x: on.x, y: on.y }
-  }
-  if (seg) return { kind: 'segment', id: seg.id, x: seg.x, y: seg.y }
+  const p = nearestPoint(L, at, pointFt)
+  if (p) return { kind: 'point', id: p.id }
+  const r = nearestRoute(L, at, segFt)
+  if (r) return { kind: 'segment', id: r.id, x: r.at.x, y: r.at.y }
   const obj = [...(L.objects ?? [])].reverse().find(o => insideObject(o, at))
   return obj ? { kind: 'object', id: obj.id } : null
 }
@@ -240,9 +254,8 @@ export function rescaleLayout<T extends SimLayout>(L: T, k: number): T {
   return {
     ...L,
     points: L.points.map(p => ({ ...p, ...s(p) })),
-    segments: L.segments.map(q => (q.curve?.kind === 'arc' ? { ...q, curve: { ...q.curve, mid: s(q.curve.mid) } }
-      : q.curve?.kind === 'bezier' ? { ...q, curve: { ...q.curve, c1: s(q.curve.c1), c2: s(q.curve.c2) } }
-      : q)),
+    segments: L.segments.map(q => (q.curve ? { ...q, curve: mapCurve(q.curve, s) } : q)),
+    ...(L.objects ? { objects: L.objects.map(o => ({ ...o, ...s(o), w: o.w * k, h: o.h * k })) } : {}),
   }
 }
 
@@ -274,14 +287,20 @@ function nextName(name: string, k: number): string {
 
 /** Repeat a point to `count` in all, `stepFt` apart along `dir` (a direction, any length), named in
  *  sequence (`Charger 1…6`). One edit — one undo removes the whole repeat (acceptance 14). */
+/** Next names after `name` (Charger 1 → Charger 2, 3…) that no point on the layout already has. */
+function freshNames(L: SimLayout): (name: string) => string {
+  const used = new Set(L.points.map(p => p.name).filter(Boolean))
+  return name => { let k = 1, n = nextName(name, k); while (used.has(n)) n = nextName(name, ++k); used.add(n); return n }
+}
+
 export function repeatPoint<T extends SimLayout>(L: T, id: string, count: number, stepFt: number, dir: XY): { layout: T; ids: string[] } {
   const src = L.points.find(p => p.id === id)
   const n = Math.hypot(dir.x, dir.y)
   if (!src || count < 2 || !(n > 0)) return { layout: L, ids: src ? [id] : [] }
-  const points = [...L.points], ids = [id]
+  const points = [...L.points], ids = [id], fresh = freshNames(L)
   for (let k = 1; k < count; k++) {
     const pid = nextId('p', points)
-    points.push({ ...src, id: pid, x: src.x + (dir.x / n) * stepFt * k, y: src.y + (dir.y / n) * stepFt * k, ...(src.name ? { name: nextName(src.name, k) } : {}) })
+    points.push({ ...src, id: pid, x: src.x + (dir.x / n) * stepFt * k, y: src.y + (dir.y / n) * stepFt * k, ...(src.name ? { name: fresh(src.name) } : {}) })
     ids.push(pid)
   }
   return { layout: { ...L, points }, ids }
@@ -291,8 +310,7 @@ export function repeatPoint<T extends SimLayout>(L: T, id: string, count: number
 export function copyPoints<T extends SimLayout>(L: T, ids: string[], offset: XY): { layout: T; ids: string[] } {
   const pick = new Set(ids), map = new Map<string, string>()
   const points = [...L.points], segments = [...L.segments]
-  const used = new Set(L.points.map(p => p.name).filter(Boolean))
-  const freshName = (name: string) => { let k = 1, n = nextName(name, k); while (used.has(n)) n = nextName(name, ++k); used.add(n); return n }
+  const freshName = freshNames(L)
   for (const p of L.points) {
     if (!pick.has(p.id)) continue
     const pid = nextId('p', points)
@@ -302,8 +320,7 @@ export function copyPoints<T extends SimLayout>(L: T, ids: string[], offset: XY)
   const shift = (q: XY) => ({ x: q.x + offset.x, y: q.y + offset.y })
   for (const s of L.segments) {
     if (!map.has(s.a) || !map.has(s.b)) continue
-    const curve: SimCurve | undefined = s.curve?.kind === 'arc' ? { kind: 'arc', mid: shift(s.curve.mid) }
-      : s.curve?.kind === 'bezier' ? { kind: 'bezier', c1: shift(s.curve.c1), c2: shift(s.curve.c2) } : undefined
+    const curve = s.curve && mapCurve(s.curve, shift)
     segments.push({ ...s, id: nextId('s', segments), a: map.get(s.a)!, b: map.get(s.b)!, ...(curve ? { curve } : {}) })
   }
   return { layout: { ...L, points, segments }, ids: [...map.values()] }
@@ -317,7 +334,7 @@ export function movePoints<T extends SimLayout>(L: T, ids: string[], d: XY): T {
     ...L,
     points: L.points.map(p => (pick.has(p.id) ? { ...p, ...shift(p) } : p)),
     segments: L.segments.map(s => (!s.curve || !pick.has(s.a) || !pick.has(s.b) ? s
-      : { ...s, curve: s.curve.kind === 'arc' ? { kind: 'arc', mid: shift(s.curve.mid) } : { kind: 'bezier', c1: shift(s.curve.c1), c2: shift(s.curve.c2) } })),
+      : { ...s, curve: mapCurve(s.curve, shift) })),
   }
 }
 
@@ -366,9 +383,8 @@ export function snapToObjects(
     const c = objectCorners({ ...o, x: o.x - offsetFt, y: o.y - offsetFt, w: o.w + 2 * offsetFt, h: o.h + 2 * offsetFt })
     corners.push(...c)
     for (let i = 0; i < 4; i++) {
-      const a = c[i], b = c[(i + 1) % 4], dx = b.x - a.x, dy = b.y - a.y
-      const t = Math.max(0, Math.min(1, ((at.x - a.x) * dx + (at.y - a.y) * dy) / (dx * dx + dy * dy || 1)))
-      edges.push({ x: a.x + t * dx, y: a.y + t * dy })
+      const q = closestOnLine(c[i], c[(i + 1) % 4], at)
+      edges.push({ x: q.x, y: q.y })
     }
   }
   const nearest = (qs: XY[]) => qs
@@ -409,10 +425,10 @@ export function removeObject<T extends SimLayout>(L: T, id: string): T {
 // ---- Drawing snaps (owner, 2026-11-11: "snapping to the endpoints … needs to be smooth and easy") ----
 
 /** Snap reach in screen pixels: generous for points (a click near an end joins it), tighter for the rest. */
-export const SNAP_PX = { point: 22, route: 12, object: 12, align: 12 }
+const SNAP_PX = { point: 22, route: 12, object: 12, align: 12 }
 
 /** Square to `from`: horizontal or vertical, whichever is closer. */
-export function squareTo(from: XY, to: XY): XY {
+function squareTo(from: XY, to: XY): XY {
   return Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? { x: to.x, y: from.y } : { x: from.x, y: to.y }
 }
 
@@ -433,24 +449,10 @@ export function snapDraw(
   o: { px: number; from?: XY | null; shift?: boolean; offsetFt?: number; exclude?: Set<string>; routes?: boolean },
 ): DrawSnap {
   const skip = o.exclude ?? new Set<string>()
-  let best: { id: string; d: number } | null = null
-  for (const p of L.points) {
-    if (skip.has(p.id)) continue
-    const d = Math.hypot(p.x - at.x, p.y - at.y)
-    if (d <= SNAP_PX.point * o.px && (!best || d < best.d)) best = { id: p.id, d }
-  }
-  if (best) { const p = L.points.find(q => q.id === best!.id)!; return { kind: 'point', id: p.id, at: { x: p.x, y: p.y } } }
-
-  if (o.routes !== false) {
-    const byId = pointById(L)
-    let seg: { id: string; d: number; at: XY } | null = null
-    for (const s of L.segments) {
-      if (skip.has(s.a) || skip.has(s.b)) continue
-      const on = projectOnSegment(L, s.id, at, byId)
-      if (on && on.dist <= SNAP_PX.route * o.px && (!seg || on.dist < seg.d)) seg = { id: s.id, d: on.dist, at: { x: on.x, y: on.y } }
-    }
-    if (seg) return { kind: 'route', id: seg.id, at: seg.at }
-  }
+  const p = nearestPoint(L, at, SNAP_PX.point * o.px, skip)
+  if (p) return { kind: 'point', id: p.id, at: { x: p.x, y: p.y } }
+  const route = o.routes !== false ? nearestRoute(L, at, SNAP_PX.route * o.px, skip) : null
+  if (route) return { kind: 'route', id: route.id, at: route.at }
 
   const from = o.from && !o.shift ? o.from : null
   const q = from ? squareTo(from, at) : at
@@ -493,4 +495,9 @@ export function mergePoints<T extends SimLayout>(L: T, from: string, into: strin
     return [t]
   })
   return { ...L, points: L.points.flatMap(p => (p.id === from ? [] : p.id === into ? [kept] : [p])), segments }
+}
+
+/** A flow with its layout links removed — back to a Sizing-only flow (its last distance kept). */
+export function unlinked<F extends { fromPointId?: string; toPointId?: string; distanceSource?: 'layout' }>(f: F): F {
+  return { ...f, fromPointId: undefined, toPointId: undefined, distanceSource: undefined }
 }

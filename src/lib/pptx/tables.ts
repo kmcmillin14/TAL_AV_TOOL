@@ -260,7 +260,7 @@ export function fillFleetSizing(zip: PizZip, model: FleetModel, names: Record<st
     { value: fleet.totalUtilizationDelta > 0 ? `+${fleet.totalUtilizationDelta}` : '+0', label: '+ HEADROOM', compact: true,
       desc: `headroom to run at ${Math.round(settings.targetUtilization * 100)}% of available time` },
     ...(simulatedDelta(fleet) > 0 ? [{ value: `+${simulatedDelta(fleet)}`, label: '+ SIMULATED', compact: true,
-      desc: 'confirmed by a full-shift simulation of the site layout' }] : []),
+      desc: 'added after a full-shift simulation of the site layout' }] : []),
     { value: String(fleet.totalFleetSold), label: '= FLEET', accent: true, compact: true,
       desc: simulatedNote(fleet) ? `recommended fleet size — ${simulatedNote(fleet)}` : 'recommended fleet size' },
   ], { h: WATERFALL_H })

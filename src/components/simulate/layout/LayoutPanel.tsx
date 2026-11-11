@@ -11,7 +11,7 @@ import {
 } from '@/src/calc/sim/layoutEdit'
 import type { SimLayout, SimObject, SimPoint, SimPointType, SimSegment } from '@/src/calc/sim/types'
 import Icon from '@/src/design-system/components/Icon'
-import { lengthFromDisplay, lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
+import { fmtLength, lengthFromDisplay, lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import type { Selection } from './LayoutCanvas'
@@ -49,8 +49,7 @@ const STATUS: Record<SegmentClearance['status'], string> = {
 }
 
 export default function LayoutPanel(p: Props) {
-  const unit = units.distance.label(p.unitSystem)
-  const len = (ft: number) => (isFinite(ft) ? `${lengthToDisplay(ft, p.unitSystem).toFixed(1)} ${unit}` : 'No route')
+  const len = (ft: number) => (isFinite(ft) ? fmtLength(ft, p.unitSystem, 1) : 'No route')
   const byId = useMemo(() => pointById(p.layout), [p.layout])
   const name = (id?: string) => (id && byId.get(id)?.name) || '—'
   const sel = p.selection
@@ -227,7 +226,7 @@ export default function LayoutPanel(p: Props) {
     <aside className="sim-card" aria-label="B56.5 clearance">
       <h3>B56.5 clearance</h3>
       <p className="sim-readout">
-        {p.rule.lowSpeedIn} in per side below {(p.rule.thresholdFps * 0.3048).toFixed(1)} m/s, {p.rule.fullSpeedIn} in at or above{p.rule.sharedBetweenVehicles ? ', shared between passing vehicles' : ''}.
+        {p.rule.lowSpeedIn} in per side below {units.distance.toMetric(p.rule.thresholdFps).toFixed(1)} m/s, {p.rule.fullSpeedIn} in at or above{p.rule.sharedBetweenVehicles ? ', shared between passing vehicles' : ''}.
         <span className="sim-source">Engineer rule — ANSI/ITSDF B56.5</span>
       </p>
       <p className="sim-readout">

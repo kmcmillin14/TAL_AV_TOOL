@@ -3,12 +3,10 @@
 import type { StoredProject } from './storage'
 import type { Vehicle } from './vehicleLibrary'
 import { DEFAULT_TARGET_UTILIZATION, type FleetSettings, type Flow, type FlowDerived, type FleetSummary } from '../calc/types'
-import { flowDerived, groupSummary } from '../calc/flowMetrics'
-import { fleetSummary, defaultChargeRegime } from '../calc/fleet'
+import { defaultChargeRegime, fleetFromFlows } from '../calc/fleet'
 import { romPricing, romOpex, romPayback, type RomPricing, type RomSummary, type RomCostInputs } from '../calc/rom'
 import { defaultOperatingDaysPerYear, consecutiveOperatingDays } from '../calc/romAnalytics'
 import { resolveAllRomSellPriceLines, resolveFleetSellPriceTotal } from './romSellPriceLine'
-
 import { pricingGate, type PricingGate } from './romComplexityFromProject'
 
 export interface FleetModel {
@@ -47,18 +45,8 @@ export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): 
   const vehicleById = new Map(vehicles.map(v => [v.id, v]))
   const flows = project.flows ?? []
 
-  const derivedByFlowId = new Map<string, FlowDerived>()
-  for (const f of flows) {
-    const veh = f.vehicleId ? vehicleById.get(f.vehicleId) : undefined
-    derivedByFlowId.set(f.id, flowDerived(f, veh))
-  }
-
-  const ids: string[] = []
-  for (const f of flows) if (f.vehicleId && !ids.includes(f.vehicleId)) ids.push(f.vehicleId)
-  const groups = ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
-
   const settings = projectFleetSettings(project)
-  const fleet = fleetSummary(groups, vehicleById, settings)
+  const { derivedByFlowId, fleet } = fleetFromFlows(flows, vehicleById, settings)
 
   const costs: RomCostInputs = {
     numberOfOperators: project.numberOfOperators

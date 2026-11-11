@@ -6,9 +6,8 @@ import { fetchVehiclesCached } from './vehicleCache'
 import { projectFleetSettings } from './fleetModel'
 import { useProjectSync } from './useProjectSync'
 import type { Vehicle } from './vehicleLibrary'
-import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
-import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
-import { fleetSummary } from '@/src/calc/fleet'
+import type { FleetSettings, Flow } from '@/src/calc/types'
+import { fleetFromFlows } from '@/src/calc/fleet'
 import { consecutiveOperatingDays } from '@/src/calc/romAnalytics'
 
 /** Centralizes the Fleet Engine data chain: load project + vehicles, derive flow
@@ -34,24 +33,8 @@ export function useFleetData(id: string) {
   const vehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
   const flows: Flow[] = useMemo(() => project?.flows ?? [], [project])
 
-  const derivedByFlowId = useMemo(() => {
-    const m = new Map<string, FlowDerived>()
-    for (const f of flows) {
-      const veh = f.vehicleId ? vehicleById.get(f.vehicleId) : undefined
-      m.set(f.id, flowDerived(f, veh))
-    }
-    return m
-  }, [flows, vehicleById])
-
-  const groups = useMemo(() => {
-    const ids: string[] = []
-    for (const f of flows) if (f.vehicleId && !ids.includes(f.vehicleId)) ids.push(f.vehicleId)
-    return ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
-  }, [flows, derivedByFlowId])
-
   const settings: FleetSettings = useMemo(() => projectFleetSettings(project ?? {}), [project])
-
-  const fleet = useMemo(() => fleetSummary(groups, vehicleById, settings), [groups, vehicleById, settings])
+  const { derivedByFlowId, groups, fleet } = useMemo(() => fleetFromFlows(flows, vehicleById, settings), [flows, vehicleById, settings])
 
   return { project, setProject, vehicles, vehicleById, loading, error, flows, derivedByFlowId, groups, settings, fleet }
 }
