@@ -124,7 +124,17 @@ export interface SimState {
   lastProgress: number
   flags: SimFlag[]
   profiles: Map<string, VehicleProfile>
+  // ---- Run-view statistics (read only; they never change behaviour) ----
+  /** Moves delivered in each simulated hour (index = hour since start). */
+  hourly: number[]
+  /** Per zone (flow point, charger, parking): seconds occupied, seconds vehicles waited for it,
+   *  handling visits, and the longest queue seen. */
+  zoneStats: Map<string, ZoneStat>
+  /** Seconds vehicles stood waiting, by graph node — the run view's wait "heat". */
+  heat: Float64Array
 }
+
+export interface ZoneStat { occT: number; waitT: number; visits: number; maxQ: number }
 
 /** No routes drawn → nothing to simulate (spec §2.2, acceptance 1). */
 export function layoutReady(layout: SimLayout): boolean {
@@ -172,6 +182,7 @@ export function createSim(
   const S: SimState = {
     G, P, t: 0, rand, orders: [], waiting: 0, veh: [], locks: new Map(), jlocks: new Map(), flows: [], excluded: [],
     series: new Map(), gridlock: null, lastProgress: 0, flags: [], profiles,
+    hourly: [], zoneStats: new Map(), heat: new Float64Array(G.n),
   }
   const profileFor = (vid: string) => {
     let p = profiles.get(vid)
@@ -367,6 +378,14 @@ function startHandling(S: SimState, v: SimVehicle, picking: boolean) {
   v.repo = repo
   v.tl = picking ? F.pickSec : F.dropSec
   v.mode = picking ? 'pick' : 'drop'
+  const z = S.G.zone[v.node]
+  if (z) zoneStat(S, z).visits++
+}
+
+const zoneStat = (S: SimState, z: string): ZoneStat => {
+  let st = S.zoneStats.get(z)
+  if (!st) { st = { occT: 0, waitT: 0, visits: 0, maxQ: 0 }; S.zoneStats.set(z, st) }
+  return st
 }
 
 function arrive(S: SimState, v: SimVehicle) {
@@ -634,6 +653,7 @@ export function step(S: SimState) {
         } else {
           const o = v.job!, F = o.F
           F.done++; F.misSum += S.t - o.td
+          const hr = Math.floor(S.t / 3600); S.hourly[hr] = (S.hourly[hr] ?? 0) + 1
           S.orders.splice(S.orders.indexOf(o), 1)
           afterDrop(S, v)
         }
@@ -644,7 +664,7 @@ export function step(S: SimState) {
       if (v.mode === 'toCharge') v.tm.charge += DT
       else if (v.mode === 'toHome') v.tm.idle += DT
       else if (v.moved > 0) v.tm.travel += DT
-      else v.tm.wait += DT
+      else { v.tm.wait += DT; S.heat[v.atNode ? v.node : v.nodes[Math.min(v.pi, v.nodes.length - 1)]] += DT }
     } else if (v.mode === 'charging') v.tm.charge += DT
     else v.tm.idle += DT
     if (b) {
@@ -659,6 +679,13 @@ export function step(S: SimState) {
       }
     }
   }
+  // run-view statistics: who occupies and who waits for each zone (wait heat is counted with the time split)
+  const queue = new Map<string, number>()
+  for (const v of S.veh) {
+    if (v.atNode && G.zone[v.node]) zoneStat(S, G.zone[v.node]!).occT += DT
+    if (v.waitZone != null) { zoneStat(S, v.waitZone).waitT += DT; queue.set(v.waitZone, (queue.get(v.waitZone) ?? 0) + 1) }
+  }
+  for (const [z, n] of queue) { const st = zoneStat(S, z); st.maxQ = Math.max(st.maxQ, n) }
   // gridlock: a wait-for cycle that persists, or a route blocked by a parked vehicle
   for (const v of S.veh) {
     let u = v.waitFor, k = 0, cyc = false

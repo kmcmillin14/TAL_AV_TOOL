@@ -10,9 +10,11 @@ import type {
   FleetGroup,
   FleetSettings,
   FleetSummary,
+  Flow,
   GroupSummary,
 } from './types'
 import type { ChargerType, Vehicle } from '@/src/lib/vehicleLibrary'
+import { flowDerived, groupSummary } from './flowMetrics'
 
 /** Map a vehicle's spec'd charger type to the two-value engine model.
  *  Display-only: the math treats every vehicle identically ("charges whenever
@@ -229,4 +231,12 @@ export function fleetSummary(
     totalFleetSold: out.reduce((s, x) => s + x.fleetSold, 0),
     targetUtilization: U,
   }
+}
+
+/** The Fleet Engine for a list of flows: per-flow cycle → per-vehicle groups → fleet. The one chain
+ *  Sizing (useFleetData) and Simulate (before/after a layout distance) both use. */
+export function fleetFromFlows(flows: Flow[], vehiclesById: Map<string, Vehicle>, settings: FleetSettings): FleetSummary {
+  const derived = new Map(flows.map(f => [f.id, flowDerived(f, f.vehicleId ? vehiclesById.get(f.vehicleId) : undefined)]))
+  const ids = [...new Set(flows.flatMap(f => (f.vehicleId ? [f.vehicleId] : [])))]
+  return fleetSummary(ids.map(vid => groupSummary(vid, flows, derived)), vehiclesById, settings)
 }

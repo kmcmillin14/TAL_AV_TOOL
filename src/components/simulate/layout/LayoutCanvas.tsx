@@ -6,7 +6,7 @@
 // are drawn to true scale (§5.8). Tools are handled by the editor — the canvas reports where the
 // pointer is and what is under it.
 
-import { memo, useEffect, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
+import { memo, useEffect, useRef, useState, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
 import Icon from '@/src/design-system/components/Icon'
 import type { SegmentClearance } from '@/src/calc/sim/clearance'
 import { segmentGeometry } from '@/src/calc/sim/geometry'
@@ -15,6 +15,7 @@ import type { SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/
 import type { ProjectFlow } from './useLayoutEditor'
 
 export type XY = { x: number; y: number }
+export { squareTo }
 export type Handle = 'mid' | 'c1' | 'c2'
 export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle }
 export type Selection =
@@ -56,6 +57,21 @@ interface Props {
   fitKey: number
   /** Shown over an empty layout. */
   emptyPrompt?: string
+  /** Route tool: the preview snaps square to the last point unless Shift is held. */
+  snapSquare: boolean
+  /** Controls floated over the canvas (tool bar, palette, view buttons, hint). */
+  children?: ReactNode
+  /** A double-click finishes the route being drawn. */
+  onDoubleClick?: () => void
+  /** Run mode: drawn over the layout (vehicles, wait heat, gridlock ring), in feet; given the size
+   *  of one screen pixel in feet so labels stay legible. */
+  scene?: (px: number) => ReactNode
+  /** Run mode: every drag pans; nothing is edited. */
+  panAlways?: boolean
+  /** Run mode: keep this spot in the middle of the view (a followed vehicle). */
+  follow?: XY | null
+  /** Point names on the map (Run mode can hide them). Default on. */
+  showLabels?: boolean
 }
 
 const POINT_PX = 13, SEG_PX = 8, CHEVRON_PX = 90, HANDLE_PX = 6
@@ -65,14 +81,15 @@ export default function LayoutCanvas(props: Props) {
   const { layout, driven, flows, image, selection, notConnected, showFlows, clearances, rubberFrom, marks, offset } = props
   const box = useRef<HTMLDivElement>(null)
   const [size, setSize] = useState({ w: 800, h: 520 })
+  const [measured, setMeasured] = useState(false)      // the first real size is known: fit then, not at 800×520
   const [view, setView] = useState({ x: -20, y: -20, ppf: 4 })      // top-left (ft) and pixels per foot
-  const [cursor, setCursor] = useState<XY | null>(null)
+  const [cursor, setCursor] = useState<{ at: XY; shift: boolean } | null>(null)
   const pan = useRef<{ sx: number; sy: number; vx: number; vy: number } | null>(null)
 
   useEffect(() => {
     const el = box.current
     if (!el) return
-    const ro = new ResizeObserver(([e]) => setSize({ w: e.contentRect.width, h: e.contentRect.height }))
+    const ro = new ResizeObserver(([e]) => { setSize({ w: e.contentRect.width, h: e.contentRect.height }); setMeasured(true) })
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
@@ -84,10 +101,23 @@ export default function LayoutCanvas(props: Props) {
     if (image) { xs.push(0, image.widthFt); ys.push(0, image.heightFt) }
     if (!xs.length) { setView({ x: -20, y: -20, ppf: 4 }); return }
     const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
-    const ppf = Math.min(size.w / Math.max(x1 - x0, 20), size.h / Math.max(y1 - y0, 20)) * 0.9
-    setView({ x: (x0 + x1) / 2 - size.w / 2 / ppf, y: (y0 + y1) / 2 - size.h / 2 / ppf, ppf })
+    // Leave room for the floating controls: labels above the top row, the bar along the bottom.
+    const top = 40, bottom = 64, side = 24
+    const ppf = Math.min((size.w - 2 * side) / Math.max(x1 - x0, 20), (size.h - top - bottom) / Math.max(y1 - y0, 20)) * 0.95
+    const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2
+    setView({ x: cx - size.w / 2 / ppf, y: cy - (top + (size.h - top - bottom) / 2) / ppf, ppf })
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.fitKey, image?.href])
+  }, [props.fitKey, image?.href, measured])
+
+  // Run mode: ease the view toward a followed vehicle.
+  useEffect(() => {
+    const f = props.follow
+    if (!f) return
+    setView(v => {
+      const cx = v.x + size.w / 2 / v.ppf, cy = v.y + size.h / 2 / v.ppf
+      return { ...v, x: v.x + (f.x - cx) * 0.15, y: v.y + (f.y - cy) * 0.15 }
+    })
+  }, [props.follow, size.w, size.h])
 
   // Wheel zoom about the cursor (non-passive so the page does not scroll).
   useEffect(() => {
@@ -118,10 +148,10 @@ export default function LayoutCanvas(props: Props) {
 
   const down = (e: RPointerEvent<HTMLDivElement>) => {
     const at = toFt(e), hit = hitAt(at, e.target)
-    if (e.button === 1 || (e.button === 0 && !hit && props.panOnEmpty && !e.shiftKey)) {
+    if (props.panAlways || e.button === 1 || (e.button === 0 && !hit && props.panOnEmpty && !e.shiftKey)) {
       pan.current = { sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y }
       e.currentTarget.setPointerCapture(e.pointerId)
-      if (e.button === 0) props.onPointer({ type: 'down', at, hit: null, shift: false })   // a click on empty space clears the selection
+      if (e.button === 0 && !props.panAlways) props.onPointer({ type: 'down', at, hit: null, shift: false })   // a click on empty space clears the selection
       return
     }
     if (e.button !== 0) return
@@ -130,7 +160,7 @@ export default function LayoutCanvas(props: Props) {
   }
   const move = (e: RPointerEvent<HTMLDivElement>) => {
     const at = toFt(e)
-    if (rubberFrom) setCursor(at)           // only the rubber line follows the pointer
+    if (rubberFrom) setCursor({ at, shift: e.shiftKey })   // only the route preview follows the pointer
     if (pan.current) {
       const p = pan.current
       setView(v => ({ ...v, x: p.vx - (e.clientX - p.sx) / v.ppf, y: p.vy - (e.clientY - p.sy) / v.ppf }))
@@ -149,6 +179,8 @@ export default function LayoutCanvas(props: Props) {
   const selected = (kind: 'point' | 'segment' | 'flow' | 'object', id: string) =>
     (selection?.kind === kind && selection.id === id) || (kind === 'point' && selection?.kind === 'points' && selection.ids.includes(id))
   const px = 1 / view.ppf                       // one screen pixel, in feet
+  const degree = new Map<string, number>()
+  for (const q of layout.segments) { degree.set(q.a, (degree.get(q.a) ?? 0) + 1); degree.set(q.b, (degree.get(q.b) ?? 0) + 1) }
   const grid = gridStep(view.ppf)
   const selSeg = selection?.kind === 'segment' ? layout.segments.find(s => s.id === selection.id) : undefined
   const rect = props.box && { x: Math.min(props.box.a.x, props.box.b.x), y: Math.min(props.box.a.y, props.box.b.y), w: Math.abs(props.box.b.x - props.box.a.x), h: Math.abs(props.box.b.y - props.box.a.y) }
@@ -161,6 +193,7 @@ export default function LayoutCanvas(props: Props) {
       onPointerMove={move}
       onPointerUp={up}
       onPointerLeave={() => setCursor(null)}
+      onDoubleClick={props.onDoubleClick}
     >
       <svg
         width="100%" height="100%"
@@ -171,6 +204,9 @@ export default function LayoutCanvas(props: Props) {
           <pattern id="sim-grid" width={grid} height={grid} patternUnits="userSpaceOnUse">
             <path d={`M ${grid} 0 L 0 0 0 ${grid}`} fill="none" className="sim-grid-line" vectorEffect="non-scaling-stroke" />
           </pattern>
+          <pattern id="sim-grid-major" width={grid * 5} height={grid * 5} patternUnits="userSpaceOnUse">
+            <path d={`M ${grid * 5} 0 L 0 0 0 ${grid * 5}`} fill="none" className="sim-grid-major" vectorEffect="non-scaling-stroke" />
+          </pattern>
           <pattern id="sim-hatch" width={8 * px} height={8 * px} patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
             <path d={`M0 0V${8 * px}`} className="sim-hatch-line" vectorEffect="non-scaling-stroke" />
           </pattern>
@@ -179,12 +215,14 @@ export default function LayoutCanvas(props: Props) {
           </marker>
         </defs>
         <rect x={view.x} y={view.y} width={size.w / view.ppf} height={size.h / view.ppf} fill="url(#sim-grid)" />
+        <rect x={view.x} y={view.y} width={size.w / view.ppf} height={size.h / view.ppf} fill="url(#sim-grid-major)" />
         {image && <image href={image.href} x={0} y={0} width={image.widthFt} height={image.heightFt} preserveAspectRatio="none" className="sim-drawing" />}
 
         {(layout.objects ?? []).map(o => <ObjectShape key={o.id} o={o} selected={selected('object', o.id)} />)}
 
         {clearances && <ClearanceOverlay layout={layout} results={clearances} px={px} />}
 
+        {driven.segments.map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} />)}
         {driven.segments.map(s => (
           <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} selected={selected('segment', s.id.split('~')[0])} />
         ))}
@@ -196,13 +234,25 @@ export default function LayoutCanvas(props: Props) {
             selected={selected('flow', f.id)} onClick={props.onFlowClick} />
         })}
 
-        {rubberFrom && cursor && (
-          <line x1={rubberFrom.x} y1={rubberFrom.y} x2={cursor.x} y2={cursor.y} className="sim-rubber" vectorEffect="non-scaling-stroke" />
-        )}
+        {rubberFrom && cursor && (() => {
+          const end = props.snapSquare && !cursor.shift ? squareTo(rubberFrom, cursor.at) : cursor.at
+          const len = Math.hypot(end.x - rubberFrom.x, end.y - rubberFrom.y)
+          return (
+            <g>
+              <line x1={rubberFrom.x} y1={rubberFrom.y} x2={end.x} y2={end.y} className="sim-rubber" vectorEffect="non-scaling-stroke" />
+              <g transform={`translate(${end.x} ${end.y}) scale(${px})`} className="sim-rubber-end">
+                <circle r={5} />
+                <text x={10} y={-10} className="sim-rubber-len">{len.toFixed(1)} ft</text>
+              </g>
+            </g>
+          )
+        })()}
 
         {[...pts.values()].map(p => (
-          <PointMarker key={p.id} p={p} px={px} selected={selected('point', p.id)} loose={notConnected.has(p.id)} />
+          <PointMarker key={p.id} p={p} px={px} selected={selected('point', p.id)} loose={notConnected.has(p.id)} cross={(degree.get(p.id) ?? 0) >= 3} label={props.showLabels !== false} />
         ))}
+
+        {props.scene?.(px)}
 
         {selSeg && <CurveHandles s={selSeg} a={pts.get(selSeg.a)} b={pts.get(selSeg.b)} px={px} />}
 
@@ -218,10 +268,16 @@ export default function LayoutCanvas(props: Props) {
         )}
       </svg>
       {props.emptyPrompt && !layout.points.length && <div className="sim-empty-prompt">{props.emptyPrompt}</div>}
+      {props.children}
       <Legend clearances={!!clearances} />
       <span className="sim-zoom num">{grid >= 1 ? `grid ${grid} ft` : `grid ${grid * 12} in`}</span>
     </div>
   )
+}
+
+/** The point square to `from` — the route keeps to the aisle direction it is closest to. */
+function squareTo(from: XY, to: XY): XY {
+  return Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? { x: to.x, y: from.y } : { x: from.x, y: to.y }
 }
 
 /** A grid step (ft) that lands 30–150 px apart on screen. */
@@ -237,24 +293,29 @@ function pathOf(a: XY, b: XY, s: SimSegment): string {
   return Array.from({ length: n + 1 }, (_, i) => { const q = g.at((g.length * i) / n); return `${i ? 'L' : 'M'}${q.x} ${q.y}` }).join('')
 }
 
+/** The aisle a route runs in: a wide lane in true feet (10 ft two-way, 6 ft one-way), as in the
+ *  proof of concept — never thinner than a few pixels. */
+const Lane = memo(function Lane({ s, a, b, px }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number }) {
+  if (!a || !b) return null
+  const w = s.dir === 'two' && s.lane !== 'single' ? 10 : 6
+  return <path d={pathOf(a, b, s)} className="sim-lane" strokeWidth={Math.max(w, 4 * px)} />
+})
+
+/** Floor tape down the lane: dashed for two-way, solid with arrowheads for one-way, solid with
+ *  "no passing" ticks for a single-lane two-way route. Spaced in screen pixels (acceptance 12). */
 const Segment = memo(function Segment({ s, a, b, px, selected }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number; selected: boolean }) {
   if (!a || !b) return null
   const g = segmentGeometry(a, b, s.curve)
-  const n = Math.max(1, Math.floor(g.length / (CHEVRON_PX * px)))
   const single = s.lane === 'single'
-  const d = pathOf(a, b, s)
+  const n = Math.max(1, Math.floor(g.length / ((s.dir === 'two' ? CHEVRON_PX : 34) * px)))
   return (
-    <g className={`sim-seg${selected ? ' is-selected' : ''}${single ? ' is-single' : ''}`}>
-      <path d={d} className="sim-seg-path" vectorEffect="non-scaling-stroke" />
-      {s.dir === 'two' && <path d={d} className="sim-seg-centre" vectorEffect="non-scaling-stroke" />}
-      {Array.from({ length: n }, (_, i) => {
-        const c = g.at((g.length * (i + 0.5)) / n), ang = (Math.atan2(c.ty, c.tx) * 180) / Math.PI
+    <g className={`sim-seg${selected ? ' is-selected' : ''}${s.dir === 'two' && !single ? ' is-two' : ''}`}>
+      <path d={pathOf(a, b, s)} className="sim-tape" vectorEffect="non-scaling-stroke" />
+      {(s.dir !== 'two' || single) && Array.from({ length: n }, (_, i) => {
+        const c = g.at((g.length * (i + 0.5)) / n), ang = (Math.atan2(c.ty, c.tx) * 180) / Math.PI + (s.dir === 'ba' ? 180 : 0)
         return (
-          <g key={i} transform={`translate(${c.x} ${c.y}) rotate(${ang}) scale(${px})`} className="sim-chevron">
-            {s.dir === 'ab' && <path d="M-4 -5L2 0L-4 5" />}
-            {s.dir === 'ba' && <path d="M4 -5L-2 0L4 5" />}
-            {s.dir === 'two' && <><path d="M2 -9L7 -6L2 -3" /><path d="M-2 3L-7 6L-2 9" /></>}
-            {s.dir === 'two' && single && <path d="M0 -4V4" className="sim-no-pass" />}
+          <g key={i} transform={`translate(${c.x} ${c.y}) rotate(${ang}) scale(${px})`} className="sim-arrow">
+            {s.dir === 'two' ? <path d="M0 -5V5" className="sim-no-pass" /> : <path d="M6 0L-4 -5L-4 5Z" />}
           </g>
         )
       })}
@@ -283,32 +344,51 @@ function CurveHandles({ s, a, b, px }: { s: SimSegment; a?: SimPoint; b?: SimPoi
   return dot(m, 'mid')
 }
 
-const PointMarker = memo(function PointMarker({ p, px, selected, loose }: { p: SimPoint; px: number; selected: boolean; loose: boolean }) {
-  const cls = `sim-pt sim-pt-${p.type}${p.role ? ` role-${p.role}` : ''}${selected ? ' is-selected' : ''}`
+/** Point tile (proof-of-concept look): a rounded square tinted by its role — round for chargers and
+ *  parking — with the approved type icon, its name in a dark pill above, and the role badge. Grows
+ *  with zoom like a floor marking, never smaller than legible. Junctions are dots: amber where three
+ *  or more routes meet. */
+const PointMarker = memo(function PointMarker({ p, px, selected, loose, cross, label }: { p: SimPoint; px: number; selected: boolean; loose: boolean; cross: boolean; label: boolean }) {
   if (p.type === 'junction') {
-    return <g transform={`translate(${p.x} ${p.y}) scale(${px})`} className={cls}><circle r={selected ? 5 : 3.5} /></g>
+    return <g transform={`translate(${p.x} ${p.y}) scale(${px})`} className={`sim-pt-junction${cross ? ' is-cross' : ''}${selected ? ' is-selected' : ''}`}><circle r={selected ? 5 : cross ? 4 : 3} /></g>
   }
+  const half = Math.max(9, 3.5 / px)                                  // screen px: 3.5 ft, at least 9 px
+  const tone = p.role ? `role-${p.role}` : `kind-${p.type}`
   const vehiclePoint = p.type === 'charger' || p.type === 'parking'
   const fp = p.footprintFt
+  const icon = Math.round(half * 1.15)
   return (
     <>
-      {fp && <rect x={p.x - fp.l / 2} y={p.y - fp.w / 2} width={fp.l} height={fp.w} className={`sim-footprint${p.role ? ` role-${p.role}` : ''}`} vectorEffect="non-scaling-stroke" />}
-      <g transform={`translate(${p.x} ${p.y}) scale(${px})`} className={cls}>
-        {vehiclePoint ? <circle r={13} className="sim-pt-body" /> : <rect x={-13} y={-13} width={26} height={26} rx={6} className="sim-pt-body" />}
-        {p.role === 'pickDrop' && <path d="M-13 7V-7A6 6 0 0 1 -7 -13H7" className="sim-pt-split" />}
-        <g transform="translate(-8 -8)"><Icon name={p.type} size={16} /></g>
+      {fp && <rect x={p.x - fp.l / 2} y={p.y - fp.w / 2} width={fp.l} height={fp.w} className={`sim-footprint ${tone}`} vectorEffect="non-scaling-stroke" />}
+      <g transform={`translate(${p.x} ${p.y}) scale(${px})`} className={`sim-pt ${tone}${selected ? ' is-selected' : ''}`}>
+        {vehiclePoint
+          ? <circle r={half} className="sim-pt-body" />
+          : <rect x={-half} y={-half} width={half * 2} height={half * 2} rx={Math.min(5, half / 2)} className="sim-pt-body" />}
+        {p.role === 'pickDrop' && <path d={`M${-half} ${half * 0.4}V${-half + 5}A5 5 0 0 1 ${-half + 5} ${-half}H${half * 0.4}`} className="sim-pt-split" />}
+        <g transform={`translate(${-icon / 2} ${-icon / 2})`} className="sim-pt-icon"><Icon name={p.type} size={icon} /></g>
         {p.role && (
-          <g transform="translate(9 -19)" className="sim-pt-badge">
+          <g transform={`translate(${half - 4} ${-half - 6})`} className="sim-pt-badge">
             <circle cx={5} cy={5} r={7} />
             <Icon name={ROLE_ICON[p.role]} size={10} />
           </g>
         )}
-        {p.name && <text y={27} className="sim-pt-name">{p.name}</text>}
-        {loose && <text y={39} className="sim-pt-loose">Not connected</text>}
+        {p.name && label && <NamePill y={-half - 6} text={p.name} />}
+        {loose && <text y={half + 14} className="sim-pt-loose">Not connected</text>}
       </g>
     </>
   )
 })
+
+/** A name in a dark pill (proof-of-concept label), bottom edge at `y`. */
+function NamePill({ y, text }: { y: number; text: string }) {
+  const w = text.length * 6.6 + 12
+  return (
+    <g className="sim-pill">
+      <rect x={-w / 2} y={y - 19} width={w} height={17} rx={4} />
+      <text y={y - 6.5}>{text}</text>
+    </g>
+  )
+}
 
 function ObjectShape({ o, selected }: { o: SimObject; selected: boolean }) {
   const c = objectCorners(o)
@@ -361,9 +441,9 @@ const FlowArrow = memo(function FlowArrow({ id, a, b, label, px, selected, onCli
 function Legend({ clearances }: { clearances: boolean }) {
   return (
     <div className="sim-legend" aria-label="Legend">
-      <span><svg width="26" height="10"><path d="M2 5H24M10 2L14 5L10 8" /></svg>One-way</span>
-      <span><svg width="26" height="12"><path d="M2 6H24" /><path d="M11 1L15 3L11 5M15 7L11 9L15 11" /></svg>Two-way</span>
-      <span><svg width="26" height="12"><path d="M2 6H24M13 3V9" /></svg>Single-lane</span>
+      <span><svg width="26" height="10"><path d="M2 5H24" className="lg-tape" /><path d="M17 5L11 2V8Z" className="lg-arrow" /></svg>One-way</span>
+      <span><svg width="26" height="10"><path d="M2 5H24" className="lg-tape is-two" /></svg>Two-way</span>
+      <span><svg width="26" height="10"><path d="M2 5H24M13 1V9" className="lg-tape" /></svg>Single-lane</span>
       <span><i className="sw pick" />Pick</span>
       <span><i className="sw drop" />Drop</span>
       {clearances && <><span><i className="sw clr-full" />Full speed</span><span><i className="sw clr-capped" />Below 1.2 m/s</span><span><i className="sw clr-violation" />Blocked</span></>}

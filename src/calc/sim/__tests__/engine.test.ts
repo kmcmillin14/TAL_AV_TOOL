@@ -394,3 +394,19 @@ describe('following is envelope to envelope (spec §5.9, §6.5.5)', () => {
     expect(long).toBeGreaterThanOrEqual(14 - 1e-6)                 // …loaded with one, never
   })
 })
+
+describe('run-view statistics agree with the results', () => {
+  it('hourly deliveries add up, every handling is a visit, and wait heat equals waiting time', () => {
+    const { layout, flows } = sampleLayout()
+    const S = sim(layout, flows, { fleet: { cb18: 4 } })
+    runFor(S, 4 * 3600)
+    const done = S.flows.reduce((a, F) => a + F.done, 0)
+    expect(S.hourly.reduce((a, b) => a + (b ?? 0), 0)).toBe(done)
+    const visits = [...S.zoneStats.values()].reduce((a, z) => a + z.visits, 0)
+    const handled = S.veh.reduce((a, v) => a + v.handlingLog.length, 0)
+    expect(visits).toBe(handled)
+    const heat = S.heat.reduce((a, b) => a + b, 0)
+    const waited = S.veh.reduce((a, v) => a + v.tm.wait, 0)
+    expect(heat).toBeCloseTo(waited, 6)
+  })
+})

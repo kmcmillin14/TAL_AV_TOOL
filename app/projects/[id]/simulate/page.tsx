@@ -1,43 +1,30 @@
 'use client'
 
 // Simulate — an optional page opened from Sizing (spec v2 §3, D-10). Not a numbered step: the
-// header keeps Sizing (3) current and the step ribbon is unchanged.
+// header keeps Sizing (3) current and the step ribbon is unchanged. Project, vehicles and the
+// Fleet Engine come from the same hook Sizing uses, so "Engine sized N" is Sizing's figure.
 
-import { useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
-import { headerFromProject } from '@/src/lib/projectHeader'
 import SimulateShell from '@/src/components/simulate/SimulateShell'
-import { getProject, type StoredProject } from '@/src/lib/storage'
-import { useProjectSync } from '@/src/lib/useProjectSync'
-import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
-import type { Vehicle } from '@/src/lib/vehicleLibrary'
+import { headerFromProject } from '@/src/lib/projectHeader'
+import { useFleetData } from '@/src/lib/useFleetData'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 
 export default function SimulatePage() {
   const { id } = useParams<{ id: string }>()
-  const [project, setProject] = useState<StoredProject | null | undefined>(undefined)
-  const [vehicles, setVehicles] = useState<Vehicle[] | null>(null)
-  const [vehicleError, setVehicleError] = useState(false)
+  const data = useFleetData(id)
   const [unitSystem, toggleUnitSystem] = useUnitSystem()
+  const { project, loading, error } = data
 
-  useEffect(() => { fetchVehiclesCached().then(setVehicles, () => setVehicleError(true)) }, [])
-
-  useEffect(() => { setProject(getProject(id)) }, [id])
-  useProjectSync(id, setProject)
-
-  if (project === undefined || (project && !vehicles && !vehicleError)) {
-    return <div className="app-shell"><div className="step2-loading">Loading simulation…</div></div>
-  }
-  if (project === null || !vehicles) {
+  if (loading) return <div className="app-shell"><div className="step2-loading">Loading simulation…</div></div>
+  if (error || !project) {
     return (
       <div className="app-shell">
         <div className="step2-error">
           <div className="step2-error-tag">Not Found</div>
           <h1>Could not load project</h1>
-          <p>{project === null
-            ? 'This project does not exist in your browser. Try importing the project file or creating a new project.'
-            : 'Failed to load vehicle library.'}</p>
+          <p>{error ?? 'This project does not exist in your browser. Try importing the project file or creating a new project.'}</p>
         </div>
       </div>
     )
@@ -53,7 +40,7 @@ export default function SimulatePage() {
         onUnitToggle={toggleUnitSystem}
       />
       <div className="workspace">
-        <SimulateShell project={project} vehicles={vehicles} unitSystem={unitSystem} />
+        <SimulateShell project={project} vehicles={data.vehicles} vehicleById={data.vehicleById} settings={data.settings} fleet={data.fleet} unitSystem={unitSystem} />
       </div>
     </div>
   )

@@ -621,7 +621,7 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 
 ## Simulate (optional, after Sizing) — in development
 
-> **Status:** being built — engine, data model, page frame and the first half of the layout editor done (Milestones 1–3, 4a). Branch `feature/fleet-simulation`; full design in
+> **Status:** being built — engine, data model, page, layout editor and run view done (Milestones 1–4; the run view was pulled forward from Milestone 5 with the proof-of-concept features). Branch `feature/fleet-simulation`; full design in
 > `docs/superpowers/specs/2026-11-10-fleet-simulation-design-v2.md`, plan in
 > `docs/superpowers/plans/2026-11-10-fleet-simulation.md`. This section states the behaviour
 > the branch must deliver; it moves to "shipped" when Milestone 9 is approved.
@@ -706,6 +706,43 @@ step ribbon is unchanged.
   - The panel (right) edits the selected point (name, equipment, role, transfer height), route
     (direction, lanes) or flow (moves/h, vehicle; *Unlink from points*). Delete removes a point or
     route; on a flow it unlinks it (Sizing keeps the flow). Help (?) opens a Simulate section.
+- **Look and features follow the CB18 proof of concept (owner, 2026-11-11),** on TAL fonts and
+  tokens, with apple-ui-design as the guiding principle (clarity, deference, one primary action,
+  details one click away). The canvas follows the app's light/dark theme (`--scene-*`, `--lane`,
+  `--tape` tokens).
+  - *Canvas:* aisle lanes in true feet (10 ft two-way, 6 ft one-way) with amber floor tape — dashed
+    two-way, solid with arrowheads one-way, ticks for single-lane; point tiles with name pills;
+    amber dots at intersections; rounded corners where the vehicle turns.
+  - *Floating tools:* Select V · Route R · One-way D · Place P · Flow F · Scale S, Undo/Redo; routes
+    snap square (Shift = any angle) with a live length; Enter or double-click finishes; hint pill
+    and messages on the canvas; Flows / B56.5 / Fit top right.
+  - *Side cards:* Drawing & scale · **Place on routes** (each Sizing location name with a suggested
+    type and Place / + Position; Charger, Parking) · Selected · **Ready to run?** (red / amber / blue
+    checklist: routes, scale, not connected, flows left off, no route, a home per vehicle, chargers).
+  - *Flows — from Sizing* table: Sizing distance, distance on the layout, Δ, and the Fleet Engine;
+    **Use layout distances** links name-matched flows after a confirmation showing Fleet Engine
+    before → after (it moves the quote).
+  - *Head:* Layout | Run (Run only when nothing is red), Load sample (the proof-of-concept site; its
+    flows are prefixed `sample-` and removed by "Clear and draw your own"), Clear layout, Back to
+    Sizing.
+- **Second half of the editor:** curves (bend handle, spline), Repeat ×N with names, copy/paste,
+  Shift-drag box select, fixed objects (walls, columns), footprints to scale, the B56.5 overlay with
+  callouts and one-click single-lane; undo keeps only what each step changed.
+- **Run mode:**
+  - *Verdict row* per vehicle type: picture, fleet stepper (stored as `simSettings.fleet`, default the
+    Fleet Engine's figure), Meets / Tight / Falls short / Gridlock from a full shift run off-screen,
+    moves/h vs target, wait, busy; Engine sized N, Reset to engine; **Check variability** (10 seeds:
+    ranges and "met in k/10").
+  - *Playback* of the same run: Play/Pause (Space), ×1/×10/×100, Run shift, Run 24 h, Restart, clock,
+    state legend; Follow a vehicle; labels on/off. Vehicles to true scale with the pallet when loaded,
+    a state dot and "id · SOC %"; red halos where vehicles waited; a pulsing ring at a gridlock.
+  - The run drives the layout with corners rounded and the B56.5 rule applied (slowed / blocked);
+    the payload from Step 1 loads sets the loaded envelope (`src/calc/sim/runInputs.ts`).
+  - *Details (one click):* engine vs simulated per flow, time split, battery, Hour by hour (moves vs
+    target, orders waiting), Locations (visits, occupied, max queue, wait), B56.5 effect, Assumptions
+    (pace, safety, demand, arrivals, seed; shift from Step 1) with the vehicle data and every
+    fallback the engine used.
+  - Nothing here changes the sized fleet or the quote; **Use N in pricing** remains Milestone 5.
 
 ---
 

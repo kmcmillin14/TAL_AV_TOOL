@@ -1,5 +1,27 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation: proof-of-concept look and features, Run mode
+
+Owner direction: restyle Simulate to the CB18 proof of concept and bring all its features, keeping
+Toyota Type and the TAL tokens, with apple-ui-design as the guiding principle.
+
+- **Restyle:** dark/light scene tokens (`--scene-bg`, `--scene-grid`, `--scene-grid-major`, `--lane`,
+  `--tape`, `--sim-charger`, `--sim-parking`); lanes with floor tape; tiles with name pills; floating
+  tool bar, palette, view buttons, hint pill and messages inside the canvas; square-snapping routes
+  with a length readout; Scale tool; Enter / double-click to finish a route.
+- **Layout features from the proof of concept:** Place on routes, Ready to run? (`readinessChecks`,
+  tested), Flows — from Sizing with Use layout distances (Fleet Engine before → after confirmation),
+  Load sample (`src/content/samples/simulate-sample.json` — also the engine tests' sample, one
+  source), Clear layout, Layout | Run.
+- **Run mode** (pulled forward from Milestone 5, without "Use N in pricing"): verdict row, stepper,
+  variability, playback, follow, labels, vehicles, wait heat, gridlock ring, details and assumptions.
+- **Engine:** run-view statistics only — deliveries per hour, per-zone visits / occupied / wait / max
+  queue, wait heat per node (`hourly`, `zoneStats`, `heat`); results unchanged (POC comparison rerun).
+  `runInputs` builds the driven layout (rounded corners, B56.5 applied).
+- **Fleet Engine:** `fleetFromFlows` (the flows → groups → fleet chain, tested equal to it), used for
+  the before → after figure. Simulate reads project, vehicles and the fleet through `useFleetData`,
+  the same hook as Sizing.
+
 ## 2026-11-11 — Fleet simulation Milestone 4 (second half, in progress): curves, repeat, objects, B56.5
 
 Functions in place and tested; the editor is being restyled to the CB18 proof-of-concept look next.

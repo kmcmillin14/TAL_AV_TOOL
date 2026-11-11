@@ -7,7 +7,7 @@
 import { useMemo, useState } from 'react'
 import type { ClearanceRule, SegmentClearance } from '@/src/calc/sim/clearance'
 import {
-  flowRefusal, FLOW_POINT_TYPES, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
+  FLOW_POINT_TYPES, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import type { SimLayout, SimObject, SimPoint, SimPointType, SimSegment } from '@/src/calc/sim/types'
 import Icon from '@/src/design-system/components/Icon'
@@ -23,8 +23,6 @@ interface Props {
   vehicles: Vehicle[]
   selection: Selection
   unitSystem: UnitSystem
-  notConnected: Set<string>
-  suggestions: { flowId: string; from?: string; to?: string }[]
   /** B56.5 results per route, when the overlay is on. */
   clearances: SegmentClearance[] | null
   rule: ClearanceRule
@@ -36,10 +34,8 @@ interface Props {
   onCopy: () => void
   onSegment: (id: string, patch: Partial<SimSegment>) => void
   onFlow: (id: string, patch: Partial<ProjectFlow>) => void
-  onLink: (flowId: string, from: string, to: string) => void
   onUnlink: (flowId: string) => void
   onDelete: () => void
-  onSelect: (s: Selection) => void
 }
 
 /** Highest transfer height the project file accepts (simSchemas.ts). */
@@ -192,7 +188,7 @@ export default function LayoutPanel(p: Props) {
   if (flow) {
     return (
       <Panel title="Flow">
-        <p className="sim-readout">{name(flow.fromPointId)} → {name(flow.toPointId)} · <span className="num">{len(flowFt)}</span></p>
+        <p className="sim-readout">{name(flow.fromPointId)} → {name(flow.toPointId)} · <span className="num">{isFinite(flowFt) ? len(flow.distanceFt) : 'No route'}</span></p>
         <label className="sim-field"><span>Moves per hour</span>
           <input type="number" min={0} step="any" value={flow.thruPerHr || ''} onChange={e => p.onFlow(flow.id, { thruPerHr: Math.max(0, Number(e.target.value) || 0) })} />
         </label>
@@ -207,56 +203,18 @@ export default function LayoutPanel(p: Props) {
     )
   }
 
-  // Nothing selected: the layout at a glance.
-  const routeFt = p.layout.segments.reduce((t, s) => t + segmentLengthFt(p.layout, s, byId), 0)
+  // Nothing selected: the B56.5 rule and its tally while the overlay is on; otherwise no card.
+  if (!p.clearances) return null
   return (
-    <aside className="sim-panel" aria-label="Layout">
-      <h3>Layout</h3>
-      <dl className="sim-stats">
-        <div><dt>Points</dt><dd className="num">{p.layout.points.filter(q => q.type !== 'junction').length}</dd></div>
-        <div><dt>Routes</dt><dd className="num">{len(routeFt)}</dd></div>
-        <div><dt>Flows</dt><dd className="num">{p.flows.filter(f => f.fromPointId && f.toPointId).length}</dd></div>
-      </dl>
-      {p.clearances && (
-        <section>
-          <h4>B56.5 clearance</h4>
-          <p className="sim-readout">
-            {p.rule.lowSpeedIn} in per side below {(p.rule.thresholdFps * 0.3048).toFixed(1)} m/s, {p.rule.fullSpeedIn} in at or above{p.rule.sharedBetweenVehicles ? ', shared between passing vehicles' : ''}.
-            <span className="sim-source">Engineer rule — ANSI/ITSDF B56.5</span>
-          </p>
-          <p className="sim-readout">
-            {p.clearances.filter(r => r.status === 'capped').length} slowed · {p.clearances.filter(r => r.status === 'violation').length} blocked
-          </p>
-        </section>
-      )}
-      {p.notConnected.size > 0 && (
-        <section>
-          <h4>Not connected</h4>
-          <ul className="sim-list">
-            {[...p.notConnected].map(id => <li key={id}><button type="button" className="link-btn" onClick={() => p.onSelect({ kind: 'point', id })}>{name(id)}</button></li>)}
-          </ul>
-        </section>
-      )}
-      {p.suggestions.length > 0 && (
-        <section>
-          <h4>Link to points</h4>
-          <ul className="sim-list">
-            {p.suggestions.map(s => {
-              const f = p.flows.find(q => q.id === s.flowId)!
-              const title = `${f.origin || '—'} → ${f.destination || '—'}`
-              const ok = s.from && s.to && !flowRefusal(p.layout, s.from, s.to)
-              return (
-                <li key={s.flowId}>
-                  <span title={title}>{title}</span>
-                  {ok
-                    ? <button type="button" className="btn ghost btn-sm" onClick={() => p.onLink(s.flowId, s.from!, s.to!)}>Link {name(s.from)} → {name(s.to)}</button>
-                    : <small>Draw it with the Flow tool</small>}
-                </li>
-              )
-            })}
-          </ul>
-        </section>
-      )}
+    <aside className="sim-card" aria-label="B56.5 clearance">
+      <h3>B56.5 clearance</h3>
+      <p className="sim-readout">
+        {p.rule.lowSpeedIn} in per side below {(p.rule.thresholdFps * 0.3048).toFixed(1)} m/s, {p.rule.fullSpeedIn} in at or above{p.rule.sharedBetweenVehicles ? ', shared between passing vehicles' : ''}.
+        <span className="sim-source">Engineer rule — ANSI/ITSDF B56.5</span>
+      </p>
+      <p className="sim-readout">
+        {p.clearances.filter(r => r.status === 'capped').length} slowed · {p.clearances.filter(r => r.status === 'violation').length} blocked
+      </p>
     </aside>
   )
 }

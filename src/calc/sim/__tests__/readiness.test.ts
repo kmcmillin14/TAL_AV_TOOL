@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { runBlocker } from '../readiness'
+import { readinessChecks, runBlocker } from '../readiness'
 import { LIBRARY, corridor } from './fixtures'
 
 const ok = { id: 'f', fromPointId: 'A', toPointId: 'B', thruPerHr: 10, vehicleId: 'cb18' }
@@ -37,5 +37,30 @@ describe('runBlocker (acceptance 1: no layout → Run disabled)', () => {
     const layout = corridor(100)
     layout.points.push({ id: 'D', x: 500, y: 500, type: 'stand', role: 'drop' })
     expect(ready([{ ...ok, toPointId: 'D' }], layout)).toBe('noFlows')
+  })
+})
+
+describe('readinessChecks ("Ready to run?")', () => {
+  const run = (flows: object[], over: { fleetNeeded?: number; layout?: ReturnType<typeof corridor> } = {}) =>
+    readinessChecks({ layout: over.layout ?? corridor(100), flows: flows as never, vehicles: LIBRARY, fleetNeeded: over.fleetNeeded ?? 2 })
+
+  it('a complete layout has nothing to report', () => {
+    expect(run([ok])).toEqual([])
+  })
+
+  it('asks for routes first, and for a scale on a loaded drawing', () => {
+    expect(readinessChecks({ vehicles: LIBRARY, fleetNeeded: 1 })[0]).toMatchObject({ level: 'bad', text: expect.stringContaining('Draw routes') })
+    expect(run([ok], { layout: { ...corridor(100), background: {} } as never })[0]).toMatchObject({ level: 'bad', text: expect.stringContaining('not scaled') })
+  })
+
+  it('needs a home for every vehicle and says when chargers are fewer than vehicles', () => {
+    expect(run([ok], { fleetNeeded: 3 }).map(c => c.level)).toEqual(['bad', 'info'])
+  })
+
+  it('lists flows left off the layout, points not connected, and flows with no route', () => {
+    const layout = corridor(100)
+    layout.points.push({ id: 'D', x: 500, y: 500, type: 'stand', role: 'drop', name: 'Far' })
+    const checks = run([ok, { ...ok, id: 'g', toPointId: 'D' }, { id: 'typed' }], { layout })
+    expect(checks.map(c => c.text).join(' | ')).toMatch(/Not connected: Far.*1 Sizing flow is not on the layout.*no route/)
   })
 })
