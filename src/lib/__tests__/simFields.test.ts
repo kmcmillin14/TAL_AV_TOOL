@@ -25,11 +25,11 @@ describe('acceptance 35 — every field has a source chip, a reset and help text
     expect(d.label.length).toBeGreaterThan(2)
     expect(FIELD_GROUPS).toContain(d.group)
     const c = ctxFor(), before = fieldState(d, c)
-    expect(['JSON', 'Step 1', 'Default', 'Override']).toContain(before.source)
+    expect(['JSON', 'Step 1', 'Drawn', 'Default', 'Override']).toContain(before.source)
     if (d.readOnly) { expect(before.source).toBe('Step 1'); return }
     expect(before.source).not.toBe('Override')
     const changed = apply(c, fieldPatch(d, c, other(d, before.value) as never))
-    expect(fieldState(d, changed).source).toBe('Override')
+    expect(fieldState(d, changed).source).toBe(d.drawn ? 'Drawn' : 'Override')
     const reset = apply(changed, fieldPatch(d, changed, undefined))
     expect(fieldState(d, reset)).toEqual(before)
   })
@@ -46,7 +46,7 @@ describe('acceptance 36 — overrides are counted and reset', () => {
     const project = {
       hoursPerShift: 8,
       simSettings: { pacePct: 60, overrides: { 'cb18.speedLoadedFps': 3 }, clearance: { thresholdFps: 3.94, lowSpeedIn: 8, fullSpeedIn: 19.69, sharedBetweenVehicles: true } },
-      simLayout: { points: [{ id: 'p', x: 0, y: 0, type: 'stand' as const, handshakeSec: 5 }], segments: [{ id: 's', a: 'p', b: 'q', dir: 'two' as const, speedLimitFps: 2 }] },
+      simLayout: { points: [{ id: 'p', x: 0, y: 0, type: 'stand' as const, handshakeSec: 5, heightFt: 4 }], segments: [{ id: 's', a: 'p', b: 'q', dir: 'two' as const, speedLimitFps: 2 }] },
     }
     const o = overriddenFields(project, [V])
     expect(o.map(x => x.def.key).sort()).toEqual(['point.handshakeSec', 'route.speedLimitFps', 'run.pacePct', 'safety.lowSpeedIn', 'vehicle.speedLoadedFps'])

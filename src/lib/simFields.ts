@@ -3,8 +3,9 @@
 // it: label, unit, group, level, the help key, and how to resolve the value and its source.
 // Stored imperial; display converts (units below).
 //
-// Sources: JSON (the vehicle file) · Step 1 (read-only) · Default (the simulation's default, or the
-// engine's fallback where the vehicle file has no value) · Override (a per-project value).
+// Sources: JSON (the vehicle file) · Step 1 (read-only) · Drawn (a fact of the site, measured onto the
+// layout — e.g. a transfer height) · Default (the simulation's default, or the engine's fallback
+// where the vehicle file has no value) · Override (a per-project value changing an assumption).
 // Overrides change the simulation only — never the Fleet Engine or the quote.
 
 import { B56_5_RULE } from '@/src/calc/sim/clearance'
@@ -14,7 +15,7 @@ import type { StoredProject } from './storage'
 import type { UnitSystem } from './utils/units'
 import type { Vehicle } from './vehicleLibrary'
 
-export type FieldSource = 'JSON' | 'Step 1' | 'Default' | 'Override'
+export type FieldSource = 'JSON' | 'Step 1' | 'Drawn' | 'Default' | 'Override'
 export type FieldGroup = 'Vehicle' | 'Motion' | 'Traffic' | 'Handling' | 'Charging' | 'Demand' | 'Safety' | 'Run'
 export const FIELD_GROUPS: FieldGroup[] = ['Vehicle', 'Motion', 'Traffic', 'Handling', 'Charging', 'Demand', 'Safety', 'Run']
 export type FieldScope = 'vehicle' | 'point' | 'route' | 'run' | 'safety'
@@ -38,6 +39,8 @@ export interface SimFieldDef {
   /** Shown when a Default has no number (the engine's fallback in words). */
   fallback?: string
   readOnly?: boolean
+  /** A site fact stored on the object (source `Drawn` when set): not an override, never counted. */
+  drawn?: boolean
 }
 
 const def = (scope: FieldScope, field: string, group: FieldGroup, level: SimFieldDef['level'], label: string, unit: FieldUnit, extra: Partial<SimFieldDef> = {}): SimFieldDef =>
@@ -50,8 +53,8 @@ export const SIM_FIELDS: SimFieldDef[] = [
   // Vehicle type (values from the vehicle file; per-project overrides)
   def('vehicle', 'speedLoadedFps', 'Motion', 'settings', 'Speed, loaded', 'ft/s', { min: 0.1, max: 30, step: 0.1 }),
   def('vehicle', 'speedUnloadedFps', 'Motion', 'settings', 'Speed, empty', 'ft/s', { min: 0.1, max: 30, step: 0.1, fallback: 'Loaded speed' }),
-  def('vehicle', 'accelFps2', 'Motion', 'advanced', 'Acceleration', 'ft/s²', { min: 0.1, max: 20, step: 0.1, fallback: 'Not in vehicle data — pace used' }),
-  def('vehicle', 'decelFps2', 'Motion', 'advanced', 'Braking', 'ft/s²', { min: 0.1, max: 20, step: 0.1, fallback: 'Not in vehicle data — pace used' }),
+  def('vehicle', 'accelFps2', 'Motion', 'advanced', 'Acceleration', 'ft/s²', { min: 0.1, max: 20, step: 0.1, fallback: 'Pace used instead' }),
+  def('vehicle', 'decelFps2', 'Motion', 'advanced', 'Braking', 'ft/s²', { min: 0.1, max: 20, step: 0.1, fallback: 'Pace used instead' }),
   def('vehicle', 'turnSpeedFps', 'Motion', 'advanced', 'Speed in turns', 'ft/s', { min: 0.1, max: 30, step: 0.1, fallback: 'Loaded speed' }),
   def('vehicle', 'reverseSpeedFps', 'Motion', 'advanced', 'Reverse speed', 'ft/s', { min: 0.1, max: 30, step: 0.1, fallback: 'Loaded speed' }),
   def('vehicle', 'widthFt', 'Vehicle', 'advanced', 'Width', 'ft', { min: 0.5, max: 20, step: 0.05 }),
@@ -77,7 +80,7 @@ export const SIM_FIELDS: SimFieldDef[] = [
   def('safety', 'fullSpeedIn', 'Safety', 'advanced', 'Clearance at or above it', 'in', { min: 0, max: 60, step: 0.5 }),
   def('safety', 'sharedBetweenVehicles', 'Safety', 'advanced', 'Passing vehicles share one clearance', '', { choices: [{ id: 'true', label: 'Shared' }, { id: 'false', label: 'Each its own' }] }),
   // Points and routes (stored on the object)
-  def('point', 'heightFt', 'Handling', 'settings', 'Transfer height', 'ft', { min: 0, max: 40, step: 0.1, fallback: 'Floor (0)' }),
+  def('point', 'heightFt', 'Handling', 'settings', 'Transfer height', 'ft', { min: 0, max: 40, step: 0.1, fallback: 'Floor (0)', drawn: true }),
   def('point', 'handshakeSec', 'Handling', 'advanced', 'Handshake time', 's', { min: 0, max: 600, step: 1, fallback: '0 s' }),
   def('point', 'approachHeadingDeg', 'Handling', 'advanced', 'Approach direction', '°', { min: 0, max: 359, step: 1, fallback: 'Along the route' }),
   def('route', 'speedLimitFps', 'Traffic', 'settings', 'Speed limit', 'ft/s', { min: 0.1, max: 30, step: 0.1, fallback: 'Vehicle speed' }),
@@ -122,7 +125,7 @@ export function fieldState(d: SimFieldDef, c: FieldContext): FieldState {
     case 'point':
     case 'route': {
       const v = ((d.scope === 'point' ? c.point : c.segment) as unknown as Record<string, Value> | undefined)?.[d.field]
-      return v != null ? { value: v, base: null, source: 'Override' } : { value: null, base: null, source: 'Default' }
+      return v != null ? { value: v, base: null, source: d.drawn ? 'Drawn' : 'Override' } : { value: null, base: null, source: 'Default' }
     }
   }
 }

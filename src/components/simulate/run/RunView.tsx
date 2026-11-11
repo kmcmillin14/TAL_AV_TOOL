@@ -41,6 +41,10 @@ interface Props {
   /** What the run drives — built once by SimulateShell and shared with "Ready to run?". */
   inputs: RunInputs
   payload: { length: number; width: number } | null
+  /** Open the Assumptions drawer — all of it, or one vehicle type's values (Milestone 6). */
+  onAssumptions: (focus?: string | null) => void
+  /** How many assumptions are overridden (the chip under the verdict). */
+  changed: number
 }
 
 const clock = (t: number) => {
@@ -62,7 +66,7 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 /** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payload }: Props) {
+export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payload }: Props) {
   const simSettings = project.simSettings ?? {}
   const engineFleet = useByValue(useMemo(() => engineFleetByType(fleet), [fleet]))
   const inputsKey = useMemo(() => simInputsKey(project, vehicleById), [project, vehicleById])
@@ -194,8 +198,6 @@ export default function RunView({ project, vehicles, simVehicles, vehicleById, s
   }, [])
 
   /** Run assumptions are the project's (Run → Assumptions); a change restarts the run. */
-  const onAssume = useCallback((patch: Partial<Assumptions>) => patchSimSettings(project.id, patch), [project.id])
-
   const setFleet = (vid: string, n: number) => {
     const next = { ...(simSettings.fleet ?? {}), [vid]: Math.max(1, Math.min(500, n)) }
     if (next[vid] === engineFleet[vid]) delete next[vid]
@@ -215,10 +217,10 @@ export default function RunView({ project, vehicles, simVehicles, vehicleById, s
           const res = R?.res.types.find(x => x.vehicleId === vid) ?? null
           return (
             <div key={vid} className="sim-vrow">
-              <div className="sim-vveh">
+              <button type="button" className="sim-vveh" title="Speeds, size and charging used in the run" onClick={() => onAssumptions(vid)}>
                 {v?.display.heroImage && <img src={v.display.heroImage} alt="" />}
                 <div><div className="nm">{v?.name ?? vid}</div><div className="mf">{v?.display.manufacturer}</div></div>
-              </div>
+              </button>
               <div className="sim-stepper" role="group" aria-label={`${v?.name ?? 'Vehicle'} fleet`}>
                 <button type="button" aria-label="Fewer vehicles" onClick={() => setFleet(vid, n - 1)}>−</button>
                 <span className="num">{n}</span>
@@ -248,6 +250,7 @@ export default function RunView({ project, vehicles, simVehicles, vehicleById, s
         <div className="sim-vsub">
           <span>Engine sized <b className="num">{engineFleetTotal(fleet)}</b>{simSettings.fleet && Object.keys(simSettings.fleet).length > 0 && <> · <button type="button" className="link-btn" onClick={() => patchSimSettings(project.id, { fleet: {} })}>Reset to engine</button></>}</span>
           <span>Full {shiftH} h shift · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
+          <button type="button" className="sim-chip sm sim-assume-chip" onClick={() => onAssumptions(null)}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
           <span className="grow" />
           {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}
           {vari && vari.k >= VARIABILITY_RUNS && <VariabilityChip out={vari.out} arrivals={assume.arrivals} />}
@@ -290,7 +293,7 @@ export default function RunView({ project, vehicles, simVehicles, vehicleById, s
 
       <RunDetails
         R={R?.res ?? null} S={R?.S ?? null} project={project} vehicleById={vehicleById} unitSystem={unitSystem}
-        inputs={inputs} assume={assume} shiftH={shiftH} onAssume={onAssume}
+        inputs={inputs} assume={assume} onOpenAssumptions={() => onAssumptions(null)}
       />
     </div>
   )

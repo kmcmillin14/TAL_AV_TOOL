@@ -787,15 +787,15 @@ step ribbon is unchanged.
     target dashed, the most orders waiting each hour on the right axis.
   - *Example site:* an empty Simulate page on a project with no flows offers **Open the example
     site** on the canvas (the same sample as ⋯ → Load sample).
-- **Inspector and Assumptions (Milestone 6 — in progress: the registry, help text and run overrides
-  are built; the inspector and Assumptions screens are next).**
+- **Inspector and Assumptions (built, Milestone 6).**
   - *One field registry* (`src/lib/simFields.ts`) lists every assumption the simulation reads. Each
     entry has a label, unit, group, level (Settings or Advanced) and a one-line help text from
     `SIM_FIELD_HELP` in `src/content/help.ts`. The inspector, the Assumptions view and the
     enumeration test all read it (acceptance 35).
-  - *Sources:* `JSON` (the vehicle file), `Step 1` (shift, read-only), `Default` (the simulation's own
-    default, or the engine's fallback when the vehicle file has no value) and `Override` (a
-    per-project value). Overrides are stored in one place: vehicle values in `simSettings.overrides`
+  - *Sources:* `JSON` (the vehicle file), `Step 1` (shift, read-only), `Drawn` (a site fact measured
+    onto the layout — a point's transfer height; not an override, never counted), `Default` (the
+    simulation's own default, or the engine's fallback when the vehicle file has no value) and
+    `Override` (a per-project value changing an assumption). Overrides are stored in one place: vehicle values in `simSettings.overrides`
     (`vehicleId.field`), run assumptions in `simSettings`, the B56.5 rule in `simSettings.clearance`,
     and point and route assumptions on the point or route itself.
   - *Overrides change the simulation only.* The Fleet Engine, Sizing and the quote never read them;
@@ -804,9 +804,13 @@ step ribbon is unchanged.
     one-line help. An overridden field has a dot. Points and routes with an overridden assumption
     show a dot on the map. The page head shows a count ("3 overrides") that opens the Assumptions
     view (acceptance 36).
-  - *Inspector:* the selected point or route shows Summary and Settings as before, plus an
-    **Advanced** disclosure with its assumptions (height, handshake, approach heading; route speed
-    limit). Clicking a vehicle type in Run (its picture or name) opens its values: speeds, motion,
+  - *Inspector:* a header with the object's name, Duplicate and Delete; a summary card with the few
+    numbers that matter (a point: type and role, routes, flows and moves/h, height; a route: length,
+    direction, lanes, tightest clearance; an object: size and rotation; a flow: from → to, moves/h,
+    distance, vehicle); a **Settings** section (open) and an **Advanced** section (one click, with a
+    count of its overrides): handshake time, approach direction as four arrows or "Along route",
+    footprint, position; a route's curve and B56.5 card. With nothing selected: the layout's totals
+    (points, routes and their length, flows on the layout, objects). Clicking a vehicle type in Run (its picture or name) opens its values: speeds, motion,
     size, charging. Every assumption is within two clicks of its object (acceptance 34).
   - *Assumptions view:* a side drawer (not a modal; Esc closes) with every field grouped Vehicle ·
     Motion · Traffic · Handling · Charging · Demand · Safety · Run. It has a **Changed only** filter

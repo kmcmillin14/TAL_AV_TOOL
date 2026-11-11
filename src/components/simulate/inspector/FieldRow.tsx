@@ -40,7 +40,7 @@ export default function FieldRow({ def, state, unitSystem, onChange, owner }: Pr
   return (
     <div className={`sim-frow${overridden ? ' is-override' : ''}`}>
       <div className="sim-frow-head">
-        <span className="sim-frow-label">{overridden && <i className="sim-dot" aria-label="Overridden" />}{owner && <b>{owner} · </b>}{def.label}</span>
+        <span className="sim-frow-label">{overridden && <i className="sim-odot" aria-label="Overridden" />}{owner && <b>{owner} · </b>}{def.label}</span>
         <span className={`sim-src src-${state.source.replace(' ', '').toLowerCase()}`}>{state.source}</span>
       </div>
       <div className="sim-frow-input">
@@ -49,19 +49,22 @@ export default function FieldRow({ def, state, unitSystem, onChange, owner }: Pr
             <span className="sim-input-unit">
               <input type="number" step="any" min={def.min != null ? round(toDisplay(def.unit, def.min, unitSystem)) : undefined}
                 max={def.max != null ? round(toDisplay(def.unit, def.max, unitSystem)) : undefined}
-                defaultValue={shown ?? ''} key={`${shown}`} placeholder={def.fallback}
+                defaultValue={shown ?? ''} key={`${shown}`} placeholder="—"
                 aria-label={owner ? `${owner} ${def.label}` : def.label}
                 onBlur={e => { if (e.target.value !== String(shown ?? '')) commit(e.target.value) }}
                 onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }} />
               {unit && <span>{unit}</span>}
             </span>
           )}
-        {overridden && !def.readOnly && (
+        {(overridden || state.source === 'Drawn') && !def.readOnly && (
           <button type="button" className="sim-reset" title={`Reset to ${state.base == null ? 'default' : `${round(toDisplay(def.unit, Number(state.base), unitSystem))} ${unit}`}`}
             aria-label={`Reset ${def.label}`} onClick={() => onChange(undefined)}>↺</button>
         )}
       </div>
-      <p className="sim-frow-help">{SIM_FIELD_HELP[def.key]}</p>
+      <p className="sim-frow-help">
+        {state.value == null && def.fallback && <b className="sim-frow-fallback">Not set — {def.fallback.charAt(0).toLowerCase() + def.fallback.slice(1)}. </b>}
+        {SIM_FIELD_HELP[def.key]}
+      </p>
     </div>
   )
 }

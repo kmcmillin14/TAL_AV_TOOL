@@ -94,9 +94,11 @@ interface Props {
   checks: ReadinessCheck[]
   unitSystem: UnitSystem
   emptyPrompt?: ReactNode
+  /** Points and routes with an overridden assumption — marked with a dot on the map (acceptance 36). */
+  overridden?: Set<string>
 }
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden }: Props) {
   const radiusFor = useCallback((id?: string) => (id && vehicleById.get(id)?.calc.turningRadiusFt) || 0, [vehicleById])
   const editor = useLayoutEditor(project, radiusFor)
   const { doc, latest, commit, canUndo, canRedo } = editor
@@ -429,6 +431,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             onLeave={() => setHover(null)}
             showLegend={showClearance || selection?.kind === 'segment'}
             laneWidths={inputs.laneWidths}
+            overridden={overridden}
             onDoubleClick={() => { if (tool === 'routes') cancel() }}
           >
             {/* Floating tool bar (proof-of-concept look): tools, then undo/redo. */}

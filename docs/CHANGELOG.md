@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation Milestone 6, step 2: inspector and Assumptions
+
+- **Inspector:** header with name, Duplicate and Delete; a summary card; Settings and Advanced
+  sections. Every assumption shows its source chip (JSON · Step 1 · Drawn · Default · Override), a reset
+  and one line of help. Approach direction is four arrows. Nothing selected shows the layout's totals.
+- **Vehicle values:** clicking a vehicle in Run opens its speeds, motion, size and charging; an
+  override re-runs the simulation and never touches the Fleet Engine or the quote.
+- **Assumptions drawer** (side panel, not a modal; Esc closes): every assumption grouped by topic,
+  **Changed only**, **Reset all**. Opened from **Assumptions · N overrides** in the page head and the
+  Run chip. Run details › Assumptions now points to it (its inputs moved there).
+- **Override dots** on fields, section headers and the map (points and routes).
+- Transfer heights are site facts (`Drawn`), not overrides — they are not counted or reset.
+
 ## 2026-11-11 — Fleet simulation: vehicle artwork in Run mode
 
 - The owner's top-down artwork for ML2, M10, 8TB50A, 8HBC40A and CB18 is in

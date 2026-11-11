@@ -14,7 +14,7 @@ import type { RunInputs } from '@/src/calc/sim/runInputs'
 import type { SimResults, SimSettings, TimeSplit } from '@/src/calc/sim/types'
 import { flowDerived } from '@/src/calc/flowMetrics'
 import type { StoredProject } from '@/src/lib/storage'
-import { fmtLength, lengthFromDisplay, lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
+import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
 import { STATES } from './RunScene'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
@@ -28,8 +28,8 @@ interface Props {
   unitSystem: UnitSystem
   inputs: RunInputs
   assume: Assumptions
-  shiftH: number
-  onAssume: (patch: Partial<Assumptions>) => void
+  /** Open the Assumptions drawer (Milestone 6) — where run assumptions are set. */
+  onOpenAssumptions: () => void
 }
 
 const SPLIT = STATES as [keyof TimeSplit, string][]
@@ -52,8 +52,7 @@ const LOC_COLS: Col[] = [
 ]
 const secs = (s: number | null | undefined) => (s == null || !isFinite(s) ? '—' : `${Math.round(s)} s`)
 
-export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem, inputs, assume, shiftH, onAssume }: Props) {
-  const unit = units.distance.label(unitSystem)
+export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem, inputs, assume, onOpenAssumptions }: Props) {
   const len = (ft?: number) => fmtLength(ft, unitSystem)
   const total = R ? R.types.reduce((a, t) => a + t.target, 0) : 0
   const flows = project.flows ?? []
@@ -146,18 +145,8 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
       <details className="sim-disc">
         <summary>Assumptions<span className="meta">pace {assume.pacePct}% · safety {fmtLength(assume.safetyFt, unitSystem, 1)} · demand {assume.demandPct}%</span></summary>
         <div className="sim-disc-body">
-          <div className="sim-assume">
-            <Num label="Pace (% of rated speed)" unit="%" value={assume.pacePct} min={10} max={100} step={5} onChange={v => onAssume({ pacePct: v })} />
-            <Num label="Safety distance" unit={unit} value={+lengthToDisplay(assume.safetyFt, unitSystem).toFixed(1)} min={0.5} max={30} step={0.5} onChange={v => onAssume({ safetyFt: lengthFromDisplay(v, unitSystem) })} />
-            <Num label="Demand (% of Sizing moves/h)" unit="%" value={assume.demandPct} min={10} max={300} step={5} onChange={v => onAssume({ demandPct: v })} />
-            <label className="sim-field"><span>Arrivals</span>
-              <select value={assume.arrivals} onChange={e => onAssume({ arrivals: e.target.value as SimSettings['arrivals'] })}>
-                <option value="regular">Regular</option><option value="random">Random (Poisson)</option>
-              </select>
-            </label>
-            <Num label="Seed" unit="" value={assume.seed} min={1} max={99999} step={1} onChange={v => onAssume({ seed: Math.round(v) })} />
-            <div className="sim-field"><span>Shift (Step 1)</span><b className="num">{project.shiftsPerDay ?? 1} × {shiftH} h</b></div>
-          </div>
+          <p className="sim-readout">Set in the Assumptions view — every value with its source and a reset.
+            <button type="button" className="link-btn" onClick={onOpenAssumptions}>Open assumptions</button></p>
           {S && [...S.profiles.values()].map(p => {
             const c = p.vehicle.calc, b = p.battery
             return (
@@ -191,18 +180,6 @@ function flowSummary(R: SimResults, n: number, demandPct: number, flows: { id: s
   return `${n} flow${n === 1 ? '' : 's'} · ${short ? `${short} below target` : 'all within 2% of target'} · ${R.orders.delivered} moves`
 }
 
-function Num({ label, unit, value, min, max, step, onChange }: { label: string; unit: string; value: number; min: number; max: number; step: number; onChange: (v: number) => void }) {
-  return (
-    <label className="sim-field"><span>{label}</span>
-      <span className="sim-input-unit">
-        <input type="number" min={min} max={max} step={step} defaultValue={value} key={value}
-          onBlur={e => { const v = Number(e.target.value); if (isFinite(v)) onChange(Math.max(min, Math.min(max, v))) }}
-          onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }} />
-        {unit && <span>{unit}</span>}
-      </span>
-    </label>
-  )
-}
 
 /** Moves delivered per hour (bars) against the target (dashed), and the most orders waiting in that
  *  hour (line, right axis) — on the app's shared chart kit. */

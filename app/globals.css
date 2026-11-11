@@ -5556,3 +5556,60 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-vari-detail b { color: var(--text-primary); }
 .sim-hud .btn { height: 36px; }
 .sim-hud .btn.primary { height: 44px; min-width: 88px; }
+
+/* ---- Fleet simulation inspector and Assumptions (Milestone 6) ----
+   Same pieces everywhere: summary card, collapsible sections, field rows with a source chip, reset
+   and one line of help; overrides marked by one accent dot. */
+.sim-summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; margin: 0; background: var(--border); border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
+.sim-summary > div { background: var(--bg-surface-2, var(--bg-hover)); padding: 8px 12px; min-width: 0; }
+.sim-summary dt { font-size: 11px; color: var(--text-tertiary); }
+.sim-summary dd { margin: 0; font-size: 13px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-section { border-top: 1px solid var(--border); }
+.sim-section > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 12px 0; font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.sim-section > summary::-webkit-details-marker { display: none; }
+.sim-section > summary::after { content: ""; margin-left: auto; width: 7px; height: 7px; border-right: 1.5px solid var(--text-tertiary); border-bottom: 1.5px solid var(--text-tertiary); transform: rotate(45deg); transition: transform 0.2s ease; }
+.sim-section[open] > summary::after { transform: rotate(-135deg); }
+.sim-section-body { display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; }
+.sim-section-count { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--accent); }
+.sim-odot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 6px; vertical-align: 1px; }
+.sim-frow { display: flex; flex-direction: column; gap: 4px; }
+.sim-frow-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.sim-frow-label { font-size: 13px; color: var(--text-primary); }
+.sim-frow-label b { font-weight: 600; color: var(--text-secondary); }
+.sim-frow-input { display: flex; align-items: center; gap: 8px; }
+.sim-frow-input .sim-input-unit, .sim-frow-input select { flex: 1; min-width: 0; }
+.sim-frow-help { margin: 0; font-size: 11px; line-height: 1.45; color: var(--text-tertiary); }
+.sim-src { font: 600 10px var(--tal-font-numeric); letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: var(--text-tertiary); background: var(--bg-hover); white-space: nowrap; }
+.sim-src.src-override { color: var(--accent); background: var(--accent-soft); }
+.sim-src.src-json { color: var(--text-secondary); }
+.sim-reset { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-surface); color: var(--text-secondary); font-size: 15px; cursor: pointer; }
+.sim-reset:hover { color: var(--accent); border-color: var(--accent); }
+.sim-arrows .seg-btn { min-width: 36px; }
+.sim-panel.is-empty .sim-panel-head h3 { color: var(--text-secondary); }
+/* The Run row's vehicle opens its values. */
+button.sim-vveh { border: 0; background: none; padding: 4px 8px 4px 0; border-radius: 8px; font: inherit; text-align: left; cursor: pointer; }
+button.sim-vveh:hover .nm { color: var(--accent); }
+.sim-assume-chip { border: 0; cursor: pointer; }
+.sim-assume-chip::before { display: none; }
+/* Page head: Assumptions with the override count. */
+.sim-assume-btn .sim-count { display: inline-flex; align-items: center; margin-left: 8px; font-size: 11px; font-weight: 600; color: var(--accent); }
+.sim-assume-btn.on { border-color: var(--accent); }
+/* Overridden points and routes on the map. */
+.sim-ov-dot { fill: var(--accent); stroke: var(--bg-surface); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+/* Assumptions drawer: beside the page, not over it — never a modal. */
+.sim-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 60; width: min(420px, 100vw); display: flex; flex-direction: column; gap: 8px; padding: 16px 24px; background: var(--bg-surface); border-left: 1px solid var(--border); box-shadow: var(--sim-shadow-float); animation: sim-drawer-in 0.25s cubic-bezier(0.25, 0.1, 0.25, 1); }
+@keyframes sim-drawer-in { from { transform: translateX(24px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .sim-drawer { animation: none; } }
+.sim-drawer-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.sim-drawer-head h3 { margin: 0; font-size: 15px; }
+.sim-drawer-head .icon-btn { width: 36px; height: 36px; border: 0; border-radius: 6px; background: none; color: var(--text-secondary); cursor: pointer; font-size: 15px; }
+.sim-drawer-head .icon-btn:hover { background: var(--bg-hover); }
+.sim-drawer-bar { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+.sim-drawer-bar .grow { flex: 1; }
+.sim-drawer-count { color: var(--text-tertiary); font-size: 11px; }
+.sim-drawer-body { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 24px; padding: 8px 0 24px; }
+.sim-drawer-group { display: flex; flex-direction: column; gap: 16px; }
+.sim-drawer-group h4 { margin: 0; font: 700 11px var(--tal-font-numeric); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+
+.sim-frow-input .sim-input-unit input { flex: 1; min-width: 0; }
+.sim-frow-fallback { font-weight: 600; color: var(--text-secondary); }

@@ -84,6 +84,8 @@ interface Props {
   /** A length for the badges and the route preview, in the user's units. Default: feet. */
   fmtLen?: (ft: number) => string
   onContextMenu?: (e: MouseEvent<HTMLDivElement>) => void
+  /** Points and routes with an overridden assumption: a small dot on the map. */
+  overridden?: Set<string>
   /** Room kept clear of floating controls when fitting, px. Default: the editor's tool column and bar. */
   fitInset?: { top: number; right: number; bottom: number; left: number }
   /** The legend, only while it explains something on screen (direction tool, B56.5 overlay). */
@@ -305,6 +307,17 @@ export default function LayoutCanvas(props: Props) {
           <PointMarker key={p.id} p={p} px={px} selected={selected('point', p.id)} loose={notConnected.has(p.id)} cross={(degree.get(p.id) ?? 0) >= 3}
             label={props.showLabels === false ? null : crowded.has(p.id) ? shortName(p.name ?? '') : p.name ?? null} />
         ))}
+
+        {/* Overridden assumptions: a dot on the point, or at the middle of the route (acceptance 36). */}
+        {props.overridden && [...props.overridden].map(id => {
+          const p = pts.get(id)
+          let at: XY | null = p ? { x: p.x + 11 * px, y: p.y - 11 * px } : null
+          if (!at) {
+            const s = layout.segments.find(q => q.id === id), a = s && pts.get(s.a), b = s && pts.get(s.b)
+            if (s && a && b) { const c = segmentGeometry(a, b, s.curve), m = c.at(c.length / 2); at = { x: m.x, y: m.y } }
+          }
+          return at && <circle key={`ov-${id}`} cx={at.x} cy={at.y} r={4 * px} className="sim-ov-dot"><title>An assumption is overridden here</title></circle>
+        })}
 
         {props.scene?.(px)}
 

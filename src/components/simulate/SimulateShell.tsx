@@ -22,6 +22,8 @@ import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutEditor from './layout/LayoutEditor'
 import RunView from './run/RunView'
+import AssumptionsDrawer from './inspector/AssumptionsDrawer'
+import { overriddenFields } from '@/src/lib/simFields'
 
 const SAMPLE_PREFIX = 'sample-'
 const isSample = (id: string) => id.startsWith(SAMPLE_PREFIX)
@@ -64,6 +66,15 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const sampleOn = flows.some(f => isSample(f.id))
   // The sample brings its own flows, so it is offered only where it cannot change a real quote.
   const canSample = empty && flows.length === 0
+  // Assumptions drawer (Milestone 6): the run's vehicle types, and what is overridden.
+  const [drawer, setDrawer] = useState<{ focus: string | null } | null>(null)
+  const runTypes = useMemo(() => {
+    const ids = new Set(inputs.flows.map(f => f.vehicleId))
+    return vehicles.filter(v => ids.has(v.id))
+  }, [inputs.flows, vehicles])
+  const changed = useMemo(() => overriddenFields(project, runTypes), [project, runTypes])
+  const overriddenIds = useMemo(() => new Set(changed.filter(o => o.def.scope === 'point' || o.def.scope === 'route').map(o => o.ownerId)), [changed])
+  const openAssumptions = (focus: string | null = null) => setDrawer({ focus })
 
   const loadSample = () => updateProject(project.id, { simLayout: sample.layout as StoredProject['simLayout'], flows: sample.flows as typeof flows })
   /** Clear the layout; flows stay in Sizing, unlinked (their last measured distance kept). Sample flows go. */
@@ -90,6 +101,9 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
             ? <button type="button" className="btn ghost" onClick={() => setMode('layout')}><Icon name="arrowL" size={13} /> Edit layout</button>
             : <button type="button" className="btn primary" disabled={!canRun} aria-describedby="sim-run-why" onClick={() => setMode('run')}>Run <Icon name="arrowR" size={13} /></button>}
           {!canRun && <span id="sim-run-why" className="sim-run-why">{blockers[0]?.text}</span>}
+          <button type="button" className={`btn ghost sim-assume-btn${drawer ? ' on' : ''}`} aria-pressed={!!drawer} onClick={() => setDrawer(d => (d ? null : { focus: null }))}>
+            Assumptions{changed.length > 0 && <span className="sim-count"><i className="sim-odot" />{changed.length} override{changed.length === 1 ? '' : 's'}</span>}
+          </button>
           {(canSample || !empty) && (
             <details className="sim-more-menu" onClick={e => { if ((e.target as HTMLElement).closest('[role=menuitem]')) e.currentTarget.open = false }}>
               <summary className="btn ghost" aria-label="More actions">⋯</summary>
@@ -114,10 +128,11 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <div className="empty-state"><h3>Open on a desktop to edit the layout</h3></div>
         </section>
       ) : running ? (
-        <RunView project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={fleet} unitSystem={unitSystem} inputs={inputs} payload={payload} />
+        <RunView onAssumptions={openAssumptions} changed={changed.length} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={fleet} unitSystem={unitSystem} inputs={inputs} payload={payload} />
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
+          overridden={overriddenIds}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
               <p>Draw routes along the aisles — or start from a finished site.</p>
@@ -127,6 +142,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           ) : 'Draw routes along the aisles.'}
         />
       )}
+      {drawer && <AssumptionsDrawer project={project} vehicles={runTypes} unitSystem={unitSystem} focus={drawer.focus} onClose={() => setDrawer(null)} />}
     </>
   )
 }
