@@ -230,6 +230,9 @@ no results).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
 **Owner check (you):**
+- [ ] Open a new project → Simulate → "Open the example site" → Run
+- [ ] Follow cb18-1: the dashed and solid legs lead to its pick and drop
+- [ ] Open Vehicles: per-vehicle moves add up to the total; Copy CSV pastes into Excel
 - [ ] Run your drawn site: do the verdicts and utilization look believable?
 - [ ] Sample layout at 130% demand: step 3 → 4, "Use 4 in pricing", confirm
 - [ ] Open Sizing, Step 4, Dashboard and the deck: they show "simulated (engine 3)"
