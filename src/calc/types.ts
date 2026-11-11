@@ -196,8 +196,9 @@ export interface ChargingResult {
 }
 
 /** Which cause set `fleetSold`. v4: one constraint, so this says whether
- *  charging contributed at all. */
-export type FleetBinding = 'charging' | 'utilization'
+ *  charging contributed at all — or 'simulation' when a simulated fleet applied
+ *  to pricing raised it (Fleet Simulation D-1). */
+export type FleetBinding = 'charging' | 'utilization' | 'simulation'
 
 export interface FleetGroup {
   vehicleId: string
@@ -218,6 +219,9 @@ export interface FleetGroup {
   utilizationDelta: number
   fleetSold: number
   binding: FleetBinding
+  /** The Fleet Engine's figure, present only when a simulated fleet raised `fleetSold` above it
+   *  (Fleet Simulation D-1, raise-only). `fleetSold − engineFleetSold` is the "+k simulated" term. */
+  engineFleetSold?: number
 }
 
 export interface FleetSummary {
@@ -227,6 +231,8 @@ export interface FleetSummary {
   totalUtilizationDelta: number
   totalFleetSold: number
   targetUtilization: number
+  /** Σ the engine's figures — present only when a simulated fleet raised any group (D-1). */
+  totalEngineFleetSold?: number
 }
 
 /** Project-level fleet settings consumed by the engine. `dailyOpHr` is derived
@@ -240,6 +246,9 @@ export interface FleetSettings {
   targetUtilization: number
   dailyOpHr: number               // H = min(24, shifts × hours)
   chargeMethods: Record<string, ChargeMethod>
+  /** Simulated fleet applied to pricing per vehicle id (Fleet Simulation D-1). Raise-only: a group
+   *  sells max(engine, applied), never fewer than the engine sized. */
+  appliedFleet?: Record<string, number>
 }
 
 /** Route-average speed factor map. Engineers pick low/medium/high per flow;

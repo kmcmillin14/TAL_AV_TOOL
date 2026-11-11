@@ -5,6 +5,7 @@
 import type { FleetModel } from '@/src/lib/fleetModel'
 import { money } from '@/src/lib/vehicleDisplay'
 import { resilience } from '@/src/calc/romSensitivity'
+import { simulatedDelta } from '@/src/calc/fleet'
 
 /** A mini horizontal bar in a KPI popover (`frac` is 0–1 of the row's max). */
 export interface KpiBar { label: string; display: string; frac: number }
@@ -57,9 +58,9 @@ export function kpiDetails(
 
   return {
     fleet: {
-      formula: `base ${fleet.totalBaseFleet}  +charging ${fleet.totalChargingDelta}  +headroom ${fleet.totalUtilizationDelta}  =  ${fleet.totalFleetSold}`,
+      formula: `base ${fleet.totalBaseFleet}  +charging ${fleet.totalChargingDelta}  +headroom ${fleet.totalUtilizationDelta}${simulatedDelta(fleet) > 0 ? `  +simulated ${simulatedDelta(fleet)}` : ''}  =  ${fleet.totalFleetSold}`,
       bars: bars(fleet.groups.map(g => ({ label: nm(g.vehicleId), weight: g.fleetSold, display: `${g.fleetSold}` }))),
-      note: 'Fleet = max(⌈raw⌉, ⌈raw ÷ (availability × utilization)⌉) per chassis. The three stages add exactly; charging is costed first so it stays a platform property.',
+      note: `Fleet = max(⌈raw⌉, ⌈raw ÷ (availability × utilization)⌉) per chassis. The ${simulatedDelta(fleet) > 0 ? 'stages (with the simulated fleet applied to pricing)' : 'three stages'} add exactly; charging is costed first so it stays a platform property.`,
     },
     types: {
       rows: fleet.groups.map(g => ({ label: nm(g.vehicleId), value: `${g.fleetSold} veh` })),

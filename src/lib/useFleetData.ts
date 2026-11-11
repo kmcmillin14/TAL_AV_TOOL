@@ -3,12 +3,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getProject, type StoredProject } from './storage'
 import { fetchVehiclesCached } from './vehicleCache'
+import { projectFleetSettings } from './fleetModel'
 import { useProjectSync } from './useProjectSync'
 import type { Vehicle } from './vehicleLibrary'
 import type { FleetSettings, Flow, FlowDerived } from '@/src/calc/types'
-import { DEFAULT_TARGET_UTILIZATION } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
-import { fleetSummary, defaultChargeRegime } from '@/src/calc/fleet'
+import { fleetSummary } from '@/src/calc/fleet'
 import { consecutiveOperatingDays } from '@/src/calc/romAnalytics'
 
 /** Centralizes the Fleet Engine data chain: load project + vehicles, derive flow
@@ -49,18 +49,7 @@ export function useFleetData(id: string) {
     return ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
   }, [flows, derivedByFlowId])
 
-  const settings: FleetSettings = useMemo(() => {
-    const dailyOpHr = Math.min(24, (project?.shiftsPerDay ?? 1) * (project?.hoursPerShift ?? 8))
-    return {
-      // Derived default, never a lock: a 24 h/day schedule has no overnight
-      // charge window, so an unset regime defaults to 'continuous'. The engine
-      // toggle writes the explicit choice, which always wins.
-      regime: project?.chargeRegime ?? defaultChargeRegime(dailyOpHr),
-      targetUtilization: project?.targetUtilization ?? DEFAULT_TARGET_UTILIZATION,
-      dailyOpHr,
-      chargeMethods: project?.chargeMethods ?? {},
-    }
-  }, [project])
+  const settings: FleetSettings = useMemo(() => projectFleetSettings(project ?? {}), [project])
 
   const fleet = useMemo(() => fleetSummary(groups, vehicleById, settings), [groups, vehicleById, settings])
 

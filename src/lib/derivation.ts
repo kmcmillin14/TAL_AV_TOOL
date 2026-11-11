@@ -129,7 +129,7 @@ export function chargingDerivation(
 // ── Tier 3: Utilization — headroom → fleet sold ──────────────────────────────
 
 const BINDING_LABEL: Record<FleetGroup['binding'], string> = {
-  charging: 'Charging', utilization: 'Target utilization',
+  charging: 'Charging', utilization: 'Target utilization', simulation: 'Fleet Simulation (applied)',
 }
 
 /** Utilization tier: the fleet build-up, whose stages are TRUE ADDENDS.
@@ -145,7 +145,10 @@ export function bufferDerivation(group: FleetGroup, targetUtilization: number): 
       { label: 'Peak demand', expr: 'Σ (moves/hr × cycle) ÷ 3600, rounded up', sub: n2(group.groupRaw), result: String(group.baseFleet) },
       { label: '+ charging', expr: 'vehicles covering charging downtime', sub: A == null ? 'no battery data — charging costs nothing' : `⌈ ${n2(group.groupRaw)} ÷ ${n2(A)} ⌉ − ${group.baseFleet}`, result: `+${group.chargingDelta}` },
       { label: '+ headroom', expr: `target ${Math.round(targetUtilization * 100)}% of AVAILABLE time — spikes, maintenance, queueing`, sub: `⌈ ${n2(group.demand)} ⌉ − ${group.fleetWithCharging}`, result: `+${group.utilizationDelta}` },
-      { label: 'Fleet (sold)', expr: 'the three above', sub: `${group.baseFleet} + ${group.chargingDelta} + ${group.utilizationDelta}`, result: String(group.fleetSold), emphasis: true },
+      ...(group.engineFleetSold != null
+        ? [{ label: '+ simulated', expr: `Fleet Simulation applied to pricing — engine ${group.engineFleetSold}`, sub: `${group.fleetSold} − ${group.engineFleetSold}`, result: `+${group.fleetSold - group.engineFleetSold}` }]
+        : []),
+      { label: 'Fleet (sold)', expr: group.engineFleetSold != null ? 'the four above' : 'the three above', sub: `${group.baseFleet} + ${group.chargingDelta} + ${group.utilizationDelta}${group.engineFleetSold != null ? ` + ${group.fleetSold - group.engineFleetSold}` : ''}`, result: String(group.fleetSold), emphasis: true },
       { label: 'Binding constraint', expr: 'what set the fleet', result: BINDING_LABEL[group.binding] },
     ],
     note: 'Headroom sits on AVAILABLE time, not clock time — a vehicle on a charger cannot answer a demand spike, so charging downtime is not usable slack. Each chassis rounds up exactly once, at the end.',

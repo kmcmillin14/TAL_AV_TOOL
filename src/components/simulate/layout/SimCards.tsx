@@ -7,7 +7,7 @@
 //                     Engine figure, and linking with a before → after confirmation (it moves the quote)
 
 import { useMemo, useState } from 'react'
-import { fleetFromFlows } from '@/src/calc/fleet'
+import { engineFleetTotal, fleetFromFlows } from '@/src/calc/fleet'
 import { linkFlow, linkSuggestions, measureFlows, sameName } from '@/src/calc/sim/layoutEdit'
 import type { ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimLayout, SimPointType, SimRole } from '@/src/calc/sim/types'
@@ -125,7 +125,9 @@ export function FlowsTable({ layout, flows, vehicleById, settings, fleet, unitSy
     return new Map(measureFlows(layout, linked, radiusFor).map(f => [f.id, f]))
   }, [layout, flows, matches, radiusFor])
   const linkedAll = useMemo(() => flows.map(f => pending.get(f.id) ?? f), [flows, pending])
-  const after = useMemo(() => (confirm ? fleetFromFlows(linkedAll, vehicleById, settings).totalFleetSold : null), [confirm, linkedAll, vehicleById, settings])
+  // The Fleet Engine's own figures — without a simulated fleet applied to pricing (D-1).
+  const engineTotal = engineFleetTotal(fleet)
+  const after = useMemo(() => (confirm ? fleetFromFlows(linkedAll, vehicleById, { ...settings, appliedFleet: undefined }).totalFleetSold : null), [confirm, linkedAll, vehicleById, settings])
   const raw = fleet.groups.reduce((t, g) => t + g.groupRaw, 0)
   const showPending = pending.size > 0
 
@@ -160,7 +162,7 @@ export function FlowsTable({ layout, flows, vehicleById, settings, fleet, unitSy
         </table>
       </div>
       <div className="sim-tbl-foot">
-        <span>Fleet Engine: raw <b className="num">{raw.toFixed(2)}</b> → <b className="num">{fleet.totalFleetSold}</b> vehicle{fleet.totalFleetSold === 1 ? '' : 's'}
+        <span>Fleet Engine: raw <b className="num">{raw.toFixed(2)}</b> → <b className="num">{engineTotal}</b> vehicle{engineTotal === 1 ? '' : 's'}
           <span className="sim-card-note"> (utilization {Math.round(settings.targetUtilization * 100)}% · {settings.dailyOpHr} h/day)</span></span>
         <span className="grow" />
         <button type="button" className="btn btn-sm ghost" disabled={!matches.length} onClick={() => setConfirm(true)}>
@@ -169,7 +171,7 @@ export function FlowsTable({ layout, flows, vehicleById, settings, fleet, unitSy
       </div>
       {confirm && after != null && (
         <div className="sim-confirm">
-          Links {matches.length} flow{matches.length === 1 ? '' : 's'} to the layout — distance and lift then come from the drawing · Fleet Engine {fleet.totalFleetSold} → {after}
+          Links {matches.length} flow{matches.length === 1 ? '' : 's'} to the layout — distance and lift then come from the drawing · Fleet Engine {engineTotal} → {after}
           <span className="grow" />
           <button type="button" className="btn btn-sm ghost" onClick={() => setConfirm(false)}>Cancel</button>
           <button type="button" className="btn btn-sm primary" onClick={() => { onFlows(linkedAll); setConfirm(false) }}>Apply</button>

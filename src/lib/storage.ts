@@ -363,6 +363,15 @@ export interface MetaOverrides {
   createdAt?: string
 }
 
+/**
+ * Merge into a project's `simSettings` as stored now — not as a component last rendered it — so two
+ * writes close together (a finished run's result, an engineer's click) never drop each other's fields.
+ */
+export function patchSimSettings(id: string, patch: Partial<NonNullable<StoredProject['simSettings']>>): void {
+  const p = getProject(id)
+  if (p) updateProject(id, { simSettings: { ...(p.simSettings ?? {}), ...patch } })
+}
+
 export function updateProject(
   id: string,
   input: PartialProjectFormData,

@@ -14,6 +14,7 @@ import RomGauge from './RomGauge'
 // Canonical compact-USD formatter lives in vehicleDisplay; re-exported here so
 // ROM components keep their existing import path.
 import { money } from '@/src/lib/vehicleDisplay'
+import { simulatedNote } from '@/src/calc/fleet'
 export const usd = money
 
 export const usdRange = (min: number, max: number) =>
@@ -101,7 +102,7 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   // availability, charging and redundancy are shown as gauges below, not tiles here.
   const tiles: Array<{ id: KpiId; label: string; value: string; accent?: boolean; delta?: Delta }> = [
     // ── Fleet & flow ──
-    { id: 'fleet', label: 'Total fleet', value: String(fleet.totalFleetSold), accent: true,
+    { id: 'fleet', label: simulatedNote(fleet) ? `Total fleet — ${simulatedNote(fleet)}` : 'Total fleet', value: String(fleet.totalFleetSold), accent: true,
       delta: chip(deltas?.totalFleetSold, n => String(Math.round(n)), 'down') },
     { id: 'types', label: 'Vehicle types', value: String(fleet.groups.length),
       delta: chip(deltas?.vehicleTypes, n => String(Math.round(n))) },

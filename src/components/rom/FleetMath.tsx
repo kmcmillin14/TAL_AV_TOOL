@@ -5,6 +5,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { StoredProject } from '@/src/lib/storage'
 import type { FleetSummary, Flow, FlowDerived } from '@/src/calc/types'
 import { DEFAULT_TARGET_UTILIZATION } from '@/src/calc/types'
+import { simulatedDelta, simulatedNote } from '@/src/calc/fleet'
 
 interface Props {
   project: StoredProject
@@ -77,7 +78,8 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
     return (
       <div className="fm-eq mono">
         {g.baseFleet} base + {g.chargingDelta} charging + {g.utilizationDelta} headroom
-        {' '}= <strong>{g.fleetSold} sold</strong> · demand {f2(g.demand)} · binding: {g.binding}
+        {simulatedDelta(g) > 0 && <> + {simulatedDelta(g)} simulated</>}
+        {' '}= <strong>{g.fleetSold} sold</strong>{simulatedNote(g) && <> · {simulatedNote(g)}</>} · demand {f2(g.demand)} · binding: {g.binding}
       </div>
     )
   }
@@ -127,7 +129,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
       </Step>
 
       <div className="fm-total mono">
-        Total: <strong>{fleet.totalBaseFleet}</strong> base + <strong>{fleet.totalChargingDelta}</strong> charging + <strong>{fleet.totalUtilizationDelta}</strong> headroom (at {Math.round(targetUtil * 100)}% utilization) → <strong className="fm-total-sold">{fleet.totalFleetSold} vehicles sold</strong>
+        Total: <strong>{fleet.totalBaseFleet}</strong> base + <strong>{fleet.totalChargingDelta}</strong> charging + <strong>{fleet.totalUtilizationDelta}</strong> headroom (at {Math.round(targetUtil * 100)}% utilization){simulatedDelta(fleet) > 0 && <> + <strong>{simulatedDelta(fleet)}</strong> simulated</>} → <strong className="fm-total-sold">{fleet.totalFleetSold} vehicles sold</strong>{simulatedNote(fleet) && <> · {simulatedNote(fleet)}</>}
       </div>
     </>
   )

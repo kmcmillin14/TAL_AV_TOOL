@@ -25,6 +25,24 @@ export interface FleetModel {
   gate: PricingGate
 }
 
+/**
+ * The project's Fleet Engine settings — the one construction Sizing, Step 4, the Dashboard and the
+ * exporters share. An unset charge regime derives from shift coverage (24 h/day → continuous); the
+ * engine toggle writes the explicit choice, which always wins. A simulated fleet applied to pricing
+ * (Fleet Simulation D-1) rides along as `appliedFleet`.
+ */
+export function projectFleetSettings(project: Pick<StoredProject, 'shiftsPerDay' | 'hoursPerShift' | 'chargeRegime' | 'targetUtilization' | 'chargeMethods' | 'simSettings'>): FleetSettings {
+  const dailyOpHr = Math.min(24, (project.shiftsPerDay ?? 1) * (project.hoursPerShift ?? 8))
+  const applied = project.simSettings?.appliedFleet
+  return {
+    regime: project.chargeRegime ?? defaultChargeRegime(dailyOpHr),
+    targetUtilization: project.targetUtilization ?? DEFAULT_TARGET_UTILIZATION,
+    dailyOpHr,
+    chargeMethods: project.chargeMethods ?? {},
+    ...(applied && Object.keys(applied).length ? { appliedFleet: Object.fromEntries(Object.entries(applied).map(([v, a]) => [v, a.fleet])) } : {}),
+  }
+}
+
 export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): FleetModel {
   const vehicleById = new Map(vehicles.map(v => [v.id, v]))
   const flows = project.flows ?? []
@@ -39,14 +57,7 @@ export function computeFleetModel(project: StoredProject, vehicles: Vehicle[]): 
   for (const f of flows) if (f.vehicleId && !ids.includes(f.vehicleId)) ids.push(f.vehicleId)
   const groups = ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
 
-  const dailyOpHr = Math.min(24, (project.shiftsPerDay ?? 1) * (project.hoursPerShift ?? 8))
-  const shiftsPerDay = project.shiftsPerDay ?? 1
-  const settings: FleetSettings = {
-    regime: project.chargeRegime ?? defaultChargeRegime(dailyOpHr),
-    targetUtilization: project.targetUtilization ?? DEFAULT_TARGET_UTILIZATION,
-    dailyOpHr,
-    chargeMethods: project.chargeMethods ?? {},
-  }
+  const settings = projectFleetSettings(project)
   const fleet = fleetSummary(groups, vehicleById, settings)
 
   const costs: RomCostInputs = {

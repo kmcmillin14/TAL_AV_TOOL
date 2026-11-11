@@ -760,7 +760,38 @@ step ribbon is unchanged.
   - Run details open collapsed with a one-line summary ("4 flows · all within 2% of target");
     variability is a "Met in k/10" chip that opens to the ranges. Assumptions (pace, safety, demand,
     arrivals, seed) are saved with the project (`simSettings`).
-  - Nothing here changes the sized fleet or the quote; **Use N in pricing** remains Milestone 5.
+  - Nothing in the run changes the sized fleet or the quote by itself (see Milestone 5).
+- **Simulated fleet in pricing (built, Milestone 5; D-1, raise-only).** Quoted numbers can move.
+  - *Use N in pricing:* a verdict row offers it only when the stepper value **Meets** and is above
+    the Fleet Engine's figure for that type. While it is offered, the run also checks one vehicle
+    fewer: if N − 1 also Meets, the row offers *N − 1 also meets* (step down) instead, so the
+    applied figure is always the smallest that Meets. Clicking it opens an inline confirmation
+    with the pricing fleet and the ROM price before → after (from the same model Step 4, the
+    Dashboard and the deck use). Confirming stores `simSettings.appliedFleet[vehicleId] =
+    { fleet, key }`.
+  - *Pricing:* `fleetSummary` sells `max(engine, applied)` per type (`FleetSettings.appliedFleet`).
+    It is never lower than the engine. A raised group carries `engineFleetSold`, and the summary
+    carries `totalEngineFleetSold`. The project's fleet settings are built in one place,
+    `projectFleetSettings` (`src/lib/fleetModel.ts`), so Sizing, Step 4, the Dashboard and the
+    exports all follow.
+  - *Labels:* where the sold fleet is shown — the Sizing total, Step 4 fleet math, Dashboard KPI,
+    the calculation trail, the PDF and the deck — a raised figure reads **"simulated (engine N)"**,
+    and the build-up shows a fourth term, **+k simulated**. That term is a column in the PDF appendix
+    and a tile on the deck's sizing slide, so every build-up still adds up. The binding constraint
+    reads *Fleet Simulation (applied)* (`binding: 'simulation'`). If the engine later sizes as many
+    or more, raise-only pricing uses the engine figure, and the applied entry reads *engine now sizes
+    M — applied N not used* with Clear.
+  - *Back to engine* (in the verdict row and on Sizing) clears it, and every figure returns exactly.
+  - *Stale:* the key is a hash of the run's inputs (`simInputsKey`: layout, the flows linked to it and
+    the vehicle data they use, loads, shift, target utilization, run assumptions, B56.5 rule; not the
+    stepper, and not flows the run ignores). When they change, the
+    applied fleet reads *stale — re-run* in Simulate and on Sizing, and pricing keeps using it. A
+    completed run that Meets at the applied figure refreshes the key.
+  - *Sizing verdict chip:* each completed full-shift run stores `simSettings.lastRun` (`key`, and
+    per type `fleet` and `verdict`) only when it changed. Sizing shows one chip per vehicle type
+    beside **Simulate** ("Meets at 3"), muted with *re-run* when stale. The run view keeps its
+    inputs stable across storage refreshes, so saving a result or refocusing the window does not
+    restart the run.
 
 ---
 

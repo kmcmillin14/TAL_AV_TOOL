@@ -4,22 +4,23 @@
 // Meets / Tight / Falls short / Gridlock, moves/h against target, wait, busy — beside the Fleet
 // Engine's figure. The verdict comes from a full shift run off-screen; the map plays a second copy of
 // the same run (same seed) at ×1/×10/×100. Details sit one click away (progressive disclosure).
-// Nothing here changes the sized fleet or the quote ("Use N in pricing" is a separate, approved step).
+// Nothing here changes the sized fleet or the quote except "Use N in pricing" (D-1, raise-only, confirmed).
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
-import { results } from '@/src/calc/sim/results'
-import { clearanceRule, payloadFt, runFleet, runInputs } from '@/src/calc/sim/runInputs'
+import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
+import { clearanceRule, payloadFt, runFleet, runInputs, simInputsKey } from '@/src/calc/sim/runInputs'
+import { engineFleetSold, engineFleetTotal } from '@/src/calc/fleet'
 import type { SimResults, SimSettings, Verdict } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
-import { updateProject, type StoredProject } from '@/src/lib/storage'
+import { getProject, patchSimSettings, type StoredProject } from '@/src/lib/storage'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutCanvas from '../layout/LayoutCanvas'
+import PricingAction from './PricingAction'
 import RunDetails, { type Assumptions } from './RunDetails'
 import { RunScene, STATES } from './RunScene'
 
-const VERDICT_TXT: Record<Verdict, string> = { meets: 'Meets', tight: 'Tight', short: 'Falls short', gridlock: 'Gridlock', warming: 'Warming up' }
 /** Run assumption defaults (spec D-3 pace; the engine's following gap); the project's values win. */
 const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as SimSettings['arrivals'], demandPct: 100, seed: 1 }
 const SLICE_MS = 30
@@ -50,25 +51,39 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
   setTimeout(slice, 0)
 }
 
+/**
+ * The same reference while the value is unchanged. The project is re-read from storage on every save
+ * and window focus (new objects each time); the run must not restart for that. Serialises only when
+ * the reference changes — not per frame.
+ */
+function useByValue<T>(v: T): T {
+  const json = useMemo(() => JSON.stringify(v), [v])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  return useMemo(() => v, [json])
+}
+
 /** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
 export default function RunView({ project, vehicles, vehicleById, settings, fleet, unitSystem }: Props) {
   const simSettings = project.simSettings ?? {}
-  const engineFleet = useMemo(() => Object.fromEntries(fleet.groups.map(g => [g.vehicleId, g.fleetSold])), [fleet])
+  const engineFleet = useByValue(useMemo(() => Object.fromEntries(fleet.groups.map(g => [g.vehicleId, engineFleetSold(g)])), [fleet]))
+  const inputsKey = useMemo(() => simInputsKey(project, vehicleById), [project, vehicleById])
 
   const assume: Assumptions = useMemo(() => ({
     pacePct: simSettings.pacePct ?? RUN_DEFAULTS.pacePct, safetyFt: simSettings.safetyFt ?? RUN_DEFAULTS.safetyFt,
     arrivals: simSettings.arrivals ?? RUN_DEFAULTS.arrivals, demandPct: simSettings.demandPct ?? RUN_DEFAULTS.demandPct, seed: simSettings.seed ?? RUN_DEFAULTS.seed,
   }), [simSettings.pacePct, simSettings.safetyFt, simSettings.arrivals, simSettings.demandPct, simSettings.seed])
   const shiftH = project.hoursPerShift ?? 8
-  const rule = useMemo(() => clearanceRule(simSettings.clearance), [simSettings.clearance])
-  const payload = useMemo(() => payloadFt(project.loads), [project.loads])
+  const clearance = useByValue(simSettings.clearance), loads = useByValue(project.loads)
+  const layout = useByValue(project.simLayout), flows = useByValue(project.flows), stepper = useByValue(simSettings.fleet)
+  const rule = useMemo(() => clearanceRule(clearance), [clearance])
+  const payload = useMemo(() => payloadFt(loads), [loads])
   const inputs = useMemo(
-    () => runInputs(project.simLayout ?? { points: [], segments: [] }, project.flows ?? [], vehicleById, rule, payload?.width ?? 0),
-    [project.simLayout, project.flows, vehicleById, rule, payload],
+    () => runInputs(layout ?? { points: [], segments: [] }, flows ?? [], vehicleById, rule, payload?.width ?? 0),
+    [layout, flows, vehicleById, rule, payload],
   )
-  const fleetBy = useMemo(() => runFleet(engineFleet, simSettings.fleet, inputs.flows.map(f => f.vehicleId)), [engineFleet, simSettings.fleet, inputs.flows])
+  const fleetBy = useByValue(useMemo(() => runFleet(engineFleet, stepper, inputs.flows.map(f => f.vehicleId)), [engineFleet, stepper, inputs.flows]))
   const simConfig = useCallback((seed: number): SimSettings => ({
     fleet: fleetBy, demandPct: assume.demandPct, seed, arrivals: assume.arrivals, pacePct: assume.pacePct, safetyFt: assume.safetyFt,
     staffedHr: settings.dailyOpHr, targetUtilization: settings.targetUtilization, ...(payload ? { payloadFt: payload } : {}),
@@ -84,6 +99,45 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
     if (!S) return
     runInSlices(S, shiftH * 3600, () => setR({ res: results(S), S }), () => tok === token.current)
   }, [inputs, vehicles, simConfig, assume.seed, shiftH])
+
+  // ---- the result is kept for Sizing's verdict chip; an applied fleet it confirms is refreshed ----
+  useEffect(() => {
+    if (!R) return
+    const types = Object.fromEntries(R.res.types.map(t => [t.vehicleId, { fleet: fleetBy[t.vehicleId] ?? 0, verdict: R.res.gridlock ? 'gridlock' as const : t.verdict }]))
+    const fresh = getProject(project.id)
+    if (!fresh) return
+    const ss = fresh.simSettings ?? {}
+    const lastRun = { key: inputsKey, types }
+    const applied = Object.fromEntries(Object.entries(ss.appliedFleet ?? {}).map(([v, a]) =>
+      [v, types[v]?.verdict === 'meets' && types[v].fleet === a.fleet ? { ...a, key: inputsKey } : a]))
+    const next = { ...ss, lastRun, ...(ss.appliedFleet ? { appliedFleet: applied } : {}) }
+    if (JSON.stringify(next) !== JSON.stringify(ss)) patchSimSettings(project.id, next)
+    // Only a new result writes; the project id and key are read with it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [R])
+
+  // ---- "Use N in pricing" needs the smallest fleet that Meets: run one fewer, per type that Meets above the engine ----
+  const [lower, setLower] = useState<Record<string, Verdict | 'checking'>>({})
+  useEffect(() => {
+    setLower({})
+    if (!R || R.res.gridlock) return
+    const todo = R.res.types.filter(t => t.verdict === 'meets' && (fleetBy[t.vehicleId] ?? 0) > (engineFleet[t.vehicleId] ?? 0)).map(t => t.vehicleId)
+    const tok = token.current
+    const next = (i: number) => {
+      if (i >= todo.length || tok !== token.current) return
+      const vid = todo[i]
+      setLower(m => ({ ...m, [vid]: 'checking' }))
+      const S = createSim(inputs.layout, inputs.flows, vehicles, { ...simConfig(assume.seed), fleet: { ...fleetBy, [vid]: fleetBy[vid] - 1 } })
+      if (!S) { setLower(m => ({ ...m, [vid]: 'short' })); return next(i + 1) }   // one fewer cannot even be placed
+      runInSlices(S, shiftH * 3600, () => {
+        const r = results(S)
+        setLower(m => ({ ...m, [vid]: r.gridlock ? 'gridlock' : r.types.find(t => t.vehicleId === vid)?.verdict ?? 'short' }))
+        next(i + 1)
+      }, () => tok === token.current)
+    }
+    next(0)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [R])
 
   // ---- variability: 10 seeds, ranges and "met in k/10" ----
   const [vari, setVari] = useState<{ k: number; out: SimResults[] } | null>(null)
@@ -144,15 +198,12 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
   }, [])
 
   /** Run assumptions are the project's (Run → Assumptions); a change restarts the run. */
-  const onAssume = useCallback((patch: Partial<Assumptions>) => {
-    const ss = project.simSettings ?? {}
-    updateProject(project.id, { simSettings: { ...ss, ...patch } })
-  }, [project.id, project.simSettings])
+  const onAssume = useCallback((patch: Partial<Assumptions>) => patchSimSettings(project.id, patch), [project.id])
 
   const setFleet = (vid: string, n: number) => {
     const next = { ...(simSettings.fleet ?? {}), [vid]: Math.max(1, Math.min(50, n)) }
     if (next[vid] === engineFleet[vid]) delete next[vid]
-    updateProject(project.id, { simSettings: { ...simSettings, fleet: next } })
+    patchSimSettings(project.id, { fleet: next })
   }
 
   const S = live.current
@@ -180,16 +231,24 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
               {R?.res.gridlock
                 ? <><span className="sim-chip gridlock">Gridlock</span><span className="sim-vstats">Stopped at <b>{clock(R.res.gridlock.t)}</b> · {R.res.gridlock.where} · {R.res.gridlock.vehicle}{R.res.gridlock.blockedBy ? ` waits on ${R.res.gridlock.blockedBy}` : ''}</span></>
                 : res
-                  ? <><span className={`sim-chip ${res.verdict}`}>{VERDICT_TXT[res.verdict]}</span>
+                  ? <><span className={`sim-chip ${res.verdict}`}>{VERDICT_LABEL[res.verdict]}</span>
                       <span className="sim-vstats"><b className="num">{res.perHr.toFixed(1)}</b> / {res.target.toFixed(0)} moves/h · <b className="num">{Math.round(res.avgWait)} s</b> wait · <b className="num">{Math.round(res.utilization * 100)}%</b> busy</span></>
                   : R
                     ? <><span className="sim-chip short">Not run</span><span className="sim-vstats">{R.res.excluded.map(x => x.why).filter((w, i, a) => a.indexOf(w) === i).join(' · ') || 'No flow of this vehicle could run'}</span></>
                     : <><span className="sim-chip">Simulating</span><span className="sim-vstats">Running a full {shiftH} h shift…</span></>}
+              {R && (
+                <PricingAction
+                  project={project} vehicles={vehicles} vehicleId={vid} n={n} engineN={engineFleet[vid] ?? 0}
+                  verdict={R.res.gridlock ? 'gridlock' : res?.verdict ?? null} lower={lower[vid]} inputsKey={inputsKey}
+                  onApplied={appliedFleet => patchSimSettings(project.id, { appliedFleet })}
+                  onStepDown={() => setFleet(vid, n - 1)}
+                />
+              )}
             </div>
           )
         })}
         <div className="sim-vsub">
-          <span>Engine sized <b className="num">{fleet.totalFleetSold}</b>{simSettings.fleet && Object.keys(simSettings.fleet).length > 0 && <> · <button type="button" className="link-btn" onClick={() => updateProject(project.id, { simSettings: { ...simSettings, fleet: {} } })}>Reset to engine</button></>}</span>
+          <span>Engine sized <b className="num">{engineFleetTotal(fleet)}</b>{simSettings.fleet && Object.keys(simSettings.fleet).length > 0 && <> · <button type="button" className="link-btn" onClick={() => patchSimSettings(project.id, { fleet: {} })}>Reset to engine</button></>}</span>
           <span>Full {shiftH} h shift · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
           <span className="grow" />
           {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}

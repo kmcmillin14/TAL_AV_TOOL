@@ -97,6 +97,18 @@ export const simSettingsSchema = z.object({
     sharedBetweenVehicles: z.boolean(),
     edition: z.string().optional(),
   }).optional(),
+  /** Simulated fleet applied to pricing (D-1, raise-only), per vehicle id. `key` is the run inputs it
+   *  came from (`simInputsKey`); a different current key marks it stale. */
+  appliedFleet: z.record(z.string(), z.object({ fleet: z.number().int().min(1).max(500), key: z.string() })).optional(),
+  /** The last completed full-shift run, for Sizing's verdict chip: its inputs key and, per vehicle id,
+   *  the fleet it ran and the verdict. */
+  lastRun: z.object({
+    key: z.string(),
+    types: z.record(z.string(), z.object({
+      fleet: z.number().int().min(0).max(500),
+      verdict: z.enum(['meets', 'tight', 'short', 'gridlock', 'warming']),
+    })),
+  }).optional(),
 })
 
 export type SimLayoutData = z.infer<typeof simLayoutSchema>

@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation Milestone 5: simulated fleet in pricing, Sizing verdict chip
+
+**Quoted numbers can move** — only when an engineer clicks *Use N in pricing* and confirms, and only
+upward (D-1). Without that, every figure is unchanged.
+
+- **Use N in pricing** (verdict row): offered when the stepper value Meets above the engine's figure
+  and one fewer does not; an inline confirmation shows the fleet and ROM before → after. Stored as
+  `simSettings.appliedFleet[vehicleId] = { fleet, key }`.
+- **Data model:** `FleetSettings.appliedFleet`; `fleetSummary` sells `max(engine, applied)`, a raised
+  group carries `engineFleetSold` (summary `totalEngineFleetSold`). `projectFleetSettings`
+  (`src/lib/fleetModel.ts`) replaces three copies of the settings construction.
+- **Labels:** "simulated (engine N)" and a "+k simulated" term on Sizing, Step 4 fleet math, the
+  Dashboard KPI, the calculation trail, the PDF and the deck. **Back to engine** restores the engine.
+- **Stale marker:** `simInputsKey` hashes what the run uses (linked flows and their vehicle data, layout,
+  loads, shift, assumptions); an applied fleet from other inputs reads "stale — re-run" (pricing keeps
+  it until the engineer acts). One the engine has since overtaken reads "not used".
+- **Build-ups still add up:** a "+Sim" column in the PDF appendix, a "+ SIMULATED" tile on the deck's
+  sizing slide, `binding: 'simulation'` in the calculation trail.
+- **Writes merge into stored `simSettings`** (`patchSimSettings`, `src/lib/storage.ts`), so a finished
+  run's result and an engineer's click never drop each other's fields.
+- **Sizing verdict chip** per vehicle type beside Simulate, from `simSettings.lastRun`.
+- **Fix:** the run view no longer restarts its run when the project is re-read from storage
+  (window focus, any save) — inputs are kept stable by value.
+
 ## 2026-11-11 — Fleet simulation: snapping, editable nodes, route direction, pallet-sized lanes
 
 Owner: "Routes need to snap to objects, nodes editable, single and bidirectional, factor pallet size

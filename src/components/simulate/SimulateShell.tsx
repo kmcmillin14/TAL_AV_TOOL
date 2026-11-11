@@ -5,6 +5,7 @@
 // the editor; Run mode plays the simulation. Run is offered only when "Ready to run?" has no red item
 // (acceptance 1).
 
+import { engineFleetSold } from '@/src/calc/fleet'
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import Icon from '@/src/design-system/components/Icon'
@@ -38,7 +39,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   // Checked against what a run will place and drive: the run fleet (linked types, stepper value) on
   // the driven layout (B56.5 applied), so "Ready" never offers a run that cannot place or route.
   const checks = useMemo(() => {
-    const engine = Object.fromEntries(fleet.groups.map(g => [g.vehicleId, g.fleetSold]))
+    const engine = Object.fromEntries(fleet.groups.map(g => [g.vehicleId, engineFleetSold(g)]))
     const placed = runFleet(engine, project.simSettings?.fleet, linkedFlows(flows).map(f => f.vehicleId))
     const driven = simLayout && runInputs(simLayout, flows, vehicleById, clearanceRule(project.simSettings?.clearance), payloadFt(project.loads)?.width ?? 0).layout
     return readinessChecks({ layout: simLayout, flows, vehicles, driven, fleetNeeded: Object.values(placed).reduce((a, b) => a + b, 0) })

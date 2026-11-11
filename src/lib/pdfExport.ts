@@ -1,6 +1,7 @@
 import { SCHEMA_VERSION, type StoredProject } from './storage'
 import { winAnsiSafe } from './utils/winAnsi'
 import { money } from './vehicleDisplay'
+import { simulatedDelta, simulatedNote } from '../calc/fleet'
 import { qualifyVehicle } from '../calc/trafficLight'
 import { appRequirementsFromProject } from './appRequirements'
 import type { Vehicle } from './vehicleLibrary'
@@ -262,7 +263,7 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
       row('Fleet', 'Not yet sized — assign vehicles to flows in the Fleet Engine.')
       return
     }
-    row('Total fleet', `${f.totalFleetSold} vehicle${f.totalFleetSold === 1 ? '' : 's'}`)
+    row('Total fleet', `${f.totalFleetSold} vehicle${f.totalFleetSold === 1 ? '' : 's'}${simulatedNote(f) ? ` — ${simulatedNote(f)}` : ''}`)
     row('Vehicle types', String(f.groups.length))
     row('Total throughput', `${Math.round(model.flows.reduce((s, fl) => s + (fl.thruPerHr || 0), 0))} moves / hr`)
     sec('Fleet mix')
@@ -512,16 +513,21 @@ export async function exportProjectPdf(project: StoredProject): Promise<Blob> {
   }
 
   if (model.fleet.groups.length > 0) {
-    renderSection('APPENDIX — FLEET BUILD-UP', `base + charging + headroom = sold, at ${Math.round(model.settings.targetUtilization * 100)}% target utilization of available time. Rounds once per vehicle pool.`, ({ table }) => {
+    renderSection('APPENDIX — FLEET BUILD-UP', `base + charging + headroom${simulatedDelta(model.fleet) > 0 ? ` + ${simulatedDelta(model.fleet)} simulated` : ''} = sold, at ${Math.round(model.settings.targetUtilization * 100)}% target utilization of available time. Rounds once per vehicle pool.${simulatedNote(model.fleet) ? ` Sold is ${simulatedNote(model.fleet)}.` : ''}`, ({ table }) => {
+      // A simulated fleet applied to pricing (D-1) gets its own column so the row still adds up.
+      const sim = simulatedDelta(model.fleet) > 0
       table(
         [
-          { header: 'Vehicle', w: 150 }, { header: 'Raw', w: 60, align: 'right' }, { header: 'Base', w: 50, align: 'right' },
-          { header: '+Chg', w: 50, align: 'right' }, { header: '+Head', w: 52, align: 'right' }, { header: 'Avail', w: 56, align: 'right' }, { header: 'Sold', w: 50, align: 'right' },
+          { header: 'Vehicle', w: sim ? 110 : 150 }, { header: 'Raw', w: 60, align: 'right' }, { header: 'Base', w: 50, align: 'right' },
+          { header: '+Chg', w: 50, align: 'right' }, { header: '+Head', w: 52, align: 'right' },
+          ...(sim ? [{ header: '+Sim', w: 40, align: 'right' as const }] : []),
+          { header: 'Avail', w: 56, align: 'right' }, { header: 'Sold', w: 50, align: 'right' },
         ],
         model.fleet.groups.map(g => [
           vName(g.vehicleId), g.groupRaw.toFixed(2), String(g.baseFleet),
           g.chargingDelta > 0 ? `+${g.chargingDelta}` : '0',
           g.utilizationDelta > 0 ? `+${g.utilizationDelta}` : '0',
+          ...(sim ? [simulatedDelta(g) > 0 ? `+${simulatedDelta(g)}` : '0'] : []),
           g.charging.availability == null ? '—' : `${Math.round(g.charging.availability * 100)}%`,
           String(g.fleetSold),
         ]),

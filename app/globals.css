@@ -5435,6 +5435,16 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-chip.short, .sim-chip.gridlock { background: var(--bad-soft); color: var(--bad); }
 .sim-vstats { font-size: 15px; color: var(--text-secondary); }
 .sim-vstats b { color: var(--text-primary); }
+/* Sizing: the last simulation run per type, and a simulated fleet in pricing (D-1). */
+.sim-sizing { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-secondary); }
+.sim-chip.sm { padding: 4px 10px; font-size: 10.5px; }
+.sim-sizing-applied { white-space: nowrap; }
+.er-sim-note { font-size: 12.5px; color: var(--accent); margin-left: 8px; align-self: center; }
+/* Use N in pricing (D-1): one action per verdict row, a tag once applied. */
+.sim-vact { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 13px; }
+.sim-vact .sim-confirm { padding: 4px 4px 4px 16px; }
+.sim-tag { font: 600 13px var(--tal-font-family); color: var(--accent); }
+.sim-tag.stale { color: var(--warn); }
 .sim-vsub { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--text-tertiary); }
 .sim-vsub b { color: var(--text-primary); }
 .sim-vsub .bad { color: var(--bad); }

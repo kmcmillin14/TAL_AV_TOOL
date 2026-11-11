@@ -11,6 +11,7 @@ import type PizZip from 'pizzip'
 import type { StoredProject } from '@/src/lib/storage'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { FleetModel } from '@/src/lib/fleetModel'
+import { simulatedDelta, simulatedNote } from '@/src/calc/fleet'
 import type { RouteLayout } from '@/src/calc/types'
 import { qualifyVehicle } from '@/src/calc/trafficLight'
 import { GATES } from '@/src/calc/gates'
@@ -258,8 +259,10 @@ export function fillFleetSizing(zip: PizZip, model: FleetModel, names: Record<st
       desc: 'keeps the fleet moving while batteries recover' },
     { value: fleet.totalUtilizationDelta > 0 ? `+${fleet.totalUtilizationDelta}` : '+0', label: '+ HEADROOM', compact: true,
       desc: `headroom to run at ${Math.round(settings.targetUtilization * 100)}% of available time` },
+    ...(simulatedDelta(fleet) > 0 ? [{ value: `+${simulatedDelta(fleet)}`, label: '+ SIMULATED', compact: true,
+      desc: 'confirmed by a full-shift simulation of the site layout' }] : []),
     { value: String(fleet.totalFleetSold), label: '= FLEET', accent: true, compact: true,
-      desc: 'recommended fleet size' },
+      desc: simulatedNote(fleet) ? `recommended fleet size — ${simulatedNote(fleet)}` : 'recommended fleet size' },
   ], { h: WATERFALL_H })
   const mix = fleet.groups.map(g => `${names[g.vehicleId] ?? g.vehicleId} ×${g.fleetSold}`).join('   ·   ')
   f.caption([

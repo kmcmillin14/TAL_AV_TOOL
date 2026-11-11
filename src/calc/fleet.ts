@@ -213,14 +213,16 @@ export function fleetSummary(
     const A = charging.availability ?? 1
     const fleetWithCharging = Math.max(g.baseFleet, Math.ceil(g.groupRaw / A))
     const demand = g.groupRaw / (A * U)
-    const fleetSold = Math.max(fleetWithCharging, Math.ceil(demand))
+    const engineSold = Math.max(fleetWithCharging, Math.ceil(demand))
+    const fleetSold = Math.max(engineSold, settings.appliedFleet?.[g.vehicleId] ?? 0)   // D-1, raise-only
     out.push({
       vehicleId: g.vehicleId, groupRaw: g.groupRaw, baseFleet: g.baseFleet, charging,
       fleetWithCharging, demand,
       chargingDelta: fleetWithCharging - g.baseFleet,
-      utilizationDelta: fleetSold - fleetWithCharging,
+      utilizationDelta: engineSold - fleetWithCharging,
       fleetSold,
-      binding: fleetWithCharging > g.baseFleet ? 'charging' : 'utilization',
+      binding: fleetSold > engineSold ? 'simulation' : fleetWithCharging > g.baseFleet ? 'charging' : 'utilization',
+      ...(fleetSold > engineSold ? { engineFleetSold: engineSold } : {}),
     })
   }
   return {
@@ -230,7 +232,22 @@ export function fleetSummary(
     totalUtilizationDelta: out.reduce((s, x) => s + x.utilizationDelta, 0),
     totalFleetSold: out.reduce((s, x) => s + x.fleetSold, 0),
     targetUtilization: U,
+    ...(out.some(x => x.engineFleetSold != null) ? { totalEngineFleetSold: out.reduce((s, x) => s + engineFleetSold(x), 0) } : {}),
   }
+}
+
+/** What the Fleet Engine sized, before any simulated fleet raised it (D-1). */
+export const engineFleetSold = (g: FleetGroup): number => g.engineFleetSold ?? g.fleetSold
+/** Σ what the Fleet Engine sized across types, before any simulated fleet (D-1). */
+export const engineFleetTotal = (f: FleetSummary): number => f.totalEngineFleetSold ?? f.totalFleetSold
+/** "+k simulated" — vehicles added by an applied simulated fleet (0 when none). */
+export const simulatedDelta = (f: FleetGroup | FleetSummary): number =>
+  'groups' in f ? f.totalFleetSold - engineFleetTotal(f) : f.fleetSold - engineFleetSold(f)
+
+/** "simulated (engine N)" for a sold figure a simulated fleet raised (D-1), else null. */
+export function simulatedNote(f: FleetGroup | FleetSummary): string | null {
+  const engine = 'groups' in f ? f.totalEngineFleetSold : f.engineFleetSold
+  return engine == null ? null : `simulated (engine ${engine})`
 }
 
 /** The Fleet Engine for a list of flows: per-flow cycle → per-vehicle groups → fleet. The one chain

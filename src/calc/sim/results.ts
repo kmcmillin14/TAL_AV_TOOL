@@ -77,3 +77,6 @@ export function results(S: SimState): SimResults {
     orders: { generated, delivered, inProgress, waiting: S.orders.filter(o => o.v == null).length },
   }
 }
+
+/** How a verdict reads on screen — Simulate's verdict rows and Sizing's chips. */
+export const VERDICT_LABEL: Record<Verdict, string> = { meets: 'Meets', tight: 'Tight', short: 'Falls short', gridlock: 'Gridlock', warming: 'Warming up' }

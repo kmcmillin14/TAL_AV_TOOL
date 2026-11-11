@@ -11,9 +11,9 @@ import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { useProjectSync } from '@/src/lib/useProjectSync'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import { DEFAULT_TARGET_UTILIZATION, type FleetSettings, type Flow, type FlowDerived } from '@/src/calc/types'
+import { type FleetSettings, type Flow, type FlowDerived } from '@/src/calc/types'
 import { flowDerived, groupSummary } from '@/src/calc/flowMetrics'
-import { fleetSummary, defaultChargeRegime } from '@/src/calc/fleet'
+import { fleetSummary, simulatedDelta, simulatedNote } from '@/src/calc/fleet'
 import { consecutiveOperatingDays, defaultOperatingDaysPerYear } from '@/src/calc/romAnalytics'
 import type { EnginePatch } from '@/src/components/engine/types'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
@@ -23,6 +23,8 @@ import FlowsTab from '@/src/components/engine/FlowsTab'
 import ChargingPipeline from '@/src/components/engine/ChargingPipeline'
 import BufferPipeline from '@/src/components/engine/BufferPipeline'
 import { pricingGate } from '@/src/lib/romComplexityFromProject'
+import { projectFleetSettings } from '@/src/lib/fleetModel'
+import SimVerdictChips from '@/src/components/step3/SimVerdictChips'
 
 export default function FleetEnginePage() {
   const params = useParams()
@@ -71,17 +73,7 @@ export default function FleetEnginePage() {
     return ids.map(vid => groupSummary(vid, flows, derivedByFlowId))
   }, [flows, derivedByFlowId])
 
-  const settings: FleetSettings = useMemo(() => {
-    const dailyOpHr = Math.min(24, (project?.shiftsPerDay ?? 1) * (project?.hoursPerShift ?? 8))
-    return {
-      // Unset regime derives from shift coverage (24 h/day → continuous);
-      // the toggle below writes the explicit choice, which always wins.
-      regime: project?.chargeRegime ?? defaultChargeRegime(dailyOpHr),
-      targetUtilization: project?.targetUtilization ?? DEFAULT_TARGET_UTILIZATION,
-      dailyOpHr,
-      chargeMethods: project?.chargeMethods ?? {},
-    }
-  }, [project])
+  const settings: FleetSettings = useMemo(() => projectFleetSettings(project ?? {}), [project])
 
   const fleet = useMemo(
     () => fleetSummary(groups, vehicleById, settings),
@@ -143,6 +135,7 @@ export default function FleetEnginePage() {
           </div>
           {/* Optional check of this fleet on a drawn layout (Fleet Simulation, spec v2 §9). */}
           <div className="eh-actions">
+            {project && <SimVerdictChips project={project} vehicleById={vehicleById} fleet={fleet} />}
             <Link href={`/projects/${id}/simulate`} className="btn ghost">
               Simulate <Icon name="arrowR" size={13} />
             </Link>
@@ -177,6 +170,7 @@ export default function FleetEnginePage() {
                 <div className="er-num-row">
                   <span className="er-num mono">{fleet.totalFleetSold}</span>
                   <span className="er-num-unit">vehicles</span>
+                  {simulatedNote(fleet) && <span className="er-sim-note">{simulatedNote(fleet)}</span>}
                 </div>
                 <div className="er-pipeline" aria-label="Fleet build-up">
                   <div className="ep-seg on">
@@ -193,6 +187,15 @@ export default function FleetEnginePage() {
                     <span className="ep-label">Headroom</span>
                     <span className="ep-val mono">+{fleet.totalUtilizationDelta}</span>
                   </div>
+                  {simulatedDelta(fleet) > 0 && (
+                    <>
+                      <span className="ep-op" aria-hidden="true">+</span>
+                      <div className="ep-seg on">
+                        <span className="ep-label">Simulated</span>
+                        <span className="ep-val mono">+{simulatedDelta(fleet)}</span>
+                      </div>
+                    </>
+                  )}
                   <span className="ep-op" aria-hidden="true">=</span>
                   <div className="ep-seg ep-total on">
                     <span className="ep-label">Total</span>

@@ -60,3 +60,34 @@ export function payloadFt(loads: { lengthIn?: number | null; widthIn?: number | 
 export function runFleet(engine: Record<string, number>, overrides: Record<string, number> = {}, linkedVehicleIds: string[]): Record<string, number> {
   return Object.fromEntries([...new Set(linkedVehicleIds)].map(vid => [vid, overrides[vid] ?? engine[vid] ?? 0]))
 }
+
+/** What a simulation result depends on, as stored on the project (spec §9 stale marker). */
+export interface SimInputsLike {
+  simLayout?: { points: unknown; segments: unknown; objects?: unknown } | null
+  flows?: ProjectFlowLike[] | null
+  loads?: unknown
+  hoursPerShift?: number | null
+  shiftsPerDay?: number | null
+  targetUtilization?: number | null
+  simSettings?: { pacePct?: number; safetyFt?: number; arrivals?: string; demandPct?: number; seed?: number; clearance?: unknown; overrides?: unknown } | null
+}
+
+/**
+ * A short key for the inputs a run depends on — layout, the flows linked to it and the vehicle data
+ * they use, loads, shift, target utilization, run assumptions and the B56.5 rule; not the fleet stepper
+ * (each result records its own fleet), flows the run ignores, nor the drawing image. An applied fleet
+ * or a stored result whose key differs is stale. FNV-1a over JSON.
+ */
+export function simInputsKey(p: SimInputsLike, vehicles?: Map<string, Vehicle>): string {
+  const ss = p.simSettings ?? {}
+  const flows = linkedFlows(p.flows ?? [])
+  const used = [...new Set(flows.map(f => f.vehicleId))].sort().map(id => [id, vehicles?.get(id)?.calc ?? null])
+  const json = JSON.stringify([
+    p.simLayout ? [p.simLayout.points, p.simLayout.segments, p.simLayout.objects ?? []] : null,
+    flows, used, p.loads ?? [], p.hoursPerShift ?? null, p.shiftsPerDay ?? null, p.targetUtilization ?? null,
+    [ss.pacePct, ss.safetyFt, ss.arrivals, ss.demandPct, ss.seed, ss.clearance, ss.overrides].map(x => x ?? null),
+  ])
+  let h = 0x811c9dc5
+  for (let i = 0; i < json.length; i++) { h ^= json.charCodeAt(i); h = Math.imul(h, 0x01000193) }
+  return (h >>> 0).toString(36)
+}
