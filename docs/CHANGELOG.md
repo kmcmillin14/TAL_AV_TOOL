@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation Milestone 4 (second half, in progress): curves, repeat, objects, B56.5
+
+Functions in place and tested; the editor is being restyled to the CB18 proof-of-concept look next.
+
+- **Rounded corners** (`src/calc/sim/corners.ts`): a two-route junction is driven as an arc of the
+  vehicle's turning radius (0 = turns in place); a 90° corner is shorter by (2 − π/2) × r
+  (acceptance 13). A linked flow's Sizing distance uses its own vehicle's radius.
+- **Curves:** bend a route by dragging its middle handle (arc) or make it a spline (two handles);
+  hit-testing, lengths and splitting follow the curve.
+- **Repeat ×N at a spacing** with sequential names, one undo (acceptance 14); copy/paste; Shift-drag box
+  select and moving several points; footprints drawn to scale.
+- **Fixed objects** (walls, columns, rack faces): `simLayout.objects` (schema + type), drawn hatched.
+- **B56.5 clearance** (`src/calc/sim/clearance.ts`): envelope = wider of vehicle and payload on loaded
+  legs; per route the tightest clearance to objects → full speed / capped below 1.2 m/s ("B56.5 reduced
+  clearance") / blocked; two-lane fit check with one-click single-lane; rule re-derives everything
+  (acceptance 29–33). Overlay with callouts in the editor.
+- **Engine:** vehicles are spaced envelope to envelope — following, zone queues, spur and junction
+  clearances use the larger of vehicle and payload when loaded (`settings.payloadFt`, §6.5.5). With
+  no payload set, results are unchanged (POC comparison rerun).
+- **Undo** keeps only the fields each step changed (`src/lib/editHistory.ts`), so undo in Simulate no
+  longer reverts a Sizing edit made in another tab (the known issue from the first half).
+- **Editor fixes:** tool rows no longer move the canvas; tool keys work while a checkbox has focus.
+
 ## 2026-11-10 — Fleet simulation Milestone 4 (first half): drawing, points, routes, flows
 
 The Simulate page gets its layout editor (halfway check before curves, repeat, objects and B56.5).

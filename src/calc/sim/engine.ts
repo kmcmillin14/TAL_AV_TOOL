@@ -78,6 +78,8 @@ export interface SimVehicle {
   mode: Mode
   job: Order | null
   loaded: boolean
+  /** The payload carried when loaded, ft (settings.payloadFt) — sets the loaded envelope. */
+  payload: { length: number; width: number } | null
   soc: number
   held: Set<string>
   /** Junction nodes this vehicle has permission for (D-12). */
@@ -216,7 +218,7 @@ export function createSim(
       S.veh.push({
         i, id: `${vid}-${j + 1}`, prof, node, atNode: true, nodes: [node], edges: [], pi: 1, s: 0,
         x: p.x, y: p.y, th: -Math.PI / 2, h: -Math.PI / 2, speed: 0, mode: 'home', job: null, loaded: false,
-        soc, held: new Set([z]), heldJ: new Set(), tl: 0, repo: 0, want: 0, moved: 0, waitFor: null, waitZone: null, blockedBy: null, headOn: false,
+        payload: P.payloadFt ?? null, soc, held: new Set([z]), heldJ: new Set(), tl: 0, repo: 0, want: 0, moved: 0, waitFor: null, waitZone: null, blockedBy: null, headOn: false,
         cycT: 0, parkT: 0, mustCharge: false, chargeTrips: 0, socMin: soc,
         tm: emptySplit(), handlingLog: [],
       })
@@ -308,7 +310,11 @@ function dispatch(S: SimState) {
   }
 }
 /** Half the vehicle plus clearance: where it stops short of a junction or stub gate it may not enter. */
-const bodyClear = (v: SimVehicle) => v.prof.lengthFt / 2 + JUNCTION_CLEAR_FT
+/** The space a vehicle takes, envelope to envelope (§5.9, §6.5.5): loaded, the larger of the vehicle
+ *  and its payload; empty, the vehicle (overall length incl. forks). */
+const envLen = (v: SimVehicle) => (v.loaded && v.payload ? Math.max(v.prof.lengthFt, v.payload.length) : v.prof.lengthFt)
+const envWid = (v: SimVehicle) => (v.loaded && v.payload ? Math.max(v.prof.vehicle.calc.widthFt, v.payload.width) : v.prof.vehicle.calc.widthFt)
+const bodyClear = (v: SimVehicle) => envLen(v) / 2 + JUNCTION_CLEAR_FT
 
 function releaseJunction(S: SimState, v: SimVehicle, n: number) {
   v.heldJ.delete(n); if (S.jlocks.get(n) === v.i) S.jlocks.delete(n)
@@ -334,7 +340,7 @@ function horizon(v: SimVehicle, target: number) {
 }
 
 /** Junctions less than one vehicle length + clearances apart are taken and kept as one block. */
-const blockSpan = (v: SimVehicle) => v.prof.lengthFt + 2 * JUNCTION_CLEAR_FT
+const blockSpan = (v: SimVehicle) => envLen(v) + 2 * JUNCTION_CLEAR_FT
 
 /** Body heading the vehicle needs at a point, from the point's approach heading and the
  *  transfer orientation (spec §6.4). */
@@ -469,7 +475,7 @@ export function step(S: SimState) {
     const accs = accsOf[v.i]
     if (!accs) continue
     let limit = Infinity, stopAt = accs[v.nodes.length - 1]
-    const gap = v.prof.lengthFt + 2
+    const gap = envLen(v) + 2
     for (let i = v.pi; i < v.nodes.length; i++) {
       const z = G.zone[v.nodes[i]]
       if (!z || v.held.has(z)) continue
@@ -526,19 +532,20 @@ export function step(S: SimState) {
     v.want = Math.max(0, Math.min(spd * DT, limit))
     faceTravel(S, v)
   }
-  // following: stop for a vehicle within the safety gap ahead. Opposite traffic passes on a
-  // two-lane segment; on a single-lane segment it blocks (spec §6.5.5).
-  const longest = Math.max(0, ...S.veh.map(u => u.prof.lengthFt))
+  // following: stop for a vehicle within the safety gap ahead, envelope to envelope — a loaded
+  // vehicle is as long and wide as the larger of itself and its payload (§5.9). Opposite traffic
+  // passes on a two-lane segment; on a single-lane segment it blocks (spec §6.5.5).
+  const longest = Math.max(0, ...S.veh.map(envLen))
   for (const v of S.veh) {
     if (!(v.want > 0)) continue
     let pts: ReturnType<typeof ahead> | null = null   // sampled once, to the longest look-ahead any vehicle needs
     for (const u of S.veh) {
       if (u === v) continue
-      const look = (v.prof.lengthFt + u.prof.lengthFt) / 2 + P.safetyFt
-      const rad = Math.max(v.prof.vehicle.calc.widthFt, u.prof.vehicle.calc.widthFt), rad2 = rad * rad
+      const look = (envLen(v) + envLen(u)) / 2 + P.safetyFt
+      const rad = Math.max(envWid(v), envWid(u)), rad2 = rad * rad
       if (Math.abs(u.x - v.x) > look + rad || Math.abs(u.y - v.y) > look + rad) continue
       if (u.atNode && G.zone[u.node]) continue          // parked/handling on a zone: zones handle it
-      pts = pts ?? ahead(S, v, (v.prof.lengthFt + longest) / 2 + P.safetyFt)
+      pts = pts ?? ahead(S, v, (envLen(v) + longest) / 2 + P.safetyFt)
       // a vehicle waiting for a zone v holds gives way to v (D-11). It blocks v only when it
       // is in v's lane ahead going the same way — the queue case the handover rule below serves.
       const yields = u.waitZone != null && v.held.has(u.waitZone)
@@ -605,7 +612,7 @@ export function step(S: SimState) {
       const spurZone = gate !== node
       const onSpur = spurZone && ((v.atNode && br.has(v.node)) || br.has(next) || (!v.atNode && br.has(v.node)))
       if (onRoute || here || onSpur) continue
-      if (Math.hypot(G.points[gate].x - v.x, G.points[gate].y - v.y) < (spurZone ? bodyClear(v) : v.prof.lengthFt + 1)) continue
+      if (Math.hypot(G.points[gate].x - v.x, G.points[gate].y - v.y) < (spurZone ? bodyClear(v) : envLen(v) + 1)) continue
       v.held.delete(z); if (S.locks.get(z) === v.i) S.locks.delete(z)
     }
   }

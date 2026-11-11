@@ -18,6 +18,8 @@ export interface SimPoint {
   name?: string
   /** Transfer height in ft (floor = 0). Drives lift time at this point. */
   heightFt?: number
+  /** Equipment footprint, ft — width across the approach × length along it (drawn to scale). */
+  footprintFt?: { w: number; l: number }
   /** Direction a vehicle travels while moving into this position, degrees (0 = +x, 90 = +y).
    *  Undefined → along the route the vehicle arrives on. */
   approachHeadingDeg?: number
@@ -43,9 +45,23 @@ export interface SimSegment {
   speedLimitFps?: number
 }
 
+/** A fixed object — wall, column, rack face, guard, building steel (spec §5.8). A rectangle in feet:
+ *  top-left corner, width along x, height along y, turned about its centre. Clearances are measured
+ *  to objects (§5.9). */
+export interface SimObject {
+  id: string
+  x: number
+  y: number
+  w: number
+  h: number
+  rotationDeg?: number
+  name?: string
+}
+
 export interface SimLayout {
   points: SimPoint[]
   segments: SimSegment[]
+  objects?: SimObject[]
 }
 
 /** One flow the simulation runs: a Pick point → a Drop point at a rate, by one vehicle type. */
@@ -77,6 +93,9 @@ export interface SimSettings {
   staffedHr: number
   /** Project target utilization (0–1). The verdict is measured against it (D-9). */
   targetUtilization: number
+  /** The handled load (Step 1), ft. A loaded vehicle's envelope is the larger of vehicle and payload:
+   *  following is measured envelope to envelope (spec §5.9, §6.5.5). Absent → the vehicle alone. */
+  payloadFt?: { length: number; width: number }
 }
 
 /** One flag on the results: a fallback was used because data is missing. */

@@ -1,7 +1,7 @@
 // Fleet Simulation project data (spec v2 §4.5). Every field is optional and nothing has a
 // default, so a project without a simulation parses — and round-trips — exactly as before.
-// Units: feet, seconds, ft/s, degrees. Fixed objects arrive with the layout editor (Milestone 4)
-// and rack/lane areas with Milestone 7, each with the code that reads them.
+// Units: feet, seconds, ft/s, degrees. Rack/lane areas arrive with Milestone 7, with the code that
+// reads them.
 import { z } from 'zod'
 
 const xy = z.object({ x: z.number(), y: z.number() })
@@ -34,6 +34,17 @@ export const simSegmentSchema = z.object({
   ]).optional(),
 })
 
+/** A fixed object (wall, column, rack face…), a rectangle in feet — what clearances are measured to. */
+export const simObjectSchema = z.object({
+  id: z.string(),
+  x: z.number(),
+  y: z.number(),
+  w: z.number().positive().max(5000),
+  h: z.number().positive().max(5000),
+  rotationDeg: z.number().optional(),
+  name: z.string().max(80).optional(),
+})
+
 /** The background drawing. The image itself (`data`) only ever travels in an exported revision
  *  file — browser storage keeps the rest (D-4); see `src/lib/storage.ts`. */
 export const simBackgroundSchema = z.object({
@@ -60,6 +71,7 @@ export const simBackgroundSchema = z.object({
 export const simLayoutSchema = z.object({
   points: z.array(simPointSchema).max(2000),
   segments: z.array(simSegmentSchema).max(5000),
+  objects: z.array(simObjectSchema).max(2000).optional(),
   background: simBackgroundSchema.optional(),
 })
 

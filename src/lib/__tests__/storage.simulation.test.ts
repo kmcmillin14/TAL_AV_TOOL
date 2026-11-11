@@ -59,6 +59,7 @@ const simProject = {
       { id: 's1', a: 'A', b: 'B', dir: 'two' as const, lane: 'single' as const },
       { id: 's2', a: 'C', b: 'A', dir: 'ab' as const, curve: { kind: 'arc' as const, mid: { x: -10, y: 4 } } },
     ],
+    objects: [{ id: 'o1', x: 10, y: 4, w: 40, h: 1, rotationDeg: 0, name: 'Wall' }],
     background: { kind: 'pdf' as const, fileName: 'site.pdf', page: 2, fingerprint: 'abc123', scale: { a: { x: 0, y: 0 }, b: { x: 100, y: 0 }, lengthFt: 50 } },
   },
   simSettings: {

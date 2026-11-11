@@ -4,11 +4,12 @@
 // the full Summary → Settings → Advanced inspector arrives in Milestone 6). With nothing selected
 // it shows the layout's totals, points that are not connected, and Sizing flows to link.
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import type { ClearanceRule, SegmentClearance } from '@/src/calc/sim/clearance'
 import {
   flowRefusal, FLOW_POINT_TYPES, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
-import type { SimLayout, SimPoint, SimPointType, SimSegment } from '@/src/calc/sim/types'
+import type { SimLayout, SimObject, SimPoint, SimPointType, SimSegment } from '@/src/calc/sim/types'
 import Icon from '@/src/design-system/components/Icon'
 import { lengthFromDisplay, lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
@@ -24,7 +25,15 @@ interface Props {
   unitSystem: UnitSystem
   notConnected: Set<string>
   suggestions: { flowId: string; from?: string; to?: string }[]
+  /** B56.5 results per route, when the overlay is on. */
+  clearances: SegmentClearance[] | null
+  rule: ClearanceRule
   onPoint: (id: string, patch: Partial<SimPoint>) => void
+  onPoints: (ids: string[], patch: Partial<SimPoint>) => void
+  onCurve: (id: string, kind: 'spline' | 'straight') => void
+  onObject: (id: string, patch: Partial<SimObject>) => void
+  onRepeat: (id: string, count: number, stepFt: number, dir: { x: number; y: number }) => void
+  onCopy: () => void
   onSegment: (id: string, patch: Partial<SimSegment>) => void
   onFlow: (id: string, patch: Partial<ProjectFlow>) => void
   onLink: (flowId: string, from: string, to: string) => void
@@ -36,12 +45,18 @@ interface Props {
 /** Highest transfer height the project file accepts (simSchemas.ts). */
 const MAX_HEIGHT_FT = 100
 
+const DIRS = [{ id: 'r', label: '→', v: { x: 1, y: 0 } }, { id: 'l', label: '←', v: { x: -1, y: 0 } }, { id: 'd', label: '↓', v: { x: 0, y: 1 } }, { id: 'u', label: '↑', v: { x: 0, y: -1 } }] as const
+const STATUS: Record<SegmentClearance['status'], string> = {
+  clear: 'No object near', full: 'Full speed', capped: 'Below 1.2 m/s — B56.5 reduced clearance', violation: 'Blocked — under the minimum clearance',
+}
+
 export default function LayoutPanel(p: Props) {
   const unit = units.distance.label(p.unitSystem)
   const len = (ft: number) => (isFinite(ft) ? `${lengthToDisplay(ft, p.unitSystem).toFixed(1)} ${unit}` : 'No route')
   const byId = useMemo(() => pointById(p.layout), [p.layout])
   const name = (id?: string) => (id && byId.get(id)?.name) || '—'
   const sel = p.selection
+  const [repeat, setRepeat] = useState({ count: 6, step: 5, dir: 'r' as (typeof DIRS)[number]['id'] })
   const flow = sel?.kind === 'flow' ? p.flows.find(q => q.id === sel.id) : undefined
   const flowFt = useMemo(
     () => (flow?.fromPointId && flow.toPointId ? routeDistanceFt(p.layout, flow.fromPointId, flow.toPointId) : Infinity),
@@ -74,15 +89,68 @@ export default function LayoutPanel(p: Props) {
             <div className="sim-field"><span>Role</span>
               <Segmented options={ROLE_OPTIONS} value={pt.role ?? 'pick'} onChange={role => p.onPoint(pt.id, { role })} />
             </div>
-            <label className="sim-field"><span>Transfer height</span>
-              <span className="sim-input-unit">
-                <input type="number" min={0} step="any" value={pt.heightFt == null ? '' : Math.round(lengthToDisplay(pt.heightFt, p.unitSystem) * 100) / 100}
-                  onChange={e => p.onPoint(pt.id, { heightFt: e.target.value === '' ? undefined : Math.min(MAX_HEIGHT_FT, Math.max(0, lengthFromDisplay(Number(e.target.value), p.unitSystem))) })} />
-                <span>{unit}</span>
-              </span>
-            </label>
+            <Len u={p.unitSystem} label="Transfer height" ft={pt.heightFt} max={MAX_HEIGHT_FT} onFt={heightFt => p.onPoint(pt.id, { heightFt })} />
+            <div className="sim-field-row">
+              <Len u={p.unitSystem} label="Footprint width" ft={pt.footprintFt?.w} onFt={w => p.onPoint(pt.id, { footprintFt: w && pt.footprintFt?.l ? { w, l: pt.footprintFt.l } : w ? { w, l: w } : undefined })} />
+              <Len u={p.unitSystem} label="length" ft={pt.footprintFt?.l} onFt={l => p.onPoint(pt.id, { footprintFt: l && pt.footprintFt?.w ? { w: pt.footprintFt.w, l } : l ? { w: l, l } : undefined })} />
+            </div>
           </>
         )}
+        {pt.type !== 'junction' && (
+          <details className="sim-more">
+            <summary>Repeat or duplicate</summary>
+            <div className="sim-field-row">
+              <label className="sim-field"><span>How many</span>
+                <input type="number" min={2} max={50} value={repeat.count} onChange={e => setRepeat({ ...repeat, count: Math.max(2, Math.min(50, Math.round(Number(e.target.value) || 2))) })} />
+              </label>
+              <Len u={p.unitSystem} label="Apart" ft={repeat.step} onFt={step => setRepeat({ ...repeat, step: step ?? 0 })} />
+            </div>
+            <Segmented options={DIRS.map(d => ({ id: d.id, label: d.label }))} value={repeat.dir} onChange={dir => setRepeat({ ...repeat, dir })} />
+            <div className="sim-card-actions">
+              <button type="button" className="btn ghost btn-sm" disabled={!(repeat.step > 0)}
+                onClick={() => p.onRepeat(pt.id, repeat.count, repeat.step, DIRS.find(d => d.id === repeat.dir)!.v)}>Repeat ×{repeat.count}</button>
+              <button type="button" className="link-btn" onClick={p.onCopy}>Duplicate (⌘C ⌘V)</button>
+            </div>
+          </details>
+        )}
+      </Panel>
+    )
+  }
+
+  if (sel?.kind === 'points') {
+    const pts = sel.ids.map(id => byId.get(id)).filter((q): q is SimPoint => !!q)
+    const allFlow = pts.every(q => FLOW_POINT_TYPES.includes(q.type))
+    const same = <K extends keyof SimPoint>(k: K) => (pts.every(q => q[k] === pts[0]?.[k]) ? pts[0]?.[k] : undefined)
+    return (
+      <Panel title={`${pts.length} points`} onDelete={p.onDelete}>
+        {allFlow && (
+          <>
+            <div className="sim-field"><span>Role</span>
+              <Segmented options={ROLE_OPTIONS} value={same('role') ?? ('' as never)} onChange={role => p.onPoints(sel.ids, { role })} />
+            </div>
+            <Len u={p.unitSystem} label="Transfer height" ft={same('heightFt')} max={MAX_HEIGHT_FT} onFt={heightFt => p.onPoints(sel.ids, { heightFt })} />
+          </>
+        )}
+        <button type="button" className="link-btn" onClick={p.onCopy}>Duplicate (⌘C ⌘V)</button>
+      </Panel>
+    )
+  }
+
+  if (sel?.kind === 'object') {
+    const o = (p.layout.objects ?? []).find(q => q.id === sel.id)
+    if (!o) return null
+    return (
+      <Panel title={o.name || 'Object'} onDelete={p.onDelete}>
+        <label className="sim-field"><span>Name</span>
+          <input value={o.name ?? ''} maxLength={80} onChange={e => p.onObject(o.id, { name: e.target.value })} />
+        </label>
+        <div className="sim-field-row">
+          <Len u={p.unitSystem} label="Width" ft={o.w} onFt={w => w && p.onObject(o.id, { w })} />
+          <Len u={p.unitSystem} label="Depth" ft={o.h} onFt={h => h && p.onObject(o.id, { h })} />
+        </div>
+        <label className="sim-field"><span>Rotation (°)</span>
+          <input type="number" step="any" value={o.rotationDeg ?? 0} onChange={e => p.onObject(o.id, { rotationDeg: Number(e.target.value) || 0 })} />
+        </label>
       </Panel>
     )
   }
@@ -90,6 +158,7 @@ export default function LayoutPanel(p: Props) {
   if (sel?.kind === 'segment') {
     const s = p.layout.segments.find(q => q.id === sel.id)
     if (!s) return null
+    const clr = p.clearances?.find(r => r.segId === s.id)
     return (
       <Panel title="Route" onDelete={p.onDelete}>
         <p className="sim-readout"><span className="num">{len(segmentLengthFt(p.layout, s, byId))}</span> · {name(s.a)} – {name(s.b)}</p>
@@ -101,6 +170,21 @@ export default function LayoutPanel(p: Props) {
           <Segmented value={s.lane ?? 'two'} onChange={lane => p.onSegment(s.id, { lane })}
             options={[{ id: 'two', label: 'Two-lane (passing)' }, { id: 'single', label: 'Single-lane' }]} />
         </div>
+        <div className="sim-card-actions">
+          {s.curve?.kind !== 'bezier' && <button type="button" className="link-btn" onClick={() => p.onCurve(s.id, 'spline')}>Make a spline</button>}
+          {s.curve && <button type="button" className="link-btn" onClick={() => p.onCurve(s.id, 'straight')}>Straighten</button>}
+        </div>
+        {clr && (
+          <section className={`sim-clr-card is-${clr.status}`}>
+            <h4>B56.5 clearance</h4>
+            <p className="sim-readout">{clr.tightestIn == null ? STATUS.clear : <><span className="num">{clr.tightestIn.toFixed(1)} in</span> tightest · {STATUS[clr.status]}</>}</p>
+            {clr.twoLaneFits === false && (
+              <p className="sim-warn-line">Two lanes do not fit here.
+                <button type="button" className="btn ghost btn-sm" onClick={() => p.onSegment(s.id, { lane: 'single' })}>Make single-lane</button>
+              </p>
+            )}
+          </section>
+        )}
       </Panel>
     )
   }
@@ -133,6 +217,18 @@ export default function LayoutPanel(p: Props) {
         <div><dt>Routes</dt><dd className="num">{len(routeFt)}</dd></div>
         <div><dt>Flows</dt><dd className="num">{p.flows.filter(f => f.fromPointId && f.toPointId).length}</dd></div>
       </dl>
+      {p.clearances && (
+        <section>
+          <h4>B56.5 clearance</h4>
+          <p className="sim-readout">
+            {p.rule.lowSpeedIn} in per side below {(p.rule.thresholdFps * 0.3048).toFixed(1)} m/s, {p.rule.fullSpeedIn} in at or above{p.rule.sharedBetweenVehicles ? ', shared between passing vehicles' : ''}.
+            <span className="sim-source">Engineer rule — ANSI/ITSDF B56.5</span>
+          </p>
+          <p className="sim-readout">
+            {p.clearances.filter(r => r.status === 'capped').length} slowed · {p.clearances.filter(r => r.status === 'violation').length} blocked
+          </p>
+        </section>
+      )}
       {p.notConnected.size > 0 && (
         <section>
           <h4>Not connected</h4>
@@ -175,6 +271,19 @@ function Panel({ title, icon, onDelete, children }: { title: string; icon?: SimP
       </div>
       {children}
     </aside>
+  )
+}
+
+/** A length field in the user's units (ft or m), stored in feet. */
+function Len({ label, ft, max, u, onFt }: { label: string; ft: number | undefined; max?: number; u: UnitSystem; onFt: (ft: number | undefined) => void }) {
+  return (
+    <label className="sim-field"><span>{label}</span>
+      <span className="sim-input-unit">
+        <input type="number" min={0} step="any" value={ft == null ? '' : Math.round(lengthToDisplay(ft, u) * 100) / 100}
+          onChange={e => onFt(e.target.value === '' ? undefined : Math.min(max ?? Infinity, Math.max(0, lengthFromDisplay(Number(e.target.value), u))))} />
+        <span>{units.distance.label(u)}</span>
+      </span>
+    </label>
   )
 }
 

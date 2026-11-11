@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { chargingAvailability } from '../../fleet'
 import { cycleBreakdown } from '../../flowMetrics'
-import { createSim, layoutReady, runFor, step, type SimState } from '../engine'
+import { createSim, DT, layoutReady, runFor, step, type SimState } from '../engine'
 import { angleDiff, distanceToGeometry } from '../geometry'
 import { results } from '../results'
 import type { SimFlow, SimLayout, VehicleSimData } from '../types'
@@ -352,5 +352,45 @@ describe('D-12 — intersection permission', () => {
       if (inStub && v.mode !== 'home' && v.mode !== 'charging') expect(v.held.has(z)).toBe(true)
     }
     expect(checked).toBeGreaterThan(0)
+  })
+})
+
+describe('following is envelope to envelope (spec §5.9, §6.5.5)', () => {
+  // Two picks on spurs feed a one-way loop; the drop sits on the loop with a long handshake, so a
+  // second loaded vehicle queues behind the one dropping.
+  const layout: SimLayout = {
+    points: [
+      { id: 'P1', x: -20, y: -20, type: 'stand', role: 'pick' }, { id: 'P2', x: -20, y: 20, type: 'stand', role: 'pick' },
+      { id: 'J', x: 0, y: 0, type: 'junction' }, { id: 'K', x: 150, y: 0, type: 'junction' }, { id: 'M', x: 200, y: 0, type: 'junction' },
+      { id: 'B', x: 400, y: 0, type: 'stand', role: 'drop', handshakeSec: 120 }, { id: 'Q', x: 400, y: 100, type: 'junction' }, { id: 'R', x: 0, y: 100, type: 'junction' },
+      { id: 'C1', x: -20, y: 120, type: 'charger' }, { id: 'C2', x: 20, y: 120, type: 'charger' },
+    ],
+    segments: [
+      { id: 'a', a: 'P1', b: 'J', dir: 'two' }, { id: 'b', a: 'P2', b: 'J', dir: 'two' },
+      { id: 'c', a: 'J', b: 'K', dir: 'ab' }, { id: 'slow', a: 'K', b: 'M', dir: 'ab', speedLimitFps: 0.5 }, { id: 'd', a: 'M', b: 'B', dir: 'ab' },
+      { id: 'g', a: 'B', b: 'Q', dir: 'ab' }, { id: 'h', a: 'Q', b: 'R', dir: 'ab' }, { id: 'i', a: 'R', b: 'J', dir: 'ab' },
+      { id: 'e', a: 'C1', b: 'R', dir: 'two' }, { id: 'f', a: 'C2', b: 'R', dir: 'two' },
+    ],
+  }
+  const flows = [
+    { id: 'f1', fromPointId: 'P1', toPointId: 'B', thruPerHr: 40, vehicleId: 'cb18' },
+    { id: 'f2', fromPointId: 'P2', toPointId: 'B', thruPerHr: 40, vehicleId: 'cb18' },
+  ]
+  const closest = (over: object) => {
+    const S = sim(layout, flows, { fleet: { cb18: 2 }, ...over })
+    let min = Infinity
+    for (let t = 0; t < 7200; t += DT) {
+      step(S)
+      const [a, b] = S.veh
+      if (a.loaded && b.loaded) min = Math.min(min, Math.hypot(a.x - b.x, a.y - b.y))
+    }
+    return min
+  }
+
+  it('a long payload keeps loaded vehicles further apart', () => {
+    const plain = closest({}), long = closest({ payloadFt: { length: 14, width: 4 } })
+    expect(isFinite(plain) && isFinite(long)).toBe(true)          // a loaded vehicle really did queue behind another
+    expect(plain).toBeLessThan(14)                                 // the bare vehicles queue closer than a payload length…
+    expect(long).toBeGreaterThanOrEqual(14 - 1e-6)                 // …loaded with one, never
   })
 })

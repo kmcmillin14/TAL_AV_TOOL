@@ -3242,7 +3242,9 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
   overflow: hidden; touch-action: none; user-select: none; cursor: crosshair;
 }
 .sim-stage svg { display: block; }
-.sim-hint { margin: 0; font-size: 12px; color: var(--text-tertiary); min-height: 1.4em; }
+.sim-toolopts { display: flex; align-items: center; gap: 12px; min-height: 34px; flex-wrap: nowrap; overflow-x: auto; }
+.sim-toolopts .sim-palette { flex-wrap: nowrap; }
+.sim-hint { margin: 0; font-size: 12px; color: var(--text-tertiary); white-space: nowrap; }
 .sim-empty-prompt {
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center;
   padding: 24px; pointer-events: none; color: var(--text-secondary); font-size: 14px;
@@ -3326,6 +3328,40 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-list li { display: flex; flex-direction: column; gap: 4px; color: var(--text-secondary); }
 .sim-list li > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sim-list small { color: var(--text-tertiary); }
+
+/* Second half of the editor: objects, footprints, handles, box select, B56.5 overlay. */
+.sim-object { fill: url(#sim-hatch); stroke: var(--text-secondary); stroke-width: 1.5; }
+.sim-object.is-selected { stroke: var(--accent); stroke-width: 2.5; }
+.sim-hatch-line { stroke: var(--text-tertiary); stroke-width: 1; }
+.sim-object-draft { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.sim-marquee { fill: var(--info-soft); stroke: var(--info); stroke-width: 1; stroke-dasharray: 4 3; }
+.sim-object-swatch { width: 14px; height: 10px; border: 1.5px solid currentColor; background: repeating-linear-gradient(45deg, transparent 0 3px, currentColor 3px 4px); opacity: 0.8; }
+.sim-footprint { fill: none; stroke: var(--text-tertiary); stroke-width: 1; stroke-dasharray: 3 3; }
+.sim-footprint.role-pick { stroke: var(--sim-pick); }
+.sim-footprint.role-drop, .sim-footprint.role-pickDrop { stroke: var(--sim-drop); }
+.sim-handle { cursor: grab; }
+.sim-handle circle { fill: var(--bg-surface); stroke: var(--accent); stroke-width: 2; }
+.sim-handle-guide { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
+.sim-clr-env { fill: none; stroke: var(--text-tertiary); opacity: 0.18; stroke-linecap: butt; }
+.sim-clr.is-capped .sim-clr-env { stroke: var(--warn); opacity: 0.28; }
+.sim-clr.is-violation .sim-clr-env { stroke: var(--bad); opacity: 0.32; }
+.sim-clr-dim { stroke: var(--text-secondary); stroke-width: 1; }
+.sim-clr.is-capped .sim-clr-dim { stroke: var(--warn); }
+.sim-clr.is-violation .sim-clr-dim { stroke: var(--bad); }
+.sim-clr-label { font-size: 10px; text-anchor: middle; font-family: var(--tal-font-numeric); fill: var(--text-primary); paint-order: stroke; stroke: var(--bg-surface); stroke-width: 3px; }
+.sim-legend .sw.clr-full { border-color: var(--text-tertiary); }
+.sim-legend .sw.clr-capped { border-color: var(--warn); }
+.sim-legend .sw.clr-violation { border-color: var(--bad); }
+.sim-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.sim-field-row .sim-input-unit input { width: 100%; }
+.sim-more { font-size: 12px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px; }
+.sim-more summary { cursor: pointer; color: var(--text-secondary); }
+.sim-more[open] { gap: 8px; }
+.sim-more > * + * { margin-top: 8px; }
+.sim-source { display: inline-block; margin-left: 6px; padding: 0 6px; border: 1px solid var(--border); border-radius: 3px; font-size: 10px; color: var(--text-tertiary); }
+.sim-clr-card { border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 6px; }
+.sim-clr-card.is-capped .sim-readout { color: var(--warn); }
+.sim-clr-card.is-violation .sim-readout { color: var(--bad); }
 /* Compact, low-key page actions (ROM Save / Export) — smaller + lighter than the
    old full-width Save Revision / Export to Customer pair. */
 .eh-actions-compact { gap: 8px; }

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  addObject, copyPoints, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
   addPoint, addSegment, emptyLayout, flowRefusal, flowStartRefusal, hitTest, linkFlow, linkSuggestions, measureFlows, notConnected,
   placeOnSegment, removePoint, rescaleLayout, routeDistanceFt, splitSegment, updatePoint, updateSegment, withLayoutDistance,
 } from '../layoutEdit'
@@ -131,5 +132,74 @@ describe('setting the drawing scale', () => {
     const { L, a, b } = line()
     const k = rescaleLayout(L, 0.5)
     expect(routeDistanceFt(k, a, b)).toBeCloseTo(200, 1)
+  })
+})
+
+describe('Repeat (acceptance 14)', () => {
+  it('Repeat ×6 at 5 ft makes six named, evenly spaced points in one edit', () => {
+    const base = addPoint(emptyLayout(), { x: 10, y: 20 }, 'charger')
+    const { layout, ids } = repeatPoint(base.layout, base.id, 6, 5, { x: 1, y: 0 })
+    const made = ids.map(id => layout.points.find(p => p.id === id)!)
+    expect(made.map(p => p.name)).toEqual(['Charger 1', 'Charger 2', 'Charger 3', 'Charger 4', 'Charger 5', 'Charger 6'])
+    expect(made.map(p => p.x)).toEqual([10, 15, 20, 25, 30, 35])
+    expect(new Set(ids).size).toBe(6)
+    expect(base.layout.points).toHaveLength(1)          // the old layout is untouched: one undo restores it
+  })
+})
+
+describe('copy, move, remove, marquee', () => {
+  it('copies points and the routes between them, with fresh names', () => {
+    const { L, a, b } = line()
+    const { layout, ids } = copyPoints(L, [a, b], { x: 0, y: 50 })
+    expect(ids).toHaveLength(2)
+    expect(layout.segments).toHaveLength(2)
+    expect(layout.points.slice(2).map(p => [p.name, p.y])).toEqual([['Stand 2', 50], ['Conveyor 2', 50]])
+    expect(routeDistanceFt(layout, ids[0], ids[1])).toBeCloseTo(400, 1)
+  })
+
+  it('moves several points together and removes several at once', () => {
+    const { L, a, b } = line()
+    expect(routeDistanceFt(movePoints(L, [a, b], { x: 3, y: 4 }), a, b)).toBeCloseTo(400, 1)
+    expect(removePoints(L, [a, b])).toMatchObject({ points: [], segments: [] })
+  })
+
+  it('selects the points inside a box', () => {
+    const { L, a } = line()
+    expect(pointsInBox(L, { x: -5, y: -5 }, { x: 100, y: 5 })).toEqual([a])
+  })
+})
+
+describe('curves (spec §5.5)', () => {
+  it('a bent route is longer than the straight one and is still hit along its curve', () => {
+    const { L, a, b, s } = line()
+    const bent = setCurve(L, s, { kind: 'arc', mid: { x: 200, y: 100 } })
+    const seg = bent.segments[0]
+    expect(segmentLengthFt(bent, seg)).toBeGreaterThan(400)
+    expect(routeDistanceFt(bent, a, b)).toBeCloseTo(segmentLengthFt(bent, seg), 0)
+    expect(hit2(bent, { x: 200, y: 98 }, 1, 3)).toMatchObject({ kind: 'segment', id: s })
+    expect(hit2(bent, { x: 200, y: 2 }, 1, 3)).toBeNull()
+  })
+
+  it('spline handles start on the route, so converting does not move it', () => {
+    const { L, s } = line()
+    const h = splineHandles(L, s)!
+    if (h.kind !== 'bezier') throw new Error('expected a spline')
+    expect([h.c1.x, h.c1.y, h.c2.x, h.c2.y].map(v => Math.round(v * 1000) / 1000)).toEqual([133.333, 0, 266.667, 0])
+    expect(segmentLengthFt(setCurve(L, s, splineHandles(L, s)!), L.segments[0])).toBeCloseTo(400, 0)
+  })
+})
+
+describe('fixed objects (spec §5.8)', () => {
+  it('a dragged rectangle becomes an object that can be hit; tiny drags are ignored', () => {
+    const { L } = line()
+    const o = addObject(L, { x: 100, y: 20 }, { x: 140, y: 30 })
+    expect(o.layout.objects).toEqual([{ id: 'o1', x: 100, y: 20, w: 40, h: 10, name: 'Object 1' }])
+    expect(hit2(o.layout, { x: 120, y: 25 }, 1, 1)).toEqual({ kind: 'object', id: 'o1' })
+    expect(addObject(L, { x: 0, y: 0 }, { x: 0.05, y: 3 }).id).toBeNull()
+  })
+
+  it('a turned object has turned corners', () => {
+    const c = objectCorners({ id: 'o', x: 0, y: 0, w: 10, h: 2, rotationDeg: 90 })
+    expect(c.map(p => [Math.round(p.x), Math.round(p.y)])).toEqual([[6, -4], [6, 6], [4, 6], [4, -4]])
   })
 })

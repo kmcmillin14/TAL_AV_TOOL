@@ -2,12 +2,17 @@
 
 // Layout editor (spec v2 §5.1): Drawing & scale → Points (P) → Routes (R) → Flows (F), with
 // Select (V) and Direction (D), undo/redo. Points first: a point can sit off every route and is
-// listed "Not connected" until a route reaches it.
+// listed "Not connected" until a route reaches it. Select also bends routes (drag the middle
+// handle), moves and box-selects points (Shift-drag), copies and pastes (⌘C / ⌘V). The Points
+// palette's Object draws walls and columns; "B56.5 clearances" shows the clearance path (§5.9).
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { B56_5_RULE, envelopes, segmentClearances, type ClearanceRule } from '@/src/calc/sim/clearance'
+import { roundCorners } from '@/src/calc/sim/corners'
 import {
-  addPoint, addSegment, flowRefusal, flowStartRefusal, FLOW_POINT_TYPES, linkFlow, linkSuggestions, notConnected,
-  placeOnSegment, removePoint, removeSegment, rescaleLayout, splitSegment, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
+  addObject, addPoint, addSegment, copyPoints, flowRefusal, flowStartRefusal, FLOW_POINT_TYPES, linkFlow, linkSuggestions, movePoints,
+  notConnected, placeOnSegment, pointsInBox, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
+  splineHandles, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import type { SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
 import Icon from '@/src/design-system/components/Icon'
@@ -18,53 +23,70 @@ import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import DrawingCard from './DrawingCard'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
-import LayoutCanvas, { type CanvasPointer, type Selection, type XY } from './LayoutCanvas'
+import LayoutCanvas, { type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
 import LayoutPanel, { Segmented } from './LayoutPanel'
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
 type Tool = 'select' | 'points' | 'routes' | 'flows' | 'direction'
 const TOOLS: { id: Tool; label: string; key: string; hint: string }[] = [
-  { id: 'select', label: 'Select', key: 'V', hint: 'Click to edit, drag a point to move it, drag empty space to pan' },
+  { id: 'select', label: 'Select', key: 'V', hint: 'Click to edit; drag to move; Shift-drag to select several; drag a route’s handle to bend it' },
   { id: 'points', label: 'Points', key: 'P', hint: 'Click to place; on a route, the point joins it' },
   { id: 'routes', label: 'Routes', key: 'R', hint: 'Click point to point; Esc ends the route' },
   { id: 'flows', label: 'Flows', key: 'F', hint: 'Click a Pick point, then a Drop point' },
   { id: 'direction', label: 'Direction', key: 'D', hint: 'Click a route: two-way → one-way → other way → single-lane' },
 ]
-const PALETTE: SimPointType[] = [...FLOW_POINT_TYPES, ...VEHICLE_POINT_TYPES]
+type Placeable = SimPointType | 'object'
+const PALETTE: Placeable[] = [...FLOW_POINT_TYPES, ...VEHICLE_POINT_TYPES, 'object']
 /** Direction tool order: two-way → one-way A→B → one-way B→A → single-lane two-way → two-way. */
 const DIRECTION_CYCLE: Pick<SimSegment, 'dir' | 'lane'>[] = [
   { dir: 'two', lane: 'two' }, { dir: 'ab', lane: 'two' }, { dir: 'ba', lane: 'two' }, { dir: 'two', lane: 'single' },
 ]
 /** An unscaled drawing with nothing to inherit is shown at this size until its scale is set. */
 const UNSCALED_FT_PER_PX = 0.05
+/** Pasted points land this far from the originals, ft. */
+const PASTE_OFFSET_FT = 5
 
 type Background = NonNullable<EditorLayout['background']>
 const ftPerPx = (bg?: Background) => (bg?.scale
   ? bg.scale.lengthFt / Math.max(1e-9, Math.hypot(bg.scale.b.x - bg.scale.a.x, bg.scale.b.y - bg.scale.a.y))
   : bg?.unscaledFtPerPx ?? UNSCALED_FT_PER_PX)
 
+/** A field that takes typed text — shortcuts stay out of it. A ticked checkbox or a pressed button
+ *  keeps focus but takes no text, so the tool keys still work there. */
+const NOT_TEXT = new Set(['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color', 'file'])
 const isTyping = (t: EventTarget | null) =>
-  t instanceof HTMLElement && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)
+  t instanceof HTMLElement && ((t instanceof HTMLInputElement && !NOT_TEXT.has(t.type)) || t.tagName === 'TEXTAREA' || t.tagName === 'SELECT' || t.isContentEditable)
 
 /** Clear a flow's point links: it keeps its values and goes back to a typed distance in Sizing. */
 const unlinked = (f: ProjectFlow): ProjectFlow => ({ ...f, fromPointId: undefined, toPointId: undefined, distanceSource: undefined })
 
+/** What a press-and-drag is doing until the pointer is released. */
+type Drag =
+  | { kind: 'points'; ids: string[]; from: XY; at: XY }
+  | { kind: 'handle'; segId: string; which: Handle; at: XY }
+  | { kind: 'object'; id: string; from: XY; at: XY }
+  | { kind: 'box'; box: 'marquee' | 'object'; from: XY; at: XY }
+
 interface Props { project: StoredProject; vehicles: Vehicle[]; unitSystem: UnitSystem; emptyPrompt?: string }
 
 export default function LayoutEditor({ project, vehicles, unitSystem, emptyPrompt }: Props) {
-  const editor = useLayoutEditor(project)
+  const vehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
+  const radiusFor = useCallback((id?: string) => (id && vehicleById.get(id)?.calc.turningRadiusFt) || 0, [vehicleById])
+  const editor = useLayoutEditor(project, radiusFor)
   const { doc, latest, commit, canUndo, canRedo } = editor
   const { layout, flows } = doc
   const [tool, setTool] = useState<Tool>('select')
-  const [placeType, setPlaceType] = useState<SimPointType>('stand')
+  const [placeType, setPlaceType] = useState<Placeable>('stand')
   const [placeRole, setPlaceRole] = useState<SimRole>('pick')
   const [selection, setSelection] = useState<Selection>(null)
   const [chainFrom, setChainFrom] = useState<string | null>(null)       // route or flow being drawn
   const [marks, setMarks] = useState<XY[] | null>(null)                 // null = not setting the scale
-  const [drag, setDrag] = useState<{ id: string; from: XY; at: XY } | null>(null)
+  const [drag, setDrag] = useState<Drag | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [showFlows, setShowFlows] = useState(true)
+  const [showClearance, setShowClearance] = useState(false)
   const [fitKey, setFitKey] = useState(0)
+  const clipboard = useRef<string[]>([])
 
   const bg = layout.background
   const image = getDrawingData(project.id)
@@ -72,6 +94,23 @@ export default function LayoutEditor({ project, vehicles, unitSystem, emptyPromp
   const loose = useMemo(() => new Set(notConnected(layout).map(p => p.id)), [layout])
   const suggestions = useMemo(() => linkSuggestions(layout, flows), [layout, flows])
   const byId = useMemo(() => new Map(layout.points.map(p => [p.id, p])), [layout])
+  const linked = useMemo(() => flows.flatMap(f => (f.fromPointId && f.toPointId ? [{ ...f, fromPointId: f.fromPointId, toPointId: f.toPointId }] : [])), [flows])
+
+  // The layout as driven: corners rounded to the largest turning radius among the flows' vehicles.
+  const driven = useMemo(() => roundCorners(layout, Math.max(0, ...linked.map(f => radiusFor(f.vehicleId)))), [layout, linked, radiusFor])
+
+  // B56.5 clearances (§5.9): envelope = vehicle or payload (Step 1 loads), whichever is wider.
+  const rule: ClearanceRule = useMemo(() => {
+    const c = project.simSettings?.clearance
+    return c ? { thresholdFps: c.thresholdFps, lowSpeedIn: c.lowSpeedIn, fullSpeedIn: c.fullSpeedIn ?? B56_5_RULE.fullSpeedIn, sharedBetweenVehicles: c.sharedBetweenVehicles } : B56_5_RULE
+  }, [project.simSettings?.clearance])
+  const clearances = useMemo(() => {
+    if (!showClearance) return null
+    const payloadWidthFt = Math.max(0, ...(project.loads ?? []).map(l => (l.widthIn ?? 0) / 12))
+    const widthOf = (id?: string) => (id && vehicleById.get(id)?.calc.widthFt) || 0
+    const env = envelopes(layout, linked.map(f => ({ ...f, vehicleWidthFt: widthOf(f.vehicleId) })), payloadWidthFt)
+    return segmentClearances(layout, env, rule)
+  }, [showClearance, layout, linked, project.loads, vehicleById, rule])
 
   const setLayout = (next: EditorLayout, merge?: string) => commit({ layout: next, flows }, merge)
   const setFlows = (next: ProjectFlow[], merge?: string) => commit({ layout, flows: next }, merge)
@@ -82,10 +121,7 @@ export default function LayoutEditor({ project, vehicles, unitSystem, emptyPromp
   /** Undo/redo can remove what a half-drawn route or a selection points at: drop both. */
   const undo = () => { cancel(); setSelection(null); editor.undo() }
   const redo = () => { cancel(); setSelection(null); editor.redo() }
-
-  // Where the dragged point is now (shown until the drop commits it).
-  const dragged = drag && byId.get(drag.id)
-  const dragAt = dragged && drag ? { x: dragged.x + drag.at.x - drag.from.x, y: dragged.y + drag.at.y - drag.from.y } : null
+  const selectedPoints = selection?.kind === 'points' ? selection.ids : selection?.kind === 'point' ? [selection.id] : []
 
   /** A point id to draw from or to: the point under the pointer, a new junction on a route, or one on empty floor. */
   const anchor = (at: XY, hit: CanvasPointer['hit']): { layout: EditorLayout; id: string } => {
@@ -94,26 +130,52 @@ export default function LayoutEditor({ project, vehicles, unitSystem, emptyPromp
     return addPoint(layout, at, 'junction')
   }
 
-  const onPointer = ({ type, at, hit }: CanvasPointer) => {
+  const onSelectPress = (at: XY, hit: CanvasPointer['hit'], shift: boolean) => {
+    if (hit?.kind === 'handle') { setDrag({ kind: 'handle', segId: hit.id, which: hit.which, at }); return }
+    if (hit?.kind === 'point') {
+      const ids = shift
+        ? (selectedPoints.includes(hit.id) ? selectedPoints.filter(i => i !== hit.id) : [...selectedPoints, hit.id])
+        : selectedPoints.includes(hit.id) ? selectedPoints : [hit.id]
+      setSelection(ids.length > 1 ? { kind: 'points', ids } : ids.length ? { kind: 'point', id: ids[0] } : null)
+      if (ids.includes(hit.id)) setDrag({ kind: 'points', ids, from: at, at })
+      return
+    }
+    if (hit?.kind === 'object') { setSelection({ kind: 'object', id: hit.id }); setDrag({ kind: 'object', id: hit.id, from: at, at }); return }
+    if (hit?.kind === 'segment') { setSelection({ kind: 'segment', id: hit.id }); return }
+    if (shift) { setDrag({ kind: 'box', box: 'marquee', from: at, at }); return }
+    setSelection(null)
+  }
+
+  const onRelease = (d: Drag) => {
+    const dx = d.at.x - (d.kind === 'handle' ? d.at.x : d.from.x), dy = d.at.y - (d.kind === 'handle' ? d.at.y : d.from.y)
+    if (d.kind === 'points' && (dx || dy)) setLayout(movePoints(layout, d.ids, { x: dx, y: dy }))
+    else if (d.kind === 'object' && (dx || dy)) {
+      const o = layout.objects?.find(q => q.id === d.id)
+      if (o) setLayout(updateObject(layout, o.id, { x: o.x + dx, y: o.y + dy }))
+    } else if (d.kind === 'handle') {
+      const s = layout.segments.find(q => q.id === d.segId)
+      if (s) setLayout(setCurve(layout, s.id, d.which === 'mid' ? { kind: 'arc', mid: d.at }
+        : s.curve?.kind === 'bezier' ? { ...s.curve, [d.which]: d.at } : s.curve))
+    } else if (d.kind === 'box' && d.box === 'marquee') {
+      const ids = [...new Set([...selectedPoints, ...pointsInBox(layout, d.from, d.at)])]
+      setSelection(ids.length > 1 ? { kind: 'points', ids } : ids.length ? { kind: 'point', id: ids[0] } : null)
+    } else if (d.kind === 'box' && d.box === 'object') {
+      const made = addObject(layout, d.from, d.at)
+      if (made.id) { setLayout(made.layout); setSelection({ kind: 'object', id: made.id }) }
+    }
+  }
+
+  const onPointer = ({ type, at, hit, shift }: CanvasPointer) => {
     if (marks) {
       if (type === 'down' && marks.length < 2) setMarks([...marks, at])
       return
     }
-    if (tool === 'select') {
-      if (type === 'down') {
-        setSelection(hit && { kind: hit.kind, id: hit.id })
-        if (hit?.kind === 'point') setDrag({ id: hit.id, from: at, at })
-      } else if (type === 'move' && drag) {
-        setDrag({ ...drag, at })
-      } else if (type === 'up' && drag) {
-        if (dragAt && (drag.at.x !== drag.from.x || drag.at.y !== drag.from.y)) setLayout(updatePoint(layout, drag.id, dragAt))
-        setDrag(null)
-      }
-      return
-    }
-    if (type !== 'down') return
+    if (type === 'move') { if (drag) setDrag({ ...drag, at }); return }
+    if (type === 'up') { if (drag) onRelease(drag); setDrag(null); return }
+    if (tool === 'select') { onSelectPress(at, hit, shift); return }
     if (tool === 'points') {
       if (hit?.kind === 'point') { setSelection({ kind: 'point', id: hit.id }); return }
+      if (placeType === 'object') { setDrag({ kind: 'box', box: 'object', from: at, at }); return }
       const role = FLOW_POINT_TYPES.includes(placeType) ? placeRole : undefined
       const placed = (hit?.kind === 'segment' && placeOnSegment(layout, hit.id, at, placeType, role)) || addPoint(layout, at, placeType, role)
       setLayout(placed.layout)
@@ -143,20 +205,29 @@ export default function LayoutEditor({ project, vehicles, unitSystem, emptyPromp
 
   const deleteSelection = () => {
     if (!selection) return
-    if (selection.kind === 'point') {
-      const gone = (f: ProjectFlow) => f.fromPointId === selection.id || f.toPointId === selection.id
-      commit({ layout: removePoint(layout, selection.id), flows: flows.map(f => (gone(f) ? unlinked(f) : f)) })
+    if (selection.kind === 'point' || selection.kind === 'points') {
+      const gone = new Set(selectedPoints), hit = (f: ProjectFlow) => gone.has(f.fromPointId ?? '') || gone.has(f.toPointId ?? '')
+      commit({ layout: removePoints(layout, selectedPoints), flows: flows.map(f => (hit(f) ? unlinked(f) : f)) })
     } else if (selection.kind === 'segment') {
       setLayout(removeSegment(layout, selection.id))
+    } else if (selection.kind === 'object') {
+      setLayout(removeObject(layout, selection.id))
     } else {
       setFlows(flows.map(f => (f.id === selection.id ? unlinked(f) : f)))
     }
     setSelection(null)
   }
 
-  // Keyboard: tools, Esc, Delete, undo/redo — captured before the header's app-level ⌘Z, which
-  // steps aside (PersistentHeader checks defaultPrevented). The listener is bound once and calls
-  // the latest handler through a ref.
+  const paste = () => {
+    const ids = clipboard.current.filter(id => byId.has(id))
+    if (!ids.length) return
+    const made = copyPoints(layout, ids, { x: PASTE_OFFSET_FT, y: PASTE_OFFSET_FT })
+    setLayout(made.layout)
+    setSelection(made.ids.length > 1 ? { kind: 'points', ids: made.ids } : { kind: 'point', id: made.ids[0] })
+  }
+
+  // Keyboard: tools, Esc, Delete, copy/paste, undo/redo — captured before the header's app-level ⌘Z,
+  // which steps aside (PersistentHeader checks defaultPrevented). Bound once; calls the latest handler.
   const onKey = useRef<(e: KeyboardEvent) => void>(() => {})
   onKey.current = (e: KeyboardEvent) => {
     // Only keys aimed at the editor (or nowhere in particular) — never a field, dialog or the tour.
@@ -168,6 +239,8 @@ export default function LayoutEditor({ project, vehicles, unitSystem, emptyPromp
       if (isRedo ? !canRedo : !canUndo) return              // nothing here: the header's app undo may take it
       e.preventDefault(); if (isRedo) redo(); else undo(); return
     }
+    if (mod && k === 'c' && selectedPoints.length) { e.preventDefault(); clipboard.current = selectedPoints; return }
+    if (mod && k === 'v' && clipboard.current.length) { e.preventDefault(); paste(); return }
     if (mod || e.altKey) return
     const t = TOOLS.find(x => x.key.toLowerCase() === k)
     if (t) chooseTool(t.id)
@@ -207,10 +280,18 @@ export default function LayoutEditor({ project, vehicles, unitSystem, emptyPromp
     // it was there first (already in true feet) and this is the drawing's first scale.
     const k = layoutPredates && !bg.scale ? 1 : ftPerPx(next) / scale
     setLayout({ ...rescaleLayout(layout, k), background: next })
-    setMarks(null); setFitKey(k => k + 1)
+    setMarks(null); setFitKey(k2 => k2 + 1)
   }
 
   const imageFt = bg && image ? { href: image, widthFt: (bg.widthPx ?? 0) * scale, heightFt: (bg.heightPx ?? 0) * scale } : null
+  // What the canvas shows mid-drag: moved points/objects, a bent handle, a box being dragged out.
+  const shownLayout = drag?.kind === 'handle'
+    ? setCurve(layout, drag.segId, drag.which === 'mid' ? { kind: 'arc', mid: drag.at }
+      : (() => { const s = layout.segments.find(q => q.id === drag.segId); return s?.curve?.kind === 'bezier' ? { ...s.curve, [drag.which]: drag.at } : s?.curve })())
+    : drag?.kind === 'object'
+      ? updateObject(layout, drag.id, (() => { const o = layout.objects?.find(q => q.id === drag.id)!; return { x: o.x + drag.at.x - drag.from.x, y: o.y + drag.at.y - drag.from.y } })())
+      : layout
+  const offset = drag?.kind === 'points' ? { ids: new Set(drag.ids), d: { x: drag.at.x - drag.from.x, y: drag.at.y - drag.from.y } } : null
 
   return (
     <div className="sim-editor">
@@ -223,43 +304,55 @@ export default function LayoutEditor({ project, vehicles, unitSystem, emptyPromp
             </button>
           ))}
         </div>
-        {tool === 'points' && (
-          <div className="sim-palette" aria-label="Point type">
-            {PALETTE.map(t => (
-              <button key={t} type="button" className={`sim-palette-btn${placeType === t ? ' on' : ''}`} aria-pressed={placeType === t} onClick={() => setPlaceType(t)}>
-                <Icon name={t as Exclude<SimPointType, 'junction'>} size={16} /><span>{POINT_LABEL[t]}</span>
-              </button>
-            ))}
-            {FLOW_POINT_TYPES.includes(placeType) && <Segmented options={ROLE_OPTIONS} value={placeRole} onChange={setPlaceRole} />}
-          </div>
-        )}
         <div className="sim-toolbar-end">
           <label className="sim-check"><input type="checkbox" checked={showFlows} onChange={e => setShowFlows(e.target.checked)} /> Show flows</label>
+          <label className="sim-check"><input type="checkbox" checked={showClearance} onChange={e => setShowClearance(e.target.checked)} /> B56.5 clearances</label>
           <button type="button" className="btn ghost btn-sm" onClick={() => setFitKey(k => k + 1)}>Fit</button>
           <button type="button" className="btn ghost btn-sm" disabled={!canUndo} onClick={undo} title="Undo (⌘Z)">Undo</button>
           <button type="button" className="btn ghost btn-sm" disabled={!canRedo} onClick={redo} title="Redo (⌘⇧Z)">Redo</button>
         </div>
       </div>
 
+      {/* One fixed-height row under the tools: the Points palette, or what the tool does. The
+          canvas below never moves when the tool changes. */}
+      <div className="sim-toolopts">
+        {tool === 'points' && !marks ? (
+          <div className="sim-palette" aria-label="Point type">
+            {PALETTE.map(t => (
+              <button key={t} type="button" className={`sim-palette-btn${placeType === t ? ' on' : ''}`} aria-pressed={placeType === t} onClick={() => setPlaceType(t)}>
+                {t === 'object' ? <span className="sim-object-swatch" aria-hidden /> : <Icon name={t as Exclude<SimPointType, 'junction'>} size={16} />}
+                <span>{t === 'object' ? 'Object' : POINT_LABEL[t]}</span>
+              </button>
+            ))}
+            {placeType !== 'object' && FLOW_POINT_TYPES.includes(placeType) && <Segmented options={ROLE_OPTIONS} value={placeRole} onChange={setPlaceRole} />}
+          </div>
+        ) : null}
+        <p className="sim-hint" aria-live="polite">
+          {message ?? (marks ? 'Click both ends of a known dimension' : tool === 'points' ? (placeType === 'object' ? 'Drag out a wall, column or rack face' : '') : TOOLS.find(t => t.id === tool)!.hint)}
+        </p>
+      </div>
+
       <div className="sim-work">
         <div className="sim-canvas-wrap">
           <LayoutCanvas
-            layout={layout}
+            layout={shownLayout}
+            driven={drag ? shownLayout : driven}
             flows={flows}
             image={imageFt}
             selection={selection}
             notConnected={loose}
             showFlows={showFlows}
+            clearances={clearances}
             panOnEmpty={tool === 'select' && !marks}
             rubberFrom={chainFrom ? byId.get(chainFrom) ?? null : null}
+            box={drag?.kind === 'box' ? { a: drag.from, b: drag.at, kind: drag.box } : null}
             marks={marks ?? []}
-            dragging={drag && dragAt && { id: drag.id, at: dragAt }}
+            offset={offset}
             onPointer={onPointer}
             onFlowClick={id => { if (tool === 'select' || tool === 'flows') setSelection({ kind: 'flow', id }) }}
             fitKey={fitKey}
             emptyPrompt={emptyPrompt}
           />
-          <p className="sim-hint" aria-live="polite">{message ?? (marks ? 'Click both ends of a known dimension' : TOOLS.find(t => t.id === tool)!.hint)}</p>
         </div>
         <div className="sim-side">
           <DrawingCard
@@ -283,8 +376,19 @@ export default function LayoutEditor({ project, vehicles, unitSystem, emptyPromp
             unitSystem={unitSystem}
             notConnected={loose}
             suggestions={suggestions}
+            clearances={clearances}
+            rule={rule}
             onPoint={(id, patch) => setLayout(updatePoint(layout, id, patch), `point:${id}:${Object.keys(patch).join()}`)}
+            onPoints={(ids, patch) => setLayout(ids.reduce((L, id) => updatePoint(L, id, patch), layout), `points:${Object.keys(patch).join()}`)}
             onSegment={(id, patch) => setLayout(updateSegment(layout, id, patch))}
+            onCurve={(id, kind) => setLayout(setCurve(layout, id, kind === 'spline' ? splineHandles(layout, id) ?? undefined : undefined))}
+            onObject={(id, patch) => setLayout(updateObject(layout, id, patch), `object:${id}:${Object.keys(patch).join()}`)}
+            onRepeat={(id, count, stepFt, dir) => {
+              const made = repeatPoint(layout, id, count, stepFt, dir)
+              setLayout(made.layout)
+              setSelection({ kind: 'points', ids: made.ids })
+            }}
+            onCopy={() => { clipboard.current = selectedPoints; paste() }}
             onFlow={(id, patch) => setFlows(flows.map(f => (f.id === id ? { ...f, ...patch } : f)), `flow:${id}:${Object.keys(patch).join()}`)}
             onLink={(flowId, from, to) => setFlows(flows.map(f => (f.id === flowId ? linkFlow(layout, f, from, to) : f)))}
             onUnlink={flowId => setFlows(flows.map(f => (f.id === flowId ? unlinked(f) : f)))}
