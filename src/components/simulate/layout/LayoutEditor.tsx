@@ -87,6 +87,9 @@ interface Props {
   project: StoredProject
   vehicles: Vehicle[]
   vehicleById: Map<string, Vehicle>
+  /** The run's vehicles (overrides applied) — for the lanes and clearances drawn; Sizing figures and
+   *  measured distances keep the vehicle files (`vehicleById`). */
+  simVehicleById: Map<string, Vehicle>
   settings: FleetSettings
   fleet: FleetSummary
   checks: ReadinessCheck[]
@@ -94,7 +97,7 @@ interface Props {
   emptyPrompt?: ReactNode
 }
 
-export default function LayoutEditor({ project, vehicles, vehicleById, settings, fleet, checks, unitSystem, emptyPrompt }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt }: Props) {
   const radiusFor = useCallback((id?: string) => (id && vehicleById.get(id)?.calc.turningRadiusFt) || 0, [vehicleById])
   const editor = useLayoutEditor(project, radiusFor)
   const { doc, latest, commit, canUndo, canRedo } = editor
@@ -132,8 +135,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, settings,
   const rule = useMemo(() => clearanceRule(project.simSettings?.clearance), [project.simSettings?.clearance])
   // What a run would drive here: lane widths from the envelope (vehicle or pallet) and the clearances.
   const inputs = useMemo(
-    () => runInputs(layout, flows, vehicleById, rule, payloadFt(project.loads)?.width ?? 0),
-    [layout, flows, vehicleById, rule, project.loads],
+    () => runInputs(layout, flows, simVehicleById, rule, payloadFt(project.loads)?.width ?? 0),
+    [layout, flows, simVehicleById, rule, project.loads],
   )
   const clearances = showClearance ? inputs.clearances : null
   /** Direction and lanes for the routes drawn next (Route tool options). One-way runs the way it is drawn. */

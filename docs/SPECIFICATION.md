@@ -779,6 +779,33 @@ step ribbon is unchanged.
     target dashed, the most orders waiting each hour on the right axis.
   - *Example site:* an empty Simulate page on a project with no flows offers **Open the example
     site** on the canvas (the same sample as ⋯ → Load sample).
+- **Inspector and Assumptions (Milestone 6 — in progress: the registry, help text and run overrides
+  are built; the inspector and Assumptions screens are next).**
+  - *One field registry* (`src/lib/simFields.ts`) lists every assumption the simulation reads. Each
+    entry has a label, unit, group, level (Settings or Advanced) and a one-line help text from
+    `SIM_FIELD_HELP` in `src/content/help.ts`. The inspector, the Assumptions view and the
+    enumeration test all read it (acceptance 35).
+  - *Sources:* `JSON` (the vehicle file), `Step 1` (shift, read-only), `Default` (the simulation's own
+    default, or the engine's fallback when the vehicle file has no value) and `Override` (a
+    per-project value). Overrides are stored in one place: vehicle values in `simSettings.overrides`
+    (`vehicleId.field`), run assumptions in `simSettings`, the B56.5 rule in `simSettings.clearance`,
+    and point and route assumptions on the point or route itself.
+  - *Overrides change the simulation only.* The Fleet Engine, Sizing and the quote never read them;
+    only "Use N in pricing" moves a quote.
+  - *Every field* shows its value and unit, a source chip, a reset (↺) when overridden, and its
+    one-line help. An overridden field has a dot. Points and routes with an overridden assumption
+    show a dot on the map. The page head shows a count ("3 overrides") that opens the Assumptions
+    view (acceptance 36).
+  - *Inspector:* the selected point or route shows Summary and Settings as before, plus an
+    **Advanced** disclosure with its assumptions (height, handshake, approach heading; route speed
+    limit). Clicking a vehicle type in Run (its picture or name) opens its values: speeds, motion,
+    size, charging. Every assumption is within two clicks of its object (acceptance 34).
+  - *Assumptions view:* a side drawer (not a modal; Esc closes) with every field grouped Vehicle ·
+    Motion · Traffic · Handling · Charging · Demand · Safety · Run. It has a **Changed only** filter
+    and **Reset all**. Run's verdict row shows a one-line chip ("Assumptions · 2 changed") that opens
+    it. It replaces the inputs that were in Run details › Assumptions; that disclosure keeps the
+    vehicle data and the fallbacks used.
+  - *Same in Layout and Run.* No modal dialogs except the destructive confirmations (acceptance 37).
 - **Simulated fleet in pricing (built, Milestone 5; D-1, raise-only).** Quoted numbers can move.
   - *Use N in pricing:* a verdict row offers it only when the stepper value **Meets** and is above
     the Fleet Engine's figure for that type. While it is offered, the run also checks one vehicle

@@ -242,3 +242,41 @@ export const HELP: HelpSection[] = [
     ],
   },
 ]
+
+/**
+ * One-line help for every Fleet Simulation assumption (Milestone 6, acceptance 35), keyed
+ * `scope.field` as in `SIM_FIELDS` (src/lib/simFields.ts). Plain words, one sentence; shown under the
+ * field in the inspector and the Assumptions view. A test fails if a field has no line here.
+ */
+export const SIM_FIELD_HELP: Record<string, string> = {
+  'vehicle.speedLoadedFps': 'Top speed carrying a load, on a straight route.',
+  'vehicle.speedUnloadedFps': 'Top speed with no load; the loaded speed when the vehicle file has none.',
+  'vehicle.accelFps2': 'How quickly it reaches speed. With acceleration and braking known, pace is not used.',
+  'vehicle.decelFps2': 'How quickly it stops — also sets how early it asks for a junction.',
+  'vehicle.turnSpeedFps': 'Speed through rounded corners.',
+  'vehicle.reverseSpeedFps': 'Speed when backing into or out of a point.',
+  'vehicle.widthFt': 'Body width — with the pallet, it sets the lane width and the B56.5 clearance.',
+  'vehicle.overallLengthFt': 'Nose to fork tips — sets the gap to the vehicle ahead.',
+  'vehicle.turningRadiusFt': 'Corners are rounded to this radius; 0 turns in place.',
+  'vehicle.liftSpeedFps': 'How fast the forks rise to a raised point.',
+  'vehicle.reorientSec': 'Extra time when it arrives facing the wrong way for the transfer.',
+  'vehicle.approachDistanceFt': 'Straight run-in before a pick or drop, driven slowly.',
+  'vehicle.avgPowerDrawKw': 'Average power while working — how fast the battery runs down.',
+  'vehicle.chargerPowerKw': 'Charger output — how fast the battery comes back.',
+  'vehicle.minSocPct': 'The battery is never run below this.',
+  'vehicle.maxSocPct': 'Charging stops at this level.',
+  'run.pacePct': 'Share of rated speed driven when the vehicle file has no acceleration or braking.',
+  'run.safetyFt': 'Gap kept behind the vehicle ahead, beyond its length and load.',
+  'run.demandPct': 'Moves per hour as a share of the Sizing figures — 120% tests growth.',
+  'run.arrivals': 'Regular spaces orders evenly; Random varies them like a real shift.',
+  'run.seed': 'Picks the random sequence — the same seed gives the same run.',
+  'run.shiftH': 'From Step 1; the verdict judges one full shift.',
+  'safety.thresholdFps': 'At or above this speed the larger clearance applies (B56.5: 1.2 m/s).',
+  'safety.lowSpeedIn': 'Minimum gap each side to walls and racks below the threshold speed.',
+  'safety.fullSpeedIn': 'Gap each side at or above the threshold speed (B56.5: 0.5 m).',
+  'safety.sharedBetweenVehicles': 'Two vehicles passing on a two-lane route share one clearance between them.',
+  'point.heightFt': 'Height the load is picked from or set down at — drives lift time.',
+  'point.handshakeSec': 'Extra wait for a conveyor or machine to accept or release the load.',
+  'point.approachHeadingDeg': 'Direction the vehicle must face as it enters, in degrees (0 = east).',
+  'route.speedLimitFps': 'Caps speed on this route, below the vehicle’s own speed.',
+}

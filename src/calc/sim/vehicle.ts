@@ -111,3 +111,40 @@ export function resolveProfile(vehicle: Vehicle, sim: VehicleSimData | null | un
     battery, flags,
   }
 }
+
+/**
+ * Vehicle values an engineer may override per project (Milestone 6), and where each lives in the
+ * vehicle file: the base `calc` block or its `calc.sim` block. Overrides change the simulation only —
+ * the Fleet Engine and the quote read the vehicle file as it is.
+ */
+export const VEHICLE_OVERRIDE_FIELDS = {
+  speedLoadedFps: 'calc', speedUnloadedFps: 'calc', widthFt: 'calc', turningRadiusFt: 'calc', liftSpeedFps: 'calc',
+  avgPowerDrawKw: 'calc', chargerPowerKw: 'calc', minSocPct: 'calc', maxSocPct: 'calc',
+  overallLengthFt: 'sim', accelFps2: 'sim', decelFps2: 'sim', turnSpeedFps: 'sim', reverseSpeedFps: 'sim',
+  reorientSec: 'sim', approachDistanceFt: 'sim',
+} as const satisfies Record<string, 'calc' | 'sim'>
+export type VehicleOverrideField = keyof typeof VEHICLE_OVERRIDE_FIELDS
+
+/** A vehicle's value for an override field, as its file states it (null when the file has none). */
+export function vehicleFileValue(v: Vehicle, field: VehicleOverrideField): number | null {
+  const where = VEHICLE_OVERRIDE_FIELDS[field]
+  const x = where === 'calc' ? (v.calc as unknown as Record<string, unknown>)[field] : (v.calc.sim as Record<string, unknown> | undefined)?.[field]
+  return typeof x === 'number' && Number.isFinite(x) ? x : null
+}
+
+/**
+ * The vehicles a run uses: each with the project's overrides (`vehicleId.field → value`) laid over
+ * its file values. Vehicles without overrides are returned as they are (same object).
+ */
+export function withVehicleOverrides(vehicles: Vehicle[], overrides: Record<string, unknown> = {}): Vehicle[] {
+  return vehicles.map(v => {
+    const calc: Record<string, unknown> = {}, sim: Record<string, unknown> = {}
+    for (const f of Object.keys(VEHICLE_OVERRIDE_FIELDS) as VehicleOverrideField[]) {
+      const x = overrides[`${v.id}.${f}`]
+      if (typeof x !== 'number' || !Number.isFinite(x)) continue
+      ;(VEHICLE_OVERRIDE_FIELDS[f] === 'calc' ? calc : sim)[f] = x
+    }
+    if (!Object.keys(calc).length && !Object.keys(sim).length) return v
+    return { ...v, calc: { ...v.calc, ...calc, sim: { ...(v.calc.sim ?? {}), ...sim } } } as Vehicle
+  })
+}

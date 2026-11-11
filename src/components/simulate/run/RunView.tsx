@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runFleet, simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
+import { RUN_DEFAULTS } from '@/src/lib/simFields'
 import { useByValue } from '@/src/lib/useByValue'
 import { engineFleetByType, engineFleetTotal } from '@/src/calc/fleet'
 import type { SimResults, SimSettings, Verdict } from '@/src/calc/sim/types'
@@ -23,14 +24,16 @@ import RunDetails, { type Assumptions } from './RunDetails'
 import { RunScene, STATES } from './RunScene'
 
 /** Run assumption defaults (spec D-3 pace; the engine's following gap); the project's values win. */
-const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as SimSettings['arrivals'], demandPct: 100, seed: 1 }
 /** Background run slices stay under half a 60 fps frame, so playback keeps its pace. */
 const SLICE_MS = 8
 const VARIABILITY_RUNS = 10
 
 interface Props {
   project: StoredProject
+  /** The vehicle files — for pricing (Use N in pricing), which never sees simulation overrides. */
   vehicles: Vehicle[]
+  /** The run's vehicles: the files with the project's overrides (Milestone 6). */
+  simVehicles: Vehicle[]
   vehicleById: Map<string, Vehicle>
   settings: FleetSettings
   fleet: FleetSummary
@@ -59,7 +62,7 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 /** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ project, vehicles, vehicleById, settings, fleet, unitSystem, inputs, payload }: Props) {
+export default function RunView({ project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payload }: Props) {
   const simSettings = project.simSettings ?? {}
   const engineFleet = useByValue(useMemo(() => engineFleetByType(fleet), [fleet]))
   const inputsKey = useMemo(() => simInputsKey(project, vehicleById), [project, vehicleById])
@@ -86,11 +89,11 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
   useEffect(() => {
     const tok = ++token.current
     setR(null)
-    const S = createSim(inputs.layout, inputs.flows, vehicles, simConfig(assume.seed))
+    const S = createSim(inputs.layout, inputs.flows, simVehicles, simConfig(assume.seed))
     setUnrunnable(!S)
     if (!S) return
     runInSlices(S, shiftH * 3600, () => setR({ res: results(S), S }), () => tok === token.current)
-  }, [inputs, vehicles, simConfig, assume.seed, shiftH])
+  }, [inputs, simVehicles, simConfig, assume.seed, shiftH])
 
   // ---- the result is kept for Sizing's verdict chip; an applied fleet it confirms is refreshed ----
   useEffect(() => {
@@ -119,7 +122,7 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
       if (i >= todo.length || tok !== token.current) return
       const vid = todo[i]
       setLower(m => ({ ...m, [vid]: 'checking' }))
-      const S = createSim(inputs.layout, inputs.flows, vehicles, { ...simConfig(assume.seed), fleet: { ...fleetBy, [vid]: fleetBy[vid] - 1 } })
+      const S = createSim(inputs.layout, inputs.flows, simVehicles, { ...simConfig(assume.seed), fleet: { ...fleetBy, [vid]: fleetBy[vid] - 1 } })
       if (!S) { setLower(m => ({ ...m, [vid]: 'short' })); return next(i + 1) }   // one fewer cannot even be placed
       runInSlices(S, shiftH * 3600, () => {
         const r = results(S)
@@ -138,7 +141,7 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
     const tok = token.current, out: SimResults[] = []
     const next = (k: number) => {
       if (k >= VARIABILITY_RUNS || tok !== token.current) return
-      const S = createSim(inputs.layout, inputs.flows, vehicles, simConfig(assume.seed + k))
+      const S = createSim(inputs.layout, inputs.flows, simVehicles, simConfig(assume.seed + k))
       if (!S) return
       runInSlices(S, shiftH * 3600, () => { out.push(results(S)); setVari({ k: k + 1, out: [...out] }); next(k + 1) }, () => tok === token.current)
     }
@@ -155,7 +158,7 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
   const [busyFF, setBusyFF] = useState(false)
   const ffToken = useRef(0)
   useEffect(() => () => { ffToken.current++ }, [])
-  const restart = useCallback(() => { ffToken.current++; setBusyFF(false); live.current = createSim(inputs.layout, inputs.flows, vehicles, simConfig(assume.seed)); setRunning(true); frame(n => n + 1) }, [inputs, vehicles, simConfig, assume.seed])
+  const restart = useCallback(() => { ffToken.current++; setBusyFF(false); live.current = createSim(inputs.layout, inputs.flows, simVehicles, simConfig(assume.seed)); setRunning(true); frame(n => n + 1) }, [inputs, simVehicles, simConfig, assume.seed])
   useEffect(() => { restart() }, [restart])
   useEffect(() => {
     let raf = 0, last = performance.now(), acc = 0

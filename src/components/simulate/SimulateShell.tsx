@@ -11,6 +11,7 @@ import Link from 'next/link'
 import Icon from '@/src/design-system/components/Icon'
 import { emptyLayout, unlinked } from '@/src/calc/sim/layoutEdit'
 import { readinessChecks } from '@/src/calc/sim/readiness'
+import { withVehicleOverrides } from '@/src/calc/sim/vehicle'
 import { clearanceRule, payloadFt, runFleet, runInputs } from '@/src/calc/sim/runInputs'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import sample from '@/src/content/samples/simulate-sample.json'
@@ -38,21 +39,23 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const narrow = useIsNarrow()
   const [mode, setMode] = useState<'layout' | 'run'>('layout')
   const { simLayout, flows = [] } = project
-  // Checked against what a run will place and drive: the run fleet (linked types, stepper value) on
-  // the driven layout (B56.5 applied), so "Ready" never offers a run that cannot place or route.
   // What a run drives, built once for "Ready to run?" and the run itself. Kept stable by value: saving
   // a run's result rewrites simSettings, and that must not rebuild the inputs and restart the run.
+  // The run's vehicles carry the project's overrides (Milestone 6); Sizing never sees them.
+  const overrides = useByValue(project.simSettings?.overrides)
+  const simVehicles = useMemo(() => withVehicleOverrides(vehicles, overrides ?? {}), [vehicles, overrides])
+  const simVehicleById = useMemo(() => new Map(simVehicles.map(v => [v.id, v])), [simVehicles])
   const layoutV = useByValue(simLayout), flowsV = useByValue(flows)
   const clearance = useByValue(project.simSettings?.clearance), loads = useByValue(project.loads)
   const payload = useMemo(() => payloadFt(loads), [loads])
   const inputs = useMemo(
-    () => runInputs(layoutV ?? emptyLayout(), flowsV, vehicleById, clearanceRule(clearance), payload?.width ?? 0),
-    [layoutV, flowsV, vehicleById, clearance, payload],
+    () => runInputs(layoutV ?? emptyLayout(), flowsV, simVehicleById, clearanceRule(clearance), payload?.width ?? 0),
+    [layoutV, flowsV, simVehicleById, clearance, payload],
   )
   const checks = useMemo(() => {
     const placed = runFleet(engineFleetByType(fleet), project.simSettings?.fleet, inputs.flows.map(f => f.vehicleId))
-    return readinessChecks({ layout: simLayout, flows, vehicles, driven: simLayout && inputs.layout, fleetNeeded: Object.values(placed).reduce((a, b) => a + b, 0) })
-  }, [simLayout, flows, vehicles, inputs, fleet, project.simSettings?.fleet])
+    return readinessChecks({ layout: simLayout, flows, vehicles: simVehicles, driven: simLayout && inputs.layout, fleetNeeded: Object.values(placed).reduce((a, b) => a + b, 0) })
+  }, [simLayout, flows, simVehicles, inputs, fleet, project.simSettings?.fleet])
   const blockers = checks.filter(c => c.level === 'bad')
   const canRun = blockers.length === 0
   // Run mode is shown only while the run can happen; a new red item drops back to the layout.
@@ -111,10 +114,10 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <div className="empty-state"><h3>Open on a desktop to edit the layout</h3></div>
         </section>
       ) : running ? (
-        <RunView project={project} vehicles={vehicles} vehicleById={vehicleById} settings={settings} fleet={fleet} unitSystem={unitSystem} inputs={inputs} payload={payload} />
+        <RunView project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={fleet} unitSystem={unitSystem} inputs={inputs} payload={payload} />
       ) : (
         <LayoutEditor
-          project={project} vehicles={vehicles} vehicleById={vehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
+          project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
               <p>Draw routes along the aisles — or start from a finished site.</p>

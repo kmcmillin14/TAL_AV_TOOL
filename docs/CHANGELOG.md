@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation Milestone 6 (in progress): field registry and run overrides
+
+- **Field registry** `src/lib/simFields.ts`: every assumption the simulation reads (30 fields) with its
+  label, unit, group, level, source (`JSON` / `Step 1` / `Default` / `Override`) and how it is set or
+  reset. One-line help for each in `SIM_FIELD_HELP` (`src/content/help.ts`); a test enumerates them
+  (acceptance 35).
+- **Vehicle overrides reach the run, and only the run:** `withVehicleOverrides`
+  (`src/calc/sim/vehicle.ts`) lays `simSettings.overrides` (`vehicleId.field`) over the vehicle file
+  values for the simulation, "Ready to run?" and the lanes drawn. The Fleet Engine, measured
+  distances and "Use N in pricing" keep reading the vehicle files.
+- No screen sets an override yet (inspector and Assumptions view are next), so nothing changes for a
+  user in this step.
+
 ## 2026-11-11 — Fleet simulation: cleanup and code review of Milestones 4–5
 
 **Cleanup (no behaviour change):**
