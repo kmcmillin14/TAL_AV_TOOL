@@ -56,10 +56,10 @@ export function removePoint<T extends SimLayout>(L: T, id: string): T {
 }
 
 /** Connect two points with a two-way, two-lane route. No route to itself, no duplicates. */
-export function addSegment<T extends SimLayout>(L: T, a: string, b: string): { layout: T; id: string | null } {
+export function addSegment<T extends SimLayout>(L: T, a: string, b: string, kind: Pick<SimSegment, 'dir' | 'lane'> = { dir: 'two', lane: 'two' }): { layout: T; id: string | null } {
   if (a === b || L.segments.some(s => (s.a === a && s.b === b) || (s.a === b && s.b === a))) return { layout: L, id: null }
   const id = nextId('s', L.segments)
-  return { layout: { ...L, segments: [...L.segments, { id, a, b, dir: 'two', lane: 'two' }] }, id }
+  return { layout: { ...L, segments: [...L.segments, { id, a, b, dir: kind.dir, lane: kind.dir === 'two' ? kind.lane : 'single' }] }, id }
 }
 
 export function updateSegment<T extends SimLayout>(L: T, id: string, patch: Partial<Omit<SimSegment, 'id' | 'a' | 'b'>>): T {
@@ -350,6 +350,31 @@ function insideObject(o: SimObject, p: XY): boolean {
   const dx = p.x - cx, dy = p.y - cy
   const lx = dx * Math.cos(th) - dy * Math.sin(th), ly = dx * Math.sin(th) + dy * Math.cos(th)
   return Math.abs(lx) <= o.w / 2 && Math.abs(ly) <= o.h / 2
+}
+
+/** Snap a spot to the fixed objects: an object corner within `radiusFt`, else the nearest point on an
+ *  object's edge within `radiusFt`; otherwise the spot unchanged. Routes drawn along walls and rack
+ *  faces then meet them exactly. */
+export function snapToObjects(L: SimLayout, at: XY, radiusFt: number): { at: XY; snapped: 'corner' | 'edge' | null } {
+  let best: { at: XY; d: number; kind: 'corner' | 'edge' } | null = null
+  for (const o of L.objects ?? []) {
+    const c = objectCorners(o)
+    for (const q of c) {
+      const d = Math.hypot(q.x - at.x, q.y - at.y)
+      if (d <= radiusFt && (!best || best.kind !== 'corner' || d < best.d)) best = { at: q, d, kind: 'corner' }
+    }
+  }
+  if (best) return { at: best.at, snapped: 'corner' }
+  for (const o of L.objects ?? []) {
+    const c = objectCorners(o)
+    for (let i = 0; i < 4; i++) {
+      const a = c[i], b = c[(i + 1) % 4], dx = b.x - a.x, dy = b.y - a.y
+      const t = Math.max(0, Math.min(1, ((at.x - a.x) * dx + (at.y - a.y) * dy) / (dx * dx + dy * dy || 1)))
+      const q = { x: a.x + t * dx, y: a.y + t * dy }, d = Math.hypot(q.x - at.x, q.y - at.y)
+      if (d <= radiusFt && (!best || d < best.d)) best = { at: q, d, kind: 'edge' }
+    }
+  }
+  return best ? { at: best.at, snapped: 'edge' } : { at, snapped: null }
 }
 
 /** Add a rectangle between two corners (drawn with the Object tool). Tiny drags are ignored. */

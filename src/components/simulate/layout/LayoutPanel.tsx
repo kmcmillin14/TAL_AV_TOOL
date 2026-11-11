@@ -64,6 +64,22 @@ export default function LayoutPanel(p: Props) {
     if (!pt) return null
     return (
       <Panel title={pt.type === 'junction' ? 'Junction' : pt.name || POINT_LABEL[pt.type]} icon={pt.type} onDelete={p.onDelete}>
+        <div className="sim-field-row">
+          <Len u={p.unitSystem} label="Position x" ft={pt.x} signed onFt={x => x != null && p.onPoint(pt.id, { x })} />
+          <Len u={p.unitSystem} label="y" ft={pt.y} signed onFt={y => y != null && p.onPoint(pt.id, { y })} />
+        </div>
+        {pt.type === 'junction' && (
+          <label className="sim-field"><span>Turn into</span>
+            <select value="" onChange={e => {
+              const type = e.target.value as SimPointType
+              if (type) p.onPoint(pt.id, { type, name: POINT_LABEL[type], role: FLOW_POINT_TYPES.includes(type) ? 'pick' : undefined })
+            }}>
+              <option value="">A junction (route node)</option>
+              <optgroup label="Flow points">{FLOW_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
+              <optgroup label="Vehicle points">{VEHICLE_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
+            </select>
+          </label>
+        )}
         {pt.type !== 'junction' && (
           <>
             <label className="sim-field"><span>Name</span>
@@ -233,12 +249,12 @@ function Panel({ title, icon, onDelete, children }: { title: string; icon?: SimP
 }
 
 /** A length field in the user's units (ft or m), stored in feet. */
-function Len({ label, ft, max, u, onFt }: { label: string; ft: number | undefined; max?: number; u: UnitSystem; onFt: (ft: number | undefined) => void }) {
+function Len({ label, ft, max, u, signed, onFt }: { label: string; ft: number | undefined; max?: number; u: UnitSystem; signed?: boolean; onFt: (ft: number | undefined) => void }) {
   return (
     <label className="sim-field"><span>{label}</span>
       <span className="sim-input-unit">
-        <input type="number" min={0} step="any" value={ft == null ? '' : Math.round(lengthToDisplay(ft, u) * 100) / 100}
-          onChange={e => onFt(e.target.value === '' ? undefined : Math.min(max ?? Infinity, Math.max(0, lengthFromDisplay(Number(e.target.value), u))))} />
+        <input type="number" min={signed ? undefined : 0} step="any" value={ft == null ? '' : Math.round(lengthToDisplay(ft, u) * 100) / 100}
+          onChange={e => onFt(e.target.value === '' ? undefined : Math.min(max ?? Infinity, Math.max(signed ? -Infinity : 0, lengthFromDisplay(Number(e.target.value), u))))} />
         <span>{units.distance.label(u)}</span>
       </span>
     </label>

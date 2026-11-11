@@ -710,11 +710,15 @@ step ribbon is unchanged.
   tokens, with apple-ui-design as the guiding principle (clarity, deference, one primary action,
   details one click away). The canvas follows the app's light/dark theme (`--scene-*`, `--lane`,
   `--tape` tokens).
-  - *Canvas:* aisle lanes in true feet (10 ft two-way, 6 ft one-way) with amber floor tape — dashed
+  - *Canvas:* aisle lanes in true feet — each route's width is its envelope (the wider of the
+    vehicle and the pallet from the Sizing loads) plus the B56.5 full-speed clearance each side; a
+    two-way, two-lane route holds two envelopes with one shared clearance between them — with amber floor tape — dashed
     two-way, solid with arrowheads one-way, ticks for single-lane; point tiles with name pills;
     amber dots at intersections; rounded corners where the vehicle turns.
   - *Floating tools:* Select V · Route R · One-way D · Place P · Flow F · Scale S, Undo/Redo; routes
-    snap square (Shift = any angle) with a live length; Enter or double-click finishes; hint pill
+    snap square (Shift = any angle) and then to fixed objects (a corner first, else the nearest edge,
+    within 12 screen px) with a live length; a Route options bar sets **Bidirectional / One-way** and
+    **Two lanes / Single lane** for new routes (one-way routes are stored single-lane); Enter or double-click finishes; hint pill
     and messages on the canvas; Flows / B56.5 / Fit top right.
   - *Side cards:* Drawing & scale · **Place on routes** (each Sizing location name with a suggested
     type and Place / + Position; Charger, Parking) · Selected · **Ready to run?** (red / amber / blue
@@ -733,7 +737,9 @@ step ribbon is unchanged.
     layout" and Δ only when a link would change a distance. Type scale 11 / 13 / 15 / 30, spacing
     4 / 8 / 16 / 24, two shadow levels, targets 36–44 px; stronger tape and lanes in light mode.
 - **Second half of the editor:** curves (bend handle, spline), Repeat ×N with names, copy/paste,
-  Shift-drag box select, fixed objects (walls, columns), footprints to scale, the B56.5 overlay with
+  Shift-drag box select, fixed objects (walls, columns), footprints to scale, nodes editable from
+  the panel (position x / y in the display unit; a junction can be turned into a pick, drop, charger
+  or parking point), the B56.5 overlay with
   callouts and one-click single-lane; undo keeps only what each step changed.
 - **Run mode:**
   - *Verdict row* per vehicle type: picture, fleet stepper (stored as `simSettings.fleet`, default the

@@ -4,7 +4,7 @@
 // is under the minimum (§5.9). Flows are the project's flows linked to points.
 
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import { applyClearance, B56_5_RULE, envelopes, segmentClearances, type ClearanceRule, type SegmentClearance } from './clearance'
+import { applyClearance, B56_5_RULE, envelopes, laneWidthFt, segmentClearances, type ClearanceRule, type SegmentClearance } from './clearance'
 import { roundCorners } from './corners'
 import { linkedFlows, type ProjectFlowLike } from './readiness'
 import type { SimFlow, SimLayout } from './types'
@@ -14,6 +14,9 @@ export interface RunInputs {
   flows: SimFlow[]
   /** B56.5 result per drawn route (what was slowed or blocked, and why). */
   clearances: SegmentClearance[]
+  /** Aisle width to draw per route, ft — envelope (vehicle or pallet) plus B56.5 clearances. Absent
+   *  when no vehicle is known for the route yet. */
+  laneWidths: Record<string, number>
 }
 
 export function runInputs(
@@ -28,7 +31,9 @@ export function runInputs(
   const env = envelopes(drawn, linked.map(f => ({ ...f, vehicleWidthFt: veh(f.vehicleId)?.calc.widthFt ?? 0 })), payloadWidthFt)
   const clearances = segmentClearances(drawn, env, rule)
   const radius = Math.max(0, ...linked.map(f => veh(f.vehicleId)?.calc.turningRadiusFt ?? 0))
-  return { layout: roundCorners(applyClearance(drawn, clearances), radius), flows: linked, clearances }
+  const laneWidths: Record<string, number> = {}
+  for (const s of drawn.segments) { const e = env(s.id); if (e > 0) laneWidths[s.id] = laneWidthFt(s, e, rule) }
+  return { layout: roundCorners(applyClearance(drawn, clearances), radius), flows: linked, clearances, laneWidths }
 }
 
 /** The project's B56.5 rule: its stored values, else the owner rule (D-2). */

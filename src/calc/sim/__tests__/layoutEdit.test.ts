@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addObject, copyPoints, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
+  addObject, copyPoints, snapToObjects, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
   addPoint, addSegment, emptyLayout, flowRefusal, flowStartRefusal, hitTest, linkFlow, linkSuggestions, measureFlows, notConnected,
   placeOnSegment, removePoint, rescaleLayout, routeDistanceFt, splitSegment, updatePoint, updateSegment, withLayoutDistance,
 } from '../layoutEdit'
@@ -28,6 +28,13 @@ describe('placing points and routes', () => {
     const { L, a, b } = line()
     expect(addSegment(L, a, a).id).toBeNull()
     expect(addSegment(L, b, a).id).toBeNull()
+  })
+
+  it('stores a one-way route as single-lane', () => {
+    const { L, a } = line()
+    const C = addPoint(L, { x: 0, y: 50 }, 'junction')
+    const S = addSegment(C.layout, a, C.id, { dir: 'ab', lane: 'two' })
+    expect(S.layout.segments.find(s => s.id === S.id)).toMatchObject({ dir: 'ab', lane: 'single' })
   })
 
   it('a 400 ft straight route measures 400 ft; one-way A→B makes B→A "No route" (acceptance 2)', () => {
@@ -201,5 +208,20 @@ describe('fixed objects (spec §5.8)', () => {
   it('a turned object has turned corners', () => {
     const c = objectCorners({ id: 'o', x: 0, y: 0, w: 10, h: 2, rotationDeg: 90 })
     expect(c.map(p => [Math.round(p.x), Math.round(p.y)])).toEqual([[6, -4], [6, 6], [4, 6], [4, -4]])
+  })
+})
+
+describe('routes snap to objects', () => {
+  const L = { points: [], segments: [], objects: [{ id: 'o', x: 10, y: 10, w: 20, h: 4 }] }
+  it('snaps to a corner first, then to an edge, else leaves the spot', () => {
+    expect(snapToObjects(L, { x: 10.6, y: 9.5 }, 1)).toEqual({ at: { x: 10, y: 10 }, snapped: 'corner' })
+    expect(snapToObjects(L, { x: 20, y: 9.4 }, 1)).toEqual({ at: { x: 20, y: 10 }, snapped: 'edge' })
+    expect(snapToObjects(L, { x: 50, y: 50 }, 1)).toEqual({ at: { x: 50, y: 50 }, snapped: null })
+  })
+  it('new routes take the chosen direction and lanes', () => {
+    const { L: line0 } = line()
+    const J = addPoint(line0, { x: 0, y: 50 }, 'junction')
+    const s = addSegment(J.layout, line0.points[0].id, J.id, { dir: 'ab', lane: 'single' })
+    expect(s.layout.segments.at(-1)).toMatchObject({ dir: 'ab', lane: 'single' })
   })
 })

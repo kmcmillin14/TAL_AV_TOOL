@@ -149,3 +149,14 @@ export function envelopes(
   }
   return id => Math.max(loaded.get(id) ?? 0, empty)
 }
+
+/**
+ * How wide a route's aisle is drawn, ft (owner, 2026-11-11: "factor pallet size in lane generation"):
+ * the envelope (wider of vehicle and pallet) plus the B56.5 full-speed clearance each side — and for a
+ * two-way, two-lane route both envelopes with one shared clearance between them (D-2).
+ */
+export function laneWidthFt(seg: { dir: 'two' | 'ab' | 'ba'; lane?: 'single' | 'two' }, envelopeFt: number, rule: ClearanceRule = B56_5_RULE): number {
+  const c = rule.fullSpeedIn / 12
+  const twoLanes = seg.dir === 'two' && seg.lane !== 'single'
+  return twoLanes ? 2 * envelopeFt + 2 * c + (rule.sharedBetweenVehicles ? c : 2 * c) : envelopeFt + 2 * c
+}

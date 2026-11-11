@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { applyClearance, B56_5_RULE, envelopes, REDUCED_CLEARANCE, segmentClearances } from '../clearance'
+import { applyClearance, B56_5_RULE, envelopes, laneWidthFt, REDUCED_CLEARANCE, segmentClearances } from '../clearance'
 import type { SimLayout, SimSegment } from '../types'
 
 const ENV = 4                                     // ft envelope width
@@ -83,5 +83,20 @@ describe('envelope width (acceptance 29)', () => {
     expect(env('AB')).toBe(4.5)
     expect(env('AC')).toBe(4.19)
     expect(envelopes(L, [{ fromPointId: 'A', toPointId: 'B', vehicleWidthFt: 4.19 }], 3.33)('AB')).toBe(4.19)
+  })
+})
+
+describe('lane width from the pallet (owner 2026-11-11)', () => {
+  const c = 19.69 / 12
+  it('single lane: envelope + full-speed clearance each side', () => {
+    expect(laneWidthFt({ dir: 'ab' }, 4.5)).toBeCloseTo(4.5 + 2 * c, 6)
+    expect(laneWidthFt({ dir: 'two', lane: 'single' }, 4.5)).toBeCloseTo(4.5 + 2 * c, 6)
+  })
+  it('two lanes: two envelopes, outer clearances and one shared clearance', () => {
+    expect(laneWidthFt({ dir: 'two', lane: 'two' }, 4.5)).toBeCloseTo(9 + 3 * c, 6)
+    expect(laneWidthFt({ dir: 'two', lane: 'two' }, 4.5, { ...B56_5_RULE, sharedBetweenVehicles: false })).toBeCloseTo(9 + 4 * c, 6)
+  })
+  it('a wider pallet widens the lane', () => {
+    expect(laneWidthFt({ dir: 'ab' }, 5)).toBeGreaterThan(laneWidthFt({ dir: 'ab' }, 4.19))
   })
 })

@@ -198,6 +198,7 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
       {/* The map, playing the same run. */}
       <LayoutCanvas
         layout={inputs.layout}
+        laneWidths={inputs.laneWidths}
         panAlways
         showLabels={labels}
         follow={followed ? { x: followed.x, y: followed.y } : null}

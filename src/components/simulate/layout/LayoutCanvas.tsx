@@ -10,7 +10,7 @@ import { memo, useEffect, useMemo, useRef, useState, type PointerEvent as RPoint
 import Icon from '@/src/design-system/components/Icon'
 import type { SegmentClearance } from '@/src/calc/sim/clearance'
 import { segmentGeometry } from '@/src/calc/sim/geometry'
-import { hitTest, objectCorners } from '@/src/calc/sim/layoutEdit'
+import { hitTest, objectCorners, snapToObjects } from '@/src/calc/sim/layoutEdit'
 import type { SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/types'
 import type { ProjectFlow } from './useLayoutEditor'
 
@@ -28,7 +28,12 @@ export interface CanvasPointer {
   at: XY
   hit: Hit
   shift: boolean
+  /** One screen pixel, ft — for snapping distances that should feel the same at every zoom. */
+  px: number
 }
+
+/** Snap distance for routes to objects, screen pixels. */
+export const SNAP_PX = 12
 
 interface Props {
   layout: SimLayout
@@ -74,6 +79,8 @@ interface Props {
   follow?: XY | null
   /** Point names on the map (Run mode can hide them). Default on. */
   showLabels?: boolean
+  /** Aisle width per route, ft (envelope + B56.5 clearances); routes without one use 10 ft / 6 ft. */
+  laneWidths?: Record<string, number>
 }
 
 const NONE = new Set<string>()
@@ -159,12 +166,12 @@ export default function LayoutCanvas(props: Props) {
     if (props.panAlways || e.button === 1 || (e.button === 0 && !hit && panOnEmpty && !e.shiftKey)) {
       pan.current = { sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y }
       e.currentTarget.setPointerCapture(e.pointerId)
-      if (e.button === 0 && !props.panAlways) onPointer({ type: 'down', at, hit: null, shift: false })   // a click on empty space clears the selection
+      if (e.button === 0 && !props.panAlways) onPointer({ type: 'down', at, hit: null, shift: false, px: 1 / view.ppf })   // a click on empty space clears the selection
       return
     }
     if (e.button !== 0) return
     e.currentTarget.setPointerCapture(e.pointerId)
-    onPointer({ type: 'down', at, hit, shift: e.shiftKey })
+    onPointer({ type: 'down', at, hit, shift: e.shiftKey, px: 1 / view.ppf })
   }
   const move = (e: RPointerEvent<HTMLDivElement>) => {
     const at = toFt(e)
@@ -174,11 +181,11 @@ export default function LayoutCanvas(props: Props) {
       setView(v => ({ ...v, x: p.vx - (e.clientX - p.sx) / v.ppf, y: p.vy - (e.clientY - p.sy) / v.ppf }))
       return
     }
-    onPointer({ type: 'move', at, hit: null, shift: e.shiftKey })   // moves need no hit-test (drags only)
+    onPointer({ type: 'move', at, hit: null, shift: e.shiftKey, px: 1 / view.ppf })   // moves need no hit-test (drags only)
   }
   const up = (e: RPointerEvent<HTMLDivElement>) => {
     if (pan.current) { pan.current = null; return }
-    onPointer({ type: 'up', at: toFt(e), hit: null, shift: e.shiftKey })
+    onPointer({ type: 'up', at: toFt(e), hit: null, shift: e.shiftKey, px: 1 / view.ppf })
   }
 
   const shown = (p: SimPoint) => (offset?.ids.has(p.id) ? { ...p, x: p.x + offset.d.x, y: p.y + offset.d.y } : p)
@@ -187,6 +194,10 @@ export default function LayoutCanvas(props: Props) {
   const selected = (kind: 'point' | 'segment' | 'flow' | 'object', id: string) =>
     (selection?.kind === kind && selection.id === id) || (kind === 'point' && selection?.kind === 'points' && selection.ids.includes(id))
   const px = 1 / view.ppf                       // one screen pixel, in feet
+  // A rounded corner (`J~arc`) or trimmed route keeps the width of the route it came from.
+  const lanes = props.laneWidths ?? {}
+  const widest = Math.max(0, ...Object.values(lanes))
+  const laneOf = (id: string) => lanes[id] ?? (id.includes('~') ? widest || undefined : undefined)
   // Names collide when two pills would overlap on screen: those show a short form (C1, P2…). Worked
   // out per layout and zoom, not per frame (Run mode re-renders every frame).
   const crowded = useMemo(() => {
@@ -242,7 +253,7 @@ export default function LayoutCanvas(props: Props) {
 
         {clearances && <ClearanceOverlay layout={layout} results={clearances} px={px} />}
 
-        {driven.segments.map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} />)}
+        {driven.segments.map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={laneOf(s.id)} />)}
         {driven.segments.map(s => (
           <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} selected={selected('segment', s.id.split('~')[0])} />
         ))}
@@ -255,7 +266,8 @@ export default function LayoutCanvas(props: Props) {
         })}
 
         {rubberFrom && cursor && (() => {
-          const end = props.snapSquare && !cursor.shift ? squareTo(rubberFrom, cursor.at) : cursor.at
+          const square = props.snapSquare && !cursor.shift ? squareTo(rubberFrom, cursor.at) : cursor.at
+          const end = props.snapSquare ? snapToObjects(layout, square, SNAP_PX * px).at : square
           const len = Math.hypot(end.x - rubberFrom.x, end.y - rubberFrom.y)
           return (
             <g>
@@ -321,11 +333,11 @@ function pathOf(a: XY, b: XY, s: SimSegment): string {
   return Array.from({ length: n + 1 }, (_, i) => { const q = g.at((g.length * i) / n); return `${i ? 'L' : 'M'}${q.x} ${q.y}` }).join('')
 }
 
-/** The aisle a route runs in: a wide lane in true feet (10 ft two-way, 6 ft one-way), as in the
- *  proof of concept — never thinner than a few pixels. */
-const Lane = memo(function Lane({ s, a, b, px }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number }) {
+/** The aisle a route runs in, in true feet: envelope (vehicle or pallet) + B56.5 clearances when the
+ *  route's vehicle is known, else 10 ft two-way / 6 ft one-way as in the proof of concept. */
+const Lane = memo(function Lane({ s, a, b, px, widthFt }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number; widthFt?: number }) {
   if (!a || !b) return null
-  const w = s.dir === 'two' && s.lane !== 'single' ? 10 : 6
+  const w = widthFt ?? (s.dir === 'two' && s.lane !== 'single' ? 10 : 6)
   return <path d={pathOf(a, b, s)} className="sim-lane" strokeWidth={Math.max(w, 4 * px)} />
 })
 

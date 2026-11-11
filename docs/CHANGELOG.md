@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation: snapping, editable nodes, route direction, pallet-sized lanes
+
+Owner: "Routes need to snap to objects, nodes editable, single and bidirectional, factor pallet size
+in lane generation."
+
+- **Snap to objects:** route points snap to a fixed object's corner, else its nearest edge, within
+  12 screen px (`snapToObjects`, `src/calc/sim/layoutEdit.ts`); the preview shows the snapped point.
+- **Editable nodes:** the selected point's x / y can be typed (display unit); a junction can be
+  turned into a pick, drop, charger or parking point.
+- **Single / bidirectional:** a Route options bar sets direction and lanes for new routes
+  (`addSegment(..., kind)`); one-way routes are stored single-lane.
+- **Pallet-sized lanes:** lane width = envelope (wider of vehicle and pallet) + B56.5 clearance each
+  side, two-lane routes with one shared middle clearance (`laneWidthFt`, `src/calc/sim/clearance.ts`);
+  the editor and run view draw these widths. Drawing only — simulation results are unchanged.
+
 ## 2026-11-11 — Fleet simulation: apple-ui-design pass and cleanup
 
 Owner review with apple-ui-design (TAL fonts and colours kept); all twelve suggestions applied, with
