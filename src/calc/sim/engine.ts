@@ -98,6 +98,8 @@ export interface SimVehicle {
   mustCharge: boolean
   chargeTrips: number
   socMin: number
+  /** Moves this vehicle delivered (per-vehicle table; Σ = the type's `done`, acceptance 16). */
+  done: number
   tm: TimeSplit
   /** Heading on arrival at every pick/drop and the heading the point requires (acceptance 25). */
   handlingLog: { node: number; arrivalH: number; required: number; repoSec: number }[]
@@ -230,7 +232,7 @@ export function createSim(
         i, id: `${vid}-${j + 1}`, prof, node, atNode: true, nodes: [node], edges: [], pi: 1, s: 0,
         x: p.x, y: p.y, th: -Math.PI / 2, h: -Math.PI / 2, speed: 0, mode: 'home', job: null, loaded: false,
         payload: P.payloadFt ?? null, soc, held: new Set([z]), heldJ: new Set(), tl: 0, repo: 0, want: 0, moved: 0, waitFor: null, waitZone: null, blockedBy: null, headOn: false,
-        cycT: 0, parkT: 0, mustCharge: false, chargeTrips: 0, socMin: soc,
+        cycT: 0, parkT: 0, mustCharge: false, chargeTrips: 0, socMin: soc, done: 0,
         tm: emptySplit(), handlingLog: [],
       })
     }
@@ -652,7 +654,7 @@ export function step(S: SimState) {
           v.mode = 'toDrop'; setRoute(S, v, v.job!.F.to)
         } else {
           const o = v.job!, F = o.F
-          F.done++; F.misSum += S.t - o.td
+          F.done++; v.done++; F.misSum += S.t - o.td
           const hr = Math.floor(S.t / 3600); S.hourly[hr] = (S.hourly[hr] ?? 0) + 1
           S.orders.splice(S.orders.indexOf(o), 1)
           afterDrop(S, v)
@@ -721,3 +723,29 @@ export function runFor(S: SimState, seconds: number): SimState {
   return S
 }
 
+
+/** Points along edges, `from` ft into the first, every ~2 ft — for drawing a route. */
+function polyline(G: Graph, edges: Edge[], from = 0): { x: number; y: number }[] {
+  const out: { x: number; y: number }[] = []
+  edges.forEach((e, i) => {
+    const len = edgeLen(G, e), s0 = i === 0 ? Math.min(from, len) : 0, n = Math.max(1, Math.ceil((len - s0) / 2))
+    for (let k = i === 0 ? 0 : 1; k <= n; k++) { const p = poseOn(G, e, s0 + ((len - s0) * k) / n); out.push({ x: p.x, y: p.y }) }
+  })
+  return out
+}
+
+/**
+ * A vehicle's job legs (acceptance 15): `empty` — from where it is to its pick (while heading there);
+ * `loaded` — pick to drop (still ahead), or from where it is to the drop once loaded. Both empty when
+ * it has no job (parked, charging, going home). Read-only.
+ */
+export function jobLegs(S: SimState, v: SimVehicle): { empty: { x: number; y: number }[]; loaded: { x: number; y: number }[] } {
+  const none = { empty: [], loaded: [] }
+  if (!v.job) return none
+  const ahead = () => [{ x: v.x, y: v.y }, ...polyline(S.G, v.edges.slice(v.pi - 1), v.atNode ? 0 : v.s)]
+  const pickToDrop = () => { const r = route(S.G, v.job!.F.from, v.job!.F.to); return r ? polyline(S.G, r.edges) : [] }
+  if (v.mode === 'toPick') return { empty: ahead(), loaded: pickToDrop() }
+  if (v.mode === 'pick') return { empty: [], loaded: pickToDrop() }
+  if (v.mode === 'toDrop') return { empty: [], loaded: ahead() }
+  return none
+}

@@ -2,7 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recharts'
 import type { CapexBarsSeries } from '@/src/calc/romCharts'
-import { ChartFrame, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, usdShort } from './recharts/ChartKit'
+import { ChartFrame, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, usdShort } from '@/src/components/charts/ChartKit'
 
 interface Props { series: CapexBarsSeries }
 

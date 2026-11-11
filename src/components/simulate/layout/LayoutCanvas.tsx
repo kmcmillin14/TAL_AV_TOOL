@@ -61,7 +61,7 @@ interface Props {
   /** Bump to fit the view to the layout and drawing. */
   fitKey?: number
   /** Shown over an empty layout. */
-  emptyPrompt?: string
+  emptyPrompt?: ReactNode
   /** Route tool: the preview snaps square to the last point unless Shift is held. */
   /** Where the next drawing click lands (the editor's `snapDraw`): drawn as a marker — a ring on a
    *  point, a diamond on a route, guides to lined-up points — with the route preview from `rubberFrom`. */

@@ -273,6 +273,7 @@ export default function RunView({ project, vehicles, vehicleById, settings, flee
             <option value={-1}>Follow: none</option>
             {S?.veh.map(v => <option key={v.i} value={v.i}>{v.id}</option>)}
           </select>
+          {followed && <span className="sim-legs-key"><i className="empty" />Empty to pick<i className="loaded" />Loaded to drop</span>}
         </div>
         <div className="sim-hud" onPointerDown={e => e.stopPropagation()}>
           <button type="button" className="btn primary btn-sm" onClick={() => setRunning(r => !r)}>{running ? 'Pause' : 'Play'}</button>

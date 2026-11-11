@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react'
 import { ResponsiveContainer } from 'recharts'
 
-/** Shared themed bits for the ROM Recharts charts — keeps every chart on the TAL
+/** Shared themed bits for the app's Recharts charts (ROM and Simulate) — keeps every chart on the TAL
  *  system (Toyota Type, brand palette, token colors) and out of the generic
  *  charting-library look. */
 

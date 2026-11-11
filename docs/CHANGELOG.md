@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation Milestone 5 completed: job legs, tables with CSV, shared charts
+
+- **Follow a vehicle** shows its empty leg to the pick and loaded leg to the drop (acceptance 15,
+  `jobLegs`).
+- **Vehicles tables** (by type, by vehicle with totals) and **Copy CSV** on every run table; per-vehicle
+  totals equal the fleet totals (acceptance 16; `SimVehicle.done`, `SimResults.vehicles`). Time shares
+  now add to 100% (repositioning counted under Pick / drop).
+- **ChartKit** moved to `src/components/charts/` (shared); the hour chart uses it. ROM charts unchanged.
+- **Open the example site** on an empty Simulate page.
+- Simulation results unchanged (the per-vehicle counter is bookkeeping only).
+
 ## 2026-11-11 — Fleet simulation: drawing that snaps to endpoints
 
 Owner: "the drawing tools are not working or snapping to the endpoints. this needs to be smooth and

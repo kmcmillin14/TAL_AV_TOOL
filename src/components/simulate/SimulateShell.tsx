@@ -106,7 +106,13 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
-          emptyPrompt={empty ? 'Draw routes along the aisles — or Load sample to see a finished site.' : undefined}
+          emptyPrompt={!empty ? undefined : canSample ? (
+            <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
+              <p>Draw routes along the aisles — or start from a finished site.</p>
+              <button type="button" className="btn primary" onClick={loadSample}>Open the example site</button>
+              <span>The CB18 proof-of-concept site: 4 flows, chargers and parking, ready to Run.</span>
+            </div>
+          ) : 'Draw routes along the aisles.'}
         />
       )}
     </>

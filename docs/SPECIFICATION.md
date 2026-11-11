@@ -765,6 +765,20 @@ step ribbon is unchanged.
     variability is a "Met in k/10" chip that opens to the ranges. Assumptions (pace, safety, demand,
     arrivals, seed) are saved with the project (`simSettings`).
   - Nothing in the run changes the sized fleet or the quote by itself (see Milestone 5).
+- **Run details, completed (Milestone 5).**
+  - *Follow a vehicle* (acceptance 15): its job legs are drawn — dashed empty leg from where it is to
+    its pick, solid loaded leg to the drop (from where it is once loaded), rings on both ends; a key
+    beside the Follow menu (`jobLegs`, `src/calc/sim/engine.ts`).
+  - *Tables with Copy CSV* (acceptance 16): Flows, **Vehicles** (by type, and by vehicle with a
+    totals row — moves, moves/h, busy, time split, battery, charge trips) and Locations. Each table's
+    CSV is the rows it shows (`DataTable`, `toCsv` in `src/lib/utils/csv.ts`). Per-vehicle moves and
+    time add up exactly to the type's (`SimResults.vehicles`). Repositioning at a pick/drop counts
+    as "Pick / drop", so time shares add to 100%.
+  - *Hour by hour* is drawn with the app's shared chart kit, now `src/components/charts/ChartKit.tsx`
+    (moved from `components/rom`, which Simulate may not import): bars for moves delivered, the
+    target dashed, the most orders waiting each hour on the right axis.
+  - *Example site:* an empty Simulate page on a project with no flows offers **Open the example
+    site** on the canvas (the same sample as ⋯ → Load sample).
 - **Simulated fleet in pricing (built, Milestone 5; D-1, raise-only).** Quoted numbers can move.
   - *Use N in pricing:* a verdict row offers it only when the stepper value **Meets** and is above
     the Fleet Engine's figure for that type. While it is offered, the run also checks one vehicle

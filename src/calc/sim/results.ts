@@ -2,7 +2,7 @@
 // Verdict is utilization-based against the project's own target utilization (spec §6.7, D-9).
 
 import type { SimState } from './engine'
-import type { SimResults, TimeSplit, TypeResult, Verdict } from './types'
+import type { SimResults, TimeSplit, TypeResult, VehicleResult, Verdict } from './types'
 
 export const VERDICT = {
   /** Minimum simulated time before any verdict but "Warming up". */
@@ -59,6 +59,14 @@ export function results(S: SimState): SimResults {
       backlogTrend, verdict,
     })
   }
+  const vehicles: VehicleResult[] = S.veh.map(v => {
+    const busy = v.tm.travel + v.tm.handle + v.tm.reposition + v.tm.wait
+    return {
+      id: v.id, vehicleId: v.prof.vehicle.id, done: v.done, perHr: hrs > 0 ? v.done / hrs : 0,
+      utilization: busy + v.tm.idle > 0 ? busy / (busy + v.tm.idle) : 0,
+      time: { ...v.tm }, soc: v.soc, socMin: v.socMin, chargeTrips: v.chargeTrips,
+    }
+  })
   const verdict = types.reduce<Verdict>((w, r) => (RANK[r.verdict] > RANK[w] ? r.verdict : w), types.length ? 'meets' : 'warming')
   const generated = S.flows.reduce((a, F) => a + F.gen, 0)
   const delivered = S.flows.reduce((a, F) => a + F.done, 0)
@@ -66,7 +74,7 @@ export function results(S: SimState): SimResults {
   return {
     t: S.t,
     verdict: S.t < VERDICT.WARMUP_S && !S.gridlock ? 'warming' : verdict,
-    types,
+    types, vehicles,
     flows: S.flows.map(F => ({
       flowId: F.f.id, measuredFt: F.measuredFt, perHr: hrs > 0 ? F.done / hrs : 0,
       mission: F.done ? F.misSum / F.done : null, wait: F.dispatched ? F.waitSum / F.dispatched : null,

@@ -2,7 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts'
 import type { UtilizationSeries } from '@/src/calc/romCharts'
-import { ChartFrame, ChartTooltip, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, CURSOR } from './recharts/ChartKit'
+import { ChartFrame, ChartTooltip, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, CURSOR } from '@/src/components/charts/ChartKit'
 
 interface Props { series: UtilizationSeries }
 

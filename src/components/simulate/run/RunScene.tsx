@@ -7,7 +7,7 @@
 //   gridlock  — a pulsing red ring where the run stopped
 
 import { useMemo, useRef } from 'react'
-import type { SimState } from '@/src/calc/sim/engine'
+import { jobLegs, type SimState } from '@/src/calc/sim/engine'
 
 type VehicleState = 'travel' | 'handle' | 'wait' | 'charge' | 'idle'
 /** The vehicle states, in legend order — the one list for the map, its legend and the time split. */
@@ -45,6 +45,7 @@ export function RunScene({ S, follow, labels, px }: { S: SimState; follow: numbe
       <defs>
         <radialGradient id="sim-heat"><stop offset="0" stopColor="var(--bad)" stopOpacity="0.55" /><stop offset="1" stopColor="var(--bad)" stopOpacity="0" /></radialGradient>
       </defs>
+      {follow >= 0 && S.veh[follow] && <JobLegs S={S} v={S.veh[follow]} px={px} />}
       {halos.map(({ i, k }) => <circle key={i} cx={pts[i].x} cy={pts[i].y} r={14 * (0.4 + k)} fill="url(#sim-heat)" opacity={0.25 + 0.75 * k} />)}
       {S.veh.map(v => {
         const e = ease.current.get(v.i) ?? { off: 0, h: v.h }
@@ -72,6 +73,22 @@ export function RunScene({ S, follow, labels, px }: { S: SimState; follow: numbe
         )
       })}
       {gl && <g transform={`translate(${gl.x} ${gl.y}) scale(${px})`}><circle r={16 + 6 * Math.sin(performance.now() / 200)} className="sim-gridlock" /></g>}
+    </g>
+  )
+}
+
+/** The followed vehicle's job (acceptance 15): dashed empty leg to the pick, solid loaded leg to the
+ *  drop, rings on both ends. */
+function JobLegs({ S, v, px }: { S: SimState; v: SimState['veh'][number]; px: number }) {
+  const { empty, loaded } = jobLegs(S, v)
+  const d = (pts: { x: number; y: number }[]) => pts.map((p, i) => `${i ? 'L' : 'M'}${p.x} ${p.y}`).join('')
+  const pick = v.job && S.G.points[v.job.F.from], drop = v.job && S.G.points[v.job.F.to]
+  return (
+    <g className="sim-legs">
+      {empty.length > 1 && <path d={d(empty)} className="sim-leg-empty" vectorEffect="non-scaling-stroke" />}
+      {loaded.length > 1 && <path d={d(loaded)} className="sim-leg-loaded" vectorEffect="non-scaling-stroke" />}
+      {pick && v.mode !== 'toDrop' && <circle cx={pick.x} cy={pick.y} r={11 * px} className="sim-leg-end pick" />}
+      {drop && <circle cx={drop.x} cy={drop.y} r={11 * px} className="sim-leg-end drop" />}
     </g>
   )
 }

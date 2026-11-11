@@ -2,7 +2,7 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from 'recharts'
 import type { PaybackSeries } from '@/src/calc/romCharts'
-import { ChartFrame, ChartTooltip, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, CURSOR, usdShort } from './recharts/ChartKit'
+import { ChartFrame, ChartTooltip, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, CURSOR, usdShort } from '@/src/components/charts/ChartKit'
 
 interface Props { series: PaybackSeries }
 

@@ -2,7 +2,7 @@
 
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine } from 'recharts'
 import type { BatterySocSeries } from '@/src/calc/romCharts'
-import { ChartFrame, ChartTooltip, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, CURSOR, pct } from './recharts/ChartKit'
+import { ChartFrame, ChartTooltip, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, CURSOR, pct } from '@/src/components/charts/ChartKit'
 import { seriesColor } from '../palette'
 
 interface Props { series: BatterySocSeries }

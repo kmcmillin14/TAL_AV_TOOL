@@ -2,7 +2,7 @@
 
 import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts'
 import type { TcoSeries } from '@/src/calc/romCharts'
-import { ChartFrame, ChartTooltip, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, CURSOR, usdShort } from './recharts/ChartKit'
+import { ChartFrame, ChartTooltip, ChartCaption, TICK, AXIS_STROKE, GRID_STROKE, CURSOR, usdShort } from '@/src/components/charts/ChartKit'
 
 interface Props { series: TcoSeries }
 

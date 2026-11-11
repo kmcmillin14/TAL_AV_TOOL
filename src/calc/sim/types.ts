@@ -157,10 +157,24 @@ export interface TypeResult {
   verdict: Verdict
 }
 
+/** One vehicle's share of the run (acceptance 16: these add up to the type's totals). */
+export interface VehicleResult {
+  id: string
+  vehicleId: string
+  done: number
+  perHr: number
+  utilization: number
+  time: TimeSplit
+  soc: number
+  socMin: number
+  chargeTrips: number
+}
+
 export interface SimResults {
   t: number
   verdict: Verdict
   types: TypeResult[]
+  vehicles: VehicleResult[]
   flows: FlowResult[]
   gridlock: Gridlock | null
   flags: SimFlag[]

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { chargingAvailability } from '../../fleet'
 import { cycleBreakdown } from '../../flowMetrics'
-import { createSim, DT, layoutReady, runFor, step, type SimState } from '../engine'
+import { createSim, DT, jobLegs, layoutReady, runFor, step, type SimState } from '../engine'
 import { angleDiff, distanceToGeometry } from '../geometry'
 import { results } from '../results'
 import type { SimFlow, SimLayout, VehicleSimData } from '../types'
@@ -27,6 +27,47 @@ describe('acceptance 4 — reproducible', () => {
     const b = sim(layout, flows, over)
     for (let t = 0; t < 2 * 3600; t += 7.5) runFor(b, 7.5)   // like a different playback speed
     expect(JSON.stringify(results(b))).toBe(JSON.stringify(results(a)))
+  })
+})
+
+describe('acceptance 15 — a vehicle\'s empty and loaded legs to its current pick/drop', () => {
+  it('empty: here → pick; loaded: pick → drop, or here → drop once loaded', () => {
+    const { layout, flows } = sampleLayout()
+    const S = sim(layout, flows, { fleet: { cb18: 3 } })
+    const near = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y) < 0.01
+    const seen = new Set<string>()
+    for (let i = 0; i < 2 * 3600 / 0.25 && seen.size < 2; i++) {
+      step(S)
+      for (const v of S.veh) {
+        const L = jobLegs(S, v), job = v.job
+        if (!job) { expect(L).toEqual({ empty: [], loaded: [] }); continue }
+        const pick = S.G.points[job.F.from], drop = S.G.points[job.F.to]
+        if (v.mode === 'toPick' && !v.atNode) {
+          expect(near(L.empty[0], v)).toBe(true); expect(near(L.empty.at(-1)!, pick)).toBe(true)
+          expect(near(L.loaded[0], pick)).toBe(true); expect(near(L.loaded.at(-1)!, drop)).toBe(true)
+          seen.add('toPick')
+        }
+        if (v.mode === 'toDrop' && !v.atNode) {
+          expect(L.empty).toEqual([]); expect(near(L.loaded[0], v)).toBe(true); expect(near(L.loaded.at(-1)!, drop)).toBe(true)
+          seen.add('toDrop')
+        }
+      }
+    }
+    expect([...seen].sort()).toEqual(['toDrop', 'toPick'])
+  })
+})
+
+describe('acceptance 16 — per-vehicle totals equal the fleet totals', () => {
+  it('moves and every time bucket add up per type', () => {
+    const { layout, flows } = sampleLayout()
+    const r = results(runFor(sim(layout, flows, { fleet: { cb18: 4 }, arrivals: 'random', seed: 2 }), 8 * 3600))
+    for (const t of r.types) {
+      const vs = r.vehicles.filter(v => v.vehicleId === t.vehicleId)
+      expect(vs).toHaveLength(t.fleet)
+      expect(vs.reduce((a, v) => a + v.done, 0)).toBe(t.done)
+      for (const k of Object.keys(t.time) as (keyof typeof t.time)[]) expect(vs.reduce((a, v) => a + v.time[k], 0)).toBeCloseTo(t.time[k], 6)
+      expect(vs.reduce((a, v) => a + v.chargeTrips, 0)).toBe(t.chargeTrips)
+    }
   })
 })
 

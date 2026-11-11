@@ -6,7 +6,7 @@
 // handle), moves and box-selects points (Shift-drag), copies and pastes (⌘C / ⌘V). The Points
 // palette's Object draws walls and columns; "B56.5 clearances" shows the clearance path (§5.9).
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { linkedFlows } from '@/src/calc/sim/readiness'
 import { laneWidthFt } from '@/src/calc/sim/clearance'
 import { clearanceRule, payloadFt, runInputs } from '@/src/calc/sim/runInputs'
@@ -92,7 +92,7 @@ interface Props {
   fleet: FleetSummary
   checks: ReadinessCheck[]
   unitSystem: UnitSystem
-  emptyPrompt?: string
+  emptyPrompt?: ReactNode
 }
 
 export default function LayoutEditor({ project, vehicles, vehicleById, settings, fleet, checks, unitSystem, emptyPrompt }: Props) {

@@ -6,6 +6,9 @@
 // is silently invented.
 
 import { memo } from 'react'
+import { Bar, CartesianGrid, ComposedChart, Line, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts'
+import { AXIS_STROKE, ChartCaption, ChartFrame, ChartTooltip, GRID_STROKE, TICK } from '@/src/components/charts/ChartKit'
+import DataTable, { type Cell, type Col } from './DataTable'
 import type { SimState } from '@/src/calc/sim/engine'
 import type { RunInputs } from '@/src/calc/sim/runInputs'
 import type { SimResults, SimSettings, TimeSplit } from '@/src/calc/sim/types'
@@ -30,6 +33,23 @@ interface Props {
 }
 
 const SPLIT = STATES as [keyof TimeSplit, string][]
+/** Seconds in a shown state — repositioning at a pick/drop counts as "Pick / drop", so shares add to 100%. */
+const inState = (t: TimeSplit, k: keyof TimeSplit) => (k === 'handle' ? t.handle + t.reposition : t[k])
+const FLOW_COLS: Col[] = [
+  { label: 'Flow', left: true }, { label: 'Moves/h target' }, { label: 'Sizing distance' }, { label: 'Driven' }, { label: 'Engine cycle' },
+  { label: 'Engine demand (veh)' }, { label: 'Sim moves/h', band: true }, { label: 'Sim mission', band: true }, { label: 'Avg wait', band: true },
+]
+const TYPE_COLS: Col[] = [
+  { label: 'Vehicle type', left: true }, { label: 'Fleet' }, { label: 'Moves' }, { label: 'Moves/h' }, { label: 'Target/h' },
+  { label: 'Busy' }, { label: 'Avg order wait' }, { label: 'Battery avg / lowest' }, { label: 'Charge trips' },
+]
+const VEH_COLS: Col[] = [
+  { label: 'Vehicle', left: true }, { label: 'Type', left: true }, { label: 'Moves' }, { label: 'Moves/h' }, { label: 'Busy' },
+  ...SPLIT.map(([, l]) => ({ label: l })), { label: 'Battery end' }, { label: 'Lowest' }, { label: 'Charge trips' },
+]
+const LOC_COLS: Col[] = [
+  { label: 'Location', left: true }, { label: 'Type', left: true }, { label: 'Visits' }, { label: 'Occupied' }, { label: 'Max queue' }, { label: 'Avg wait / visit' },
+]
 const pct = (x: number) => `${Math.round(x * 100)}%`
 const secs = (s: number | null | undefined) => (s == null || !isFinite(s) ? '—' : `${Math.round(s)} s`)
 
@@ -38,48 +58,31 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
   const len = (ft?: number) => fmtLength(ft, unitSystem)
   const total = R ? R.types.reduce((a, t) => a + t.target, 0) : 0
   const flows = project.flows ?? []
+  const linked = flows.filter(f => f.fromPointId && f.toPointId)
   const name = (id?: string) => project.simLayout?.points.find(p => p.id === id)?.name ?? '—'
-  const time = R ? R.types.reduce((acc, t) => { for (const [k] of SPLIT) acc[k] += t.time[k]; acc.reposition += t.time.reposition; return acc },
+  const time = R ? R.types.reduce((acc, t) => { for (const k of Object.keys(acc) as (keyof TimeSplit)[]) acc[k] += t.time[k]; return acc },
     { travel: 0, handle: 0, reposition: 0, wait: 0, charge: 0, idle: 0 } as TimeSplit) : null
   const tot = time ? Object.values(time).reduce((a, b) => a + b, 0) || 1 : 1
 
   return (
     <section className="sim-below">
       <details className="sim-disc">
-        <summary>Flows — engine vs simulated<span className="meta">{R ? flowSummary(R, flows.filter(f => f.fromPointId && f.toPointId).length, assume.demandPct, flows) : 'simulating…'}</span></summary>
+        <summary>Flows — engine vs simulated<span className="meta">{R ? flowSummary(R, linked.length, assume.demandPct, flows) : 'simulating…'}</span></summary>
         <div className="sim-disc-body">
-          <div className="sim-tbl-wrap">
-            <table className="sim-tbl">
-              <thead><tr><th className="l">Flow</th><th>Moves/h target</th><th>Sizing distance</th><th>Driven</th><th>Engine cycle</th><th>Engine demand (veh)</th><th className="band">Sim moves/h</th><th className="band">Sim mission</th><th className="band">Avg wait</th></tr></thead>
-              <tbody>
-                {flows.filter(f => f.fromPointId && f.toPointId).map(f => {
-                  const sim = R?.flows.find(x => x.flowId === f.id)
-                  const why = R?.excluded.find(x => x.flowId === f.id)?.why
-                  const e = flowDerived(f, f.vehicleId ? vehicleById.get(f.vehicleId) : undefined)
-                  const target = f.thruPerHr * assume.demandPct / 100
-                  return (
-                    <tr key={f.id}>
-                      <td className="l">{name(f.fromPointId)} → {name(f.toPointId)}</td>
-                      <td>{target.toFixed(0)}</td>
-                      <td>{len(f.distanceFt)}</td>
-                      {why ? <td className="dim l" colSpan={6}>Left out of the run — {why.toLowerCase()}</td> : <>
-                        <td>{len(sim?.measuredFt)}</td>
-                        <td>{secs(e.cycleSeconds)}</td>
-                        <td>{e.rawVehicles == null ? '—' : e.rawVehicles.toFixed(2)}</td>
-                        <td className={`band${sim && sim.perHr < target * 0.98 ? ' bad' : ''}`}>{sim ? sim.perHr.toFixed(1) : '—'}</td>
-                        <td className="band">{secs(sim?.mission)}</td>
-                        <td className="band">{secs(sim?.wait)}</td>
-                      </>}
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DataTable label="Flows" cols={FLOW_COLS} rows={linked.map(f => {
+            const sim = R?.flows.find(x => x.flowId === f.id)
+            const why = R?.excluded.find(x => x.flowId === f.id)?.why
+            const e = flowDerived(f, f.vehicleId ? vehicleById.get(f.vehicleId) : undefined)
+            const target = f.thruPerHr * assume.demandPct / 100
+            const head: Cell[] = [`${name(f.fromPointId)} → ${name(f.toPointId)}`, Math.round(target), len(f.distanceFt)]
+            if (why) return [...head, { v: `Left out of the run — ${why.toLowerCase()}`, cls: 'dim l' }, null, null, null, null, null]
+            return [...head, len(sim?.measuredFt), secs(e.cycleSeconds), e.rawVehicles == null ? null : e.rawVehicles.toFixed(2),
+              { v: sim ? sim.perHr.toFixed(1) : null, cls: sim && sim.perHr < target * 0.98 ? 'bad' : '' }, secs(sim?.mission), secs(sim?.wait)]
+          })} />
           {time && (
             <div className="sim-split-wrap">
-              <div className="sim-splitleg">{SPLIT.map(([k, l]) => <span key={k}><i className={`st-${k}`} />{l} {pct(time[k] / tot)}</span>)}</div>
-              <div className="sim-split">{SPLIT.map(([k]) => <span key={k} className={`st-${k}`} style={{ width: `${(time[k] / tot) * 100}%` }} />)}</div>
+              <div className="sim-splitleg">{SPLIT.map(([k, l]) => <span key={k}><i className={`st-${k}`} />{l} {pct(inState(time, k) / tot)}</span>)}</div>
+              <div className="sim-split">{SPLIT.map(([k]) => <span key={k} className={`st-${k}`} style={{ width: `${(inState(time, k) / tot) * 100}%` }} />)}</div>
             </div>
           )}
           {R && (
@@ -93,6 +96,28 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
       </details>
 
       <details className="sim-disc">
+        <summary>Vehicles<span className="meta">{R ? `${R.vehicles.length} vehicle${R.vehicles.length === 1 ? '' : 's'} · ${R.orders.delivered} moves` : 'simulating…'}</span></summary>
+        <div className="sim-disc-body">
+          {R && <>
+            <DataTable label="By vehicle type" cols={TYPE_COLS} rows={R.types.map(t => [
+              vehicleById.get(t.vehicleId)?.name ?? t.vehicleId, t.fleet, t.done, t.perHr.toFixed(1), t.target.toFixed(0),
+              pct(t.utilization), secs(t.avgWait), `${Math.round(t.socAvg)}% / ${Math.round(t.socMin)}%`, t.chargeTrips,
+            ])} />
+            <DataTable label="By vehicle" cols={VEH_COLS} rows={R.vehicles.map(v => {
+              const all = Object.values(v.time).reduce((a, b) => a + b, 0) || 1
+              return [v.id, vehicleById.get(v.vehicleId)?.name ?? v.vehicleId, v.done, v.perHr.toFixed(1), pct(v.utilization),
+                ...SPLIT.map(([k]) => pct(inState(v.time, k) / all)), `${Math.round(v.soc)}%`, `${Math.round(v.socMin)}%`, v.chargeTrips]
+            })} foot={(() => {
+              const sum = (f: (v: SimResults['vehicles'][number]) => number) => R.vehicles.reduce((a, v) => a + f(v), 0)
+              const all = sum(v => Object.values(v.time).reduce((a, b) => a + b, 0)) || 1
+              return ['Total', '', sum(v => v.done), sum(v => v.perHr).toFixed(1), '',
+                ...SPLIT.map(([k]) => pct(sum(v => inState(v.time, k)) / all)), '', '', sum(v => v.chargeTrips)]
+            })()} />
+          </>}
+        </div>
+      </details>
+
+      <details className="sim-disc">
         <summary>Hour by hour</summary>
         <div className="sim-disc-body">{S && R ? <HourChart S={S} target={total} hours={Math.ceil(R.t / 3600)} /> : <p className="sim-card-note">Simulating…</p>}</div>
       </details>
@@ -100,22 +125,10 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
       <details className="sim-disc">
         <summary>Locations<span className="meta">{S?.zoneStats.size ?? 0}</span></summary>
         <div className="sim-disc-body">
-          <div className="sim-tbl-wrap">
-            <table className="sim-tbl">
-              <thead><tr><th className="l">Location</th><th className="l">Type</th><th>Visits</th><th>Occupied</th><th>Max queue</th><th>Avg wait / visit</th></tr></thead>
-              <tbody>
-                {S && R && [...S.zoneStats].map(([z, st]) => {
-                  const p = S.G.points[S.G.zoneNode.get(z) ?? -1]
-                  return (
-                    <tr key={z}>
-                      <td className="l">{p?.name ?? z}</td><td className="l">{p?.type ?? ''}</td><td>{st.visits}</td>
-                      <td>{pct(st.occT / Math.max(1, R.t))}</td><td>{st.maxQ}</td><td>{st.visits ? secs(st.waitT / st.visits) : '—'}</td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <DataTable label="Locations" cols={LOC_COLS} rows={S && R ? [...S.zoneStats].map(([z, st]) => {
+            const p = S.G.points[S.G.zoneNode.get(z) ?? -1]
+            return [p?.name ?? z, p?.type ?? '', st.visits, pct(st.occT / Math.max(1, R.t)), st.maxQ, st.visits ? secs(st.waitT / st.visits) : null]
+          }) : []} />
         </div>
       </details>
 
@@ -192,30 +205,31 @@ function Num({ label, unit, value, min, max, step, onChange }: { label: string; 
   )
 }
 
-/** Moves delivered per hour (bars) against the target (dashed), and orders waiting (line, right axis). */
+/** Moves delivered per hour (bars) against the target (dashed), and the most orders waiting in that
+ *  hour (line, right axis) — on the app's shared chart kit. */
 function HourChart({ S, target, hours }: { S: SimState; target: number; hours: number }) {
-  const n = Math.max(1, hours), vals = Array.from({ length: n }, (_, i) => S.hourly[i] ?? 0)
   const ser = [...S.series.values()].flat()
-  const W = 760, H = 220, pad = { l: 40, r: 40, t: 10, b: 24 }
-  const ymax = Math.max(10, Math.ceil(Math.max(target * 1.25, ...vals) / 10) * 10)
-  const pmax = Math.max(4, ...ser.map(p => p[1])) * 1.15
-  const bw = (W - pad.l - pad.r) / n
-  const Y = (v: number) => H - pad.b - ((H - pad.t - pad.b) * v) / ymax
-  const Y2 = (v: number) => H - pad.b - ((H - pad.t - pad.b) * v) / pmax
+  const data = Array.from({ length: Math.max(1, hours) }, (_, i) => ({
+    hour: `${i + 1}h`,
+    moves: S.hourly[i] ?? 0,
+    waiting: Math.max(0, ...ser.filter(([t]) => t > i * 3600 && t <= (i + 1) * 3600).map(([, n]) => n)),
+  }))
+  const short = data.filter(d => d.moves < target * 0.98).length
   return (
     <>
-      <div className="sim-chartleg"><span><i className="bar" />Moves delivered</span><span><i className="tgt" />Target</span><span><i className="wait" />Orders waiting (right axis)</span></div>
-      <svg className="sim-chart" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Moves per hour">
-        {Array.from({ length: 6 }, (_, i) => (ymax * i) / 5).map(v => (
-          <g key={v}><line x1={pad.l} x2={W - pad.r} y1={Y(v)} y2={Y(v)} className="grid" /><text x={pad.l - 6} y={Y(v) + 4} className="ax l">{Math.round(v)}</text></g>
-        ))}
-        {vals.map((v, i) => (
-          <g key={i}><rect x={pad.l + i * bw + bw * 0.18} y={Y(v)} width={bw * 0.64} height={Y(0) - Y(v)} className="bar" /><text x={pad.l + i * bw + bw / 2} y={H - 6} className="ax">{i + 1}h</text></g>
-        ))}
-        <line x1={pad.l} x2={W - pad.r} y1={Y(target)} y2={Y(target)} className="tgt" />
-        {ser.length > 1 && <path d={ser.map((p, i) => `${i ? 'L' : 'M'}${pad.l + (p[0] / 3600) * bw} ${Y2(p[1])}`).join('')} className="wait" />}
-        {Array.from({ length: 5 }, (_, q) => (pmax * q) / 4).map(v => <text key={v} x={W - pad.r + 6} y={Y2(v) + 4} className="ax r">{Math.round(v)}</text>)}
-      </svg>
+      <ChartFrame height={220}>
+        <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <CartesianGrid stroke={GRID_STROKE} strokeDasharray="2 4" vertical={false} />
+          <XAxis dataKey="hour" tick={TICK} stroke={AXIS_STROKE} />
+          <YAxis yAxisId="m" tick={TICK} stroke={AXIS_STROKE} width={36} allowDecimals={false} />
+          <YAxis yAxisId="w" orientation="right" tick={TICK} stroke={AXIS_STROKE} width={28} allowDecimals={false} />
+          <Tooltip content={<ChartTooltip fmt={n => String(Math.round(n))} />} cursor={{ fill: 'var(--bg-hover)' }} />
+          <Bar isAnimationActive={false} yAxisId="m" dataKey="moves" name="Moves delivered" fill="var(--tal-classic-blue)" maxBarSize={28} radius={[3, 3, 0, 0]} />
+          <ReferenceLine yAxisId="m" y={target} stroke="var(--accent)" strokeDasharray="5 4" label={{ value: `Target ${Math.round(target)}/h`, position: 'insideTopLeft', fill: 'var(--accent)', fontSize: 10 }} />
+          <Line isAnimationActive={false} yAxisId="w" dataKey="waiting" name="Orders waiting (most)" stroke="var(--warn)" strokeWidth={2} dot={false} type="monotone" />
+        </ComposedChart>
+      </ChartFrame>
+      <ChartCaption>{short === 0 ? 'Every hour met the target.' : `${short} of ${data.length} hours below the target.`} Bars: moves delivered · dashed: target · line: most orders waiting (right axis).</ChartCaption>
     </>
   )
 }

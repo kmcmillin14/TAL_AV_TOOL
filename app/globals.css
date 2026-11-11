@@ -3323,6 +3323,9 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-rubber { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; }
 .sim-rubber-len { font-size: 13px; font-weight: 600; font-family: var(--tal-font-numeric); fill: var(--text-primary); paint-order: stroke; stroke: var(--scene-bg); stroke-width: 3px; }
 .sim-empty-prompt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; pointer-events: none; color: var(--text-secondary); font-size: 13px; }
+.sim-empty-cta { display: flex; flex-direction: column; align-items: center; gap: 16px; pointer-events: auto; padding: 24px; border-radius: 12px; background: color-mix(in srgb, var(--bg-surface) 92%, transparent); box-shadow: var(--sim-shadow-float); }
+.sim-empty-cta p { margin: 0; font-size: 15px; color: var(--text-primary); }
+.sim-empty-cta span { font-size: 11px; color: var(--text-tertiary); }
 
 /* Floating controls over the canvas. */
 .sim-tools {
@@ -5484,16 +5487,20 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-kv dt { color: var(--text-secondary); } .sim-kv dd { margin: 0; font-family: var(--tal-font-numeric); text-align: right; color: var(--text-primary); }
 .sim-assume { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
 .sim-vehdata h4, .sim-h4 { margin: 8px 0; font: 700 11px var(--tal-font-numeric); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
-.sim-chart { width: 100%; height: auto; display: block; }
-.sim-chart .grid { stroke: var(--border); }
-.sim-chart .ax { font: 11px var(--tal-font-numeric); fill: var(--text-tertiary); text-anchor: middle; }
-.sim-chart .ax.l { text-anchor: end; } .sim-chart .ax.r { text-anchor: start; fill: var(--bad); }
-.sim-chart .bar { fill: var(--accent); }
-.sim-chart .tgt { stroke: var(--good); stroke-width: 2; stroke-dasharray: 6 4; }
-.sim-chart .wait { fill: none; stroke: var(--bad); stroke-width: 1.5; }
-.sim-chartleg { display: flex; gap: 16px; font-size: 13px; color: var(--text-secondary); }
-.sim-chartleg i { display: inline-block; width: 12px; height: 3px; margin-right: 6px; vertical-align: 3px; }
-.sim-chartleg i.bar { background: var(--accent); height: 9px; width: 9px; } .sim-chartleg i.tgt { background: var(--good); } .sim-chartleg i.wait { background: var(--bad); }
+/* A followed vehicle's job legs (acceptance 15): dashed empty to the pick, solid loaded to the drop. */
+.sim-legs { pointer-events: none; }
+.sim-leg-empty { fill: none; stroke: var(--text-secondary); stroke-width: 2.5; stroke-dasharray: 6 5; }
+.sim-leg-loaded { fill: none; stroke: var(--accent); stroke-width: 3; }
+.sim-leg-end { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.sim-leg-end.pick { stroke: var(--sim-pick); } .sim-leg-end.drop { stroke: var(--sim-drop); }
+.sim-legs-key { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; font-size: 11px; color: var(--text-secondary); background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px; }
+.sim-legs-key i { display: inline-block; width: 16px; height: 0; border-top: 2.5px dashed var(--text-secondary); }
+.sim-legs-key i.loaded { border-top: 3px solid var(--accent); margin-left: 6px; }
+/* Run tables: Copy CSV under each, a totals row (acceptance 16). */
+.sim-tbl-block { display: flex; flex-direction: column; gap: 4px; }
+.sim-tbl-block + .sim-tbl-block { margin-top: 16px; }
+.sim-csv { align-self: flex-end; font-size: 11px; }
+.sim-tbl tfoot td { font-weight: 700; color: var(--text-primary); border-top: 1px solid var(--border-strong); }
 .btn, .sim-tool, .sim-palette-btn, .seg-btn { transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
 @media (prefers-reduced-motion: reduce) { .sim-card, .sim-panel { animation: none; } }
 
