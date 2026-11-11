@@ -716,12 +716,20 @@ step ribbon is unchanged.
     two-way, solid with arrowheads one-way, ticks for single-lane; point tiles with name pills;
     amber dots at intersections; rounded corners where the vehicle turns.
   - *Floating tools:* Select V · Route R · One-way D · Place P · Flow F · Scale S, Undo/Redo; routes
-    snap by one rule (`snapDraw`, `src/calc/sim/layoutEdit.ts`) shared by the marker under the pointer,
-    the click and a dragged point: an existing point within 22 screen px (joined — a ring marks it),
-    else a route within 12 px (split and joined — a diamond), else open floor squared to the last
-    point (Shift = any angle), onto a fixed object's aisle line half a lane off the face so the lane
-    keeps its B56.5 clearance (a square marks it; only where the line stays square), lined up with
-    any existing point's x or y within 12 px (a dashed guide), else whole feet. The Place tool uses
+    snap by one rule (`snapDraw`, `src/calc/sim/layoutEdit.ts`) shared by the crosshair, the click
+    and a dragged point. **The click lands where the crosshair is drawn**: in the Route and Place
+    tools the system cursor is hidden and a + is drawn at the landing spot, snaps included. The
+    rule: an existing point within 22 screen px (joined — a ring marks it), else a route within
+    12 px (split and joined — a diamond), else open floor — straight (horizontal or vertical from
+    the last point) when the cursor is within 12 px of straight or Shift is held, any angle
+    otherwise; onto a fixed object's aisle line half a lane off the face so the lane keeps its
+    B56.5 clearance (a square marks it; only where a straight line stays straight); lined up with
+    any existing point's x or y within 12 px (a dashed guide); else on the grid — whole feet, finer
+    as you zoom in (6 in, 3 in, 1 in), so the landing spot is within about 4 px of the cursor.
+    Routes are drawn by clicking point to point or by pressing, dragging and releasing; right-click,
+    Enter, Esc or a double-click ends the chain. Reaches are real screen pixels at any canvas zoom
+    and any page zoom: the canvas converts pointer positions for the app's `html { zoom: 0.8 }`
+    (`localPx`, `LayoutCanvas.tsx`). The Place tool uses
     the same rule. Dragging one point (Select) snaps the same way, and dropping it on another point
     joins them (`mergePoints`; flows linked to it follow) with a live length; a Route options bar sets **Bidirectional / One-way** and
     **Two lanes / Single lane** for new routes (one-way routes are stored single-lane); Enter or double-click finishes; hint pill

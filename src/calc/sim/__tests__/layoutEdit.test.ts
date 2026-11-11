@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addObject, convertPoint, copyPoints, mergePoints, snapDraw, snapToObjects, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
+  addObject, convertPoint, copyPoints, drawGridFt, mergePoints, snapDraw, snapToObjects, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
   addPoint, addSegment, emptyLayout, flowRefusal, flowStartRefusal, hitTest, linkFlow, linkSuggestions, measureFlows, notConnected,
   placeOnSegment, rescaleLayout, routeDistanceFt, splitSegment, updatePoint, updateSegment, withLayoutDistance,
 } from '../layoutEdit'
@@ -263,18 +263,29 @@ describe('snapDraw — one rule for the preview, the click and a dragged point',
   it('else the route, at the nearest spot on it', () => {
     expect(snapDraw(base(), { x: 50, y: 0.8 }, { px })).toMatchObject({ kind: 'route', at: { x: 50, y: 0 } })
   })
-  it('on open floor: squared to the last point, lined up with existing points, else whole feet', () => {
+  it('open floor: straight when the cursor is near straight, any angle otherwise; Shift keeps it straight', () => {
     const L = base()
-    // From (100,0) going down: x stays 100, y free → rounded.
-    expect(snapDraw(L, { x: 103, y: 40.4 }, { px, from: { x: 100, y: 0 } })).toMatchObject({ kind: 'free', at: { x: 100, y: 40 } })
-    // Free floor near x = 0: lines up with the point at (0,0), with a guide back to it.
-    const s = snapDraw(L, { x: 0.6, y: 30.3 }, { px })
-    expect(s).toMatchObject({ kind: 'free', at: { x: 0, y: 30 } })
+    // 0.9 ft (9 px) off the vertical through (100,0): straight — x stays 100, y lands on the grid.
+    expect(snapDraw(L, { x: 100.9, y: 40.4 }, { px, from: { x: 100, y: 0 } })).toMatchObject({ kind: 'free', at: { x: 100, y: 40.5 } })
+    // 3 ft (30 px) off: the click lands where the cursor is, on the grid.
+    expect(snapDraw(L, { x: 103, y: 40.4 }, { px, from: { x: 100, y: 0 } }).at).toEqual({ x: 103, y: 40.5 })
+    // …unless Shift locks it straight.
+    expect(snapDraw(L, { x: 103, y: 40.4 }, { px, from: { x: 100, y: 0 }, lock: true }).at).toEqual({ x: 100, y: 40.5 })
+  })
+  it('open floor: lines up with existing points, with a guide back to them', () => {
+    const s = snapDraw(base(), { x: 0.6, y: 30.3 }, { px })
+    expect(s).toMatchObject({ kind: 'free', at: { x: 0, y: 30.5 } })
     expect(s.kind === 'free' && s.guides).toEqual([{ x: 0, y: 0 }])
   })
-  it('Shift leaves the angle free; excluded points are ignored', () => {
+  it('the grid is whole feet, finer as you zoom in — never more than ~4 px from the cursor', () => {
+    expect([0.5, 0.25, 0.1, 0.04, 0.01].map(drawGridFt)).toEqual([1, 1, 0.5, 0.25, 1 / 12])
+    for (const z of [0.5, 0.25, 0.1, 0.04, 0.011]) {
+      const at = { x: 37.37, y: 81.19 }, r = snapDraw(emptyLayout(), at, { px: z }).at
+      expect(Math.hypot(r.x - at.x, r.y - at.y) / z).toBeLessThanOrEqual(4 * Math.SQRT2)
+    }
+  })
+  it('excluded points are ignored', () => {
     const L = base()
-    expect(snapDraw(L, { x: 33.4, y: 12.6 }, { px, from: { x: 0, y: 50 }, shift: true }).at).toEqual({ x: 33, y: 13 })
     expect(snapDraw(L, { x: 0.5, y: 0.5 }, { px, exclude: new Set([L.points[0].id]), routes: false }).kind).toBe('free')
   })
 })

@@ -1,5 +1,25 @@
 # Changelog
 
+## 2026-11-11 — Fleet simulation: clicks land where the cursor is
+
+Owner: "the cursor for clicking routes is not accurate and where the + is isn't where it clicks."
+
+- **Root cause — page zoom.** The app runs at `html { zoom: 0.8 }`; the layout canvas converted
+  clicks, pans and wheel-zoom without it, so every click landed 20% short of the cursor — 41 px off
+  for a click 200 px into the canvas, more further in. Fixed in one place (`localPx`,
+  `LayoutCanvas.tsx`); measured after: about 2 px. This has been wrong since the editor was built.
+- **The crosshair is the click.** In the Route and Place tools the system cursor is hidden and a + is
+  drawn where the click will land, snaps included. Select shows an arrow, not a crosshair.
+- **Straight when near straight.** A route no longer forces horizontal/vertical from the last point:
+  it snaps straight within 12 px of straight and follows the cursor otherwise; Shift keeps it straight
+  (before: always square, Shift = any angle).
+- **Finer grid when zoomed in** (`drawGridFt`): whole feet, then 6 in, 3 in, 1 in — never more than
+  about 4 px from the cursor (before: always whole feet, up to 13 px off when zoomed in).
+- **Drag to draw** a route (press, drag, release); **right-click** ends the chain.
+- **Empty canvas:** the "Open the example site" card no longer blocks clicks — it shows only in Select.
+- Snap and hit reaches are real screen pixels at any page zoom.
+- Layouts already drawn and simulation results are unchanged.
+
 ## 2026-11-11 — Fleet simulation Milestone 6 (in progress): field registry and run overrides
 
 - **Field registry** `src/lib/simFields.ts`: every assumption the simulation reads (30 fields) with its

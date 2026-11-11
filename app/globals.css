@@ -3294,8 +3294,14 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-stage {
   position: relative; height: min(68vh, 680px); min-height: 440px;
   background: var(--scene-bg); border: 1px solid var(--border); border-radius: 8px;
-  overflow: hidden; touch-action: none; user-select: none; cursor: crosshair;
+  overflow: hidden; touch-action: none; user-select: none; cursor: default;
 }
+/* Cursors: an arrow to select, a crosshair to point, a hand to pan — and none while the landing
+   crosshair is drawn (the click lands exactly there, snaps included). */
+.sim-stage.is-aim { cursor: crosshair; }
+.sim-stage.is-pan { cursor: grab; }
+.sim-stage.is-snapping { cursor: none; }
+.sim-snap-cross { fill: none; stroke: var(--accent); stroke-width: 1.75; stroke-linecap: round; }
 .sim-grid-line { stroke: var(--scene-grid); stroke-width: 1; }
 .sim-grid-major { stroke: var(--scene-grid-major); stroke-width: 1; }
 .sim-lane { fill: none; stroke: var(--lane); stroke-linecap: square; }

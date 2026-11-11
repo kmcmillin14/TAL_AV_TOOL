@@ -6,7 +6,7 @@
 // are drawn to true scale (§5.8). Tools are handled by the editor — the canvas reports where the
 // pointer is and what is under it.
 
-import { memo, useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
+import { memo, useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
 import Icon from '@/src/design-system/components/Icon'
 import { laneWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { segmentGeometry } from '@/src/calc/sim/geometry'
@@ -27,8 +27,20 @@ export interface CanvasPointer {
   at: XY
   hit: Hit
   shift: boolean
-  /** One screen pixel, ft — for snapping distances that should feel the same at every zoom. */
+  /** One real screen pixel, ft — for snapping distances that should feel the same at every zoom. */
   px: number
+}
+
+/**
+ * A pointer position in the stage's own layout pixels. The app runs at `html { zoom: 0.8 }`
+ * (globals.css): the bounding rect and clientX/Y are in zoomed screen pixels, while the SVG inside is
+ * laid out in unzoomed ones. The ratio of the two widths converts between them (1 with no zoom) — so
+ * a click lands exactly under the cursor at any page zoom.
+ */
+function localPx(el: HTMLElement, clientX: number, clientY: number): XY & { k: number } {
+  const r = el.getBoundingClientRect()
+  const k = el.offsetWidth ? r.width / el.offsetWidth : 1
+  return { x: (clientX - r.left) / k - el.clientLeft, y: (clientY - r.top) / k - el.clientTop, k }
 }
 
 /** Fit margins for the editor's floating controls: tool column, options bar and name pills, hint. */
@@ -66,6 +78,10 @@ interface Props {
   snap?: DrawSnap | null
   /** The pointer left the canvas. */
   onLeave?: () => void
+  /** A tool that points at things (not Select): crosshair cursor. While `snap` is shown the system
+   *  cursor is hidden and the crosshair is drawn at the landing spot instead. */
+  aim?: boolean
+  onContextMenu?: (e: MouseEvent<HTMLDivElement>) => void
   /** Room kept clear of floating controls when fitting, px. Default: the editor's tool column and bar. */
   fitInset?: { top: number; right: number; bottom: number; left: number }
   /** The legend, only while it explains something on screen (direction tool, B56.5 overlay). */
@@ -144,51 +160,55 @@ export default function LayoutCanvas(props: Props) {
     if (!el) return
     const onWheel = (e: WheelEvent) => {
       e.preventDefault()
-      const r = el.getBoundingClientRect()
+      const m = localPx(el, e.clientX, e.clientY)
       setView(v => {
         const ppf = Math.min(400, Math.max(0.05, v.ppf * Math.exp(-e.deltaY * 0.0015)))
-        const fx = v.x + (e.clientX - r.left) / v.ppf, fy = v.y + (e.clientY - r.top) / v.ppf
-        return { x: fx - (e.clientX - r.left) / ppf, y: fy - (e.clientY - r.top) / ppf, ppf }
+        const fx = v.x + m.x / v.ppf, fy = v.y + m.y / v.ppf
+        return { x: fx - m.x / ppf, y: fy - m.y / ppf, ppf }
       })
     }
     el.addEventListener('wheel', onWheel, { passive: false })
     return () => el.removeEventListener('wheel', onWheel)
   }, [])
 
-  const toFt = (e: RPointerEvent): XY => {
-    const r = box.current!.getBoundingClientRect()
-    return { x: view.x + (e.clientX - r.left) / view.ppf, y: view.y + (e.clientY - r.top) / view.ppf }
+  /** The pointer in feet, and one real screen pixel in feet (`px`) — reaches for hits and snaps are
+   *  in screen pixels, so they feel the same at any canvas zoom and any page zoom. */
+  const toFt = (e: RPointerEvent): XY & { px: number } => {
+    const m = localPx(box.current!, e.clientX, e.clientY)
+    return { x: view.x + m.x / view.ppf, y: view.y + m.y / view.ppf, px: 1 / (view.ppf * m.k) }
   }
-  const hitAt = (at: XY, target: EventTarget): Hit => {
+  const hitAt = (at: XY, px: number, target: EventTarget): Hit => {
     const h = (target as Element).closest?.('[data-handle]')
     if (h) return { kind: 'handle', id: h.getAttribute('data-seg')!, which: h.getAttribute('data-handle') as Handle }
-    return hitTest(layout, at, POINT_PX / view.ppf, SEG_PX / view.ppf)
+    return hitTest(layout, at, POINT_PX * px, SEG_PX * px)
   }
 
   const down = (e: RPointerEvent<HTMLDivElement>) => {
-    const at = toFt(e), hit = hitAt(at, e.target)
+    const { px, ...at } = toFt(e), hit = hitAt(at, px, e.target)
     if (props.panAlways || e.button === 1 || (e.button === 0 && !hit && panOnEmpty && !e.shiftKey)) {
-      pan.current = { sx: e.clientX, sy: e.clientY, vx: view.x, vy: view.y }
+      const m = localPx(e.currentTarget, e.clientX, e.clientY)
+      pan.current = { sx: m.x, sy: m.y, vx: view.x, vy: view.y }
       e.currentTarget.setPointerCapture(e.pointerId)
-      if (e.button === 0 && !props.panAlways) onPointer({ type: 'down', at, hit: null, shift: false, px: 1 / view.ppf })   // a click on empty space clears the selection
+      if (e.button === 0 && !props.panAlways) onPointer({ type: 'down', at, hit: null, shift: false, px })   // a click on empty space clears the selection
       return
     }
     if (e.button !== 0) return
     e.currentTarget.setPointerCapture(e.pointerId)
-    onPointer({ type: 'down', at, hit, shift: e.shiftKey, px: 1 / view.ppf })
+    onPointer({ type: 'down', at, hit, shift: e.shiftKey, px })
   }
   const move = (e: RPointerEvent<HTMLDivElement>) => {
-    const at = toFt(e)
+    const { px, ...at } = toFt(e)
     if (pan.current) {
-      const p = pan.current
-      setView(v => ({ ...v, x: p.vx - (e.clientX - p.sx) / v.ppf, y: p.vy - (e.clientY - p.sy) / v.ppf }))
+      const p = pan.current, m = localPx(e.currentTarget, e.clientX, e.clientY)
+      setView(v => ({ ...v, x: p.vx - (m.x - p.sx) / v.ppf, y: p.vy - (m.y - p.sy) / v.ppf }))
       return
     }
-    onPointer({ type: 'move', at, hit: null, shift: e.shiftKey, px: 1 / view.ppf })   // moves need no hit-test (drags only)
+    onPointer({ type: 'move', at, hit: null, shift: e.shiftKey, px })   // moves need no hit-test (drags only)
   }
   const up = (e: RPointerEvent<HTMLDivElement>) => {
     if (pan.current) { pan.current = null; return }
-    onPointer({ type: 'up', at: toFt(e), hit: null, shift: e.shiftKey, px: 1 / view.ppf })
+    const { px, ...at } = toFt(e)
+    onPointer({ type: 'up', at, hit: null, shift: e.shiftKey, px })
   }
 
   const shown = (p: SimPoint) => (offset?.ids.has(p.id) ? { ...p, x: p.x + offset.d.x, y: p.y + offset.d.y } : p)
@@ -219,7 +239,8 @@ export default function LayoutCanvas(props: Props) {
   return (
     <div
       ref={box}
-      className="sim-stage"
+      className={`sim-stage${props.panAlways ? ' is-pan' : props.snap ? ' is-snapping' : props.aim ? ' is-aim' : ''}`}
+      onContextMenu={props.onContextMenu}
       onPointerDown={down}
       onPointerMove={move}
       onPointerUp={up}
@@ -311,10 +332,12 @@ function SnapMark({ snap, from, px }: { snap: DrawSnap; from: XY | null; px: num
       {'guides' in snap && snap.guides.map((g, i) => <line key={i} x1={g.x} y1={g.y} x2={x} y2={y} className="sim-snap-guide" vectorEffect="non-scaling-stroke" />)}
       {from && <line x1={from.x} y1={from.y} x2={x} y2={y} className="sim-rubber" vectorEffect="non-scaling-stroke" />}
       <g transform={`translate(${x} ${y}) scale(${px})`}>
+        {/* The crosshair is drawn where the click will land — the system cursor is hidden meanwhile. */}
+        <path d="M-13 0H-4M4 0H13M0 -13V-4M0 4V13" className="sim-snap-cross" />
         {snap.kind === 'point' ? <circle r={12} className="sim-snap-ring" />
           : snap.kind === 'route' ? <rect x={-6} y={-6} width={12} height={12} transform="rotate(45)" className="sim-snap-ring" />
           : snap.kind === 'object' ? <rect x={-6} y={-6} width={12} height={12} className="sim-snap-ring" />
-          : <circle r={5} className="sim-snap-dot" />}
+          : <circle r={2.5} className="sim-snap-dot" />}
         {from && len > 0 && <text x={14} y={-12} className="sim-rubber-len">{len.toFixed(1)} ft</text>}
       </g>
     </g>

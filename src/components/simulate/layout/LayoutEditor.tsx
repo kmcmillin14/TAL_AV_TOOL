@@ -33,9 +33,11 @@ import LayoutPanel, { Segmented } from './LayoutPanel'
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
 type Tool = 'select' | 'points' | 'routes' | 'flows' | 'direction' | 'scale'
+/** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
+const DRAG_PX = 8
 const TOOLS: { id: Tool; label: string; key: string; hint: string }[] = [
   { id: 'select', label: 'Select', key: 'V', hint: 'Click to select · drag to move · drag empty space to pan · Shift-drag to select several · Delete removes' },
-  { id: 'routes', label: 'Route', key: 'R', hint: 'Click to start a route along an aisle · start on a route to branch from it' },
+  { id: 'routes', label: 'Route', key: 'R', hint: 'Click or drag to draw a route · the + shows where it lands · start on a route to branch from it' },
   { id: 'direction', label: 'One-way', key: 'D', hint: 'Click a route: two-way → one-way → other way → single-lane' },
   { id: 'points', label: 'Place', key: 'P', hint: 'Click to place · on a route, the point joins it' },
   { id: 'flows', label: 'Flow', key: 'F', hint: 'Click a Pick point, then a Drop point' },
@@ -160,8 +162,18 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const selectedPoints = selection?.kind === 'points' ? selection.ids : selection?.kind === 'point' ? [selection.id] : []
 
   /** Where a route click lands — the same `snapDraw` the canvas marks under the pointer. */
-  const routeSnap = (at: XY, shift: boolean, px: number) =>
-    snapDraw(layout, at, { px, from: chainFrom ? byId.get(chainFrom) : null, shift, offsetFt: snapOffsetFt })
+  const routeSnap = (at: XY, lock: boolean, px: number) =>
+    snapDraw(layout, at, { px, from: chainFrom ? byId.get(chainFrom) : null, lock, offsetFt: snapOffsetFt })
+  /** One route click: start, continue or join. A press-drag-release is two of these (drag to draw). */
+  const routeClick = (at: XY, lock: boolean, px: number) => {
+    const end = anchor(routeSnap(at, lock, px))
+    if (chainFrom && chainFrom !== end.id) setLayout(addSegment(end.layout, chainFrom, end.id, routeKind).layout)
+    else if (end.layout !== layout) setLayout(end.layout)
+    setChainFrom(end.id)
+    setHover(null)
+  }
+  /** Where the Route tool was pressed — a release more than a few pixels away draws to there. */
+  const press = useRef<XY | null>(null)
   const placeSnap = (at: XY, px: number) => snapDraw(layout, at, { px })
   const [hover, setHover] = useState<DrawSnap | null>(null)
   /** A point id to draw from or to: the point it snapped to, a new junction on a route, or one on open floor. */
@@ -237,7 +249,13 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       else if (tool === 'points' && placeType !== 'object' && !marks) setHover(placeSnap(at, px))
       return
     }
-    if (type === 'up') { if (drag) onRelease(drag); setDrag(null); return }
+    if (type === 'up') {
+      if (drag) onRelease(drag)
+      else if (tool === 'routes' && press.current && Math.hypot(at.x - press.current.x, at.y - press.current.y) > DRAG_PX * px) routeClick(at, shift, px)
+      press.current = null
+      setDrag(null)
+      return
+    }
     if (tool === 'select') { onSelectPress(at, hit, shift); return }
     if (tool === 'points') {
       if (placeType === 'object') { setDrag({ kind: 'box', box: 'object', from: at, at }); return }
@@ -251,11 +269,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       setSelection({ kind: 'point', id: placed.id })
       setArmed(null)
     } else if (tool === 'routes') {
-      const end = anchor(routeSnap(at, shift, px))
-      if (chainFrom && chainFrom !== end.id) setLayout(addSegment(end.layout, chainFrom, end.id, routeKind).layout)
-      else if (end.layout !== layout) setLayout(end.layout)
-      setChainFrom(end.id)
-      setHover(null)
+      press.current = at
+      routeClick(at, shift, px)
     } else if (tool === 'flows') {
       if (hit?.kind !== 'point') { setChainFrom(null); return }
       const why = chainFrom ? flowRefusal(layout, chainFrom, hit.id) : flowStartRefusal(layout, hit.id)
@@ -356,7 +371,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
 
   const hint = marks
     ? (marks.length < 2 ? (marks.length ? 'Click the end of the dimension' : 'Click the start of a known dimension') : 'Enter the real length in the Drawing card')
-    : tool === 'routes' && chainFrom ? 'Click to continue · ends join nearby points and routes · Shift = any angle · Enter or double-click to finish'
+    : tool === 'routes' && chainFrom ? 'Click where the + is to continue · it joins points and routes it touches · Shift keeps it straight · right-click or Enter to finish'
     : tool === 'points' && armed ? `Click on a route to place “${armed.name}”`
     : tool === 'points' && placeType === 'object' ? 'Drag out a wall, column or rack face'
     : TOOLS.find(t => t.id === tool)!.hint
@@ -391,7 +406,9 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             onPointer={onPointer}
             onFlowClick={id => { if (tool === 'select' || tool === 'flows') setSelection({ kind: 'flow', id }) }}
             fitKey={fitKey}
-            emptyPrompt={emptyPrompt}
+            emptyPrompt={tool === 'select' ? emptyPrompt : undefined}
+            aim={tool !== 'select'}
+            onContextMenu={e => { if (chainFrom || marks) { e.preventDefault(); cancel() } }}
             snap={drag?.kind === 'points' ? drag.snap ?? null : (tool === 'routes' || (tool === 'points' && placeType !== 'object')) && !marks ? hover : null}
             onLeave={() => setHover(null)}
             showLegend={tool === 'direction' || showClearance}

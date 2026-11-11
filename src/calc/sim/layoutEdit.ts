@@ -435,18 +435,27 @@ function squareTo(from: XY, to: XY): XY {
 export type DrawSnap =
   | { kind: 'point'; id: string; at: XY }
   | { kind: 'route'; id: string; at: XY }
-  /** Open floor: on an object's aisle line, lined up with existing points (`guides`), else whole feet. */
+  /** Open floor: on an object's aisle line, lined up with existing points (`guides`), else on the grid. */
   | { kind: 'object' | 'free'; at: XY; guides: XY[] }
 
+/** The grid a free click lands on, ft: whole feet, finer as you zoom in (6 in, 3 in, 1 in) so the
+ *  landing spot is never more than ~4 screen pixels from the cursor. */
+export function drawGridFt(px: number): number {
+  return [1, 0.5, 0.25, 1 / 12].find(step => step <= 8 * px) ?? 1 / 12
+}
+const onGrid = (v: number, step: number) => Math.round(Math.round(v / step) * step * 1e6) / 1e6
+
 /**
- * Where a drawing click lands — the one rule for the preview, the click and a dragged point:
- * an existing point within reach (joined), else a route (split there), else open floor — squared to
- * `from` unless Shift, onto an object's aisle line `offsetFt` out (only where the line stays square),
- * lined up with any existing point's x or y, and otherwise whole feet (only the free axis is rounded).
+ * Where a drawing click lands — the one rule for the crosshair, the click and a dragged point, so
+ * the click always lands where the crosshair is drawn:
+ * an existing point within reach (joined), else a route (split there), else open floor —
+ * straight (horizontal or vertical from `from`) when the cursor is within reach of straight or `lock`
+ * (Shift) is held, any angle otherwise; onto an object's aisle line `offsetFt` out (only where a
+ * straight line stays straight); lined up with any existing point's x or y; else on the grid.
  */
 export function snapDraw(
   L: SimLayout, at: XY,
-  o: { px: number; from?: XY | null; shift?: boolean; offsetFt?: number; exclude?: Set<string>; routes?: boolean },
+  o: { px: number; from?: XY | null; lock?: boolean; offsetFt?: number; exclude?: Set<string>; routes?: boolean },
 ): DrawSnap {
   const skip = o.exclude ?? new Set<string>()
   const p = nearestPoint(L, at, SNAP_PX.point * o.px, skip)
@@ -454,24 +463,26 @@ export function snapDraw(
   const route = o.routes !== false ? nearestRoute(L, at, SNAP_PX.route * o.px, skip) : null
   if (route) return { kind: 'route', id: route.id, at: route.at }
 
-  const from = o.from && !o.shift ? o.from : null
-  const q = from ? squareTo(from, at) : at
-  const square = (p: XY) => !from || Math.abs(p.x - from.x) < 1e-6 || Math.abs(p.y - from.y) < 1e-6
-  const obj = snapToObjects(L, q, SNAP_PX.object * o.px, o.offsetFt ?? 0, square)
+  const reach = SNAP_PX.align * o.px
+  const sq = o.from ? squareTo(o.from, at) : null
+  const from = o.from && sq && (o.lock || Math.hypot(sq.x - at.x, sq.y - at.y) <= reach) ? o.from : null
+  const q = from ? sq! : at
+  const straight = (c: XY) => !from || Math.abs(c.x - from.x) < 1e-6 || Math.abs(c.y - from.y) < 1e-6
+  const obj = snapToObjects(L, q, SNAP_PX.object * o.px, o.offsetFt ?? 0, straight)
   if (obj.snapped) return { kind: 'object', at: obj.at, guides: [] }
 
-  // Free axes: both on open floor; only the one along the line when squared.
+  // Free axes: both on open floor; only the one along the line when straight.
   const freeX = !from || q.y === from.y, freeY = !from || q.x === from.x
-  const reach = SNAP_PX.align * o.px
   const near = (axis: 'x' | 'y') => {
     let g: SimPoint | null = null
-    for (const p of L.points) if (!skip.has(p.id) && Math.abs(p[axis] - q[axis]) <= reach && (!g || Math.abs(p[axis] - q[axis]) < Math.abs(g[axis] - q[axis]))) g = p
+    for (const c of L.points) if (!skip.has(c.id) && Math.abs(c[axis] - q[axis]) <= reach && (!g || Math.abs(c[axis] - q[axis]) < Math.abs(g[axis] - q[axis]))) g = c
     return g
   }
   const gx = freeX ? near('x') : null, gy = freeY ? near('y') : null
+  const step = drawGridFt(o.px)
   const r = {
-    x: gx ? gx.x : freeX ? Math.round(q.x) : q.x,
-    y: gy ? gy.y : freeY ? Math.round(q.y) : q.y,
+    x: gx ? gx.x : freeX ? onGrid(q.x, step) : q.x,
+    y: gy ? gy.y : freeY ? onGrid(q.y, step) : q.y,
   }
   return { kind: 'free', at: r, guides: [gx, gy].flatMap(g => (g ? [{ x: g.x, y: g.y }] : [])) }
 }
