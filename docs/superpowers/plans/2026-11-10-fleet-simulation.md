@@ -195,12 +195,13 @@ no results).
 
 **Owner check (you):**
 - [ ] Draw one of your real sites from a PDF: scale, stands, conveyors, chargers, routes, flows
+- [ ] Click or drag a route: the point lands exactly where the + is
 - [ ] Close a loop and branch off a route: the ring / diamond shows the join before you click
 - [ ] Drag a loose end onto a point: they join
 - [ ] Repeat a charger ×6 at 5 ft, then undo once
 - [ ] Narrow an aisle and read the B56.5 callouts: 6 in / 0.5 m, shared between vehicles
 - [ ] Export the revision, re-import it: the drawing comes back
-- [ ] Interim check: Latest: drawing snaps reworked after "not snapping to the endpoints" — see the drawing example in the chat. Pushed to feature/fleet-simulation (Vercel preview).
+- [ ] Interim check: Latest: the cursor-accuracy bug is fixed — clicks now land where the + is. Please retry drawing on the Vercel preview.
 - **Sign-off question:** Is drawing now smooth enough to draw a real site in about 30 minutes?
 - **You receive:** Vercel preview of the branch and the drawing example
 
