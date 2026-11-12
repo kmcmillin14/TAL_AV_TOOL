@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { readinessChecks } from '../readiness'
+import { checkStatus, readinessChecks } from '../readiness'
 import { LIBRARY, corridor } from './fixtures'
 
 const ok = { id: 'f', fromPointId: 'A', toPointId: 'B', thruPerHr: 10, vehicleId: 'cb18' }
@@ -44,7 +44,7 @@ describe('Run is blocked until a flow can run (acceptance 1: no layout → Run d
   })
 })
 
-describe('readinessChecks ("Ready to run?")', () => {
+describe('readinessChecks (validation)', () => {
   const run = (flows: object[], over: { fleetNeeded?: number; layout?: ReturnType<typeof corridor> } = {}) =>
     readinessChecks({ layout: over.layout ?? corridor(100), flows: flows as never, vehicles: LIBRARY, fleetNeeded: over.fleetNeeded ?? 2 })
 
@@ -65,7 +65,8 @@ describe('readinessChecks ("Ready to run?")', () => {
     const layout = corridor(100)
     layout.points.push({ id: 'D', x: 500, y: 500, type: 'stand', role: 'drop', name: 'Far' })
     const checks = run([ok, { ...ok, id: 'g', toPointId: 'D' }, { id: 'typed' }], { layout })
-    expect(checks.map(c => c.text).join(' | ')).toMatch(/Not connected: Far.*1 Sizing flow is not on the layout.*no route/)
+    const all = checks.map(c => c.text).join(' | ')
+    for (const re of [/Not connected: Far/, /1 Sizing flow is not on the layout/, /no route/]) expect(all).toMatch(re)
   })
 
   it('points each check at what it is about and the tool that fixes it (validation)', () => {
@@ -75,8 +76,19 @@ describe('readinessChecks ("Ready to run?")', () => {
     const of = (re: RegExp) => checks.find(c => re.test(c.text))
     // one row per loose point
     expect(checks.filter(c => c.text.startsWith('Not connected')).map(c => c.target)).toEqual([{ kind: 'point', id: 'D' }, { kind: 'point', id: 'E' }])
-    expect(of(/not on the layout/)).toMatchObject({ fix: 'flows' })
+    expect(of(/not on the layout/)).toMatchObject({ fix: 'flowsTab' })
     expect(of(/no route/)).toMatchObject({ level: 'bad', target: { kind: 'flow', id: 'g' }, fix: 'route' })
     expect(readinessChecks({ vehicles: LIBRARY, fleetNeeded: 1 })[0]).toMatchObject({ fix: 'route' })
+  })
+
+  it('lists blockers first, then warnings, then notes, and gives one status', () => {
+    const layout = corridor(100)
+    layout.points.push({ id: 'D', x: 500, y: 500, type: 'stand', role: 'drop', name: 'Far' })
+    const checks = run([ok, { ...ok, id: 'g', toPointId: 'D' }], { layout, fleetNeeded: 3 })
+    const levels = checks.map(c => c.level)
+    expect(levels).toEqual([...levels].sort((a, b) => ['bad', 'warn', 'info'].indexOf(a) - ['bad', 'warn', 'info'].indexOf(b)))
+    expect(checkStatus(checks)).toMatchObject({ tone: 'bad', blockers: levels.filter(l => l === 'bad').length })
+    expect(checkStatus([{ level: 'warn', text: '' }])).toEqual({ tone: 'warn', blockers: 0, warnings: 1 })
+    expect(checkStatus([])).toEqual({ tone: 'good', blockers: 0, warnings: 0 })
   })
 })

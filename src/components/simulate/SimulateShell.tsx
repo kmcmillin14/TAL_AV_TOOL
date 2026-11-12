@@ -10,7 +10,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Icon from '@/src/design-system/components/Icon'
 import { emptyLayout, unlinked } from '@/src/calc/sim/layoutEdit'
-import { readinessChecks } from '@/src/calc/sim/readiness'
+import { checkStatus, readinessChecks } from '@/src/calc/sim/readiness'
 import { withVehicleOverrides } from '@/src/calc/sim/vehicle'
 import { clearanceRule, payloadFt, runFleet, runInputs } from '@/src/calc/sim/runInputs'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
@@ -20,7 +20,8 @@ import { useByValue } from '@/src/lib/useByValue'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import LayoutEditor from './layout/LayoutEditor'
+import LayoutEditor, { type PanelTab } from './layout/LayoutEditor'
+import { statusLabel } from './layout/SimCards'
 import RunView from './run/RunView'
 import AssumptionsDrawer from './inspector/AssumptionsDrawer'
 import { overriddenFields } from '@/src/lib/simFields'
@@ -59,14 +60,13 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     return Object.values(placed).reduce((a, b) => a + b, 0)
   }, [inputs.flows, fleet, project.simSettings?.fleet])
   const checks = useMemo(
-    () => readinessChecks({ layout: simLayout, flows, vehicles: simVehicles, driven: simLayout && inputs.layout, fleetNeeded }),
-    [simLayout, flows, simVehicles, inputs, fleetNeeded],
+    () => readinessChecks({ layout: layoutV, flows: flowsV, vehicles: simVehicles, driven: layoutV && inputs.layout, fleetNeeded }),
+    [layoutV, flowsV, simVehicles, inputs, fleetNeeded],
   )
-  const blockers = checks.filter(c => c.level === 'bad')
-  const warnings = checks.filter(c => c.level === 'warn').length
-  /** Bumped by the Validation button: the editor opens its Validation tab. */
-  const [validateKey, setValidateKey] = useState(0)
-  const canRun = blockers.length === 0
+  const status = useMemo(() => checkStatus(checks), [checks])
+  /** The editor's side-panel tab — owned here so the Validation button can open it. */
+  const [tab, setTab] = useState<PanelTab>('layout')
+  const canRun = status.blockers === 0
   // Run mode is shown only while the run can happen; a new red item drops back to the layout.
   const running = mode === 'run' && canRun
   const empty = !simLayout?.points.length
@@ -126,10 +126,10 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
             ? <button type="button" className="btn ghost" onClick={() => setMode('layout')}><Icon name="arrowL" size={13} /> Edit layout</button>
             : <>
                 {/* Validation, live: one status, a click opens the list in the side panel. */}
-                <button type="button" id="sim-valid" className={`btn ghost sim-valid-btn is-${blockers.length ? 'bad' : warnings ? 'warn' : 'good'}`}
-                  disabled={narrow} onClick={() => setValidateKey(k => k + 1)} title={blockers[0]?.text ?? 'Open the validation list'}>
-                  <i aria-hidden />{blockers.length ? `${blockers.length} blocker${blockers.length === 1 ? '' : 's'}` : 'Valid'}
-                  {warnings > 0 && <span className="sim-valid-sub">{warnings} warning{warnings === 1 ? '' : 's'}</span>}
+                <button type="button" id="sim-valid" className="btn ghost sim-valid-btn"
+                  disabled={narrow} onClick={() => setTab('checks')} title={checks[0]?.level === 'bad' ? checks[0].text : 'Open the validation list'}>
+                  <i className={`sim-vdot is-${status.tone}`} aria-hidden />{statusLabel(status)}
+                  {status.warnings > 0 && <span className="sim-valid-sub">{status.warnings} warning{status.warnings === 1 ? '' : 's'}</span>}
                 </button>
                 <button type="button" className="btn primary" disabled={!canRun} aria-describedby="sim-valid" onClick={() => setMode('run')}>Run <Icon name="arrowR" size={13} /></button>
               </>}
@@ -161,7 +161,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           overridden={overriddenIds}
           registerLayoutWriter={registerLayoutWriter}
-          validateKey={validateKey} banner={banner}
+          tab={tab} onTab={setTab} status={status} banner={banner}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
               <p>Draw routes along the aisles — or start from a finished site.</p>

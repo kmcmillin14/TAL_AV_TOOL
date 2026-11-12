@@ -9,7 +9,7 @@
 import { useMemo, useState } from 'react'
 import { engineFleetTotal, fleetFromFlows } from '@/src/calc/fleet'
 import { FLOW_POINT_TYPES, linkFlow, linkSuggestions, measureFlows, pointById, sameName } from '@/src/calc/sim/layoutEdit'
-import type { CheckFix, ReadinessCheck } from '@/src/calc/sim/readiness'
+import type { checkStatus, CheckFix, ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimLayout, SimPointType, SimRole } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import { fmtLength, lengthToDisplay, type UnitSystem } from '@/src/lib/utils/units'
@@ -18,11 +18,11 @@ import { POINT_LABEL } from './labels'
 import type { ProjectFlow } from './useLayoutEditor'
 
 /** A name suggests a type (proof of concept); the engineer confirms it in the list. */
-export const suggestType = (name: string): SimPointType => (/conveyor|infeed|outfeed|wrapper/i.test(name) ? 'conveyor' : 'stand')
+const suggestType = (name: string): SimPointType => (/conveyor|infeed|outfeed|wrapper/i.test(name) ? 'conveyor' : 'stand')
 
 /** The Sizing flows' location names, with whether each is a flow's origin, destination or both. */
 export interface FlowName { name: string; from: boolean; to: boolean }
-export function flowNames(flows: ProjectFlow[]): FlowName[] {
+function flowNames(flows: ProjectFlow[]): FlowName[] {
   const m = new Map<string, FlowName>()
   for (const f of flows) for (const [n, end] of [[f.origin, 'from'], [f.destination, 'to']] as const) {
     if (!n?.trim()) continue
@@ -35,10 +35,9 @@ export function flowNames(flows: ProjectFlow[]): FlowName[] {
 /** What the Place tool is armed with from this list. */
 export interface Armed { name: string; type: SimPointType; role: SimRole }
 /** A name's role: Pick where flows start, Drop where they end, both where both. */
-export const roleOf = (n: FlowName): SimRole => (n.from && n.to ? 'pickDrop' : n.from ? 'pick' : 'drop')
+const roleOf = (n: FlowName): SimRole => (n.from && n.to ? 'pickDrop' : n.from ? 'pick' : 'drop')
 
-/** The Sizing names and which are not on the layout yet — one count for the step strip, the Place
- *  section's status and the step's arming. */
+/** The Sizing names and which are not on the layout yet (the Place section and its status). */
 export function placeProgress(layout: SimLayout, flows: ProjectFlow[]) {
   const names = flowNames(flows)
   return { names, unplaced: names.filter(n => !layout.points.some(p => sameName(p.name, n.name))) }
@@ -91,25 +90,23 @@ export function PlaceCard({ layout, names, armed, onArm, onArmHome }: {
 
 /** The Validation tab: blockers first, then warnings and notes, one row per thing. A row with a
  *  target selects it and centres on it; its fix button picks the tool that fixes it. */
-const LEVEL_ORDER = { bad: 0, warn: 1, info: 2 } as const
-const FIX_LABEL: Record<CheckFix, string> = { scale: 'Scale', route: 'Draw route', charger: 'Place charger', flow: 'Link flow', flows: 'Open Flows' }
-export function ValidationList({ checks, onLocate, onFix }: {
+const FIX_LABEL: Record<CheckFix, string> = { scale: 'Scale', route: 'Draw route', charger: 'Place charger', linkFlow: 'Link flow', flowsTab: 'Open Flows' }
+/** The status in words — the page head and the Validation tab say it the same way. */
+export const statusLabel = ({ blockers }: ReturnType<typeof checkStatus>) => (blockers ? `${blockers} blocker${blockers === 1 ? '' : 's'}` : 'Valid')
+export function ValidationList({ checks, status, onLocate, onFix }: {
   checks: ReadinessCheck[]
+  status: ReturnType<typeof checkStatus>
   onLocate: (t: NonNullable<ReadinessCheck['target']>) => void
   onFix: (c: ReadinessCheck) => void
 }) {
-  const sorted = [...checks].sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level])
-  const blockers = checks.filter(c => c.level === 'bad').length
   return (
     <section className="sim-valid" aria-label="Validation">
-      <p className={`sim-valid-head is-${blockers ? 'bad' : 'good'}`}>
-        {blockers ? `${blockers} blocker${blockers === 1 ? '' : 's'} — fix to run` : 'Ready to run'}
-      </p>
-      {sorted.length > 0 && (
+      <p className={`sim-valid-head is-${status.blockers ? 'bad' : 'good'}`}>{status.blockers ? `${statusLabel(status)} — fix to run` : 'Ready to run'}</p>
+      {checks.length > 0 && (
         <ul className="sim-valid-list">
-          {sorted.map((c, i) => (
-            <li key={i} className={`sim-valid-row ${c.level}`}>
-              <i aria-hidden />
+          {checks.map((c, i) => (
+            <li key={i} className="sim-valid-row">
+              <i className={`sim-vdot is-${c.level}`} aria-hidden />
               {c.target
                 ? <button type="button" className="sim-valid-text" onClick={() => onLocate(c.target!)} title="Show on the layout">{c.text}</button>
                 : <span className="sim-valid-text">{c.text}</span>}

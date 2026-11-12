@@ -14,6 +14,10 @@
 - **Decisions recorded** in the spec and plan: Sizing → Simulation → Price only (the simulation never
   writes to Sizing); Phase A (validation, vehicle switcher, easier flow linking); Milestone 7 adds
   highways with a suggested B56.5 width and a lasso; 3D planned for later.
+- **Cleanup review:** one validation status (`checkStatus`) for the head and the tab; checks come back
+  blockers first from `readinessChecks` itself; the page owns the side-panel tab (no counter prop, so
+  coming back from Run opens Layout); one table of fixes named after the editor's actions; one dot
+  style; exports used only in their own file made private.
 
 ## 2026-11-12 — Fleet simulation: quality-of-life pass on the editor
 

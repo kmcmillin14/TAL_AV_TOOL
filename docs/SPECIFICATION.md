@@ -735,7 +735,7 @@ step ribbon is unchanged.
     **Two lanes / Single lane** for new routes (one-way routes are stored single-lane); Enter or double-click finishes; hint pill
     and messages on the canvas; Flows / B56.5 / Fit top right.
   - *Side cards:* Drawing & scale · **Place on routes** (each Sizing location name with a suggested
-    type and Place / + Position; Charger, Parking) · Selected · **Ready to run?** (red / amber / blue
+    type and Place / + Position; Charger, Parking) · Selected · **Ready to run?** — now **Validation**, below — (red / amber / blue
     checklist: routes, scale, not connected, flows left off, no route, a home per vehicle, chargers).
   - *Flows — from Sizing* table: Sizing distance, distance on the layout, Δ, and the Fleet Engine;
     **Use layout distances** links name-matched flows after a confirmation showing Fleet Engine

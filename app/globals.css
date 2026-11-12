@@ -5656,10 +5656,10 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 
 /* Validation (owner, 2026-11-12): live checks — a status button in the head, a list in the panel. */
 .sim-valid-btn { display: inline-flex; align-items: center; gap: 8px; }
-.sim-valid-btn > i, .sim-vdot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
-.sim-valid-btn.is-warn > i, .sim-vdot.is-warn { background: var(--warn); }
-.sim-valid-btn.is-bad > i, .sim-vdot.is-bad { background: var(--bad); }
-.sim-vdot { display: inline-block; margin-left: 8px; vertical-align: 1px; }
+.sim-vdot { flex: none; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
+.sim-vdot.is-warn { background: var(--warn); }
+.sim-vdot.is-bad { background: var(--bad); }
+.sim-vdot.is-info { background: var(--info); }
 .sim-valid-sub { font-weight: 500; color: var(--text-tertiary); }
 .sim-valid-sub::before { content: "·"; margin-right: 8px; }
 .sim-valid { display: flex; flex-direction: column; gap: 8px; }
@@ -5668,9 +5668,7 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-valid-head.is-good { color: var(--good); }
 .sim-valid-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .sim-valid-row { display: grid; grid-template-columns: 8px minmax(0, 1fr); align-items: start; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--border); }
-.sim-valid-row > i { width: 8px; height: 8px; margin-top: 6px; border-radius: 50%; background: var(--info); }
-.sim-valid-row.bad > i { background: var(--bad); }
-.sim-valid-row.warn > i { background: var(--warn); }
+.sim-valid-row > .sim-vdot { margin-top: 6px; }
 .sim-valid-text { font-size: 13px; line-height: 1.45; color: var(--text-primary); text-align: left; }
 button.sim-valid-text { border-radius: 4px; }
 button.sim-valid-text:hover { color: var(--sim-sel); text-decoration: underline; text-underline-offset: 2px; }

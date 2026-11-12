@@ -18,7 +18,7 @@ import {
   notConnected, placeOnSegment, pointsInBox, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
   mergePoints, nextDirection, placeWithSpur, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
-import type { ReadinessCheck } from '@/src/calc/sim/readiness'
+import type { checkStatus, CheckFix, ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import Icon from '@/src/design-system/components/Icon'
@@ -34,6 +34,9 @@ import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import LayoutCanvas, { type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
 import LayoutPanel, { Segmented } from './LayoutPanel'
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
+
+/** The side panel's tabs. */
+export type PanelTab = 'layout' | 'flows' | 'checks'
 
 type Tool = 'select' | 'hand' | 'points' | 'routes' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
@@ -102,15 +105,18 @@ interface Props {
   /** Hands the page a way to change the layout through this editor (its undo history), so the
    *  Assumptions drawer's point and route edits are undo steps too and never overwritten. */
   registerLayoutWriter?: (write: ((update: (L: EditorLayout) => EditorLayout) => void) | null) => void
-  /** Bumped by the page head's Validation button: open the Validation tab. */
-  validateKey?: number
+  /** The side panel's tab — owned by the page, so its Validation button can open it. */
+  tab: PanelTab
+  onTab: (t: PanelTab) => void
+  /** The validation status (tone and counts), worked out once by the page. */
+  status: ReturnType<typeof checkStatus>
   /** Shown at the top of the side panel (the sample banner). */
   banner?: ReactNode
 }
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, validateKey = 0, banner }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, tab, onTab: setTab, status, banner }: Props) {
   const radiusFor = useCallback((id?: string) => (id && vehicleById.get(id)?.calc.turningRadiusFt) || 0, [vehicleById])
   const editor = useLayoutEditor(project, radiusFor)
   const { doc, latest, commit, canUndo, canRedo } = editor
@@ -127,8 +133,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const [showClearance, setShowClearance] = useState(false)
   const [fitKey, setFitKey] = useState(0)
   /** The side panel's tab. */
-  const [tab, setTab] = useState<'layout' | 'flows' | 'checks'>('layout')
-  useEffect(() => { if (validateKey) setTab('checks') }, [validateKey])
   /** Centre the view here (navigator, Tab); the key re-centres on the same spot. */
   const [center, setCenter] = useState<{ at: XY; key: number } | null>(null)
   const focusOn = (sel: NonNullable<Selection>, at: XY) => { setSelection(sel); setCenter(c => ({ at, key: (c?.key ?? 0) + 1 })) }
@@ -343,11 +347,15 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
 
   /** Validation: a check's fix button picks the tool that fixes it. */
   const onFix = ({ fix, target }: ReadinessCheck) => {
-    if (fix === 'flows') { setTab('flows'); return }
-    if (fix === 'charger') { armHome('charger'); return }
-    chooseTool(fix === 'scale' ? 'scale' : fix === 'route' ? 'routes' : 'flows')
-    // A loose point: the route starts from it, so the next click finishes the connection.
-    if (fix === 'route' && target?.kind === 'point' && byId.has(target.id)) { locate(target); setChainFrom(target.id) }
+    const act: Record<CheckFix, () => void> = {
+      scale: () => chooseTool('scale'),
+      // A loose point: the route starts from it, so the next click finishes the connection.
+      route: () => { chooseTool('routes'); if (target?.kind === 'point' && byId.has(target.id)) { locate(target); setChainFrom(target.id) } },
+      charger: () => armHome('charger'),
+      linkFlow: () => chooseTool('flows'),
+      flowsTab: () => setTab('flows'),
+    }
+    if (fix) act[fix]()
   }
   /** Validation: select what a check is about and centre on it (a flow: halfway between its ends). */
   const locate = (t: NonNullable<ReadinessCheck['target']>) => {
@@ -572,13 +580,13 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
               Flows <span className="num">{linked.length}/{flows.length}</span>
             </button>
             <button type="button" role="tab" aria-selected={tab === 'checks'} className={tab === 'checks' ? 'on' : ''} onClick={() => setTab('checks')}>
-              Validation<i className={`sim-vdot is-${checks.some(c => c.level === 'bad') ? 'bad' : checks.some(c => c.level === 'warn') ? 'warn' : 'good'}`} aria-hidden />
+              Validation
             </button>
           </div>
           <div className="sim-side-body" role="tabpanel">
             {banner}
             {tab === 'checks' ? (
-              <ValidationList checks={checks} onLocate={locate} onFix={onFix} />
+              <ValidationList checks={checks} status={status} onLocate={locate} onFix={onFix} />
             ) : tab === 'flows' ? (
               <FlowsList
                 layout={layout}

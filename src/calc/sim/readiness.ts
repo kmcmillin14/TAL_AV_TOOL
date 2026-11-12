@@ -24,16 +24,16 @@ export function linkedFlows(flows: ProjectFlowLike[] = []): SimFlow[] {
 }
 
 /** Chargers, and chargers plus parking spots ("homes") — every vehicle needs a home to run. */
-export function homeCounts(layout: SimLayout): { chargers: number; homes: number } {
+function homeCounts(layout: SimLayout): { chargers: number; homes: number } {
   const chargers = layout.points.filter(p => p.type === 'charger').length
   return { chargers, homes: chargers + layout.points.filter(p => p.type === 'parking').length }
 }
 
-// ---- "Ready to run?" (proof-of-concept checklist) -----------------------------------------------
+// ---- Validation (the readiness checks) -----------------------------------------------
 
 export type CheckLevel = 'bad' | 'warn' | 'info'
 /** The tool that fixes a check (validation's fix button). */
-export type CheckFix = 'scale' | 'route' | 'charger' | 'flow' | 'flows'
+export type CheckFix = 'scale' | 'route' | 'charger' | 'linkFlow' | 'flowsTab'
 export interface ReadinessCheck {
   level: CheckLevel
   text: string
@@ -63,17 +63,31 @@ export function readinessChecks(input: ReadinessInput & { fleetNeeded: number; d
   const loose = notConnected(layout)
   for (const p of loose) out.push({ level: 'warn', text: `Not connected: ${p.name || p.id} — draw a route to it.`, target: { kind: 'point', id: p.id }, fix: 'route' })
   const unplaced = flows.filter(f => !(f.fromPointId && f.toPointId))
-  if (unplaced.length) out.push({ level: 'warn', text: `${unplaced.length} Sizing flow${unplaced.length === 1 ? ' is' : 's are'} not on the layout — left out of the run.`, fix: 'flows' })
+  if (unplaced.length) out.push({ level: 'warn', text: `${unplaced.length} Sizing flow${unplaced.length === 1 ? ' is' : 's are'} not on the layout — left out of the run.`, fix: 'flowsTab' })
   let runnable = 0
   for (const f of linked) {
     const why = flowExclusion(G, f, byId, 100)
-    if (!why) runnable++
-    if (why) out.push({ level: why === 'No route' ? 'bad' : 'warn', text: `${name.get(f.fromPointId) ?? '?'} → ${name.get(f.toPointId) ?? '?'}: ${why === 'No route' ? 'no route (check one-way routes, connections and B56.5 blocks)' : why.toLowerCase()}.`, target: { kind: 'flow', id: f.id }, ...(why === 'No route' ? { fix: 'route' as const } : {}) })
+    if (!why) { runnable++; continue }
+    const noRoute = why === 'No route'
+    out.push({
+      level: noRoute ? 'bad' : 'warn', target: { kind: 'flow', id: f.id }, fix: noRoute ? 'route' : undefined,
+      text: `${name.get(f.fromPointId) ?? '?'} → ${name.get(f.toPointId) ?? '?'}: ${noRoute ? 'no route (check one-way routes, connections and B56.5 blocks)' : why.toLowerCase()}.`,
+    })
   }
   const { chargers, homes } = homeCounts(layout)
   if (fleetNeeded > 0 && homes < fleetNeeded) out.push({ level: 'bad', text: `Place a charger or parking spot for every vehicle: ${homes} placed, ${fleetNeeded} needed.`, fix: 'charger' })
   if (!chargers) out.push({ level: 'warn', text: 'No chargers placed — vehicles cannot charge during the run.', fix: 'charger' })
   else if (chargers < fleetNeeded) out.push({ level: 'info', text: `${chargers} charger${chargers === 1 ? '' : 's'} for ${fleetNeeded} vehicles. The Fleet Engine assumes one charger per vehicle.` })
-  if (!runnable) out.push({ level: 'bad', text: 'No flow runs yet: link a Pick point to a Drop point, with a vehicle and moves per hour.', fix: 'flow' })
-  return out
+  if (!runnable) out.push({ level: 'bad', text: 'No flow runs yet: link a Pick point to a Drop point, with a vehicle and moves per hour.', fix: 'linkFlow' })
+  return byLevel(out)
+}
+
+const LEVEL_ORDER: Record<CheckLevel, number> = { bad: 0, warn: 1, info: 2 }
+/** Blockers first, then warnings, then notes — the order validation lists them in (stable). */
+const byLevel = (checks: ReadinessCheck[]) => [...checks].sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level])
+
+/** The one validation status: its tone and counts, for the page head and the Validation tab. */
+export function checkStatus(checks: ReadinessCheck[]): { tone: 'bad' | 'warn' | 'good'; blockers: number; warnings: number } {
+  const blockers = checks.filter(c => c.level === 'bad').length, warnings = checks.filter(c => c.level === 'warn').length
+  return { tone: blockers ? 'bad' : warnings ? 'warn' : 'good', blockers, warnings }
 }
