@@ -292,6 +292,23 @@ selects anything it touches; validation runs live; 3D is planned for later (Task
 
 ---
 
+### Task 6c: Owner additions (2026-11-12, after simulation vehicles)
+
+Order: vehicles cleanup review → lasso (Task 7) → these → rack areas (Task 7).
+
+- [ ] **Static calc as the baseline.** The run starts from Step 3's static calculation (Fleet Engine
+  count per type) and tests it: "Static calc: 3 CB18 — does it hold?"; the stepper tests other counts
+  against that baseline ("3 → 4").
+- [ ] **Deciding headline row** across the top of Run, static calc beside simulated: fleet,
+  utilization (total), pallets/moves per hour vs target, battery (lowest SoC, time charging), average
+  wait, verdict.
+- [ ] **Fleet manager flag** (information only — no effect on the run): when the simulated types'
+  `fleetSoftware` differ, a Validation warning and a Run note — the simulation assumes one traffic
+  control for all vehicles; a mixed fleet needs zone interlocks or a coordinating layer.
+- [ ] **Site traffic factor** (owner chose option 1 of 3): one percentage under Assumptions for
+  congestion from forklifts, people and other traffic — it slows every vehicle everywhere (on top of
+  pace %). Shown in Run's assumptions line. (Zones and simulated other traffic were declined for now.)
+
 ### Task 7: Highways, areas, racking and floor lanes (Milestone 7)
 
 - [ ] **Highway object:** a rectangle (x, y, length, width, angle; ft) with direction, U-turns and
