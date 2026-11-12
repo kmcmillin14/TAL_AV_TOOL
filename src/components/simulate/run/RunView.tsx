@@ -9,10 +9,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
-import { runFleet, simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
+import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
 import { RUN_DEFAULTS } from '@/src/lib/simFields'
-import { useByValue } from '@/src/lib/useByValue'
-import { engineFleetByType, engineFleetTotal } from '@/src/calc/fleet'
+import { engineFleetTotal } from '@/src/calc/fleet'
 import type { SimResults, SimSettings, Verdict } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import { getProject, patchSimSettings, type StoredProject } from '@/src/lib/storage'
@@ -49,7 +48,12 @@ interface Props {
    *  speaks for Sizing or the price. */
   differs: boolean
   /** Set a type's simulated count (the page's one writer of the stepper). */
-  onFleet: (vehicleId: string, n: number) => void
+  onFleet: (vehicleId: string, n: number | undefined) => void
+  /** The static calc per type (the Fleet Engine for the flows as simulated) and the fleet the run
+   *  places — worked out once by the page, shared with the chips and validation. */
+  onResetFleet: (vehicleIds: string[]) => void
+  engineFleet: Record<string, number>
+  fleetBy: Record<string, number>
 }
 
 const clock = (t: number) => {
@@ -71,11 +75,10 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 /** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet }: Props) {
+export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy }: Props) {
   const simSettings = project.simSettings ?? {}
   /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
   const forSizing = !differs
-  const engineFleet = useByValue(useMemo(() => engineFleetByType(fleet), [fleet]))
   // The key hashes the vehicle files (overrides are hashed from simSettings) — as Sizing does, so a
   // result is only "stale" when its inputs really changed.
   const fileVehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
@@ -86,8 +89,6 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     arrivals: simSettings.arrivals ?? RUN_DEFAULTS.arrivals, demandPct: simSettings.demandPct ?? RUN_DEFAULTS.demandPct, seed: simSettings.seed ?? RUN_DEFAULTS.seed,
   }), [simSettings.pacePct, simSettings.safetyFt, simSettings.arrivals, simSettings.demandPct, simSettings.seed])
   const shiftH = project.hoursPerShift ?? 8
-  const stepper = useByValue(simSettings.fleet)
-  const fleetBy = useByValue(useMemo(() => runFleet(engineFleet, stepper, inputs.flows.map(f => f.vehicleId)), [engineFleet, stepper, inputs.flows]))
   const simConfig = useCallback((seed: number): SimSettings => ({
     fleet: fleetBy, demandPct: assume.demandPct, seed, arrivals: assume.arrivals, pacePct: assume.pacePct, safetyFt: assume.safetyFt,
     staffedHr: settings.dailyOpHr, targetUtilization: settings.targetUtilization, ...(Object.keys(payloads).length ? { payloadFt: payloads } : {}),
@@ -210,7 +211,6 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   /** Stable, so the memoized Run details do not re-render every frame. */
   const openAll = useCallback(() => onAssumptions(null), [onAssumptions])
 
-
   const S = live.current
   const followed = S && follow >= 0 ? S.veh[follow] : null
 
@@ -256,7 +256,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         })}
         <div className="sim-vsub">
           {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
-          <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <> · <button type="button" className="link-btn" onClick={() => patchSimSettings(project.id, { fleet: Object.fromEntries(Object.entries(simSettings.fleet ?? {}).filter(([vid]) => !(vid in fleetBy))) })}>Reset to engine</button></>}</span>
+          <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <> · <button type="button" className="link-btn" onClick={() => onResetFleet(Object.keys(fleetBy))}>Reset to engine</button></>}</span>
           <span>Full {shiftH} h shift · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
           <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
           <span className="grow" />

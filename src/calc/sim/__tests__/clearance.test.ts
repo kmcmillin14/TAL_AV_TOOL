@@ -82,10 +82,10 @@ describe('envelope width (acceptance 29)', () => {
       ],
       segments: [{ id: 'AB', a: 'A', b: 'B', dir: 'two' }, { id: 'AC', a: 'A', b: 'C', dir: 'two' }],
     }
-    const env = envelopes(L, [{ fromPointId: 'A', toPointId: 'B', vehicleWidthFt: 4.19 }], 4.5)
+    const env = envelopes(L, [{ fromPointId: 'A', toPointId: 'B', vehicleWidthFt: 4.19, payloadWidthFt: 4.5 }])
     expect(env('AB')).toBe(4.5)
     expect(env('AC')).toBe(4.19)
-    expect(envelopes(L, [{ fromPointId: 'A', toPointId: 'B', vehicleWidthFt: 4.19 }], 3.33)('AB')).toBe(4.19)
+    expect(envelopes(L, [{ fromPointId: 'A', toPointId: 'B', vehicleWidthFt: 4.19, payloadWidthFt: 3.33 }])('AB')).toBe(4.19)
   })
 })
 

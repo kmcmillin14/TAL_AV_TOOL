@@ -179,7 +179,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   }, [hoverOn, chainFrom, targetMarks, layout, graph])
   /** A flow just linked here: the inspector opens it with Moves per hour focused. */
   const [justAdded, setJustAdded] = useState<string | null>(null)
-  // The flows as the simulation drives them (vehicle switcher) — lanes, corners and B56.5 follow.
+  // The flows as the simulation drives them (simulation vehicles) — lanes, corners and B56.5 follow.
   const simFlows = useMemo(() => (runAs ? runAs(flows).flows : flows), [flows, runAs])
   /** Each flow's simulation vehicle (the flow inspector). */
   const simVehicleOf = useMemo(() => new Map(simFlows.map(f => [f.id, f.vehicleId])), [simFlows])

@@ -138,7 +138,7 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
   onFlows: (next: ProjectFlow[]) => void
   onSelect: (flowId: string) => void
   /** Each flow's simulation vehicle (shown when it differs from Sizing's). */
-  simVehicleOf?: Map<string, string | undefined>
+  simVehicleOf: Map<string, string | undefined>
   selectedId?: string
 }) {
   const [confirm, setConfirm] = useState(false)
@@ -163,14 +163,14 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
       <ol className="sim-flow-list">
         {flows.map((f, i) => {
           const linked = !!(f.fromPointId && f.toPointId)
-          const would = pending.get(f.id)
+          const would = pending.get(f.id), sv = simVehicleOf.get(f.id)
           const d = would ? (would.distanceFt ?? 0) - f.distanceFt : null
           const body = (
             <>
               <span className="n num">{i + 1}</span>
               <span className="nm">{linked ? `${name(f.fromPointId)} → ${name(f.toPointId)}` : `${f.origin || '—'} → ${f.destination || '—'}`}</span>
               <span className="meta">
-                {(() => { const sv = simVehicleOf?.get(f.id) ?? f.vehicleId; return (sv && vehicleById.get(sv)?.name) || 'No vehicle' })()}{simVehicleOf && simVehicleOf.get(f.id) !== f.vehicleId && <span className="sim-tag">sim only</span>} · <span className="num">{f.thruPerHr || 0}</span>/h · <span className="num">{fmt(f.distanceFt)}</span>
+                {(sv && vehicleById.get(sv)?.name) || 'No vehicle'}{sv !== f.vehicleId && <span className="sim-tag">sim only</span>} · <span className="num">{f.thruPerHr || 0}</span>/h · <span className="num">{fmt(f.distanceFt)}</span>
                 {linked ? <span className="sim-tag">layout</span> : !would && <span className="sim-tag is-off">not placed</span>}
                 {would && <span className={d != null && Math.abs(d) >= 0.5 ? 'warn' : ''}> → <span className="num">{fmt(would.distanceFt)}</span> ({d! > 0 ? '+' : ''}{lengthToDisplay(d!, unitSystem).toFixed(0)})</span>}
               </span>

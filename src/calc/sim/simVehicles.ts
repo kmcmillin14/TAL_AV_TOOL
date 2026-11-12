@@ -35,13 +35,18 @@ export function vehicleChoices(vehicles: Vehicle[], app: ApplicationRequirements
  */
 export function simVehicleTypes(stored: SimVehicleType[] | undefined, sizingFlows: { vehicleId?: string }[], loads: LoadDims[], vehicleAs?: string): SimVehicleType[] {
   if (stored) return stored
-  const big = largestLoad(loads), payload = big ? { loadId: big.id } : undefined
   const ids = vehicleAs ? [vehicleAs] : [...new Set(sizingFlows.flatMap(f => (f.vehicleId ? [f.vehicleId] : [])))]
-  return ids.map(vehicleId => ({ vehicleId, ...(payload ? { payload } : {}) }))
+  return ids.map(id => newSimType(id, loads))
+}
+
+/** A type as it is added (prefill or + Vehicle): carrying Step 1's largest load, when there is one. */
+export function newSimType(vehicleId: string, loads: LoadDims[]): SimVehicleType {
+  const big = largestLoad(loads)
+  return big ? { vehicleId, payload: { loadId: big.id } } : { vehicleId }
 }
 
 /** The load a new type carries: Step 1's widest (then longest) — the one that sizes the aisles. */
-export function largestLoad<L extends LoadDims>(loads: L[]): L | undefined {
+function largestLoad<L extends LoadDims>(loads: L[]): L | undefined {
   return [...loads].sort((a, b) => (b.widthIn ?? 0) - (a.widthIn ?? 0) || (b.lengthIn ?? 0) - (a.lengthIn ?? 0))[0]
 }
 

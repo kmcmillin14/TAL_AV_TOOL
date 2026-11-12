@@ -156,7 +156,6 @@ export function applyClearance<T extends SimLayout>(L: T, results: SegmentCleara
 export function envelopes(
   L: SimLayout,
   flows: { fromPointId: string; toPointId: string; vehicleWidthFt: number; payloadWidthFt?: number }[],
-  payloadWidthFt = 0,
 ): (segId: string) => number {
   const G = buildGraph(L)
   const loaded = new Map<string, number>(), empty = Math.max(0, ...flows.map(f => f.vehicleWidthFt))
@@ -165,7 +164,7 @@ export function envelopes(
     const r = a != null && b != null ? route(G, a, b) : null
     for (const e of r?.edges ?? []) {
       const id = L.segments[e.seg].id
-      loaded.set(id, Math.max(loaded.get(id) ?? 0, f.vehicleWidthFt, f.payloadWidthFt ?? payloadWidthFt))
+      loaded.set(id, Math.max(loaded.get(id) ?? 0, f.vehicleWidthFt, f.payloadWidthFt ?? 0))
     }
   }
   return id => Math.max(loaded.get(id) ?? 0, empty)

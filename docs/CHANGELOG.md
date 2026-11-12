@@ -23,6 +23,10 @@
   be cleared while typing; the + Vehicle window keeps focus; the popover opens leftward near the edge;
   cards say Compatible · Review required · Not checked; one writer for the simulated count (tested,
   simulate-first included).
+- Cleanup review: one map of the fleet the run places (chips, validation and Run share it) and one
+  writer of the stepper; one rule for a new type's payload (`newSimType`); the + Vehicle window works
+  out its cards only while open and reuses the comparison window's frame; `useDismiss` closes the
+  window and popover on Escape or a press outside; `envelopes` takes the payload per flow only.
 
 ## 2026-11-12 — Fleet simulation: highways (Milestone 7, part 1)
 

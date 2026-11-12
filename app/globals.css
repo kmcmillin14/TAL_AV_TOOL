@@ -5677,7 +5677,6 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-valid-row > .btn { grid-column: 2; justify-self: start; }
 
 
-/* Vehicle switcher (simulation only): ‹ vehicle › in the page head. */
 /* Simulation vehicles: one chip per type (static → simulated), + Vehicle, and the type's popover. */
 .sim-vbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .sim-vbar-label { font: 600 11px var(--tal-font-numeric); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); margin-right: 4px; }
@@ -5706,14 +5705,11 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-field-note { display: block; margin-top: 4px; font-size: 12px; color: var(--text-secondary); }
 
 /* + Vehicle window: vehicle cards with photo and Step 2 compatibility. */
-.sim-vpick-overlay { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 40px 16px; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); }
-.sim-vpick { display: flex; flex-direction: column; width: 100%; max-width: 920px; max-height: 100%; background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 18px; box-shadow: 0 24px 64px rgba(0,0,0,0.35); }
-.sim-vpick-head { display: flex; align-items: baseline; gap: 12px; padding: 24px 24px 16px; }
-.sim-vpick-head h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); }
+.sim-vpick { max-width: 920px; border-radius: 18px; }
+.sim-vpick-head { justify-content: flex-start; gap: 12px; }
+.sim-vpick-head .cmp-close { margin-left: auto; }
 .sim-vpick-sub { font-size: 13px; color: var(--text-secondary); }
-.sim-vpick-close { margin-left: auto; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--text-secondary); }
-.sim-vpick-close:hover { background: var(--bg-hover); color: var(--text-primary); }
-.sim-vpick-grid { list-style: none; margin: 0; padding: 0 24px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.sim-vpick-grid { list-style: none; margin: 0; padding: 16px 24px 0; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
 .sim-vcard { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 12px 16px; text-align: left; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); cursor: pointer; transition: border-color 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.2s cubic-bezier(0.25, 0.1, 0.25, 1); }
 .sim-vcard:hover:not(:disabled) { border-color: var(--border-strong); }
 .sim-vcard:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 2px; }

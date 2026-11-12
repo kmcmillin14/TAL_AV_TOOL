@@ -7,7 +7,7 @@
 
 import { engineFleetByType } from '@/src/calc/fleet'
 import { engineFleetFor } from '@/src/lib/fleetModel'
-import { payloadsByVehicle, simFlows, simVehicleTypes, vehicleChoices, type SimVehicleType } from '@/src/calc/sim/simVehicles'
+import { payloadsByVehicle, simFlows, simVehicleTypes, type SimVehicleType } from '@/src/calc/sim/simVehicles'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
 import { useCallback, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
@@ -31,6 +31,7 @@ import AssumptionsDrawer from './inspector/AssumptionsDrawer'
 import { overriddenFields } from '@/src/lib/simFields'
 
 const SAMPLE_PREFIX = 'sample-'
+const NO_LOADS: NonNullable<StoredProject['loads']> = []
 const isSample = (id: string) => id.startsWith(SAMPLE_PREFIX)
 
 interface Props {
@@ -58,7 +59,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const ss = project.simSettings
   const app = useByValue(useMemo(() => appRequirementsFromProject(project), [project]))
   const sizingIds = useByValue(useMemo(() => fleet.groups.map(g => g.vehicleId), [fleet]))   // Sizing's vehicles
-  const loads = useByValue(project.loads ?? [])
+  const loads = useByValue(project.loads ?? NO_LOADS)
   const types = useByValue(useMemo(() => simVehicleTypes(ss?.vehicles, sizingFlows, loads, ss?.vehicleAs), [ss?.vehicles, sizingFlows, loads, ss?.vehicleAs]))
   const flowVehicle = useByValue(ss?.flowVehicle)
   /** The run's flows from any flows (the editor's live ones too) — one rule. */
@@ -70,38 +71,37 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const simFleet = useMemo(() => (sim.changed ? engineFleetFor(flowsV, vehicleById, settingsV) : fleet), [sim.changed, fleet, flowsV, vehicleById, settingsV])
   const payloads = useMemo(() => payloadsByVehicle(types, loads), [types, loads])
   /** Store the types (from then on they no longer follow Sizing); an earlier switch is folded in. */
-  const setTypes = (next: SimVehicleType[]) => patchSimSettings(project.id, { vehicles: next, vehicleAs: undefined })
+  const setTypes = useCallback((next: SimVehicleType[]) => patchSimSettings(project.id, { vehicles: next, vehicleAs: undefined }), [project.id])
   /** A flow's simulation vehicle; its Sizing vehicle again clears the choice. */
   const setFlowVehicle = useCallback((flowId: string, vehicleId: string) => {
     const next = { ...(flowVehicle ?? {}) }
-    if (flows.find(f => f.id === flowId)?.vehicleId === vehicleId) delete next[flowId]
+    if (sizingFlows.find(f => f.id === flowId)?.vehicleId === vehicleId) delete next[flowId]
     else next[flowId] = vehicleId
     patchSimSettings(project.id, { flowVehicle: next })
-  }, [flowVehicle, flows, project.id])
+  }, [flowVehicle, sizingFlows, project.id])
   const clearance = useByValue(project.simSettings?.clearance)
   // The chips: each type's static calc (the Fleet Engine for the flows as simulated) and the count the
   // run places (its stepper, else the engine).
-  const choices = useMemo(() => vehicleChoices(vehicles, app, sizingIds), [vehicles, app, sizingIds])
-  const staticN = useMemo(() => engineFleetByType(simFleet), [simFleet])
+  const staticN = useByValue(useMemo(() => engineFleetByType(simFleet), [simFleet]))
   const stepperV = useByValue(ss?.fleet)
-  const simulatedN = useMemo(() => runFleet(staticN, stepperV, types.map(t => t.vehicleId)), [staticN, stepperV, types])
-  const runningIds = useMemo(() => new Set(flowsV.flatMap(f => (f.vehicleId ? [f.vehicleId] : []))), [flowsV])
   const stepped = useMemo(() => new Set(Object.keys(stepperV ?? {})), [stepperV])
   const typeVehicles = useMemo(() => types.flatMap(t => vehicleById.get(t.vehicleId) ?? []), [types, vehicleById])
-  const setFleet = (vid: string, n: number | undefined) => {
+  /** The one writer of the simulated count: a value equal to the static calc (or none) clears it. */
+  const setFleet = useCallback((vid: string, n: number | undefined) => {
     const next = { ...(stepperV ?? {}) }
     if (n == null || n === staticN[vid]) delete next[vid]
     else next[vid] = Math.max(1, Math.min(500, n))
     patchSimSettings(project.id, { fleet: next })
-  }
+  }, [stepperV, staticN, project.id])
+  /** Back to the static calc for these types. */
+  const resetFleet = useCallback((ids: string[]) => patchSimSettings(project.id, { fleet: Object.fromEntries(Object.entries(stepperV ?? {}).filter(([vid]) => !ids.includes(vid))) }), [stepperV, project.id])
   const inputs = useMemo(
     () => runInputs(layoutV ?? emptyLayout(), flowsV, simVehicleById, clearanceRule(clearance), payloads),
     [layoutV, flowsV, simVehicleById, clearance, payloads],
   )
-  const fleetNeeded = useMemo(() => {
-    const placed = runFleet(engineFleetByType(simFleet), project.simSettings?.fleet, inputs.flows.map(f => f.vehicleId))
-    return Object.values(placed).reduce((a, b) => a + b, 0)
-  }, [inputs.flows, simFleet, project.simSettings?.fleet])
+  /** The fleet the run places, per type with a linked flow — one map for the chips, validation and Run. */
+  const placed = useByValue(useMemo(() => runFleet(staticN, stepperV, inputs.flows.map(f => f.vehicleId)), [staticN, stepperV, inputs.flows]))
+  const fleetNeeded = useMemo(() => Object.values(placed).reduce((a, b) => a + b, 0), [placed])
   const checks = useMemo(
     () => readinessChecks({ layout: layoutV, flows: flowsV, vehicles: simVehicles, driven: layoutV && inputs.layout, fleetNeeded }),
     [layoutV, flowsV, simVehicles, inputs, fleetNeeded],
@@ -194,8 +194,8 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
       </div>
 
       {!narrow && (
-        <VehicleBar types={types} vehicleById={vehicleById} choices={choices} loads={loads} staticN={staticN} simulatedN={simulatedN}
-          stepped={stepped} running={runningIds} unitSystem={unitSystem} onTypes={setTypes} onFleet={setFleet} />
+        <VehicleBar types={types} vehicleById={vehicleById} vehicles={vehicles} app={app} sizingIds={sizingIds} loads={loads} staticN={staticN}
+          placed={placed} stepped={stepped} unitSystem={unitSystem} onTypes={setTypes} onFleet={setFleet} />
       )}
       {(running || narrow) && banner}
 
@@ -204,7 +204,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <div className="empty-state"><h3>Open on a desktop to edit the layout</h3></div>
         </section>
       ) : running ? (
-        <RunView onAssumptions={openAssumptions} changed={changed.length} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} />
+        <RunView onAssumptions={openAssumptions} changed={changed.length} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}

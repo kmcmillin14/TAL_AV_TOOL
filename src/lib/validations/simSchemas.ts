@@ -102,7 +102,7 @@ export const simSettingsSchema = z.object({
   /** Earlier vehicle switcher: read once as a one-type `vehicles` list (simVehicleTypes); not written. */
   vehicleAs: z.string().optional(),
   /** The simulation's vehicle types, each with its payload (a Step 1 load or custom dims, in);
-   *  absent = Sizing's vehicles with Step 1's first load (simulation only). */
+   *  absent = Sizing's vehicles with Step 1's largest load (simulation only). */
   vehicles: z.array(z.object({
     vehicleId: z.string(),
     payload: z.union([

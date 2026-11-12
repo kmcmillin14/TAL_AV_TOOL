@@ -3,44 +3,44 @@
 // + Vehicle (owner, 2026-11-12): a window of vehicle cards — photo, name, Step 2 compatibility, Sizing's
 // tagged. Red ones are shown greyed with the requirement they fail. Tick one or several and add them.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '@/src/design-system/components/Icon'
 import TrafficLight from '@/src/design-system/components/TrafficLight'
-import type { VehicleChoice } from '@/src/calc/sim/simVehicles'
+import { vehicleChoices } from '@/src/calc/sim/simVehicles'
+import type { ApplicationRequirements } from '@/src/calc/types'
+import { useDismiss } from '@/src/lib/useDismiss'
+import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
 /** Step 2's compatibility in the spec's words (spec: Simulation vehicles). */
 const STATUS_WORD = { GREEN: 'Compatible', YELLOW: 'Review required', INCOMPLETE: 'Not checked', RED: 'Not compatible' } as const
 
 interface Props {
-  choices: VehicleChoice[]
+  vehicles: Vehicle[]
+  app: ApplicationRequirements
+  sizingIds: string[]
   /** Vehicle ids already in the simulation (shown ticked, not addable again). */
   added: Set<string>
   onAdd: (vehicleIds: string[]) => void
   onClose: () => void
 }
 
-export default function VehiclePicker({ choices, added, onAdd, onClose }: Props) {
+export default function VehiclePicker({ vehicles, app, sizingIds, added, onAdd, onClose }: Props) {
+  const choices = useMemo(() => vehicleChoices(vehicles, app, sizingIds), [vehicles, app, sizingIds])
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const dialog = useRef<HTMLDivElement>(null)
-  const close = useRef(onClose)
-  useEffect(() => { close.current = onClose })
+  useDismiss(onClose)
   // Focus the first card once, on open (not on every re-render of the page behind it).
-  useEffect(() => {
-    dialog.current?.querySelector<HTMLElement>('.sim-vcard:not(:disabled)')?.focus()
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') close.current() }
-    window.addEventListener('keydown', esc)
-    return () => window.removeEventListener('keydown', esc)
-  }, [])
+  useEffect(() => { dialog.current?.querySelector<HTMLElement>('.sim-vcard:not(:disabled)')?.focus() }, [])
   const toggle = (id: string) => setPicked(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const n = picked.size
 
   return (
-    <div className="sim-vpick-overlay" onPointerDown={e => { if (e.target === e.currentTarget) onClose() }}>
-      <div className="sim-vpick" role="dialog" aria-modal="true" aria-labelledby="sim-vpick-title" ref={dialog}>
-        <header className="sim-vpick-head">
+    <div className="cmp-overlay" onPointerDown={e => { if (e.target === e.currentTarget) onClose() }}>
+      <div className="cmp-modal sim-vpick" role="dialog" aria-modal="true" aria-labelledby="sim-vpick-title" ref={dialog}>
+        <header className="cmp-head sim-vpick-head">
           <h2 id="sim-vpick-title">Add vehicles</h2>
           <span className="sim-vpick-sub">Simulation only — Sizing keeps its vehicles</span>
-          <button type="button" className="sim-vpick-close" aria-label="Close" onClick={onClose}><Icon name="x" size={16} /></button>
+          <button type="button" className="cmp-close" aria-label="Close" onClick={onClose}><Icon name="x" size={16} /></button>
         </header>
         <ul className="sim-vpick-grid">
           {choices.map(({ vehicle: v, status, sizing, why }) => {
