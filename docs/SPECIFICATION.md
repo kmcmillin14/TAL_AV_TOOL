@@ -740,8 +740,8 @@ step ribbon is unchanged.
   - *Flows — from Sizing* table: Sizing distance, distance on the layout, Δ, and the Fleet Engine;
     **Use layout distances** links name-matched flows after a confirmation showing Fleet Engine
     before → after (it moves the quote).
-  - *Head (apple-ui-design pass):* one primary action — **Run** (red) once "Ready to run?" has no red
-    item, the reason beside it when not; **Edit layout** in Run mode. A ⋯ menu holds **Load sample**
+  - *Head (apple-ui-design pass):* one primary action — **Run** (red) once validation has no red
+    item (the Validation button beside it says why when not); **Edit layout** in Run mode. A ⋯ menu holds **Load sample**
     (offered only on a project with no flows, so it can never change a real quote; its flows are
     prefixed `sample-` and removed by "Clear and draw your own") and **Clear layout…**. Back to Sizing
     is a link beside the step label.
@@ -850,9 +850,8 @@ step ribbon is unchanged.
     Fleet Engine line and **Use layout distances** (with its before → after confirmation) stay at
     its foot. There is no Run tab — Run stays the page head's one red button (one action, asked once).
   - *Selection first.* The Layout tab shows the selected object's inspector at the top. Drawing,
-    Place on routes and Ready to run? sit below it as folded sections, each with a one-word status
-    (e.g. "Scaled", "3 to place", "2 issues"); Place on routes opens by itself while names are left
-    to place.
+    Place on routes sit below it as folded sections, each with a one-word status (e.g. "Scaled",
+    "3 to place"); Place on routes opens by itself while names are left to place.
   - *Compact rows.* Each assumption is one row: label on the left, value on the right with the unit
     inside the box, the reset (↺) beside it when overridden or drawn. The source is a small word
     under the label (JSON · Step 1 · Drawn · Default · Override); an override has the accent dot.
@@ -869,10 +868,16 @@ step ribbon is unchanged.
   - *Keyboard.* Arrow keys nudge the selected points or object 1 ft (Shift: 10 ft; one undo step
     per run of nudges); Delete removes the selection; Tab / Shift-Tab steps through the stations,
     selecting and centring each, once the canvas has focus (a click on it). Keys go to the editor only when no field or control has focus.
-  - *Step strip.* A thin strip above the canvas: **Draw aisles · Place stations · Link flows ·
-    Chargers & parking · Run**. Each step is done (✓), next (highlighted) or to do, worked out from
-    the layout and the readiness checks; clicking a step picks its tool (Route; Place, with the
-    Place on routes section open; the Flows tab; Place armed with a charger; Run when it can run).
+  - *Validation (owner, 2026-11-12; replaces the step strip and the Ready to run? section).* The
+    checks (`readinessChecks`) run live as the layout changes. The page head shows them as one
+    button beside Run — **✓ Valid**, or **2 blockers · 3 warnings** — and Run is enabled only while
+    nothing is red. The button opens the side panel's **Validation** tab: blockers first, then
+    warnings and notes, one row per thing (each loose point is its own row). Clicking a row selects
+    what it is about and centres the view on it; a row's fix button picks the tool that fixes it
+    (Draw route · Place charger · Link flow · Scale · Open Flows).
+  - *One direction (owner, 2026-11-12):* **Sizing → Simulation → Price only.** The simulation reads
+    Sizing (flows, vehicles, loads) and never writes back to it; the only way it changes a quote is
+    an explicit "Use … in pricing" with its before → after confirmation (D-1).
 - **Simulated fleet in pricing (built, Milestone 5; D-1, raise-only).** Quoted numbers can move.
   - *Use N in pricing:* a verdict row offers it only when the stepper value **Meets** and is above
     the Fleet Engine's figure for that type. While it is offered, the run also checks one vehicle

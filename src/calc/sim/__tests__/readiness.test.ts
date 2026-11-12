@@ -67,4 +67,16 @@ describe('readinessChecks ("Ready to run?")', () => {
     const checks = run([ok, { ...ok, id: 'g', toPointId: 'D' }, { id: 'typed' }], { layout })
     expect(checks.map(c => c.text).join(' | ')).toMatch(/Not connected: Far.*1 Sizing flow is not on the layout.*no route/)
   })
+
+  it('points each check at what it is about and the tool that fixes it (validation)', () => {
+    const layout = corridor(100)
+    layout.points.push({ id: 'D', x: 500, y: 500, type: 'stand', role: 'drop', name: 'Far' }, { id: 'E', x: 600, y: 500, type: 'stand', role: 'drop', name: 'Farther' })
+    const checks = run([ok, { ...ok, id: 'g', toPointId: 'D' }, { id: 'typed' }], { layout })
+    const of = (re: RegExp) => checks.find(c => re.test(c.text))
+    // one row per loose point
+    expect(checks.filter(c => c.text.startsWith('Not connected')).map(c => c.target)).toEqual([{ kind: 'point', id: 'D' }, { kind: 'point', id: 'E' }])
+    expect(of(/not on the layout/)).toMatchObject({ fix: 'flows' })
+    expect(of(/no route/)).toMatchObject({ level: 'bad', target: { kind: 'flow', id: 'g' }, fix: 'route' })
+    expect(readinessChecks({ vehicles: LIBRARY, fleetNeeded: 1 })[0]).toMatchObject({ fix: 'route' })
+  })
 })

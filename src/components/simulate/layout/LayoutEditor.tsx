@@ -28,7 +28,7 @@ import { getDrawingData, type StoredProject } from '@/src/lib/storage'
 import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import DrawingCard from './DrawingCard'
-import { ChecksCard, FlowsList, layoutSteps, PlaceCard, placeProgress, roleOf, StepStrip, suggestType, type Armed, type StepId } from './SimCards'
+import { FlowsList, PlaceCard, placeProgress, ValidationList, type Armed } from './SimCards'
 import { Section } from '../inspector/InspectorParts'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import LayoutCanvas, { type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
@@ -102,18 +102,15 @@ interface Props {
   /** Hands the page a way to change the layout through this editor (its undo history), so the
    *  Assumptions drawer's point and route edits are undo steps too and never overwritten. */
   registerLayoutWriter?: (write: ((update: (L: EditorLayout) => EditorLayout) => void) | null) => void
-  /** The step strip's last step. */
-  canRun: boolean
-  onRun: () => void
-  /** Vehicles the run places — the chargers & parking step needs a home for each. */
-  fleetNeeded: number
+  /** Bumped by the page head's Validation button: open the Validation tab. */
+  validateKey?: number
   /** Shown at the top of the side panel (the sample banner). */
   banner?: ReactNode
 }
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, canRun, onRun, fleetNeeded, banner }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, validateKey = 0, banner }: Props) {
   const radiusFor = useCallback((id?: string) => (id && vehicleById.get(id)?.calc.turningRadiusFt) || 0, [vehicleById])
   const editor = useLayoutEditor(project, radiusFor)
   const { doc, latest, commit, canUndo, canRedo } = editor
@@ -130,7 +127,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const [showClearance, setShowClearance] = useState(false)
   const [fitKey, setFitKey] = useState(0)
   /** The side panel's tab. */
-  const [tab, setTab] = useState<'layout' | 'flows'>('layout')
+  const [tab, setTab] = useState<'layout' | 'flows' | 'checks'>('layout')
+  useEffect(() => { if (validateKey) setTab('checks') }, [validateKey])
   /** Centre the view here (navigator, Tab); the key re-centres on the same spot. */
   const [center, setCenter] = useState<{ at: XY; key: number } | null>(null)
   const focusOn = (sel: NonNullable<Selection>, at: XY) => { setSelection(sel); setCenter(c => ({ at, key: (c?.key ?? 0) + 1 })) }
@@ -343,24 +341,24 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     return false
   }
 
-  /** A step in the strip: pick its tool (and the panel that goes with it). */
-  const onStep = (id: StepId) => {
-    if (id === 'run') { onRun(); return }
-    setTab(id === 'flows' ? 'flows' : 'layout')
-    chooseTool(id === 'aisles' ? 'routes' : id === 'flows' ? 'flows' : 'points')
-    if (id === 'homes') armHome('charger')
-    // The first Sizing name not yet placed is armed, so the next click places it.
-    const n = place.unplaced[0]
-    if (id === 'stations' && n) arm({ name: n.name, type: suggestType(n.name), role: roleOf(n) })
+  /** Validation: a check's fix button picks the tool that fixes it. */
+  const onFix = ({ fix, target }: ReadinessCheck) => {
+    if (fix === 'flows') { setTab('flows'); return }
+    if (fix === 'charger') { armHome('charger'); return }
+    chooseTool(fix === 'scale' ? 'scale' : fix === 'route' ? 'routes' : 'flows')
+    // A loose point: the route starts from it, so the next click finishes the connection.
+    if (fix === 'route' && target?.kind === 'point' && byId.has(target.id)) { locate(target); setChainFrom(target.id) }
+  }
+  /** Validation: select what a check is about and centre on it (a flow: halfway between its ends). */
+  const locate = (t: NonNullable<ReadinessCheck['target']>) => {
+    if (t.kind === 'point') { const p = byId.get(t.id); if (p) focusOn({ kind: 'point', id: p.id }, p); return }
+    const f = flows.find(q => q.id === t.id), a = byId.get(f?.fromPointId ?? ''), b = byId.get(f?.toPointId ?? '')
+    if (f && a && b) focusOn({ kind: 'flow', id: f.id }, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 })
   }
   /** Arm the Place tool with a Sizing name (its type and role), or with a charger or parking spot. */
   const arm = (a: Armed) => { setTool('points'); setChainFrom(null); setMarks(null); setPlaceType(a.type); setPlaceRole(a.role); setArmed(a) }
   const armHome = (t: 'charger' | 'parking') => { setTool('points'); setChainFrom(null); setMarks(null); setPlaceType(t); setArmed(null) }
   const place = useMemo(() => placeProgress(layout, flows), [layout, flows])
-  const steps = useMemo(
-    () => layoutSteps({ layout, place, linked: linked.length, flowCount: flows.length, fleetNeeded, canRun }),
-    [layout, place, linked.length, flows.length, fleetNeeded, canRun],
-  )
 
   const paste = () => {
     const ids = clipboard.current.filter(id => byId.has(id))
@@ -469,7 +467,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
 
   // Side panel: the Layout tab's folded cards, with a status word each; scaling brings Drawing to the top.
   const { names } = place, toPlace = place.unplaced.length
-  const issues = checks.filter(c => c.level !== 'info').length
   const drawingFold = (
     <Section key="drawing" title="Drawing" open={!!marks || (!!bg && !bg.scale)}
       status={!bg ? 'None' : bg.scale ? 'Scaled' : 'Not scaled'} tone={bg && !bg.scale ? 'warn' : undefined}>
@@ -493,7 +490,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     <div className="sim-editor">
       <div className="sim-work">
         <div className="sim-canvas-wrap">
-          <StepStrip steps={steps} onStep={onStep} />
           <LayoutCanvas
             layout={shownLayout}
             driven={drag ? shownLayout : driven}
@@ -575,10 +571,15 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             <button type="button" role="tab" aria-selected={tab === 'flows'} className={tab === 'flows' ? 'on' : ''} onClick={() => setTab('flows')}>
               Flows <span className="num">{linked.length}/{flows.length}</span>
             </button>
+            <button type="button" role="tab" aria-selected={tab === 'checks'} className={tab === 'checks' ? 'on' : ''} onClick={() => setTab('checks')}>
+              Validation<i className={`sim-vdot is-${checks.some(c => c.level === 'bad') ? 'bad' : checks.some(c => c.level === 'warn') ? 'warn' : 'good'}`} aria-hidden />
+            </button>
           </div>
           <div className="sim-side-body" role="tabpanel">
             {banner}
-            {tab === 'flows' ? (
+            {tab === 'checks' ? (
+              <ValidationList checks={checks} onLocate={locate} onFix={onFix} />
+            ) : tab === 'flows' ? (
               <FlowsList
                 layout={layout}
                 flows={flows}
@@ -630,9 +631,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                       onArm={arm}
                       onArmHome={armHome}
                     />
-                  </Section>
-                  <Section title="Ready to run?" status={canRun ? (issues ? `Ready · ${issues} to check` : 'Ready') : 'Not yet'} tone={canRun ? (issues ? 'warn' : 'good') : 'bad'}>
-                    <ChecksCard checks={checks} />
                   </Section>
                 </div>
               </>

@@ -267,7 +267,7 @@ no results).
 - [ ] Open Assumptions, tick Changed only, then Reset all
 - [ ] Draw: two-way aisles show both paths; click a route's badge to flip direction; place a stand near an aisle — it connects itself
 - [ ] Is the screen still clean, with nothing explained in paragraphs?
-- [ ] Follow the step strip on an empty project, start to Run — does it guide without getting in the way?
+- [ ] Break a layout on purpose: the Validation button turns red; open it, click an issue, fix it from its button
 - [ ] With nothing selected, click a station in the list; then use the arrows and Tab on the canvas
 - **Sign-off question:** Clean enough, and is anything missing or too much?
 - **You receive:** Vercel preview and this list of editable assumptions
@@ -276,7 +276,32 @@ no results).
 
 ---
 
-### Task 7: Racking and floor lanes (Milestone 7)
+### Task 6b: After the quality-of-life pass — Phase A (owner, 2026-11-12)
+
+Decisions: **Sizing → Simulation → Price only** (the simulation never writes to Sizing); lasso
+selects anything it touches; validation runs live; 3D is planned for later (Task 10).
+
+- [ ] **A1 Validation** replaces the step strip and Ready to run?: live checks, a head button
+      (✓ Valid / N blockers · N warnings), a Validation tab with click-to-locate and fix buttons.
+- [ ] **A2 Vehicle switcher** (simulation only): preloaded from the Sizing flows (or Step 2's top
+      compatible vehicle); cycle ‹ › in the head; lanes, B56.5 and the run follow; flows drawn in
+      Simulate take it. Carrying a switched vehicle into the price is its own "in pricing" step.
+- [ ] **A3 Flow linking:** a Pick lights up the Drops it can reach (and the reverse), the rest
+      dimmed with the reason on hover; hover previews the path, distance and time; Shift-click
+      chains drops; moves/h asked inline; "Add flow to…" from a Pick; name-match suggestions.
+
+---
+
+### Task 7: Highways, areas, racking and floor lanes (Milestone 7)
+
+- [ ] **Highway object:** a rectangle (x, y, length, width, angle; ft) with direction, U-turns and
+      joins; lanes, junctions and corners are derived (never stored) and drive the run; stations
+      connect to the nearest lane; drawn routes stay as connectors.
+- [ ] **Suggested width** from the vehicle or carrier envelope and B56.5 (19.7 in full speed, 6 in
+      below 1.2 m/s, shared between passing lanes), with its working and "Use suggested".
+- [ ] **Lasso (L, or Shift-drag):** selects anything it touches; totals (count, overall length,
+      one-way count); change direction or width together; delete; arrows move the selection.
+- [ ] Item 9: areas lay out their own positions.
 
 **Files:**
 - Modify: `src/calc/sim/{graph,traffic,engine}.ts` (+ tests), `src/components/simulate/layout/*`
@@ -340,3 +365,10 @@ no results).
 - **You receive:** Final summary and the complete test report
 
 **Done when:** all gates are green and the owner approves.
+
+---
+
+### Task 10: 3D view (later — planned, not scheduled)
+
+- [ ] A 3D view of the layout and the run. No data changes needed: highways carry length, width and
+      angle; racks carry levels and beam heights.

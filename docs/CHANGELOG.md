@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-11-12 — Fleet simulation: live validation replaces the step strip (owner)
+
+- **Validation:** the checks run live. The page head shows one status beside Run — "Valid", or
+  "2 blockers · 3 warnings" — and opens the side panel's new **Validation** tab: blockers first,
+  one row per thing. A row selects what it is about and centres the view on it; its button picks the
+  tool that fixes it (Draw route — starting from the loose point —, Place charger, Link flow, Scale,
+  Open Flows). Run stays disabled while anything is red.
+- **Removed:** the step strip and the "Ready to run?" section (validation does both jobs), and the
+  blocker sentence beside Run.
+- **Readiness checks** (`src/calc/sim/readiness.ts`) now carry what each is about (`target`) and its
+  fix (`fix`); a loose point is its own check instead of one list.
+- **Decisions recorded** in the spec and plan: Sizing → Simulation → Price only (the simulation never
+  writes to Sizing); Phase A (validation, vehicle switcher, easier flow linking); Milestone 7 adds
+  highways with a suggested B56.5 width and a lasso; 3D planned for later.
+
 ## 2026-11-12 — Fleet simulation: quality-of-life pass on the editor
 
 For the application engineer using it, reviewed against apple-ui-design (TAL font and colours kept).

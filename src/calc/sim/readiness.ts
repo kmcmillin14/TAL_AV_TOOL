@@ -32,7 +32,15 @@ export function homeCounts(layout: SimLayout): { chargers: number; homes: number
 // ---- "Ready to run?" (proof-of-concept checklist) -----------------------------------------------
 
 export type CheckLevel = 'bad' | 'warn' | 'info'
-export interface ReadinessCheck { level: CheckLevel; text: string }
+/** The tool that fixes a check (validation's fix button). */
+export type CheckFix = 'scale' | 'route' | 'charger' | 'flow' | 'flows'
+export interface ReadinessCheck {
+  level: CheckLevel
+  text: string
+  /** What the check is about — validation selects it and centres the view on it. */
+  target?: { kind: 'point' | 'flow'; id: string }
+  fix?: CheckFix
+}
 
 /**
  * Everything standing between the layout and a good run, in plain words (spec §5.1, acceptance 10).
@@ -42,9 +50,9 @@ export interface ReadinessCheck { level: CheckLevel; text: string }
 export function readinessChecks(input: ReadinessInput & { fleetNeeded: number; driven?: SimLayout }): ReadinessCheck[] {
   const { layout, flows = [], vehicles, fleetNeeded } = input
   const out: ReadinessCheck[] = []
-  if (layout?.background && !layout.background.scale) out.push({ level: 'bad', text: 'The drawing is not scaled — use Scale and click a known dimension.' })
+  if (layout?.background && !layout.background.scale) out.push({ level: 'bad', text: 'The drawing is not scaled — use Scale and click a known dimension.', fix: 'scale' })
   if (!layout || !layout.segments.length) {
-    out.push({ level: 'bad', text: 'Draw routes along the aisles to simulate.' })
+    out.push({ level: 'bad', text: 'Draw routes along the aisles to simulate.', fix: 'route' })
     return out
   }
   const name = new Map(layout.points.map(p => [p.id, p.name || p.id]))
@@ -53,19 +61,19 @@ export function readinessChecks(input: ReadinessInput & { fleetNeeded: number; d
   const byId = new Map(vehicles.map(v => [v.id, v]))
   const linked = linkedFlows(flows)
   const loose = notConnected(layout)
-  if (loose.length) out.push({ level: 'warn', text: `Not connected: ${loose.map(p => p.name || p.id).join(', ')} — draw a route to ${loose.length === 1 ? 'it' : 'them'}.` })
+  for (const p of loose) out.push({ level: 'warn', text: `Not connected: ${p.name || p.id} — draw a route to it.`, target: { kind: 'point', id: p.id }, fix: 'route' })
   const unplaced = flows.filter(f => !(f.fromPointId && f.toPointId))
-  if (unplaced.length) out.push({ level: 'warn', text: `${unplaced.length} Sizing flow${unplaced.length === 1 ? ' is' : 's are'} not on the layout — left out of the run.` })
+  if (unplaced.length) out.push({ level: 'warn', text: `${unplaced.length} Sizing flow${unplaced.length === 1 ? ' is' : 's are'} not on the layout — left out of the run.`, fix: 'flows' })
   let runnable = 0
   for (const f of linked) {
     const why = flowExclusion(G, f, byId, 100)
     if (!why) runnable++
-    if (why) out.push({ level: why === 'No route' ? 'bad' : 'warn', text: `${name.get(f.fromPointId) ?? '?'} → ${name.get(f.toPointId) ?? '?'}: ${why === 'No route' ? 'no route (check one-way routes, connections and B56.5 blocks)' : why.toLowerCase()}.` })
+    if (why) out.push({ level: why === 'No route' ? 'bad' : 'warn', text: `${name.get(f.fromPointId) ?? '?'} → ${name.get(f.toPointId) ?? '?'}: ${why === 'No route' ? 'no route (check one-way routes, connections and B56.5 blocks)' : why.toLowerCase()}.`, target: { kind: 'flow', id: f.id }, ...(why === 'No route' ? { fix: 'route' as const } : {}) })
   }
   const { chargers, homes } = homeCounts(layout)
-  if (fleetNeeded > 0 && homes < fleetNeeded) out.push({ level: 'bad', text: `Place a charger or parking spot for every vehicle: ${homes} placed, ${fleetNeeded} needed.` })
-  if (!chargers) out.push({ level: 'warn', text: 'No chargers placed — vehicles cannot charge during the run.' })
+  if (fleetNeeded > 0 && homes < fleetNeeded) out.push({ level: 'bad', text: `Place a charger or parking spot for every vehicle: ${homes} placed, ${fleetNeeded} needed.`, fix: 'charger' })
+  if (!chargers) out.push({ level: 'warn', text: 'No chargers placed — vehicles cannot charge during the run.', fix: 'charger' })
   else if (chargers < fleetNeeded) out.push({ level: 'info', text: `${chargers} charger${chargers === 1 ? '' : 's'} for ${fleetNeeded} vehicles. The Fleet Engine assumes one charger per vehicle.` })
-  if (!runnable) out.push({ level: 'bad', text: 'No flow runs yet: link a Pick point to a Drop point, with a vehicle and moves per hour.' })
+  if (!runnable) out.push({ level: 'bad', text: 'No flow runs yet: link a Pick point to a Drop point, with a vehicle and moves per hour.', fix: 'flow' })
   return out
 }

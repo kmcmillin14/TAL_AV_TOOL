@@ -2,7 +2,7 @@
 
 // Simulate page frame (spec v2 §3; CB18 proof-of-concept layout): an optional page opened from Sizing,
 // not a numbered step. Head: Layout | Run, Load sample, Clear layout, Back to Sizing. Layout mode is
-// the editor; Run mode plays the simulation. Run is offered only when "Ready to run?" has no red item
+// the editor; Run mode plays the simulation. Run is offered only when validation has no red item
 // (acceptance 1).
 
 import { engineFleetByType } from '@/src/calc/fleet'
@@ -41,7 +41,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const narrow = useIsNarrow()
   const [mode, setMode] = useState<'layout' | 'run'>('layout')
   const { simLayout, flows = [] } = project
-  // What a run drives, built once for "Ready to run?" and the run itself. Kept stable by value: saving
+  // What a run drives, built once for validation and the run itself. Kept stable by value: saving
   // a run's result rewrites simSettings, and that must not rebuild the inputs and restart the run.
   // The run's vehicles carry the project's overrides (Milestone 6); Sizing never sees them.
   const overrides = useByValue(project.simSettings?.overrides)
@@ -63,6 +63,9 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     [simLayout, flows, simVehicles, inputs, fleetNeeded],
   )
   const blockers = checks.filter(c => c.level === 'bad')
+  const warnings = checks.filter(c => c.level === 'warn').length
+  /** Bumped by the Validation button: the editor opens its Validation tab. */
+  const [validateKey, setValidateKey] = useState(0)
   const canRun = blockers.length === 0
   // Run mode is shown only while the run can happen; a new red item drops back to the layout.
   const running = mode === 'run' && canRun
@@ -121,8 +124,15 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
         <div className="eh-actions">
           {running
             ? <button type="button" className="btn ghost" onClick={() => setMode('layout')}><Icon name="arrowL" size={13} /> Edit layout</button>
-            : <button type="button" className="btn primary" disabled={!canRun} aria-describedby="sim-run-why" onClick={() => setMode('run')}>Run <Icon name="arrowR" size={13} /></button>}
-          {!canRun && <span id="sim-run-why" className="sim-run-why">{blockers[0]?.text}</span>}
+            : <>
+                {/* Validation, live: one status, a click opens the list in the side panel. */}
+                <button type="button" id="sim-valid" className={`btn ghost sim-valid-btn is-${blockers.length ? 'bad' : warnings ? 'warn' : 'good'}`}
+                  disabled={narrow} onClick={() => setValidateKey(k => k + 1)} title={blockers[0]?.text ?? 'Open the validation list'}>
+                  <i aria-hidden />{blockers.length ? `${blockers.length} blocker${blockers.length === 1 ? '' : 's'}` : 'Valid'}
+                  {warnings > 0 && <span className="sim-valid-sub">{warnings} warning{warnings === 1 ? '' : 's'}</span>}
+                </button>
+                <button type="button" className="btn primary" disabled={!canRun} aria-describedby="sim-valid" onClick={() => setMode('run')}>Run <Icon name="arrowR" size={13} /></button>
+              </>}
           <button type="button" className={`btn ghost sim-assume-btn${drawer ? ' on' : ''}`} aria-pressed={!!drawer} onClick={() => setDrawer(d => (d ? null : { focus: null }))}>
             Assumptions{changed.length > 0 && <span className="sim-count"><i className="sim-odot" />{changed.length} override{changed.length === 1 ? '' : 's'}</span>}
           </button>
@@ -151,7 +161,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           overridden={overriddenIds}
           registerLayoutWriter={registerLayoutWriter}
-          canRun={canRun} onRun={() => setMode('run')} fleetNeeded={fleetNeeded} banner={banner}
+          validateKey={validateKey} banner={banner}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
               <p>Draw routes along the aisles — or start from a finished site.</p>

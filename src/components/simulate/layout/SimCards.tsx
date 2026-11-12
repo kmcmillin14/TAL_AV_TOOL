@@ -2,16 +2,14 @@
 
 // The layout editor's side panel parts (proof of concept; QoL pass):
 //   Place on routes — the Sizing flows' location names, each placed with one click (plus chargers, parking)
-//   Ready to run?   — the checklist (src/calc/sim/readiness.ts)
+//   Validation      — the live checks (src/calc/sim/readiness.ts): locate and fix each
 //   Flows           — the Flows tab: every flow, its Sizing distance and its distance on the layout, the
 //                     Fleet Engine figure, and linking with a before → after confirmation (it moves the quote)
-//   Step strip      — Draw aisles · Place stations · Link flows · Chargers & parking · Run, above the canvas
 
 import { useMemo, useState } from 'react'
 import { engineFleetTotal, fleetFromFlows } from '@/src/calc/fleet'
 import { FLOW_POINT_TYPES, linkFlow, linkSuggestions, measureFlows, pointById, sameName } from '@/src/calc/sim/layoutEdit'
-import { homeCounts } from '@/src/calc/sim/readiness'
-import type { ReadinessCheck } from '@/src/calc/sim/readiness'
+import type { CheckFix, ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimLayout, SimPointType, SimRole } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import { fmtLength, lengthToDisplay, type UnitSystem } from '@/src/lib/utils/units'
@@ -91,14 +89,35 @@ export function PlaceCard({ layout, names, armed, onArm, onArmHome }: {
   )
 }
 
-export function ChecksCard({ checks }: { checks: ReadinessCheck[] }) {
+/** The Validation tab: blockers first, then warnings and notes, one row per thing. A row with a
+ *  target selects it and centres on it; its fix button picks the tool that fixes it. */
+const LEVEL_ORDER = { bad: 0, warn: 1, info: 2 } as const
+const FIX_LABEL: Record<CheckFix, string> = { scale: 'Scale', route: 'Draw route', charger: 'Place charger', flow: 'Link flow', flows: 'Open Flows' }
+export function ValidationList({ checks, onLocate, onFix }: {
+  checks: ReadinessCheck[]
+  onLocate: (t: NonNullable<ReadinessCheck['target']>) => void
+  onFix: (c: ReadinessCheck) => void
+}) {
+  const sorted = [...checks].sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level])
+  const blockers = checks.filter(c => c.level === 'bad').length
   return (
-    <section className="sim-card" aria-label="Ready to run?">
-      <div className="sim-msgs">
-        {checks.length
-          ? checks.map((c, i) => <div key={i} className={`sim-msg ${c.level}`}><i /><span>{c.text}</span></div>)
-          : <div className="sim-msg ok"><i /><span>Layout complete — switch to Run.</span></div>}
-      </div>
+    <section className="sim-valid" aria-label="Validation">
+      <p className={`sim-valid-head is-${blockers ? 'bad' : 'good'}`}>
+        {blockers ? `${blockers} blocker${blockers === 1 ? '' : 's'} — fix to run` : 'Ready to run'}
+      </p>
+      {sorted.length > 0 && (
+        <ul className="sim-valid-list">
+          {sorted.map((c, i) => (
+            <li key={i} className={`sim-valid-row ${c.level}`}>
+              <i aria-hidden />
+              {c.target
+                ? <button type="button" className="sim-valid-text" onClick={() => onLocate(c.target!)} title="Show on the layout">{c.text}</button>
+                : <span className="sim-valid-text">{c.text}</span>}
+              {c.fix && <button type="button" className="btn btn-sm ghost" onClick={() => onFix(c)}>{FIX_LABEL[c.fix]}</button>}
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   )
 }
@@ -183,44 +202,3 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
   )
 }
 
-export type StepId = 'aisles' | 'stations' | 'flows' | 'homes' | 'run'
-export interface Step { id: StepId; label: string; done: boolean; note?: string; disabled?: boolean }
-
-/** The five steps of a layout, from what is drawn and the same counts the readiness checks use. */
-export function layoutSteps({ layout, place, linked, flowCount, fleetNeeded, canRun }: {
-  layout: SimLayout; place: ReturnType<typeof placeProgress>; linked: number; flowCount: number; fleetNeeded: number; canRun: boolean
-}): Step[] {
-  const { names, unplaced } = place
-  const { chargers, homes } = homeCounts(layout)
-  return [
-    { id: 'aisles', label: 'Draw aisles', done: layout.segments.length > 0 },
-    { id: 'stations', label: 'Place stations', done: names.length ? !unplaced.length : layout.points.some(p => FLOW_POINT_TYPES.includes(p.type)),
-      note: names.length ? `${names.length - unplaced.length}/${names.length}` : undefined },
-    { id: 'flows', label: 'Link flows', done: linked > 0 && linked === flowCount, note: flowCount ? `${linked}/${flowCount}` : undefined },
-    { id: 'homes', label: 'Chargers & parking', done: chargers > 0 && homes >= fleetNeeded, note: fleetNeeded ? `${homes}/${fleetNeeded}` : undefined },
-    { id: 'run', label: 'Run', done: false, note: canRun ? 'ready' : undefined, disabled: !canRun },
-  ]
-}
-
-/** The step strip above the canvas: done ✓, the next step highlighted, a click picks its tool. */
-export function StepStrip({ steps, onStep }: { steps: Step[]; onStep: (id: StepId) => void }) {
-  const next = steps.find(s => !s.done)?.id
-  return (
-    <nav className="sim-steps" aria-label="Layout steps">
-      <ol>
-        {steps.map((s, i) => {
-          return (
-            <li key={s.id}>
-              <button type="button" className={`sim-step${s.done ? ' is-done' : ''}${s.id === next ? ' is-next' : ''}`} disabled={s.disabled}
-                aria-current={s.id === next ? 'step' : undefined} onClick={() => onStep(s.id)}>
-                <span className="sim-step-n" aria-hidden>{s.done ? '✓' : i + 1}</span>
-                <span>{s.label}</span>
-                {s.note && <span className="sim-step-note num">{s.note}</span>}
-              </button>
-            </li>
-          )
-        })}
-      </ol>
-    </nav>
-  )
-}
