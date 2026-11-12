@@ -93,10 +93,11 @@ describe('flows from points (acceptance 11)', () => {
     expect(flowRefusal(L, a, b)).toBeNull()
     expect(flowRefusal(L, b, a)).toBe('Start a flow at a Pick point.')
     expect(flowRefusal(L, a, a)).toBe('A flow needs two different points.')
-    expect(flowStartRefusal(L, b)).toBe('Start a flow at a Pick point.')
+    expect(flowStartRefusal(L, b)).toBeNull()   // a Drop can start one (linked back to a Pick)
     expect(flowStartRefusal(L, a)).toBeNull()
     const C = addPoint(L, { x: 0, y: 30 }, 'charger')
     expect(flowRefusal(C.layout, a, C.id)).toBe('End a flow at a Drop point.')
+    expect(flowStartRefusal(C.layout, C.id)).toBe('Start a flow at a Pick or a Drop point.')
     expect(flowRefusal(updatePoint(L, b, { role: 'pickDrop' }), b, a)).toBe('End a flow at a Drop point.')
   })
 
@@ -376,14 +377,15 @@ describe('flowTargets (Flow tool highlight, "Add flow to…")', () => {
     const r = flowTargets(L, 'P', [{ fromPointId: 'P', toPointId: 'D2' }])!
     expect(r.from).toBe('pick')
     const by = Object.fromEntries(r.targets.map(t => [t.id, t]))
-    expect(r.targets[0]).toMatchObject({ id: 'D1', ok: true, distanceFt: 10 })
+    expect(r.targets[0]).toMatchObject({ id: 'D1', pick: 'P', drop: 'D1', ok: true, distanceFt: 10 })
     expect(by.D2).toMatchObject({ ok: false, reason: 'Already linked.' })
     expect(by.D3).toMatchObject({ ok: false, reason: expect.stringMatching(/^No route/) })
     expect(by.C).toMatchObject({ ok: false, reason: 'End a flow at a Drop point.' })
     expect(by.J).toBeUndefined()
   })
   it('from a Drop lists the Picks (the flow still runs Pick → Drop); a charger starts nothing', () => {
-    expect(flowTargets(L, 'D1', [])!.targets.filter(t => t.ok).map(t => t.id)).toEqual(['P'])
+    expect(flowTargets(L, 'D1', [])!.targets.filter(t => t.ok).map(t => [t.pick, t.drop, t.distanceFt])).toEqual([['P', 'D1', 10]])
+    expect(flowTargets(L, 'D3', [])!.targets.filter(t => t.ok)).toEqual([])   // one-way: D3 is reached from nowhere
     expect(flowTargets(L, 'D1', [])!.from).toBe('drop')
     expect(flowTargets(L, 'C', [])).toBeNull()
   })

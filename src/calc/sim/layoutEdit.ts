@@ -3,7 +3,7 @@
 
 import { roundCorners } from './corners'
 import { closestOnLine, segmentGeometry } from './geometry'
-import { buildGraph, pathLen } from './graph'
+import { buildGraph, pathLen, tree } from './graph'
 import type { SimCurve, SimLayout, SimObject, SimPoint, SimPointType, SimRole, SimSegment } from './types'
 
 type XY = { x: number; y: number }
@@ -168,41 +168,47 @@ export function routeDistanceFt(L: SimLayout, from: string, to: string, G = buil
 export const canPick = (p?: SimPoint) => p?.role === 'pick' || p?.role === 'pickDrop'
 export const canDrop = (p?: SimPoint) => p?.role === 'drop' || p?.role === 'pickDrop'
 
-/** Why the Flow tool will not start a flow at this point, or `null` (spec §5.4). */
-export function flowStartRefusal(L: SimLayout, from: string): string | null {
-  return canPick(pointById(L).get(from)) ? null : 'Start a flow at a Pick point.'
+/** Why the Flow tool will not start at this point, or `null`: a flow starts at its Pick, or at its
+ *  Drop and is linked back to a Pick (spec §5.4). */
+export function flowStartRefusal(L: SimLayout, start: string): string | null {
+  const p = pointById(L).get(start)
+  return canPick(p) || canDrop(p) ? null : 'Start a flow at a Pick or a Drop point.'
 }
 
-/** Why the Flow tool refuses this pair, or `null` (spec §5.4, acceptance 11). */
+/** Why the Flow tool refuses this Pick → Drop pair, or `null` (spec §5.4, acceptance 11). */
 export function flowRefusal(L: SimLayout, from: string, to: string): string | null {
-  const start = flowStartRefusal(L, from)
-  if (start) return start
+  if (!canPick(pointById(L).get(from))) return 'Start a flow at a Pick point.'
   if (from === to) return 'A flow needs two different points.'
   if (!canDrop(pointById(L).get(to))) return 'End a flow at a Drop point.'
   return null
 }
 
-/** One point a flow could link to from a start point (the Flow tool's highlight, "Add flow to…"). */
-export interface FlowTarget { id: string; ok: boolean; reason?: string; distanceFt?: number }
+/** One point a flow could link to from a start point (the Flow tool's highlight, "Add flow to…"),
+ *  with the flow's Pick and Drop already in order. */
+export interface FlowTarget { id: string; pick: string; drop: string; ok: boolean; reason?: string; distanceFt?: number }
 
+const REVERSED = { two: 'two', ab: 'ba', ba: 'ab' } as const
 /**
  * Every point a flow can link to from `start`, with the reason when it cannot (the same rules as
  * `flowRefusal`, plus *Already linked* and *No route*). A Pick start lists Drops; a Drop start lists
  * Picks (the flow still runs Pick → Drop). `null` when the start can be neither. Junctions are left
- * out. Valid targets come first, nearest first.
+ * out. Valid targets first, nearest first. One shortest-path tree from the start gives every distance
+ * (for a Drop start, on the routes reversed: the distance from each Pick to it).
  */
 export function flowTargets(L: SimLayout, start: string, flows: { fromPointId?: string; toPointId?: string }[]): { from: 'pick' | 'drop'; targets: FlowTarget[] } | null {
   const s = pointById(L).get(start)
   const from = canPick(s) ? 'pick' : canDrop(s) ? 'drop' : null
   if (!from) return null
-  const G = buildGraph(L)
+  const G = buildGraph(from === 'pick' ? L : { ...L, segments: L.segments.map(q => ({ ...q, dir: REVERSED[q.dir] })) })
+  const dist = tree(G, G.idx.get(start)!).dist
+  const end = from === 'pick' ? canDrop : canPick
   const targets = L.points.filter(p => p.type !== 'junction' && p.id !== start).map((p): FlowTarget => {
-    const [a, b] = from === 'pick' ? [start, p.id] : [p.id, start]
-    const why = flowRefusal(L, a, b)
-    if (why) return { id: p.id, ok: false, reason: why }
-    if (flows.some(f => f.fromPointId === a && f.toPointId === b)) return { id: p.id, ok: false, reason: 'Already linked.' }
-    const d = routeDistanceFt(L, a, b, G)
-    return isFinite(d) ? { id: p.id, ok: true, distanceFt: d } : { id: p.id, ok: false, reason: 'No route — check one-way routes and connections.' }
+    const [pick, drop] = from === 'pick' ? [start, p.id] : [p.id, start]
+    const base = { id: p.id, pick, drop }
+    if (!end(p)) return { ...base, ok: false, reason: from === 'pick' ? 'End a flow at a Drop point.' : 'Start a flow at a Pick point.' }
+    if (flows.some(f => f.fromPointId === pick && f.toPointId === drop)) return { ...base, ok: false, reason: 'Already linked.' }
+    const d = dist[G.idx.get(p.id)!]
+    return isFinite(d) ? { ...base, ok: true, distanceFt: d } : { ...base, ok: false, reason: 'No route — check one-way routes and connections.' }
   })
   return { from, targets: targets.sort((x, y) => Number(y.ok) - Number(x.ok) || (x.distanceFt ?? 0) - (y.distanceFt ?? 0)) }
 }

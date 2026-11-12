@@ -111,7 +111,7 @@ interface Props {
   /** Flow tool: the points a flow can link to from its start (lit) or not (dimmed, with why). */
   flowTargets?: Map<string, FlowTarget> | null
   /** Flow tool: the hovered target's path along the routes, and its length. */
-  flowPreview?: { path: XY[]; label: string } | null
+  flowPreview?: { path: XY[]; distanceFt: number } | null
   /** Aisle width per route, ft (envelope + B56.5 clearances); routes without one use 10 ft / 6 ft. */
   laneWidths?: Record<string, number>
 }
@@ -119,7 +119,9 @@ interface Props {
 const NONE = new Set<string>()
 const noop = () => {}
 
-const POINT_PX = 13, SEG_PX = 8, HANDLE_PX = 6
+/** Hit radii, screen px — the editor's Flow-tool hover uses the same point radius. */
+export const POINT_HIT_PX = 13
+const POINT_PX = POINT_HIT_PX, SEG_PX = 8, HANDLE_PX = 6
 const ROLE_ICON = { pick: 'pick', drop: 'drop', pickDrop: 'pickDrop' } as const
 
 export default function LayoutCanvas(props: Props) {
@@ -333,7 +335,7 @@ export default function LayoutCanvas(props: Props) {
         {props.flowPreview && props.flowPreview.path.length > 1 && (
           <g className="sim-flow-preview">
             <polyline points={props.flowPreview.path.map(q => `${q.x},${q.y}`).join(' ')} vectorEffect="non-scaling-stroke" />
-            <PreviewLabel at={props.flowPreview.path[Math.floor(props.flowPreview.path.length / 2)]} px={px} text={props.flowPreview.label} />
+            <PreviewLabel at={props.flowPreview.path[Math.floor(props.flowPreview.path.length / 2)]} px={px} text={fmtLen(props.flowPreview.distanceFt)} />
           </g>
         )}
         {[...pts.values()].map(p => {
@@ -568,7 +570,7 @@ function CurveHandles({ s, a, b, px }: { s: SimSegment; a?: SimPoint; b?: SimPoi
  *  or more routes meet. */
 /** The flow preview's length, beside the middle of its path. */
 function PreviewLabel({ at, px, text }: { at: XY; px: number; text: string }) {
-  return <text x={at.x + 10 * px} y={at.y - 10 * px} fontSize={13 * px} className="sim-flow-preview-len">{text}</text>
+  return <text x={at.x + 10 * px} y={at.y - 10 * px} fontSize={13 * px} className="sim-rubber-len">{text}</text>
 }
 
 /** `mark` (Flow tool): a point the flow can link to is lit, the rest dimmed — `reason` says why. */

@@ -8,6 +8,12 @@
   per hour focused.
 - **Add flow to…** in a Pick or Drop point's inspector: reachable points, nearest first, one click each.
 - Calc: `flowTargets` (layoutEdit) and `pathPoints` (engine), with tests.
+- **Cleanup review:** each target carries its Pick and Drop in order (one direction rule, not four);
+  one start rule and message (`flowStartRefusal` now accepts a Drop start); one shortest-path tree for
+  all targets (on the routes reversed for a Drop start) instead of one search per point; hover uses the
+  canvas's own point radius, so a preview always means the click lands, and the preview is derived from
+  the hovered point; Moves per hour is focused only for a flow just linked; the length label reuses the
+  route preview's style and formatter.
 
 ## 2026-11-12 — Fleet simulation: vehicle switcher (simulation only)
 

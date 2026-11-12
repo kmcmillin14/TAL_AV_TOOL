@@ -46,6 +46,8 @@ interface Props {
   onFocus: (sel: NonNullable<Selection>, at: XY) => void
   /** "Add flow to…": link a new flow Pick → Drop. */
   onAddFlow: (from: string, to: string) => void
+  /** A flow just linked in the editor: open it with Moves per hour focused. */
+  focusRateOf?: string | null
 }
 
 
@@ -74,18 +76,20 @@ export default function LayoutPanel(p: Props) {
     [p.layout, flow?.fromPointId, flow?.toPointId],
   )
 
-  // A new flow (no moves yet) opens with Moves per hour focused — after the click that made it, which
-  // would otherwise take the focus back to the canvas.
+  // A flow just linked opens with Moves per hour focused — a moment after the click that made it, which
+  // otherwise takes the focus back to the canvas.
   const rateRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
-    if (!flow || flow.thruPerHr) return
+    if (!p.focusRateOf || p.focusRateOf !== flow?.id) return
     const t = window.setTimeout(() => rateRef.current?.focus())
     return () => window.clearTimeout(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flow?.id])
+  }, [p.focusRateOf, flow?.id])
 
   // "Add flow to…" for the selected Pick or Drop point: what it can link to, nearest first.
-  const links = useMemo(() => (sel?.kind === 'point' ? flowTargets(p.layout, sel.id, p.flows) : null), [sel, p.layout, p.flows])
+  const links = useMemo(() => {
+    const t = sel?.kind === 'point' ? flowTargets(p.layout, sel.id, p.flows) : null
+    return t && { from: t.from, reachable: t.targets.filter(x => x.ok) }
+  }, [sel, p.layout, p.flows])
 
   if (sel?.kind === 'point') {
     const pt = byId.get(sel.id)
@@ -150,12 +154,12 @@ export default function LayoutPanel(p: Props) {
           )}
         </Section>
         {links && (
-          <Section title="Add flow to…" open={!flowsHere.length} status={`${links.targets.filter(t => t.ok).length} reachable`}>
-            {links.targets.some(t => t.ok)
+          <Section title="Add flow to…" open={!flowsHere.length} status={`${links.reachable.length} reachable`}>
+            {links.reachable.length
               ? <ul className="sim-nav">
-                  {links.targets.filter(t => t.ok).map(t => (
-                    <li key={t.id}><button type="button" onClick={() => (links.from === 'pick' ? p.onAddFlow(pt.id, t.id) : p.onAddFlow(t.id, pt.id))}>
-                      <span className="nm">{links.from === 'pick' ? '→ ' : '← '}{name(t.id)}</span><span className="meta num">{len(t.distanceFt ?? Infinity)}</span>
+                  {links.reachable.map(t => (
+                    <li key={t.id}><button type="button" onClick={() => p.onAddFlow(t.pick, t.drop)}>
+                      <span className="nm">{links.from === 'pick' ? '→ ' : '← '}{name(t.id)}</span><span className="meta num">{len(t.distanceFt!)}</span>
                     </button></li>
                   ))}
                 </ul>
