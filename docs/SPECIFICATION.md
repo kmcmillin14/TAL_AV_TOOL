@@ -875,6 +875,9 @@ step ribbon is unchanged.
     warnings and notes, one row per thing (each loose point is its own row). Clicking a row selects
     what it is about and centres the view on it; a row's fix button picks the tool that fixes it
     (Draw route · Place charger · Link flow · Scale · Open Flows).
+  - *Full screen (owner, 2026-11-12).* A button in the page head (beside Assumptions) fills the screen
+    with the Simulate page — head, vehicles, the editor or Run, and its windows; Esc or the button
+    leaves it. On a desktop only.
   - *Simulation vehicles (owner, 2026-11-12; replaces the vehicle switcher; simulation only).* The
     page head shows the vehicle types the simulation runs — one chip each, with its photo, name and
     **static → simulated** fleet count (e.g. **CB18 AGF · 3 → 4**) — and **+ Vehicle**, in Layout and Run.

@@ -5753,3 +5753,9 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-hw-status.is-warn { color: var(--warn); }
 .sim-hw-status.is-bad { color: var(--bad); }
 
+
+/* Simulate full screen: the page fills the screen; the workspace takes what the head and vehicles leave. */
+.sim-shell:fullscreen { background: var(--bg-base); padding: 16px 24px; overflow: auto; }
+.sim-shell:fullscreen .sim-work { height: max(560px, calc(100vh / var(--root-zoom) - 200px)); }
+.sim-full-btn { width: 40px; padding: 0; justify-content: center; }
+.sim-shell:fullscreen .sim-run .sim-stage { height: max(440px, calc(100vh / var(--root-zoom) - 360px)); }

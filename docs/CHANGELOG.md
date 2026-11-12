@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-12 — Fleet simulation: full screen
+
+- A **full screen** button in the Simulate head fills the screen with the page (Layout or Run, with
+  the vehicles bar and windows); Esc or the button leaves it.
+
 ## 2026-11-12 — Fleet simulation: simulation vehicles (replaces the vehicle switcher)
 
 - **Vehicles bar** under the Simulate head: one chip per vehicle type the simulation runs — photo,
