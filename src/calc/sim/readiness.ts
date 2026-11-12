@@ -86,6 +86,20 @@ const LEVEL_ORDER: Record<CheckLevel, number> = { bad: 0, warn: 1, info: 2 }
 /** Blockers first, then warnings, then notes — the order validation lists them in (stable). */
 const byLevel = (checks: ReadinessCheck[]) => [...checks].sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level])
 
+/** What a check's fix button does in the editor: pick a tool, arm the charger, or open the Flows tab
+ *  — and for a loose point, start the route from it (`startFrom`). */
+export type FixAction = { tool: 'scale' | 'routes' | 'flows'; startFrom?: string } | { arm: 'charger' } | { tab: 'flows' }
+export function fixAction({ fix, target }: ReadinessCheck): FixAction | null {
+  switch (fix) {
+    case 'scale': return { tool: 'scale' }
+    case 'route': return { tool: 'routes', ...(target?.kind === 'point' ? { startFrom: target.id } : {}) }
+    case 'linkFlow': return { tool: 'flows' }
+    case 'charger': return { arm: 'charger' }
+    case 'flowsTab': return { tab: 'flows' }
+    default: return null
+  }
+}
+
 /** The one validation status: its tone and counts, for the page head and the Validation tab. */
 export function checkStatus(checks: ReadinessCheck[]): { tone: 'bad' | 'warn' | 'good'; blockers: number; warnings: number } {
   const blockers = checks.filter(c => c.level === 'bad').length, warnings = checks.filter(c => c.level === 'warn').length

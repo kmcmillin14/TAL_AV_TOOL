@@ -18,6 +18,10 @@
   blockers first from `readinessChecks` itself; the page owns the side-panel tab (no counter prop, so
   coming back from Run opens Layout); one table of fixes named after the editor's actions; one dot
   style; exports used only in their own file made private.
+- **Code review:** "Ready to run" reads in body text with a green dot (the green text was 3.3:1); the
+  first blocker is read with Run by screen readers and shown beside it on a narrow screen; a row
+  with no fix offers Details (selects it and opens the Layout tab); the fix buttons' actions are a
+  tested pure mapping (`fixAction`).
 
 ## 2026-11-12 — Fleet simulation: quality-of-life pass on the editor
 

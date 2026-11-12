@@ -5663,9 +5663,10 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-valid-sub { font-weight: 500; color: var(--text-tertiary); }
 .sim-valid-sub::before { content: "·"; margin-right: 8px; }
 .sim-valid { display: flex; flex-direction: column; gap: 8px; }
-.sim-valid-head { margin: 0; font-size: 15px; font-weight: 700; }
-.sim-valid-head.is-bad { color: var(--bad); }
-.sim-valid-head.is-good { color: var(--good); }
+.sim-valid-head { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.sim-run-why { max-width: 280px; font-size: 13px; color: var(--text-tertiary); }
+/* Read by screen readers, not shown. */
+.sim-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .sim-valid-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .sim-valid-row { display: grid; grid-template-columns: 8px minmax(0, 1fr); align-items: start; gap: 4px 12px; padding: 12px 0; border-top: 1px solid var(--border); }
 .sim-valid-row > .sim-vdot { margin-top: 6px; }

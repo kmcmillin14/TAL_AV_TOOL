@@ -93,15 +93,17 @@ export function PlaceCard({ layout, names, armed, onArm, onArmHome }: {
 const FIX_LABEL: Record<CheckFix, string> = { scale: 'Scale', route: 'Draw route', charger: 'Place charger', linkFlow: 'Link flow', flowsTab: 'Open Flows' }
 /** The status in words — the page head and the Validation tab say it the same way. */
 export const statusLabel = ({ blockers }: ReturnType<typeof checkStatus>) => (blockers ? `${blockers} blocker${blockers === 1 ? '' : 's'}` : 'Valid')
-export function ValidationList({ checks, status, onLocate, onFix }: {
+export function ValidationList({ checks, status, onLocate, onDetails, onFix }: {
   checks: ReadinessCheck[]
   status: ReturnType<typeof checkStatus>
   onLocate: (t: NonNullable<ReadinessCheck['target']>) => void
+  /** A row with no fix: select it and open its inspector (the Layout tab), where it is changed. */
+  onDetails: (t: NonNullable<ReadinessCheck['target']>) => void
   onFix: (c: ReadinessCheck) => void
 }) {
   return (
     <section className="sim-valid" aria-label="Validation">
-      <p className={`sim-valid-head is-${status.blockers ? 'bad' : 'good'}`}>{status.blockers ? `${statusLabel(status)} — fix to run` : 'Ready to run'}</p>
+      <p className={`sim-valid-head is-${status.blockers ? 'bad' : 'good'}`}><i className={`sim-vdot is-${status.tone}`} aria-hidden />{status.blockers ? `${statusLabel(status)} — fix to run` : 'Ready to run'}</p>
       {checks.length > 0 && (
         <ul className="sim-valid-list">
           {checks.map((c, i) => (
@@ -110,7 +112,9 @@ export function ValidationList({ checks, status, onLocate, onFix }: {
               {c.target
                 ? <button type="button" className="sim-valid-text" onClick={() => onLocate(c.target!)} title="Show on the layout">{c.text}</button>
                 : <span className="sim-valid-text">{c.text}</span>}
-              {c.fix && <button type="button" className="btn btn-sm ghost" onClick={() => onFix(c)}>{FIX_LABEL[c.fix]}</button>}
+              {c.fix
+                ? <button type="button" className="btn btn-sm ghost" onClick={() => onFix(c)}>{FIX_LABEL[c.fix]}</button>
+                : c.target && <button type="button" className="btn btn-sm ghost" onClick={() => onDetails(c.target!)}>Details</button>}
             </li>
           ))}
         </ul>

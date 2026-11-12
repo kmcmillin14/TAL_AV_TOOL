@@ -18,7 +18,7 @@ import {
   notConnected, placeOnSegment, pointsInBox, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
   mergePoints, nextDirection, placeWithSpur, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
-import type { checkStatus, CheckFix, ReadinessCheck } from '@/src/calc/sim/readiness'
+import { fixAction, type checkStatus, type ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import Icon from '@/src/design-system/components/Icon'
@@ -346,16 +346,13 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   }
 
   /** Validation: a check's fix button picks the tool that fixes it. */
-  const onFix = ({ fix, target }: ReadinessCheck) => {
-    const act: Record<CheckFix, () => void> = {
-      scale: () => chooseTool('scale'),
-      // A loose point: the route starts from it, so the next click finishes the connection.
-      route: () => { chooseTool('routes'); if (target?.kind === 'point' && byId.has(target.id)) { locate(target); setChainFrom(target.id) } },
-      charger: () => armHome('charger'),
-      linkFlow: () => chooseTool('flows'),
-      flowsTab: () => setTab('flows'),
-    }
-    if (fix) act[fix]()
+  const onFix = (c: ReadinessCheck) => {
+    const a = fixAction(c)
+    if (!a) return
+    if ('tab' in a) { setTab(a.tab); return }
+    if ('arm' in a) { armHome(a.arm); return }
+    chooseTool(a.tool)                      // cancels any chain — so the route's start is set after it
+    if (a.startFrom && byId.has(a.startFrom)) { locate({ kind: 'point', id: a.startFrom }); setChainFrom(a.startFrom) }
   }
   /** Validation: select what a check is about and centre on it (a flow: halfway between its ends). */
   const locate = (t: NonNullable<ReadinessCheck['target']>) => {
@@ -586,7 +583,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           <div className="sim-side-body" role="tabpanel">
             {banner}
             {tab === 'checks' ? (
-              <ValidationList checks={checks} status={status} onLocate={locate} onFix={onFix} />
+              <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); setTab('layout') }} onFix={onFix} />
             ) : tab === 'flows' ? (
               <FlowsList
                 layout={layout}

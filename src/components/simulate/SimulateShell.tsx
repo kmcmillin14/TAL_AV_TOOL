@@ -131,7 +131,9 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
                   <i className={`sim-vdot is-${status.tone}`} aria-hidden />{statusLabel(status)}
                   {status.warnings > 0 && <span className="sim-valid-sub">{status.warnings} warning{status.warnings === 1 ? '' : 's'}</span>}
                 </button>
-                <button type="button" className="btn primary" disabled={!canRun} aria-describedby="sim-valid" onClick={() => setMode('run')}>Run <Icon name="arrowR" size={13} /></button>
+                {/* The first blocker in words: read with Run by screen readers, shown on a narrow screen. */}
+                {!canRun && <span id="sim-run-why" className={narrow ? 'sim-run-why' : 'sim-sr'}>{checks[0].text}</span>}
+                <button type="button" className="btn primary" disabled={!canRun} aria-describedby={canRun ? undefined : 'sim-run-why'} onClick={() => setMode('run')}>Run <Icon name="arrowR" size={13} /></button>
               </>}
           <button type="button" className={`btn ghost sim-assume-btn${drawer ? ' on' : ''}`} aria-pressed={!!drawer} onClick={() => setDrawer(d => (d ? null : { focus: null }))}>
             Assumptions{changed.length > 0 && <span className="sim-count"><i className="sim-odot" />{changed.length} override{changed.length === 1 ? '' : 's'}</span>}

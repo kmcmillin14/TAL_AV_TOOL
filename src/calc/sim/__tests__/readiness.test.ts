@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { checkStatus, readinessChecks } from '../readiness'
+import { checkStatus, fixAction, readinessChecks } from '../readiness'
 import { LIBRARY, corridor } from './fixtures'
 
 const ok = { id: 'f', fromPointId: 'A', toPointId: 'B', thruPerHr: 10, vehicleId: 'cb18' }
@@ -90,5 +90,15 @@ describe('readinessChecks (validation)', () => {
     expect(checkStatus(checks)).toMatchObject({ tone: 'bad', blockers: levels.filter(l => l === 'bad').length })
     expect(checkStatus([{ level: 'warn', text: '' }])).toEqual({ tone: 'warn', blockers: 0, warnings: 1 })
     expect(checkStatus([])).toEqual({ tone: 'good', blockers: 0, warnings: 0 })
+  })
+
+  it('maps each fix to its editor action; a loose point starts the route from it', () => {
+    expect(fixAction({ level: 'warn', text: '', fix: 'route', target: { kind: 'point', id: 'D' } })).toEqual({ tool: 'routes', startFrom: 'D' })
+    expect(fixAction({ level: 'bad', text: '', fix: 'route', target: { kind: 'flow', id: 'g' } })).toEqual({ tool: 'routes' })
+    expect(fixAction({ level: 'bad', text: '', fix: 'scale' })).toEqual({ tool: 'scale' })
+    expect(fixAction({ level: 'bad', text: '', fix: 'linkFlow' })).toEqual({ tool: 'flows' })
+    expect(fixAction({ level: 'bad', text: '', fix: 'charger' })).toEqual({ arm: 'charger' })
+    expect(fixAction({ level: 'warn', text: '', fix: 'flowsTab' })).toEqual({ tab: 'flows' })
+    expect(fixAction({ level: 'warn', text: '' })).toBeNull()
   })
 })
