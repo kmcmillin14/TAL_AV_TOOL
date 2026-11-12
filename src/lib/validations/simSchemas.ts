@@ -99,8 +99,19 @@ export const simSettingsSchema = z.object({
   pacePct: z.number().min(10).max(100).optional(),
   safetyFt: z.number().min(0).max(30).optional(),
   arrivals: z.enum(['regular', 'random']).optional(),
-  /** Vehicle switcher (simulation only): every flow runs as this vehicle; absent = as Sizing. */
+  /** Earlier vehicle switcher: read once as a one-type `vehicles` list (simVehicleTypes); not written. */
   vehicleAs: z.string().optional(),
+  /** The simulation's vehicle types, each with its payload (a Step 1 load or custom dims, in);
+   *  absent = Sizing's vehicles with Step 1's first load (simulation only). */
+  vehicles: z.array(z.object({
+    vehicleId: z.string(),
+    payload: z.union([
+      z.object({ loadId: z.string() }),
+      z.object({ lengthIn: z.number().positive().max(1200), widthIn: z.number().positive().max(1200), heightIn: z.number().positive().max(1200).optional() }),
+    ]).optional(),
+  })).max(20).optional(),
+  /** A flow's simulation vehicle where it differs from Sizing's, by flow id. */
+  flowVehicle: z.record(z.string(), z.string()).optional(),
   /** Inspector overrides in one place: `vehicleId.field` / `pointId.field` → value (source chip "Override"). */
   overrides: z.record(z.string(), z.union([z.number(), z.string(), z.boolean(), z.null()])).optional(),
   /** ANSI/ITSDF B56.5 clearance rule (D-2): 6 in per side below 1.2 m/s, 0.5 m at or above,

@@ -41,6 +41,10 @@ interface Props {
   envelopeFt: number
   /** Each highway's worst B56.5 status (its derived routes' clearances). */
   highwayStatus: Map<string, SegmentClearance['status']>
+  /** Each flow's simulation vehicle, the types it can run as, and choosing one (simulation only). */
+  simVehicleOf: Map<string, string | undefined>
+  vehicleTypes: Vehicle[]
+  onFlowVehicle?: (flowId: string, vehicleId: string) => void
   onRepeat: (id: string, count: number, stepFt: number, dir: { x: number; y: number }) => void
   onCopy: () => void
   onSegment: (id: string, patch: Partial<SimSegment>) => void
@@ -351,22 +355,25 @@ export default function LayoutPanel(p: Props) {
   }
 
   if (flow) {
+    const simVid = p.simVehicleOf.get(flow.id)
     return (
       <Inspector title="Flow">
         <Summary items={[
           ['From → to', `${name(flow.fromPointId)} → ${name(flow.toPointId)}`],
           ['Moves/h', flow.thruPerHr || 0],
           ['Distance', isFinite(flowFt) ? len(flow.distanceFt) : 'No route'],
-          ['Vehicle', p.vehicles.find(v => v.id === flow.vehicleId)?.name ?? '—'],
+          ['Vehicle', p.vehicles.find(v => v.id === simVid)?.name ?? '—'],
         ]} />
         <label className="sim-field"><span>Moves per hour</span>
           <input type="number" min={0} step="any" value={flow.thruPerHr || ''} ref={rateRef} onKeyDown={e => { if (e.key === 'Escape') e.currentTarget.blur() }} onChange={e => p.onFlow(flow.id, { thruPerHr: Math.max(0, Number(e.target.value) || 0) })} />
         </label>
+        {/* Simulation only: the types the simulation runs (Sizing keeps the flow's own vehicle). */}
         <label className="sim-field"><span>Vehicle</span>
-          <select value={flow.vehicleId ?? ''} onChange={e => p.onFlow(flow.id, { vehicleId: e.target.value || undefined, transferMethodIdx: undefined })}>
-            <option value="">Choose a vehicle</option>
-            {p.vehicles.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
+          <select value={simVid ?? ''} disabled={!p.vehicleTypes.length || !p.onFlowVehicle} onChange={e => p.onFlowVehicle?.(flow.id, e.target.value)}>
+            {!p.vehicleTypes.length && <option value="">Add a vehicle first</option>}
+            {p.vehicleTypes.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
+          {simVid !== flow.vehicleId && <small className="sim-field-note">Sizing: {p.vehicles.find(v => v.id === flow.vehicleId)?.name ?? 'no vehicle'}</small>}
         </label>
         <button type="button" className="link-btn" onClick={() => p.onUnlink(flow.id)}>Unlink from points</button>
       </Inspector>

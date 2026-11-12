@@ -99,7 +99,7 @@ describe('highways: stored as rectangles, routes derived', () => {
       points: [{ id: 'P', x: 0, y: 10, type: 'stand', role: 'pick' }, { id: 'D', x: 40, y: 10, type: 'stand', role: 'drop' }],
       segments: [], highways: [hw({ x: 0, y: 10 }, { x: 40, y: 10 })],
     }
-    const r = runInputs(L, [{ id: 'f', fromPointId: 'P', toPointId: 'D', thruPerHr: 10, vehicleId: 'x' }], new Map(), B56_5_RULE, 0)
+    const r = runInputs(L, [{ id: 'f', fromPointId: 'P', toPointId: 'D', thruPerHr: 10, vehicleId: 'x' }], new Map(), B56_5_RULE)
     expect(Object.entries(r.laneWidths).filter(([k]) => k.startsWith(DERIVED)).every(([, w]) => w === 10)).toBe(true)
     expect(flowTargets(L, 'P', [])!.targets.find(t => t.id === 'D')).toMatchObject({ ok: true, distanceFt: 40 })
   })
@@ -119,7 +119,7 @@ describe('a run on highways alone', () => {
       highways: [{ ...highwayFromEnds({ x: 0, y: 0 }, { x: 150, y: 0 }, 13.4, { id: 'h1', dir: 'two' }) }],
     }
     const flows = [{ id: 'f', fromPointId: 'A', toPointId: 'B', thruPerHr: 10, vehicleId: 'cb18' }]
-    const r = runInputs(L, flows, new Map(LIBRARY.map(v => [v.id, v])), B56_5_RULE, 0)
+    const r = runInputs(L, flows, new Map(LIBRARY.map(v => [v.id, v])), B56_5_RULE)
     const S = createSim(r.layout, r.flows, LIBRARY, settings())!
     expect(S).not.toBeNull()
     runFor(S, 2 * 3600)

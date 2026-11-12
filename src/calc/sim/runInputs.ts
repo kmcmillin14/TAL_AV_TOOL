@@ -27,12 +27,13 @@ export function runInputs(
   flows: ProjectFlowLike[],
   vehicles: Map<string, Vehicle>,
   rule: ClearanceRule,
-  payloadWidthFt: number,
+  /** Each vehicle type's payload, ft, by vehicle id (`payloadsByVehicle`). */
+  payloads: Record<string, { width: number }> = {},
 ): RunInputs {
   const drawn = withHighways(layout)   // highways become routes (derived, never stored)
   const linked = linkedFlows(flows)
   const veh = (id: string) => vehicles.get(id)
-  const env = envelopes(drawn, linked.map(f => ({ ...f, vehicleWidthFt: veh(f.vehicleId)?.calc.widthFt ?? 0 })), payloadWidthFt)
+  const env = envelopes(drawn, linked.map(f => ({ ...f, vehicleWidthFt: veh(f.vehicleId)?.calc.widthFt ?? 0, payloadWidthFt: payloads[f.vehicleId]?.width ?? 0 })))
   const clearances = segmentClearances(drawn, env, rule)
   const radius = Math.max(0, ...linked.map(f => veh(f.vehicleId)?.calc.turningRadiusFt ?? 0))
   const laneWidths: Record<string, number> = {}
@@ -50,13 +51,6 @@ export function clearanceRule(c?: { thresholdFps: number; lowSpeedIn: number; fu
   return c ? { thresholdFps: c.thresholdFps, lowSpeedIn: c.lowSpeedIn, fullSpeedIn: c.fullSpeedIn ?? B56_5_RULE.fullSpeedIn, sharedBetweenVehicles: c.sharedBetweenVehicles } : B56_5_RULE
 }
 
-/** The handled load from Step 1, ft: the longest and widest of the project's loads (each from its own
- *  dimension — a load with a width but no length still sets the width). Null when none is entered. */
-export function payloadFt(loads: { lengthIn?: number | null; widthIn?: number | null }[] = []): { length: number; width: number } | null {
-  const length = Math.max(0, ...loads.map(l => (l.lengthIn ?? 0) / 12)), width = Math.max(0, ...loads.map(l => (l.widthIn ?? 0) / 12))
-  return length > 0 || width > 0 ? { length, width } : null
-}
-
 /** The fleet a run places: per vehicle type with a flow on the layout, the stepper's value if set,
  *  else the Fleet Engine's. Types with no linked flow are left out — they would only take homes. */
 export function runFleet(engine: Record<string, number>, overrides: Record<string, number> = {}, linkedVehicleIds: string[]): Record<string, number> {
@@ -71,7 +65,7 @@ export interface SimInputsLike {
   hoursPerShift?: number | null
   shiftsPerDay?: number | null
   targetUtilization?: number | null
-  simSettings?: { pacePct?: number; safetyFt?: number; arrivals?: string; demandPct?: number; seed?: number; clearance?: unknown; overrides?: unknown } | null
+  simSettings?: { pacePct?: number; safetyFt?: number; arrivals?: string; demandPct?: number; seed?: number; clearance?: unknown; overrides?: unknown; vehicles?: unknown; flowVehicle?: unknown } | null
 }
 
 /**
@@ -85,13 +79,15 @@ export function simInputsKey(p: SimInputsLike, vehicles?: Map<string, Vehicle>):
   const flows = linkedFlows(p.flows ?? [])
   const ids = [...new Set(flows.map(f => f.vehicleId))]
   const used = [...ids].sort().map(id => [id, vehicles?.get(id)?.calc ?? null])
-  // Overrides of vehicles the flows do not use (e.g. one tried in the vehicle switcher) are not inputs.
+  // Overrides of vehicles the flows do not use (e.g. one tried in the simulation only) are not inputs.
   const kept = Object.entries((ss.overrides ?? {}) as Record<string, unknown>).filter(([k]) => ids.includes(k.split('.')[0]))
   const overrides = kept.length ? Object.fromEntries(kept) : null
   const json = JSON.stringify([
     p.simLayout ? [p.simLayout.points, p.simLayout.segments, p.simLayout.objects ?? [], ...(p.simLayout.highways?.length ? [p.simLayout.highways] : [])] : null,
     flows, used, p.loads ?? [], p.hoursPerShift ?? null, p.shiftsPerDay ?? null, p.targetUtilization ?? null,
     [ss.pacePct, ss.safetyFt, ss.arrivals, ss.demandPct, ss.seed, ss.clearance, overrides].map(x => x ?? null),
+    // The simulation's vehicles and payloads, once chosen (absent: Sizing's — older keys unchanged).
+    ...(ss.vehicles || ss.flowVehicle ? [[ss.vehicles ?? null, ss.flowVehicle ?? null]] : []),
   ])
   let h = 0x811c9dc5
   for (let i = 0; i < json.length; i++) { h ^= json.charCodeAt(i); h = Math.imul(h, 0x01000193) }

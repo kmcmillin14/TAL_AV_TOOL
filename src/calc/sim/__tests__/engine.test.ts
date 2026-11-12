@@ -429,7 +429,7 @@ describe('following is envelope to envelope (spec §5.9, §6.5.5)', () => {
   }
 
   it('a long payload keeps loaded vehicles further apart', () => {
-    const plain = closest({}), long = closest({ payloadFt: { length: 14, width: 4 } })
+    const plain = closest({}), long = closest({ payloadFt: { cb18: { length: 14, width: 4 } } })
     expect(isFinite(plain) && isFinite(long)).toBe(true)          // a loaded vehicle really did queue behind another
     expect(plain).toBeLessThan(14)                                 // the bare vehicles queue closer than a payload length…
     expect(long).toBeGreaterThanOrEqual(14 - 1e-6)                 // …loaded with one, never

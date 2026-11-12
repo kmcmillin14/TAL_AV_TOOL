@@ -875,28 +875,31 @@ step ribbon is unchanged.
     warnings and notes, one row per thing (each loose point is its own row). Clicking a row selects
     what it is about and centres the view on it; a row's fix button picks the tool that fixes it
     (Draw route · Place charger · Link flow · Scale · Open Flows).
-  - *Vehicle switcher (owner, 2026-11-12; simulation only).* The page head shows the vehicle the
-    simulation runs as — **‹ CB18 AGF ›**, with a list — in Layout and Run.
-    - *Preloaded:* the Sizing flows' vehicle (the most used one); with no vehicle on any flow, Step 2's
-      first compatible vehicle. While no flow has a vehicle yet, every flow runs as the preloaded one,
-      so the simulation can come first; once Sizing has vehicles, a flow without one stays out of
-      the run, as in Sizing.
-    - *Offered:* the Sizing vehicles first, then the vehicles Step 2 rates green, then amber, then
-      not yet checked (incomplete — e.g. before Step 1 is filled in), by name, each marked in the
-      list (`switcherVehicles`); red vehicles are never offered.
-    - *Mixed Sizing:* when Sizing's flows use more than one vehicle, the first entry is **As Sizing
-      (mixed)**; choosing any vehicle — the most used one included — runs the whole site as it.
-    - *Switching* (`simSettings.vehicleAs`; ignored once the switcher no longer offers it, e.g. Step 1
-      makes it red) runs every flow as that vehicle (`simulateAs`), each with that vehicle's default
-      transfer method (Sizing's method and timing belong to Sizing's vehicle): lanes,
-      corners, B56.5, validation and the run follow it. Sizing's flows are not changed. Run's line
-      reads "Simulating as M10 — Sizing and the price use CB18 AGF", and "Engine sized" becomes
-      the Fleet Engine's figure for that vehicle. A switched run does not update Sizing's verdict
-      chip and offers no "Use N in pricing"; its "Reset to engine" clears only its own vehicles'
-      stepper values. A tried vehicle's assumption overrides are not Sizing inputs (they do not mark
-      Sizing's result stale). Choosing the Sizing vehicle again clears the switch.
-    - *New flows* drawn in Simulate have no vehicle in Sizing (it is chosen there); the simulation
-      runs them as the preloaded vehicle.
+  - *Simulation vehicles (owner, 2026-11-12; replaces the vehicle switcher; simulation only).* The
+    page head shows the vehicle types the simulation runs — one chip each, with its photo, name and
+    **static → simulated** fleet count (e.g. **CB18 AGF · 3 → 4**) — and **+ Vehicle**, in Layout and Run.
+    - *+ Vehicle* opens a window of vehicle cards — photo, name, Step 2 compatibility (Compatible ·
+      Review required · Not checked), Sizing's vehicles tagged **Sizing**. Red vehicles are shown greyed
+      with the requirement they fail and cannot be added. Several can be ticked and added at once.
+    - *A type* (click its chip) carries one **payload**: one of Step 1's loads, or **Custom** L × W × H
+      (simulation only; Step 1 is not changed). A loaded vehicle's envelope — lanes, corners, B56.5 and
+      the run — is the larger of the vehicle and its own payload. The chip's window also shows the
+      **static calc** (the Fleet Engine for the flows as simulated) beside the **simulated** count (the
+      stepper; Reset to engine), and **Remove**.
+    - *Prefill:* with no change made, the types are Sizing's vehicles in the order its flows use them,
+      each carrying Step 1's first load; nothing is stored until a type, payload or flow vehicle is
+      changed (`simSettings.vehicles`), so Sizing's changes keep flowing in until then. With no
+      vehicle in Sizing the list starts empty — **+ Vehicle** — so the simulation can come first.
+    - *Per flow:* the flow inspector's Vehicle lists only the types, starting from Sizing's vehicle
+      for the flow ("Sizing: CB18 AGF" when different; `simSettings.flowVehicle`). A flow whose vehicle
+      is not a type — none in Sizing, or a type removed — runs as the first type. A flow moved to
+      another vehicle takes that vehicle's default transfer method.
+    - *Sizing → Simulation → Price:* Sizing's flows are never changed. While every flow runs on its
+      Sizing vehicle, the run speaks for Sizing (verdict chip, **Use N in pricing**). Otherwise Run
+      reads "Simulated vehicles differ from Sizing — the price uses Sizing's", shows the Fleet Engine
+      figure for the flows as simulated, saves no verdict and offers no Use N in pricing; "Reset to
+      engine" clears only its own vehicles' steppers. A stored switch from the earlier switcher
+      (`vehicleAs`) becomes a one-type list.
   - *Easier flow linking (owner, 2026-11-12).*
     - With the Flow tool, clicking a **Pick** lights up every Drop it can link to and dims the rest;
       clicking a **Drop** first does the same for Picks (the flow still runs Pick → Drop); a **Pick &

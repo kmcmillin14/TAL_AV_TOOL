@@ -3239,7 +3239,7 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
    editor itself is narrow — a container query, no resize listener. */
 .sim-editor { container-type: inline-size; display: flex; flex-direction: column; gap: 8px; }
 
-.sim-work { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: stretch; height: max(560px, calc(100vh / var(--root-zoom) - 244px)); }
+.sim-work { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: stretch; height: max(560px, calc(100vh / var(--root-zoom) - 296px)); }
 @container (max-width: 900px) { .sim-work { grid-template-columns: minmax(0, 1fr); height: auto; } }
 .sim-canvas-wrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; }
 .sim-stage svg { display: block; }
@@ -3288,7 +3288,7 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-field input, .sim-field select { font: inherit; font-size: 13px; height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-primary); min-width: 0; }
 .sim-field small { font-size: 11px; color: var(--text-tertiary); }
 .sim-input-unit { display: flex; align-items: center; gap: 4px; height: 32px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); transition: border-color 0.2s, box-shadow 0.2s; }
-.sim-input-unit:focus-within, .sim-vswitch.is-switched { border-color: var(--sim-sel); box-shadow: 0 0 0 3px var(--sim-sel-soft); }
+.sim-input-unit:focus-within { border-color: var(--sim-sel); box-shadow: 0 0 0 3px var(--sim-sel-soft); }
 .sim-input-unit input, .sim-field .sim-input-unit input { flex: 1; width: 110px; min-width: 0; height: 100%; padding: 0; border: 0; background: none; outline: none; text-align: right; font: 500 13px var(--tal-font-numeric); color: var(--text-primary); box-shadow: none; }
 .sim-input-unit > span { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
 .sim-seg-toggle { flex-wrap: wrap; }
@@ -5678,12 +5678,59 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 
 
 /* Vehicle switcher (simulation only): ‹ vehicle › in the page head. */
-.sim-vswitch { display: inline-flex; align-items: center; height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-surface); overflow: hidden; }
-.sim-vswitch button { width: 32px; height: 100%; font-size: 17px; color: var(--text-secondary); transition: background 0.2s cubic-bezier(0.25, 0.1, 0.25, 1); }
-.sim-vswitch button:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
-.sim-vswitch button:disabled { opacity: 0.35; cursor: default; }
-.sim-vswitch select { height: 100%; max-width: 180px; padding: 0 8px; border: 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: none; font-size: 13px; font-weight: 600; color: var(--text-primary); text-overflow: ellipsis; cursor: pointer; }
-.sim-vswitch select:focus-visible, .sim-vswitch button:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: -2px; }
+/* Simulation vehicles: one chip per type (static → simulated), + Vehicle, and the type's popover. */
+.sim-vbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
+.sim-vbar-label { font: 600 11px var(--tal-font-numeric); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); margin-right: 4px; }
+.sim-vchip-wrap { position: relative; }
+.sim-vchip { display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 12px 0 6px; border: 1px solid var(--border); border-radius: 99px; background: var(--bg-surface); font-size: 13px; font-weight: 600; color: var(--text-primary); cursor: pointer; transition: border-color 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.2s cubic-bezier(0.25, 0.1, 0.25, 1); }
+.sim-vchip:hover { border-color: var(--border-strong); }
+.sim-vchip.is-open { border-color: var(--sim-sel); box-shadow: 0 0 0 3px var(--sim-sel-soft); }
+.sim-vchip:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 2px; }
+.sim-vchip img { width: 40px; height: 28px; object-fit: contain; border-radius: 99px; background: var(--bg-surface-3); }
+.sim-vchip-dot { width: 28px; height: 28px; border-radius: 50%; background: var(--bg-surface-3); }
+.sim-vchip-n { display: inline-flex; align-items: center; gap: 4px; padding-left: 8px; border-left: 1px solid var(--border); color: var(--text-secondary); font-weight: 500; }
+.sim-vchip-n b { color: var(--sim-sel); }
+.sim-vchip-n.is-idle { font-size: 12px; color: var(--text-tertiary); }
+.sim-vadd { padding: 0 16px; color: var(--text-secondary); border-style: dashed; }
+.sim-vadd:hover { color: var(--text-primary); }
+.sim-vpop { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; width: 300px; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
+.sim-vpop-dims .sim-field { flex: 1; min-width: 0; }
+.sim-vpop-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+.sim-vpop-counts > div { display: flex; flex-direction: column; gap: 4px; }
+.sim-vpop-counts > div > span:first-child { font-size: 12px; color: var(--text-secondary); }
+.sim-vpop-counts > div > b { font-size: 24px; line-height: 44px; }
+.sim-vpop-counts .sim-stepper b { min-width: 32px; text-align: center; font-size: 17px; }
+.sim-vpop-foot { display: flex; align-items: center; gap: 8px; }
+.sim-vpop-foot .grow { flex: 1; }
+.sim-field-note { display: block; margin-top: 4px; font-size: 12px; color: var(--text-secondary); }
+
+/* + Vehicle window: vehicle cards with photo and Step 2 compatibility. */
+.sim-vpick-overlay { position: fixed; inset: 0; z-index: 60; display: flex; align-items: center; justify-content: center; padding: 40px 16px; background: rgba(0,0,0,0.5); backdrop-filter: blur(3px); }
+.sim-vpick { display: flex; flex-direction: column; width: 100%; max-width: 920px; max-height: 100%; background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 18px; box-shadow: 0 24px 64px rgba(0,0,0,0.35); }
+.sim-vpick-head { display: flex; align-items: baseline; gap: 12px; padding: 24px 24px 16px; }
+.sim-vpick-head h2 { font-size: 20px; font-weight: 700; letter-spacing: -0.01em; color: var(--text-primary); }
+.sim-vpick-sub { font-size: 13px; color: var(--text-secondary); }
+.sim-vpick-close { margin-left: auto; width: 44px; height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 50%; color: var(--text-secondary); }
+.sim-vpick-close:hover { background: var(--bg-hover); color: var(--text-primary); }
+.sim-vpick-grid { list-style: none; margin: 0; padding: 0 24px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+.sim-vcard { position: relative; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px 12px 16px; text-align: left; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); cursor: pointer; transition: border-color 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), box-shadow 0.2s cubic-bezier(0.25, 0.1, 0.25, 1); }
+.sim-vcard:hover:not(:disabled) { border-color: var(--border-strong); }
+.sim-vcard:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 2px; }
+.sim-vcard.is-on { border-color: var(--sim-sel); box-shadow: 0 0 0 3px var(--sim-sel-soft); }
+.sim-vcard:disabled { cursor: default; }
+.sim-vcard.is-red { opacity: 0.55; }
+.sim-vcard-check { position: absolute; top: 12px; right: 12px; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; border: 1.5px solid var(--border-strong); border-radius: 50%; color: #fff; }
+.sim-vcard.is-on .sim-vcard-check { background: var(--sim-sel); border-color: var(--sim-sel); }
+.sim-vcard-img { width: 100%; height: 112px; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; border-radius: 8px; background: var(--bg-surface-3); color: var(--text-tertiary); font-size: 12px; }
+.sim-vcard-img img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.sim-vcard-name { font-size: 15px; font-weight: 700; color: var(--text-primary); }
+.sim-vcard-mfr { font-size: 12px; color: var(--text-secondary); }
+.sim-vcard-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.sim-vcard-tags .sim-chip { padding: 4px 8px; }
+.sim-vcard-tags .sim-chip::before { display: none; }
+.sim-vcard-why { margin-top: 4px; font-size: 12px; color: var(--bad); }
+.sim-vpick-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px 24px; }
+.sim-vpick-foot .btn { height: 44px; }
 .sim-as-note { color: var(--text-primary); }
 .sim-as-note b { color: var(--sim-sel); }
 

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-11-12 — Fleet simulation: simulation vehicles (replaces the vehicle switcher)
+
+- **Vehicles bar** under the Simulate head: one chip per vehicle type the simulation runs — photo,
+  name and **static calc → simulated** fleet — and **+ Vehicle**.
+- **+ Vehicle window:** vehicle cards with photo and Step 2 compatibility; Sizing's are tagged; red
+  ones are greyed with the requirement they fail. Tick several and add them at once.
+- **Each type carries a payload** — a Step 1 load or custom L × W × H. Lanes, corners, B56.5 and the
+  run size each flow's loaded envelope from its own type's payload (was: the largest Step 1 load for
+  every flow). Engine: `SimSettings.payloadFt` is now per vehicle id.
+- **Per-flow vehicle** in the flow inspector, from the types, starting from Sizing's ("Sizing: …" when
+  different). A flow whose vehicle is not a type runs as the first type.
+- **Prefill:** with nothing changed, the types are Sizing's vehicles, each with Step 1's first load.
+  Data: `simSettings.vehicles`, `simSettings.flowVehicle` (optional); an earlier `vehicleAs` becomes a
+  one-type list. `src/calc/sim/simVehicles.ts` replaces `switcher.ts`.
+- Sizing is never changed; when the simulated vehicles differ, Run says so, saves no verdict and offers
+  no Use N in pricing (as before).
+
 ## 2026-11-12 — Fleet simulation: highways (Milestone 7, part 1)
 
 - **Highway tool (W):** drag an aisle as one object; it starts at the suggested width. Move it, drag

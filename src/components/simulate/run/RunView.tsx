@@ -39,14 +39,15 @@ interface Props {
   unitSystem: UnitSystem
   /** What the run drives — built once by SimulateShell and shared with validation. */
   inputs: RunInputs
-  payload: { length: number; width: number } | null
+  /** Each vehicle type's payload, ft, by vehicle id (simulation vehicles). */
+  payloads: Record<string, { length: number; width: number }>
   /** Open the Assumptions drawer — all of it, or one vehicle type's values (Milestone 6). */
   onAssumptions: (focus?: string | null) => void
   /** How many assumptions are overridden (the chip under the verdict). */
   changed: number
-  /** Set when the run does not drive Sizing's flows as they are (vehicle switcher): names of the
-   *  vehicle simulated and Sizing's. Such a run never saves Sizing's verdict or offers pricing. */
-  simulatedAs?: { as: string; sizing: string }
+  /** Some flow runs on a vehicle other than its Sizing one (simulation vehicles): the run then never
+   *  speaks for Sizing or the price. */
+  differs: boolean
 }
 
 const clock = (t: number) => {
@@ -68,10 +69,10 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 /** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payload, simulatedAs }: Props) {
+export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs }: Props) {
   const simSettings = project.simSettings ?? {}
   /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
-  const forSizing = !simulatedAs
+  const forSizing = !differs
   const engineFleet = useByValue(useMemo(() => engineFleetByType(fleet), [fleet]))
   // The key hashes the vehicle files (overrides are hashed from simSettings) — as Sizing does, so a
   // result is only "stale" when its inputs really changed.
@@ -87,8 +88,8 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const fleetBy = useByValue(useMemo(() => runFleet(engineFleet, stepper, inputs.flows.map(f => f.vehicleId)), [engineFleet, stepper, inputs.flows]))
   const simConfig = useCallback((seed: number): SimSettings => ({
     fleet: fleetBy, demandPct: assume.demandPct, seed, arrivals: assume.arrivals, pacePct: assume.pacePct, safetyFt: assume.safetyFt,
-    staffedHr: settings.dailyOpHr, targetUtilization: settings.targetUtilization, ...(payload ? { payloadFt: payload } : {}),
-  }), [fleetBy, assume, settings.dailyOpHr, settings.targetUtilization, payload])
+    staffedHr: settings.dailyOpHr, targetUtilization: settings.targetUtilization, ...(Object.keys(payloads).length ? { payloadFt: payloads } : {}),
+  }), [fleetBy, assume, settings.dailyOpHr, settings.targetUtilization, payloads])
 
   // ---- the verdict: one full shift off-screen; restarted whenever an input changes ----
   const [R, setR] = useState<{ res: SimResults; S: SimState } | null>(null)
@@ -257,7 +258,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           )
         })}
         <div className="sim-vsub">
-          {simulatedAs && <span className="sim-as-note">Simulating as <b>{simulatedAs.as}</b> — Sizing and the price use {simulatedAs.sizing || 'no vehicle yet'}</span>}
+          {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
           <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <> · <button type="button" className="link-btn" onClick={() => patchSimSettings(project.id, { fleet: Object.fromEntries(Object.entries(simSettings.fleet ?? {}).filter(([vid]) => !(vid in fleetBy))) })}>Reset to engine</button></>}</span>
           <span>Full {shiftH} h shift · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
           <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>

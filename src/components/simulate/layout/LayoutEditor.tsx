@@ -14,7 +14,7 @@ import { pathPoints } from '@/src/calc/sim/engine'
 import { buildGraph } from '@/src/calc/sim/graph'
 import { highwayEnds, highwayFromEnds, withHighways } from '@/src/calc/sim/highways'
 import { suggestedWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
-import { clearanceRule, payloadFt, runInputs } from '@/src/calc/sim/runInputs'
+import { clearanceRule, runInputs } from '@/src/calc/sim/runInputs'
 import { roundCorners } from '@/src/calc/sim/corners'
 import {
   addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowStartRefusal, flowTargets, hitTest, FLOW_POINT_TYPES, linkFlow, movePoints,
@@ -122,14 +122,20 @@ interface Props {
   status: ReturnType<typeof checkStatus>
   /** Shown at the top of the side panel (the sample banner). */
   banner?: ReactNode
-  /** Vehicle switcher (simulation only): the flows as the run drives them — lanes, corners and B56.5
-   *  follow. Sizing's flows (and new flows drawn here) keep their own vehicle. */
-  runAs?: <F extends { vehicleId?: string }>(flows: F[]) => { flows: F[] }
+  /** Simulation vehicles: the flows as the run drives them — lanes, corners and B56.5 follow.
+   *  Sizing's flows (and new flows drawn here) keep their own vehicle. */
+  runAs?: <F extends { id: string; vehicleId?: string }>(flows: F[]) => { flows: F[] }
+  /** Each vehicle type's payload, ft, by vehicle id. */
+  payloads?: Record<string, { length: number; width: number }>
+  /** The simulation's vehicle types (the flow inspector's Vehicle list) and a flow's choice among them. */
+  vehicleTypes?: Vehicle[]
+  onFlowVehicle?: (flowId: string, vehicleId: string) => void
 }
+const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, tab, onTab: setTab, status, banner, runAs }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, tab, onTab: setTab, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle }: Props) {
   const radiusFor = useCallback((id?: string) => (id && vehicleById.get(id)?.calc.turningRadiusFt) || 0, [vehicleById])
   const editor = useLayoutEditor(project, radiusFor)
   const { doc, latest, commit, canUndo, canRedo } = editor
@@ -175,6 +181,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const [justAdded, setJustAdded] = useState<string | null>(null)
   // The flows as the simulation drives them (vehicle switcher) — lanes, corners and B56.5 follow.
   const simFlows = useMemo(() => (runAs ? runAs(flows).flows : flows), [flows, runAs])
+  /** Each flow's simulation vehicle (the flow inspector). */
+  const simVehicleOf = useMemo(() => new Map(simFlows.map(f => [f.id, f.vehicleId])), [simFlows])
   const simLinked = useMemo(() => (simFlows === flows ? linked : linkedFlows(simFlows)), [simFlows, flows, linked])
 
   // The layout as driven: corners rounded to the largest turning radius among the flows' vehicles.
@@ -189,8 +197,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const rule = useMemo(() => clearanceRule(project.simSettings?.clearance), [project.simSettings?.clearance])
   // What a run would drive here: lane widths from the envelope (vehicle or pallet) and the clearances.
   const inputs = useMemo(
-    () => runInputs(layout, simFlows, simVehicleById, rule, payloadFt(project.loads)?.width ?? 0),
-    [layout, simFlows, simVehicleById, rule, project.loads],
+    () => runInputs(layout, simFlows, simVehicleById, rule, payloads),
+    [layout, simFlows, simVehicleById, rule, payloads],
   )
   const clearances = showClearance ? inputs.clearances : null
   /** Direction and lanes for the routes drawn next (Route tool options). One-way runs the way it is drawn. */
@@ -735,6 +743,9 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   onHighway={(id, patch) => setLayout(updateHighway(layout, id, patch), `highway:${id}:${Object.keys(patch).join()}`)}
                   envelopeFt={inputs.envelopeFt}
                   highwayStatus={highwayStatus}
+                  simVehicleOf={simVehicleOf}
+                  vehicleTypes={vehicleTypes}
+                  onFlowVehicle={onFlowVehicle}
                   onRepeat={(id, count, stepFt, dir) => {
                     const made = repeatPoint(layout, id, count, stepFt, dir)
                     setLayout(made.layout)

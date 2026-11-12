@@ -113,9 +113,10 @@ export interface SimSettings {
   staffedHr: number
   /** Project target utilization (0–1). The verdict is measured against it (D-9). */
   targetUtilization: number
-  /** The handled load (Step 1), ft. A loaded vehicle's envelope is the larger of vehicle and payload:
-   *  following is measured envelope to envelope (spec §5.9, §6.5.5). Absent → the vehicle alone. */
-  payloadFt?: { length: number; width: number }
+  /** Each vehicle type's payload, ft, by vehicle id (its Step 1 load or custom dims). A loaded
+   *  vehicle's envelope is the larger of vehicle and payload: following is measured envelope to
+   *  envelope (spec §5.9, §6.5.5). Absent → the vehicle alone. */
+  payloadFt?: Record<string, { length: number; width: number }>
 }
 
 /** One flag on the results: a fallback was used because data is missing. */
