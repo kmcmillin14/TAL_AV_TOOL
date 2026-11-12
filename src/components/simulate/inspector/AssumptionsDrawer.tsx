@@ -63,7 +63,7 @@ export default function AssumptionsDrawer({ project, vehicles, changed, writeLay
   const write = (r: Row, v: number | string | boolean | undefined) => apply(fieldPatch(r.def, r.ctx, v), r.ctx)
   /** Reset every override to its source — the registry's own reset for each, so nothing is missed. */
   const resetAll = () => {
-    if (!window.confirm(`Reset ${changed.length} assumption${changed.length === 1 ? '' : 's'} to their sources? Undo brings them back.`)) return
+    if (!window.confirm(`Reset ${changed.length} assumption${changed.length === 1 ? '' : 's'} to their sources? `)) return
     let settings: Partial<NonNullable<StoredProject['simSettings']>> = {}
     const layoutResets: { id: string; patch: FieldPatch }[] = []
     for (const o of changed) {
@@ -91,7 +91,7 @@ export default function AssumptionsDrawer({ project, vehicles, changed, writeLay
         {only && <button type="button" className="link-btn" onClick={() => setOnly(null)}>All assumptions</button>}
         {!only && changed.length > 0 && <button type="button" className="link-btn" onClick={resetAll}>Reset all</button>}
       </div>
-      <p className="sim-frow-help">Changes here affect the simulation only — never the Fleet Engine or the quote.</p>
+      <p className="sim-frow-help">Simulation only — not the Fleet Engine or the quote.</p>
       <div className="sim-drawer-body">
         {FIELD_GROUPS.map(g => {
           const inGroup = visible.filter(r => r.def.group === g)

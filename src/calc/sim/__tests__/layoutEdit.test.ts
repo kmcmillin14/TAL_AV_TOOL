@@ -336,6 +336,19 @@ describe('stations connect themselves', () => {
     expect(routeDistanceFt(r.layout, a, r.id)).toBeCloseTo(175, 6)      // 150 along the aisle + 25 up the spur
     expect(routeDistanceFt(r.layout, a, b)).toBeCloseTo(400, 6)         // the aisle is still whole
   })
+  it('placed past a route end: the spur joins that end — no split, no zero-length route', () => {
+    const { L, b } = line()                                // (0,0) → (400,0); b at (400,0)
+    const join = spurTarget(L, { x: 420, y: 0 })!
+    const r = placeWithSpur(L, { x: 420, y: 0 }, 'dock', 'drop', join)
+    expect(r.layout.points).toHaveLength(3)                // a, b and the dock — no extra junction
+    expect(r.layout.segments.find(s => s.b === r.id)).toMatchObject({ a: b, dir: 'two', lane: 'single' })
+    expect(r.layout.segments.every(s => segmentLengthFt(r.layout, s) > 0)).toBe(true)
+  })
+  it('a curved route is never split for a spur (it would straighten)', () => {
+    const { L, s } = line()
+    const curved = setCurve(L, s, { kind: 'arc', mid: { x: 200, y: 30 } })
+    expect(spurTarget(curved, { x: 200, y: 50 })).toBeNull()
+  })
   it('no route within 40 ft → no spur', () => {
     const { L } = line()
     expect(spurTarget(L, { x: 150, y: SPUR_REACH_FT + 1 })).toBeNull()

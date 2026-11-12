@@ -40,6 +40,8 @@ export interface SimFieldDef {
   /** Shown when a Default has no number (the engine's fallback in words). */
   fallback?: string
   readOnly?: boolean
+  /** Whole numbers only (a seed). */
+  integer?: boolean
   /** A site fact stored on the object (source `Drawn` when set): not an override, never counted. */
   drawn?: boolean
 }
@@ -73,7 +75,7 @@ export const SIM_FIELDS: SimFieldDef[] = [
   def('run', 'safetyFt', 'Traffic', 'settings', 'Following gap', 'ft', { min: 0.5, max: 30, step: 0.5 }),
   def('run', 'demandPct', 'Demand', 'settings', 'Demand', '%', { min: 10, max: 300, step: 5 }),
   def('run', 'arrivals', 'Demand', 'settings', 'Arrivals', '', { choices: [{ value: 'regular', label: 'Regular' }, { value: 'random', label: 'Random' }] }),
-  def('run', 'seed', 'Run', 'advanced', 'Seed', '', { min: 1, max: 9999, step: 1 }),
+  def('run', 'seed', 'Run', 'advanced', 'Seed', '', { min: 1, max: 99999, step: 1, integer: true }),
   def('run', 'shiftH', 'Run', 'settings', 'Shift length', 'h', { readOnly: true }),
   // B56.5 rule (simSettings.clearance)
   def('safety', 'thresholdFps', 'Safety', 'advanced', 'Speed for the larger clearance', 'ft/s', { min: 0.5, max: 20, step: 0.01 }),
@@ -81,7 +83,7 @@ export const SIM_FIELDS: SimFieldDef[] = [
   def('safety', 'fullSpeedIn', 'Safety', 'advanced', 'Clearance at or above it', 'in', { min: 0, max: 60, step: 0.5 }),
   def('safety', 'sharedBetweenVehicles', 'Safety', 'advanced', 'Passing vehicles share one clearance', '', { choices: [{ value: true, label: 'Shared' }, { value: false, label: 'Each its own' }] }),
   // Points and routes (stored on the object)
-  def('point', 'heightFt', 'Handling', 'settings', 'Transfer height', 'ft', { min: 0, max: 40, step: 0.1, fallback: 'Floor (0)', drawn: true }),
+  def('point', 'heightFt', 'Handling', 'settings', 'Transfer height', 'ft', { min: 0, max: 100, step: 0.1, fallback: 'Floor (0)', drawn: true }),
   def('point', 'handshakeSec', 'Handling', 'advanced', 'Handshake time', 's', { min: 0, max: 600, step: 1, fallback: '0 s' }),
   def('point', 'approachHeadingDeg', 'Handling', 'advanced', 'Approach direction', '°', { min: 0, max: 359, step: 1, fallback: 'Along the route' }),
   def('route', 'speedLimitFps', 'Traffic', 'settings', 'Speed limit', 'ft/s', { min: 0.1, max: 30, step: 0.1, fallback: 'Vehicle speed' }),

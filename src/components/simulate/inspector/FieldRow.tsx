@@ -34,7 +34,8 @@ export default function FieldRow({ def, state, unitSystem, onChange, owner, chil
     const v = Number(raw)
     if (!Number.isFinite(v)) return
     const ft = fromDisplay(def.unit, v, unitSystem)
-    onChange(Math.min(def.max ?? Infinity, Math.max(def.min ?? -Infinity, ft)))
+    const clamped = Math.min(def.max ?? Infinity, Math.max(def.min ?? -Infinity, ft))
+    onChange(def.integer ? Math.round(clamped) : clamped)
   }
   const choice = def.choices && (
     <select value={def.choices.findIndex(c => c.value === state.value)} onChange={e => onChange(def.choices![Number(e.target.value)].value)}>

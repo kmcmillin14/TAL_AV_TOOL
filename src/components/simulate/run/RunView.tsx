@@ -68,7 +68,10 @@ const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payload }: Props) {
   const simSettings = project.simSettings ?? {}
   const engineFleet = useByValue(useMemo(() => engineFleetByType(fleet), [fleet]))
-  const inputsKey = useMemo(() => simInputsKey(project, vehicleById), [project, vehicleById])
+  // The key hashes the vehicle files (overrides are hashed from simSettings) — as Sizing does, so a
+  // result is only "stale" when its inputs really changed.
+  const fileVehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
+  const inputsKey = useMemo(() => simInputsKey(project, fileVehicleById), [project, fileVehicleById])
 
   const assume: Assumptions = useMemo(() => ({
     pacePct: simSettings.pacePct ?? RUN_DEFAULTS.pacePct, safetyFt: simSettings.safetyFt ?? RUN_DEFAULTS.safetyFt,

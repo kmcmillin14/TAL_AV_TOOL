@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-12 — Fleet simulation: code review of Milestone 6
+
+- **Stale marker:** the run hashed its inputs key from the overridden vehicles, Sizing from the vehicle
+  files — with any override, Sizing read every result as "re-run". Both now hash the files (overrides
+  are in the key through simSettings).
+- **Spurs:**
+  - A station placed past a route's end joins that end. Before, it created a duplicate junction and a
+    zero-length route.
+  - Curved routes are never split for a spur, which would have straightened them.
+- **Space** presses a focused button again; it pans only when no control has focus.
+- **Seed** stays a whole number (up to 99999 again).
+- **Transfer height** accepts up to 100 ft, the file's limit (was 40 ft).
+- **Reset all** no longer promises Undo for run values; explanatory sentences trimmed from working
+  screens (help stays in the field's one line and `help.ts`).
+- Noted, not changed: a spur can cross a wall or rack between the station and the aisle (hold Shift
+  to place unconnected); the inspector's position and footprint inputs and the registry rows are two
+  input components.
+
 ## 2026-11-12 — Fleet simulation: cleanup review of Milestone 6
 
 Four cleanup reviewers (reuse, simplification, efficiency, altitude) over Milestone 6. Fixed:

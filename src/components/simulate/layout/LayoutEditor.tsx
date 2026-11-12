@@ -347,7 +347,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     if (mod && k === 'c' && selectedPoints.length) { e.preventDefault(); clipboard.current = selectedPoints; return }
     if (mod && k === 'v' && clipboard.current.length) { e.preventDefault(); paste(); return }
     if (mod || e.altKey) return
-    if (k === ' ') { e.preventDefault(); if (!e.repeat) setSpaceHeld(true); return }
+    // Space pans — unless a control has focus, where Space presses it.
+    if (k === ' ' && !target?.closest('button, input, select, summary, [role="radio"], [role="button"]')) { e.preventDefault(); if (!e.repeat) setSpaceHeld(true); return }
     if (k === 'd' && selection?.kind === 'segment') { stepDirection(selection.id); return }
     const t = TOOLS.find(x => x.key.toLowerCase() === k)
     if (t) chooseTool(t.id)

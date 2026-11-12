@@ -145,8 +145,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
       <details className="sim-disc">
         <summary>Assumptions<span className="meta">pace {assume.pacePct}% · safety {fmtLength(assume.safetyFt, unitSystem, 1)} · demand {assume.demandPct}%</span></summary>
         <div className="sim-disc-body">
-          <p className="sim-readout">Set in the Assumptions view — every value with its source and a reset.
-            <button type="button" className="link-btn" onClick={onOpenAssumptions}>Open assumptions</button></p>
+          <p className="sim-readout"><button type="button" className="link-btn" onClick={onOpenAssumptions}>Open assumptions</button></p>
           {S && [...S.profiles.values()].map(p => {
             const c = p.vehicle.calc, b = p.battery
             return (

@@ -237,7 +237,7 @@ export default function LayoutPanel(p: Props) {
                 </p>
               )}
             </section>
-          ) : <p className="sim-frow-help">Turn on B56.5 (top right) to see this route’s clearance.</p>}
+          ) : null}
         </Section>
       </Inspector>
     )
@@ -268,17 +268,15 @@ export default function LayoutPanel(p: Props) {
 
   // Nothing selected: the layout's totals (and the B56.5 rule while its overlay is on).
   const linkedFlows = p.flows.filter(f => f.fromPointId && f.toPointId).length
-  const totalFt = totalRouteFt
   return (
     <aside className="sim-panel is-empty" aria-label="Layout">
       <div className="sim-panel-head"><h3>Nothing selected</h3></div>
       <Summary items={[
         ['Points', p.layout.points.filter(q => q.type !== 'junction').length],
-        ['Routes', `${p.layout.segments.length} · ${fmtLength(totalFt, p.unitSystem)}`],
+        ['Routes', `${p.layout.segments.length} · ${fmtLength(totalRouteFt, p.unitSystem)}`],
         ['Flows on layout', `${linkedFlows} of ${p.flows.length}`],
         ['Objects', (p.layout.objects ?? []).length],
       ]} />
-      <p className="sim-frow-help">Click a point, route, object or flow to see its settings.</p>
       {p.clearances && (
         <Section title="B56.5 clearance" open>
           <p className="sim-readout">

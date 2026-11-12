@@ -522,7 +522,8 @@ export const SPUR_REACH_FT = 40
 /** Where a point placed at `at` would join the network: the nearest spot on the nearest route within
  *  `SPUR_REACH_FT`, or null when no route is that close. */
 export function spurTarget(L: SimLayout, at: XY): { id: string; at: XY } | null {
-  return nearestRoute(L, at, SPUR_REACH_FT)
+  // Curved routes are left alone: splitting one for a spur would straighten it.
+  return nearestRoute({ ...L, segments: L.segments.filter(s => !s.curve) }, at, SPUR_REACH_FT)
 }
 
 /**
@@ -532,9 +533,15 @@ export function spurTarget(L: SimLayout, at: XY): { id: string; at: XY } | null 
  */
 export function placeWithSpur<T extends SimLayout>(L: T, at: XY, type: SimPointType, role: SimRole | undefined, join: { id: string; at: XY }): { layout: T; id: string } {
   const placed = addPoint(L, at, type, role)
+  const spur = { dir: 'two', lane: 'single' } as const
+  // Nearest spot is a route's end (the point was placed past it): join that end — no split, no
+  // zero-length route.
+  const s = L.segments.find(q => q.id === join.id)
+  const end = s && [s.a, s.b].find(id => { const q = L.points.find(p => p.id === id); return q && Math.hypot(q.x - join.at.x, q.y - join.at.y) < 1e-6 })
+  if (end) return { layout: addSegment(placed.layout, end, placed.id, spur).layout, id: placed.id }
   const split = splitSegment(placed.layout, join.id, join.at)
   if (!split) return placed
-  return { layout: addSegment(split.layout, split.id, placed.id, { dir: 'two', lane: 'single' }).layout, id: placed.id }
+  return { layout: addSegment(split.layout, split.id, placed.id, spur).layout, id: placed.id }
 }
 
 /** The next direction for a route when its badge is clicked: two-way → one-way → the other way. */
