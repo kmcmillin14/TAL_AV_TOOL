@@ -46,8 +46,9 @@ interface Props {
   onFocus: (sel: NonNullable<Selection>, at: XY) => void
   /** "Add flow to…": link a new flow Pick → Drop. */
   onAddFlow: (from: string, to: string) => void
-  /** A flow just linked in the editor: open it with Moves per hour focused. */
+  /** A flow just linked in the editor: open it with Moves per hour focused (once — then this is called). */
   focusRateOf?: string | null
+  onRateFocused?: () => void
 }
 
 
@@ -81,14 +82,15 @@ export default function LayoutPanel(p: Props) {
   const rateRef = useRef<HTMLInputElement>(null)
   useEffect(() => {
     if (!p.focusRateOf || p.focusRateOf !== flow?.id) return
-    const t = window.setTimeout(() => rateRef.current?.focus())
+    const t = window.setTimeout(() => { rateRef.current?.focus(); p.onRateFocused?.() })
     return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p.focusRateOf, flow?.id])
 
   // "Add flow to…" for the selected Pick or Drop point: what it can link to, nearest first.
   const links = useMemo(() => {
     const t = sel?.kind === 'point' ? flowTargets(p.layout, sel.id, p.flows) : null
-    return t && { from: t.from, reachable: t.targets.filter(x => x.ok) }
+    return t && { end: t.end, reachable: t.targets.filter(x => x.ok) }
   }, [sel, p.layout, p.flows])
 
   if (sel?.kind === 'point') {
@@ -159,11 +161,11 @@ export default function LayoutPanel(p: Props) {
               ? <ul className="sim-nav">
                   {links.reachable.map(t => (
                     <li key={t.id}><button type="button" onClick={() => p.onAddFlow(t.pick, t.drop)}>
-                      <span className="nm">{links.from === 'pick' ? '→ ' : '← '}{name(t.id)}</span><span className="meta num">{len(t.distanceFt!)}</span>
+                      <span className="nm">{t.pick === pt.id ? '→ ' : '← '}{name(t.id)}</span><span className="meta num">{len(t.distanceFt!)}</span>
                     </button></li>
                   ))}
                 </ul>
-              : <p className="sim-card-note">No {links.from === 'pick' ? 'Drop' : 'Pick'} point it can reach yet.</p>}
+              : <p className="sim-card-note">No {links.end} point it can link to yet.</p>}
           </Section>
         )}
         <Section title="Advanced" count={advancedOverrides}>
@@ -296,7 +298,7 @@ export default function LayoutPanel(p: Props) {
           ['Vehicle', p.vehicles.find(v => v.id === flow.vehicleId)?.name ?? '—'],
         ]} />
         <label className="sim-field"><span>Moves per hour</span>
-          <input type="number" min={0} step="any" value={flow.thruPerHr || ''} ref={rateRef} onChange={e => p.onFlow(flow.id, { thruPerHr: Math.max(0, Number(e.target.value) || 0) })} />
+          <input type="number" min={0} step="any" value={flow.thruPerHr || ''} ref={rateRef} onKeyDown={e => { if (e.key === 'Escape') e.currentTarget.blur() }} onChange={e => p.onFlow(flow.id, { thruPerHr: Math.max(0, Number(e.target.value) || 0) })} />
         </label>
         <label className="sim-field"><span>Vehicle</span>
           <select value={flow.vehicleId ?? ''} onChange={e => p.onFlow(flow.id, { vehicleId: e.target.value || undefined, transferMethodIdx: undefined })}>

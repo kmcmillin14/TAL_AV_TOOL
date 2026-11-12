@@ -899,14 +899,15 @@ step ribbon is unchanged.
       runs them as the preloaded vehicle.
   - *Easier flow linking (owner, 2026-11-12).*
     - With the Flow tool, clicking a **Pick** lights up every Drop it can link to and dims the rest;
-      clicking a **Drop** first does the same for Picks (the flow still runs Pick → Drop). A dimmed
-      point says why on hover and on click: *End a flow at a Drop point* · *Same point* · *Already
-      linked* · *No route — check one-way routes and connections* (`flowTargets`, the same rules the
-      engine and validation use).
+      clicking a **Drop** first does the same for Picks (the flow still runs Pick → Drop); a **Pick &
+      drop** point lights both. A dimmed point says why on hover and on click: *End a flow at a Drop
+      point* · *Start a flow at a Pick point* · *Already linked* · *No route — check one-way routes and
+      connections* (`flowTargets`, built on `flowRefusal`, the rule the engine and validation use).
     - Hovering a lit point draws the path the flow will take along the routes, with its length.
     - A click links it; **Shift-click** links it and keeps the start, so one Pick can feed several
-      Drops in a row. Esc, a right-click or a click on empty floor stops.
-    - A new flow opens in the inspector with **Moves per hour** focused.
+      Drops in a row. Esc, a right-click, a click on the start again or on empty floor stops.
+    - A flow linked with a plain click (the last of a chain, or from "Add flow to…") opens in the
+      inspector with **Moves per hour** focused, once; Esc there returns to the canvas.
     - A Pick (or Drop) point's inspector lists **Add flow to…**: every point it can link to, nearest
       first, with the distance — one click creates the flow.
     - Name-matched Sizing flows are linked from the Flows tab (**Use layout distances**, as before).

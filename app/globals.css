@@ -5689,7 +5689,7 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 
 /* Flow tool (owner, 2026-11-12): the points a flow can link to are lit, the rest dimmed; the hovered
    one's path along the routes is drawn with its length. */
-.sim-pt.is-dim { opacity: 0.3; transition: opacity 0.2s cubic-bezier(0.25, 0.1, 0.25, 1); }
+.sim-pt.is-dim, .sim-footprint.is-dim { opacity: 0.3; transition: opacity 0.2s cubic-bezier(0.25, 0.1, 0.25, 1); }
 .sim-pt-halo { fill: var(--sim-sel-soft); stroke: var(--sim-sel); stroke-width: 2; animation: sim-halo 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) infinite; }
 @keyframes sim-halo { 50% { stroke-opacity: 0.35; } }
 @media (prefers-reduced-motion: reduce) { .sim-pt-halo { animation: none; } }

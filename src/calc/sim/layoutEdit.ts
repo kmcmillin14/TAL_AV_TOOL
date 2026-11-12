@@ -176,41 +176,49 @@ export function flowStartRefusal(L: SimLayout, start: string): string | null {
 }
 
 /** Why the Flow tool refuses this Pick → Drop pair, or `null` (spec §5.4, acceptance 11). */
-export function flowRefusal(L: SimLayout, from: string, to: string): string | null {
-  if (!canPick(pointById(L).get(from))) return 'Start a flow at a Pick point.'
+export function flowRefusal(L: SimLayout, from: string, to: string, byId = pointById(L)): string | null {
+  if (!canPick(byId.get(from))) return 'Start a flow at a Pick point.'
   if (from === to) return 'A flow needs two different points.'
-  if (!canDrop(pointById(L).get(to))) return 'End a flow at a Drop point.'
+  if (!canDrop(byId.get(to))) return 'End a flow at a Drop point.'
   return null
 }
 
 /** One point a flow could link to from a start point (the Flow tool's highlight, "Add flow to…"),
  *  with the flow's Pick and Drop already in order. */
 export interface FlowTarget { id: string; pick: string; drop: string; ok: boolean; reason?: string; distanceFt?: number }
+/** What a start can link to: a Pick's Drops, a Drop's Picks, a Pick & drop point's both. */
+export type FlowEnd = 'Drop' | 'Pick' | 'Pick or Drop'
 
 const REVERSED = { two: 'two', ab: 'ba', ba: 'ab' } as const
 /**
- * Every point a flow can link to from `start`, with the reason when it cannot (the same rules as
- * `flowRefusal`, plus *Already linked* and *No route*). A Pick start lists Drops; a Drop start lists
- * Picks (the flow still runs Pick → Drop). `null` when the start can be neither. Junctions are left
- * out. Valid targets first, nearest first. One shortest-path tree from the start gives every distance
- * (for a Drop start, on the routes reversed: the distance from each Pick to it).
+ * Every point a flow can link to from `start`, with the reason when it cannot (`flowRefusal`, plus
+ * *Already linked* and *No route*). A Pick start lists Drops; a Drop start lists Picks (the flow still
+ * runs Pick → Drop); a Pick & drop point lists both. `null` when the start can be neither. Junctions
+ * are left out. Valid targets first, nearest first. One shortest-path tree per direction gives every
+ * distance (from the start; on the routes reversed, to it). `G` may be passed in (the forward graph).
  */
-export function flowTargets(L: SimLayout, start: string, flows: { fromPointId?: string; toPointId?: string }[]): { from: 'pick' | 'drop'; targets: FlowTarget[] } | null {
-  const s = pointById(L).get(start)
-  const from = canPick(s) ? 'pick' : canDrop(s) ? 'drop' : null
-  if (!from) return null
-  const G = buildGraph(from === 'pick' ? L : { ...L, segments: L.segments.map(q => ({ ...q, dir: REVERSED[q.dir] })) })
-  const dist = tree(G, G.idx.get(start)!).dist
-  const end = from === 'pick' ? canDrop : canPick
+export function flowTargets(L: SimLayout, start: string, flows: { fromPointId?: string; toPointId?: string }[], G = buildGraph(L)): { end: FlowEnd; targets: FlowTarget[] } | null {
+  const byId = pointById(L), s = byId.get(start)
+  const out = canPick(s), into = canDrop(s)
+  if (!out && !into) return null
+  const i = G.idx.get(start)!
+  const fwd = out ? tree(G, i).dist : null
+  const back = into ? (() => { const R = buildGraph({ ...L, segments: L.segments.map(q => ({ ...q, dir: REVERSED[q.dir] })) }); return tree(R, R.idx.get(start)!).dist })() : null
   const targets = L.points.filter(p => p.type !== 'junction' && p.id !== start).map((p): FlowTarget => {
-    const [pick, drop] = from === 'pick' ? [start, p.id] : [p.id, start]
+    // Start → p when the start picks and p drops; otherwise p → start.
+    const forward = out && canDrop(p)
+    const [pick, drop] = forward || !into ? [start, p.id] : [p.id, start]
     const base = { id: p.id, pick, drop }
-    if (!end(p)) return { ...base, ok: false, reason: from === 'pick' ? 'End a flow at a Drop point.' : 'Start a flow at a Pick point.' }
+    const why = flowRefusal(L, pick, drop, byId)
+    if (why) return { ...base, ok: false, reason: why }
     if (flows.some(f => f.fromPointId === pick && f.toPointId === drop)) return { ...base, ok: false, reason: 'Already linked.' }
-    const d = dist[G.idx.get(p.id)!]
+    const d = (forward ? fwd! : back!)[G.idx.get(p.id)!]
     return isFinite(d) ? { ...base, ok: true, distanceFt: d } : { ...base, ok: false, reason: 'No route — check one-way routes and connections.' }
   })
-  return { from, targets: targets.sort((x, y) => Number(y.ok) - Number(x.ok) || (x.distanceFt ?? 0) - (y.distanceFt ?? 0)) }
+  return {
+    end: out && into ? 'Pick or Drop' : out ? 'Drop' : 'Pick',
+    targets: targets.sort((x, y) => Number(y.ok) - Number(x.ok) || (x.distanceFt ?? 0) - (y.distanceFt ?? 0)),
+  }
 }
 
 /** A project flow as stored in Sizing — the layout fields are optional. */

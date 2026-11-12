@@ -587,7 +587,7 @@ const PointMarker = memo(function PointMarker({ p, px, selected, loose, cross, l
   const icon = Math.round(half * 1.15)
   return (
     <>
-      {fp && <rect x={p.x - fp.l / 2} y={p.y - fp.w / 2} width={fp.l} height={fp.w} className={`sim-footprint ${tone}`} vectorEffect="non-scaling-stroke" />}
+      {fp && <rect x={p.x - fp.l / 2} y={p.y - fp.w / 2} width={fp.l} height={fp.w} className={`sim-footprint ${tone}${mark ? ` is-${mark}` : ''}`} vectorEffect="non-scaling-stroke" />}
       <g transform={`translate(${p.x} ${p.y}) scale(${px})`} className={`sim-pt ${tone}${selected ? ' is-selected' : ''}${mark ? ` is-${mark}` : ''}`}>
         {mark === 'target' && <circle r={half + 7} className="sim-pt-halo" />}
         {vehiclePoint

@@ -14,6 +14,11 @@
   canvas's own point radius, so a preview always means the click lands, and the preview is derived from
   the hovered point; Moves per hour is focused only for a flow just linked; the length label reuses the
   route preview's style and formatter.
+- **Code review:** while chaining with Shift-click the focus stays on the canvas (Esc stops); a plain
+  click opens Moves per hour focused once, and Esc there returns to the canvas; the path preview clears
+  when the pointer leaves the map or the start changes; a Pick & drop point links both ways; the
+  targets are built on `flowRefusal` (one rule); one routing graph while a start is armed, and typing a
+  rate no longer recomputes the targets; a dimmed station's footprint dims too.
 
 ## 2026-11-12 — Fleet simulation: vehicle switcher (simulation only)
 

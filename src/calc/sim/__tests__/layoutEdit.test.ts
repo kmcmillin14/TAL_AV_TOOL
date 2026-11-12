@@ -375,7 +375,7 @@ describe('flowTargets (Flow tool highlight, "Add flow to…")', () => {
   } as never
   it('lists the Drops a Pick reaches, nearest first, and why the rest cannot be linked', () => {
     const r = flowTargets(L, 'P', [{ fromPointId: 'P', toPointId: 'D2' }])!
-    expect(r.from).toBe('pick')
+    expect(r.end).toBe('Drop')
     const by = Object.fromEntries(r.targets.map(t => [t.id, t]))
     expect(r.targets[0]).toMatchObject({ id: 'D1', pick: 'P', drop: 'D1', ok: true, distanceFt: 10 })
     expect(by.D2).toMatchObject({ ok: false, reason: 'Already linked.' })
@@ -386,8 +386,15 @@ describe('flowTargets (Flow tool highlight, "Add flow to…")', () => {
   it('from a Drop lists the Picks (the flow still runs Pick → Drop); a charger starts nothing', () => {
     expect(flowTargets(L, 'D1', [])!.targets.filter(t => t.ok).map(t => [t.pick, t.drop, t.distanceFt])).toEqual([['P', 'D1', 10]])
     expect(flowTargets(L, 'D3', [])!.targets.filter(t => t.ok)).toEqual([])   // one-way: D3 is reached from nowhere
-    expect(flowTargets(L, 'D1', [])!.from).toBe('drop')
+    expect(flowTargets(L, 'D1', [])!.end).toBe('Pick')
     expect(flowTargets(L, 'C', [])).toBeNull()
+  })
+  it('a Pick & drop point links both ways: to Drops it reaches, from Picks that reach it', () => {
+    const base = L as SimLayout
+    const Q = { ...base, points: base.points.map(p => (p.id === 'D1' ? { ...p, role: 'pickDrop' as const } : p)) }
+    const r = flowTargets(Q, 'D1', [])!
+    expect(r.end).toBe('Pick or Drop')
+    expect(r.targets.filter(t => t.ok).map(t => `${t.pick}>${t.drop}`).sort()).toEqual(['D1>D2', 'P>D1'])
   })
   it('previews the path along the routes', () => {
     const path = pathPoints(L, 'P', 'D2')!
