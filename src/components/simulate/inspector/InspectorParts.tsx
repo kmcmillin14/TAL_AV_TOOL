@@ -7,8 +7,6 @@
 import type { ReactNode } from 'react'
 import type { SimPointType } from '@/src/calc/sim/types'
 import Icon from '@/src/design-system/components/Icon'
-import { SIM_FIELD_HELP } from '@/src/content/help'
-import type { FieldState } from '@/src/lib/simFields'
 
 export function Inspector({ title, icon, onCopy, onDelete, children }: {
   title: string; icon?: SimPointType; onCopy?: () => void; onDelete?: () => void; children: ReactNode
@@ -47,26 +45,16 @@ export function Section({ title, open, count, children }: { title: string; open?
 
 const ARROWS = [{ deg: 270, label: '↑' }, { deg: 90, label: '↓' }, { deg: 180, label: '←' }, { deg: 0, label: '→' }]
 
-/** Approach direction as four arrows (and "Along the route"): the direction a vehicle faces as it
- *  enters the point. Same source chip, reset and help as every field. */
-export function ApproachArrows({ state, onChange }: { state: FieldState; onChange: (deg: number | undefined) => void }) {
-  const v = typeof state.value === 'number' ? state.value : null
-  const overridden = state.source === 'Override'
+/** Approach direction as four arrows (and "Along route"): the direction a vehicle faces as it enters
+ *  the point — a control for the `point.approachHeadingDeg` row (FieldRow keeps chip, reset, help). */
+export function ApproachArrows({ value, onChange }: { value: number | null; onChange: (deg: number | undefined) => void }) {
   return (
-    <div className={`sim-frow${overridden ? ' is-override' : ''}`}>
-      <div className="sim-frow-head">
-        <span className="sim-frow-label">{overridden && <i className="sim-odot" aria-label="Overridden" />}Approach direction</span>
-        <span className={`sim-src src-${state.source.replace(' ', '').toLowerCase()}`}>{state.source}</span>
-      </div>
-      <div className="seg-toggle sim-seg-toggle sim-arrows" role="radiogroup" aria-label="Approach direction">
-        <button type="button" role="radio" aria-checked={v == null} className={`seg-btn${v == null ? ' on' : ''}`} onClick={() => onChange(undefined)}>Along route</button>
-        {ARROWS.map(a => (
-          <button key={a.deg} type="button" role="radio" aria-checked={v === a.deg} aria-label={`Enter heading ${a.label}`}
-            className={`seg-btn${v === a.deg ? ' on' : ''}`} onClick={() => onChange(a.deg)}>{a.label}</button>
-        ))}
-      </div>
-      {v != null && !ARROWS.some(a => a.deg === v) && <p className="sim-frow-help">Set to {Math.round(v)}° in the project file.</p>}
-      <p className="sim-frow-help">{SIM_FIELD_HELP['point.approachHeadingDeg']}</p>
+    <div className="seg-toggle sim-seg-toggle sim-arrows" role="radiogroup" aria-label="Approach direction">
+      <button type="button" role="radio" aria-checked={value == null} className={`seg-btn${value == null ? ' on' : ''}`} onClick={() => onChange(undefined)}>Along route</button>
+      {ARROWS.map(a => (
+        <button key={a.deg} type="button" role="radio" aria-checked={value === a.deg} aria-label={`Enter heading ${a.label}`}
+          className={`seg-btn${value === a.deg ? ' on' : ''}`} onClick={() => onChange(a.deg)}>{a.label}</button>
+      ))}
     </div>
   )
 }

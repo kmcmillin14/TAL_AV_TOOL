@@ -3311,7 +3311,6 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-seg.is-selected .sim-tape { stroke: var(--accent); stroke-width: 3; opacity: 1; }
 .sim-arrow path { fill: var(--tape); opacity: 0.9; }
 .sim-seg.is-selected .sim-arrow path { fill: var(--accent); }
-.sim-arrow .sim-no-pass { fill: none; stroke: var(--tape); stroke-width: 2; vector-effect: non-scaling-stroke; }
 .sim-pt-junction circle { fill: var(--text-secondary); }
 .sim-pt-junction.is-cross circle { fill: var(--tape); }
 .sim-pt-junction.is-selected circle { fill: var(--accent); }
@@ -3418,10 +3417,6 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-legend .sw.clr-violation { border-color: var(--bad); }
 .sim-field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .sim-field-row .sim-input-unit input { width: 100%; }
-.sim-more { font-size: 13px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 8px; }
-.sim-more summary { cursor: pointer; color: var(--text-secondary); }
-.sim-more[open] { gap: 8px; }
-.sim-more > * + * { margin-top: 8px; }
 .sim-source { display: inline-block; margin-left: 8px; padding: 0 8px; border: 1px solid var(--border); border-radius: 3px; font-size: 11px; color: var(--text-tertiary); }
 .sim-clr-card { border-top: 1px solid var(--border); padding-top: 8px; display: flex; flex-direction: column; gap: 8px; }
 .sim-clr-card.is-capped .sim-readout { color: var(--warn); }
@@ -5487,8 +5482,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-states i, .sim-splitleg i, .sim-split span { background: var(--st); }
 .sim-run .sim-legend, .sim-run .sim-zoom { display: none; }
 .sim-run .sim-zoomctl { bottom: 62px; }
-/* Vehicle artwork: a soft shadow lifts it off the floor in both themes; the state dot stays on top. */
-.sim-veh-sprite { filter: drop-shadow(0 0.15px 0.3px rgba(0, 0, 0, 0.35)); }
 .sim-veh-body { fill: var(--bg-surface); stroke: var(--text-primary); stroke-width: 0.15; }
 .sim-veh-forks { stroke: var(--text-secondary); stroke-width: 0.35; stroke-linecap: round; }
 .sim-veh-pallet { fill: #b08850; stroke: #d9cfb5; stroke-width: 0.2; }
@@ -5510,7 +5503,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-splitleg { display: flex; gap: 16px; flex-wrap: wrap; font-size: 11px; color: var(--text-tertiary); }
 .sim-kv { display: grid; grid-template-columns: 1fr auto; gap: 4px 16px; margin: 0; font-size: 13px; max-width: 520px; }
 .sim-kv dt { color: var(--text-secondary); } .sim-kv dd { margin: 0; font-family: var(--tal-font-numeric); text-align: right; color: var(--text-primary); }
-.sim-assume { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; }
 .sim-vehdata h4, .sim-h4 { margin: 8px 0; font: 700 11px var(--tal-font-numeric); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-tertiary); }
 /* A followed vehicle's job legs (acceptance 15): dashed empty to the pick, solid loaded to the drop. */
 .sim-legs { pointer-events: none; }

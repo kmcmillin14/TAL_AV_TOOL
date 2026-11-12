@@ -10,7 +10,7 @@ import {
   FLOW_POINT_TYPES, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import type { SimLayout, SimObject, SimPoint, SimPointType, SimSegment } from '@/src/calc/sim/types'
-import { fieldsFor, fieldPatch, fieldState, type SimFieldDef } from '@/src/lib/simFields'
+import { fieldDef, fieldsFor, fieldPatch, fieldState, type SimFieldDef } from '@/src/lib/simFields'
 import { fmtLength, lengthFromDisplay, lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
@@ -42,8 +42,6 @@ interface Props {
   onDelete: () => void
 }
 
-/** Highest transfer height the project file accepts (simSchemas.ts). */
-const MAX_HEIGHT_FT = 100
 
 const DIRS = [{ id: 'r', label: '→', v: { x: 1, y: 0 } }, { id: 'l', label: '←', v: { x: -1, y: 0 } }, { id: 'd', label: '↓', v: { x: 0, y: 1 } }, { id: 'u', label: '↑', v: { x: 0, y: -1 } }] as const
 const STATUS: Record<SegmentClearance['status'], string> = {
@@ -56,6 +54,7 @@ export default function LayoutPanel(p: Props) {
   const name = (id?: string) => (id && byId.get(id)?.name) || '—'
   const sel = p.selection
   const [repeat, setRepeat] = useState({ count: 6, step: 5, dir: 'r' as (typeof DIRS)[number]['id'] })
+  const totalRouteFt = useMemo(() => p.layout.segments.reduce((t, q) => t + segmentLengthFt(p.layout, q, byId), 0), [p.layout, byId])
   const flow = sel?.kind === 'flow' ? p.flows.find(q => q.id === sel.id) : undefined
   const flowFt = useMemo(
     () => (flow?.fromPointId && flow.toPointId ? routeDistanceFt(p.layout, flow.fromPointId, flow.toPointId) : Infinity),
@@ -66,15 +65,18 @@ export default function LayoutPanel(p: Props) {
     const pt = byId.get(sel.id)
     if (!pt) return null
     const ctx = { point: pt }
+    const set = (d: SimFieldDef, v: number | string | boolean | undefined) => { const patch = fieldPatch(d, ctx, v); if ('point' in patch) p.onPoint(pt.id, patch.point) }
+    // Every registry field for points, by level: Settings with the point, Advanced one click on.
+    // The approach direction uses arrows in place of a number box (same row, chip and reset).
     const row = (d: SimFieldDef) => (
-      <FieldRow key={d.key} def={d} state={fieldState(d, ctx)} unitSystem={p.unitSystem}
-        onChange={v => { const patch = fieldPatch(d, ctx, v); if ('point' in patch) p.onPoint(pt.id, patch.point) }} />
+      <FieldRow key={d.key} def={d} state={fieldState(d, ctx)} unitSystem={p.unitSystem} onChange={v => set(d, v)}>
+        {d.field === 'approachHeadingDeg' ? <ApproachArrows value={typeof pt.approachHeadingDeg === 'number' ? pt.approachHeadingDeg : null} onChange={v => set(d, v)} /> : undefined}
+      </FieldRow>
     )
-    const [height, handshake, approach] = ['heightFt', 'handshakeSec', 'approachHeadingDeg'].map(f => fieldsFor('point').find(d => d.field === f)!)
     const flowsHere = p.flows.filter(f => f.fromPointId === pt.id || f.toPointId === pt.id)
     const routes = p.layout.segments.filter(q => q.a === pt.id || q.b === pt.id).length
     const isFlowPoint = FLOW_POINT_TYPES.includes(pt.type)
-    const advancedOverrides = [handshake, approach].filter(d => fieldState(d, ctx).source === 'Override').length
+    const advancedOverrides = fieldsFor('point', 'advanced').filter(d => fieldState(d, ctx).source === 'Override').length
     return (
       <Inspector title={pt.type === 'junction' ? 'Junction' : pt.name || POINT_LABEL[pt.type]} icon={pt.type} onCopy={pt.type === 'junction' ? undefined : p.onCopy} onDelete={p.onDelete}>
         <Summary items={[
@@ -117,15 +119,14 @@ export default function LayoutPanel(p: Props) {
               <div className="sim-field"><span>Role</span>
                 <Segmented options={ROLE_OPTIONS} value={pt.role ?? 'pick'} onChange={role => p.onPoint(pt.id, { role })} />
               </div>
-              {row(height)}
+              {fieldsFor('point', 'settings').map(row)}
             </>
           )}
         </Section>
         <Section title="Advanced" count={advancedOverrides}>
           {isFlowPoint && (
             <>
-              {row(handshake)}
-              <ApproachArrows state={fieldState(approach, ctx)} onChange={deg => p.onPoint(pt.id, { approachHeadingDeg: deg })} />
+              {fieldsFor('point', 'advanced').map(row)}
               <div className="sim-field-row">
                 <Len u={p.unitSystem} label="Footprint width" ft={pt.footprintFt?.w} onFt={w => p.onPoint(pt.id, { footprintFt: w && pt.footprintFt?.l ? { w, l: pt.footprintFt.l } : w ? { w, l: w } : undefined })} />
                 <Len u={p.unitSystem} label="length" ft={pt.footprintFt?.l} onFt={l => p.onPoint(pt.id, { footprintFt: l && pt.footprintFt?.w ? { w: pt.footprintFt.w, l } : l ? { w: l, l } : undefined })} />
@@ -167,7 +168,7 @@ export default function LayoutPanel(p: Props) {
             <div className="sim-field"><span>Role</span>
               <Segmented options={ROLE_OPTIONS} value={same('role') ?? ('' as never)} onChange={role => p.onPoints(sel.ids, { role })} />
             </div>
-            <Len u={p.unitSystem} label="Transfer height" ft={same('heightFt')} max={MAX_HEIGHT_FT} onFt={heightFt => p.onPoints(sel.ids, { heightFt })} />
+            <Len u={p.unitSystem} label="Transfer height" ft={same('heightFt')} max={fieldDef('point.heightFt').max} onFt={heightFt => p.onPoints(sel.ids, { heightFt })} />
           </>
         )}
       </Inspector>
@@ -198,7 +199,7 @@ export default function LayoutPanel(p: Props) {
     const s = p.layout.segments.find(q => q.id === sel.id)
     if (!s) return null
     const clr = p.clearances?.find(r => r.segId === s.id)
-    const ctx = { segment: s }, speed = fieldsFor('route')[0]
+    const ctx = { segment: s }
     return (
       <Inspector title="Route" onDelete={p.onDelete}>
         <Summary items={[
@@ -216,8 +217,10 @@ export default function LayoutPanel(p: Props) {
             <Segmented value={s.lane ?? 'two'} onChange={lane => p.onSegment(s.id, { lane })}
               options={[{ id: 'two', label: 'Two-lane (passing)' }, { id: 'single', label: 'Single-lane' }]} />
           </div>
-          <FieldRow def={speed} state={fieldState(speed, ctx)} unitSystem={p.unitSystem}
-            onChange={v => { const patch = fieldPatch(speed, ctx, v); if ('segment' in patch) p.onSegment(s.id, patch.segment) }} />
+          {fieldsFor('route', 'settings').map(d => (
+            <FieldRow key={d.key} def={d} state={fieldState(d, ctx)} unitSystem={p.unitSystem}
+              onChange={v => { const patch = fieldPatch(d, ctx, v); if ('segment' in patch) p.onSegment(s.id, patch.segment) }} />
+          ))}
         </Section>
         <Section title="Advanced">
           <div className="sim-card-actions">
@@ -265,7 +268,7 @@ export default function LayoutPanel(p: Props) {
 
   // Nothing selected: the layout's totals (and the B56.5 rule while its overlay is on).
   const linkedFlows = p.flows.filter(f => f.fromPointId && f.toPointId).length
-  const totalFt = p.layout.segments.reduce((t, q) => t + segmentLengthFt(p.layout, q, byId), 0)
+  const totalFt = totalRouteFt
   return (
     <aside className="sim-panel is-empty" aria-label="Layout">
       <div className="sim-panel-head"><h3>Nothing selected</h3></div>

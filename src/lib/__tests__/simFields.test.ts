@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import cb18 from '@/src/content/vehicles/cb18.json'
 import { SIM_FIELD_HELP } from '@/src/content/help'
-import { withVehicleOverrides } from '@/src/calc/sim/vehicle'
+import { VEHICLE_OVERRIDE_FIELDS, withVehicleOverrides } from '@/src/calc/sim/vehicle'
 import { FIELD_GROUPS, SIM_FIELDS, fieldPatch, fieldState, fromDisplay, overriddenFields, toDisplay, type FieldContext, type FieldPatch, type SimFieldDef } from '../simFields'
 import type { Vehicle } from '../vehicleLibrary'
 
@@ -16,7 +16,7 @@ const apply = (c: FieldContext, p: FieldPatch): FieldContext =>
   'simSettings' in p ? { ...c, simSettings: JSON.parse(JSON.stringify({ ...c.simSettings, ...p.simSettings })) } : 'point' in p ? { ...c, point: { ...c.point!, ...p.point } } : { ...c, segment: { ...c.segment!, ...p.segment } }
 /** A value different from the field's base, inside its range. */
 const other = (d: SimFieldDef, base: unknown): number | string | boolean =>
-  d.choices ? (d.field === 'sharedBetweenVehicles' ? !base : d.choices.find(c => c.id !== base)!.id)
+  d.choices ? d.choices.find(c => c.value !== base)!.value
     : ((b: number, step: number) => (b + step * 3 <= (d.max ?? Infinity) ? b + step * 3 : b - step * 3))(typeof base === 'number' ? base : d.min ?? 0, d.step ?? 1)
 
 describe('acceptance 35 — every field has a source chip, a reset and help text', () => {
@@ -67,7 +67,13 @@ describe('vehicle overrides reach the run, and only the run', () => {
 describe('display units', () => {
   it('stores imperial; metric only on screen', () => {
     expect(toDisplay('ft', 10, 'metric')).toBeCloseTo(3.048)
-    expect(fromDisplay('in', 2.54, 'metric')).toBeCloseTo(1)
+    expect(fromDisplay('in', 25.4, 'metric')).toBeCloseTo(1)          // clearances in mm, as elsewhere in the app
     expect(toDisplay('%', 50, 'metric')).toBe(50)
+  })
+})
+
+describe('one list of vehicle override fields', () => {
+  it('the registry shows exactly the fields a run can override', () => {
+    expect(SIM_FIELDS.filter(d => d.scope === 'vehicle').map(d => d.field).sort()).toEqual(Object.keys(VEHICLE_OVERRIDE_FIELDS).sort())
   })
 })

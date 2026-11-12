@@ -23,7 +23,6 @@ import PricingAction from './PricingAction'
 import RunDetails, { type Assumptions } from './RunDetails'
 import { RunScene, STATES } from './RunScene'
 
-/** Run assumption defaults (spec D-3 pace; the engine's following gap); the project's values win. */
 /** Background run slices stay under half a 60 fps frame, so playback keeps its pace. */
 const SLICE_MS = 8
 const VARIABILITY_RUNS = 10
@@ -197,7 +196,9 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     return () => document.removeEventListener('keydown', onKey)
   }, [])
 
-  /** Run assumptions are the project's (Run → Assumptions); a change restarts the run. */
+  /** Stable, so the memoized Run details do not re-render every frame. */
+  const openAll = useCallback(() => onAssumptions(null), [onAssumptions])
+
   const setFleet = (vid: string, n: number) => {
     const next = { ...(simSettings.fleet ?? {}), [vid]: Math.max(1, Math.min(500, n)) }
     if (next[vid] === engineFleet[vid]) delete next[vid]
@@ -250,7 +251,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         <div className="sim-vsub">
           <span>Engine sized <b className="num">{engineFleetTotal(fleet)}</b>{simSettings.fleet && Object.keys(simSettings.fleet).length > 0 && <> · <button type="button" className="link-btn" onClick={() => patchSimSettings(project.id, { fleet: {} })}>Reset to engine</button></>}</span>
           <span>Full {shiftH} h shift · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
-          <button type="button" className="sim-chip sm sim-assume-chip" onClick={() => onAssumptions(null)}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
+          <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
           <span className="grow" />
           {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}
           {vari && vari.k >= VARIABILITY_RUNS && <VariabilityChip out={vari.out} arrivals={assume.arrivals} />}
@@ -293,7 +294,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
 
       <RunDetails
         R={R?.res ?? null} S={R?.S ?? null} project={project} vehicleById={vehicleById} unitSystem={unitSystem}
-        inputs={inputs} assume={assume} onOpenAssumptions={() => onAssumptions(null)}
+        inputs={inputs} assume={assume} onOpenAssumptions={openAll}
       />
     </div>
   )

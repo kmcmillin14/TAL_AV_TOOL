@@ -11,6 +11,7 @@ import Icon from '@/src/design-system/components/Icon'
 import { laneWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { segmentGeometry } from '@/src/calc/sim/geometry'
 import { hitTest, objectCorners, type DrawSnap } from '@/src/calc/sim/layoutEdit'
+import { fmtLength } from '@/src/lib/utils/units'
 import type { SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/types'
 import type { ProjectFlow } from './useLayoutEditor'
 
@@ -110,7 +111,7 @@ interface Props {
 const NONE = new Set<string>()
 const noop = () => {}
 
-const POINT_PX = 13, SEG_PX = 8, CHEVRON_PX = 90, HANDLE_PX = 6
+const POINT_PX = 13, SEG_PX = 8, HANDLE_PX = 6
 const ROLE_ICON = { pick: 'pick', drop: 'drop', pickDrop: 'pickDrop' } as const
 
 export default function LayoutCanvas(props: Props) {
@@ -150,7 +151,7 @@ export default function LayoutCanvas(props: Props) {
   }, [fitKey, fitTick, image?.href, measured])
   /** Zoom about the middle of the canvas (the zoom control's − and +). */
   const zoomBy = (f: number) => setView(v => {
-    const ppf = Math.min(400, Math.max(0.05, v.ppf * f))
+    const ppf = clampPpf(v.ppf * f)
     const cx = v.x + size.w / 2 / v.ppf, cy = v.y + size.h / 2 / v.ppf
     return { x: cx - size.w / 2 / ppf, y: cy - size.h / 2 / ppf, ppf }
   })
@@ -174,7 +175,7 @@ export default function LayoutCanvas(props: Props) {
       e.preventDefault()
       const m = localPx(el, e.clientX, e.clientY)
       setView(v => {
-        const ppf = Math.min(400, Math.max(0.05, v.ppf * Math.exp(-e.deltaY * 0.0015)))
+        const ppf = clampPpf(v.ppf * Math.exp(-e.deltaY * 0.0015))
         const fx = v.x + m.x / v.ppf, fy = v.y + m.y / v.ppf
         return { x: fx - m.x / ppf, y: fy - m.y / ppf, ppf }
       })
@@ -232,6 +233,17 @@ export default function LayoutCanvas(props: Props) {
     (selection?.kind === kind && selection.id === id) || (kind === 'point' && selection?.kind === 'points' && selection.ids.includes(id))
   const px = 1 / view.ppf                       // one screen pixel, in feet
   const lanes = props.laneWidths ?? {}
+  // Where the override dots go — worked out when the layout or the overrides change, not per move.
+  const ovDots = useMemo(() => {
+    if (!props.overridden?.size) return []
+    const byId = new Map(layout.points.map(q => [q.id, q])), segs = new Map(layout.segments.map(q => [q.id, q]))
+    return [...props.overridden].flatMap(id => {
+      const p = byId.get(id)
+      if (p) return [{ id, at: { x: p.x, y: p.y }, point: true }]
+      const s = segs.get(id), a = s && byId.get(s.a), b = s && byId.get(s.b)
+      return s && a && b ? [{ id, at: segMid(s, a, b), point: false }] : []
+    })
+  }, [props.overridden, layout])
   // Names collide when two pills would overlap on screen: those show a short form (C1, P2…). Worked
   // out per layout and zoom, not per frame (Run mode re-renders every frame).
   const crowded = useMemo(() => {
@@ -309,15 +321,11 @@ export default function LayoutCanvas(props: Props) {
         ))}
 
         {/* Overridden assumptions: a dot on the point, or at the middle of the route (acceptance 36). */}
-        {props.overridden && [...props.overridden].map(id => {
-          const p = pts.get(id)
-          let at: XY | null = p ? { x: p.x + 11 * px, y: p.y - 11 * px } : null
-          if (!at) {
-            const s = layout.segments.find(q => q.id === id), a = s && pts.get(s.a), b = s && pts.get(s.b)
-            if (s && a && b) { const c = segmentGeometry(a, b, s.curve), m = c.at(c.length / 2); at = { x: m.x, y: m.y } }
-          }
-          return at && <circle key={`ov-${id}`} cx={at.x} cy={at.y} r={4 * px} className="sim-ov-dot"><title>An assumption is overridden here</title></circle>
-        })}
+        {ovDots.map(d => (
+          <circle key={`ov-${d.id}`} cx={d.point ? d.at.x + 11 * px : d.at.x} cy={d.point ? d.at.y - 11 * px : d.at.y} r={4 * px} className="sim-ov-dot">
+            <title>An assumption is overridden here</title>
+          </circle>
+        ))}
 
         {props.scene?.(px)}
 
@@ -408,7 +416,15 @@ const Lane = memo(function Lane({ s, a, b, px, widthFt }: { s: SimSegment; a?: S
 
 /** Floor tape down the lane: dashed for two-way, solid with arrowheads for one-way, solid with
  *  "no passing" ticks for a single-lane two-way route. Spaced in screen pixels (acceptance 12). */
-const FEET = (ft: number) => `${ft.toFixed(1)} ft`
+const FEET = (ft: number) => fmtLength(ft, 'imperial', 1)
+/** The canvas zoom range, pixels per foot. */
+const clampPpf = (ppf: number) => Math.min(400, Math.max(0.05, ppf))
+/** The middle of a route, along its line or curve. */
+const segMid = (s: SimSegment, a: XY, b: XY): XY => { const g = segmentGeometry(a, b, s.curve), m = g.at(g.length / 2); return { x: m.x, y: m.y } }
+/** Arrow spacing on a route, screen px: a street's lanes, a shared single lane, a one-way route. And
+ *  at most this many per lane, so zooming in never builds thousands of arrows off screen. */
+const ARROW_GAP_PX = { street: 90, shared: 56, oneWay: 34 }
+const MAX_ARROWS = 32
 /** The least width on screen for a two-lane aisle to show both travel paths, px. */
 const STREET_PX = 18
 
@@ -438,7 +454,8 @@ const Segment = memo(function Segment({ s, a, b, px, selected, widthFt }: { s: S
     const m = g.curved ? Math.max(8, Math.ceil(g.length / 2)) : 1
     return Array.from({ length: m + 1 }, (_, i) => { const c = g.at((g.length * i) / m); return `${i ? 'L' : 'M'}${c.x - c.ty * off} ${c.y + c.tx * off}` }).join('')
   }
-  const n = Math.max(1, Math.floor(g.length / ((twoLane ? CHEVRON_PX : single && s.dir === 'two' ? 56 : 34) * px)))
+  const gap = twoLane ? ARROW_GAP_PX.street : single && s.dir === 'two' ? ARROW_GAP_PX.shared : ARROW_GAP_PX.oneWay
+  const n = Math.min(MAX_ARROWS, Math.max(1, Math.floor(g.length / (gap * px))))
   return (
     <g className={`sim-seg${selected ? ' is-selected' : ''}${twoLane ? ' is-two' : ''}`}>
       <path d={pathOf(a, b, s)} className="sim-tape" vectorEffect="non-scaling-stroke" />
@@ -515,8 +532,7 @@ function CurveHandles({ s, a, b, px }: { s: SimSegment; a?: SimPoint; b?: SimPoi
       </g>
     )
   }
-  const g = segmentGeometry(a, b, s.curve), m = g.at(g.length / 2)
-  return dot(m, 'mid')
+  return dot(segMid(s, a, b), 'mid')
 }
 
 /** Point tile (proof-of-concept look): a rounded square tinted by its role — round for chargers and

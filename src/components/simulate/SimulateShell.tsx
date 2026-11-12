@@ -6,7 +6,7 @@
 // (acceptance 1).
 
 import { engineFleetByType } from '@/src/calc/fleet'
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Icon from '@/src/design-system/components/Icon'
 import { emptyLayout, unlinked } from '@/src/calc/sim/layoutEdit'
@@ -15,7 +15,7 @@ import { withVehicleOverrides } from '@/src/calc/sim/vehicle'
 import { clearanceRule, payloadFt, runFleet, runInputs } from '@/src/calc/sim/runInputs'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import sample from '@/src/content/samples/simulate-sample.json'
-import { updateProject, type StoredProject } from '@/src/lib/storage'
+import { getProject, updateProject, type StoredProject } from '@/src/lib/storage'
 import { useByValue } from '@/src/lib/useByValue'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
 import type { UnitSystem } from '@/src/lib/utils/units'
@@ -72,9 +72,19 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     const ids = new Set(inputs.flows.map(f => f.vehicleId))
     return vehicles.filter(v => ids.has(v.id))
   }, [inputs.flows, vehicles])
-  const changed = useMemo(() => overriddenFields(project, runTypes), [project, runTypes])
+  // Only what overrides depend on — a run result saved into simSettings must not rescan the layout.
+  const overrideInputs = useByValue({ ss: project.simSettings && { ...project.simSettings, lastRun: undefined, appliedFleet: undefined, fleet: undefined }, layout: project.simLayout, h: project.hoursPerShift })
+  const changed = useMemo(() => overriddenFields({ simSettings: overrideInputs.ss, simLayout: overrideInputs.layout, hoursPerShift: overrideInputs.h }, runTypes), [overrideInputs, runTypes])
+  const closeDrawer = useCallback(() => setDrawer(null), [])
   const overriddenIds = useMemo(() => new Set(changed.filter(o => o.def.scope === 'point' || o.def.scope === 'route').map(o => o.ownerId)), [changed])
-  const openAssumptions = (focus: string | null = null) => setDrawer({ focus })
+  const openAssumptions = useCallback((focus: string | null = null) => setDrawer({ focus }), [])
+  // The open editor's layout writer (its undo history); without it (Run mode) the drawer writes storage.
+  const layoutWriter = useRef<((update: (L: NonNullable<StoredProject['simLayout']>) => NonNullable<StoredProject['simLayout']>) => void) | null>(null)
+  const registerLayoutWriter = useCallback((w: typeof layoutWriter.current) => { layoutWriter.current = w }, [])
+  const writeLayout = useCallback((update: (L: NonNullable<StoredProject['simLayout']>) => NonNullable<StoredProject['simLayout']>) => {
+    if (layoutWriter.current) layoutWriter.current(update)
+    else { const cur = getProject(project.id)?.simLayout; if (cur) updateProject(project.id, { simLayout: update(cur) }) }
+  }, [project.id])
 
   const loadSample = () => updateProject(project.id, { simLayout: sample.layout as StoredProject['simLayout'], flows: sample.flows as typeof flows })
   /** Clear the layout; flows stay in Sizing, unlinked (their last measured distance kept). Sample flows go. */
@@ -133,6 +143,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           overridden={overriddenIds}
+          registerLayoutWriter={registerLayoutWriter}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
               <p>Draw routes along the aisles — or start from a finished site.</p>
@@ -142,7 +153,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           ) : 'Draw routes along the aisles.'}
         />
       )}
-      {drawer && <AssumptionsDrawer project={project} vehicles={runTypes} unitSystem={unitSystem} focus={drawer.focus} onClose={() => setDrawer(null)} />}
+      {drawer && <AssumptionsDrawer key={drawer.focus ?? 'all'} project={project} vehicles={runTypes} changed={changed} writeLayout={writeLayout} unitSystem={unitSystem} focus={drawer.focus} onClose={closeDrawer} />}
     </>
   )
 }

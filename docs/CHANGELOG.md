@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-11-12 — Fleet simulation: cleanup review of Milestone 6
+
+Four cleanup reviewers (reuse, simplification, efficiency, altitude) over Milestone 6. Fixed:
+- **Speed:** Run details re-rendered every animation frame because a callback changed each render —
+  stable again. Vehicle artwork loses its per-vehicle shadow filter (one filter pass per vehicle per
+  frame). Arrows are capped per lane when zoomed in. Override dots and the layout totals are no
+  longer recomputed on every pointer move. Overrides are counted from what they depend on, so
+  saving a run result no longer rescans the layout.
+- **One source:**
+  - Display units come from `units.ts`; clearances now show in mm, as elsewhere in the app (were cm).
+  - The inspector shows fields by their registry level, not by name.
+  - Reset all uses the registry's own reset, so a new field can't be missed.
+  - The drawer gets the override list from the page.
+  - The approach arrows are a control inside the standard field row (one chip, reset and help).
+  - Choices store typed values, so there's no field-name check.
+  - A test keeps the registry's vehicle fields equal to the fields a run can override.
+- **Undo:** in Layout mode the drawer's point and route edits (and Reset all) go through the editor,
+  so ⌘Z undoes them and a later edit cannot overwrite them.
+- **Corners:** the editor draws corners at the run's turning radius (overrides included); Sizing
+  distances still use the vehicle files.
+- Dead code: unused CSS rules (`.sim-more`, `.sim-assume`, `.sim-no-pass`), stale comments.
+
+Noted, not changed: the Step 3 floating panel likely has the same page-zoom offset fixed here for the
+canvas (outside Simulate); the Place tool scans routes twice per move (fine at today's sizes).
+
 ## 2026-11-11 — Fleet simulation Milestone 6, step 2: inspector and Assumptions
 
 - **Inspector:** header with name, Duplicate and Delete; a summary card; Settings and Advanced

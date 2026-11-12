@@ -96,9 +96,12 @@ interface Props {
   emptyPrompt?: ReactNode
   /** Points and routes with an overridden assumption — marked with a dot on the map (acceptance 36). */
   overridden?: Set<string>
+  /** Hands the page a way to change the layout through this editor (its undo history), so the
+   *  Assumptions drawer's point and route edits are undo steps too and never overwritten. */
+  registerLayoutWriter?: (write: ((update: (L: EditorLayout) => EditorLayout) => void) | null) => void
 }
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter }: Props) {
   const radiusFor = useCallback((id?: string) => (id && vehicleById.get(id)?.calc.turningRadiusFt) || 0, [vehicleById])
   const editor = useLayoutEditor(project, radiusFor)
   const { doc, latest, commit, canUndo, canRedo } = editor
@@ -130,7 +133,9 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const linked = useMemo(() => linkedFlows(flows), [flows])
 
   // The layout as driven: corners rounded to the largest turning radius among the flows' vehicles.
-  const driven = useMemo(() => roundCorners(layout, Math.max(0, ...linked.map(f => radiusFor(f.vehicleId)))), [layout, linked, radiusFor])
+  // Corners drawn as the run drives them: the run's vehicles (overrides included). Sizing distances
+  // are measured with the vehicle files (`radiusFor`), as the Fleet Engine reads them.
+  const driven = useMemo(() => roundCorners(layout, Math.max(0, ...linked.map(f => (f.vehicleId && simVehicleById.get(f.vehicleId)?.calc.turningRadiusFt) || 0))), [layout, linked, simVehicleById])
 
   // B56.5 clearances (§5.9) — the same rule and payload a run uses (src/calc/sim/runInputs.ts).
   const rule = useMemo(() => clearanceRule(project.simSettings?.clearance), [project.simSettings?.clearance])
@@ -147,6 +152,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const snapOffsetFt = Math.ceil((laneWidthFt(routeKind, inputs.envelopeFt, rule) / 2) * 10) / 10
 
   const setLayout = (next: EditorLayout, merge?: string) => commit({ layout: next, flows }, merge)
+  useEffect(() => {
+    if (!registerLayoutWriter) return
+    registerLayoutWriter(update => { const cur = latest(); commit({ layout: update(cur.layout), flows: cur.flows }) })
+    return () => registerLayoutWriter(null)
+  }, [registerLayoutWriter, latest, commit])
   const setFlows = (next: ProjectFlow[], merge?: string) => commit({ layout, flows: next }, merge)
   const say = (m: string) => { setMessage(m); window.setTimeout(() => setMessage(c => (c === m ? null : c)), 3500) }
   /** Stop whatever is half-drawn: a route, a flow, the scale marks. */

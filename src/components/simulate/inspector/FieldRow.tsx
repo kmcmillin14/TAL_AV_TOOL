@@ -3,6 +3,7 @@
 // One assumption (Milestone 6, spec §5.7a): label, value in the user's units, source chip, reset when
 // overridden, and its one line of help. The same row in the inspector and the Assumptions view.
 
+import type { ReactNode } from 'react'
 import { SIM_FIELD_HELP } from '@/src/content/help'
 import { fromDisplay, toDisplay, unitLabel, type FieldState, type SimFieldDef } from '@/src/lib/simFields'
 import type { UnitSystem } from '@/src/lib/utils/units'
@@ -17,11 +18,14 @@ interface Props {
   onChange: (v: Value | undefined) => void
   /** Owner shown before the label (Assumptions view, e.g. "CB18 AGF"). */
   owner?: string
+  /** A control in place of the number box or select (e.g. the approach arrows); the row keeps its
+   *  label, source chip, reset and help. */
+  children?: ReactNode
 }
 
 const round = (v: number) => Math.round(v * 1000) / 1000
 
-export default function FieldRow({ def, state, unitSystem, onChange, owner }: Props) {
+export default function FieldRow({ def, state, unitSystem, onChange, owner, children }: Props) {
   const overridden = state.source === 'Override'
   const unit = unitLabel(def.unit, unitSystem)
   const shown = typeof state.value === 'number' ? round(toDisplay(def.unit, state.value, unitSystem)) : null
@@ -33,8 +37,8 @@ export default function FieldRow({ def, state, unitSystem, onChange, owner }: Pr
     onChange(Math.min(def.max ?? Infinity, Math.max(def.min ?? -Infinity, ft)))
   }
   const choice = def.choices && (
-    <select value={String(state.value)} onChange={e => onChange(def.field === 'sharedBetweenVehicles' ? e.target.value === 'true' : e.target.value)}>
-      {def.choices.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+    <select value={def.choices.findIndex(c => c.value === state.value)} onChange={e => onChange(def.choices![Number(e.target.value)].value)}>
+      {def.choices.map((c, i) => <option key={i} value={i}>{c.label}</option>)}
     </select>
   )
   return (
@@ -44,7 +48,7 @@ export default function FieldRow({ def, state, unitSystem, onChange, owner }: Pr
         <span className={`sim-src src-${state.source.replace(' ', '').toLowerCase()}`}>{state.source}</span>
       </div>
       <div className="sim-frow-input">
-        {def.readOnly ? <span className="num">{shown ?? '—'} {unit}</span>
+        {children ?? (def.readOnly ? <span className="num">{shown ?? '—'} {unit}</span>
           : choice ?? (
             <span className="sim-input-unit">
               <input type="number" step="any" min={def.min != null ? round(toDisplay(def.unit, def.min, unitSystem)) : undefined}
@@ -55,14 +59,14 @@ export default function FieldRow({ def, state, unitSystem, onChange, owner }: Pr
                 onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }} />
               {unit && <span>{unit}</span>}
             </span>
-          )}
+          ))}
         {(overridden || state.source === 'Drawn') && !def.readOnly && (
           <button type="button" className="sim-reset" title={`Reset to ${state.base == null ? 'default' : `${round(toDisplay(def.unit, Number(state.base), unitSystem))} ${unit}`}`}
             aria-label={`Reset ${def.label}`} onClick={() => onChange(undefined)}>↺</button>
         )}
       </div>
       <p className="sim-frow-help">
-        {state.value == null && def.fallback && <b className="sim-frow-fallback">Not set — {def.fallback.charAt(0).toLowerCase() + def.fallback.slice(1)}. </b>}
+        {state.value == null && def.fallback && !children && <b className="sim-frow-fallback">Not set — {def.fallback.charAt(0).toLowerCase() + def.fallback.slice(1)}. </b>}
         {SIM_FIELD_HELP[def.key]}
       </p>
     </div>
