@@ -90,6 +90,13 @@ export function segmentClearances(L: SimLayout, envelopeFt: (segId: string) => n
     const n = Math.max(1, Math.ceil(g.length / SAMPLE_FT))
     // Nearest object on each side of the centreline: distance from the centreline, and where.
     const side = [{ d: Infinity, p: a as XY, q: a as XY, nx: 0, ny: 0 }, { d: Infinity, p: a as XY, q: a as XY, nx: 0, ny: 0 }]
+    // A highway's own edges bound it like walls, half its width either side of the centre line — so
+    // its width is judged by the same rule (full speed · slowed · blocked · second lane fits).
+    if (s.widthFt) {
+      const m = g.at(g.length / 2), half = s.widthFt / 2
+      side[0] = { d: half, p: { x: m.x, y: m.y }, q: { x: m.x - m.ty * half, y: m.y + m.tx * half }, nx: -m.ty, ny: m.tx }
+      side[1] = { d: half, p: { x: m.x, y: m.y }, q: { x: m.x + m.ty * half, y: m.y - m.tx * half }, nx: m.ty, ny: -m.tx }
+    }
     // Objects whose box is beyond reach of the route's box cannot be nearest — skip them whole
     // (1 ft margin covers a curve's bulge between the 9 box samples).
     const segBox = box(Array.from({ length: 9 }, (_, i) => g.at((g.length * i) / 8)))

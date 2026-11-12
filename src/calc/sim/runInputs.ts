@@ -6,6 +6,7 @@
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { applyClearance, B56_5_RULE, envelopes, laneWidthFt, segmentClearances, type ClearanceRule, type SegmentClearance } from './clearance'
 import { roundCorners } from './corners'
+import { withHighways } from './highways'
 import { linkedFlows, type ProjectFlowLike } from './readiness'
 import type { SimFlow, SimLayout } from './types'
 
@@ -22,12 +23,13 @@ export interface RunInputs {
 }
 
 export function runInputs(
-  drawn: SimLayout,
+  layout: SimLayout,
   flows: ProjectFlowLike[],
   vehicles: Map<string, Vehicle>,
   rule: ClearanceRule,
   payloadWidthFt: number,
 ): RunInputs {
+  const drawn = withHighways(layout)   // highways become routes (derived, never stored)
   const linked = linkedFlows(flows)
   const veh = (id: string) => vehicles.get(id)
   const env = envelopes(drawn, linked.map(f => ({ ...f, vehicleWidthFt: veh(f.vehicleId)?.calc.widthFt ?? 0 })), payloadWidthFt)
@@ -35,7 +37,7 @@ export function runInputs(
   const radius = Math.max(0, ...linked.map(f => veh(f.vehicleId)?.calc.turningRadiusFt ?? 0))
   const laneWidths: Record<string, number> = {}
   for (const s of drawn.segments) {
-    const w = laneWidthFt(s, env(s.id), rule)
+    const w = s.widthFt ?? laneWidthFt(s, env(s.id), rule)   // a highway is drawn at its real width
     laneWidths[s.id] = w
     for (const j of [s.a, s.b]) laneWidths[`${j}~arc`] = Math.max(laneWidths[`${j}~arc`] ?? 0, w)   // corner at j (corners.ts)
   }
@@ -63,7 +65,7 @@ export function runFleet(engine: Record<string, number>, overrides: Record<strin
 
 /** What a simulation result depends on, as stored on the project (spec §9 stale marker). */
 export interface SimInputsLike {
-  simLayout?: { points: unknown; segments: unknown; objects?: unknown } | null
+  simLayout?: { points: unknown; segments: unknown; objects?: unknown; highways?: unknown[] } | null
   flows?: ProjectFlowLike[] | null
   loads?: unknown
   hoursPerShift?: number | null
@@ -87,7 +89,7 @@ export function simInputsKey(p: SimInputsLike, vehicles?: Map<string, Vehicle>):
   const kept = Object.entries((ss.overrides ?? {}) as Record<string, unknown>).filter(([k]) => ids.includes(k.split('.')[0]))
   const overrides = kept.length ? Object.fromEntries(kept) : null
   const json = JSON.stringify([
-    p.simLayout ? [p.simLayout.points, p.simLayout.segments, p.simLayout.objects ?? []] : null,
+    p.simLayout ? [p.simLayout.points, p.simLayout.segments, p.simLayout.objects ?? [], ...(p.simLayout.highways?.length ? [p.simLayout.highways] : [])] : null,
     flows, used, p.loads ?? [], p.hoursPerShift ?? null, p.shiftsPerDay ?? null, p.targetUtilization ?? null,
     [ss.pacePct, ss.safetyFt, ss.arrivals, ss.demandPct, ss.seed, ss.clearance, overrides].map(x => x ?? null),
   ])

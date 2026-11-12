@@ -911,6 +911,26 @@ step ribbon is unchanged.
     - A Pick (or Drop) point's inspector lists **Add flow to…**: every point it can link to, nearest
       first, with the distance — one click creates the flow.
     - Name-matched Sizing flows are linked from the Flows tab (**Use layout distances**, as before).
+  - *Highways (Milestone 7, owner, 2026-11-12).* An aisle drawn as one object rather than as
+    route lines.
+    - *Stored:* only the rectangle — centre, length, width, angle (ft, degrees) — its direction
+      (two-way, one-way, the other way) and lanes (two or single, two-way only) in
+      `simLayout.highways`.
+    - *Derived, never stored* (`withHighways`): its centre line becomes ordinary routes for the
+      run, split wherever a point sits on it (a station's spur, a route's end), where another
+      highway's centre line crosses it, and at its ends (an existing point at an end is joined). The
+      run, distances, validation, flow linking and the snaps all use it the same way as drawn routes.
+    - *Drawing:* the **Highway** tool (W) — drag along the aisle from one end to the other; the
+      ends snap like routes (points, other highways, lined-up guides; Shift keeps it square). It
+      starts at the suggested width. Select it to move it (drag), drag an end to stretch or turn it,
+      or type its X, Y, length, width and angle. Delete removes it; arrows nudge it.
+    - *Suggested width (ANSI/ITSDF B56.5):* the envelope (the wider of vehicle and payload) plus the
+      B56.5 clearance per side at full speed — two lanes: two envelopes and three clearances when
+      passing vehicles share the middle one. The inspector shows the working (e.g. "48 in envelope
+      + 2 × 19.7 in = 87.4 in") and **Use suggested**. A highway narrower than that runs below
+      1.2 m/s (reduced 6 in clearance), and narrower than the reduced width is blocked — shown in
+      the inspector and the B56.5 overlay, the same results the run uses.
+    - Stations, spurs and routes join a highway like any route. Drawn routes stay for connectors.
   - *One direction (owner, 2026-11-12):* **Sizing → Simulation → Price only.** The simulation reads
     Sizing (flows, vehicles, loads) and never writes back to it; the only way it changes a quote is
     an explicit "Use … in pricing" with its before → after confirmation (D-1).

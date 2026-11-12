@@ -68,10 +68,23 @@ export const simBackgroundSchema = z.object({
   data: z.string().max(7_000_000).optional(),
 })
 
+/** A highway: the rectangle and its direction; its routes are derived, never stored. */
+const simHighwaySchema = z.object({
+  id: z.string().min(1).max(40),
+  x: z.number(), y: z.number(),
+  lengthFt: z.number().positive().max(10000),
+  widthFt: z.number().positive().max(200),
+  angleDeg: z.number().min(-360).max(360),
+  dir: z.enum(['two', 'ab', 'ba']),
+  lane: z.enum(['single', 'two']).optional(),
+  name: z.string().max(80).optional(),
+})
+
 export const simLayoutSchema = z.object({
   points: z.array(simPointSchema).max(2000),
   segments: z.array(simSegmentSchema).max(5000),
   objects: z.array(simObjectSchema).max(2000).optional(),
+  highways: z.array(simHighwaySchema).max(500).optional(),
   background: simBackgroundSchema.optional(),
 })
 

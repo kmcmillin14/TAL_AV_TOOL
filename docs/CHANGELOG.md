@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-12 — Fleet simulation: highways (Milestone 7, part 1)
+
+- **Highway tool (W):** drag an aisle as one object; it starts at the suggested width. Move it, drag
+  an end to stretch or turn it, or type X, Y, length, width and angle in the inspector.
+- **Suggested width** from the envelope and ANSI/ITSDF B56.5, with its working and **Use suggested**;
+  a narrower highway is slowed below 1.2 m/s, or blocked under the reduced width.
+- **Derived routes:** a highway's centre line becomes ordinary routes for the run (`withHighways`),
+  joined to points on it, crossing highways and its ends — nothing derived is stored.
+- Data: `simLayout.highways` (optional; old projects load unchanged).
+
 ## 2026-11-12 — Fleet simulation: easier flow linking
 
 - **Flow tool:** a Pick lights up the Drops it can link to (a Drop first: the Picks); the rest are dimmed

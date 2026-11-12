@@ -51,8 +51,8 @@ export function readinessChecks(input: ReadinessInput & { fleetNeeded: number; d
   const { layout, flows = [], vehicles, fleetNeeded } = input
   const out: ReadinessCheck[] = []
   if (layout?.background && !layout.background.scale) out.push({ level: 'bad', text: 'The drawing is not scaled — use Scale and click a known dimension.', fix: 'scale' })
-  if (!layout || !layout.segments.length) {
-    out.push({ level: 'bad', text: 'Draw routes along the aisles to simulate.', fix: 'route' })
+  if (!layout || (!layout.segments.length && !layout.highways?.length)) {
+    out.push({ level: 'bad', text: 'Draw routes or highways along the aisles to simulate.', fix: 'route' })
     return out
   }
   const name = new Map(layout.points.map(p => [p.id, p.name || p.id]))

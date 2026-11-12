@@ -43,6 +43,25 @@ export interface SimSegment {
   curve?: SimCurve
   /** Segment speed limit (slow zone), ft/s. */
   speedLimitFps?: number
+  /** Derived from a highway (never stored): which one, and its real width, ft. */
+  highwayId?: string
+  widthFt?: number
+}
+
+/** A highway (Milestone 7): an aisle drawn as one object — a rectangle in feet, its centre, length
+ *  along its angle and width across it. Its routes are derived (`withHighways`), never stored. */
+export interface SimHighway {
+  id: string
+  x: number
+  y: number
+  lengthFt: number
+  widthFt: number
+  angleDeg: number
+  /** 'two' = both directions; 'ab' = from the start end to the far end; 'ba' = the other way. */
+  dir: 'two' | 'ab' | 'ba'
+  /** Two-way only: 'two' lanes (opposite traffic passes, default) or 'single'. */
+  lane?: 'single' | 'two'
+  name?: string
 }
 
 /** A fixed object — wall, column, rack face, guard, building steel (spec §5.8). A rectangle in feet:
@@ -62,6 +81,7 @@ export interface SimLayout {
   points: SimPoint[]
   segments: SimSegment[]
   objects?: SimObject[]
+  highways?: SimHighway[]
 }
 
 /** One flow the simulation runs: a Pick point → a Drop point at a rate, by one vehicle type. */

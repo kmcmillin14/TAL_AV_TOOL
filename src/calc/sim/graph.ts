@@ -3,6 +3,7 @@
 // lane types and point ids instead of location names.
 
 import { segmentGeometry, type SegmentGeometry } from './geometry'
+import { withHighways } from './highways'
 import type { SimLayout, SimPoint } from './types'
 
 export interface Edge { to: number; seg: number; forward: boolean; length: number }
@@ -33,7 +34,8 @@ export interface Graph {
 
 const isZone = (p: SimPoint) => p.role != null || p.type === 'charger' || p.type === 'parking'
 
-export function buildGraph(L: SimLayout): Graph {
+export function buildGraph(drawn: SimLayout): Graph {
+  const L = withHighways(drawn)   // highways become routes here, for every consumer of the graph
   const idx = new Map<string, number>()
   L.points.forEach((p, i) => idx.set(p.id, i))
   const n = L.points.length

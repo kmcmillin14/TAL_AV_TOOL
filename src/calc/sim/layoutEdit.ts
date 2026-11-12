@@ -4,7 +4,8 @@
 import { roundCorners } from './corners'
 import { closestOnLine, segmentGeometry } from './geometry'
 import { buildGraph, pathLen, tree } from './graph'
-import type { SimCurve, SimLayout, SimObject, SimPoint, SimPointType, SimRole, SimSegment } from './types'
+import { alongHighway, highwayCorners, highwayFromEnds, highwayOfSegment, insideHighway, withHighways } from './highways'
+import type { SimCurve, SimHighway, SimLayout, SimObject, SimPoint, SimPointType, SimRole, SimSegment } from './types'
 
 type XY = { x: number; y: number }
 
@@ -120,6 +121,9 @@ function mapCurve(c: SimCurve, f: (p: XY) => XY): SimCurve {
 
 /** Join a new junction into a route at `at`: the route becomes two, keeping its direction and lane. */
 export function splitSegment<T extends SimLayout>(L: T, segId: string, at: XY): { layout: T; id: string } | null {
+  // A highway's route is derived: a junction on its centre line splits it (withHighways joins it).
+  const h = highwayOfSegment(L, segId)
+  if (h) return addPoint(L, alongHighway(h, at).at, 'junction')
   const s = L.segments.find(q => q.id === segId)
   const on = s && projectOnSegment(L, segId, at)
   if (!s || !on) return null
@@ -136,12 +140,15 @@ export function splitSegment<T extends SimLayout>(L: T, segId: string, at: XY): 
 export function hitTest(L: SimLayout, at: XY, pointFt: number, segFt: number):
   | { kind: 'point'; id: string }
   | { kind: 'segment'; id: string; x: number; y: number }
+  | { kind: 'highway'; id: string }
   | { kind: 'object'; id: string }
   | null {
   const p = nearestPoint(L, at, pointFt)
   if (p) return { kind: 'point', id: p.id }
   const r = nearestRoute(L, at, segFt)
   if (r) return { kind: 'segment', id: r.id, x: r.at.x, y: r.at.y }
+  const hw = [...(L.highways ?? [])].reverse().find(h => insideHighway(h, at))
+  if (hw) return { kind: 'highway', id: hw.id }
   const obj = [...(L.objects ?? [])].reverse().find(o => insideObject(o, at))
   return obj ? { kind: 'object', id: obj.id } : null
 }
@@ -154,7 +161,7 @@ export function segmentLengthFt(L: SimLayout, s: SimSegment, byId = pointById(L)
 
 /** Points with no route — shown "Not connected" and listed before a run (acceptance 10). */
 export function notConnected(L: SimLayout): SimPoint[] {
-  const linked = new Set(L.segments.flatMap(s => [s.a, s.b]))
+  const linked = new Set(withHighways(L).segments.flatMap(s => [s.a, s.b]))
   return L.points.filter(p => p.type !== 'junction' && !linked.has(p.id))
 }
 
@@ -203,7 +210,7 @@ export function flowTargets(L: SimLayout, start: string, flows: { fromPointId?: 
   if (!out && !into) return null
   const i = G.idx.get(start)!
   const fwd = out ? tree(G, i).dist : null
-  const back = into ? (() => { const R = buildGraph({ ...L, segments: L.segments.map(q => ({ ...q, dir: REVERSED[q.dir] })) }); return tree(R, R.idx.get(start)!).dist })() : null
+  const back = into ? (() => { const R = buildGraph({ ...L, segments: L.segments.map(q => ({ ...q, dir: REVERSED[q.dir] })), highways: L.highways?.map(h => ({ ...h, dir: REVERSED[h.dir] })) }); return tree(R, R.idx.get(start)!).dist })() : null
   const targets = L.points.filter(p => p.type !== 'junction' && p.id !== start).map((p): FlowTarget => {
     // Start → p when the start picks and p drops; otherwise p → start.
     const forward = out && canDrop(p)
@@ -461,6 +468,26 @@ export function removeObject<T extends SimLayout>(L: T, id: string): T {
   return { ...L, objects: (L.objects ?? []).filter(o => o.id !== id) }
 }
 
+// ---- Highways (Milestone 7): stored as rectangles; their routes are derived (highways.ts) ----
+
+/** A highway from end `a` to end `b`, `widthFt` wide. Too short (under 2 ft): nothing. */
+export function addHighway<T extends SimLayout>(L: T, a: XY, b: XY, widthFt: number, kind: Pick<SimHighway, 'dir' | 'lane'> = { dir: 'two', lane: 'two' }): { layout: T; id: string | null } {
+  if (Math.hypot(b.x - a.x, b.y - a.y) < 2) return { layout: L, id: null }
+  const highways = L.highways ?? []
+  const id = nextId('h', highways)
+  return { layout: { ...L, highways: [...highways, highwayFromEnds(a, b, widthFt, { id, ...kind, name: `Highway ${highways.length + 1}` })] }, id }
+}
+
+export function updateHighway<T extends SimLayout>(L: T, id: string, patch: Partial<Omit<SimHighway, 'id'>>): T {
+  return { ...L, highways: (L.highways ?? []).map(h => (h.id === id ? { ...h, ...patch } : h)) }
+}
+
+export function removeHighway<T extends SimLayout>(L: T, id: string): T {
+  return { ...L, highways: (L.highways ?? []).filter(h => h.id !== id) }
+}
+
+export { highwayCorners }
+
 // ---- Drawing snaps (owner, 2026-11-11: "snapping to the endpoints … needs to be smooth and easy") ----
 
 /** Snap reach in screen pixels: generous for points (a click near an end joins it), tighter for the rest. */
@@ -562,7 +589,8 @@ export const SPUR_REACH_FT = 40
  *  `SPUR_REACH_FT`, or null when no route is that close. */
 export function spurTarget(L: SimLayout, at: XY): { id: string; at: XY } | null {
   // Curved routes are left alone: splitting one for a spur would straighten it.
-  return nearestRoute({ ...L, segments: L.segments.filter(s => !s.curve) }, at, SPUR_REACH_FT)
+  const net = withHighways(L)
+  return nearestRoute({ ...net, segments: net.segments.filter(s => !s.curve) }, at, SPUR_REACH_FT)
 }
 
 /**
