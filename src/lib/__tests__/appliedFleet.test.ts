@@ -74,6 +74,9 @@ describe('simInputsKey (stale marker)', () => {
     const k = simInputsKey(p, byId)
     expect(simInputsKey({ ...p, simSettings: { ...p.simSettings, fleet: { cb18: 9 }, lastRun: { key: 'x', types: {} }, appliedFleet: {} } } as typeof p, byId)).toBe(k)
     expect(simInputsKey({ ...p, flows: [linked, { id: 'typed', thruPerHr: 50 }] }, byId)).toBe(k)
+    // a vehicle tried in the switcher: its overrides and the switch itself are not Sizing's inputs
+    expect(simInputsKey({ ...p, simSettings: { ...p.simSettings, vehicleAs: 'm10', overrides: { 'm10.speedLoadedFps': 2 } } } as typeof p, byId)).toBe(k)
+    expect(simInputsKey({ ...p, simSettings: { ...p.simSettings, overrides: { 'cb18.speedLoadedFps': 2 } } } as typeof p, byId)).not.toBe(k)
   })
   it('changes with linked flows, layout, loads, run assumptions and the vehicle data used', () => {
     const k = simInputsKey(p, byId)

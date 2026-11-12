@@ -258,7 +258,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         })}
         <div className="sim-vsub">
           {simulatedAs && <span className="sim-as-note">Simulating as <b>{simulatedAs.as}</b> — Sizing and the price use {simulatedAs.sizing || 'no vehicle yet'}</span>}
-          <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{simSettings.fleet && Object.keys(simSettings.fleet).length > 0 && <> · <button type="button" className="link-btn" onClick={() => patchSimSettings(project.id, { fleet: {} })}>Reset to engine</button></>}</span>
+          <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <> · <button type="button" className="link-btn" onClick={() => patchSimSettings(project.id, { fleet: Object.fromEntries(Object.entries(simSettings.fleet ?? {}).filter(([vid]) => !(vid in fleetBy))) })}>Reset to engine</button></>}</span>
           <span>Full {shiftH} h shift · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
           <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
           <span className="grow" />

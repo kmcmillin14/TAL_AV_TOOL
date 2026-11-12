@@ -878,16 +878,23 @@ step ribbon is unchanged.
   - *Vehicle switcher (owner, 2026-11-12; simulation only).* The page head shows the vehicle the
     simulation runs as — **‹ CB18 AGF ›**, with a list — in Layout and Run.
     - *Preloaded:* the Sizing flows' vehicle (the most used one); with no vehicle on any flow, Step 2's
-      first compatible vehicle. A flow with no vehicle runs as the preloaded one, so the simulation
-      can come before the flows are finished in Sizing.
+      first compatible vehicle. While no flow has a vehicle yet, every flow runs as the preloaded one,
+      so the simulation can come first; once Sizing has vehicles, a flow without one stays out of
+      the run, as in Sizing.
     - *Offered:* the Sizing vehicles first, then the vehicles Step 2 rates green, then amber, then
       not yet checked (incomplete — e.g. before Step 1 is filled in), by name, each marked in the
       list (`switcherVehicles`); red vehicles are never offered.
-    - *Switching* (`simSettings.vehicleAs`) runs every flow as that vehicle (`simulateAs`): lanes,
+    - *Mixed Sizing:* when Sizing's flows use more than one vehicle, the first entry is **As Sizing
+      (mixed)**; choosing any vehicle — the most used one included — runs the whole site as it.
+    - *Switching* (`simSettings.vehicleAs`; ignored once the switcher no longer offers it, e.g. Step 1
+      makes it red) runs every flow as that vehicle (`simulateAs`), each with that vehicle's default
+      transfer method (Sizing's method and timing belong to Sizing's vehicle): lanes,
       corners, B56.5, validation and the run follow it. Sizing's flows are not changed. Run's line
       reads "Simulating as M10 — Sizing and the price use CB18 AGF", and "Engine sized" becomes
       the Fleet Engine's figure for that vehicle. A switched run does not update Sizing's verdict
-      chip and offers no "Use N in pricing". Choosing the Sizing vehicle again clears it.
+      chip and offers no "Use N in pricing"; its "Reset to engine" clears only its own vehicles'
+      stepper values. A tried vehicle's assumption overrides are not Sizing inputs (they do not mark
+      Sizing's result stale). Choosing the Sizing vehicle again clears the switch.
     - *New flows* drawn in Simulate have no vehicle in Sizing (it is chosen there); the simulation
       runs them as the preloaded vehicle.
   - *One direction (owner, 2026-11-12):* **Sizing → Simulation → Price only.** The simulation reads

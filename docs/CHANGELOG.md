@@ -15,6 +15,12 @@
   fleet groups); Run reads one "speaks for Sizing" flag; the editor gets one run-as function, not the
   switcher's inputs; new flows stay without a vehicle in Sizing; `engineFleetFor` (fleetModel) is shared
   with the Flows tab; requirements and settings are kept stable between saves.
+- **Code review:** a switched flow drops Sizing's transfer method and timing (they belong to Sizing's
+  vehicle); a Sizing fleet of several vehicles gets an **As Sizing (mixed)** entry so any one vehicle can
+  run the site; a stored choice no longer offered (e.g. now red) is ignored; one blank flow no longer
+  stops the run speaking for Sizing (blank flows run as the preloaded vehicle only while no flow has
+  one); Reset to engine clears only the run's own vehicles; overrides of a vehicle Sizing does not use
+  no longer mark Sizing's result stale.
 
 ## 2026-11-12 — Fleet simulation: live validation replaces the step strip (owner)
 

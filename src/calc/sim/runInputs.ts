@@ -81,11 +81,15 @@ export interface SimInputsLike {
 export function simInputsKey(p: SimInputsLike, vehicles?: Map<string, Vehicle>): string {
   const ss = p.simSettings ?? {}
   const flows = linkedFlows(p.flows ?? [])
-  const used = [...new Set(flows.map(f => f.vehicleId))].sort().map(id => [id, vehicles?.get(id)?.calc ?? null])
+  const ids = [...new Set(flows.map(f => f.vehicleId))]
+  const used = [...ids].sort().map(id => [id, vehicles?.get(id)?.calc ?? null])
+  // Overrides of vehicles the flows do not use (e.g. one tried in the vehicle switcher) are not inputs.
+  const kept = Object.entries((ss.overrides ?? {}) as Record<string, unknown>).filter(([k]) => ids.includes(k.split('.')[0]))
+  const overrides = kept.length ? Object.fromEntries(kept) : null
   const json = JSON.stringify([
     p.simLayout ? [p.simLayout.points, p.simLayout.segments, p.simLayout.objects ?? []] : null,
     flows, used, p.loads ?? [], p.hoursPerShift ?? null, p.shiftsPerDay ?? null, p.targetUtilization ?? null,
-    [ss.pacePct, ss.safetyFt, ss.arrivals, ss.demandPct, ss.seed, ss.clearance, ss.overrides].map(x => x ?? null),
+    [ss.pacePct, ss.safetyFt, ss.arrivals, ss.demandPct, ss.seed, ss.clearance, overrides].map(x => x ?? null),
   ])
   let h = 0x811c9dc5
   for (let i = 0; i < json.length; i++) { h ^= json.charCodeAt(i); h = Math.imul(h, 0x01000193) }

@@ -58,9 +58,12 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const sizingIds = useByValue(useMemo(() => fleet.groups.map(g => g.vehicleId), [fleet]))   // Sizing's vehicles
   const offered = useMemo(() => switcherVehicles(vehicles, app, sizingIds), [vehicles, app, sizingIds])
   const preloaded = useMemo(() => preloadedVehicle(sizingFlows, offered), [sizingFlows, offered])
+  // A stored choice counts only while the switcher still offers it (e.g. not after Step 1 makes it red).
   const stored = project.simSettings?.vehicleAs
-  const asId = stored && vehicleById.has(stored) ? stored : undefined
-  const simId = asId ?? preloaded                       // the vehicle the switcher shows
+  const asId = stored && offered.some(o => o.vehicle.id === stored) ? stored : undefined
+  /** Sizing runs more than one vehicle: "as Sizing" is its own entry, and any vehicle — the most used
+   *  one included — can be chosen to run the whole site. */
+  const mixed = sizingIds.length > 1
   /** The run's flows from any flows (the editor's live ones too) — one switcher rule. */
   const runAs = useCallback(<F extends { vehicleId?: string }>(fs: F[]) => simulateAs(fs, asId, preloaded), [asId, preloaded])
   const sim = useMemo(() => runAs(sizingFlows), [runAs, sizingFlows])
@@ -68,12 +71,13 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   /** Set only when the run does not drive Sizing's flows as they are: it then never speaks for Sizing
    *  or the price (no verdict saved, no "Use N in pricing"). */
   const simulatedAs = useMemo(() => (sim.changed
-    ? { as: vehicleById.get(simId ?? '')?.name ?? '', sizing: sizingIds.map(id => vehicleById.get(id)?.name ?? id).join(', ') }
-    : undefined), [sim.changed, simId, sizingIds, vehicleById])
+    ? { as: vehicleById.get(asId ?? preloaded ?? '')?.name ?? '', sizing: sizingIds.map(id => vehicleById.get(id)?.name ?? id).join(', ') }
+    : undefined), [sim.changed, asId, preloaded, sizingIds, vehicleById])
   // The Fleet Engine's figure for the flows as simulated (Sizing's own when nothing is switched).
   const settingsV = useByValue(settings)
   const simFleet = useMemo(() => (sim.changed ? engineFleetFor(flowsV, vehicleById, settingsV) : fleet), [sim.changed, fleet, flowsV, vehicleById, settingsV])
-  const switchTo = (id: string) => patchSimSettings(project.id, { vehicleAs: id === preloaded ? undefined : id })
+  /** '' = as Sizing. With one Sizing vehicle, choosing it is the same as Sizing. */
+  const switchTo = (id: string) => patchSimSettings(project.id, { vehicleAs: !id || (!mixed && id === preloaded) ? undefined : id })
   const clearance = useByValue(project.simSettings?.clearance), loads = useByValue(project.loads)
   const payload = useMemo(() => payloadFt(loads), [loads])
   const inputs = useMemo(
@@ -147,7 +151,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <h1 className="eh-title">Simulate</h1>
         </div>
         <div className="eh-actions">
-          {offered.length > 0 && <VehicleSwitcher offered={offered} value={simId} switched={sim.changed} onChange={switchTo} />}
+          {offered.length > 0 && <VehicleSwitcher offered={offered} value={asId ?? (mixed ? '' : preloaded)} mixed={mixed} switched={sim.changed} onChange={switchTo} />}
           {running
             ? <button type="button" className="btn ghost" onClick={() => setMode('layout')}><Icon name="arrowL" size={13} /> Edit layout</button>
             : <>
@@ -206,16 +210,19 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
 
 const OFFERED_NOTE = { SIZING: ' · Sizing', GREEN: '', YELLOW: ' · amber', INCOMPLETE: ' · not checked' } as const
 /** ‹ Vehicle › — the vehicle the simulation runs as: step through the offered list, or pick from it. */
-function VehicleSwitcher({ offered, value, switched, onChange }: { offered: Offered[]; value?: string; switched: boolean; onChange: (id: string) => void }) {
-  const at = Math.max(0, offered.findIndex(o => o.vehicle.id === value))
-  const step = (d: number) => onChange(offered[(at + d + offered.length) % offered.length].vehicle.id)
+function VehicleSwitcher({ offered, value, mixed, switched, onChange }: { offered: Offered[]; value?: string; mixed: boolean; switched: boolean; onChange: (id: string) => void }) {
+  // The entries, in order: "As Sizing" first when Sizing mixes vehicles ('' = no switch), then each vehicle.
+  const ids = [...(mixed ? [''] : []), ...offered.map(o => o.vehicle.id)]
+  const at = Math.max(0, ids.indexOf(value ?? ''))
+  const step = (d: number) => onChange(ids[(at + d + ids.length) % ids.length])
   return (
     <div className={`sim-vswitch${switched ? ' is-switched' : ''}`} role="group" aria-label="Simulate as">
-      <button type="button" aria-label="Previous vehicle" onClick={() => step(-1)} disabled={offered.length < 2}>‹</button>
-      <select value={offered[at].vehicle.id} onChange={e => onChange(e.target.value)} aria-label="Vehicle the simulation runs as" title="Simulation only — Sizing and the price keep their vehicle">
+      <button type="button" aria-label="Previous vehicle" onClick={() => step(-1)} disabled={ids.length < 2}>‹</button>
+      <select value={ids[at]} onChange={e => onChange(e.target.value)} aria-label="Vehicle the simulation runs as" title="Simulation only — Sizing and the price keep their vehicle">
+        {mixed && <option value="">As Sizing (mixed)</option>}
         {offered.map(({ vehicle: v, status }) => <option key={v.id} value={v.id}>{v.name}{OFFERED_NOTE[status]}</option>)}
       </select>
-      <button type="button" aria-label="Next vehicle" onClick={() => step(1)} disabled={offered.length < 2}>›</button>
+      <button type="button" aria-label="Next vehicle" onClick={() => step(1)} disabled={ids.length < 2}>›</button>
     </div>
   )
 }
