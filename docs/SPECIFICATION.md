@@ -868,7 +868,7 @@ step ribbon is unchanged.
     object and centres the view on it.
   - *Keyboard.* Arrow keys nudge the selected points or object 1 ft (Shift: 10 ft; one undo step
     per run of nudges); Delete removes the selection; Tab / Shift-Tab steps through the stations,
-    selecting and centring each. Keys go to the editor only when no field or control has focus.
+    selecting and centring each, once the canvas has focus (a click on it). Keys go to the editor only when no field or control has focus.
   - *Step strip.* A thin strip above the canvas: **Draw aisles · Place stations · Link flows ·
     Chargers & parking · Run**. Each step is done (✓), next (highlighted) or to do, worked out from
     the layout and the readiness checks; clicking a step picks its tool (Route; Place, with the
