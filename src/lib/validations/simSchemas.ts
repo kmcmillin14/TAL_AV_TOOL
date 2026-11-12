@@ -86,6 +86,8 @@ export const simSettingsSchema = z.object({
   pacePct: z.number().min(10).max(100).optional(),
   safetyFt: z.number().min(0).max(30).optional(),
   arrivals: z.enum(['regular', 'random']).optional(),
+  /** Vehicle switcher (simulation only): every flow runs as this vehicle; absent = as Sizing. */
+  vehicleAs: z.string().optional(),
   /** Inspector overrides in one place: `vehicleId.field` / `pointId.field` → value (source chip "Override"). */
   overrides: z.record(z.string(), z.union([z.number(), z.string(), z.boolean(), z.null()])).optional(),
   /** ANSI/ITSDF B56.5 clearance rule (D-2): 6 in per side below 1.2 m/s, 0.5 m at or above,

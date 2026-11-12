@@ -5676,3 +5676,14 @@ button.sim-valid-text:hover { color: var(--sim-sel); text-decoration: underline;
 button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 2px; }
 .sim-valid-row > .btn { grid-column: 2; justify-self: start; }
 
+
+/* Vehicle switcher (simulation only): ‹ vehicle › in the page head. */
+.sim-vswitch { display: inline-flex; align-items: center; height: 36px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-surface); overflow: hidden; }
+.sim-vswitch button { width: 32px; height: 100%; font-size: 17px; color: var(--text-secondary); transition: background 0.2s cubic-bezier(0.25, 0.1, 0.25, 1); }
+.sim-vswitch button:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
+.sim-vswitch button:disabled { opacity: 0.35; cursor: default; }
+.sim-vswitch select { height: 100%; max-width: 180px; padding: 0 8px; border: 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: none; font-size: 13px; font-weight: 600; color: var(--text-primary); text-overflow: ellipsis; cursor: pointer; }
+.sim-vswitch select:focus-visible, .sim-vswitch button:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: -2px; }
+.sim-vswitch.is-switched { border-color: var(--sim-sel); box-shadow: 0 0 0 3px var(--sim-sel-soft); }
+.sim-as-note { color: var(--text-primary); }
+.sim-as-note b { color: var(--sim-sel); }

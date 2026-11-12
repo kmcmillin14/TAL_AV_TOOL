@@ -875,6 +875,20 @@ step ribbon is unchanged.
     warnings and notes, one row per thing (each loose point is its own row). Clicking a row selects
     what it is about and centres the view on it; a row's fix button picks the tool that fixes it
     (Draw route · Place charger · Link flow · Scale · Open Flows).
+  - *Vehicle switcher (owner, 2026-11-12; simulation only).* The page head shows the vehicle the
+    simulation runs as — **‹ CB18 AGF ›**, with a list — in Layout and Run.
+    - *Preloaded:* the Sizing flows' vehicle (the most used one); with no vehicle on any flow, Step 2's
+      first compatible vehicle. A flow with no vehicle runs as the preloaded one, so the simulation
+      can come before the flows are finished in Sizing.
+    - *Offered:* the Sizing vehicles first, then the vehicles Step 2 rates green, then amber, then
+      not yet checked (incomplete — e.g. before Step 1 is filled in), by name, each marked in the
+      list (`switcherVehicles`); red vehicles are never offered.
+    - *Switching* (`simSettings.vehicleAs`) runs every flow as that vehicle (`simulateAs`): lanes,
+      corners, B56.5, validation and the run follow it. Sizing's flows are not changed. Run's line
+      reads "Simulating as M10 — Sizing and the price use CB18 AGF", and "Engine sized" becomes
+      the Fleet Engine's figure for that vehicle. A switched run does not update Sizing's verdict
+      chip and offers no "Use N in pricing". Choosing the Sizing vehicle again clears it.
+    - *New flows* drawn in Simulate take the preloaded (Sizing) vehicle, never the switched one.
   - *One direction (owner, 2026-11-12):* **Sizing → Simulation → Price only.** The simulation reads
     Sizing (flows, vehicles, loads) and never writes back to it; the only way it changes a quote is
     an explicit "Use … in pricing" with its before → after confirmation (D-1).

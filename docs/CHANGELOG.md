@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-12 — Fleet simulation: vehicle switcher (simulation only)
+
+- **‹ Vehicle ›** in the page head: preloaded from the Sizing flows (or Step 2's first compatible
+  vehicle); cycles through the Sizing vehicles, then Step 2 green, amber and not yet checked (never red). Switching runs every
+  flow as that vehicle — lanes, B56.5, validation and the run follow — without changing Sizing.
+- A switched run shows the Fleet Engine's figure for that vehicle, never saves Sizing's verdict chip
+  and offers no "Use N in pricing" (Sizing → Simulation → Price only).
+- Flows with no vehicle run as the preloaded one; new flows drawn in Simulate take it.
+- Data: `simSettings.vehicleAs` (optional; old projects load unchanged).
+
 ## 2026-11-12 — Fleet simulation: live validation replaces the step strip (owner)
 
 - **Validation:** the checks run live. The page head shows one status beside Run — "Valid", or
