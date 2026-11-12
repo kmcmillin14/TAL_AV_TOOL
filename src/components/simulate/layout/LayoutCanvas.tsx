@@ -44,7 +44,7 @@ function localPx(el: HTMLElement, clientX: number, clientY: number): XY & { k: n
   return { x: (clientX - r.left) / k - el.clientLeft, y: (clientY - r.top) / k - el.clientTop, k }
 }
 
-/** Fit margins for the editor's floating controls: tool column, options bar and name pills, hint. */
+/** Fit margins for the editor's floating controls: tool column, options bar and name pills, zoom control. */
 const EDITOR_INSET = { top: 84, right: 24, bottom: 52, left: 72 }
 
 interface Props {
@@ -431,7 +431,8 @@ const FEET = (ft: number) => fmtLength(ft, 'imperial', 1)
 /** The canvas zoom range, pixels per foot. */
 const clampPpf = (ppf: number) => Math.min(400, Math.max(0.05, ppf))
 /** The middle of a route, along its line or curve. */
-const segMid = (s: SimSegment, a: XY, b: XY): XY => { const g = segmentGeometry(a, b, s.curve), m = g.at(g.length / 2); return { x: m.x, y: m.y } }
+/** The middle of a route along its curve (badges, the navigator). */
+export const segMid = (s: SimSegment, a: XY, b: XY): XY => { const g = segmentGeometry(a, b, s.curve), m = g.at(g.length / 2); return { x: m.x, y: m.y } }
 /** Arrow spacing on a route, screen px: a street's lanes, a shared single lane, a one-way route. And
  *  at most this many per lane, so zooming in never builds thousands of arrows off screen. */
 const ARROW_GAP_PX = { street: 90, shared: 56, oneWay: 34 }

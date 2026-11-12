@@ -23,6 +23,12 @@ export function linkedFlows(flows: ProjectFlowLike[] = []): SimFlow[] {
     : []))
 }
 
+/** Chargers, and chargers plus parking spots ("homes") — every vehicle needs a home to run. */
+export function homeCounts(layout: SimLayout): { chargers: number; homes: number } {
+  const chargers = layout.points.filter(p => p.type === 'charger').length
+  return { chargers, homes: chargers + layout.points.filter(p => p.type === 'parking').length }
+}
+
 // ---- "Ready to run?" (proof-of-concept checklist) -----------------------------------------------
 
 export type CheckLevel = 'bad' | 'warn' | 'info'
@@ -56,8 +62,7 @@ export function readinessChecks(input: ReadinessInput & { fleetNeeded: number; d
     if (!why) runnable++
     if (why) out.push({ level: why === 'No route' ? 'bad' : 'warn', text: `${name.get(f.fromPointId) ?? '?'} → ${name.get(f.toPointId) ?? '?'}: ${why === 'No route' ? 'no route (check one-way routes, connections and B56.5 blocks)' : why.toLowerCase()}.` })
   }
-  const chargers = layout.points.filter(p => p.type === 'charger').length
-  const homes = chargers + layout.points.filter(p => p.type === 'parking').length
+  const { chargers, homes } = homeCounts(layout)
   if (fleetNeeded > 0 && homes < fleetNeeded) out.push({ level: 'bad', text: `Place a charger or parking spot for every vehicle: ${homes} placed, ${fleetNeeded} needed.` })
   if (!chargers) out.push({ level: 'warn', text: 'No chargers placed — vehicles cannot charge during the run.' })
   else if (chargers < fleetNeeded) out.push({ level: 'info', text: `${chargers} charger${chargers === 1 ? '' : 's'} for ${fleetNeeded} vehicles. The Fleet Engine assumes one charger per vehicle.` })

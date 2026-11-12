@@ -7,6 +7,7 @@
 
 import { useMemo, useState } from 'react'
 import type { ClearanceRule, SegmentClearance } from '@/src/calc/sim/clearance'
+import { linkedFlows } from '@/src/calc/sim/readiness'
 import {
   FLOW_POINT_TYPES, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
@@ -15,7 +16,7 @@ import { fieldDef, fieldsFor, fieldPatch, fieldState, type SimFieldDef } from '@
 import { fmtLength, lengthFromDisplay, lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
-import type { Selection, XY } from './LayoutCanvas'
+import { segMid, type Selection, type XY } from './LayoutCanvas'
 import type { ProjectFlow } from './useLayoutEditor'
 import FieldRow from '../inspector/FieldRow'
 import { ApproachArrows, Inspector, Section, Summary } from '../inspector/InspectorParts'
@@ -57,7 +58,14 @@ export default function LayoutPanel(p: Props) {
   const name = (id?: string) => (id && byId.get(id)?.name) || '—'
   const sel = p.selection
   const [repeat, setRepeat] = useState({ count: 6, step: 5, dir: 'r' as (typeof DIRS)[number]['id'] })
-  const totalRouteFt = useMemo(() => p.layout.segments.reduce((t, q) => t + segmentLengthFt(p.layout, q, byId), 0), [p.layout, byId])
+  // Navigator rows (stations; routes with their length and middle) and the totals, once per layout.
+  const nav = useMemo(() => {
+    const routes = p.layout.segments.flatMap(q => {
+      const a = byId.get(q.a), b = byId.get(q.b)
+      return a && b ? [{ q, a, b, ft: segmentLengthFt(p.layout, q, byId), mid: segMid(q, a, b) }] : []
+    })
+    return { stations: p.layout.points.filter(q => q.type !== 'junction'), routes, totalFt: routes.reduce((t, r) => t + r.ft, 0) }
+  }, [p.layout, byId])
   const flow = sel?.kind === 'flow' ? p.flows.find(q => q.id === sel.id) : undefined
   const flowFt = useMemo(
     () => (flow?.fromPointId && flow.toPointId ? routeDistanceFt(p.layout, flow.fromPointId, flow.toPointId) : Infinity),
@@ -270,37 +278,32 @@ export default function LayoutPanel(p: Props) {
   }
 
   // Nothing selected: the layout's totals (and the B56.5 rule while its overlay is on).
-  const linkedFlows = p.flows.filter(f => f.fromPointId && f.toPointId).length
-  const stations = p.layout.points.filter(q => q.type !== 'junction')
+  const { stations } = nav
   return (
     <aside className="sim-panel is-empty" aria-label="Layout">
       <div className="sim-panel-head"><h3>Layout</h3></div>
       <Summary items={[
-        ['Points', p.layout.points.filter(q => q.type !== 'junction').length],
-        ['Routes', `${p.layout.segments.length} · ${fmtLength(totalRouteFt, p.unitSystem)}`],
-        ['Flows on layout', `${linkedFlows} of ${p.flows.length}`],
+        ['Points', stations.length],
+        ['Routes', `${p.layout.segments.length} · ${fmtLength(nav.totalFt, p.unitSystem)}`],
+        ['Flows on layout', `${linkedFlows(p.flows).length} of ${p.flows.length}`],
         ['Objects', (p.layout.objects ?? []).length],
       ]} />
       <Section title={`Stations · ${stations.length}`} open={stations.length > 0}>
         <ul className="sim-nav">
           {stations.map(q => (
             <li key={q.id}><button type="button" onClick={() => p.onFocus({ kind: 'point', id: q.id }, q)}>
-              <span className={`sim-nav-dot kind-${q.type}${q.role ? ` role-${q.role}` : ''}`} /><span className="nm">{q.name || POINT_LABEL[q.type]}</span><span className="meta">{POINT_LABEL[q.type]}</span>
+              <span className={`sim-dot is-placed kind-${q.type}${q.role ? ` role-${q.role}` : ''}`} /><span className="nm">{q.name || POINT_LABEL[q.type]}</span><span className="meta">{POINT_LABEL[q.type]}</span>
             </button></li>
           ))}
         </ul>
       </Section>
       <Section title={`Routes · ${p.layout.segments.length}`}>
         <ul className="sim-nav">
-          {p.layout.segments.map(q => {
-            const a = byId.get(q.a), b = byId.get(q.b)
-            if (!a || !b) return null
-            return (
-              <li key={q.id}><button type="button" onClick={() => p.onFocus({ kind: 'segment', id: q.id }, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 })}>
-                <span className="nm">{a.name || 'Junction'} {q.dir === 'two' ? '↔' : q.dir === 'ab' ? '→' : '←'} {b.name || 'Junction'}</span><span className="meta num">{len(segmentLengthFt(p.layout, q, byId))}</span>
-              </button></li>
-            )
-          })}
+          {nav.routes.map(({ q, a, b, ft, mid }) => (
+            <li key={q.id}><button type="button" onClick={() => p.onFocus({ kind: 'segment', id: q.id }, mid)}>
+              <span className="nm">{a.name || 'Junction'} {q.dir === 'two' ? '↔' : q.dir === 'ab' ? '→' : '←'} {b.name || 'Junction'}</span><span className="meta num">{len(ft)}</span>
+            </button></li>
+          ))}
         </ul>
       </Section>
       {p.clearances && (

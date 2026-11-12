@@ -17,6 +17,16 @@ No feature removed — folded, moved or derived:
 - **Keyboard:** arrows nudge 1 ft (Shift 10 ft); Tab / Shift-Tab steps through stations.
 - **Step strip:** Draw aisles · Place stations · Link flows · Chargers & parking · Run, from the readiness
   checks; a click picks the step's tool.
+- **Cleanup review (reuse, simplification, efficiency, altitude):**
+  - One count for each fact: unplaced Sizing names (`placeProgress`) drive the step strip, the Place
+    status and the step's arming; chargers and homes come from `homeCounts` in `readiness.ts`, which
+    the readiness checks use too; linked flows come from `linkedFlows`.
+  - One arming path for the Place card and the step strip; one role rule (`roleOf`).
+  - The navigator centres a curved route on its curve (`segMid`), reuses the point-type dots, and
+    measures route lengths once per layout, not on every pointer move.
+  - CSS: cards lose their own chrome at the source (they only live in the panel); one `.sim-tag` and
+    one boxed `.sim-input-unit` everywhere; Run's view controls keep their styling (a rule the pass
+    had removed).
 
 ## 2026-11-12 — Fleet simulation: code review of Milestone 6
 

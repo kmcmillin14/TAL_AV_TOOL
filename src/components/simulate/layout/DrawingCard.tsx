@@ -64,7 +64,6 @@ export default function DrawingCard(p: Props) {
   if (!p.background) {
     return (
       <section className="sim-card" aria-label="Drawing">
-        <h3>Drawing</h3>
         <p className="sim-card-note">Optional — PDF page, PNG or JPG.</p>
         <button type="button" className="btn ghost btn-sm" disabled={busy} onClick={() => input.current?.click()}>
           {busy ? 'Reading…' : 'Load PDF or image'}
@@ -78,7 +77,6 @@ export default function DrawingCard(p: Props) {
   const bg = p.background
   return (
     <section className="sim-card" aria-label="Drawing">
-      <h3>Drawing</h3>
       <p className="sim-card-file" title={bg.fileName}>
         {bg.fileName}
         {file ? (

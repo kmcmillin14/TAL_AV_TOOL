@@ -16,7 +16,7 @@ import { roundCorners } from '@/src/calc/sim/corners'
 import {
   addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowStartRefusal, FLOW_POINT_TYPES, linkFlow, movePoints,
   notConnected, placeOnSegment, pointsInBox, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
-  mergePoints, nextDirection, sameName, placeWithSpur, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
+  mergePoints, nextDirection, placeWithSpur, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import type { ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
@@ -28,7 +28,7 @@ import { getDrawingData, type StoredProject } from '@/src/lib/storage'
 import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import DrawingCard from './DrawingCard'
-import { ChecksCard, flowNames, suggestType, FlowsList, layoutSteps, PlaceCard, StepStrip, type Armed, type StepId } from './SimCards'
+import { ChecksCard, FlowsList, layoutSteps, PlaceCard, placeProgress, roleOf, StepStrip, suggestType, type Armed, type StepId } from './SimCards'
 import { Section } from '../inspector/InspectorParts'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import LayoutCanvas, { type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
@@ -348,14 +348,19 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     if (id === 'run') { onRun(); return }
     setTab(id === 'flows' ? 'flows' : 'layout')
     chooseTool(id === 'aisles' ? 'routes' : id === 'flows' ? 'flows' : 'points')
-    if (id === 'homes') setPlaceType('charger')
-    if (id === 'stations') {
-      // The first Sizing name not yet placed is armed, so the next click places it.
-      const n = flowNames(flows).find(x => !layout.points.some(p => sameName(p.name, x.name)))
-      if (n) setArmed({ name: n.name, type: suggestType(n.name), role: n.from && n.to ? 'pickDrop' : n.from ? 'pick' : 'drop' })
-    }
+    if (id === 'homes') armHome('charger')
+    // The first Sizing name not yet placed is armed, so the next click places it.
+    const n = place.unplaced[0]
+    if (id === 'stations' && n) arm({ name: n.name, type: suggestType(n.name), role: roleOf(n) })
   }
-  const steps = useMemo(() => layoutSteps({ layout, flows, fleetNeeded, canRun }), [layout, flows, fleetNeeded, canRun])
+  /** Arm the Place tool with a Sizing name (its type and role), or with a charger or parking spot. */
+  const arm = (a: Armed) => { setTool('points'); setChainFrom(null); setMarks(null); setPlaceType(a.type); setPlaceRole(a.role); setArmed(a) }
+  const armHome = (t: 'charger' | 'parking') => { setTool('points'); setChainFrom(null); setMarks(null); setPlaceType(t); setArmed(null) }
+  const place = useMemo(() => placeProgress(layout, flows), [layout, flows])
+  const steps = useMemo(
+    () => layoutSteps({ layout, place, linked: linked.length, flowCount: flows.length, fleetNeeded, canRun }),
+    [layout, place, linked.length, flows.length, fleetNeeded, canRun],
+  )
 
   const paste = () => {
     const ids = clipboard.current.filter(id => byId.has(id))
@@ -394,7 +399,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       if (!stations.length) return
       e.preventDefault()
       const at = stations.findIndex(p => p.id === (selection?.kind === 'point' ? selection.id : ''))
-      const next = stations[(at + (e.shiftKey ? -1 : 1) + stations.length + (at < 0 && e.shiftKey ? 1 : 0)) % stations.length]
+      const len = stations.length
+      const next = stations[at < 0 ? (e.shiftKey ? len - 1 : 0) : (at + (e.shiftKey ? len - 1 : 1)) % len]
       focusOn({ kind: 'point', id: next.id }, next)
       return
     }
@@ -461,8 +467,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const offset = drag?.kind === 'points' ? { ids: new Set(drag.ids), d: { x: drag.at.x - drag.from.x, y: drag.at.y - drag.from.y } } : null
 
   // Side panel: the Layout tab's folded cards, with a status word each; scaling brings Drawing to the top.
-  const names = flowNames(flows)
-  const toPlace = names.filter(n => !layout.points.some(p => sameName(p.name, n.name))).length
+  const { names } = place, toPlace = place.unplaced.length
   const issues = checks.filter(c => c.level !== 'info').length
   const drawingFold = (
     <Section key="drawing" title="Drawing" open={!!marks || (!!bg && !bg.scale)}
@@ -487,7 +492,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     <div className="sim-editor">
       <div className="sim-work">
         <div className="sim-canvas-wrap">
-          <StepStrip steps={steps} canRun={canRun} onStep={onStep} />
+          <StepStrip steps={steps} onStep={onStep} />
           <LayoutCanvas
             layout={shownLayout}
             driven={drag ? shownLayout : driven}
@@ -567,7 +572,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           <div className="sim-tabs" role="tablist" aria-label="Side panel">
             <button type="button" role="tab" aria-selected={tab === 'layout'} className={tab === 'layout' ? 'on' : ''} onClick={() => setTab('layout')}>Layout</button>
             <button type="button" role="tab" aria-selected={tab === 'flows'} className={tab === 'flows' ? 'on' : ''} onClick={() => setTab('flows')}>
-              Flows <span className="num">{flows.filter(f => f.fromPointId && f.toPointId).length}/{flows.length}</span>
+              Flows <span className="num">{linked.length}/{flows.length}</span>
             </button>
           </div>
           <div className="sim-side-body" role="tabpanel">
@@ -619,10 +624,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                     status={names.length ? (toPlace ? `${toPlace} to place` : 'All placed') : undefined} tone={names.length && !toPlace ? 'good' : undefined}>
                     <PlaceCard
                       layout={layout}
-                      flows={flows}
+                      names={names}
                       armed={armed}
-                      onArm={a => { setTool('points'); setChainFrom(null); setMarks(null); setPlaceType(a.type); setPlaceRole(a.role); setArmed(a) }}
-                      onArmHome={t => { setTool('points'); setChainFrom(null); setMarks(null); setPlaceType(t); setArmed(null) }}
+                      onArm={arm}
+                      onArmHome={armHome}
                     />
                   </Section>
                   <Section title="Ready to run?" status={canRun ? (issues ? `Ready · ${issues} to check` : 'Ready') : 'Not yet'} tone={canRun ? (issues ? 'warn' : 'good') : 'bad'}>
