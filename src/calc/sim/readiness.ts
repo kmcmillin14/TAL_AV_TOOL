@@ -4,6 +4,7 @@
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { flowExclusion } from './engine'
 import { buildGraph } from './graph'
+import { withHighways } from './highways'
 import { notConnected } from './layoutEdit'
 import type { SimFlow, SimLayout } from './types'
 
@@ -51,7 +52,7 @@ export function readinessChecks(input: ReadinessInput & { fleetNeeded: number; d
   const { layout, flows = [], vehicles, fleetNeeded } = input
   const out: ReadinessCheck[] = []
   if (layout?.background && !layout.background.scale) out.push({ level: 'bad', text: 'The drawing is not scaled — use Scale and click a known dimension.', fix: 'scale' })
-  if (!layout || (!layout.segments.length && !layout.highways?.length)) {
+  if (!layout || !withHighways(layout).segments.length) {
     out.push({ level: 'bad', text: 'Draw routes or highways along the aisles to simulate.', fix: 'route' })
     return out
   }

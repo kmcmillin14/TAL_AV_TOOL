@@ -6,7 +6,7 @@
 // (stations and routes — a click selects and centres).
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { laneWidthFt, type ClearanceRule, type SegmentClearance } from '@/src/calc/sim/clearance'
+import { laneWidthFt, suggestedWidthFt, type ClearanceRule, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { linkedFlows } from '@/src/calc/sim/readiness'
 import {
   FLOW_POINT_TYPES, flowTargets, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
@@ -39,6 +39,8 @@ interface Props {
   onHighway: (id: string, patch: Partial<SimHighway>) => void
   /** The widest vehicle or payload the run drives, ft — a highway's suggested width (B56.5). */
   envelopeFt: number
+  /** Each highway's worst B56.5 status (its derived routes' clearances). */
+  highwayStatus: Map<string, SegmentClearance['status']>
   onRepeat: (id: string, count: number, stepFt: number, dir: { x: number; y: number }) => void
   onCopy: () => void
   onSegment: (id: string, patch: Partial<SimSegment>) => void
@@ -249,18 +251,16 @@ export default function LayoutPanel(p: Props) {
     const set = (patch: Partial<SimHighway>) => p.onHighway(h.id, patch)
     const kind = { dir: h.dir, lane: h.lane }, env = p.envelopeFt
     // Suggested width: the envelope plus the B56.5 clearance per side at full speed (shared between two
-    // lanes); below it the reduced clearance applies (slowed), below that it is blocked.
-    const full = laneWidthFt(kind, env, p.rule), low = laneWidthFt(kind, env, { ...p.rule, fullSpeedIn: p.rule.lowSpeedIn })
-    const suggested = Math.ceil(full * 10) / 10
+    // lanes). The status is the run's own clearance check on the highway's routes.
+    const suggested = suggestedWidthFt(kind, env, p.rule)
     const twoLanes = h.dir === 'two' && h.lane !== 'single'
-    const inch = (ft: number) => (p.unitSystem === 'metric' ? `${Math.round(ft * 304.8)} mm` : `${Math.round(ft * 120) / 10} in`)
+    const inch = (ft: number) => { const i = ft * 12; return p.unitSystem === 'metric' ? `${Math.round(units.dimension.toMetric(i))} mm` : `${Math.round(i * 10) / 10} in` }
     const c = p.rule.fullSpeedIn / 12
     const working = env > 0
-      ? (twoLanes ? `2 × ${inch(env)} envelope + ${p.rule.sharedBetweenVehicles ? 3 : 4} × ${inch(c)}` : `${inch(env)} envelope + 2 × ${inch(c)}`) + ` = ${inch(full)}`
+      ? (twoLanes ? `2 × ${inch(env)} envelope + ${p.rule.sharedBetweenVehicles ? 3 : 4} × ${inch(c)}` : `${inch(env)} envelope + 2 × ${inch(c)}`) + ` = ${inch(laneWidthFt(kind, env, p.rule))}`
       : 'No vehicle drives it yet — the default aisle'
-    const mps = units.distance.toMetric(p.rule.thresholdFps).toFixed(1)
-    const status = !(env > 0) ? null : h.widthFt >= full - 1e-6 ? { word: 'Full speed', tone: 'good' } : h.widthFt >= low - 1e-6
-      ? { word: `Slowed below ${mps} m/s`, tone: 'warn' } : { word: `Blocked — under ${p.rule.lowSpeedIn} in clearance`, tone: 'bad' }
+    const st = env > 0 ? p.highwayStatus.get(h.id) : undefined
+    const status = st ? { word: st === 'clear' ? STATUS.full : STATUS[st], tone: st === 'violation' ? 'bad' : st === 'capped' ? 'warn' : 'good' } : null
     return (
       <Inspector title={h.name || 'Highway'} onDelete={p.onDelete}>
         <Summary items={[

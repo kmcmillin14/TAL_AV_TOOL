@@ -126,3 +126,24 @@ export function closestOnLine(a: { x: number; y: number }, b: { x: number; y: nu
   const x = a.x + t * dx, y = a.y + t * dy
   return { x, y, t, dist: Math.hypot(p.x - x, p.y - y) }
 }
+
+/** A rectangle at (x, y) top-left, w × h, turned `rotationDeg` about its centre (objects, highways). */
+export interface Rect { x: number; y: number; w: number; h: number; rotationDeg?: number }
+
+/** A rectangle's four corners, in order. */
+export function rectCorners(o: Rect): Vec[] {
+  const cx = o.x + o.w / 2, cy = o.y + o.h / 2, th = ((o.rotationDeg ?? 0) * Math.PI) / 180
+  const c = Math.cos(th), s = Math.sin(th)
+  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) => {
+    const dx = (i * o.w) / 2, dy = (j * o.h) / 2
+    return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c }
+  })
+}
+
+/** Is `p` inside the rectangle? */
+export function insideRect(o: Rect, p: Vec): boolean {
+  const th = (-(o.rotationDeg ?? 0) * Math.PI) / 180, cx = o.x + o.w / 2, cy = o.y + o.h / 2
+  const dx = p.x - cx, dy = p.y - cy
+  const lx = dx * Math.cos(th) - dy * Math.sin(th), ly = dx * Math.sin(th) + dy * Math.cos(th)
+  return Math.abs(lx) <= o.w / 2 && Math.abs(ly) <= o.h / 2
+}

@@ -3,6 +3,7 @@
 // distances, validation and snapping alike: the centre line split wherever a point sits on it, where
 // another highway's centre line crosses it, and at its ends. Nothing derived is stored.
 
+import { closestOnLine, insideRect, rectCorners } from './geometry'
 import type { SimHighway, SimLayout, SimPoint, SimSegment } from './types'
 
 type XY = { x: number; y: number }
@@ -25,26 +26,19 @@ export function highwayFromEnds(a: XY, b: XY, widthFt: number, rest: Omit<SimHig
   return { ...rest, x: (a.x + b.x) / 2, y: (a.y + b.y) / 2, lengthFt: Math.hypot(b.x - a.x, b.y - a.y), widthFt, angleDeg: (Math.atan2(b.y - a.y, b.x - a.x) * 180) / Math.PI }
 }
 
-/** The rectangle's corners (for drawing and hit tests). */
-export function highwayCorners(h: SimHighway): XY[] {
-  const { a, b } = highwayEnds(h), u = unit(h), n = { x: -u.y * h.widthFt / 2, y: u.x * h.widthFt / 2 }
-  return [{ x: a.x + n.x, y: a.y + n.y }, { x: b.x + n.x, y: b.y + n.y }, { x: b.x - n.x, y: b.y - n.y }, { x: a.x - n.x, y: a.y - n.y }]
-}
+/** The highway as a rectangle (the same rotated-rectangle rule as fixed objects). */
+const asRect = (h: SimHighway) => ({ x: h.x - h.lengthFt / 2, y: h.y - h.widthFt / 2, w: h.lengthFt, h: h.widthFt, rotationDeg: h.angleDeg })
 
-/** Where `p` falls along the centre line (t: 0 at `a`, 1 at `b`) and how far off it, ft. */
-export function alongHighway(h: SimHighway, p: XY): { t: number; off: number; at: XY } {
-  const { a, b } = highwayEnds(h), dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy || 1
-  const t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / L2, c = Math.max(0, Math.min(1, t))
-  const at = { x: a.x + dx * c, y: a.y + dy * c }
-  return { t, off: Math.hypot(p.x - at.x, p.y - at.y), at }
-}
+/** The rectangle's corners (for drawing and hit tests). */
+export const highwayCorners = (h: SimHighway): XY[] => rectCorners(asRect(h))
 
 /** Inside the rectangle? */
-export const insideHighway = (h: SimHighway, p: XY) => { const r = alongHighway(h, p); return r.t >= 0 && r.t <= 1 && r.off <= h.widthFt / 2 }
+export const insideHighway = (h: SimHighway, p: XY) => insideRect(asRect(h), p)
+
+type Ends = { a: XY; b: XY }
 
 /** Where two centre lines cross, or null. */
-function crossing(h: SimHighway, k: SimHighway): XY | null {
-  const p = highwayEnds(h), q = highwayEnds(k)
+function crossing(p: Ends, q: Ends): XY | null {
   const r = { x: p.b.x - p.a.x, y: p.b.y - p.a.y }, s = { x: q.b.x - q.a.x, y: q.b.y - q.a.y }
   const d = r.x * s.y - r.y * s.x
   if (Math.abs(d) < 1e-9) return null
@@ -52,38 +46,41 @@ function crossing(h: SimHighway, k: SimHighway): XY | null {
   return t > 1e-6 && t < 1 - 1e-6 && u > 1e-6 && u < 1 - 1e-6 ? { x: p.a.x + r.x * t, y: p.a.y + r.y * t } : null
 }
 
+/** One expansion per stored layout: the editor, readiness, the graph and the run all ask for it. */
+const expanded = new WeakMap<SimLayout, SimLayout>()
+
 /**
  * The layout with its highways turned into routes (derived points and segments, ids starting `hw:`).
  * The same layout comes back when it has none; the result has no `highways`, so a second call is a
- * no-op. Each derived segment carries its highway and real width.
+ * no-op. Each derived segment carries its highway and real width. Cached per layout object, so the
+ * derived segments keep their identity until the layout changes.
  */
 export function withHighways<T extends SimLayout>(L: T): T {
   const hs = L.highways ?? []
   if (!hs.length) return L
+  const hit = expanded.get(L)
+  if (hit) return hit as T
+  const ends = hs.map(highwayEnds)
   const points: SimPoint[] = [...L.points]
   const junction = (id: string, at: XY) => { points.push({ id, x: at.x, y: at.y, type: 'junction' }); return id }
   const near = (at: XY) => points.find(p => Math.hypot(p.x - at.x, p.y - at.y) <= ON_HIGHWAY_FT)
   // Ends: an existing point there is joined; otherwise a derived junction.
-  for (const h of hs) for (const [k, at] of Object.entries(highwayEnds(h))) if (!near(at)) junction(`${DERIVED}${h.id}:${k}`, at)
+  hs.forEach((h, i) => { for (const [k, at] of Object.entries(ends[i])) if (!near(at)) junction(`${DERIVED}${h.id}:${k}`, at) })
   // Crossings: one derived junction shared by both highways.
-  hs.forEach((h, i) => hs.slice(i + 1).forEach(k => { const at = crossing(h, k); if (at && !near(at)) junction(`${DERIVED}x:${h.id}:${k.id}`, at) }))
+  hs.forEach((h, i) => { for (let j = i + 1; j < hs.length; j++) { const at = crossing(ends[i], ends[j]); if (at && !near(at)) junction(`${DERIVED}x:${h.id}:${hs[j].id}`, at) } })
   const segments: SimSegment[] = [...L.segments]
-  for (const h of hs) {
-    const on = points.flatMap(p => { const r = alongHighway(h, p); return r.off <= ON_HIGHWAY_FT && r.t >= -1e-6 && r.t <= 1 + 1e-6 ? [{ id: p.id, t: r.t }] : [] })
+  hs.forEach((h, i) => {
+    const { a, b } = ends[i]
+    const on = points.flatMap(p => { const r = closestOnLine(a, b, p); return r.dist <= ON_HIGHWAY_FT ? [{ id: p.id, t: r.t }] : [] })
       .sort((x, y) => x.t - y.t)
     const lane = h.dir === 'two' ? h.lane ?? 'two' : 'single'
     on.slice(1).forEach((p, k) => {
       if (p.t - on[k].t < 1e-6) return
       segments.push({ id: `${DERIVED}${h.id}:${k}`, a: on[k].id, b: p.id, dir: h.dir, lane, highwayId: h.id, widthFt: h.widthFt })
     })
-  }
+  })
   const { highways: _h, ...rest } = L
-  return { ...rest, points, segments } as T
-}
-
-/** The highway a derived segment id belongs to. */
-export function highwayOfSegment(L: SimLayout, segId: string): SimHighway | undefined {
-  if (!segId.startsWith(DERIVED)) return undefined
-  const hid = segId.slice(DERIVED.length).split(':')[0]
-  return L.highways?.find(h => h.id === hid)
+  const out = { ...rest, points, segments } as T
+  expanded.set(L, out)
+  return out
 }

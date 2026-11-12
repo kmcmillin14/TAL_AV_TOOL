@@ -43,6 +43,10 @@ describe('highways: stored as rectangles, routes derived', () => {
     const net = withHighways(L)
     expect(net.segments[0].a).toBe('C')
     expect(routeDistanceFt(L, 'C', `${DERIVED}h2:b`)).toBeCloseTo(60)
+    expect(withHighways(L)).toBe(net)                                       // expanded once per layout
+    // A point just past an end (within reach) is the end — no gap at the highway's end.
+    const past: SimLayout = { points: [{ id: 'P', x: -0.5, y: 0, type: 'stand', role: 'pick' }], segments: [], highways: [hw({ x: 0, y: 0 }, { x: 30, y: 0 })] }
+    expect(notConnected(past)).toEqual([])
   })
 
   it('spurs, splits and hit tests treat a highway like a route — and store only a junction on it', () => {
@@ -55,6 +59,7 @@ describe('highways: stored as rectangles, routes derived', () => {
     expect(notConnected(placed.layout)).toEqual([])
     expect(routeDistanceFt(placed.layout, placed.id, `${DERIVED}h1:b`)).toBeCloseTo(15 + 30)
     expect(splitSegment(L, `${DERIVED}h1:0`, { x: 5, y: 3 })!.layout.points[0]).toMatchObject({ x: 5, y: 0, type: 'junction' })
+    expect(splitSegment(L, `${DERIVED}nope:0`, { x: 5, y: 3 })).toBeNull()
     expect(hitTest(L, { x: 20, y: 3 }, 1, 1)).toEqual({ kind: 'highway', id: 'h1' })
     expect(addHighway(L, { x: 0, y: 0 }, { x: 1, y: 0 }, 10).id).toBeNull()   // too short
   })

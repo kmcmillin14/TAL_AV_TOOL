@@ -2,9 +2,9 @@
 // Every function returns a new layout; the editor keeps the old one for undo. Units: feet.
 
 import { roundCorners } from './corners'
-import { closestOnLine, segmentGeometry } from './geometry'
+import { closestOnLine, insideRect, rectCorners, segmentGeometry } from './geometry'
 import { buildGraph, pathLen, tree } from './graph'
-import { alongHighway, highwayCorners, highwayFromEnds, highwayOfSegment, insideHighway, withHighways } from './highways'
+import { highwayFromEnds, insideHighway, withHighways } from './highways'
 import type { SimCurve, SimHighway, SimLayout, SimObject, SimPoint, SimPointType, SimRole, SimSegment } from './types'
 
 type XY = { x: number; y: number }
@@ -121,12 +121,14 @@ function mapCurve(c: SimCurve, f: (p: XY) => XY): SimCurve {
 
 /** Join a new junction into a route at `at`: the route becomes two, keeping its direction and lane. */
 export function splitSegment<T extends SimLayout>(L: T, segId: string, at: XY): { layout: T; id: string } | null {
-  // A highway's route is derived: a junction on its centre line splits it (withHighways joins it).
-  const h = highwayOfSegment(L, segId)
-  if (h) return addPoint(L, alongHighway(h, at).at, 'junction')
   const s = L.segments.find(q => q.id === segId)
-  const on = s && projectOnSegment(L, segId, at)
-  if (!s || !on) return null
+  // A highway's route is derived: a junction on its centre line splits it (withHighways joins it).
+  if (!s) {
+    const net = withHighways(L), on = net.segments.some(q => q.id === segId && q.highwayId) && projectOnSegment(net, segId, at)
+    return on ? addPoint(L, { x: on.x, y: on.y }, 'junction') : null
+  }
+  const on = projectOnSegment(L, segId, at)
+  if (!on) return null
   const { layout: withPoint, id } = addPoint(L, { x: on.x, y: on.y }, 'junction')
   const second = nextId('s', withPoint.segments)
   const { curve: _curve, ...rest } = s   // a split curve becomes two straight routes; bend them again if needed
@@ -149,7 +151,7 @@ export function hitTest(L: SimLayout, at: XY, pointFt: number, segFt: number):
   if (r) return { kind: 'segment', id: r.id, x: r.at.x, y: r.at.y }
   const hw = [...(L.highways ?? [])].reverse().find(h => insideHighway(h, at))
   if (hw) return { kind: 'highway', id: hw.id }
-  const obj = [...(L.objects ?? [])].reverse().find(o => insideObject(o, at))
+  const obj = [...(L.objects ?? [])].reverse().find(o => insideRect(o, at))
   return obj ? { kind: 'object', id: obj.id } : null
 }
 
@@ -210,7 +212,7 @@ export function flowTargets(L: SimLayout, start: string, flows: { fromPointId?: 
   if (!out && !into) return null
   const i = G.idx.get(start)!
   const fwd = out ? tree(G, i).dist : null
-  const back = into ? (() => { const R = buildGraph({ ...L, segments: L.segments.map(q => ({ ...q, dir: REVERSED[q.dir] })), highways: L.highways?.map(h => ({ ...h, dir: REVERSED[h.dir] })) }); return tree(R, R.idx.get(start)!).dist })() : null
+  const back = into ? (() => { const N = withHighways(L), R = buildGraph({ ...N, segments: N.segments.map(q => ({ ...q, dir: REVERSED[q.dir] })) }); return tree(R, R.idx.get(start)!).dist })() : null
   const targets = L.points.filter(p => p.type !== 'junction' && p.id !== start).map((p): FlowTarget => {
     // Start → p when the start picks and p drops; otherwise p → start.
     const forward = out && canDrop(p)
@@ -399,21 +401,7 @@ export function pointsInBox(L: SimLayout, a: XY, b: XY): string[] {
 // ---- Fixed objects (spec §5.8) ------------------------------------------------------------------
 
 /** An object's four corners, ft, in order. */
-export function objectCorners(o: SimObject): XY[] {
-  const cx = o.x + o.w / 2, cy = o.y + o.h / 2, th = ((o.rotationDeg ?? 0) * Math.PI) / 180
-  const c = Math.cos(th), s = Math.sin(th)
-  return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) => {
-    const dx = (i * o.w) / 2, dy = (j * o.h) / 2
-    return { x: cx + dx * c - dy * s, y: cy + dx * s + dy * c }
-  })
-}
-
-function insideObject(o: SimObject, p: XY): boolean {
-  const th = (-(o.rotationDeg ?? 0) * Math.PI) / 180, cx = o.x + o.w / 2, cy = o.y + o.h / 2
-  const dx = p.x - cx, dy = p.y - cy
-  const lx = dx * Math.cos(th) - dy * Math.sin(th), ly = dx * Math.sin(th) + dy * Math.cos(th)
-  return Math.abs(lx) <= o.w / 2 && Math.abs(ly) <= o.h / 2
-}
+export const objectCorners = (o: SimObject): XY[] => rectCorners(o)
 
 /**
  * Snap a route point to the fixed objects (owner, 2026-11-11). A route is an aisle centreline, so it
@@ -486,7 +474,6 @@ export function removeHighway<T extends SimLayout>(L: T, id: string): T {
   return { ...L, highways: (L.highways ?? []).filter(h => h.id !== id) }
 }
 
-export { highwayCorners }
 
 // ---- Drawing snaps (owner, 2026-11-11: "snapping to the endpoints … needs to be smooth and easy") ----
 

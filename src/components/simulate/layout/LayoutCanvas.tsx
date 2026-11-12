@@ -320,8 +320,8 @@ export default function LayoutCanvas(props: Props) {
         {image && <image href={image.href} x={0} y={0} width={image.widthFt} height={image.heightFt} preserveAspectRatio="none" className="sim-drawing" />}
 
         {(layout.objects ?? []).map(o => <ObjectShape key={o.id} o={o} selected={selected('object', o.id)} />)}
-        {(layout.highways ?? []).map(h => <HighwayShape key={h.id} h={h} px={px} selected={selected('highway', h.id)} />)}
-        {props.draftHighway && <HighwayShape h={props.draftHighway} px={px} draft />}
+        {(layout.highways ?? []).map(h => <HighwayShape key={h.id} h={h} selected={selected('highway', h.id)} />)}
+        {props.draftHighway && <HighwayShape h={props.draftHighway} draft />}
 
         {clearances && <ClearanceOverlay layout={driven} results={clearances} px={px} />}
 
@@ -630,7 +630,7 @@ function NamePill({ y, text }: { y: number; text: string }) {
 }
 
 /** A highway: its rectangle (the aisle's real width). Its lanes are drawn as routes (derived). */
-function HighwayShape({ h, selected, draft }: { h: SimHighway; px?: number; selected?: boolean; draft?: boolean }) {
+function HighwayShape({ h, selected, draft }: { h: SimHighway; selected?: boolean; draft?: boolean }) {
   return (
     <g className={`sim-highway${selected ? ' is-selected' : ''}${draft ? ' is-draft' : ''}`}>
       <polygon points={highwayCorners(h).map(q => `${q.x},${q.y}`).join(' ')} vectorEffect="non-scaling-stroke" />

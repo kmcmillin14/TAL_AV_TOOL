@@ -12,6 +12,10 @@
 - Editor: a selected highway's end handles sit above its lanes; the inspector shows its B56.5 status
   (full speed · slowed · blocked) and the suggested-width working; the navigator lists highways; D
   steps its direction. A full shift runs on a highway-only site (test).
+- Cleanup review: highways are expanded once per layout (cached); the inspector's B56.5 status is the
+  run's own clearance check on the highway's routes; one suggested-width rule (`suggestedWidthFt`)
+  for new routes, new highways and the inspector; highways and objects share one rotated-rectangle
+  rule. A point just past a highway's end now joins it; a direction badge on a highway steps the highway.
 
 ## 2026-11-12 — Fleet simulation: easier flow linking
 

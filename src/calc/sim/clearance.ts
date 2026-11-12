@@ -183,3 +183,7 @@ export function laneWidthFt(seg: { dir: 'two' | 'ab' | 'ba'; lane?: 'single' | '
   const c = rule.fullSpeedIn / 12
   return twoLanes ? 2 * envelopeFt + 2 * c + (rule.sharedBetweenVehicles ? c : 2 * c) : envelopeFt + 2 * c
 }
+
+/** The width to draw a new aisle or highway at: `laneWidthFt` rounded up to 0.1 ft, so the clearance
+ *  check never lands a hair short. */
+export const suggestedWidthFt = (...a: Parameters<typeof laneWidthFt>) => Math.ceil(laneWidthFt(...a) * 10) / 10

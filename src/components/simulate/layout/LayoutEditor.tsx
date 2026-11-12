@@ -13,7 +13,7 @@ import { linkedFlows } from '@/src/calc/sim/readiness'
 import { pathPoints } from '@/src/calc/sim/engine'
 import { buildGraph } from '@/src/calc/sim/graph'
 import { highwayEnds, highwayFromEnds, withHighways } from '@/src/calc/sim/highways'
-import { laneWidthFt } from '@/src/calc/sim/clearance'
+import { suggestedWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { clearanceRule, payloadFt, runInputs } from '@/src/calc/sim/runInputs'
 import { roundCorners } from '@/src/calc/sim/corners'
 import {
@@ -22,7 +22,7 @@ import {
   mergePoints, nextDirection, placeWithSpur, addHighway, removeHighway, updateHighway, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import { fixAction, type checkStatus, type ReadinessCheck } from '@/src/calc/sim/readiness'
-import type { SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
+import type { SimLayout, SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import Icon from '@/src/design-system/components/Icon'
 import type { LoadedDrawing } from '@/src/lib/drawingImport'
@@ -156,7 +156,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const bg = layout.background
   const image = getDrawingData(project.id)
   const scale = ftPerPx(bg)
-  const loose = useMemo(() => new Set(notConnected(layout).map(p => p.id)), [layout])
   const byId = useMemo(() => pointById(layout), [layout])
   const linked = useMemo(() => linkedFlows(flows), [flows])
   // Flow tool: from the clicked start, every point it can link to (lit) or not (dimmed, with why).
@@ -182,7 +181,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   // Corners drawn as the run drives them: the run's vehicles (overrides included). Sizing distances
   // are measured with the vehicle files (`radiusFor`), as the Fleet Engine reads them.
   // The layout with its highways as routes (derived): what snaps, spurs and the drawn lanes use.
-  const net = useMemo(() => withHighways(layout), [layout])
+  const net = useMemo(() => withHighways<SimLayout>(layout), [layout])
+  const loose = useMemo(() => new Set(notConnected(net).map(p => p.id)), [net])
   const driven = useMemo(() => roundCorners(net, Math.max(0, ...simLinked.map(f => (f.vehicleId && simVehicleById.get(f.vehicleId)?.calc.turningRadiusFt) || 0))), [net, simLinked, simVehicleById])
 
   // B56.5 clearances (§5.9) — the same rule and payload a run uses (src/calc/sim/runInputs.ts).
@@ -195,9 +195,20 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const clearances = showClearance ? inputs.clearances : null
   /** Direction and lanes for the routes drawn next (Route tool options). One-way runs the way it is drawn. */
   const [routeKind, setRouteKind] = useState<Pick<SimSegment, 'dir' | 'lane'>>({ dir: 'two', lane: 'two' })
-  // New routes snap half their aisle off an object, so the lane keeps its B56.5 clearance (rounded up
-  // to 0.1 ft so the clearance check never lands a hair short).
-  const snapOffsetFt = Math.ceil((laneWidthFt(routeKind, inputs.envelopeFt, rule) / 2) * 10) / 10
+  // New routes and highways are drawn at the suggested B56.5 width, and snap half of it off an object,
+  // so the lane keeps its clearance.
+  const newWidthFt = suggestedWidthFt(routeKind, inputs.envelopeFt, rule), snapOffsetFt = newWidthFt / 2
+  /** Each highway's worst B56.5 status, from the same clearances a run uses (its derived routes). */
+  const highwayStatus = useMemo(() => {
+    const of = new Map(net.segments.flatMap(s => (s.highwayId ? [[s.id, s.highwayId] as const] : [])))
+    const rank = { clear: 0, full: 0, capped: 1, violation: 2 }
+    const out = new Map<string, SegmentClearance['status']>()
+    for (const c of inputs.clearances) {
+      const h = of.get(c.segId), was = h && out.get(h)
+      if (h && (!was || rank[c.status] > rank[was])) out.set(h, c.status)
+    }
+    return out
+  }, [net, inputs.clearances])
 
   const setLayout = (next: EditorLayout, merge?: string) => commit({ layout: next, flows }, merge)
   useEffect(() => {
@@ -221,11 +232,9 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   /** Where a route click lands — the same `snapDraw` the canvas marks under the pointer. */
   const routeSnap = (at: XY, lock: boolean, px: number) =>
     snapDraw(net, at, { px, from: chainFrom ? byId.get(chainFrom) : null, lock, offsetFt: snapOffsetFt })
-  /** A new highway's width: the suggested B56.5 width for its kind, rounded up to 0.1 ft. */
-  const suggestWidth = (kind: Pick<SimSegment, 'dir' | 'lane'>) => Math.ceil(laneWidthFt(kind, inputs.envelopeFt, rule) * 10) / 10
   /** Where a highway end lands — the same snaps as a route end; off an object by half its width. */
   const hwSnap = (at: XY, lock: boolean, px: number, from: XY | null) =>
-    snapDraw(net, at, { px, from, lock, offsetFt: suggestWidth(routeKind) / 2 })
+    snapDraw(net, at, { px, from, lock, offsetFt: snapOffsetFt })
   /** One route click: start, continue or join. A press-drag-release is two of these (drag to draw). */
   const routeClick = (at: XY, lock: boolean, px: number) => {
     const end = anchor(routeSnap(at, lock, px))
@@ -239,7 +248,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   /** Where a placed point lands — and, on open floor, the route it joins by a spur (Shift: none). */
   const placeSnap = (at: XY, px: number, shift: boolean): DrawSnap => {
     const snap = snapDraw(net, at, { px })
-    return (snap.kind === 'free' || snap.kind === 'object') && !shift ? { ...snap, spur: spurTarget(layout, snap.at) } : snap
+    return (snap.kind === 'free' || snap.kind === 'object') && !shift ? { ...snap, spur: spurTarget(net, snap.at) } : snap
   }
   const [hover, setHover] = useState<DrawSnap | null>(null)
   /** A point id to draw from or to: the point it snapped to, a new junction on a route, or one on open floor. */
@@ -301,11 +310,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       const made = addObject(layout, d.from, d.at)
       if (made.id) { setLayout(made.layout); setSelection({ kind: 'object', id: made.id }) }
     } else if (d.kind === 'hwDraw') {
-      const made = addHighway(layout, d.from, d.at, suggestWidth(routeKind), routeKind)
+      const made = addHighway(layout, d.from, d.at, newWidthFt, routeKind)
       if (made.id) { setLayout(made.layout); setSelection({ kind: 'highway', id: made.id }) }
     } else if (d.kind === 'highway' || d.kind === 'hwEnd') {
-      const moved = draggedHighway(d)
-      if (moved) setLayout(updateHighway(layout, moved.id, moved))
+      setLayout(draggedHighway(d))
     }
   }
 
@@ -348,7 +356,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       setDrag(null)
       return
     }
-    if (hit?.kind === 'dir') { stepDirection(hit.id); return }
+    if (hit?.kind === 'dir') { const hw = net.segments.find(s => s.id === hit.id)?.highwayId; stepDirection(hw ? 'highway' : 'segment', hw ?? hit.id); return }
     if (tool === 'select') { onSelectPress(at, hit, shift); return }
     if (tool === 'points') {
       if (placeType === 'object') { setDrag({ kind: 'box', box: 'object', from: at, at }); return }
@@ -387,20 +395,21 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   }
 
   /** The route badge (or D): two-way → one-way → the other way. Lanes stay as set. */
-  const stepDirection = (segId: string) => {
-    const s = layout.segments.find(q => q.id === segId)
-    if (s) setLayout(updateSegment(layout, s.id, { dir: nextDirection(s.dir) }), `dir:${s.id}`)
-    const h = layout.highways?.find(q => q.id === segId)
-    if (h) setLayout(updateHighway(layout, h.id, { dir: nextDirection(h.dir) }), `dir:${h.id}`)
+  const stepDirection = (kind: 'segment' | 'highway', id: string) => {
+    const r = kind === 'segment' ? layout.segments.find(q => q.id === id) : layout.highways?.find(q => q.id === id)
+    if (!r) return
+    const dir = nextDirection(r.dir)
+    setLayout(kind === 'segment' ? updateSegment(layout, id, { dir }) : updateHighway(layout, id, { dir }), `dir:${id}`)
   }
-  /** A highway as a drag would leave it: moved whole, or with one end at the pointer. */
-  const draggedHighway = (d: Drag) => {
-    if (d.kind !== 'highway' && d.kind !== 'hwEnd') return null
+  /** The layout as a highway drag would leave it: the highway moved whole, or one end at the pointer. */
+  const draggedHighway = (d: Extract<Drag, { kind: 'highway' | 'hwEnd' }>): EditorLayout => {
     const h = layout.highways?.find(q => q.id === d.id)
-    if (!h) return null
-    if (d.kind === 'highway') return { ...h, x: h.x + d.at.x - d.from.x, y: h.y + d.at.y - d.from.y }
+    if (!h) return layout
+    if (d.kind === 'highway') return updateHighway(layout, h.id, { x: h.x + d.at.x - d.from.x, y: h.y + d.at.y - d.from.y })
     const ends = { ...highwayEnds(h), [d.end]: d.at }
-    return Math.hypot(ends.b.x - ends.a.x, ends.b.y - ends.a.y) < 2 ? h : highwayFromEnds(ends.a, ends.b, h.widthFt, h)
+    if (Math.hypot(ends.b.x - ends.a.x, ends.b.y - ends.a.y) < 2) return layout
+    const { x, y, lengthFt, angleDeg } = highwayFromEnds(ends.a, ends.b, h.widthFt, h)
+    return updateHighway(layout, h.id, { x, y, lengthFt, angleDeg })
   }
 
   /** Link a new flow Pick → Drop and open it with Moves per hour to fill in. It has no vehicle in Sizing;
@@ -490,7 +499,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     if (mod || e.altKey) return
     // Space pans — unless a control has focus, where Space presses it.
     if (k === ' ' && !target?.closest('button, input, select, summary, [role="radio"], [role="button"]')) { e.preventDefault(); if (!e.repeat) setSpaceHeld(true); return }
-    if (k === 'd' && (selection?.kind === 'segment' || selection?.kind === 'highway')) { stepDirection(selection.id); return }
+    if (k === 'd' && (selection?.kind === 'segment' || selection?.kind === 'highway')) { stepDirection(selection.kind, selection.id); return }
     const arrow = ({ arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] } as Record<string, [number, number]>)[k]
     if (arrow && !target?.closest('button, summary, [role="radio"]')) { if (nudge(arrow, e.shiftKey ? 10 : 1)) e.preventDefault(); return }
     // Tab steps through the stations — only once the canvas has focus (a click on it), so Tab from
@@ -566,11 +575,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     : drag?.kind === 'object'
       ? updateObject(layout, drag.id, (() => { const o = layout.objects?.find(q => q.id === drag.id)!; return { x: o.x + drag.at.x - drag.from.x, y: o.y + drag.at.y - drag.from.y } })())
       : drag?.kind === 'highway' || drag?.kind === 'hwEnd'
-        ? (() => { const m = draggedHighway(drag); return m ? updateHighway(layout, m.id, m) : layout })()
+        ? draggedHighway(drag)
         : layout
   /** The highway being dragged out (Highway tool). */
   const draftHighway = drag?.kind === 'hwDraw' && Math.hypot(drag.at.x - drag.from.x, drag.at.y - drag.from.y) > 0.5
-    ? highwayFromEnds(drag.from, drag.at, suggestWidth(routeKind), { id: 'draft', ...routeKind }) : null
+    ? highwayFromEnds(drag.from, drag.at, newWidthFt, { id: 'draft', ...routeKind }) : null
   const offset = drag?.kind === 'points' ? { ids: new Set(drag.ids), d: { x: drag.at.x - drag.from.x, y: drag.at.y - drag.from.y } } : null
 
   // Side panel: the Layout tab's folded cards, with a status word each; scaling brings Drawing to the top.
@@ -722,6 +731,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   onObject={(id, patch) => setLayout(updateObject(layout, id, patch), `object:${id}:${Object.keys(patch).join()}`)}
                   onHighway={(id, patch) => setLayout(updateHighway(layout, id, patch), `highway:${id}:${Object.keys(patch).join()}`)}
                   envelopeFt={inputs.envelopeFt}
+                  highwayStatus={highwayStatus}
                   onRepeat={(id, count, stepFt, dir) => {
                     const made = repeatPoint(layout, id, count, stepFt, dir)
                     setLayout(made.layout)
