@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DERIVED, highwayCorners, highwayEnds, highwayFromEnds, insideHighway, withHighways } from '../highways'
-import { addHighway, flowTargets, hitTest, notConnected, placeWithSpur, routeDistanceFt, spurTarget, splitSegment } from '../layoutEdit'
+import { addHighway, updateHighway, flowTargets, hitTest, notConnected, placeWithSpur, routeDistanceFt, spurTarget, splitSegment } from '../layoutEdit'
 import { segmentClearances, B56_5_RULE } from '../clearance'
 import { runInputs } from '../runInputs'
 import type { SimHighway, SimLayout } from '../types'
@@ -9,6 +9,23 @@ const hw = (a: { x: number; y: number }, b: { x: number; y: number }, extra: Par
   highwayFromEnds(a, b, 10, { id: extra.id ?? 'h1', dir: 'two', ...extra })
 
 describe('highways: stored as rectangles, routes derived', () => {
+  it('a point on the centre line goes with the highway when it moves or stretches; the angle stays within ±180°', () => {
+    const L: SimLayout = { points: [{ id: 'J', x: 10, y: 0, type: 'junction' }, { id: 'far', x: 10, y: 9, type: 'stand' }], segments: [], highways: [hw({ x: 0, y: 0 }, { x: 40, y: 0 })] }
+    const moved = updateHighway(L, 'h1', { y: 2 })
+    expect(moved.points.map(p => [p.x, p.y])).toEqual([[10, 2], [10, 9]])
+    const { a } = highwayEnds(L.highways![0])
+    const stretched = updateHighway(L, 'h1', highwayFromEnds(a, { x: 60, y: 0 }, 10, { id: 'h1', dir: 'two' }))
+    expect(stretched.points[0].x).toBeCloseTo(10)                            // kept from the end that stayed
+    expect(updateHighway(L, 'h1', { angleDeg: 400 }).highways![0].angleDeg).toBeCloseTo(40)
+    expect(updateHighway(L, 'h1', { angleDeg: 270 }).highways![0].angleDeg).toBeCloseTo(-90)
+  })
+
+  it('two points facing each other across the line at the same station are both joined', () => {
+    const L: SimLayout = { points: [{ id: 'P', x: 20, y: 0.5, type: 'stand', role: 'pick' }, { id: 'D', x: 20, y: -0.5, type: 'stand', role: 'drop' }], segments: [], highways: [hw({ x: 0, y: 0 }, { x: 40, y: 0 })] }
+    expect(routeDistanceFt(L, `${DERIVED}h1:a`, `${DERIVED}h1:b`)).toBeLessThan(42)
+    expect(isFinite(routeDistanceFt(L, 'P', 'D'))).toBe(true)
+  })
+
   it('ends, corners and inside follow the angle', () => {
     const h = hw({ x: 0, y: 0 }, { x: 0, y: 40 })
     expect(h).toMatchObject({ x: 0, y: 20, lengthFt: 40, angleDeg: 90 })

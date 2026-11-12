@@ -279,7 +279,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const onRelease = (d: Drag) => {
     const from = d.kind === 'handle' || d.kind === 'hwEnd' ? d.at : d.from
     const dx = d.at.x - from.x, dy = d.at.y - from.y
-    if (d.kind === 'points' && d.snap?.kind === 'point') {
+    // (A highway's derived end or crossing is not stored: the point just lands there and joins it.)
+    if (d.kind === 'points' && d.snap?.kind === 'point' && byId.has(d.snap.id)) {
       // An end dropped on another point joins it; flows linked to the dropped point follow.
       // Refused (nothing changes) when a flow on the dropped point would no longer be a valid
       // Pick → Drop — e.g. a flow's pick dropped on its own drop, or on a charger.
@@ -313,7 +314,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       const made = addHighway(layout, d.from, d.at, newWidthFt, routeKind)
       if (made.id) { setLayout(made.layout); setSelection({ kind: 'highway', id: made.id }) }
     } else if (d.kind === 'highway' || d.kind === 'hwEnd') {
-      setLayout(draggedHighway(d))
+      if (d.kind === 'hwEnd' || dx || dy) setLayout(draggedHighway(d))   // a plain click only selects
     }
   }
 
@@ -326,15 +327,17 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       if (drag?.kind === 'points' && drag.ids.length === 1) {
         // One point dragged: it snaps like a route end (points, objects, lined up) — never onto its own routes.
         const p0 = byId.get(drag.ids[0])!
-        const snap = snapDraw(layout, { x: p0.x + at.x - drag.from.x, y: p0.y + at.y - drag.from.y }, { px, exclude: new Set(drag.ids), routes: false })
+        const snap = snapDraw(net, { x: p0.x + at.x - drag.from.x, y: p0.y + at.y - drag.from.y }, { px, exclude: new Set(drag.ids), routes: false })
         setDrag({ ...drag, at: { x: drag.from.x + snap.at.x - p0.x, y: drag.from.y + snap.at.y - p0.y }, snap })
       } else if (drag?.kind === 'hwDraw') {
         const snap = hwSnap(at, shift, px, drag.from)
         setDrag({ ...drag, at: snap.at, snap })
       } else if (drag?.kind === 'hwEnd') {
         // An end snaps like a route end (onto another highway, a point, lined up), from the other end.
+        // Never onto itself: it snaps against the layout without it.
         const h = layout.highways?.find(q => q.id === drag.id), ends = h && highwayEnds(h)
-        const snap = hwSnap(at, shift, px, ends ? ends[drag.end === 'a' ? 'b' : 'a'] : null)
+        const rest = withHighways<SimLayout>({ ...layout, highways: layout.highways?.filter(q => q.id !== drag.id) })
+        const snap = snapDraw(rest, at, { px, from: ends ? ends[drag.end === 'a' ? 'b' : 'a'] : null, lock: shift, offsetFt: snapOffsetFt })
         setDrag({ ...drag, at: snap.at, snap })
       } else if (drag) setDrag({ ...drag, at })
       else if (tool === 'highway') setHover(hwSnap(at, shift, px, null))
@@ -609,7 +612,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
         <div className="sim-canvas-wrap">
           <LayoutCanvas
             layout={shownLayout}
-            driven={drag ? shownLayout : driven}
+            driven={drag ? withHighways(shownLayout) : driven}
             flows={flows}
             image={imageFt}
             selection={selection}

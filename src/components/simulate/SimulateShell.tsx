@@ -98,7 +98,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const canRun = status.blockers === 0
   // Run mode is shown only while the run can happen; a new red item drops back to the layout.
   const running = mode === 'run' && canRun
-  const empty = !simLayout?.points.length
+  const empty = !simLayout?.points.length && !simLayout?.highways?.length
   const sampleOn = flows.some(f => isSample(f.id))
   // The sample brings its own flows, so it is offered only where it cannot change a real quote.
   const canSample = empty && flows.length === 0

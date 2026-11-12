@@ -278,7 +278,7 @@ export default function LayoutCanvas(props: Props) {
     return out
   }, [layout.points, px])
   const degree = new Map<string, number>()
-  for (const q of layout.segments) { degree.set(q.a, (degree.get(q.a) ?? 0) + 1); degree.set(q.b, (degree.get(q.b) ?? 0) + 1) }
+  for (const q of driven.segments) { degree.set(q.a, (degree.get(q.a) ?? 0) + 1); degree.set(q.b, (degree.get(q.b) ?? 0) + 1) }
   const grid = gridStep(view.ppf)
   const selSeg = selection?.kind === 'segment' ? layout.segments.find(s => s.id === selection.id) : undefined
   const selObj = selection?.kind === 'object' ? layout.objects?.find(o => o.id === selection.id) : undefined

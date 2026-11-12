@@ -4,7 +4,7 @@
 import { roundCorners } from './corners'
 import { closestOnLine, insideRect, rectCorners, segmentGeometry } from './geometry'
 import { buildGraph, pathLen, tree } from './graph'
-import { highwayFromEnds, insideHighway, withHighways } from './highways'
+import { highwayEnds, highwayFromEnds, insideHighway, ON_HIGHWAY_FT, withHighways } from './highways'
 import type { SimCurve, SimHighway, SimLayout, SimObject, SimPoint, SimPointType, SimRole, SimSegment } from './types'
 
 type XY = { x: number; y: number }
@@ -466,8 +466,33 @@ export function addHighway<T extends SimLayout>(L: T, a: XY, b: XY, widthFt: num
   return { layout: { ...L, highways: [...highways, highwayFromEnds(a, b, widthFt, { id, ...kind, name: `Highway ${highways.length + 1}` })] }, id }
 }
 
+/**
+ * Change a highway. The stations and junctions on its centre line go with it (kept at their distance
+ * from the end that stayed put, or from the centre when it moved or turned), so they stay joined.
+ * The angle is kept within ±180°.
+ */
 export function updateHighway<T extends SimLayout>(L: T, id: string, patch: Partial<Omit<SimHighway, 'id'>>): T {
-  return { ...L, highways: (L.highways ?? []).map(h => (h.id === id ? { ...h, ...patch } : h)) }
+  const h = L.highways?.find(q => q.id === id)
+  if (!h) return L
+  const next = { ...h, ...patch }
+  if (patch.angleDeg != null) next.angleDeg = ((((patch.angleDeg + 180) % 360) + 360) % 360) - 180
+  const highways = L.highways!.map(q => (q.id === id ? next : q))
+  const was = highwayEnds(h), now = highwayEnds(next)
+  const same = (p: XY, q: XY) => Math.hypot(p.x - q.x, p.y - q.y) < 1e-6
+  if (same(was.a, now.a) && same(was.b, now.b)) return { ...L, highways }
+  // The anchor and the unit vectors along / across, before and after.
+  const frame = (e: { a: XY; b: XY }, len: number) => {
+    const u = { x: (e.b.x - e.a.x) / (len || 1), y: (e.b.y - e.a.y) / (len || 1) }
+    const o = same(was.a, now.a) ? e.a : same(was.b, now.b) ? e.b : { x: (e.a.x + e.b.x) / 2, y: (e.a.y + e.b.y) / 2 }
+    return { o, u, n: { x: -u.y, y: u.x } }
+  }
+  const f0 = frame(was, h.lengthFt), f1 = frame(now, next.lengthFt)
+  const points = L.points.map(p => {
+    if (closestOnLine(was.a, was.b, p).dist > ON_HIGHWAY_FT) return p
+    const dx = p.x - f0.o.x, dy = p.y - f0.o.y, s = dx * f0.u.x + dy * f0.u.y, d = dx * f0.n.x + dy * f0.n.y
+    return { ...p, x: f1.o.x + s * f1.u.x + d * f1.n.x, y: f1.o.y + s * f1.u.y + d * f1.n.y }
+  })
+  return { ...L, points, highways }
 }
 
 export function removeHighway<T extends SimLayout>(L: T, id: string): T {

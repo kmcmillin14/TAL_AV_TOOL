@@ -74,10 +74,16 @@ export function withHighways<T extends SimLayout>(L: T): T {
     const on = points.flatMap(p => { const r = closestOnLine(a, b, p); return r.dist <= ON_HIGHWAY_FT ? [{ id: p.id, t: r.t }] : [] })
       .sort((x, y) => x.t - y.t)
     const lane = h.dir === 'two' ? h.lane ?? 'two' : 'single'
-    on.slice(1).forEach((p, k) => {
-      if (p.t - on[k].t < 1e-6) return
-      segments.push({ id: `${DERIVED}${h.id}:${k}`, a: on[k].id, b: p.id, dir: h.dir, lane, highwayId: h.id, widthFt: h.widthFt })
-    })
+    // Consecutive points along the line are joined (two facing each other across it too); a point
+    // stacked exactly on the one before is left out rather than breaking the chain.
+    const at = new Map(points.map(p => [p.id, p]))
+    let prev = on[0], k = 0
+    for (const p of on.slice(1)) {
+      const q = at.get(p.id)!, r = at.get(prev.id)!
+      if (Math.hypot(q.x - r.x, q.y - r.y) < 1e-6) continue
+      segments.push({ id: `${DERIVED}${h.id}:${k++}`, a: prev.id, b: p.id, dir: h.dir, lane, highwayId: h.id, widthFt: h.widthFt })
+      prev = p
+    }
   })
   const { highways: _h, ...rest } = L
   const out = { ...rest, points, segments } as T

@@ -16,6 +16,12 @@
   run's own clearance check on the highway's routes; one suggested-width rule (`suggestedWidthFt`)
   for new routes, new highways and the inspector; highways and objects share one rotated-rectangle
   rule. A point just past a highway's end now joins it; a direction badge on a highway steps the highway.
+- Code review: moving, stretching or turning a highway takes the stations and junctions on its centre
+  line with it (they stay joined); the angle is kept within ±180° (an out-of-range angle no longer
+  fails the save); two points facing each other across a highway are both joined; a highway end no
+  longer snaps to itself; lanes stay drawn mid-drag; a click on a highway adds no undo step; a dragged
+  station snaps to highway ends; crossings on highways get the junction mark; Run details names slowed
+  or blocked highways; a highway-only layout is no longer treated as empty (no sample over it).
 
 ## 2026-11-12 — Fleet simulation: easier flow linking
 

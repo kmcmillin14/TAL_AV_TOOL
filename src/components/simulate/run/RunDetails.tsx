@@ -10,8 +10,9 @@ import { Bar, CartesianGrid, ComposedChart, Line, ReferenceLine, Tooltip, XAxis,
 import { AXIS_STROKE, ChartCaption, ChartFrame, ChartTooltip, GRID_STROKE, pct, TICK } from '@/src/components/charts/ChartKit'
 import DataTable, { type Cell, type Col } from './DataTable'
 import type { SimState } from '@/src/calc/sim/engine'
+import { withHighways } from '@/src/calc/sim/highways'
 import type { RunInputs } from '@/src/calc/sim/runInputs'
-import type { SimResults, SimSettings, TimeSplit } from '@/src/calc/sim/types'
+import type { SimLayout, SimResults, SimSettings, TimeSplit } from '@/src/calc/sim/types'
 import { flowDerived } from '@/src/calc/flowMetrics'
 import type { StoredProject } from '@/src/lib/storage'
 import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
@@ -57,7 +58,9 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
   const total = R ? R.types.reduce((a, t) => a + t.target, 0) : 0
   const flows = project.flows ?? []
   const linked = flows.filter(f => f.fromPointId && f.toPointId)
-  const name = (id?: string) => project.simLayout?.points.find(p => p.id === id)?.name ?? '—'
+  // Highways' routes are derived: they are found (and named) on the expanded layout.
+  const net = project.simLayout && withHighways<SimLayout>(project.simLayout)
+  const name = (id?: string) => net?.points.find(p => p.id === id)?.name ?? '—'
   const time = R ? R.types.reduce((acc, t) => { for (const k of Object.keys(acc) as (keyof TimeSplit)[]) acc[k] += t.time[k]; return acc },
     { travel: 0, handle: 0, reposition: 0, wait: 0, charge: 0, idle: 0 } as TimeSplit) : null
   const tot = time ? Object.values(time).reduce((a, b) => a + b, 0) || 1 : 1
@@ -135,8 +138,9 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
         <div className="sim-disc-body">
           {inputs.clearances.some(c => c.status === 'capped' || c.status === 'violation')
             ? <ul className="sim-list">{inputs.clearances.filter(c => c.status === 'capped' || c.status === 'violation').map(c => {
-                const seg = project.simLayout?.segments.find(s => s.id === c.segId)
-                return <li key={c.segId}>{name(seg?.a)} – {name(seg?.b)}: {c.tightestIn?.toFixed(1)} in · {c.reason}</li>
+                const seg = net?.segments.find(s => s.id === c.segId)
+                const where = seg?.highwayId ? project.simLayout?.highways?.find(h => h.id === seg.highwayId)?.name || 'Highway' : `${name(seg?.a)} – ${name(seg?.b)}`
+                return <li key={c.segId}>{where}: {c.tightestIn?.toFixed(1)} in · {c.reason}</li>
               })}</ul>
             : <p className="sim-card-note">No route is slowed or blocked.</p>}
         </div>
