@@ -888,7 +888,8 @@ step ribbon is unchanged.
       reads "Simulating as M10 — Sizing and the price use CB18 AGF", and "Engine sized" becomes
       the Fleet Engine's figure for that vehicle. A switched run does not update Sizing's verdict
       chip and offers no "Use N in pricing". Choosing the Sizing vehicle again clears it.
-    - *New flows* drawn in Simulate take the preloaded (Sizing) vehicle, never the switched one.
+    - *New flows* drawn in Simulate have no vehicle in Sizing (it is chosen there); the simulation
+      runs them as the preloaded vehicle.
   - *One direction (owner, 2026-11-12):* **Sizing → Simulation → Price only.** The simulation reads
     Sizing (flows, vehicles, loads) and never writes back to it; the only way it changes a quote is
     an explicit "Use … in pricing" with its before → after confirmation (D-1).

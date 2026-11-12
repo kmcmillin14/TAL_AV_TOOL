@@ -70,7 +70,8 @@ const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
 export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payload, simulatedAs }: Props) {
   const simSettings = project.simSettings ?? {}
-  const switched = !!simulatedAs
+  /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
+  const forSizing = !simulatedAs
   const engineFleet = useByValue(useMemo(() => engineFleetByType(fleet), [fleet]))
   // The key hashes the vehicle files (overrides are hashed from simSettings) — as Sizing does, so a
   // result is only "stale" when its inputs really changed.
@@ -107,7 +108,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
 
   // ---- the result is kept for Sizing's verdict chip; an applied fleet it confirms is refreshed ----
   useEffect(() => {
-    if (!R || simulatedAs) return
+    if (!R || !forSizing) return
     const types = Object.fromEntries(R.res.types.map(t => [t.vehicleId, { fleet: fleetBy[t.vehicleId] ?? 0, verdict: R.res.gridlock ? 'gridlock' as const : t.verdict }]))
     const fresh = getProject(project.id)
     if (!fresh) return
@@ -125,7 +126,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const [lower, setLower] = useState<Record<string, Verdict | 'checking'>>({})
   useEffect(() => {
     setLower({})
-    if (!R || R.res.gridlock || switched) return   // only pricing reads it, and a switched run offers none
+    if (!R || R.res.gridlock || !forSizing) return   // only pricing reads it
     const todo = R.res.types.filter(t => t.verdict === 'meets' && (fleetBy[t.vehicleId] ?? 0) > (engineFleet[t.vehicleId] ?? 0)).map(t => t.vehicleId)
     const tok = token.current
     const next = (i: number) => {
@@ -244,7 +245,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
                     : unrunnable
                       ? <><span className="sim-chip short">Not run</span><span className="sim-vstats">Nothing the run can place or drive — check Validation in Edit layout</span></>
                       : <><span className="sim-chip">Simulating</span><span className="sim-vstats">Running a full {shiftH} h shift…</span></>}
-              {R && !simulatedAs && (
+              {R && forSizing && (
                 <PricingAction
                   project={project} vehicles={vehicles} vehicleId={vid} n={n} engineN={engineFleet[vid] ?? 0}
                   verdict={R.res.gridlock ? 'gridlock' : res?.verdict ?? null} lower={lower[vid]} inputsKey={inputsKey}
@@ -257,7 +258,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         })}
         <div className="sim-vsub">
           {simulatedAs && <span className="sim-as-note">Simulating as <b>{simulatedAs.as}</b> — Sizing and the price use {simulatedAs.sizing || 'no vehicle yet'}</span>}
-          <span>{simulatedAs ? 'Engine would size' : 'Engine sized'} <b className="num">{engineFleetTotal(fleet)}</b>{simSettings.fleet && Object.keys(simSettings.fleet).length > 0 && <> · <button type="button" className="link-btn" onClick={() => patchSimSettings(project.id, { fleet: {} })}>Reset to engine</button></>}</span>
+          <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{simSettings.fleet && Object.keys(simSettings.fleet).length > 0 && <> · <button type="button" className="link-btn" onClick={() => patchSimSettings(project.id, { fleet: {} })}>Reset to engine</button></>}</span>
           <span>Full {shiftH} h shift · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
           <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
           <span className="grow" />

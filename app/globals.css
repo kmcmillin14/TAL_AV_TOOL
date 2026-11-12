@@ -3288,7 +3288,7 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-field input, .sim-field select { font: inherit; font-size: 13px; height: 30px; padding: 0 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg-input); color: var(--text-primary); min-width: 0; }
 .sim-field small { font-size: 11px; color: var(--text-tertiary); }
 .sim-input-unit { display: flex; align-items: center; gap: 4px; height: 32px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); transition: border-color 0.2s, box-shadow 0.2s; }
-.sim-input-unit:focus-within { border-color: var(--sim-sel); box-shadow: 0 0 0 3px var(--sim-sel-soft); }
+.sim-input-unit:focus-within, .sim-vswitch.is-switched { border-color: var(--sim-sel); box-shadow: 0 0 0 3px var(--sim-sel-soft); }
 .sim-input-unit input, .sim-field .sim-input-unit input { flex: 1; width: 110px; min-width: 0; height: 100%; padding: 0; border: 0; background: none; outline: none; text-align: right; font: 500 13px var(--tal-font-numeric); color: var(--text-primary); box-shadow: none; }
 .sim-input-unit > span { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
 .sim-seg-toggle { flex-wrap: wrap; }
@@ -5684,6 +5684,5 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-vswitch button:disabled { opacity: 0.35; cursor: default; }
 .sim-vswitch select { height: 100%; max-width: 180px; padding: 0 8px; border: 0; border-left: 1px solid var(--border); border-right: 1px solid var(--border); background: none; font-size: 13px; font-weight: 600; color: var(--text-primary); text-overflow: ellipsis; cursor: pointer; }
 .sim-vswitch select:focus-visible, .sim-vswitch button:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: -2px; }
-.sim-vswitch.is-switched { border-color: var(--sim-sel); box-shadow: 0 0 0 3px var(--sim-sel-soft); }
 .sim-as-note { color: var(--text-primary); }
 .sim-as-note b { color: var(--sim-sel); }

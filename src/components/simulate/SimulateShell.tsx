@@ -5,7 +5,8 @@
 // the editor; Run mode plays the simulation. Run is offered only when validation has no red item
 // (acceptance 1).
 
-import { engineFleetByType, fleetFromFlows } from '@/src/calc/fleet'
+import { engineFleetByType } from '@/src/calc/fleet'
+import { engineFleetFor } from '@/src/lib/fleetModel'
 import { preloadedVehicle, simulateAs, switcherVehicles, type Offered } from '@/src/calc/sim/switcher'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
 import { useCallback, useMemo, useRef, useState } from 'react'
@@ -53,20 +54,25 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const layoutV = useByValue(simLayout), sizingFlows = useByValue(flows)
   // Vehicle switcher (simulation only): the vehicles offered, the one Sizing implies, and the flows
   // as the run drives them. Sizing's flows are never changed (Sizing → Simulation → Price only).
-  const app = useByValue(appRequirementsFromProject(project))
-  const sizingIds = useByValue([...new Set(flows.flatMap(f => (f.vehicleId ? [f.vehicleId] : [])))])
+  const app = useByValue(useMemo(() => appRequirementsFromProject(project), [project]))
+  const sizingIds = useByValue(useMemo(() => fleet.groups.map(g => g.vehicleId), [fleet]))   // Sizing's vehicles
   const offered = useMemo(() => switcherVehicles(vehicles, app, sizingIds), [vehicles, app, sizingIds])
   const preloaded = useMemo(() => preloadedVehicle(sizingFlows, offered), [sizingFlows, offered])
   const stored = project.simSettings?.vehicleAs
   const asId = stored && vehicleById.has(stored) ? stored : undefined
-  const flowsV = useMemo(() => simulateAs(sizingFlows, asId, preloaded), [sizingFlows, asId, preloaded])
-  /** The run drives Sizing's flows as they are — only then does it speak for Sizing and pricing. */
-  const asSizing = flowsV === sizingFlows
+  const simId = asId ?? preloaded                       // the vehicle the switcher shows
+  /** The run's flows from any flows (the editor's live ones too) — one switcher rule. */
+  const runAs = useCallback(<F extends { vehicleId?: string }>(fs: F[]) => simulateAs(fs, asId, preloaded), [asId, preloaded])
+  const sim = useMemo(() => runAs(sizingFlows), [runAs, sizingFlows])
+  const flowsV = sim.flows
+  /** Set only when the run does not drive Sizing's flows as they are: it then never speaks for Sizing
+   *  or the price (no verdict saved, no "Use N in pricing"). */
+  const simulatedAs = useMemo(() => (sim.changed
+    ? { as: vehicleById.get(simId ?? '')?.name ?? '', sizing: sizingIds.map(id => vehicleById.get(id)?.name ?? id).join(', ') }
+    : undefined), [sim.changed, simId, sizingIds, vehicleById])
   // The Fleet Engine's figure for the flows as simulated (Sizing's own when nothing is switched).
-  const simFleet = useMemo(
-    () => (asSizing ? fleet : fleetFromFlows(flowsV, vehicleById, { ...settings, appliedFleet: undefined }).fleet),
-    [asSizing, fleet, flowsV, vehicleById, settings],
-  )
+  const settingsV = useByValue(settings)
+  const simFleet = useMemo(() => (sim.changed ? engineFleetFor(flowsV, vehicleById, settingsV) : fleet), [sim.changed, fleet, flowsV, vehicleById, settingsV])
   const switchTo = (id: string) => patchSimSettings(project.id, { vehicleAs: id === preloaded ? undefined : id })
   const clearance = useByValue(project.simSettings?.clearance), loads = useByValue(project.loads)
   const payload = useMemo(() => payloadFt(loads), [loads])
@@ -141,7 +147,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <h1 className="eh-title">Simulate</h1>
         </div>
         <div className="eh-actions">
-          {offered.length > 0 && <VehicleSwitcher offered={offered} value={asId ?? preloaded} switched={!asSizing} onChange={switchTo} />}
+          {offered.length > 0 && <VehicleSwitcher offered={offered} value={simId} switched={sim.changed} onChange={switchTo} />}
           {running
             ? <button type="button" className="btn ghost" onClick={() => setMode('layout')}><Icon name="arrowL" size={13} /> Edit layout</button>
             : <>
@@ -177,14 +183,13 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <div className="empty-state"><h3>Open on a desktop to edit the layout</h3></div>
         </section>
       ) : running ? (
-        <RunView onAssumptions={openAssumptions} changed={changed.length} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payload={payload}
-          simulatedAs={asSizing ? undefined : { as: vehicleById.get(asId ?? preloaded ?? '')?.name ?? '', sizing: [...new Set(sizingFlows.flatMap(f => (f.vehicleId ? [vehicleById.get(f.vehicleId)?.name ?? f.vehicleId] : [])))].join(', ') }} />
+        <RunView onAssumptions={openAssumptions} changed={changed.length} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payload={payload} simulatedAs={simulatedAs} />
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           overridden={overriddenIds}
           registerLayoutWriter={registerLayoutWriter}
-          tab={tab} onTab={setTab} status={status} banner={banner} asId={asId} preloaded={preloaded}
+          tab={tab} onTab={setTab} status={status} banner={banner} runAs={runAs}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
               <p>Draw routes along the aisles — or start from a finished site.</p>

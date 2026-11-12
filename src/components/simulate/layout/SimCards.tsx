@@ -7,7 +7,8 @@
 //                     Fleet Engine figure, and linking with a before → after confirmation (it moves the quote)
 
 import { useMemo, useState } from 'react'
-import { engineFleetTotal, fleetFromFlows } from '@/src/calc/fleet'
+import { engineFleetTotal } from '@/src/calc/fleet'
+import { engineFleetFor } from '@/src/lib/fleetModel'
 import { FLOW_POINT_TYPES, linkFlow, linkSuggestions, measureFlows, pointById, sameName } from '@/src/calc/sim/layoutEdit'
 import type { checkStatus, CheckFix, ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimLayout, SimPointType, SimRole } from '@/src/calc/sim/types'
@@ -152,7 +153,7 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
   const linkedAll = useMemo(() => flows.map(f => pending.get(f.id) ?? f), [flows, pending])
   // The Fleet Engine's own figures — without a simulated fleet applied to pricing (D-1).
   const engineTotal = engineFleetTotal(fleet)
-  const after = useMemo(() => (confirm ? fleetFromFlows(linkedAll, vehicleById, { ...settings, appliedFleet: undefined }).fleet.totalFleetSold : null), [confirm, linkedAll, vehicleById, settings])
+  const after = useMemo(() => (confirm ? engineFleetFor(linkedAll, vehicleById, settings).totalFleetSold : null), [confirm, linkedAll, vehicleById, settings])
   const raw = fleet.groups.reduce((t, g) => t + g.groupRaw, 0)
 
   return (

@@ -8,21 +8,22 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
 interface FlowVehicle { vehicleId?: string }
 
-const RANK = { GREEN: 1, YELLOW: 2, INCOMPLETE: 3 } as const
+/** The order the switcher lists vehicles in: Sizing's, then Step 2 green, amber, not yet checked. */
+export const OFFER_RANK = { SIZING: 0, GREEN: 1, YELLOW: 2, INCOMPLETE: 3 } as const
 
-export interface Offered { vehicle: Vehicle; status: 'SIZING' | keyof typeof RANK }
+export interface Offered { vehicle: Vehicle; status: keyof typeof OFFER_RANK }
 
 /** The vehicles offered: the Sizing flows' vehicles first, then Step 2 green, amber, and not yet
  *  checked (incomplete — e.g. before Step 1 is filled in, so the simulation can come first), by name.
  *  Red vehicles are never offered. */
 export function switcherVehicles(vehicles: Vehicle[], app: ApplicationRequirements, sizingIds: string[]): Offered[] {
   const sizing = new Set(sizingIds)
-  const rated = vehicles.flatMap((v): (Offered & { rank: number })[] => {
-    if (sizing.has(v.id)) return [{ vehicle: v, status: 'SIZING', rank: 0 }]
-    const s = qualifyVehicle(v, app).status
-    return s === 'RED' ? [] : [{ vehicle: v, status: s, rank: RANK[s] }]
+  const offered = vehicles.flatMap((v): Offered[] => {
+    if (sizing.has(v.id)) return [{ vehicle: v, status: 'SIZING' }]
+    const status = qualifyVehicle(v, app).status
+    return status === 'RED' ? [] : [{ vehicle: v, status }]
   })
-  return rated.sort((a, b) => a.rank - b.rank || a.vehicle.name.localeCompare(b.vehicle.name)).map(({ vehicle, status }) => ({ vehicle, status }))
+  return offered.sort((a, b) => OFFER_RANK[a.status] - OFFER_RANK[b.status] || a.vehicle.name.localeCompare(b.vehicle.name))
 }
 
 /** The vehicle the switcher starts on: the Sizing flows' most used vehicle, else the first offered. */
@@ -35,9 +36,11 @@ export function preloadedVehicle(flows: FlowVehicle[], offered: Offered[]): stri
 }
 
 /** The flows as the simulation runs them: every flow as `asId` when switched; otherwise a flow with
- *  no vehicle runs as `fallbackId` (so the simulation can come before Sizing is finished). The same
- *  array comes back when nothing changes. */
-export function simulateAs<F extends FlowVehicle>(flows: F[], asId: string | undefined, fallbackId: string | undefined): F[] {
+ *  no vehicle runs as `fallbackId` (so the simulation can come before Sizing is finished).
+ *  `changed`: the run does not drive Sizing's flows as they are, so it cannot speak for Sizing or the
+ *  price. The same array comes back when nothing changes. */
+export function simulateAs<F extends FlowVehicle>(flows: F[], asId: string | undefined, fallbackId: string | undefined): { flows: F[]; changed: boolean } {
   const target = (f: F) => asId ?? f.vehicleId ?? fallbackId
-  return flows.some(f => target(f) !== f.vehicleId) ? flows.map(f => ({ ...f, vehicleId: target(f) })) : flows
+  const changed = flows.some(f => target(f) !== f.vehicleId)
+  return { flows: changed ? flows.map(f => ({ ...f, vehicleId: target(f) })) : flows, changed }
 }

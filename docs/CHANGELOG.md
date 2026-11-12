@@ -7,8 +7,14 @@
   flow as that vehicle — lanes, B56.5, validation and the run follow — without changing Sizing.
 - A switched run shows the Fleet Engine's figure for that vehicle, never saves Sizing's verdict chip
   and offers no "Use N in pricing" (Sizing → Simulation → Price only).
-- Flows with no vehicle run as the preloaded one; new flows drawn in Simulate take it.
+- Flows with no vehicle (including new flows drawn in Simulate) run as the preloaded one; Sizing keeps
+  them without a vehicle until one is chosen there.
 - Data: `simSettings.vehicleAs` (optional; old projects load unchanged).
+- **Cleanup review:** `simulateAs` says whether the run still drives Sizing's flows (`changed`) instead
+  of the page comparing arrays; one "simulated vehicle" and one list of Sizing's vehicles (from Sizing's
+  fleet groups); Run reads one "speaks for Sizing" flag; the editor gets one run-as function, not the
+  switcher's inputs; new flows stay without a vehicle in Sizing; `engineFleetFor` (fleetModel) is shared
+  with the Flows tab; requirements and settings are kept stable between saves.
 
 ## 2026-11-12 — Fleet simulation: live validation replaces the step strip (owner)
 

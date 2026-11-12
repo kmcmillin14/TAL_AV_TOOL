@@ -10,7 +10,6 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { linkedFlows } from '@/src/calc/sim/readiness'
-import { simulateAs } from '@/src/calc/sim/switcher'
 import { laneWidthFt } from '@/src/calc/sim/clearance'
 import { clearanceRule, payloadFt, runInputs } from '@/src/calc/sim/runInputs'
 import { roundCorners } from '@/src/calc/sim/corners'
@@ -113,15 +112,14 @@ interface Props {
   status: ReturnType<typeof checkStatus>
   /** Shown at the top of the side panel (the sample banner). */
   banner?: ReactNode
-  /** Vehicle switcher (simulation only): the vehicle every flow runs as, and the preloaded (Sizing)
-   *  one — which flows with no vehicle run as, and new flows drawn here take. */
-  asId?: string
-  preloaded?: string
+  /** Vehicle switcher (simulation only): the flows as the run drives them — lanes, corners and B56.5
+   *  follow. Sizing's flows (and new flows drawn here) keep their own vehicle. */
+  runAs?: <F extends { vehicleId?: string }>(flows: F[]) => { flows: F[] }
 }
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, tab, onTab: setTab, status, banner, asId, preloaded }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, tab, onTab: setTab, status, banner, runAs }: Props) {
   const radiusFor = useCallback((id?: string) => (id && vehicleById.get(id)?.calc.turningRadiusFt) || 0, [vehicleById])
   const editor = useLayoutEditor(project, radiusFor)
   const { doc, latest, commit, canUndo, canRedo } = editor
@@ -152,8 +150,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const byId = useMemo(() => pointById(layout), [layout])
   const linked = useMemo(() => linkedFlows(flows), [flows])
   // The flows as the simulation drives them (vehicle switcher) — lanes, corners and B56.5 follow.
-  const simFlows = useMemo(() => simulateAs(flows, asId, preloaded), [flows, asId, preloaded])
-  const simLinked = useMemo(() => linkedFlows(simFlows), [simFlows])
+  const simFlows = useMemo(() => (runAs ? runAs(flows).flows : flows), [flows, runAs])
+  const simLinked = useMemo(() => (simFlows === flows ? linked : linkedFlows(simFlows)), [simFlows, flows, linked])
 
   // The layout as driven: corners rounded to the largest turning radius among the flows' vehicles.
   // Corners drawn as the run drives them: the run's vehicles (overrides included). Sizing distances
@@ -315,8 +313,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       const why = chainFrom ? flowRefusal(layout, chainFrom, hit.id) : flowStartRefusal(layout, hit.id)
       if (why) { say(why); return }
       if (!chainFrom) { setChainFrom(hit.id); return }
-      // A new flow takes the preloaded (Sizing) vehicle — never the switched one (simulation only).
-      const blank: ProjectFlow = { id: newFlowId(), origin: '', destination: '', distanceFt: 0, thruPerHr: 0, routeLayout: 'medium', liftHeightFt: 0, ...(preloaded ? { vehicleId: preloaded } : {}) }
+      // A new flow has no vehicle in Sizing; the simulation runs it as the preloaded one (runAs).
+      const blank: ProjectFlow = { id: newFlowId(), origin: '', destination: '', distanceFt: 0, thruPerHr: 0, routeLayout: 'medium', liftHeightFt: 0 }
       const flow = linkFlow(layout, blank, chainFrom, hit.id)
       setFlows([...flows, flow])
       setSelection({ kind: 'flow', id: flow.id })
