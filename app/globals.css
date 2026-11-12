@@ -5695,3 +5695,14 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 @media (prefers-reduced-motion: reduce) { .sim-pt-halo { animation: none; } }
 .sim-flow-preview polyline { fill: none; stroke: var(--sim-sel); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 8 6; }
 
+/* Highways (Milestone 7): the aisle's rectangle under its derived lanes; end handles when selected. */
+.sim-highway polygon { fill: color-mix(in srgb, var(--lane) 35%, transparent); stroke: var(--border-strong); stroke-width: 1; cursor: pointer; }
+.sim-highway.is-selected polygon { stroke: var(--sim-sel); stroke-width: 2; fill: color-mix(in srgb, var(--sim-sel) 8%, transparent); }
+.sim-highway.is-draft polygon { fill: var(--sim-sel-soft); stroke: var(--sim-sel); stroke-width: 1.5; stroke-dasharray: 6 4; pointer-events: none; }
+.sim-hw-suggest { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-size: 12px; color: var(--text-secondary); }
+.sim-hw-suggest b { color: var(--text-primary); }
+.sim-hw-status { margin: 0; font-size: 12px; font-weight: 600; }
+.sim-hw-status.is-good { color: var(--text-primary); }
+.sim-hw-status.is-warn { color: var(--warn); }
+.sim-hw-status.is-bad { color: var(--bad); }
+

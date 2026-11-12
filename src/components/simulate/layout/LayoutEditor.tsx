@@ -12,13 +12,14 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { linkedFlows } from '@/src/calc/sim/readiness'
 import { pathPoints } from '@/src/calc/sim/engine'
 import { buildGraph } from '@/src/calc/sim/graph'
+import { highwayEnds, highwayFromEnds, withHighways } from '@/src/calc/sim/highways'
 import { laneWidthFt } from '@/src/calc/sim/clearance'
 import { clearanceRule, payloadFt, runInputs } from '@/src/calc/sim/runInputs'
 import { roundCorners } from '@/src/calc/sim/corners'
 import {
   addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowStartRefusal, flowTargets, hitTest, FLOW_POINT_TYPES, linkFlow, movePoints,
   notConnected, placeOnSegment, pointsInBox, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
-  mergePoints, nextDirection, placeWithSpur, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
+  mergePoints, nextDirection, placeWithSpur, addHighway, removeHighway, updateHighway, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import { fixAction, type checkStatus, type ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
@@ -41,12 +42,13 @@ import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayou
 /** The side panel's tabs. */
 export type PanelTab = 'layout' | 'flows' | 'checks'
 
-type Tool = 'select' | 'hand' | 'points' | 'routes' | 'flows' | 'scale'
+type Tool = 'select' | 'hand' | 'points' | 'routes' | 'highway' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
 const DRAG_PX = 8
 const TOOLS: { id: Tool; label: string; key: string; hint: string }[] = [
   { id: 'select', label: 'Select', key: 'V', hint: 'Click to select · drag to move · drag empty space to pan · Shift-drag to select several · a route’s badge (or D) changes its direction' },
   { id: 'hand', label: 'Hand', key: 'H', hint: 'Drag to move around · hold Space to pan in any tool' },
+  { id: 'highway', label: 'Highway', key: 'W', hint: 'Drag along the aisle from one end to the other · it starts at the suggested width · its ends snap like routes · Shift keeps it square' },
   { id: 'routes', label: 'Route', key: 'R', hint: 'Click or drag to draw a route · the + shows where it lands · start on a route to branch from it' },
   { id: 'points', label: 'Place', key: 'P', hint: 'Click to place · it joins the nearest route (dashed) · Shift places it unconnected' },
   { id: 'flows', label: 'Flow', key: 'F', hint: 'Click a Pick (or a Drop) — the points it can link to light up' },
@@ -54,7 +56,7 @@ const TOOLS: { id: Tool; label: string; key: string; hint: string }[] = [
 ]
 /** Tool icons — the proof of concept's set, plus Flow. */
 const TOOL_ICON: Record<Tool | 'undo' | 'redo', string> = {
-  select: 'M5 3l14 8-6 2-2 6z', routes: 'M4 20V8h8v8h8V4',
+  select: 'M5 3l14 8-6 2-2 6z', routes: 'M4 20V8h8v8h8V4', highway: 'M3 5h18M3 19h18M3 12h3M10.5 12h3M18 12h3',
   hand: 'M8 13V5.5a1.5 1.5 0 013 0V12M11 11.5v-7a1.5 1.5 0 013 0V12M14 6.5a1.5 1.5 0 013 0V13M17 9.5a1.5 1.5 0 013 0V15a6 6 0 01-6 6h-2a6 6 0 01-4.9-2.5L4.5 14a1.5 1.5 0 012.4-1.8L8 13.5',
   points: 'M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z',
   flows: 'M4 18c6 0 9-12 16-12M15 3l5 3-5 3', scale: 'M3 17L17 3l4 4L7 21zM7 13l2 2M10 10l2 2M13 7l2 2',
@@ -90,6 +92,11 @@ type Drag =
   | { kind: 'handle'; segId: string; which: Handle; at: XY }
   | { kind: 'object'; id: string; from: XY; at: XY }
   | { kind: 'box'; box: 'marquee' | 'object'; from: XY; at: XY }
+  /** Highway tool: dragging one out from end to end (each end snapped). */
+  | { kind: 'hwDraw'; from: XY; at: XY; snap: DrawSnap }
+  /** A highway moved whole, or one of its ends dragged (stretch / turn). */
+  | { kind: 'highway'; id: string; from: XY; at: XY }
+  | { kind: 'hwEnd'; id: string; end: 'a' | 'b'; at: XY; snap?: DrawSnap }
 
 interface Props {
   project: StoredProject
@@ -174,7 +181,9 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   // The layout as driven: corners rounded to the largest turning radius among the flows' vehicles.
   // Corners drawn as the run drives them: the run's vehicles (overrides included). Sizing distances
   // are measured with the vehicle files (`radiusFor`), as the Fleet Engine reads them.
-  const driven = useMemo(() => roundCorners(layout, Math.max(0, ...simLinked.map(f => (f.vehicleId && simVehicleById.get(f.vehicleId)?.calc.turningRadiusFt) || 0))), [layout, simLinked, simVehicleById])
+  // The layout with its highways as routes (derived): what snaps, spurs and the drawn lanes use.
+  const net = useMemo(() => withHighways(layout), [layout])
+  const driven = useMemo(() => roundCorners(net, Math.max(0, ...simLinked.map(f => (f.vehicleId && simVehicleById.get(f.vehicleId)?.calc.turningRadiusFt) || 0))), [net, simLinked, simVehicleById])
 
   // B56.5 clearances (§5.9) — the same rule and payload a run uses (src/calc/sim/runInputs.ts).
   const rule = useMemo(() => clearanceRule(project.simSettings?.clearance), [project.simSettings?.clearance])
@@ -211,7 +220,12 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
 
   /** Where a route click lands — the same `snapDraw` the canvas marks under the pointer. */
   const routeSnap = (at: XY, lock: boolean, px: number) =>
-    snapDraw(layout, at, { px, from: chainFrom ? byId.get(chainFrom) : null, lock, offsetFt: snapOffsetFt })
+    snapDraw(net, at, { px, from: chainFrom ? byId.get(chainFrom) : null, lock, offsetFt: snapOffsetFt })
+  /** A new highway's width: the suggested B56.5 width for its kind, rounded up to 0.1 ft. */
+  const suggestWidth = (kind: Pick<SimSegment, 'dir' | 'lane'>) => Math.ceil(laneWidthFt(kind, inputs.envelopeFt, rule) * 10) / 10
+  /** Where a highway end lands — the same snaps as a route end; off an object by half its width. */
+  const hwSnap = (at: XY, lock: boolean, px: number, from: XY | null) =>
+    snapDraw(net, at, { px, from, lock, offsetFt: suggestWidth(routeKind) / 2 })
   /** One route click: start, continue or join. A press-drag-release is two of these (drag to draw). */
   const routeClick = (at: XY, lock: boolean, px: number) => {
     const end = anchor(routeSnap(at, lock, px))
@@ -224,13 +238,14 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const press = useRef<XY | null>(null)
   /** Where a placed point lands — and, on open floor, the route it joins by a spur (Shift: none). */
   const placeSnap = (at: XY, px: number, shift: boolean): DrawSnap => {
-    const snap = snapDraw(layout, at, { px })
+    const snap = snapDraw(net, at, { px })
     return (snap.kind === 'free' || snap.kind === 'object') && !shift ? { ...snap, spur: spurTarget(layout, snap.at) } : snap
   }
   const [hover, setHover] = useState<DrawSnap | null>(null)
   /** A point id to draw from or to: the point it snapped to, a new junction on a route, or one on open floor. */
   const anchor = (snap: DrawSnap): { layout: EditorLayout; id: string } =>
-    snap.kind === 'point' ? { layout, id: snap.id }
+    // A highway's derived end or crossing is not stored: a junction there joins it.
+    snap.kind === 'point' ? (byId.has(snap.id) ? { layout, id: snap.id } : addPoint(layout, snap.at, 'junction'))
     : snap.kind === 'route' ? splitSegment(layout, snap.id, snap.at) ?? addPoint(layout, snap.at, 'junction')
     : addPoint(layout, snap.at, 'junction')
 
@@ -245,13 +260,16 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       return
     }
     if (hit?.kind === 'object') { setSelection({ kind: 'object', id: hit.id }); setDrag({ kind: 'object', id: hit.id, from: at, at }); return }
+    if (hit?.kind === 'hwEnd') { setSelection({ kind: 'highway', id: hit.id }); setDrag({ kind: 'hwEnd', id: hit.id, end: hit.end, at }); return }
+    if (hit?.kind === 'highway') { setSelection({ kind: 'highway', id: hit.id }); setDrag({ kind: 'highway', id: hit.id, from: at, at }); return }
     if (hit?.kind === 'segment') { setSelection({ kind: 'segment', id: hit.id }); return }
     if (shift) { setDrag({ kind: 'box', box: 'marquee', from: at, at }); return }
     setSelection(null)
   }
 
   const onRelease = (d: Drag) => {
-    const dx = d.at.x - (d.kind === 'handle' ? d.at.x : d.from.x), dy = d.at.y - (d.kind === 'handle' ? d.at.y : d.from.y)
+    const from = d.kind === 'handle' || d.kind === 'hwEnd' ? d.at : d.from
+    const dx = d.at.x - from.x, dy = d.at.y - from.y
     if (d.kind === 'points' && d.snap?.kind === 'point') {
       // An end dropped on another point joins it; flows linked to the dropped point follow.
       // Refused (nothing changes) when a flow on the dropped point would no longer be a valid
@@ -282,6 +300,12 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     } else if (d.kind === 'box' && d.box === 'object') {
       const made = addObject(layout, d.from, d.at)
       if (made.id) { setLayout(made.layout); setSelection({ kind: 'object', id: made.id }) }
+    } else if (d.kind === 'hwDraw') {
+      const made = addHighway(layout, d.from, d.at, suggestWidth(routeKind), routeKind)
+      if (made.id) { setLayout(made.layout); setSelection({ kind: 'highway', id: made.id }) }
+    } else if (d.kind === 'highway' || d.kind === 'hwEnd') {
+      const moved = draggedHighway(d)
+      if (moved) setLayout(updateHighway(layout, moved.id, moved))
     }
   }
 
@@ -296,7 +320,16 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
         const p0 = byId.get(drag.ids[0])!
         const snap = snapDraw(layout, { x: p0.x + at.x - drag.from.x, y: p0.y + at.y - drag.from.y }, { px, exclude: new Set(drag.ids), routes: false })
         setDrag({ ...drag, at: { x: drag.from.x + snap.at.x - p0.x, y: drag.from.y + snap.at.y - p0.y }, snap })
+      } else if (drag?.kind === 'hwDraw') {
+        const snap = hwSnap(at, shift, px, drag.from)
+        setDrag({ ...drag, at: snap.at, snap })
+      } else if (drag?.kind === 'hwEnd') {
+        // An end snaps like a route end (onto another highway, a point, lined up), from the other end.
+        const h = layout.highways?.find(q => q.id === drag.id), ends = h && highwayEnds(h)
+        const snap = hwSnap(at, shift, px, ends ? ends[drag.end === 'a' ? 'b' : 'a'] : null)
+        setDrag({ ...drag, at: snap.at, snap })
       } else if (drag) setDrag({ ...drag, at })
+      else if (tool === 'highway') setHover(hwSnap(at, shift, px, null))
       else if (tool === 'routes' && !marks) setHover(routeSnap(at, shift, px))
       else if (tool === 'points' && placeType !== 'object' && !marks) setHover(placeSnap(at, px, shift))
       else if (targetMarks) {
@@ -330,6 +363,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       setLayout(armed ? updatePoint(placed.layout, placed.id, { name: armed.name }) : placed.layout)
       setSelection({ kind: 'point', id: placed.id })
       setArmed(null)
+    } else if (tool === 'highway') {
+      const snap = hwSnap(at, shift, px, null)
+      setDrag({ kind: 'hwDraw', from: snap.at, at: snap.at, snap })
+      setHover(null)
     } else if (tool === 'routes') {
       press.current = at
       routeClick(at, shift, px)
@@ -353,6 +390,17 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const stepDirection = (segId: string) => {
     const s = layout.segments.find(q => q.id === segId)
     if (s) setLayout(updateSegment(layout, s.id, { dir: nextDirection(s.dir) }), `dir:${s.id}`)
+    const h = layout.highways?.find(q => q.id === segId)
+    if (h) setLayout(updateHighway(layout, h.id, { dir: nextDirection(h.dir) }), `dir:${h.id}`)
+  }
+  /** A highway as a drag would leave it: moved whole, or with one end at the pointer. */
+  const draggedHighway = (d: Drag) => {
+    if (d.kind !== 'highway' && d.kind !== 'hwEnd') return null
+    const h = layout.highways?.find(q => q.id === d.id)
+    if (!h) return null
+    if (d.kind === 'highway') return { ...h, x: h.x + d.at.x - d.from.x, y: h.y + d.at.y - d.from.y }
+    const ends = { ...highwayEnds(h), [d.end]: d.at }
+    return Math.hypot(ends.b.x - ends.a.x, ends.b.y - ends.a.y) < 2 ? h : highwayFromEnds(ends.a, ends.b, h.widthFt, h)
   }
 
   /** Link a new flow Pick → Drop and open it with Moves per hour to fill in. It has no vehicle in Sizing;
@@ -375,6 +423,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       setLayout(removeSegment(layout, selection.id))
     } else if (selection.kind === 'object') {
       setLayout(removeObject(layout, selection.id))
+    } else if (selection.kind === 'highway') {
+      setLayout(removeHighway(layout, selection.id))
     } else {
       setFlows(flows.map(f => (f.id === selection.id ? unlinked(f) : f)))
     }
@@ -387,6 +437,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     if (selectedPoints.length) { setLayout(movePoints(layout, selectedPoints, d), `nudge:${selectedPoints.join()}`); return true }
     const o = selection?.kind === 'object' ? layout.objects?.find(q => q.id === selection.id) : undefined
     if (o) { setLayout(updateObject(layout, o.id, { x: o.x + d.x, y: o.y + d.y }), `nudge:${o.id}`); return true }
+    const h = selection?.kind === 'highway' ? layout.highways?.find(q => q.id === selection.id) : undefined
+    if (h) { setLayout(updateHighway(layout, h.id, { x: h.x + d.x, y: h.y + d.y }), `nudge:${h.id}`); return true }
     return false
   }
 
@@ -438,7 +490,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     if (mod || e.altKey) return
     // Space pans — unless a control has focus, where Space presses it.
     if (k === ' ' && !target?.closest('button, input, select, summary, [role="radio"], [role="button"]')) { e.preventDefault(); if (!e.repeat) setSpaceHeld(true); return }
-    if (k === 'd' && selection?.kind === 'segment') { stepDirection(selection.id); return }
+    if (k === 'd' && (selection?.kind === 'segment' || selection?.kind === 'highway')) { stepDirection(selection.id); return }
     const arrow = ({ arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] } as Record<string, [number, number]>)[k]
     if (arrow && !target?.closest('button, summary, [role="radio"]')) { if (nudge(arrow, e.shiftKey ? 10 : 1)) e.preventDefault(); return }
     // Tab steps through the stations — only once the canvas has focus (a click on it), so Tab from
@@ -513,7 +565,12 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       : (() => { const s = layout.segments.find(q => q.id === drag.segId); return s?.curve?.kind === 'bezier' ? { ...s.curve, [drag.which]: drag.at } : s?.curve })())
     : drag?.kind === 'object'
       ? updateObject(layout, drag.id, (() => { const o = layout.objects?.find(q => q.id === drag.id)!; return { x: o.x + drag.at.x - drag.from.x, y: o.y + drag.at.y - drag.from.y } })())
-      : layout
+      : drag?.kind === 'highway' || drag?.kind === 'hwEnd'
+        ? (() => { const m = draggedHighway(drag); return m ? updateHighway(layout, m.id, m) : layout })()
+        : layout
+  /** The highway being dragged out (Highway tool). */
+  const draftHighway = drag?.kind === 'hwDraw' && Math.hypot(drag.at.x - drag.from.x, drag.at.y - drag.from.y) > 0.5
+    ? highwayFromEnds(drag.from, drag.at, suggestWidth(routeKind), { id: 'draft', ...routeKind }) : null
   const offset = drag?.kind === 'points' ? { ids: new Set(drag.ids), d: { x: drag.at.x - drag.from.x, y: drag.at.y - drag.from.y } } : null
 
   // Side panel: the Layout tab's folded cards, with a status word each; scaling brings Drawing to the top.
@@ -564,12 +621,13 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             emptyPrompt={tool === 'select' ? emptyPrompt : undefined}
             aim={tool !== 'select' && tool !== 'hand'}
             onContextMenu={e => { if (chainFrom || marks) { e.preventDefault(); cancel() } }}
-            snap={spaceHeld ? null : drag?.kind === 'points' ? drag.snap ?? null : (tool === 'routes' || (tool === 'points' && placeType !== 'object')) && !marks ? hover : null}
+            snap={spaceHeld ? null : drag?.kind === 'points' || drag?.kind === 'hwDraw' || drag?.kind === 'hwEnd' ? drag.snap ?? null : (tool === 'routes' || tool === 'highway' || (tool === 'points' && placeType !== 'object')) && !marks ? hover : null}
             onLeave={() => { setHover(null); setHoverOn(null) }}
             showLegend={showClearance || selection?.kind === 'segment'}
             laneWidths={inputs.laneWidths}
             overridden={overridden}
             onDoubleClick={() => { if (tool === 'routes') cancel() }}
+            draftHighway={draftHighway}
             flowTargets={targetMarks}
             flowPreview={preview}
             viewControls={<>
@@ -604,8 +662,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                 {placeType !== 'object' && FLOW_POINT_TYPES.includes(placeType) && <Segmented options={ROLE_OPTIONS} value={placeRole} onChange={setPlaceRole} />}
               </div>
             )}
-            {tool === 'routes' && !marks && (
-              <div className="sim-palette" aria-label="New routes" onPointerDown={e => e.stopPropagation()}>
+            {(tool === 'routes' || tool === 'highway') && !marks && (
+              <div className="sim-palette" aria-label={tool === 'highway' ? 'New highways' : 'New routes'} onPointerDown={e => e.stopPropagation()}>
                 <Segmented options={[{ id: 'two', label: 'Bidirectional' }, { id: 'ab', label: 'One-way' }]} value={routeKind.dir === 'two' ? 'two' : 'ab'}
                   onChange={dir => setRouteKind(k => ({ ...k, dir }))} />
                 {routeKind.dir === 'two' && (
@@ -662,6 +720,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   onSegment={(id, patch) => setLayout(updateSegment(layout, id, patch))}
                   onCurve={(id, kind) => setLayout(setCurve(layout, id, kind === 'spline' ? splineHandles(layout, id) ?? undefined : undefined))}
                   onObject={(id, patch) => setLayout(updateObject(layout, id, patch), `object:${id}:${Object.keys(patch).join()}`)}
+                  onHighway={(id, patch) => setLayout(updateHighway(layout, id, patch), `highway:${id}:${Object.keys(patch).join()}`)}
+                  envelopeFt={inputs.envelopeFt}
                   onRepeat={(id, count, stepFt, dir) => {
                     const made = repeatPoint(layout, id, count, stepFt, dir)
                     setLayout(made.layout)

@@ -82,3 +82,26 @@ describe('highways: stored as rectangles, routes derived', () => {
     expect(flowTargets(L, 'P', [])!.targets.find(t => t.id === 'D')).toMatchObject({ ok: true, distanceFt: 40 })
   })
 })
+
+describe('a run on highways alone', () => {
+  it('drives a full shift: the Pick and Drop sit on a highway, chargers join it by spurs', async () => {
+    const { createSim, runFor } = await import('../engine')
+    const { results } = await import('../results')
+    const { LIBRARY, settings } = await import('./fixtures')
+    const L: SimLayout = {
+      points: [
+        { id: 'A', x: 0, y: 0, type: 'stand', role: 'pick', name: 'A' }, { id: 'B', x: 150, y: 0, type: 'stand', role: 'drop', name: 'B' },
+        { id: 'J', x: 20, y: 0, type: 'junction' }, { id: 'C', x: 20, y: 20, type: 'charger', name: 'Charger 1' },
+      ],
+      segments: [{ id: 's1', a: 'J', b: 'C', dir: 'two', lane: 'single' }],
+      highways: [{ ...highwayFromEnds({ x: 0, y: 0 }, { x: 150, y: 0 }, 13.4, { id: 'h1', dir: 'two' }) }],
+    }
+    const flows = [{ id: 'f', fromPointId: 'A', toPointId: 'B', thruPerHr: 10, vehicleId: 'cb18' }]
+    const r = runInputs(L, flows, new Map(LIBRARY.map(v => [v.id, v])), B56_5_RULE, 0)
+    const S = createSim(r.layout, r.flows, LIBRARY, settings())!
+    expect(S).not.toBeNull()
+    runFor(S, 2 * 3600)
+    const t = results(S).types.find(x => x.vehicleId === 'cb18')!
+    expect(t.done).toBeGreaterThan(10)
+  })
+})

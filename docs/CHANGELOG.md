@@ -9,6 +9,9 @@
 - **Derived routes:** a highway's centre line becomes ordinary routes for the run (`withHighways`),
   joined to points on it, crossing highways and its ends — nothing derived is stored.
 - Data: `simLayout.highways` (optional; old projects load unchanged).
+- Editor: a selected highway's end handles sit above its lanes; the inspector shows its B56.5 status
+  (full speed · slowed · blocked) and the suggested-width working; the navigator lists highways; D
+  steps its direction. A full shift runs on a highway-only site (test).
 
 ## 2026-11-12 — Fleet simulation: easier flow linking
 

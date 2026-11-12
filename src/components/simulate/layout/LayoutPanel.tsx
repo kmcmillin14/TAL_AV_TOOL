@@ -6,12 +6,12 @@
 // (stations and routes — a click selects and centres).
 
 import { useEffect, useMemo, useRef, useState } from 'react'
-import type { ClearanceRule, SegmentClearance } from '@/src/calc/sim/clearance'
+import { laneWidthFt, type ClearanceRule, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { linkedFlows } from '@/src/calc/sim/readiness'
 import {
   FLOW_POINT_TYPES, flowTargets, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
-import type { SimLayout, SimObject, SimPoint, SimPointType, SimSegment } from '@/src/calc/sim/types'
+import type { SimHighway, SimLayout, SimObject, SimPoint, SimPointType, SimSegment } from '@/src/calc/sim/types'
 import { fieldDef, fieldsFor, fieldPatch, fieldState, type SimFieldDef } from '@/src/lib/simFields'
 import { fmtLength, lengthFromDisplay, lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
@@ -36,6 +36,9 @@ interface Props {
   onPoints: (ids: string[], patch: Partial<SimPoint>) => void
   onCurve: (id: string, kind: 'spline' | 'straight') => void
   onObject: (id: string, patch: Partial<SimObject>) => void
+  onHighway: (id: string, patch: Partial<SimHighway>) => void
+  /** The widest vehicle or payload the run drives, ft — a highway's suggested width (B56.5). */
+  envelopeFt: number
   onRepeat: (id: string, count: number, stepFt: number, dir: { x: number; y: number }) => void
   onCopy: () => void
   onSegment: (id: string, patch: Partial<SimSegment>) => void
@@ -240,6 +243,65 @@ export default function LayoutPanel(p: Props) {
     )
   }
 
+  if (sel?.kind === 'highway') {
+    const h = (p.layout.highways ?? []).find(q => q.id === sel.id)
+    if (!h) return null
+    const set = (patch: Partial<SimHighway>) => p.onHighway(h.id, patch)
+    const kind = { dir: h.dir, lane: h.lane }, env = p.envelopeFt
+    // Suggested width: the envelope plus the B56.5 clearance per side at full speed (shared between two
+    // lanes); below it the reduced clearance applies (slowed), below that it is blocked.
+    const full = laneWidthFt(kind, env, p.rule), low = laneWidthFt(kind, env, { ...p.rule, fullSpeedIn: p.rule.lowSpeedIn })
+    const suggested = Math.ceil(full * 10) / 10
+    const twoLanes = h.dir === 'two' && h.lane !== 'single'
+    const inch = (ft: number) => (p.unitSystem === 'metric' ? `${Math.round(ft * 304.8)} mm` : `${Math.round(ft * 120) / 10} in`)
+    const c = p.rule.fullSpeedIn / 12
+    const working = env > 0
+      ? (twoLanes ? `2 × ${inch(env)} envelope + ${p.rule.sharedBetweenVehicles ? 3 : 4} × ${inch(c)}` : `${inch(env)} envelope + 2 × ${inch(c)}`) + ` = ${inch(full)}`
+      : 'No vehicle drives it yet — the default aisle'
+    const mps = units.distance.toMetric(p.rule.thresholdFps).toFixed(1)
+    const status = !(env > 0) ? null : h.widthFt >= full - 1e-6 ? { word: 'Full speed', tone: 'good' } : h.widthFt >= low - 1e-6
+      ? { word: `Slowed below ${mps} m/s`, tone: 'warn' } : { word: `Blocked — under ${p.rule.lowSpeedIn} in clearance`, tone: 'bad' }
+    return (
+      <Inspector title={h.name || 'Highway'} onDelete={p.onDelete}>
+        <Summary items={[
+          ['Length', len(h.lengthFt)],
+          ['Width', len(h.widthFt)],
+          ['Direction', h.dir === 'two' ? (twoLanes ? 'Two-way · 2 lanes' : 'Two-way · 1 lane') : 'One-way'],
+          ['B56.5', status ? <span className={`sim-hw-status is-${status.tone}`}>{status.word.split(' — ')[0]}</span> : '—'],
+        ]} />
+        <Section title="Settings" open>
+          <label className="sim-field"><span>Name</span>
+            <input value={h.name ?? ''} maxLength={80} onChange={e => set({ name: e.target.value })} />
+          </label>
+          <label className="sim-field"><span>Direction</span>
+            <Segmented options={[{ id: 'two', label: 'Two-way' }, { id: 'ab', label: 'Start → end' }, { id: 'ba', label: 'End → start' }]} value={h.dir} onChange={dir => set({ dir })} />
+          </label>
+          {h.dir === 'two' && (
+            <label className="sim-field"><span>Lanes</span>
+              <Segmented options={[{ id: 'two', label: 'Two lanes' }, { id: 'single', label: 'Single lane' }]} value={h.lane ?? 'two'} onChange={lane => set({ lane })} />
+            </label>
+          )}
+          <Len u={p.unitSystem} label="Width" ft={h.widthFt} max={200} onFt={w => w && set({ widthFt: w })} />
+          <div className="sim-hw-suggest">
+            <span>Suggested <b className="num">{len(suggested)}</b> — {working}</span>
+            {Math.abs(h.widthFt - suggested) > 0.05 && <button type="button" className="btn btn-sm ghost" onClick={() => set({ widthFt: suggested })}>Use suggested</button>}
+          </div>
+          {status && status.tone !== 'good' && <p className={`sim-hw-status is-${status.tone}`}>{status.word}</p>}
+        </Section>
+        <Section title="Advanced">
+          <Len u={p.unitSystem} label="Length" ft={h.lengthFt} max={10000} onFt={l => l && l >= 2 && set({ lengthFt: l })} />
+          <label className="sim-field"><span>Angle (°)</span>
+            <input type="number" step="any" value={Math.round(h.angleDeg * 10) / 10} onChange={e => set({ angleDeg: Number(e.target.value) || 0 })} />
+          </label>
+          <div className="sim-field-row">
+            <Len u={p.unitSystem} label="Centre x" ft={h.x} signed onFt={x => x != null && set({ x })} />
+            <Len u={p.unitSystem} label="Centre y" ft={h.y} signed onFt={y => y != null && set({ y })} />
+          </div>
+        </Section>
+      </Inspector>
+    )
+  }
+
   if (sel?.kind === 'segment') {
     const s = p.layout.segments.find(q => q.id === sel.id)
     if (!s) return null
@@ -331,6 +393,17 @@ export default function LayoutPanel(p: Props) {
           ))}
         </ul>
       </Section>
+      {(p.layout.highways ?? []).length > 0 && (
+        <Section title={`Highways · ${p.layout.highways!.length}`} open>
+          <ul className="sim-nav">
+            {p.layout.highways!.map(h => (
+              <li key={h.id}><button type="button" onClick={() => p.onFocus({ kind: 'highway', id: h.id }, h)}>
+                <span className="nm">{h.name || 'Highway'}</span><span className="meta num">{len(h.lengthFt)} · {h.dir === 'two' ? '↔' : '→'}</span>
+              </button></li>
+            ))}
+          </ul>
+        </Section>
+      )}
       <Section title={`Routes · ${p.layout.segments.length}`}>
         <ul className="sim-nav">
           {nav.routes.map(({ q, a, b, ft, mid }) => (

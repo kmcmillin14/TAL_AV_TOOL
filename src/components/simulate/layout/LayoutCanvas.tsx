@@ -12,14 +12,15 @@ import { laneWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { segmentGeometry } from '@/src/calc/sim/geometry'
 import { hitTest, objectCorners, type DrawSnap, type FlowTarget } from '@/src/calc/sim/layoutEdit'
 import { fmtLength } from '@/src/lib/utils/units'
-import type { SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/types'
+import type { SimHighway, SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/types'
+import { highwayCorners, highwayEnds } from '@/src/calc/sim/highways'
 import type { ProjectFlow } from './useLayoutEditor'
 
 export type XY = { x: number; y: number }
 export type Handle = 'mid' | 'c1' | 'c2'
-export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string }
+export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string } | { kind: 'hwEnd'; id: string; end: 'a' | 'b' }
 export type Selection =
-  | { kind: 'point' | 'segment' | 'flow' | 'object'; id: string }
+  | { kind: 'point' | 'segment' | 'flow' | 'object' | 'highway'; id: string }
   | { kind: 'points'; ids: string[] }
   | null
 
@@ -108,6 +109,8 @@ interface Props {
   follow?: XY | null
   /** Point names on the map (Run mode can hide them). Default on. */
   showLabels?: boolean
+  /** Highway tool: the highway being dragged out. */
+  draftHighway?: SimHighway | null
   /** Flow tool: the points a flow can link to from its start (lit) or not (dimmed, with why). */
   flowTargets?: Map<string, FlowTarget> | null
   /** Flow tool: the hovered target's path along the routes, and its length. */
@@ -209,6 +212,8 @@ export default function LayoutCanvas(props: Props) {
   const hitAt = (at: XY, px: number, target: EventTarget): Hit => {
     const h = (target as Element).closest?.('[data-handle]')
     if (h) return { kind: 'handle', id: h.getAttribute('data-seg')!, which: h.getAttribute('data-handle') as Handle }
+    const e = (target as Element).closest?.('[data-hw-end]')
+    if (e) return { kind: 'hwEnd', id: e.getAttribute('data-hw')!, end: e.getAttribute('data-hw-end') as 'a' | 'b' }
     const d = (target as Element).closest?.('[data-dir]')
     if (d) return { kind: 'dir', id: d.getAttribute('data-dir')! }
     return hitTest(layout, at, POINT_PX * px, SEG_PX * px)
@@ -245,7 +250,7 @@ export default function LayoutCanvas(props: Props) {
   const shown = (p: SimPoint) => (offset?.ids.has(p.id) ? { ...p, x: p.x + offset.d.x, y: p.y + offset.d.y } : p)
   const pts = new Map(layout.points.map(p => [p.id, shown(p)]))
   const dpts = new Map(driven.points.map(p => [p.id, pts.get(p.id) ?? p]))
-  const selected = (kind: 'point' | 'segment' | 'flow' | 'object', id: string) =>
+  const selected = (kind: 'point' | 'segment' | 'flow' | 'object' | 'highway', id: string) =>
     (selection?.kind === kind && selection.id === id) || (kind === 'point' && selection?.kind === 'points' && selection.ids.includes(id))
   const px = 1 / view.ppf                       // one screen pixel, in feet
   const lanes = props.laneWidths ?? {}
@@ -315,13 +320,17 @@ export default function LayoutCanvas(props: Props) {
         {image && <image href={image.href} x={0} y={0} width={image.widthFt} height={image.heightFt} preserveAspectRatio="none" className="sim-drawing" />}
 
         {(layout.objects ?? []).map(o => <ObjectShape key={o.id} o={o} selected={selected('object', o.id)} />)}
+        {(layout.highways ?? []).map(h => <HighwayShape key={h.id} h={h} px={px} selected={selected('highway', h.id)} />)}
+        {props.draftHighway && <HighwayShape h={props.draftHighway} px={px} draft />}
 
-        {clearances && <ClearanceOverlay layout={layout} results={clearances} px={px} />}
+        {clearances && <ClearanceOverlay layout={driven} results={clearances} px={px} />}
 
         {driven.segments.map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} />)}
         {driven.segments.map(s => (
-          <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} selected={selected('segment', s.id.split('~')[0])} />
+          <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} selected={selected('segment', s.id.split('~')[0]) || (!!s.highwayId && selected('highway', s.highwayId))} />
         ))}
+        {/* The selected highway's end handles, above its lanes so a press reaches them. */}
+        {(layout.highways ?? []).filter(h => selected('highway', h.id)).map(h => <HighwayEnds key={h.id} h={h} px={px} />)}
 
         {showFlows && flows.map(f => {
           const a = f.fromPointId && pts.get(f.fromPointId), b = f.toPointId && pts.get(f.toPointId)
@@ -618,6 +627,25 @@ function NamePill({ y, text }: { y: number; text: string }) {
       <text y={y - 6.5}>{text}</text>
     </g>
   )
+}
+
+/** A highway: its rectangle (the aisle's real width). Its lanes are drawn as routes (derived). */
+function HighwayShape({ h, selected, draft }: { h: SimHighway; px?: number; selected?: boolean; draft?: boolean }) {
+  return (
+    <g className={`sim-highway${selected ? ' is-selected' : ''}${draft ? ' is-draft' : ''}`}>
+      <polygon points={highwayCorners(h).map(q => `${q.x},${q.y}`).join(' ')} vectorEffect="non-scaling-stroke" />
+    </g>
+  )
+}
+
+/** A selected highway's end handles: drag one to stretch or turn it. */
+function HighwayEnds({ h, px }: { h: SimHighway; px: number }) {
+  const { a, b } = highwayEnds(h)
+  return <>{([['a', a], ['b', b]] as const).map(([end, q]) => (
+    <g key={end} transform={`translate(${q.x} ${q.y}) scale(${px})`} className="sim-handle sim-hw-end" data-hw-end={end} data-hw={h.id}>
+      <circle r={7} />
+    </g>
+  ))}</>
 }
 
 function ObjectShape({ o, selected }: { o: SimObject; selected: boolean }) {
