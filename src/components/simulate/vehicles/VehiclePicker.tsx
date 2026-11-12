@@ -8,6 +8,9 @@ import Icon from '@/src/design-system/components/Icon'
 import TrafficLight from '@/src/design-system/components/TrafficLight'
 import type { VehicleChoice } from '@/src/calc/sim/simVehicles'
 
+/** Step 2's compatibility in the spec's words (spec: Simulation vehicles). */
+const STATUS_WORD = { GREEN: 'Compatible', YELLOW: 'Review required', INCOMPLETE: 'Not checked', RED: 'Not compatible' } as const
+
 interface Props {
   choices: VehicleChoice[]
   /** Vehicle ids already in the simulation (shown ticked, not addable again). */
@@ -19,12 +22,15 @@ interface Props {
 export default function VehiclePicker({ choices, added, onAdd, onClose }: Props) {
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const dialog = useRef<HTMLDivElement>(null)
+  const close = useRef(onClose)
+  useEffect(() => { close.current = onClose })
+  // Focus the first card once, on open (not on every re-render of the page behind it).
   useEffect(() => {
-    dialog.current?.querySelector<HTMLElement>('button:not(:disabled)')?.focus()
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    dialog.current?.querySelector<HTMLElement>('.sim-vcard:not(:disabled)')?.focus()
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') close.current() }
     window.addEventListener('keydown', esc)
     return () => window.removeEventListener('keydown', esc)
-  }, [onClose])
+  }, [])
   const toggle = (id: string) => setPicked(s => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n })
   const n = picked.size
 
@@ -51,7 +57,7 @@ export default function VehiclePicker({ choices, added, onAdd, onClose }: Props)
                   <span className="sim-vcard-name">{v.name}</span>
                   <span className="sim-vcard-mfr">{v.display.manufacturer}</span>
                   <span className="sim-vcard-tags">
-                    <TrafficLight status={status} />
+                    <span className={`sim-vcard-status is-${status.toLowerCase()}`}><TrafficLight status={status} showLabel={false} />{STATUS_WORD[status]}</span>
                     {sizing && <span className="sim-chip sm">Sizing</span>}
                     {isAdded && <span className="sim-chip sm">Added</span>}
                   </span>

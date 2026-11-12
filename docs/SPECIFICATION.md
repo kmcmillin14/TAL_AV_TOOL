@@ -887,19 +887,23 @@ step ribbon is unchanged.
       **static calc** (the Fleet Engine for the flows as simulated) beside the **simulated** count (the
       stepper; Reset to engine), and **Remove**.
     - *Prefill:* with no change made, the types are Sizing's vehicles in the order its flows use them,
-      each carrying Step 1's first load; nothing is stored until a type, payload or flow vehicle is
+      each carrying Step 1's largest load (the widest — the one that sizes the aisles); nothing is stored until a type, payload or flow vehicle is
       changed (`simSettings.vehicles`), so Sizing's changes keep flowing in until then. With no
       vehicle in Sizing the list starts empty — **+ Vehicle** — so the simulation can come first.
     - *Per flow:* the flow inspector's Vehicle lists only the types, starting from Sizing's vehicle
-      for the flow ("Sizing: CB18 AGF" when different; `simSettings.flowVehicle`). A flow whose vehicle
-      is not a type — none in Sizing, or a type removed — runs as the first type. A flow moved to
-      another vehicle takes that vehicle's default transfer method.
+      for the flow ("Sizing: CB18 AGF" when different; `simSettings.flowVehicle`). A flow whose Sizing
+      vehicle was removed from the types runs as the first type. A flow with no vehicle in Sizing runs
+      as the first type only while no flow has one (simulate first); otherwise it stays out, as in
+      Sizing — and choosing one in the inspector gives it its first vehicle in Sizing (it is filled in,
+      not overridden). A flow moved to another vehicle takes that vehicle's default transfer method.
+      The Flows tab shows each flow's simulation vehicle, tagged *sim only* when it differs.
     - *Sizing → Simulation → Price:* Sizing's flows are never changed. While every flow runs on its
       Sizing vehicle, the run speaks for Sizing (verdict chip, **Use N in pricing**). Otherwise Run
       reads "Simulated vehicles differ from Sizing — the price uses Sizing's", shows the Fleet Engine
       figure for the flows as simulated, saves no verdict and offers no Use N in pricing; "Reset to
       engine" clears only its own vehicles' steppers. A stored switch from the earlier switcher
-      (`vehicleAs`) becomes a one-type list.
+      (`vehicleAs`) becomes a one-type list. The run's inputs key includes the payloads of the vehicles
+      the flows use, once the types are stored; an unused type does not mark a result stale.
   - *Easier flow linking (owner, 2026-11-12).*
     - With the Flow tool, clicking a **Pick** lights up every Drop it can link to and dims the rest;
       clicking a **Drop** first does the same for Picks (the flow still runs Pick → Drop); a **Pick &

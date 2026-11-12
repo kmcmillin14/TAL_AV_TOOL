@@ -4,9 +4,9 @@
 // calc → simulated fleet — and + Vehicle. A chip opens its payload (a Step 1 load or custom L × W × H),
 // both counts with the simulated stepper, and Remove. Simulation only: Sizing is never changed.
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import Icon from '@/src/design-system/components/Icon'
-import type { SimPayload, SimVehicleType, VehicleChoice } from '@/src/calc/sim/simVehicles'
+import { largestLoad, type SimPayload, type SimVehicleType, type VehicleChoice } from '@/src/calc/sim/simVehicles'
 import { units, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import VehiclePicker from './VehiclePicker'
@@ -44,7 +44,7 @@ export default function VehicleBar(p: Props) {
   const added = new Set(p.types.map(t => t.vehicleId))
   const setType = (vid: string, patch: Partial<SimVehicleType>) => p.onTypes(p.types.map(t => (t.vehicleId === vid ? { ...t, ...patch } : t)))
   const add = (ids: string[]) => {
-    const payload = p.loads[0] ? { loadId: p.loads[0].id } : undefined
+    const big = largestLoad(p.loads), payload = big ? { loadId: big.id } : undefined
     p.onTypes([...p.types, ...ids.map(vehicleId => ({ vehicleId, ...(payload ? { payload } : {}) }))])
     setPicking(false)
   }
@@ -87,24 +87,27 @@ function TypePopover({ t, v, st, sim, stepped, loads, u, onPayload, onFleet, onR
   onPayload: (p: SimPayload | undefined) => void; onFleet: (n: number | undefined) => void; onRemove: () => void; onClose: () => void
 }) {
   const box = useRef<HTMLDivElement>(null)
+  const close = useRef(onClose)
+  useEffect(() => { close.current = onClose })
   useEffect(() => {
-    const out = (e: PointerEvent) => { if (!box.current?.parentElement?.contains(e.target as Node)) onClose() }
-    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const out = (e: PointerEvent) => { if (!box.current?.parentElement?.contains(e.target as Node)) close.current() }
+    const esc = (e: KeyboardEvent) => { if (e.key === 'Escape') close.current() }
     window.addEventListener('pointerdown', out); window.addEventListener('keydown', esc)
     return () => { window.removeEventListener('pointerdown', out); window.removeEventListener('keydown', esc) }
-  }, [onClose])
+  }, [])
+  // Near the right edge it opens leftward, so the stepper and Remove stay on screen.
+  const [flip, setFlip] = useState(false)
+  useLayoutEffect(() => { const r = box.current?.getBoundingClientRect(); if (r && r.right > document.documentElement.clientWidth - 8) setFlip(true) }, [])
   const custom = t.payload && !('loadId' in t.payload) ? t.payload : null
   const which = !t.payload ? '' : 'loadId' in t.payload ? t.payload.loadId : CUSTOM
-  const toIn = (x: number) => (u === 'metric' ? units.dimension.toImperial(x) : x)
-  const fromIn = (i?: number) => (i == null ? '' : u === 'metric' ? Math.round(units.dimension.toMetric(i)) : Math.round(i * 10) / 10)
-  const setDim = (k: 'lengthIn' | 'widthIn' | 'heightIn', raw: string) => {
-    const n = Number(raw) > 0 ? toIn(Number(raw)) : undefined
+  /** A dimension typed in: stored (inches) once it is a positive number; height may be cleared. */
+  const setDim = (k: 'lengthIn' | 'widthIn' | 'heightIn', inches: number | undefined) => {
     const base = custom ?? { lengthIn: 48, widthIn: 40 }
-    if (k === 'heightIn') { const { heightIn: _h, ...rest } = base; onPayload(n ? { ...rest, heightIn: n } : rest) }
-    else if (n) onPayload({ ...base, [k]: n })
+    if (k === 'heightIn') { const { heightIn: _h, ...rest } = base; onPayload(inches ? { ...rest, heightIn: inches } : rest) }
+    else if (inches) onPayload({ ...base, [k]: inches })
   }
   return (
-    <div className="sim-vpop" ref={box} role="dialog" aria-label={v?.name ?? t.vehicleId}>
+    <div className={`sim-vpop${flip ? ' is-flip' : ''}`} ref={box} role="dialog" aria-label={v?.name ?? t.vehicleId}>
       <label className="sim-field"><span>Payload</span>
         <select value={which} onChange={e => onPayload(e.target.value === CUSTOM ? custom ?? { lengthIn: 48, widthIn: 40 } : e.target.value ? { loadId: e.target.value } : undefined)}>
           <option value="">None — the vehicle alone</option>
@@ -116,10 +119,7 @@ function TypePopover({ t, v, st, sim, stepped, loads, u, onPayload, onFleet, onR
         <div className="sim-field-row sim-vpop-dims">
           {(['lengthIn', 'widthIn', 'heightIn'] as const).map(k => (
             <label key={k} className="sim-field"><span>{k === 'lengthIn' ? 'L' : k === 'widthIn' ? 'W' : 'H'}</span>
-              <span className="sim-input-unit">
-                <input type="number" min={0} step="any" value={fromIn(custom[k])} onChange={e => setDim(k, e.target.value)} />
-                <span>{units.dimension.label(u)}</span>
-              </span>
+              <DimInput inches={custom[k]} u={u} onInches={i => setDim(k, i)} />
             </label>
           ))}
         </div>
@@ -140,5 +140,23 @@ function TypePopover({ t, v, st, sim, stepped, loads, u, onPayload, onFleet, onR
         <button type="button" className="link-btn danger" onClick={onRemove}>Remove</button>
       </div>
     </div>
+  )
+}
+
+/** A dimension field (in or mm) that keeps what is typed — an empty or partial entry is not snapped
+ *  back to the stored value; it is stored once it is a positive number, and shown again on blur. */
+function DimInput({ inches, u, onInches }: { inches?: number; u: UnitSystem; onInches: (inches: number | undefined) => void }) {
+  const shown = (i?: number) => (i == null ? '' : String(u === 'metric' ? Math.round(units.dimension.toMetric(i)) : Math.round(i * 10) / 10))
+  const [draft, setDraft] = useState<string | null>(null)
+  return (
+    <span className="sim-input-unit">
+      <input type="number" min={0} step="any" value={draft ?? shown(inches)} onBlur={() => setDraft(null)}
+        onChange={e => {
+          setDraft(e.target.value)
+          const n = Number(e.target.value)
+          onInches(n > 0 ? (u === 'metric' ? units.dimension.toImperial(n) : n) : undefined)
+        }} />
+      <span>{units.dimension.label(u)}</span>
+    </span>
   )
 }

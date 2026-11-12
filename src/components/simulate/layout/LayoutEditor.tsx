@@ -714,6 +714,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
               <FlowsList
                 layout={layout}
                 flows={flows}
+                simVehicleOf={simVehicleOf}
                 vehicleById={vehicleById}
                 settings={settings}
                 fleet={fleet}

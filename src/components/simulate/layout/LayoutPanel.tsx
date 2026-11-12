@@ -367,13 +367,14 @@ export default function LayoutPanel(p: Props) {
         <label className="sim-field"><span>Moves per hour</span>
           <input type="number" min={0} step="any" value={flow.thruPerHr || ''} ref={rateRef} onKeyDown={e => { if (e.key === 'Escape') e.currentTarget.blur() }} onChange={e => p.onFlow(flow.id, { thruPerHr: Math.max(0, Number(e.target.value) || 0) })} />
         </label>
-        {/* Simulation only: the types the simulation runs (Sizing keeps the flow's own vehicle). */}
+        {/* The types the simulation runs. A flow with a Sizing vehicle keeps it (the choice is the
+            simulation's); a flow with none yet — e.g. drawn here — gets its first vehicle in Sizing. */}
         <label className="sim-field"><span>Vehicle</span>
-          <select value={simVid ?? ''} disabled={!p.vehicleTypes.length || !p.onFlowVehicle} onChange={e => p.onFlowVehicle?.(flow.id, e.target.value)}>
+          <select value={simVid ?? ''} disabled={!p.vehicleTypes.length || !p.onFlowVehicle} onChange={e => (flow.vehicleId ? p.onFlowVehicle?.(flow.id, e.target.value) : p.onFlow(flow.id, { vehicleId: e.target.value, transferMethodIdx: undefined }))}>
             {!p.vehicleTypes.length && <option value="">Add a vehicle first</option>}
             {p.vehicleTypes.map(v => <option key={v.id} value={v.id}>{v.name}</option>)}
           </select>
-          {simVid !== flow.vehicleId && <small className="sim-field-note">Sizing: {p.vehicles.find(v => v.id === flow.vehicleId)?.name ?? 'no vehicle'}</small>}
+          {flow.vehicleId && simVid !== flow.vehicleId && <small className="sim-field-note">Sizing: {p.vehicles.find(v => v.id === flow.vehicleId)?.name ?? 'no vehicle'}</small>}
         </label>
         <button type="button" className="link-btn" onClick={() => p.onUnlink(flow.id)}>Unlink from points</button>
       </Inspector>

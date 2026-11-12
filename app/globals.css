@@ -5694,6 +5694,7 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-vadd { padding: 0 16px; color: var(--text-secondary); border-style: dashed; }
 .sim-vadd:hover { color: var(--text-primary); }
 .sim-vpop { position: absolute; top: calc(100% + 8px); left: 0; z-index: 30; width: 300px; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
+.sim-vpop.is-flip { left: auto; right: 0; }
 .sim-vpop-dims .sim-field { flex: 1; min-width: 0; }
 .sim-vpop-counts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 12px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); }
 .sim-vpop-counts > div { display: flex; flex-direction: column; gap: 4px; }
@@ -5728,6 +5729,9 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-vcard-tags { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
 .sim-vcard-tags .sim-chip { padding: 4px 8px; }
 .sim-vcard-tags .sim-chip::before { display: none; }
+.sim-vcard-status { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 600; color: var(--text-secondary); }
+.sim-vcard-status.is-green { color: var(--good); } .sim-vcard-status.is-yellow { color: var(--warn); } .sim-vcard-status.is-red { color: var(--bad); }
+.sim-vcard-status .traffic-light { padding: 0; background: none; border: 0; }
 .sim-vcard-why { margin-top: 4px; font-size: 12px; color: var(--bad); }
 .sim-vpick-foot { display: flex; justify-content: flex-end; gap: 8px; padding: 16px 24px 24px; }
 .sim-vpick-foot .btn { height: 44px; }

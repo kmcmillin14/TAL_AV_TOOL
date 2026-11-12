@@ -10,12 +10,18 @@
   run size each flow's loaded envelope from its own type's payload (was: the largest Step 1 load for
   every flow). Engine: `SimSettings.payloadFt` is now per vehicle id.
 - **Per-flow vehicle** in the flow inspector, from the types, starting from Sizing's ("Sizing: …" when
-  different). A flow whose vehicle is not a type runs as the first type.
-- **Prefill:** with nothing changed, the types are Sizing's vehicles, each with Step 1's first load.
+  different); a flow with no vehicle in Sizing gets its first one there. The Flows tab shows the
+  simulation vehicle (*sim only* when different).
+- **Prefill:** with nothing changed, the types are Sizing's vehicles, each with Step 1's largest load.
   Data: `simSettings.vehicles`, `simSettings.flowVehicle` (optional); an earlier `vehicleAs` becomes a
   one-type list. `src/calc/sim/simVehicles.ts` replaces `switcher.ts`.
 - Sizing is never changed; when the simulated vehicles differ, Run says so, saves no verdict and offers
   no Use N in pricing (as before).
+- Code review: a Sizing flow with no vehicle stays out of the run (as in Sizing) unless no flow has one,
+  so it no longer makes every run "differ"; the inputs key hashes only the payloads of vehicles the
+  flows use; the prefill carries Step 1's largest load (as the run did before); custom dimensions can
+  be cleared while typing; the + Vehicle window keeps focus; the popover opens leftward near the edge;
+  cards say Compatible · Review required · Not checked; one writer for the simulated count.
 
 ## 2026-11-12 — Fleet simulation: highways (Milestone 7, part 1)
 

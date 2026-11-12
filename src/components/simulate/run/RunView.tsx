@@ -48,6 +48,8 @@ interface Props {
   /** Some flow runs on a vehicle other than its Sizing one (simulation vehicles): the run then never
    *  speaks for Sizing or the price. */
   differs: boolean
+  /** Set a type's simulated count (the page's one writer of the stepper). */
+  onFleet: (vehicleId: string, n: number) => void
 }
 
 const clock = (t: number) => {
@@ -69,7 +71,7 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 /** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs }: Props) {
+export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet }: Props) {
   const simSettings = project.simSettings ?? {}
   /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
   const forSizing = !differs
@@ -208,11 +210,6 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   /** Stable, so the memoized Run details do not re-render every frame. */
   const openAll = useCallback(() => onAssumptions(null), [onAssumptions])
 
-  const setFleet = (vid: string, n: number) => {
-    const next = { ...(simSettings.fleet ?? {}), [vid]: Math.max(1, Math.min(500, n)) }
-    if (next[vid] === engineFleet[vid]) delete next[vid]
-    patchSimSettings(project.id, { fleet: next })
-  }
 
   const S = live.current
   const followed = S && follow >= 0 ? S.veh[follow] : null

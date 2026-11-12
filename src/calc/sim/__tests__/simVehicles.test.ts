@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { payloadFtOf, payloadsByVehicle, simFlows, simVehicleTypes, vehicleChoices } from '../simVehicles'
-import { runInputs } from '../runInputs'
+import { runInputs, simInputsKey } from '../runInputs'
 import { B56_5_RULE } from '../clearance'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
 import { LIBRARY } from './fixtures'
@@ -24,6 +24,7 @@ describe('simulation vehicles (simulation only)', () => {
     expect(simVehicleTypes(undefined, flows, loads)).toEqual([{ vehicleId: 'b', payload: { loadId: 'L1' } }, { vehicleId: 'a', payload: { loadId: 'L1' } }])
     expect(simVehicleTypes(undefined, flows, [])).toEqual([{ vehicleId: 'b' }, { vehicleId: 'a' }])
     expect(simVehicleTypes(undefined, flows, loads, 'm')).toEqual([{ vehicleId: 'm', payload: { loadId: 'L1' } }])
+    expect(simVehicleTypes(undefined, flows, [...loads].reverse())[0].payload).toEqual({ loadId: 'L1' })   // the largest load, wherever it is
     expect(simVehicleTypes([], flows, loads)).toEqual([])                       // emptied on purpose
   })
 
@@ -34,17 +35,20 @@ describe('simulation vehicles (simulation only)', () => {
     expect(payloadsByVehicle([{ vehicleId: 'a', payload: { loadId: 'L1' } }, { vehicleId: 'b' }], loads)).toEqual({ a: { length: 4, width: 40 / 12 } })
   })
 
-  it('runs each flow on its chosen type, else its Sizing vehicle, else the first type', () => {
+  it('runs each flow on its chosen type, else its Sizing vehicle, else (type removed) the first type', () => {
     const flows = [{ id: '1', vehicleId: 'a', transferMethodIdx: 2 }, { id: '2', vehicleId: 'gone' }, { id: '3' }, { id: '4', vehicleId: 'a' }]
     const types = [{ vehicleId: 'b' }, { vehicleId: 'a' }]
     const r = simFlows(flows, types, { 4: 'b', 1: 'nope' })
     expect(r.changed).toBe(true)
-    expect(r.flows.map(f => f.vehicleId)).toEqual(['a', 'b', 'b', 'b'])
+    expect(r.flows.map(f => f.vehicleId)).toEqual(['a', 'b', undefined, 'b'])   // no Sizing vehicle: out, as in Sizing
     expect(r.flows[0]).toBe(flows[0])                                            // unchanged flow kept
     expect(r.flows[3]).not.toHaveProperty('transferMethodIdx')
     const same = [{ id: '1', vehicleId: 'a' }]
     expect(simFlows(same, [{ vehicleId: 'a' }])).toEqual({ flows: same, changed: false })
     expect(simFlows([{ id: '1' }], []).changed).toBe(false)                     // nothing to run yet
+    expect(simFlows([{ id: '1' }, { id: '2' }], types).flows.map(f => f.vehicleId)).toEqual(['b', 'b'])   // simulate first
+    const one = [{ id: '1', vehicleId: 'a' }, { id: '2' }]
+    expect(simFlows(one, [{ vehicleId: 'a' }])).toEqual({ flows: one, changed: false })                    // an unassigned flow does not make the run differ
   })
 
   it("each type's payload sets the lanes its own flows drive", () => {
@@ -58,5 +62,17 @@ describe('simulation vehicles (simulation only)', () => {
     const r = runInputs(L, flows, new Map(LIBRARY.map(v => [v.id, v])), B56_5_RULE, { [v1.id]: { width: 20 } })
     expect(r.laneWidths.AB).toBeGreaterThan(20)
     expect(r.laneWidths.CD).toBeLessThan(20)
+  })
+
+  it('the inputs key moves with the payloads of the vehicles the flows use — not with unused types', () => {
+    const flows = [{ id: '1', fromPointId: 'A', toPointId: 'B', thruPerHr: 5, vehicleId: 'a' }]
+    const base = { flows, loads, simSettings: {} }
+    const k0 = simInputsKey(base)
+    const k1 = simInputsKey({ ...base, simSettings: { vehicles: [{ vehicleId: 'a', payload: { loadId: 'L1' } }, { vehicleId: 'z', payload: { loadId: 'L2' } }] } })
+    const k2 = simInputsKey({ ...base, simSettings: { vehicles: [{ vehicleId: 'a', payload: { loadId: 'L1' } }] } })
+    const k3 = simInputsKey({ ...base, simSettings: { vehicles: [{ vehicleId: 'a', payload: { loadId: 'L2' } }] } })
+    expect(k1).toBe(k2)
+    expect(k3).not.toBe(k2)
+    expect(k0).toBe(simInputsKey(base))
   })
 })

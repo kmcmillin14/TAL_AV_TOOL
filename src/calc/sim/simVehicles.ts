@@ -31,13 +31,18 @@ export function vehicleChoices(vehicles: Vehicle[], app: ApplicationRequirements
 
 /**
  * The types the simulation runs: the stored list once changed; else Sizing's vehicles in the order its
- * flows use them (an earlier switch, `vehicleAs`, as a one-type list), each carrying Step 1's first load.
+ * flows use them (an earlier switch, `vehicleAs`, as a one-type list), each carrying Step 1's largest load.
  */
-export function simVehicleTypes(stored: SimVehicleType[] | undefined, sizingFlows: { vehicleId?: string }[], loads: { id: string }[], vehicleAs?: string): SimVehicleType[] {
+export function simVehicleTypes(stored: SimVehicleType[] | undefined, sizingFlows: { vehicleId?: string }[], loads: LoadDims[], vehicleAs?: string): SimVehicleType[] {
   if (stored) return stored
-  const payload = loads[0] ? { loadId: loads[0].id } : undefined
+  const big = largestLoad(loads), payload = big ? { loadId: big.id } : undefined
   const ids = vehicleAs ? [vehicleAs] : [...new Set(sizingFlows.flatMap(f => (f.vehicleId ? [f.vehicleId] : [])))]
   return ids.map(vehicleId => ({ vehicleId, ...(payload ? { payload } : {}) }))
+}
+
+/** The load a new type carries: Step 1's widest (then longest) — the one that sizes the aisles. */
+export function largestLoad<L extends LoadDims>(loads: L[]): L | undefined {
+  return [...loads].sort((a, b) => (b.widthIn ?? 0) - (a.widthIn ?? 0) || (b.lengthIn ?? 0) - (a.lengthIn ?? 0))[0]
 }
 
 /** A payload's footprint, ft — null when it has no dimensions (or its Step 1 load is gone). */
@@ -54,16 +59,21 @@ export function payloadsByVehicle(types: SimVehicleType[], loads: LoadDims[]): R
 
 /**
  * The flows as the simulation runs them: each on its chosen vehicle (`flowVehicle`), else its Sizing
- * vehicle, when that is a type; else the first type. A flow moved off its Sizing vehicle drops its
+ * vehicle, when that is a type; a flow whose Sizing vehicle was removed from the types runs as the
+ * first type. A flow with no vehicle in Sizing runs as the first type only while no flow has one
+ * (simulate first); otherwise it stays out of the run, as in Sizing. A flow moved off its Sizing vehicle drops its
  * transfer choice (the method index and timing belong to that vehicle) and takes the new one's default.
  * `changed`: some flow does not run on its Sizing vehicle, so the run cannot speak for Sizing or the
  * price. The same array comes back when nothing changes.
  */
 export function simFlows<F extends FlowVehicle>(flows: F[], types: SimVehicleType[], flowVehicle: Record<string, string> = {}): { flows: F[]; changed: boolean } {
   const ids = new Set(types.map(t => t.vehicleId)), first = types[0]?.vehicleId
+  const none = !flows.some(f => f.vehicleId)
   const target = (f: F) => {
     const chosen = flowVehicle[f.id]
-    return chosen && ids.has(chosen) ? chosen : f.vehicleId && ids.has(f.vehicleId) ? f.vehicleId : first
+    if (chosen && ids.has(chosen)) return chosen
+    if (!f.vehicleId) return none ? first : undefined
+    return ids.has(f.vehicleId) ? f.vehicleId : first
   }
   const changed = flows.some(f => target(f) !== f.vehicleId)
   if (!changed) return { flows, changed }

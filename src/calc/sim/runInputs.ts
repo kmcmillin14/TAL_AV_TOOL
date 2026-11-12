@@ -7,6 +7,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { applyClearance, B56_5_RULE, envelopes, laneWidthFt, segmentClearances, type ClearanceRule, type SegmentClearance } from './clearance'
 import { roundCorners } from './corners'
 import { withHighways } from './highways'
+import { payloadsByVehicle, type SimVehicleType } from './simVehicles'
 import { linkedFlows, type ProjectFlowLike } from './readiness'
 import type { SimFlow, SimLayout } from './types'
 
@@ -65,7 +66,7 @@ export interface SimInputsLike {
   hoursPerShift?: number | null
   shiftsPerDay?: number | null
   targetUtilization?: number | null
-  simSettings?: { pacePct?: number; safetyFt?: number; arrivals?: string; demandPct?: number; seed?: number; clearance?: unknown; overrides?: unknown; vehicles?: unknown; flowVehicle?: unknown } | null
+  simSettings?: { pacePct?: number; safetyFt?: number; arrivals?: string; demandPct?: number; seed?: number; clearance?: unknown; overrides?: unknown; vehicles?: unknown } | null
 }
 
 /**
@@ -86,13 +87,17 @@ export function simInputsKey(p: SimInputsLike, vehicles?: Map<string, Vehicle>):
     p.simLayout ? [p.simLayout.points, p.simLayout.segments, p.simLayout.objects ?? [], ...(p.simLayout.highways?.length ? [p.simLayout.highways] : [])] : null,
     flows, used, p.loads ?? [], p.hoursPerShift ?? null, p.shiftsPerDay ?? null, p.targetUtilization ?? null,
     [ss.pacePct, ss.safetyFt, ss.arrivals, ss.demandPct, ss.seed, ss.clearance, overrides].map(x => x ?? null),
-    // The simulation's vehicles and payloads, once chosen (absent: Sizing's — older keys unchanged).
-    ...(ss.vehicles || ss.flowVehicle ? [[ss.vehicles ?? null, ss.flowVehicle ?? null]] : []),
+    // Once the simulation's vehicles are chosen, the payloads of those the flows use (absent: Sizing's
+    // vehicles with the largest load — older keys unchanged). Unused types are not inputs.
+    ...(ss.vehicles ? [usedPayloads(ss.vehicles as SimVehicleType[], ids, (p.loads ?? []) as { id: string }[])] : []),
   ])
   let h = 0x811c9dc5
   for (let i = 0; i < json.length; i++) { h ^= json.charCodeAt(i); h = Math.imul(h, 0x01000193) }
   return (h >>> 0).toString(36)
 }
+
+const usedPayloads = (types: SimVehicleType[], ids: string[], loads: { id: string }[]) =>
+  Object.entries(payloadsByVehicle(types.filter(t => ids.includes(t.vehicleId)), loads)).sort(([a], [b]) => a.localeCompare(b))
 
 /**
  * Where an applied simulated fleet stands (D-1): `unused` — the engine now sizes as many or more, so

@@ -127,7 +127,7 @@ export function ValidationList({ checks, status, onLocate, onDetails, onFix }: {
 /** The Flows tab: every flow as two lines — from → to, then vehicle · moves/h · distance — with the
  *  layout distance and its Δ while a link is pending; the Fleet Engine line and "Use layout
  *  distances" (before → after confirmation) at its foot. */
-export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSystem, radiusFor, onFlows, onSelect, selectedId }: {
+export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSystem, radiusFor, onFlows, onSelect, selectedId, simVehicleOf }: {
   layout: SimLayout
   flows: ProjectFlow[]
   vehicleById: Map<string, Vehicle>
@@ -137,6 +137,8 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
   radiusFor: (vehicleId?: string) => number
   onFlows: (next: ProjectFlow[]) => void
   onSelect: (flowId: string) => void
+  /** Each flow's simulation vehicle (shown when it differs from Sizing's). */
+  simVehicleOf?: Map<string, string | undefined>
   selectedId?: string
 }) {
   const [confirm, setConfirm] = useState(false)
@@ -168,7 +170,7 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
               <span className="n num">{i + 1}</span>
               <span className="nm">{linked ? `${name(f.fromPointId)} → ${name(f.toPointId)}` : `${f.origin || '—'} → ${f.destination || '—'}`}</span>
               <span className="meta">
-                {(f.vehicleId && vehicleById.get(f.vehicleId)?.name) || 'No vehicle'} · <span className="num">{f.thruPerHr || 0}</span>/h · <span className="num">{fmt(f.distanceFt)}</span>
+                {(() => { const sv = simVehicleOf?.get(f.id) ?? f.vehicleId; return (sv && vehicleById.get(sv)?.name) || 'No vehicle' })()}{simVehicleOf && simVehicleOf.get(f.id) !== f.vehicleId && <span className="sim-tag">sim only</span>} · <span className="num">{f.thruPerHr || 0}</span>/h · <span className="num">{fmt(f.distanceFt)}</span>
                 {linked ? <span className="sim-tag">layout</span> : !would && <span className="sim-tag is-off">not placed</span>}
                 {would && <span className={d != null && Math.abs(d) >= 0.5 ? 'warn' : ''}> → <span className="num">{fmt(would.distanceFt)}</span> ({d! > 0 ? '+' : ''}{lengthToDisplay(d!, unitSystem).toFixed(0)})</span>}
               </span>
