@@ -46,7 +46,7 @@ describe('simulation vehicles (simulation only)', () => {
     const same = [{ id: '1', vehicleId: 'a' }]
     expect(simFlows(same, [{ vehicleId: 'a' }])).toEqual({ flows: same, changed: false })
     expect(simFlows([{ id: '1' }], []).changed).toBe(false)                     // nothing to run yet
-    expect(simFlows([{ id: '1' }, { id: '2' }], types).flows.map(f => f.vehicleId)).toEqual(['b', 'b'])   // simulate first
+    expect(simFlows<{ id: string; vehicleId?: string }>([{ id: '1' }, { id: '2' }], types).flows.map(f => f.vehicleId)).toEqual(['b', 'b'])   // simulate first
     const one = [{ id: '1', vehicleId: 'a' }, { id: '2' }]
     expect(simFlows(one, [{ vehicleId: 'a' }])).toEqual({ flows: one, changed: false })                    // an unassigned flow does not make the run differ
   })

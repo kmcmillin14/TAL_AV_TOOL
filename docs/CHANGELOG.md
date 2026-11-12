@@ -21,7 +21,8 @@
   so it no longer makes every run "differ"; the inputs key hashes only the payloads of vehicles the
   flows use; the prefill carries Step 1's largest load (as the run did before); custom dimensions can
   be cleared while typing; the + Vehicle window keeps focus; the popover opens leftward near the edge;
-  cards say Compatible · Review required · Not checked; one writer for the simulated count.
+  cards say Compatible · Review required · Not checked; one writer for the simulated count (tested,
+  simulate-first included).
 
 ## 2026-11-12 — Fleet simulation: highways (Milestone 7, part 1)
 
