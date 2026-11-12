@@ -75,6 +75,8 @@
   --info-soft:      rgba(95, 168, 224, 0.18);
   /* Fleet Simulation point roles (spec v2 §5.2): Pick blue, Drop violet */
   --sim-pick:       #5fa8e0;
+  --sim-sel:        #0a84ff;   /* selection, active tool, snaps (QoL pass) — red is for Run */
+  --sim-sel-soft:   rgba(10, 132, 255, 0.18);
   --sim-drop:       #b18cf2;
   --sim-charger:    #2dd4bf;
   --sim-parking:    #8a8a94;
@@ -117,6 +119,8 @@
   --info-soft:      rgba(34, 116, 165, 0.10);
   --shadow-card:    0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
   --sim-pick:       #2274A5;
+  --sim-sel:        #0066cc;
+  --sim-sel-soft:   rgba(0, 102, 204, 0.10);
   --sim-drop:       #7c3aed;
   --sim-charger:    #0d9488;
   --sim-parking:    #71717a;
@@ -139,8 +143,10 @@ html {
      viewport-calc zoom, is stable (no feedback loop). Different screen WIDTHS are
      handled by the responsive breakpoints (card grid 3→2→1, ribbon 5→3→2→1), so
      the app stays usable from laptop to wide desktop. zoom DOWN also resamples
-     raster images sharper on hi-DPI, not blurrier. */
-  zoom: 0.8;
+     raster images sharper on hi-DPI, not blurrier. `--root-zoom` names it once: a
+     full-window layout divides 100vh by it (vh is not scaled by the root zoom). */
+  --root-zoom: 0.8;
+  zoom: var(--root-zoom);
 }
 html, body {
   margin: 0;
@@ -3249,14 +3255,14 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 
 /* Canvas drawing. Widths are screen pixels (non-scaling strokes). */
 .sim-drawing { opacity: 0.9; }
-.sim-mark path { stroke: var(--accent); stroke-width: 2; }
-.sim-mark-line { stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.sim-mark path { stroke: var(--sim-sel); stroke-width: 2; }
+.sim-mark-line { stroke: var(--sim-sel); stroke-width: 1.5; stroke-dasharray: 4 3; }
 
 
 .sim-flow { cursor: pointer; }
 .sim-flow-hit { fill: none; stroke: transparent; stroke-width: 14; }
 .sim-flow-path { fill: none; stroke: var(--info); stroke-width: 1.5; }
-.sim-flow.is-selected .sim-flow-path { stroke: var(--accent); stroke-width: 2.5; }
+.sim-flow.is-selected .sim-flow-path { stroke: var(--sim-sel); stroke-width: 2.5; }
 .sim-flow-head { fill: var(--info); }
 .sim-flow-label { font-size: 11px; text-anchor: middle; fill: var(--info); font-family: var(--tal-font-numeric); paint-order: stroke; stroke: var(--bg-surface); stroke-width: 3px; }
 
@@ -3302,18 +3308,18 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-stage.is-aim { cursor: crosshair; }
 .sim-stage.is-pan { cursor: grab; }
 .sim-stage.is-snapping { cursor: none; }
-.sim-snap-cross { fill: none; stroke: var(--accent); stroke-width: 1.75; stroke-linecap: round; }
+.sim-snap-cross { fill: none; stroke: var(--sim-sel); stroke-width: 1.75; stroke-linecap: round; }
 .sim-grid-line { stroke: var(--scene-grid); stroke-width: 1; }
 .sim-grid-major { stroke: var(--scene-grid-major); stroke-width: 1; }
 .sim-lane { fill: none; stroke: var(--lane); stroke-linecap: square; }
 .sim-tape { fill: none; stroke: var(--tape); stroke-width: 1.5; opacity: 0.75; }
 .sim-seg.is-two .sim-tape { stroke-dasharray: 8 6; }
-.sim-seg.is-selected .sim-tape { stroke: var(--accent); stroke-width: 3; opacity: 1; }
+.sim-seg.is-selected .sim-tape { stroke: var(--sim-sel); stroke-width: 3; opacity: 1; }
 .sim-arrow path { fill: var(--tape); opacity: 0.9; }
-.sim-seg.is-selected .sim-arrow path { fill: var(--accent); }
+.sim-seg.is-selected .sim-arrow path { fill: var(--sim-sel); }
 .sim-pt-junction circle { fill: var(--text-secondary); }
 .sim-pt-junction.is-cross circle { fill: var(--tape); }
-.sim-pt-junction.is-selected circle { fill: var(--accent); }
+.sim-pt-junction.is-selected circle { fill: var(--sim-sel); }
 .sim-pt { --tone: var(--text-tertiary); color: var(--tone); }
 .sim-pt.role-pick { --tone: var(--sim-pick); }
 .sim-pt.role-drop, .sim-pt.role-pickDrop { --tone: var(--sim-drop); }
@@ -3321,12 +3327,12 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-pt.kind-parking { --tone: var(--sim-parking); }
 .sim-pt-body { fill: color-mix(in srgb, var(--tone) 20%, var(--scene-bg)); stroke: var(--tone); stroke-width: 2; }
 .sim-pt-split { fill: none; stroke: var(--sim-pick); stroke-width: 2; }
-.sim-pt.is-selected .sim-pt-body { stroke: var(--accent); stroke-width: 3; }
+.sim-pt.is-selected .sim-pt-body { stroke: var(--sim-sel); stroke-width: 3; }
 .sim-pt-badge circle { fill: var(--scene-bg); stroke: var(--tone); stroke-width: 1; }
 .sim-pill rect { fill: rgba(0, 0, 0, 0.55); }
 .sim-pill text { font-size: 11px; font-weight: 700; text-anchor: middle; fill: #fff; }
 .sim-pt-loose { font-size: 11px; text-anchor: middle; fill: var(--warn); font-weight: 700; paint-order: stroke; stroke: var(--scene-bg); stroke-width: 3px; }
-.sim-rubber { stroke: var(--accent); stroke-width: 2; stroke-dasharray: 5 4; }
+.sim-rubber { stroke: var(--sim-sel); stroke-width: 2; stroke-dasharray: 5 4; }
 .sim-rubber-len { font-size: 13px; font-weight: 600; font-family: var(--tal-font-numeric); fill: var(--text-primary); paint-order: stroke; stroke: var(--scene-bg); stroke-width: 3px; }
 .sim-empty-prompt { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; padding: 24px; pointer-events: none; color: var(--text-secondary); font-size: 13px; }
 .sim-empty-cta { display: flex; flex-direction: column; align-items: center; gap: 16px; pointer-events: auto; padding: 24px; border-radius: 12px; background: color-mix(in srgb, var(--bg-surface) 92%, transparent); box-shadow: var(--sim-shadow-float); }
@@ -3341,7 +3347,7 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 }
 .sim-tool { display: flex; align-items: center; justify-content: center; gap: 8px; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 5px; background: none; font: inherit; font-size: 13px; color: var(--text-secondary); text-align: left; cursor: pointer; }
 .sim-tool:hover:not(:disabled) { background: var(--bg-hover); color: var(--text-primary); }
-.sim-tool.on { background: var(--accent-soft); color: var(--text-primary); box-shadow: inset 2px 0 0 var(--accent); }
+.sim-tool.on { background: var(--sim-sel-soft); color: var(--text-primary); box-shadow: inset 2px 0 0 var(--sim-sel); }
 .sim-tool:disabled { opacity: 0.35; cursor: not-allowed; }
 .sim-tool svg { flex: none; }
 .sim-tool kbd { margin-left: auto; padding-left: 8px; font: 500 11px var(--tal-font-numeric); color: var(--text-tertiary); }
@@ -3352,15 +3358,7 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 }
 .sim-palette-btn { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 8px; border: 1px solid transparent; border-radius: 5px; background: none; color: var(--text-secondary); font: inherit; font-size: 13px; cursor: pointer; }
 .sim-palette-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-.sim-palette-btn.on { border-color: var(--accent); color: var(--text-primary); background: var(--accent-soft); }
-.sim-viewctl { position: absolute; right: 10px; top: 10px; display: flex; gap: 8px; cursor: default; }
-.sim-viewctl .btn { background: var(--bg-surface); }
-.sim-viewctl .btn.on { border-color: var(--accent); color: var(--text-primary); }
-.sim-hint {
-  position: absolute; left: 50%; bottom: 12px; transform: translateX(-50%); margin: 0; max-width: calc(100% - 40px);
-  font-size: 13px; color: var(--text-secondary); background: color-mix(in srgb, var(--bg-surface) 92%, transparent);
-  border: 1px solid var(--border); border-radius: 99px; padding: 8px 16px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
-}
+.sim-palette-btn.on { border-color: var(--sim-sel); color: var(--text-primary); background: var(--sim-sel-soft); }
 .sim-toast {
   position: absolute; left: 50%; top: 14px; transform: translateX(-50%); margin: 0; font-size: 13px; font-weight: 600;
   color: var(--text-primary); background: var(--bg-surface-3); border: 1px solid var(--border-strong); border-radius: 6px; padding: 8px 16px; pointer-events: none;
@@ -3379,10 +3377,10 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-lane-path { fill: none; stroke: var(--tape); stroke-width: 1; opacity: 0.45; }
 /* The selected route's badge (direction — click to change — and length); the selected object's size. */
 .sim-rbadge { cursor: pointer; }
-.sim-rbadge rect { fill: var(--bg-surface); stroke: var(--accent); stroke-width: 1.5; }
+.sim-rbadge rect { fill: var(--bg-surface); stroke: var(--sim-sel); stroke-width: 1.5; }
 .sim-rbadge text { font: 600 12px var(--tal-font-numeric); fill: var(--text-primary); }
-.sim-rbadge-dir path { fill: none; stroke: var(--accent); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
-.sim-rbadge:hover rect { fill: var(--accent-soft); }
+.sim-rbadge-dir path { fill: none; stroke: var(--sim-sel); stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; }
+.sim-rbadge:hover rect { fill: var(--sim-sel-soft); }
 .sim-rbadge.is-size { cursor: default; pointer-events: none; }
 .sim-rbadge.is-size rect { stroke: var(--border-strong); }
 @container (max-width: 900px) { .sim-tool kbd { display: none; } .sim-palette { left: 10px; top: auto; bottom: 50px; max-width: calc(100% - 20px); } }
@@ -3390,21 +3388,21 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 /* Second half of the editor: objects, footprints, handles, box select, B56.5 overlay. */
 /* Drawing snaps: what the next click joins — ring = point, diamond = route, square = object face. */
 .sim-snap { pointer-events: none; }
-.sim-snap-ring { fill: color-mix(in srgb, var(--accent) 14%, transparent); stroke: var(--accent); stroke-width: 2; }
-.sim-snap-dot { fill: var(--accent); }
-.sim-snap-guide { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.7; }
+.sim-snap-ring { fill: color-mix(in srgb, var(--sim-sel) 14%, transparent); stroke: var(--sim-sel); stroke-width: 2; }
+.sim-snap-dot { fill: var(--sim-sel); }
+.sim-snap-guide { stroke: var(--sim-sel); stroke-width: 1; stroke-dasharray: 4 4; opacity: 0.7; }
 .sim-object { fill: url(#sim-hatch); stroke: var(--text-secondary); stroke-width: 1.5; }
-.sim-object.is-selected { stroke: var(--accent); stroke-width: 2.5; }
+.sim-object.is-selected { stroke: var(--sim-sel); stroke-width: 2.5; }
 .sim-hatch-line { stroke: var(--text-tertiary); stroke-width: 1; }
-.sim-object-draft { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.sim-object-draft { fill: var(--sim-sel-soft); stroke: var(--sim-sel); stroke-width: 1.5; stroke-dasharray: 5 4; }
 .sim-marquee { fill: var(--info-soft); stroke: var(--info); stroke-width: 1; stroke-dasharray: 4 3; }
 .sim-object-swatch { width: 14px; height: 10px; border: 1.5px solid currentColor; background: repeating-linear-gradient(45deg, transparent 0 3px, currentColor 3px 4px); opacity: 0.8; }
 .sim-footprint { fill: none; stroke: var(--text-tertiary); stroke-width: 1; stroke-dasharray: 3 3; }
 .sim-footprint.role-pick { stroke: var(--sim-pick); }
 .sim-footprint.role-drop, .sim-footprint.role-pickDrop { stroke: var(--sim-drop); }
 .sim-handle { cursor: grab; }
-.sim-handle circle { fill: var(--bg-surface); stroke: var(--accent); stroke-width: 2; }
-.sim-handle-guide { stroke: var(--accent); stroke-width: 1; stroke-dasharray: 3 3; }
+.sim-handle circle { fill: var(--bg-surface); stroke: var(--sim-sel); stroke-width: 2; }
+.sim-handle-guide { stroke: var(--sim-sel); stroke-width: 1; stroke-dasharray: 3 3; }
 .sim-clr-env { fill: none; stroke: var(--text-tertiary); opacity: 0.18; stroke-linecap: butt; }
 .sim-clr.is-capped .sim-clr-env { stroke: var(--warn); opacity: 0.28; }
 .sim-clr.is-violation .sim-clr-env { stroke: var(--bad); opacity: 0.32; }
@@ -5423,7 +5421,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-msg { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: var(--text-secondary); }
 .sim-msg i { flex: none; width: 7px; height: 7px; border-radius: 50%; margin-top: 8px; }
 .sim-msg.bad i { background: var(--bad); } .sim-msg.warn i { background: var(--warn); } .sim-msg.info i { background: var(--info); } .sim-msg.ok i { background: var(--good); }
-.sim-flows { margin-top: 16px; }
 .sim-tbl-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
 .sim-tbl { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 13px; }
 .sim-tbl th { font: 500 11px var(--tal-font-numeric); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); text-align: right; padding: 8px 16px; border-bottom: 1px solid var(--border); background: var(--bg-surface-2); white-space: nowrap; }
@@ -5432,12 +5429,8 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-tbl th.l, .sim-tbl td.l { text-align: left; font-family: var(--tal-font-family); }
 .sim-tbl td.dim, .sim-tbl .dim { color: var(--text-tertiary); }
 .sim-tbl td.warn { color: var(--warn); } .sim-tbl td.bad { color: var(--bad); }
-.sim-tbl .band { background: color-mix(in srgb, var(--info) 6%, transparent); }
-.sim-tbl tr.is-linked { cursor: pointer; }
-.sim-tbl tr.is-linked:hover td { background: var(--bg-hover); }
 .sim-tag { margin-left: 8px; padding: 0 8px; border-radius: 99px; font: 600 11px var(--tal-font-family); color: var(--info); background: var(--info-soft); }
-.sim-tbl-foot { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-top: 8px; font-size: 13px; color: var(--text-secondary); }
-.sim-tbl-foot .grow, .sim-confirm .grow, .sim-vsub .grow, .sim-hud .grow { flex: 1; }
+.sim-confirm .grow, .sim-vsub .grow, .sim-hud .grow { flex: 1; }
 .sim-confirm { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; background: var(--warn-soft); color: var(--text-primary); font-size: 13px; }
 
 /* ---- Run mode ---- */
@@ -5463,11 +5456,11 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-sizing { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-secondary); }
 .sim-chip.sm { padding: 4px 10px; font-size: 10.5px; }
 .sim-sizing-applied { white-space: nowrap; }
-.er-sim-note { font-size: 12.5px; color: var(--accent); margin-left: 8px; align-self: center; }
+.er-sim-note { font-size: 12.5px; color: var(--sim-sel); margin-left: 8px; align-self: center; }
 /* Use N in pricing (D-1): one action per verdict row, a tag once applied. */
 .sim-vact { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 13px; }
 .sim-vact .sim-confirm { padding: 4px 4px 4px 16px; }
-.sim-tag { font: 600 13px var(--tal-font-family); color: var(--accent); }
+.sim-tag { font: 600 13px var(--tal-font-family); color: var(--sim-sel); }
 .sim-tag.stale { color: var(--warn); }
 .sim-vsub { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; font-size: 13px; color: var(--text-tertiary); }
 .sim-vsub b { color: var(--text-primary); }
@@ -5486,7 +5479,7 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-veh-forks { stroke: var(--text-secondary); stroke-width: 0.35; stroke-linecap: round; }
 .sim-veh-pallet { fill: #b08850; stroke: #d9cfb5; stroke-width: 0.2; }
 .sim-veh-dot { fill: var(--st); stroke: #111; stroke-width: 0.12; }
-.sim-veh-follow { fill: none; stroke: var(--accent); stroke-width: 0.3; }
+.sim-veh-follow { fill: none; stroke: var(--sim-sel); stroke-width: 0.3; }
 .sim-veh-label { font: 700 11px var(--tal-font-numeric); text-anchor: middle; fill: var(--text-primary); paint-order: stroke; stroke: var(--scene-bg); stroke-width: 3px; }
 .sim-gridlock { fill: none; stroke: var(--bad); stroke-width: 3; }
 .sim-below { display: grid; gap: 8px; }
@@ -5507,12 +5500,12 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 /* A followed vehicle's job legs (acceptance 15): dashed empty to the pick, solid loaded to the drop. */
 .sim-legs { pointer-events: none; }
 .sim-leg-empty { fill: none; stroke: var(--text-secondary); stroke-width: 2.5; stroke-dasharray: 6 5; }
-.sim-leg-loaded { fill: none; stroke: var(--accent); stroke-width: 3; }
+.sim-leg-loaded { fill: none; stroke: var(--sim-sel); stroke-width: 3; }
 .sim-leg-end { fill: none; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
 .sim-leg-end.pick { stroke: var(--sim-pick); } .sim-leg-end.drop { stroke: var(--sim-drop); }
 .sim-legs-key { display: inline-flex; align-items: center; gap: 6px; padding: 0 8px; font-size: 11px; color: var(--text-secondary); background: var(--bg-surface); border: 1px solid var(--border); border-radius: 6px; }
 .sim-legs-key i { display: inline-block; width: 16px; height: 0; border-top: 2.5px dashed var(--text-secondary); }
-.sim-legs-key i.loaded { border-top: 3px solid var(--accent); margin-left: 6px; }
+.sim-legs-key i.loaded { border-top: 3px solid var(--sim-sel); margin-left: 6px; }
 /* Run tables: Copy CSV under each, a totals row (acceptance 16). */
 .sim-tbl-block { display: flex; flex-direction: column; gap: 4px; }
 .sim-tbl-block + .sim-tbl-block { margin-top: 16px; }
@@ -5534,13 +5527,7 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-menu button { text-align: left; height: 36px; padding: 0 16px; border: 0; border-radius: 6px; background: none; font: inherit; font-size: 13px; color: var(--text-primary); cursor: pointer; }
 .sim-menu button:hover { background: var(--bg-hover); }
 .sim-menu button.danger { color: var(--bad); }
-.sim-hint { transition: opacity 0.4s cubic-bezier(0.25, 0.1, 0.25, 1); }
-.sim-hint.is-faded { opacity: 0; }
-.sim-card.is-done { gap: 4px; }
-.sim-done { margin: 0; font-size: 13px; color: var(--good); display: flex; gap: 8px; align-items: center; }
-.sim-done .link-btn { margin-left: auto; }
 .sim-card h3 { display: flex; align-items: center; }
-.sim-h3-action { margin-left: auto; font-family: var(--tal-font-family); text-transform: none; letter-spacing: 0; }
 .sim-tag.is-off { color: var(--text-tertiary); background: var(--bg-surface-3); }
 .sim-vari { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sim-vari .sim-chip { border: 0; cursor: pointer; }
@@ -5561,33 +5548,52 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-section > summary::-webkit-details-marker { display: none; }
 .sim-section > summary::after { content: ""; margin-left: auto; width: 7px; height: 7px; border-right: 1.5px solid var(--text-tertiary); border-bottom: 1.5px solid var(--text-tertiary); transform: rotate(45deg); transition: transform 0.2s ease; }
 .sim-section[open] > summary::after { transform: rotate(-135deg); }
-.sim-section-body { display: flex; flex-direction: column; gap: 16px; padding-bottom: 16px; }
-.sim-section-count { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--accent); }
-.sim-odot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); margin-right: 6px; vertical-align: 1px; }
-.sim-frow { display: flex; flex-direction: column; gap: 4px; }
-.sim-frow-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.sim-frow-label { font-size: 13px; color: var(--text-primary); }
+.sim-section-body { display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px; }
+.sim-section-count { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 600; color: var(--sim-sel); }
+.sim-odot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--sim-sel); margin-right: 6px; vertical-align: 1px; }
+/* Compact assumption rows (QoL pass): label + source word | value with unit inside the box + reset. */
+.sim-frow { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 132px); align-items: center; gap: 4px 12px; }
+.sim-frow.is-wide { grid-template-columns: minmax(0, 1fr); }
+.sim-frow-head { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; min-width: 0; }
+.sim-frow-label { position: static; display: inline-flex; align-items: center; flex-wrap: wrap; gap: 0 4px; font-size: 13px; line-height: 1.3; color: var(--text-primary); }
 .sim-frow-label b { font-weight: 600; color: var(--text-secondary); }
-.sim-frow-input { display: flex; align-items: center; gap: 8px; }
+.sim-frow-input { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .sim-frow-input .sim-input-unit, .sim-frow-input select { flex: 1; min-width: 0; }
+.sim-frow-ro { font-size: 13px; color: var(--text-secondary); justify-self: end; }
+.sim-frow .sim-input-unit { height: 32px; gap: 4px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); transition: border-color 0.2s, box-shadow 0.2s; }
+.sim-frow .sim-input-unit:focus-within { border-color: var(--sim-sel); box-shadow: 0 0 0 3px var(--sim-sel-soft); }
+.sim-frow .sim-input-unit input { flex: 1; width: auto; min-width: 0; height: 100%; padding: 0; border: 0; background: none; outline: none; text-align: right; font: 500 13px var(--tal-font-numeric); color: var(--text-primary); box-shadow: none; }
+.sim-frow .sim-input-unit > span { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
+.sim-frow select { height: 32px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); font-size: 13px; color: var(--text-primary); }
 .sim-frow-help { margin: 0; font-size: 11px; line-height: 1.45; color: var(--text-tertiary); }
-.sim-src { font: 600 10px var(--tal-font-numeric); letter-spacing: 0.04em; text-transform: uppercase; padding: 2px 6px; border-radius: 4px; color: var(--text-tertiary); background: var(--bg-hover); white-space: nowrap; }
-.sim-src.src-override { color: var(--accent); background: var(--accent-soft); }
+/* ⓘ: the field's help (and its fallback) on hover or focus, under the row, the row's width. */
+.sim-frow { position: relative; }
+.sim-info { display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border: 1px solid var(--border-strong); border-radius: 50%; font: italic 700 10px/1 var(--tal-font-family); color: var(--text-tertiary); cursor: help; }
+.sim-info:hover, .sim-info:focus-visible { color: var(--sim-sel); border-color: var(--sim-sel); outline: none; }
+.sim-info::after {
+  content: attr(data-tip); position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 5; padding: 8px 12px;
+  font: 400 12px/1.45 var(--tal-font-family); font-style: normal; color: var(--text-primary); background: var(--bg-surface-3, var(--bg-surface));
+  border: 1px solid var(--border-strong); border-radius: 8px; box-shadow: var(--sim-shadow-float); pointer-events: none;
+  opacity: 0; transform: translateY(-2px); transition: opacity 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1); visibility: hidden;
+}
+.sim-info:hover::after, .sim-info:focus-visible::after { opacity: 1; transform: none; visibility: visible; }
+.sim-src { font: 500 10px var(--tal-font-numeric); letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-tertiary); white-space: nowrap; }
+.sim-src.src-override { color: var(--sim-sel); font-weight: 700; }
 .sim-src.src-json { color: var(--text-secondary); }
-.sim-reset { width: 36px; height: 36px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-surface); color: var(--text-secondary); font-size: 15px; cursor: pointer; }
-.sim-reset:hover { color: var(--accent); border-color: var(--accent); }
+.sim-reset { flex: none; width: 32px; height: 32px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-surface); color: var(--text-secondary); font-size: 15px; cursor: pointer; }
+.sim-reset:hover { color: var(--sim-sel); border-color: var(--sim-sel); }
 .sim-arrows .seg-btn { min-width: 36px; }
 .sim-panel.is-empty .sim-panel-head h3 { color: var(--text-secondary); }
 /* The Run row's vehicle opens its values. */
 button.sim-vveh { border: 0; background: none; padding: 4px 8px 4px 0; border-radius: 8px; font: inherit; text-align: left; cursor: pointer; }
-button.sim-vveh:hover .nm { color: var(--accent); }
+button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-assume-chip { border: 0; cursor: pointer; }
 .sim-assume-chip::before { display: none; }
 /* Page head: Assumptions with the override count. */
-.sim-assume-btn .sim-count { display: inline-flex; align-items: center; margin-left: 8px; font-size: 11px; font-weight: 600; color: var(--accent); }
-.sim-assume-btn.on { border-color: var(--accent); }
+.sim-assume-btn .sim-count { display: inline-flex; align-items: center; margin-left: 8px; font-size: 11px; font-weight: 600; color: var(--sim-sel); }
+.sim-assume-btn.on { border-color: var(--sim-sel); }
 /* Overridden points and routes on the map. */
-.sim-ov-dot { fill: var(--accent); stroke: var(--bg-surface); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
+.sim-ov-dot { fill: var(--sim-sel); stroke: var(--bg-surface); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
 /* Assumptions drawer: beside the page, not over it — never a modal. */
 .sim-drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 60; width: min(420px, 100vw); display: flex; flex-direction: column; gap: 8px; padding: 16px 24px; background: var(--bg-surface); border-left: 1px solid var(--border); box-shadow: var(--sim-shadow-float); animation: sim-drawer-in 0.25s cubic-bezier(0.25, 0.1, 0.25, 1); }
 @keyframes sim-drawer-in { from { transform: translateX(24px); opacity: 0; } }
@@ -5603,5 +5609,85 @@ button.sim-vveh:hover .nm { color: var(--accent); }
 .sim-drawer-group { display: flex; flex-direction: column; gap: 16px; }
 .sim-drawer-group h4 { margin: 0; font: 700 11px var(--tal-font-numeric); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
 
-.sim-frow-input .sim-input-unit input { flex: 1; min-width: 0; }
-.sim-frow-fallback { font-weight: 600; color: var(--text-secondary); }
+/* ---- Quality-of-life pass (2026-11-12): full-height workspace ------------------------------- */
+/* The editor fills the window under the page head: step strip · canvas · status line | side panel. */
+.sim-editor .sim-work { grid-template-columns: minmax(0, 1fr) 340px; align-items: stretch; height: max(560px, calc(100vh / var(--root-zoom) - 244px)); }
+.sim-editor .sim-canvas-wrap { min-height: 0; }
+.sim-editor .sim-stage { flex: 1; height: auto; min-height: 0; }
+@container (max-width: 900px) {
+  .sim-editor .sim-work { height: auto; }
+  .sim-editor .sim-stage { flex: none; height: 62vh; }
+  .sim-editor .sim-side { height: auto; max-height: none; }
+}
+.sim-status { margin: 0; min-height: 18px; font-size: 12px; line-height: 18px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Side panel: tabs, then one scrolling body. */
+.sim-editor .sim-side { gap: 0; min-height: 0; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); box-shadow: var(--sim-shadow-rest); overflow: hidden; }
+.sim-tabs { display: flex; gap: 4px; padding: 8px; border-bottom: 1px solid var(--border); }
+.sim-tabs button { flex: 1; height: 36px; border-radius: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); transition: background 0.2s cubic-bezier(0.25, 0.1, 0.25, 1), color 0.2s; }
+.sim-tabs button:hover { background: var(--bg-hover); color: var(--text-primary); }
+.sim-tabs button.on { background: var(--bg-surface-3); color: var(--text-primary); }
+.sim-tabs .num { margin-left: 4px; font-weight: 500; color: var(--text-tertiary); }
+.sim-side-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 16px; }
+.sim-side-body .sim-banner { margin: 0; flex-wrap: wrap; gap: 4px 16px; padding: 8px 12px; }
+/* Inside the panel the inspector and cards lose their own card chrome — one surface, sections divide it. */
+.sim-side-body .sim-panel, .sim-side-body .sim-card { padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; animation: none; }
+.sim-side-body .sim-section .sim-card > h3 { display: none; }
+.sim-folds { display: flex; flex-direction: column; margin-top: 8px; }
+.sim-folds > .sim-section:last-child { border-bottom: 1px solid var(--border); }
+.sim-section-status { margin-left: auto; font: 500 11px var(--tal-font-numeric); color: var(--text-tertiary); }
+.sim-section-status.is-good { color: var(--good); }
+.sim-section-status.is-warn { color: var(--warn); }
+.sim-section-status.is-bad { color: var(--bad); }
+.sim-section > summary:has(.sim-section-status)::after { margin-left: 12px; }
+
+/* Navigator: stations and routes, a click selects and centres. */
+.sim-nav { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sim-nav button { display: flex; align-items: center; gap: 8px; width: 100%; min-height: 36px; padding: 4px 8px; border-radius: 6px; font-size: 13px; text-align: left; color: var(--text-primary); }
+.sim-nav button:hover { background: var(--bg-hover); }
+.sim-nav button:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: -2px; }
+.sim-nav .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-nav .meta { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
+.sim-nav-dot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--text-tertiary); }
+.sim-nav-dot.role-pick { background: var(--sim-pick); }
+.sim-nav-dot.role-drop, .sim-nav-dot.role-pickDrop { background: var(--sim-drop); }
+.sim-nav-dot.kind-charger { background: var(--sim-charger); }
+.sim-nav-dot.kind-parking { background: var(--sim-parking); }
+
+/* Flows tab: two lines per flow; the Fleet Engine line and linking at the foot. */
+.sim-flow-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
+.sim-flow-list > li > button, .sim-flow-list > li > div { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 2px 8px; width: 100%; padding: 8px; border-radius: 8px; text-align: left; font-size: 13px; color: var(--text-primary); }
+.sim-flow-list > li > button:hover { background: var(--bg-hover); }
+.sim-flow-list > li.is-selected > button { background: var(--sim-sel-soft); }
+.sim-flow-list > li + li { border-top: 1px solid var(--border); }
+.sim-flow-list .n { grid-row: span 2; color: var(--text-tertiary); font-size: 12px; padding-top: 1px; }
+.sim-flow-list .nm { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-flow-list .meta { font-size: 12px; color: var(--text-secondary); }
+.sim-flow-list .meta .warn { color: var(--warn); }
+.sim-flow-list .sim-tag { margin-left: 8px; padding: 0 6px; font-size: 11px; }
+.sim-flows-foot { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-secondary); }
+.sim-flows-foot .btn { margin-top: 8px; }
+.sim-flows-foot .sim-confirm { flex-direction: column; align-items: stretch; margin-top: 8px; }
+.sim-confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* Step strip above the canvas: done ✓, the next step marked, a click picks its tool. */
+.sim-steps ol { list-style: none; margin: 0; padding: 0; display: flex; gap: 4px; overflow-x: auto; }
+.sim-steps li { flex: 1 1 0; min-width: 0; }
+.sim-step { display: flex; align-items: center; gap: 8px; width: 100%; height: 36px; padding: 0 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-surface); font-size: 13px; color: var(--text-secondary); white-space: nowrap; transition: border-color 0.2s, background 0.2s; }
+.sim-step > span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; }
+.sim-step:hover:not(:disabled) { border-color: var(--border-strong); color: var(--text-primary); }
+.sim-step:disabled { opacity: 0.5; cursor: not-allowed; }
+.sim-step-n { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border-radius: 50%; font: 700 11px var(--tal-font-numeric); color: var(--text-tertiary); background: var(--bg-surface-3); }
+.sim-step-note { margin-left: auto; font-size: 11px; color: var(--text-tertiary); }
+.sim-step.is-done { color: var(--text-primary); }
+.sim-step.is-done .sim-step-n { color: #fff; background: var(--good); }
+.sim-step.is-next { border-color: var(--sim-sel); color: var(--text-primary); background: var(--sim-sel-soft); }
+.sim-step.is-next .sim-step-n { color: #fff; background: var(--sim-sel); }
+@container (max-width: 1100px) { .sim-step-note { display: none; } }
+
+/* View toggles in the zoom control (nothing else floats over the drawing). */
+.sim-zoomctl button.on { background: var(--sim-sel-soft); color: var(--sim-sel); }
+.sim-zoomctl-sep { width: 1px; height: 20px; margin: 0 4px; background: var(--border); }
+
+/* Segmented choices on the Simulate page: the quiet blue, not the Run red. */
+:is(.sim-editor, .sim-run, .sim-drawer) .seg-btn.on { background: var(--sim-sel-soft); color: var(--sim-sel); }

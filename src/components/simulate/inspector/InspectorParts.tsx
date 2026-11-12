@@ -33,11 +33,15 @@ export function Summary({ items }: { items: [label: string, value: ReactNode][] 
   )
 }
 
-/** A collapsible section (Settings open, Advanced closed by default). */
-export function Section({ title, open, count, children }: { title: string; open?: boolean; count?: number; children: ReactNode }) {
+/** A collapsible section (Settings open, Advanced closed by default). `status`: a word beside the title
+ *  ("Scaled", "3 to place") — `tone` colours it. */
+export function Section({ title, open, count, status, tone, children }: {
+  title: string; open?: boolean; count?: number; status?: ReactNode; tone?: 'good' | 'warn' | 'bad'; children: ReactNode
+}) {
   return (
     <details className="sim-section" open={open}>
-      <summary>{title}{count ? <span className="sim-section-count"><i className="sim-odot" />{count}</span> : null}</summary>
+      <summary>{title}{count ? <span className="sim-section-count"><i className="sim-odot" />{count}</span> : null}
+        {status != null && <span className={`sim-section-status${tone ? ` is-${tone}` : ''}`}>{status}</span>}</summary>
       <div className="sim-section-body">{children}</div>
     </details>
   )

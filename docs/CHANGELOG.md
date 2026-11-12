@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-12 — Fleet simulation: quality-of-life pass on the editor
+
+For the application engineer using it, reviewed against apple-ui-design (TAL font and colours kept).
+No feature removed — folded, moved or derived:
+- **Full-height workspace:** canvas plus one right panel with **Layout** and **Flows** tabs; the flows
+  table under the canvas becomes the Flows tab; the sample banner moves into the panel.
+- **Selection first:** the inspector leads the Layout tab; Drawing, Place on routes and Ready to run?
+  fold below it with a status word.
+- **Compact rows:** label left, value right with the unit inside the box; source as a small word; help
+  and fallback behind ⓘ.
+- **Colour:** red only for Run and destructive actions; selection, tools, snaps and badges in a quiet blue.
+- **Nothing floating over the drawing but the tools:** the hint is a status line under the canvas;
+  Flows and B56.5 join the zoom control (duplicate Fit removed).
+- **Navigator** when nothing is selected: stations and routes, click to select and centre.
+- **Keyboard:** arrows nudge 1 ft (Shift 10 ft); Tab / Shift-Tab steps through stations.
+- **Step strip:** Draw aisles · Place stations · Link flows · Chargers & parking · Run, from the readiness
+  checks; a click picks the step's tool.
+
 ## 2026-11-12 — Fleet simulation: code review of Milestone 6
 
 - **Stale marker:** the run hashed its inputs key from the overridden vehicles, Sizing from the vehicle

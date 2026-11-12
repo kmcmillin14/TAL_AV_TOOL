@@ -1,7 +1,8 @@
 'use client'
 
-// One assumption (Milestone 6, spec §5.7a): label, value in the user's units, source chip, reset when
-// overridden, and its one line of help. The same row in the inspector and the Assumptions view.
+// One assumption (Milestone 6, spec §5.7a; compact rows, QoL pass): label and a small source word on
+// the left, the value with its unit inside the box on the right, reset when overridden or drawn, and
+// its one line of help behind ⓘ. The same row in the inspector and the Assumptions view.
 
 import type { ReactNode } from 'react'
 import { SIM_FIELD_HELP } from '@/src/content/help'
@@ -42,14 +43,19 @@ export default function FieldRow({ def, state, unitSystem, onChange, owner, chil
       {def.choices.map((c, i) => <option key={i} value={i}>{c.label}</option>)}
     </select>
   )
+  const fallback = state.value == null && def.fallback && !children ? `Not set — ${def.fallback.charAt(0).toLowerCase() + def.fallback.slice(1)}. ` : ''
+  const help = fallback + (SIM_FIELD_HELP[def.key] ?? '')
   return (
-    <div className={`sim-frow${overridden ? ' is-override' : ''}`}>
+    <div className={`sim-frow${overridden ? ' is-override' : ''}${children ? ' is-wide' : ''}`}>
       <div className="sim-frow-head">
-        <span className="sim-frow-label">{overridden && <i className="sim-odot" aria-label="Overridden" />}{owner && <b>{owner} · </b>}{def.label}</span>
+        <span className="sim-frow-label">
+          {overridden && <i className="sim-odot" aria-label="Overridden" />}{owner && <b>{owner} · </b>}{def.label}
+          {help && <span className="sim-info" tabIndex={0} role="note" aria-label={help} data-tip={help}>i</span>}
+        </span>
         <span className={`sim-src src-${state.source.replace(' ', '').toLowerCase()}`}>{state.source}</span>
       </div>
       <div className="sim-frow-input">
-        {children ?? (def.readOnly ? <span className="num">{shown ?? '—'} {unit}</span>
+        {children ?? (def.readOnly ? <span className="num sim-frow-ro">{shown ?? '—'} {unit}</span>
           : choice ?? (
             <span className="sim-input-unit">
               <input type="number" step="any" min={def.min != null ? round(toDisplay(def.unit, def.min, unitSystem)) : undefined}
@@ -66,10 +72,6 @@ export default function FieldRow({ def, state, unitSystem, onChange, owner, chil
             aria-label={`Reset ${def.label}`} onClick={() => onChange(undefined)}>↺</button>
         )}
       </div>
-      <p className="sim-frow-help">
-        {state.value == null && def.fallback && !children && <b className="sim-frow-fallback">Not set — {def.fallback.charAt(0).toLowerCase() + def.fallback.slice(1)}. </b>}
-        {SIM_FIELD_HELP[def.key]}
-      </p>
     </div>
   )
 }

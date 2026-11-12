@@ -200,7 +200,7 @@ function HourChart({ S, target, hours }: { S: SimState; target: number; hours: n
           <YAxis yAxisId="w" orientation="right" tick={TICK} stroke={AXIS_STROKE} width={28} allowDecimals={false} />
           <Tooltip content={<ChartTooltip fmt={n => String(Math.round(n))} />} cursor={{ fill: 'var(--bg-hover)' }} />
           <Bar isAnimationActive={false} yAxisId="m" dataKey="moves" name="Moves delivered" fill="var(--tal-classic-blue)" maxBarSize={28} radius={[3, 3, 0, 0]} />
-          <ReferenceLine yAxisId="m" y={target} stroke="var(--accent)" strokeDasharray="5 4" label={{ value: `Target ${Math.round(target)}/h`, position: 'insideTopLeft', fill: 'var(--accent)', fontSize: 10 }} />
+          <ReferenceLine yAxisId="m" y={target} stroke="var(--text-secondary)" strokeDasharray="5 4" label={{ value: `Target ${Math.round(target)}/h`, position: 'insideTopLeft', fill: 'var(--text-secondary)', fontSize: 10 }} />
           <Line isAnimationActive={false} yAxisId="w" dataKey="waiting" name="Orders waiting (most)" stroke="var(--warn)" strokeWidth={2} dot={false} type="monotone" />
         </ComposedChart>
       </ChartFrame>

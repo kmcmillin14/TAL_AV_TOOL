@@ -54,10 +54,14 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     () => runInputs(layoutV ?? emptyLayout(), flowsV, simVehicleById, clearanceRule(clearance), payload?.width ?? 0),
     [layoutV, flowsV, simVehicleById, clearance, payload],
   )
-  const checks = useMemo(() => {
+  const fleetNeeded = useMemo(() => {
     const placed = runFleet(engineFleetByType(fleet), project.simSettings?.fleet, inputs.flows.map(f => f.vehicleId))
-    return readinessChecks({ layout: simLayout, flows, vehicles: simVehicles, driven: simLayout && inputs.layout, fleetNeeded: Object.values(placed).reduce((a, b) => a + b, 0) })
-  }, [simLayout, flows, simVehicles, inputs, fleet, project.simSettings?.fleet])
+    return Object.values(placed).reduce((a, b) => a + b, 0)
+  }, [inputs.flows, fleet, project.simSettings?.fleet])
+  const checks = useMemo(
+    () => readinessChecks({ layout: simLayout, flows, vehicles: simVehicles, driven: simLayout && inputs.layout, fleetNeeded }),
+    [simLayout, flows, simVehicles, inputs, fleetNeeded],
+  )
   const blockers = checks.filter(c => c.level === 'bad')
   const canRun = blockers.length === 0
   // Run mode is shown only while the run can happen; a new red item drops back to the layout.
@@ -97,6 +101,14 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     setMode('layout')
   }
 
+  // In Layout mode the banner sits at the top of the side panel; in Run mode above the run.
+  const banner = sampleOn && (
+    <div className="sim-banner">
+      <span><b>Sample layout</b> — the CB18 proof-of-concept site.</span>
+      <button type="button" className="link-btn" onClick={clearLayout}>Clear and draw your own</button>
+    </div>
+  )
+
   return (
     <>
       <div className="engine-head with-actions sim-head">
@@ -126,12 +138,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
         </div>
       </div>
 
-      {sampleOn && (
-        <div className="sim-banner">
-          <b>Sample layout</b> — the CB18 proof-of-concept site.
-          <button type="button" className="link-btn" onClick={clearLayout}>Clear and draw your own</button>
-        </div>
-      )}
+      {running && banner}
 
       {narrow ? (
         <section className="sim-canvas" aria-label="Simulation layout">
@@ -144,6 +151,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           overridden={overriddenIds}
           registerLayoutWriter={registerLayoutWriter}
+          canRun={canRun} onRun={() => setMode('run')} fleetNeeded={fleetNeeded} banner={banner}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
               <p>Draw routes along the aisles — or start from a finished site.</p>

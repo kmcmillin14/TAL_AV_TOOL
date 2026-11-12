@@ -1,14 +1,15 @@
 'use client'
 
-// The proof-of-concept side cards and flows table for the layout editor:
+// The layout editor's side panel parts (proof of concept; QoL pass):
 //   Place on routes — the Sizing flows' location names, each placed with one click (plus chargers, parking)
 //   Ready to run?   — the checklist (src/calc/sim/readiness.ts)
-//   Flows — from Sizing — every flow, its Sizing distance and its distance on the layout, the Fleet
-//                     Engine figure, and linking with a before → after confirmation (it moves the quote)
+//   Flows           — the Flows tab: every flow, its Sizing distance and its distance on the layout, the
+//                     Fleet Engine figure, and linking with a before → after confirmation (it moves the quote)
+//   Step strip      — Draw aisles · Place stations · Link flows · Chargers & parking · Run, above the canvas
 
 import { useMemo, useState } from 'react'
 import { engineFleetTotal, fleetFromFlows } from '@/src/calc/fleet'
-import { linkFlow, linkSuggestions, measureFlows, sameName } from '@/src/calc/sim/layoutEdit'
+import { FLOW_POINT_TYPES, linkFlow, linkSuggestions, measureFlows, sameName } from '@/src/calc/sim/layoutEdit'
 import type { ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimLayout, SimPointType, SimRole } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
@@ -18,8 +19,18 @@ import { POINT_LABEL } from './labels'
 import type { ProjectFlow } from './useLayoutEditor'
 
 /** A name suggests a type (proof of concept); the engineer confirms it in the list. */
-const suggestType = (name: string): SimPointType => (/conveyor|infeed|outfeed|wrapper/i.test(name) ? 'conveyor' : 'stand')
-const PLACEABLE: SimPointType[] = ['stand', 'conveyor', 'machine', 'dock']
+export const suggestType = (name: string): SimPointType => (/conveyor|infeed|outfeed|wrapper/i.test(name) ? 'conveyor' : 'stand')
+
+/** The Sizing flows' location names, with whether each is a flow's origin, destination or both. */
+export function flowNames(flows: ProjectFlow[]) {
+  const m = new Map<string, { name: string; from: boolean; to: boolean }>()
+  for (const f of flows) for (const [n, end] of [[f.origin, 'from'], [f.destination, 'to']] as const) {
+    if (!n?.trim()) continue
+    const k = n.trim().toLowerCase(), e = m.get(k) ?? { name: n.trim(), from: false, to: false }
+    e[end] = true; m.set(k, e)
+  }
+  return [...m.values()]
+}
 
 /** What the Place tool is armed with from this list. */
 export interface Armed { name: string; type: SimPointType; role: SimRole }
@@ -32,31 +43,11 @@ export function PlaceCard({ layout, flows, armed, onArm, onArmHome }: {
   onArmHome: (type: 'charger' | 'parking') => void
 }) {
   const [types, setTypes] = useState<Record<string, SimPointType>>({})
-  const [open, setOpen] = useState(false)
-  const names = useMemo(() => {
-    const m = new Map<string, { name: string; from: boolean; to: boolean }>()
-    for (const f of flows) for (const [n, end] of [[f.origin, 'from'], [f.destination, 'to']] as const) {
-      if (!n?.trim()) continue
-      const k = n.trim().toLowerCase(), e = m.get(k) ?? { name: n.trim(), from: false, to: false }
-      e[end] = true; m.set(k, e)
-    }
-    return [...m.values()]
-  }, [flows])
+  const names = useMemo(() => flowNames(flows), [flows])
   const placed = (n: string) => layout.points.filter(p => sameName(p.name, n))
   const count = (t: SimPointType) => layout.points.filter(p => p.type === t).length
-  const allPlaced = names.length > 0 && names.every(n => placed(n.name).length > 0)
-  if (allPlaced && !open && !armed) {
-    return (
-      <section className="sim-card is-done" aria-label="Place on routes">
-        <h3>Place on routes</h3>
-        <p className="sim-done">All {names.length} placed ✓ · {count('charger')} charger{count('charger') === 1 ? '' : 's'} · {count('parking')} parking
-          <button type="button" className="link-btn" onClick={() => setOpen(true)}>Show</button></p>
-      </section>
-    )
-  }
   return (
     <section className="sim-card" aria-label="Place on routes">
-      <h3>Place on routes{allPlaced && <button type="button" className="link-btn sim-h3-action" onClick={() => setOpen(false)}>Hide</button>}</h3>
       {!names.length && <p className="sim-card-note">No Sizing flows yet — add them on Sizing, or draw flows with the Flow tool.</p>}
       {names.map(({ name, from, to }) => {
         const ps = placed(name)
@@ -72,7 +63,7 @@ export function PlaceCard({ layout, flows, armed, onArm, onArmHome }: {
                 ? <div className="meta">{POINT_LABEL[type]} · {ps.length} position{ps.length > 1 ? 's' : ''}</div>
                 : <select className="sim-sel" value={type} title="Type — suggested from the name; confirm before placing"
                     onChange={e => setTypes({ ...types, [name.toLowerCase()]: e.target.value as SimPointType })}>
-                    {PLACEABLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}
+                    {FLOW_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}
                   </select>}
             </div>
             <button type="button" className={`btn btn-sm${on ? ' primary' : ' ghost'}`} onClick={() => onArm({ name, type, role })}>{ps.length ? '+ Position' : 'Place'}</button>
@@ -93,7 +84,6 @@ export function PlaceCard({ layout, flows, armed, onArm, onArmHome }: {
 export function ChecksCard({ checks }: { checks: ReadinessCheck[] }) {
   return (
     <section className="sim-card" aria-label="Ready to run?">
-      <h3>Ready to run?</h3>
       <div className="sim-msgs">
         {checks.length
           ? checks.map((c, i) => <div key={i} className={`sim-msg ${c.level}`}><i /><span>{c.text}</span></div>)
@@ -103,7 +93,10 @@ export function ChecksCard({ checks }: { checks: ReadinessCheck[] }) {
   )
 }
 
-export function FlowsTable({ layout, flows, vehicleById, settings, fleet, unitSystem, radiusFor, onFlows, onSelect }: {
+/** The Flows tab: every flow as two lines — from → to, then vehicle · moves/h · distance — with the
+ *  layout distance and its Δ while a link is pending; the Fleet Engine line and "Use layout
+ *  distances" (before → after confirmation) at its foot. */
+export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSystem, radiusFor, onFlows, onSelect, selectedId }: {
   layout: SimLayout
   flows: ProjectFlow[]
   vehicleById: Map<string, Vehicle>
@@ -113,6 +106,7 @@ export function FlowsTable({ layout, flows, vehicleById, settings, fleet, unitSy
   radiusFor: (vehicleId?: string) => number
   onFlows: (next: ProjectFlow[]) => void
   onSelect: (flowId: string) => void
+  selectedId?: string
 }) {
   const [confirm, setConfirm] = useState(false)
   const fmt = (ft?: number) => fmtLength(ft, unitSystem)
@@ -129,54 +123,95 @@ export function FlowsTable({ layout, flows, vehicleById, settings, fleet, unitSy
   const engineTotal = engineFleetTotal(fleet)
   const after = useMemo(() => (confirm ? fleetFromFlows(linkedAll, vehicleById, { ...settings, appliedFleet: undefined }).fleet.totalFleetSold : null), [confirm, linkedAll, vehicleById, settings])
   const raw = fleet.groups.reduce((t, g) => t + g.groupRaw, 0)
-  const showPending = pending.size > 0
 
   return (
-    <section className="sim-card sim-flows" aria-label="Flows from Sizing">
-      <h3>Flows — from Sizing</h3>
-      <div className="sim-tbl-wrap">
-        <table className="sim-tbl">
-          <thead><tr><th className="l">#</th><th className="l">From → To</th><th>Moves/h</th><th className="l">Vehicle</th><th>Distance</th>
-            {showPending && <><th className="band">On the layout</th><th className="band">Δ</th></>}</tr></thead>
-          <tbody>
-            {flows.map((f, i) => {
-              const linked = f.fromPointId && f.toPointId
-              const would = pending.get(f.id)
-              const d = would ? (would.distanceFt ?? 0) - f.distanceFt : null
-              return (
-                <tr key={f.id} onClick={() => linked && onSelect(f.id)} className={linked ? 'is-linked' : ''}>
-                  <td className="dim">{i + 1}</td>
-                  <td className="l">{linked ? `${name(f.fromPointId)} → ${name(f.toPointId)}` : `${f.origin || '—'} → ${f.destination || '—'}`}</td>
-                  <td>{f.thruPerHr || 0}</td>
-                  <td className="l">{(f.vehicleId && vehicleById.get(f.vehicleId)?.name) || <span className="dim">—</span>}</td>
-                  <td>{fmt(f.distanceFt)}{linked ? <span className="sim-tag">layout</span> : !would && <span className="sim-tag is-off">not placed</span>}</td>
-                  {showPending && <>
-                    <td className={`band${would ? '' : ' dim'}`}>{would ? fmt(would.distanceFt) : '—'}</td>
-                    <td className={`band${d != null && Math.abs(d) >= 0.5 ? ' warn' : ' dim'}`}>{d == null ? '—' : `${d > 0 ? '+' : ''}${lengthToDisplay(d, unitSystem).toFixed(0)}`}</td>
-                  </>}
-                </tr>
-              )
-            })}
-            {!flows.length && <tr><td className="dim l" colSpan={showPending ? 7 : 5}>No flows yet.</td></tr>}
-          </tbody>
-        </table>
+    <section className="sim-flows" aria-label="Flows from Sizing">
+      <ol className="sim-flow-list">
+        {flows.map((f, i) => {
+          const linked = !!(f.fromPointId && f.toPointId)
+          const would = pending.get(f.id)
+          const d = would ? (would.distanceFt ?? 0) - f.distanceFt : null
+          const body = (
+            <>
+              <span className="n num">{i + 1}</span>
+              <span className="nm">{linked ? `${name(f.fromPointId)} → ${name(f.toPointId)}` : `${f.origin || '—'} → ${f.destination || '—'}`}</span>
+              <span className="meta">
+                {(f.vehicleId && vehicleById.get(f.vehicleId)?.name) || 'No vehicle'} · <span className="num">{f.thruPerHr || 0}</span>/h · <span className="num">{fmt(f.distanceFt)}</span>
+                {linked ? <span className="sim-tag">layout</span> : !would && <span className="sim-tag is-off">not placed</span>}
+                {would && <span className={d != null && Math.abs(d) >= 0.5 ? 'warn' : ''}> → <span className="num">{fmt(would.distanceFt)}</span> ({d! > 0 ? '+' : ''}{lengthToDisplay(d!, unitSystem).toFixed(0)})</span>}
+              </span>
+            </>
+          )
+          return (
+            <li key={f.id} className={f.id === selectedId ? 'is-selected' : ''}>
+              {linked ? <button type="button" onClick={() => onSelect(f.id)} title="Select on the layout">{body}</button> : <div>{body}</div>}
+            </li>
+          )
+        })}
+        {!flows.length && <li className="sim-card-note">No flows yet — add them on Sizing, or link a Pick point to a Drop point with the Flow tool (F).</li>}
+      </ol>
+      <div className="sim-flows-foot">
+        <span>Fleet Engine: raw <b className="num">{raw.toFixed(2)}</b> → <b className="num">{engineTotal}</b> vehicle{engineTotal === 1 ? '' : 's'}</span>
+        <span className="sim-card-note">Utilization {Math.round(settings.targetUtilization * 100)}% · {settings.dailyOpHr} h/day</span>
+        {!confirm && (
+          <button type="button" className="btn btn-sm ghost" disabled={!matches.length} onClick={() => setConfirm(true)}>
+            Use layout distances{matches.length ? ` (${matches.length})` : ''}
+          </button>
+        )}
+        {confirm && after != null && (
+          <div className="sim-confirm">
+            <span>Links {matches.length} flow{matches.length === 1 ? '' : 's'} to the layout — distance and lift then come from the drawing · Fleet Engine {engineTotal} → {after}</span>
+            <span className="sim-confirm-actions">
+              <button type="button" className="btn btn-sm ghost" onClick={() => setConfirm(false)}>Cancel</button>
+              <button type="button" className="btn btn-sm primary" onClick={() => { onFlows(linkedAll); setConfirm(false) }}>Apply</button>
+            </span>
+          </div>
+        )}
       </div>
-      <div className="sim-tbl-foot">
-        <span>Fleet Engine: raw <b className="num">{raw.toFixed(2)}</b> → <b className="num">{engineTotal}</b> vehicle{engineTotal === 1 ? '' : 's'}
-          <span className="sim-card-note"> (utilization {Math.round(settings.targetUtilization * 100)}% · {settings.dailyOpHr} h/day)</span></span>
-        <span className="grow" />
-        <button type="button" className="btn btn-sm ghost" disabled={!matches.length} onClick={() => setConfirm(true)}>
-          Use layout distances{matches.length ? ` (${matches.length})` : ''}
-        </button>
-      </div>
-      {confirm && after != null && (
-        <div className="sim-confirm">
-          Links {matches.length} flow{matches.length === 1 ? '' : 's'} to the layout — distance and lift then come from the drawing · Fleet Engine {engineTotal} → {after}
-          <span className="grow" />
-          <button type="button" className="btn btn-sm ghost" onClick={() => setConfirm(false)}>Cancel</button>
-          <button type="button" className="btn btn-sm primary" onClick={() => { onFlows(linkedAll); setConfirm(false) }}>Apply</button>
-        </div>
-      )}
     </section>
+  )
+}
+
+export type StepId = 'aisles' | 'stations' | 'flows' | 'homes' | 'run'
+export interface Step { id: StepId; label: string; done: boolean; note?: string }
+
+/** The five steps of a layout, worked out from what is drawn (readiness checks' own facts). */
+export function layoutSteps({ layout, flows, fleetNeeded, canRun }: { layout: SimLayout; flows: ProjectFlow[]; fleetNeeded: number; canRun: boolean }): Step[] {
+  const names = flowNames(flows)
+  const placedNames = names.filter(n => layout.points.some(p => sameName(p.name, n.name))).length
+  const stations = layout.points.filter(p => FLOW_POINT_TYPES.includes(p.type)).length
+  const linked = flows.filter(f => f.fromPointId && f.toPointId).length
+  const chargers = layout.points.filter(p => p.type === 'charger').length
+  const homes = chargers + layout.points.filter(p => p.type === 'parking').length
+  return [
+    { id: 'aisles', label: 'Draw aisles', done: layout.segments.length > 0 },
+    { id: 'stations', label: 'Place stations', done: names.length ? placedNames === names.length : stations > 0, note: names.length ? `${placedNames}/${names.length}` : undefined },
+    { id: 'flows', label: 'Link flows', done: linked > 0 && linked === flows.length, note: flows.length ? `${linked}/${flows.length}` : undefined },
+    { id: 'homes', label: 'Chargers & parking', done: chargers > 0 && homes >= fleetNeeded, note: fleetNeeded ? `${homes}/${fleetNeeded}` : undefined },
+    { id: 'run', label: 'Run', done: false, note: canRun ? 'ready' : undefined },
+  ]
+}
+
+/** The step strip above the canvas: done ✓, the next step highlighted, a click picks its tool. */
+export function StepStrip({ steps, canRun, onStep }: { steps: Step[]; canRun: boolean; onStep: (id: StepId) => void }) {
+  const next = steps.find(s => !s.done)?.id
+  return (
+    <nav className="sim-steps" aria-label="Layout steps">
+      <ol>
+        {steps.map((s, i) => {
+          const off = s.id === 'run' && !canRun
+          return (
+            <li key={s.id}>
+              <button type="button" className={`sim-step${s.done ? ' is-done' : ''}${s.id === next ? ' is-next' : ''}`} disabled={off}
+                aria-current={s.id === next ? 'step' : undefined} onClick={() => onStep(s.id)}>
+                <span className="sim-step-n" aria-hidden>{s.done ? '✓' : i + 1}</span>
+                <span>{s.label}</span>
+                {s.note && <span className="sim-step-note num">{s.note}</span>}
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+    </nav>
   )
 }

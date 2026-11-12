@@ -45,7 +45,7 @@ function localPx(el: HTMLElement, clientX: number, clientY: number): XY & { k: n
 }
 
 /** Fit margins for the editor's floating controls: tool column, options bar and name pills, hint. */
-const EDITOR_INSET = { top: 84, right: 24, bottom: 64, left: 72 }
+const EDITOR_INSET = { top: 84, right: 24, bottom: 52, left: 72 }
 
 interface Props {
   layout: SimLayout
@@ -91,8 +91,12 @@ interface Props {
   fitInset?: { top: number; right: number; bottom: number; left: number }
   /** The legend, only while it explains something on screen (direction tool, B56.5 overlay). */
   showLegend?: boolean
-  /** Controls floated over the canvas (tool bar, palette, view buttons, hint). */
+  /** Controls floated over the canvas (tool bar, palette, toast). */
   children?: ReactNode
+  /** View toggles shown in the zoom control (Layout: Flows, B56.5) — nothing else floats over the drawing. */
+  viewControls?: ReactNode
+  /** Centre the view on this spot (ft) whenever `key` changes — the navigator, Tab. */
+  centerOn?: { at: XY; key: number } | null
   /** A double-click finishes the route being drawn. */
   onDoubleClick?: () => void
   /** Run mode: drawn over the layout (vehicles, wait heat, gridlock ring), in feet; given the size
@@ -149,6 +153,12 @@ export default function LayoutCanvas(props: Props) {
     setView({ x: cx - (left + (size.w - left - right) / 2) / ppf, y: cy - (top + (size.h - top - bottom) / 2) / ppf, ppf })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fitKey, fitTick, image?.href, measured])
+  // Centre on a spot when asked (navigator, Tab), keeping the zoom.
+  useEffect(() => {
+    const c = props.centerOn
+    if (c) setView(v => ({ ...v, x: c.at.x - size.w / 2 / v.ppf, y: c.at.y - size.h / 2 / v.ppf }))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [props.centerOn?.key])
   /** Zoom about the middle of the canvas (the zoom control's − and +). */
   const zoomBy = (f: number) => setView(v => {
     const ppf = clampPpf(v.ppf * f)
@@ -348,6 +358,7 @@ export default function LayoutCanvas(props: Props) {
       {props.children}
       {props.showLegend && <Legend clearances={!!clearances} />}
       <div className="sim-zoomctl" onPointerDown={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()}>
+        {props.viewControls}
         <span className="sim-zoom num">{grid >= 1 ? `grid ${grid} ft` : `grid ${grid * 12} in`}</span>
         <button type="button" onClick={() => setFitTick(n => n + 1)} title="Fit the layout to the window">Fit</button>
         <button type="button" onClick={() => zoomBy(1 / 1.25)} aria-label="Zoom out">−</button>

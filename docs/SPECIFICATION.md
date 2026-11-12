@@ -840,6 +840,39 @@ step ribbon is unchanged.
     ML2, M10, 8TB50A, 8HBC40A, CB18; owner artwork in `public/images/sprites/`, load end facing left)
     is drawn from it at its true length × width and turned to its heading, with the state dot and the
     pallet (when loaded) on top. A vehicle without one (eBase7) keeps the plain outline.
+- **Quality-of-life pass on the editor (owner, 2026-11-12; apple-ui-design as the lens, TAL font and
+  colours kept).** No feature is removed; things are folded, moved or derived.
+  - *Full-height workspace.* Below the page head (one row: title, **Run**, Assumptions, ⋯) the editor
+    fills the window: the canvas on the left, one right panel with two tabs, **Layout** and
+    **Flows**. The sample banner sits at the top of the panel. The flows table that sat under the
+    canvas is the **Flows** tab, as a list: from → to, then vehicle · moves/h · distance (with
+    "layout" or "not placed"), and the layout distance with its Δ when a link is pending; the
+    Fleet Engine line and **Use layout distances** (with its before → after confirmation) stay at
+    its foot. There is no Run tab — Run stays the page head's one red button (one action, asked once).
+  - *Selection first.* The Layout tab shows the selected object's inspector at the top. Drawing,
+    Place on routes and Ready to run? sit below it as folded sections, each with a one-word status
+    (e.g. "Scaled", "3 to place", "2 issues"); Place on routes opens by itself while names are left
+    to place.
+  - *Compact rows.* Each assumption is one row: label on the left, value on the right with the unit
+    inside the box, the reset (↺) beside it when overridden or drawn. The source is a small word
+    under the label (JSON · Step 1 · Drawn · Default · Override); an override has the accent dot.
+    The one-line help, and the "Not set — fallback" note, move into an ⓘ beside the label (hover or
+    focus). Same row in the inspector and the Assumptions drawer.
+  - *Colour.* Red (the TAL accent) is for Run and destructive actions only. Selection, the active
+    tool, snaps, badges and toggles use a quiet blue (`--sim-sel`), distinct from the Pick blue.
+  - *Nothing floats over the drawing but the tools.* The tool hint is a status line under the
+    canvas (and each tool's tooltip), not a pill over it. The Flows and B56.5 toggles join the
+    zoom control in the canvas corner; the separate Fit button goes (the zoom control's Fit stays).
+  - *Navigator.* With nothing selected, the Layout tab shows the layout totals and two short lists —
+    Stations (named points, chargers, parking) and Routes (from → to, length) — each row selects its
+    object and centres the view on it.
+  - *Keyboard.* Arrow keys nudge the selected points or object 1 ft (Shift: 10 ft; one undo step
+    per run of nudges); Delete removes the selection; Tab / Shift-Tab steps through the stations,
+    selecting and centring each. Keys go to the editor only when no field or control has focus.
+  - *Step strip.* A thin strip above the canvas: **Draw aisles · Place stations · Link flows ·
+    Chargers & parking · Run**. Each step is done (✓), next (highlighted) or to do, worked out from
+    the layout and the readiness checks; clicking a step picks its tool (Route; Place, with the
+    Place on routes section open; the Flows tab; Place armed with a charger; Run when it can run).
 - **Simulated fleet in pricing (built, Milestone 5; D-1, raise-only).** Quoted numbers can move.
   - *Use N in pricing:* a verdict row offers it only when the stepper value **Meets** and is above
     the Fleet Engine's figure for that type. While it is offered, the run also checks one vehicle
