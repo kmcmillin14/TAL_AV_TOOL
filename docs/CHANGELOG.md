@@ -27,6 +27,11 @@ No feature removed — folded, moved or derived:
   - CSS: cards lose their own chrome at the source (they only live in the panel); one `.sim-tag` and
     one boxed `.sim-input-unit` everywhere; Run's view controls keep their styling (a rule the pass
     had removed).
+- **Code review:** Tab steps through stations only once the canvas has focus (a click on it) — from
+  the page it moves through the controls again; Scale opens the Layout tab so its length box shows;
+  the sample banner shows on a phone again. Noted, not changed: the side panel re-renders while
+  drawing (as before); the ⓘ help can be clipped on the last row of a scrolled panel; the workspace
+  height uses a fixed allowance for the page head.
 
 ## 2026-11-12 — Fleet simulation: code review of Milestone 6
 

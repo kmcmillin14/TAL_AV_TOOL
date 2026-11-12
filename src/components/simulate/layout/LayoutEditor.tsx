@@ -175,7 +175,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   /** Stop whatever is half-drawn: a route, a flow, the scale marks. */
   const cancel = () => { setChainFrom(null); setMarks(null); setArmed(null) }
   const chooseTool = (t: Tool) => {
-    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]) } return }
+    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); setTab('layout') } return }
     setTool(t); cancel()
   }
   /** Undo/redo can remove what a half-drawn route or a selection points at: drop both. */
@@ -393,8 +393,9 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     if (k === 'd' && selection?.kind === 'segment') { stepDirection(selection.id); return }
     const arrow = ({ arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] } as Record<string, [number, number]>)[k]
     if (arrow && !target?.closest('button, summary, [role="radio"]')) { if (nudge(arrow, e.shiftKey ? 10 : 1)) e.preventDefault(); return }
-    // Tab steps through the stations — only from the canvas (nowhere in particular), never off a control.
-    if (e.key === 'Tab' && (!target || target === document.body)) {
+    // Tab steps through the stations — only once the canvas has focus (a click on it), so Tab from
+    // the page still moves through its controls.
+    if (e.key === 'Tab' && target?.classList.contains('sim-stage')) {
       const stations = layout.points.filter(p => p.type !== 'junction')
       if (!stations.length) return
       e.preventDefault()

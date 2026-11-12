@@ -3243,6 +3243,7 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 @container (max-width: 900px) { .sim-work { grid-template-columns: minmax(0, 1fr); height: auto; } }
 .sim-canvas-wrap { display: flex; flex-direction: column; gap: 8px; min-width: 0; min-height: 0; }
 .sim-stage svg { display: block; }
+.sim-stage:focus { outline: none; }
 .sim-legend span { display: inline-flex; align-items: center; gap: 4px; }
 .sim-legend .lg-path { fill: none; stroke: var(--tape); stroke-width: 1; opacity: 0.5; }
 .lg-tape { fill: none; stroke: var(--tape); stroke-width: 1.5; }
@@ -5408,7 +5409,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .flow-from-layout { display: block; font-size: 10px; letter-spacing: 0.04em; color: var(--info); margin-top: 2px; }
 
 /* ---- Simulate: head, cards, flows table (proof-of-concept structure, apple-ui-design rhythm) ---- */
-@keyframes sim-fade-up { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 .sim-head .eh-actions { gap: 8px; }
 .sim-banner { display: flex; align-items: center; gap: 16px; padding: 8px 16px; margin: 0 0 16px; border-radius: 10px; background: var(--info-soft); color: var(--text-secondary); font-size: 13px; }
 .sim-banner b { color: var(--text-primary); }
@@ -5561,7 +5561,7 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-frow-label b { font-weight: 600; color: var(--text-secondary); }
 .sim-frow-input { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .sim-frow-input .sim-input-unit, .sim-frow-input select { flex: 1; min-width: 0; }
-.sim-frow-ro { font-size: 13px; color: var(--text-secondary); justify-self: end; }
+.sim-frow-ro { margin-left: auto; font-size: 13px; color: var(--text-secondary); }
 .sim-frow select { height: 32px; padding: 0 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-input); font-size: 13px; color: var(--text-primary); }
 .sim-frow-help { margin: 0; font-size: 11px; line-height: 1.45; color: var(--text-tertiary); }
 /* ⓘ: the field's help (and its fallback) on hover or focus, under the row, the row's width. */

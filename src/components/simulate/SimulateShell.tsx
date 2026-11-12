@@ -101,7 +101,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     setMode('layout')
   }
 
-  // In Layout mode the banner sits at the top of the side panel; in Run mode above the run.
+  // In Layout mode the banner sits at the top of the side panel; in Run mode (and on a phone) above the page.
   const banner = sampleOn && (
     <div className="sim-banner">
       <span><b>Sample layout</b> — the CB18 proof-of-concept site.</span>
@@ -138,7 +138,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
         </div>
       </div>
 
-      {running && banner}
+      {(running || narrow) && banner}
 
       {narrow ? (
         <section className="sim-canvas" aria-label="Simulation layout">

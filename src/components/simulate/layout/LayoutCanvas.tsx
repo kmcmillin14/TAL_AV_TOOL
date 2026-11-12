@@ -276,6 +276,7 @@ export default function LayoutCanvas(props: Props) {
   return (
     <div
       ref={box}
+      tabIndex={-1}
       className={`sim-stage${props.panAlways ? ' is-pan' : props.snap ? ' is-snapping' : props.aim ? ' is-aim' : ''}`}
       onContextMenu={props.onContextMenu}
       onPointerDown={down}
