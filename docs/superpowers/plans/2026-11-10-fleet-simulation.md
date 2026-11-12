@@ -267,6 +267,8 @@ no results).
 - [ ] Open Assumptions, tick Changed only, then Reset all
 - [ ] Draw: two-way aisles show both paths; click a route's badge to flip direction; place a stand near an aisle — it connects itself
 - [ ] Is the screen still clean, with nothing explained in paragraphs?
+- [ ] Follow the step strip on an empty project, start to Run — does it guide without getting in the way?
+- [ ] With nothing selected, click a station in the list; then use the arrows and Tab on the canvas
 - **Sign-off question:** Clean enough, and is anything missing or too much?
 - **You receive:** Vercel preview and this list of editable assumptions
 
