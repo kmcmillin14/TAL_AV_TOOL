@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-12 — Fleet simulation: easier flow linking
+
+- **Flow tool:** a Pick lights up the Drops it can link to (a Drop first: the Picks); the rest are dimmed
+  with the reason on hover and click. Hovering a lit point previews the path and its length.
+- **Shift-click** links and keeps the start, for one Pick to several Drops. A new flow opens with Moves
+  per hour focused.
+- **Add flow to…** in a Pick or Drop point's inspector: reachable points, nearest first, one click each.
+- Calc: `flowTargets` (layoutEdit) and `pathPoints` (engine), with tests.
+
 ## 2026-11-12 — Fleet simulation: vehicle switcher (simulation only)
 
 - **‹ Vehicle ›** in the page head: preloaded from the Sizing flows (or Step 2's first compatible

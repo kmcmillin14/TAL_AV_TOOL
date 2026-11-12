@@ -5,11 +5,11 @@
 // (source chip, reset, one line of help). With nothing selected: the layout's totals and a navigator
 // (stations and routes — a click selects and centres).
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ClearanceRule, SegmentClearance } from '@/src/calc/sim/clearance'
 import { linkedFlows } from '@/src/calc/sim/readiness'
 import {
-  FLOW_POINT_TYPES, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
+  FLOW_POINT_TYPES, flowTargets, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import type { SimLayout, SimObject, SimPoint, SimPointType, SimSegment } from '@/src/calc/sim/types'
 import { fieldDef, fieldsFor, fieldPatch, fieldState, type SimFieldDef } from '@/src/lib/simFields'
@@ -44,6 +44,8 @@ interface Props {
   onDelete: () => void
   /** Navigator: select this object and centre the view on it. */
   onFocus: (sel: NonNullable<Selection>, at: XY) => void
+  /** "Add flow to…": link a new flow Pick → Drop. */
+  onAddFlow: (from: string, to: string) => void
 }
 
 
@@ -71,6 +73,19 @@ export default function LayoutPanel(p: Props) {
     () => (flow?.fromPointId && flow.toPointId ? routeDistanceFt(p.layout, flow.fromPointId, flow.toPointId) : Infinity),
     [p.layout, flow?.fromPointId, flow?.toPointId],
   )
+
+  // A new flow (no moves yet) opens with Moves per hour focused — after the click that made it, which
+  // would otherwise take the focus back to the canvas.
+  const rateRef = useRef<HTMLInputElement>(null)
+  useEffect(() => {
+    if (!flow || flow.thruPerHr) return
+    const t = window.setTimeout(() => rateRef.current?.focus())
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flow?.id])
+
+  // "Add flow to…" for the selected Pick or Drop point: what it can link to, nearest first.
+  const links = useMemo(() => (sel?.kind === 'point' ? flowTargets(p.layout, sel.id, p.flows) : null), [sel, p.layout, p.flows])
 
   if (sel?.kind === 'point') {
     const pt = byId.get(sel.id)
@@ -134,6 +149,19 @@ export default function LayoutPanel(p: Props) {
             </>
           )}
         </Section>
+        {links && (
+          <Section title="Add flow to…" open={!flowsHere.length} status={`${links.targets.filter(t => t.ok).length} reachable`}>
+            {links.targets.some(t => t.ok)
+              ? <ul className="sim-nav">
+                  {links.targets.filter(t => t.ok).map(t => (
+                    <li key={t.id}><button type="button" onClick={() => (links.from === 'pick' ? p.onAddFlow(pt.id, t.id) : p.onAddFlow(t.id, pt.id))}>
+                      <span className="nm">{links.from === 'pick' ? '→ ' : '← '}{name(t.id)}</span><span className="meta num">{len(t.distanceFt ?? Infinity)}</span>
+                    </button></li>
+                  ))}
+                </ul>
+              : <p className="sim-card-note">No {links.from === 'pick' ? 'Drop' : 'Pick'} point it can reach yet.</p>}
+          </Section>
+        )}
         <Section title="Advanced" count={advancedOverrides}>
           {isFlowPoint && (
             <>
@@ -264,7 +292,7 @@ export default function LayoutPanel(p: Props) {
           ['Vehicle', p.vehicles.find(v => v.id === flow.vehicleId)?.name ?? '—'],
         ]} />
         <label className="sim-field"><span>Moves per hour</span>
-          <input type="number" min={0} step="any" value={flow.thruPerHr || ''} onChange={e => p.onFlow(flow.id, { thruPerHr: Math.max(0, Number(e.target.value) || 0) })} />
+          <input type="number" min={0} step="any" value={flow.thruPerHr || ''} ref={rateRef} onChange={e => p.onFlow(flow.id, { thruPerHr: Math.max(0, Number(e.target.value) || 0) })} />
         </label>
         <label className="sim-field"><span>Vehicle</span>
           <select value={flow.vehicleId ?? ''} onChange={e => p.onFlow(flow.id, { vehicleId: e.target.value || undefined, transferMethodIdx: undefined })}>

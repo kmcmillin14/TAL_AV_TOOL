@@ -10,7 +10,7 @@ import { memo, useEffect, useMemo, useRef, useState, type MouseEvent, type Point
 import Icon from '@/src/design-system/components/Icon'
 import { laneWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { segmentGeometry } from '@/src/calc/sim/geometry'
-import { hitTest, objectCorners, type DrawSnap } from '@/src/calc/sim/layoutEdit'
+import { hitTest, objectCorners, type DrawSnap, type FlowTarget } from '@/src/calc/sim/layoutEdit'
 import { fmtLength } from '@/src/lib/utils/units'
 import type { SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/types'
 import type { ProjectFlow } from './useLayoutEditor'
@@ -108,6 +108,10 @@ interface Props {
   follow?: XY | null
   /** Point names on the map (Run mode can hide them). Default on. */
   showLabels?: boolean
+  /** Flow tool: the points a flow can link to from its start (lit) or not (dimmed, with why). */
+  flowTargets?: Map<string, FlowTarget> | null
+  /** Flow tool: the hovered target's path along the routes, and its length. */
+  flowPreview?: { path: XY[]; label: string } | null
   /** Aisle width per route, ft (envelope + B56.5 clearances); routes without one use 10 ft / 6 ft. */
   laneWidths?: Record<string, number>
 }
@@ -326,10 +330,20 @@ export default function LayoutCanvas(props: Props) {
 
         {props.snap && <SnapMark snap={props.snap} from={rubberFrom} px={px} fmtLen={fmtLen} />}
 
-        {[...pts.values()].map(p => (
-          <PointMarker key={p.id} p={p} px={px} selected={selected('point', p.id)} loose={notConnected.has(p.id)} cross={(degree.get(p.id) ?? 0) >= 3}
-            label={props.showLabels === false ? null : crowded.has(p.id) ? shortName(p.name ?? '') : p.name ?? null} />
-        ))}
+        {props.flowPreview && props.flowPreview.path.length > 1 && (
+          <g className="sim-flow-preview">
+            <polyline points={props.flowPreview.path.map(q => `${q.x},${q.y}`).join(' ')} vectorEffect="non-scaling-stroke" />
+            <PreviewLabel at={props.flowPreview.path[Math.floor(props.flowPreview.path.length / 2)]} px={px} text={props.flowPreview.label} />
+          </g>
+        )}
+        {[...pts.values()].map(p => {
+          const t = props.flowTargets?.get(p.id)
+          return (
+            <PointMarker key={p.id} p={p} px={px} selected={selected('point', p.id)} loose={notConnected.has(p.id)} cross={(degree.get(p.id) ?? 0) >= 3}
+              mark={!t ? undefined : t.ok ? 'target' : 'dim'} reason={t && !t.ok ? t.reason : undefined}
+              label={props.showLabels === false ? null : crowded.has(p.id) ? shortName(p.name ?? '') : p.name ?? null} />
+          )
+        })}
 
         {/* Overridden assumptions: a dot on the point, or at the middle of the route (acceptance 36). */}
         {ovDots.map(d => (
@@ -552,7 +566,15 @@ function CurveHandles({ s, a, b, px }: { s: SimSegment; a?: SimPoint; b?: SimPoi
  *  parking — with the approved type icon, its name in a dark pill above, and the role badge. Grows
  *  with zoom like a floor marking, never smaller than legible. Junctions are dots: amber where three
  *  or more routes meet. */
-const PointMarker = memo(function PointMarker({ p, px, selected, loose, cross, label }: { p: SimPoint; px: number; selected: boolean; loose: boolean; cross: boolean; label: string | null }) {
+/** The flow preview's length, beside the middle of its path. */
+function PreviewLabel({ at, px, text }: { at: XY; px: number; text: string }) {
+  return <text x={at.x + 10 * px} y={at.y - 10 * px} fontSize={13 * px} className="sim-flow-preview-len">{text}</text>
+}
+
+/** `mark` (Flow tool): a point the flow can link to is lit, the rest dimmed — `reason` says why. */
+const PointMarker = memo(function PointMarker({ p, px, selected, loose, cross, label, mark, reason }: {
+  p: SimPoint; px: number; selected: boolean; loose: boolean; cross: boolean; label: string | null; mark?: 'target' | 'dim'; reason?: string
+}) {
   if (p.type === 'junction') {
     return <g transform={`translate(${p.x} ${p.y}) scale(${px})`} className={`sim-pt-junction${cross ? ' is-cross' : ''}${selected ? ' is-selected' : ''}`}><circle r={selected ? 5 : cross ? 4 : 3} /></g>
   }
@@ -564,7 +586,8 @@ const PointMarker = memo(function PointMarker({ p, px, selected, loose, cross, l
   return (
     <>
       {fp && <rect x={p.x - fp.l / 2} y={p.y - fp.w / 2} width={fp.l} height={fp.w} className={`sim-footprint ${tone}`} vectorEffect="non-scaling-stroke" />}
-      <g transform={`translate(${p.x} ${p.y}) scale(${px})`} className={`sim-pt ${tone}${selected ? ' is-selected' : ''}`}>
+      <g transform={`translate(${p.x} ${p.y}) scale(${px})`} className={`sim-pt ${tone}${selected ? ' is-selected' : ''}${mark ? ` is-${mark}` : ''}`}>
+        {mark === 'target' && <circle r={half + 7} className="sim-pt-halo" />}
         {vehiclePoint
           ? <circle r={half} className="sim-pt-body" />
           : <rect x={-half} y={-half} width={half * 2} height={half * 2} rx={Math.min(5, half / 2)} className="sim-pt-body" />}
@@ -577,7 +600,7 @@ const PointMarker = memo(function PointMarker({ p, px, selected, loose, cross, l
           </g>
         )}
         {label && <NamePill y={-half - 6} text={label} />}
-        {p.name && <title>{p.name}</title>}
+        {(p.name || reason) && <title>{[p.name, reason].filter(Boolean).join(' — ')}</title>}
         {loose && <text y={half + 14} className="sim-pt-loose">Not connected</text>}
       </g>
     </>

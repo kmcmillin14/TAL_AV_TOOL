@@ -10,11 +10,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { linkedFlows } from '@/src/calc/sim/readiness'
+import { pathPoints } from '@/src/calc/sim/engine'
 import { laneWidthFt } from '@/src/calc/sim/clearance'
 import { clearanceRule, payloadFt, runInputs } from '@/src/calc/sim/runInputs'
 import { roundCorners } from '@/src/calc/sim/corners'
 import {
-  addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowStartRefusal, FLOW_POINT_TYPES, linkFlow, movePoints,
+  addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowTargets, FLOW_POINT_TYPES, linkFlow, movePoints,
   notConnected, placeOnSegment, pointsInBox, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
   mergePoints, nextDirection, placeWithSpur, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
@@ -41,12 +42,14 @@ export type PanelTab = 'layout' | 'flows' | 'checks'
 type Tool = 'select' | 'hand' | 'points' | 'routes' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
 const DRAG_PX = 8
+/** How near a lit flow target the pointer must be to preview its path, screen px. */
+const TARGET_PX = 18
 const TOOLS: { id: Tool; label: string; key: string; hint: string }[] = [
   { id: 'select', label: 'Select', key: 'V', hint: 'Click to select · drag to move · drag empty space to pan · Shift-drag to select several · a route’s badge (or D) changes its direction' },
   { id: 'hand', label: 'Hand', key: 'H', hint: 'Drag to move around · hold Space to pan in any tool' },
   { id: 'routes', label: 'Route', key: 'R', hint: 'Click or drag to draw a route · the + shows where it lands · start on a route to branch from it' },
   { id: 'points', label: 'Place', key: 'P', hint: 'Click to place · it joins the nearest route (dashed) · Shift places it unconnected' },
-  { id: 'flows', label: 'Flow', key: 'F', hint: 'Click a Pick point, then a Drop point' },
+  { id: 'flows', label: 'Flow', key: 'F', hint: 'Click a Pick (or a Drop) — the points it can link to light up' },
   { id: 'scale', label: 'Scale', key: 'S', hint: 'Click both ends of a known dimension' },
 ]
 /** Tool icons — the proof of concept's set, plus Flow. */
@@ -149,6 +152,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const loose = useMemo(() => new Set(notConnected(layout).map(p => p.id)), [layout])
   const byId = useMemo(() => pointById(layout), [layout])
   const linked = useMemo(() => linkedFlows(flows), [flows])
+  // Flow tool: from the clicked start, every point it can link to (lit) or not (dimmed, with why).
+  const targets = useMemo(() => (tool === 'flows' && chainFrom ? flowTargets(layout, chainFrom, flows) : null), [tool, chainFrom, layout, flows])
+  const targetMarks = useMemo(() => (targets ? new Map(targets.targets.map(t => [t.id, t])) : null), [targets])
+  /** The hovered target's path along the routes, and its length. */
+  const [preview, setPreview] = useState<{ id: string; path: XY[]; label: string } | null>(null)
   // The flows as the simulation drives them (vehicle switcher) — lanes, corners and B56.5 follow.
   const simFlows = useMemo(() => (runAs ? runAs(flows).flows : flows), [flows, runAs])
   const simLinked = useMemo(() => (simFlows === flows ? linked : linkedFlows(simFlows)), [simFlows, flows, linked])
@@ -181,7 +189,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const setFlows = (next: ProjectFlow[], merge?: string) => commit({ layout, flows: next }, merge)
   const say = (m: string) => { setMessage(m); window.setTimeout(() => setMessage(c => (c === m ? null : c)), 3500) }
   /** Stop whatever is half-drawn: a route, a flow, the scale marks. */
-  const cancel = () => { setChainFrom(null); setMarks(null); setArmed(null) }
+  const cancel = () => { setChainFrom(null); setMarks(null); setArmed(null); setPreview(null) }
   const chooseTool = (t: Tool) => {
     if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); setTab('layout') } return }
     setTool(t); cancel()
@@ -281,6 +289,14 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       } else if (drag) setDrag({ ...drag, at })
       else if (tool === 'routes' && !marks) setHover(routeSnap(at, shift, px))
       else if (tool === 'points' && placeType !== 'object' && !marks) setHover(placeSnap(at, px, shift))
+      else if (targets) {
+        // Hovering a point the flow can link to previews its path along the routes.
+        const near = targets.targets.find(t => t.ok && Math.hypot(byId.get(t.id)!.x - at.x, byId.get(t.id)!.y - at.y) < TARGET_PX * px)
+        if (near?.id !== preview?.id) {
+          const [a, b] = targets.from === 'pick' ? [chainFrom!, near?.id] : [near?.id, chainFrom!]
+          setPreview(near && a && b ? { id: near.id, path: pathPoints(layout, a, b) ?? [], label: fmtLength(near.distanceFt, unitSystem, 1) } : null)
+        }
+      }
       return
     }
     if (type === 'up') {
@@ -309,16 +325,18 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       press.current = at
       routeClick(at, shift, px)
     } else if (tool === 'flows') {
-      if (hit?.kind !== 'point') { setChainFrom(null); return }
-      const why = chainFrom ? flowRefusal(layout, chainFrom, hit.id) : flowStartRefusal(layout, hit.id)
-      if (why) { say(why); return }
-      if (!chainFrom) { setChainFrom(hit.id); return }
-      // A new flow has no vehicle in Sizing; the simulation runs it as the preloaded one (runAs).
-      const blank: ProjectFlow = { id: newFlowId(), origin: '', destination: '', distanceFt: 0, thruPerHr: 0, routeLayout: 'medium', liftHeightFt: 0 }
-      const flow = linkFlow(layout, blank, chainFrom, hit.id)
-      setFlows([...flows, flow])
-      setSelection({ kind: 'flow', id: flow.id })
-      setChainFrom(null)
+      if (hit?.kind !== 'point' || hit.id === chainFrom) { setChainFrom(null); setPreview(null); return }
+      if (!targets) {
+        if (flowTargets(layout, hit.id, flows)) setChainFrom(hit.id)
+        else say('Start a flow at a Pick or a Drop point.')
+        return
+      }
+      const t = targets.targets.find(x => x.id === hit.id)
+      if (!t?.ok) { say(t?.reason ?? 'Not a flow end.'); return }
+      // A Drop start links the other way round: the flow always runs Pick → Drop.
+      if (targets.from === 'pick') addFlow(chainFrom!, hit.id); else addFlow(hit.id, chainFrom!)
+      setPreview(null)
+      if (!shift) setChainFrom(null)            // Shift-click keeps the start: one Pick, several Drops
     }
   }
 
@@ -326,6 +344,16 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const stepDirection = (segId: string) => {
     const s = layout.segments.find(q => q.id === segId)
     if (s) setLayout(updateSegment(layout, s.id, { dir: nextDirection(s.dir) }), `dir:${s.id}`)
+  }
+
+  /** Link a new flow Pick → Drop and open it with Moves per hour to fill in. It has no vehicle in Sizing;
+   *  the simulation runs it as the preloaded one (runAs). */
+  const addFlow = (from: string, to: string) => {
+    const blank: ProjectFlow = { id: newFlowId(), origin: '', destination: '', distanceFt: 0, thruPerHr: 0, routeLayout: 'medium', liftHeightFt: 0 }
+    const flow = linkFlow(layout, blank, from, to)
+    setFlows([...flows, flow])
+    setSelection({ kind: 'flow', id: flow.id })
+    setTab('layout')
   }
 
   const deleteSelection = () => {
@@ -463,6 +491,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
 
   const hint = marks
     ? (marks.length < 2 ? (marks.length ? 'Click the end of the dimension' : 'Click the start of a known dimension') : 'Enter the real length in the Drawing card')
+    : tool === 'flows' && chainFrom ? `Click a lit ${targets?.from === 'drop' ? 'Pick' : 'Drop'} to link · Shift-click to link several · Esc to stop`
     : tool === 'routes' && chainFrom ? 'Click where the + is to continue · it joins points and routes it touches · Shift keeps it straight · right-click or Enter to finish'
     : tool === 'points' && armed ? `Click on a route to place “${armed.name}”`
     : tool === 'points' && placeType === 'object' ? 'Drag out a wall, column or rack face'
@@ -531,6 +560,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             laneWidths={inputs.laneWidths}
             overridden={overridden}
             onDoubleClick={() => { if (tool === 'routes') cancel() }}
+            flowTargets={targetMarks}
+            flowPreview={preview}
             viewControls={<>
               <button type="button" className={showFlows ? 'on' : ''} aria-pressed={showFlows} onClick={() => setShowFlows(v => !v)} title="Show flows on the layout">Flows</button>
               <button type="button" className={showClearance ? 'on' : ''} aria-pressed={showClearance} onClick={() => setShowClearance(v => !v)} title="B56.5 clearance overlay">B56.5</button>
@@ -631,6 +662,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   onUnlink={flowId => setFlows(flows.map(f => (f.id === flowId ? unlinked(f) : f)))}
                   onDelete={deleteSelection}
                   onFocus={focusOn}
+                  onAddFlow={addFlow}
                 />
                 <div className="sim-folds">
                   {!marks && drawingFold}

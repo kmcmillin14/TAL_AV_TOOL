@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   addObject, convertPoint, copyPoints, drawGridFt, mergePoints, nextDirection, placeWithSpur, snapDraw, snapToObjects, spurTarget, SPUR_REACH_FT, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
-  addPoint, addSegment, emptyLayout, flowRefusal, flowStartRefusal, hitTest, linkFlow, linkSuggestions, measureFlows, notConnected,
+  addPoint, addSegment, emptyLayout, flowRefusal, flowTargets, flowStartRefusal, hitTest, linkFlow, linkSuggestions, measureFlows, notConnected,
   placeOnSegment, rescaleLayout, routeDistanceFt, splitSegment, updatePoint, updateSegment, withLayoutDistance,
 } from '../layoutEdit'
 import type { SimLayout } from '../types'
+import { pathPoints } from '../engine'
 
 /** Pick at (0,0), Drop at (400,0), joined by one two-way route. */
 function line(): { L: SimLayout; a: string; b: string; s: string } {
@@ -355,5 +356,41 @@ describe('stations connect themselves', () => {
   })
   it('the direction badge steps two-way → one-way → the other way', () => {
     expect(['two', 'ab', 'ba'].map(d => nextDirection(d as 'two' | 'ab' | 'ba'))).toEqual(['ab', 'ba', 'two'])
+  })
+})
+
+describe('flowTargets (Flow tool highlight, "Add flow to…")', () => {
+  // P (pick) — D1 (drop) — D2 (drop), with a one-way route D2 → far Drop D3 the wrong way.
+  const L = {
+    points: [
+      { id: 'P', x: 0, y: 0, type: 'stand', role: 'pick' }, { id: 'D1', x: 10, y: 0, type: 'stand', role: 'drop' },
+      { id: 'D2', x: 30, y: 0, type: 'stand', role: 'drop' }, { id: 'D3', x: 60, y: 0, type: 'stand', role: 'drop' },
+      { id: 'C', x: 0, y: 20, type: 'charger' }, { id: 'J', x: 20, y: 0, type: 'junction' },
+    ],
+    segments: [
+      { id: 's1', a: 'P', b: 'D1', dir: 'two' }, { id: 's2', a: 'D1', b: 'J', dir: 'two' }, { id: 's3', a: 'J', b: 'D2', dir: 'two' },
+      { id: 's4', a: 'D3', b: 'D2', dir: 'ab' }, { id: 's5', a: 'P', b: 'C', dir: 'two' },
+    ],
+  } as never
+  it('lists the Drops a Pick reaches, nearest first, and why the rest cannot be linked', () => {
+    const r = flowTargets(L, 'P', [{ fromPointId: 'P', toPointId: 'D2' }])!
+    expect(r.from).toBe('pick')
+    const by = Object.fromEntries(r.targets.map(t => [t.id, t]))
+    expect(r.targets[0]).toMatchObject({ id: 'D1', ok: true, distanceFt: 10 })
+    expect(by.D2).toMatchObject({ ok: false, reason: 'Already linked.' })
+    expect(by.D3).toMatchObject({ ok: false, reason: expect.stringMatching(/^No route/) })
+    expect(by.C).toMatchObject({ ok: false, reason: 'End a flow at a Drop point.' })
+    expect(by.J).toBeUndefined()
+  })
+  it('from a Drop lists the Picks (the flow still runs Pick → Drop); a charger starts nothing', () => {
+    expect(flowTargets(L, 'D1', [])!.targets.filter(t => t.ok).map(t => t.id)).toEqual(['P'])
+    expect(flowTargets(L, 'D1', [])!.from).toBe('drop')
+    expect(flowTargets(L, 'C', [])).toBeNull()
+  })
+  it('previews the path along the routes', () => {
+    const path = pathPoints(L, 'P', 'D2')!
+    expect(path[0]).toEqual({ x: 0, y: 0 })
+    expect(path.at(-1)).toEqual({ x: 30, y: 0 })
+    expect(pathPoints(L, 'D2', 'D3')).toBeNull()
   })
 })

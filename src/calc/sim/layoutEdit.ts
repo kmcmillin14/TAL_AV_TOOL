@@ -182,6 +182,31 @@ export function flowRefusal(L: SimLayout, from: string, to: string): string | nu
   return null
 }
 
+/** One point a flow could link to from a start point (the Flow tool's highlight, "Add flow to…"). */
+export interface FlowTarget { id: string; ok: boolean; reason?: string; distanceFt?: number }
+
+/**
+ * Every point a flow can link to from `start`, with the reason when it cannot (the same rules as
+ * `flowRefusal`, plus *Already linked* and *No route*). A Pick start lists Drops; a Drop start lists
+ * Picks (the flow still runs Pick → Drop). `null` when the start can be neither. Junctions are left
+ * out. Valid targets come first, nearest first.
+ */
+export function flowTargets(L: SimLayout, start: string, flows: { fromPointId?: string; toPointId?: string }[]): { from: 'pick' | 'drop'; targets: FlowTarget[] } | null {
+  const s = pointById(L).get(start)
+  const from = canPick(s) ? 'pick' : canDrop(s) ? 'drop' : null
+  if (!from) return null
+  const G = buildGraph(L)
+  const targets = L.points.filter(p => p.type !== 'junction' && p.id !== start).map((p): FlowTarget => {
+    const [a, b] = from === 'pick' ? [start, p.id] : [p.id, start]
+    const why = flowRefusal(L, a, b)
+    if (why) return { id: p.id, ok: false, reason: why }
+    if (flows.some(f => f.fromPointId === a && f.toPointId === b)) return { id: p.id, ok: false, reason: 'Already linked.' }
+    const d = routeDistanceFt(L, a, b, G)
+    return isFinite(d) ? { id: p.id, ok: true, distanceFt: d } : { id: p.id, ok: false, reason: 'No route — check one-way routes and connections.' }
+  })
+  return { from, targets: targets.sort((x, y) => Number(y.ok) - Number(x.ok) || (x.distanceFt ?? 0) - (y.distanceFt ?? 0)) }
+}
+
 /** A project flow as stored in Sizing — the layout fields are optional. */
 export interface LayoutFlow {
   id: string

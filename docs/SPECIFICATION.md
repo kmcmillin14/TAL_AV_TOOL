@@ -897,6 +897,19 @@ step ribbon is unchanged.
       Sizing's result stale). Choosing the Sizing vehicle again clears the switch.
     - *New flows* drawn in Simulate have no vehicle in Sizing (it is chosen there); the simulation
       runs them as the preloaded vehicle.
+  - *Easier flow linking (owner, 2026-11-12).*
+    - With the Flow tool, clicking a **Pick** lights up every Drop it can link to and dims the rest;
+      clicking a **Drop** first does the same for Picks (the flow still runs Pick → Drop). A dimmed
+      point says why on hover and on click: *End a flow at a Drop point* · *Same point* · *Already
+      linked* · *No route — check one-way routes and connections* (`flowTargets`, the same rules the
+      engine and validation use).
+    - Hovering a lit point draws the path the flow will take along the routes, with its length.
+    - A click links it; **Shift-click** links it and keeps the start, so one Pick can feed several
+      Drops in a row. Esc, a right-click or a click on empty floor stops.
+    - A new flow opens in the inspector with **Moves per hour** focused.
+    - A Pick (or Drop) point's inspector lists **Add flow to…**: every point it can link to, nearest
+      first, with the distance — one click creates the flow.
+    - Name-matched Sizing flows are linked from the Flows tab (**Use layout distances**, as before).
   - *One direction (owner, 2026-11-12):* **Sizing → Simulation → Price only.** The simulation reads
     Sizing (flows, vehicles, loads) and never writes back to it; the only way it changes a quote is
     an explicit "Use … in pricing" with its before → after confirmation (D-1).

@@ -5686,3 +5686,13 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-vswitch select:focus-visible, .sim-vswitch button:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: -2px; }
 .sim-as-note { color: var(--text-primary); }
 .sim-as-note b { color: var(--sim-sel); }
+
+/* Flow tool (owner, 2026-11-12): the points a flow can link to are lit, the rest dimmed; the hovered
+   one's path along the routes is drawn with its length. */
+.sim-pt.is-dim { opacity: 0.3; transition: opacity 0.2s cubic-bezier(0.25, 0.1, 0.25, 1); }
+.sim-pt-halo { fill: var(--sim-sel-soft); stroke: var(--sim-sel); stroke-width: 2; animation: sim-halo 1.6s cubic-bezier(0.25, 0.1, 0.25, 1) infinite; }
+@keyframes sim-halo { 50% { stroke-opacity: 0.35; } }
+@media (prefers-reduced-motion: reduce) { .sim-pt-halo { animation: none; } }
+.sim-flow-preview polyline { fill: none; stroke: var(--sim-sel); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 8 6; }
+.sim-flow-preview-len { font-family: var(--tal-font-numeric); font-weight: 600; fill: var(--text-primary); paint-order: stroke; stroke: var(--scene-bg); stroke-width: 3px; pointer-events: none; }
+

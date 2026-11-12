@@ -734,6 +734,14 @@ function polyline(G: Graph, edges: Edge[], from = 0): { x: number; y: number }[]
   return out
 }
 
+/** The path from point `a` to point `b` along the routes, as points (ft) — the Flow tool's preview.
+ *  `null` when there is no route. */
+export function pathPoints(L: SimLayout, a: string, b: string, G = buildGraph(L)): { x: number; y: number }[] | null {
+  const i = G.idx.get(a), j = G.idx.get(b)
+  const r = i == null || j == null ? null : route(G, i, j)
+  return r ? (r.edges.length ? polyline(G, r.edges) : [{ x: L.points[i!].x, y: L.points[i!].y }]) : null
+}
+
 /**
  * A vehicle's job legs (acceptance 15): `empty` — from where it is to its pick (while heading there);
  * `loaded` — pick to drop (still ahead), or from where it is to the drop once loaded. Both empty when
