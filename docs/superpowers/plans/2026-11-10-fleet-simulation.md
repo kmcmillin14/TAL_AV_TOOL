@@ -262,11 +262,13 @@ no results).
 - [ ] Gates; `/simplify`; `/code-review`; commit; owner summary.
 
 **Owner check (you):**
-- [ ] Click a point, a route, a vehicle: everything you'd change is within two clicks
-- [ ] Override a speed, see the dot and count, then Reset all
-- [ ] Is the screen still clean, Apple-level, with nothing explained in paragraphs?
+- [ ] Click a point, a route, a vehicle in Run: everything you'd change is within two clicks
+- [ ] Override a vehicle speed: see the dot, the count in the page head and the Run chip; the verdict re-runs; Engine sized stays the same
+- [ ] Open Assumptions, tick Changed only, then Reset all
+- [ ] Draw: two-way aisles show both paths; click a route's badge to flip direction; place a stand near an aisle — it connects itself
+- [ ] Is the screen still clean, with nothing explained in paragraphs?
 - **Sign-off question:** Clean enough, and is anything missing or too much?
-- **You receive:** Preview link and the full list of editable assumptions
+- **You receive:** Vercel preview and this list of editable assumptions
 
 **Done when:** acceptance 34–37 pass.
 
