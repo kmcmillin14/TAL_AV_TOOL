@@ -148,14 +148,17 @@ export function insideRect(o: Rect, p: Vec): boolean {
   return Math.abs(lx) <= o.w / 2 && Math.abs(ly) <= o.h / 2
 }
 
-/** Is `p` inside the closed polygon `poly` (even-odd)? */
+/** Is `p` inside the closed polygon `poly`? Nonzero winding, so a freehand loop drawn round twice (or
+ *  crossing itself) still holds what it circles. */
 export function insidePolygon(poly: Vec[], p: Vec): boolean {
-  let inside = false
-  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-    const a = poly[i], b = poly[j]
-    if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside
+  let wn = 0
+  for (let i = 0; i < poly.length; i++) {
+    const a = poly[i], b = poly[(i + 1) % poly.length]
+    const side = (b.x - a.x) * (p.y - a.y) - (p.x - a.x) * (b.y - a.y)
+    if (a.y <= p.y) { if (b.y > p.y && side > 0) wn++ }
+    else if (b.y <= p.y && side < 0) wn--
   }
-  return inside
+  return wn !== 0
 }
 
 /** Do segments a–b and c–d cross or touch? */

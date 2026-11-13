@@ -393,25 +393,37 @@ export function removePoints<T extends SimLayout>(L: T, ids: string[]): T {
 }
 
 /** Points whose position lies inside the rectangle spanned by two corners (marquee select). */
+export function pointsInBox(L: SimLayout, a: XY, b: XY): string[] {
+  const [x0, x1, y0, y1] = [Math.min(a.x, b.x), Math.max(a.x, b.x), Math.min(a.y, b.y), Math.max(a.y, b.y)]
+  return L.points.filter(p => p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1).map(p => p.id)
+}
+
 /** Points inside a lasso (a closed loop, ft). */
 export function pointsInLoop(L: SimLayout, loop: XY[]): string[] {
   return loop.length < 3 ? [] : L.points.filter(p => insidePolygon(loop, p)).map(p => p.id)
 }
 
-/** Change several highways at once: `patch` gives each its own change (stations on each go with it). */
+/** Change several highways at once: `patch` gives each its own change. A station on one of them goes
+ *  with it — once: a point on two of them (a crossing, a shared end) rides the first, judged on the
+ *  layout before any of them moved. */
 export function updateHighways<T extends SimLayout>(L: T, ids: string[], patch: (h: SimHighway) => Partial<Omit<SimHighway, 'id'>>): T {
-  return ids.reduce((acc, id) => { const h = acc.highways?.find(q => q.id === id); return h ? updateHighway(acc, id, patch(h)) : acc }, L)
+  const owner = new Map<string, string>()
+  for (const id of ids) {
+    const h = L.highways?.find(q => q.id === id)
+    if (!h) continue
+    const { a, b } = highwayEnds(h)
+    for (const p of L.points) if (!owner.has(p.id) && closestOnLine(a, b, p).dist <= ON_HIGHWAY_FT) owner.set(p.id, id)
+  }
+  return ids.reduce((acc, id) => {
+    const h = acc.highways?.find(q => q.id === id)
+    return h ? updateHighway(acc, id, patch(h), new Set([...owner].filter(([, o]) => o === id).map(([p]) => p))) : acc
+  }, L)
 }
 
 /** Remove several highways. */
 export function removeHighways<T extends SimLayout>(L: T, ids: string[]): T {
   const gone = new Set(ids)
   return { ...L, highways: (L.highways ?? []).filter(h => !gone.has(h.id)) }
-}
-
-export function pointsInBox(L: SimLayout, a: XY, b: XY): string[] {
-  const [x0, x1, y0, y1] = [Math.min(a.x, b.x), Math.max(a.x, b.x), Math.min(a.y, b.y), Math.max(a.y, b.y)]
-  return L.points.filter(p => p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1).map(p => p.id)
 }
 
 // ---- Fixed objects (spec §5.8) ------------------------------------------------------------------
@@ -485,9 +497,10 @@ export function addHighway<T extends SimLayout>(L: T, a: XY, b: XY, widthFt: num
 /**
  * Change a highway. The stations and junctions on its centre line go with it (kept at their distance
  * from the end that stayed put, or from the centre when it moved or turned), so they stay joined.
- * The angle is kept within ±180°.
+ * The angle is kept within ±180°. `carry`: exactly the points to take along (several highways moved
+ * together — see updateHighways).
  */
-export function updateHighway<T extends SimLayout>(L: T, id: string, patch: Partial<Omit<SimHighway, 'id'>>): T {
+export function updateHighway<T extends SimLayout>(L: T, id: string, patch: Partial<Omit<SimHighway, 'id'>>, carry?: Set<string>): T {
   const h = L.highways?.find(q => q.id === id)
   if (!h) return L
   const next = { ...h, ...patch }
@@ -504,15 +517,11 @@ export function updateHighway<T extends SimLayout>(L: T, id: string, patch: Part
   }
   const f0 = frame(was, h.lengthFt), f1 = frame(now, next.lengthFt)
   const points = L.points.map(p => {
-    if (closestOnLine(was.a, was.b, p).dist > ON_HIGHWAY_FT) return p
+    if (carry ? !carry.has(p.id) : closestOnLine(was.a, was.b, p).dist > ON_HIGHWAY_FT) return p
     const dx = p.x - f0.o.x, dy = p.y - f0.o.y, s = dx * f0.u.x + dy * f0.u.y, d = dx * f0.n.x + dy * f0.n.y
     return { ...p, x: f1.o.x + s * f1.u.x + d * f1.n.x, y: f1.o.y + s * f1.u.y + d * f1.n.y }
   })
   return { ...L, points, highways }
-}
-
-export function removeHighway<T extends SimLayout>(L: T, id: string): T {
-  return { ...L, highways: (L.highways ?? []).filter(h => h.id !== id) }
 }
 
 

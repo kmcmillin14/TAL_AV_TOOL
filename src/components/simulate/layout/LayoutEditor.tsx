@@ -249,8 +249,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     const hw = highwaysTouching(layout, loop)
     if (hw.length) { setSelection(highwaySelection([...new Set([...(add ? selectedHighways : []), ...hw])])); return }
     const pts = pointsInLoop(layout, loop)
-    if (pts.length || add) setSelection(pointSelection([...new Set([...(add ? selectedPoints : []), ...pts])]))
-    else setSelection(null)
+    if (pts.length) setSelection(pointSelection([...new Set([...(add ? selectedPoints : []), ...pts])]))
+    else if (!add) setSelection(null)                 // Shift over empty floor keeps the selection
   }
 
   /** Where a route click lands — the same `snapDraw` the canvas marks under the pointer. */
@@ -288,7 +288,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       const ids = shift
         ? (selectedPoints.includes(hit.id) ? selectedPoints.filter(i => i !== hit.id) : [...selectedPoints, hit.id])
         : selectedPoints.includes(hit.id) ? selectedPoints : [hit.id]
-      setSelection(ids.length > 1 ? { kind: 'points', ids } : ids.length ? { kind: 'point', id: ids[0] } : null)
+      setSelection(pointSelection(ids))
       if (ids.includes(hit.id)) setDrag({ kind: 'points', ids, from: at, at })
       return
     }
@@ -558,6 +558,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     }
     const t = TOOLS.find(x => x.key.toLowerCase() === k)
     if (t) chooseTool(t.id)
+    else if (e.key === 'Escape' && drag?.kind === 'lasso') setDrag(null)   // abandon the loop being drawn
     else if (e.key === 'Escape' || e.key === 'Enter') { if (chainFrom || marks) cancel(); else if (e.key === 'Escape') setSelection(null) }
     else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelection() }
   }
@@ -773,7 +774,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   onSegment={(id, patch) => setLayout(updateSegment(layout, id, patch))}
                   onCurve={(id, kind) => setLayout(setCurve(layout, id, kind === 'spline' ? splineHandles(layout, id) ?? undefined : undefined))}
                   onObject={(id, patch) => setLayout(updateObject(layout, id, patch), `object:${id}:${Object.keys(patch).join()}`)}
-                  onHighways={(ids, patch) => setLayout(updateHighways(layout, ids, patch), `highways:${ids.join()}`)}
+                  onHighways={(ids, patch, what) => setLayout(updateHighways(layout, ids, patch), `highways:${ids.join()}:${what}`)}
                   onHighway={(id, patch) => setLayout(updateHighway(layout, id, patch), `highway:${id}:${Object.keys(patch).join()}`)}
                   envelopeFt={inputs.envelopeFt}
                   highwayStatus={highwayStatus}

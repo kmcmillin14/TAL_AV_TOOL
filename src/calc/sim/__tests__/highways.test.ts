@@ -26,6 +26,15 @@ describe('highways: stored as rectangles, routes derived', () => {
     expect(removeHighways(L, ['h1', 'h3']).highways!.map(h => h.id)).toEqual(['h2'])
   })
 
+  it('moving two crossing highways together moves their shared junction once; a loop drawn round twice still holds its points', () => {
+    const L: SimLayout = { points: [{ id: 'J', x: 20, y: 20, type: 'junction' }], segments: [],
+      highways: [hw({ x: 0, y: 20 }, { x: 40, y: 20 }), hw({ x: 20, y: 0 }, { x: 20, y: 40 }, { id: 'h2' })] }
+    const up = updateHighways(L, ['h1', 'h2'], h => ({ y: h.y - 5 }))
+    expect(up.points[0]).toMatchObject({ x: 20, y: 15 })
+    const sq = [{ x: 10, y: 10 }, { x: 30, y: 10 }, { x: 30, y: 30 }, { x: 10, y: 30 }]
+    expect(pointsInLoop(L, [...sq, ...sq])).toEqual(['J'])
+  })
+
   it('a point on the centre line goes with the highway when it moves or stretches; the angle stays within ±180°', () => {
     const L: SimLayout = { points: [{ id: 'J', x: 10, y: 0, type: 'junction' }, { id: 'far', x: 10, y: 9, type: 'stand' }], segments: [], highways: [hw({ x: 0, y: 0 }, { x: 40, y: 0 })] }
     const moved = updateHighway(L, 'h1', { y: 2 })

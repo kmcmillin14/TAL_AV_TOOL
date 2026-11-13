@@ -10,6 +10,10 @@
 - Calc: `highwaysTouching`, `pointsInLoop`, `updateHighways`, `removeHighways`; geometry
   `insidePolygon`, `polygonsTouch` (tested).
 - The full-screen button's icon is larger.
+- Code review: moving several highways moves a shared junction once; Shift-lasso over empty floor
+  keeps the selection; Escape abandons a lasso; the lasso holds what a loop drawn round twice circles;
+  separate undo steps for separate bulk changes; the summary's B56.5 shows only with a vehicle on
+  the layout; the unused `removeHighway` is gone.
 
 ## 2026-11-12 — Fleet simulation: full screen
 

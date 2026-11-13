@@ -38,7 +38,7 @@ interface Props {
   onObject: (id: string, patch: Partial<SimObject>) => void
   onHighway: (id: string, patch: Partial<SimHighway>) => void
   /** Several highways at once (lasso): each gets its own change. */
-  onHighways: (ids: string[], patch: (h: SimHighway) => Partial<SimHighway>) => void
+  onHighways: (ids: string[], patch: (h: SimHighway) => Partial<SimHighway>, what: string) => void
   /** The widest vehicle or payload the run drives, ft — a highway's suggested width (B56.5). */
   envelopeFt: number
   /** Each highway's worst B56.5 status (its derived routes' clearances). */
@@ -253,19 +253,22 @@ export default function LayoutPanel(p: Props) {
 
   if (sel?.kind === 'highways') {
     const hs = (p.layout.highways ?? []).filter(h => sel.ids.includes(h.id))
-    const ids = hs.map(h => h.id), all = (patch: Partial<SimHighway>) => p.onHighways(ids, () => patch)
+    if (!hs.length) return null
+    const ids = hs.map(h => h.id), all = (patch: Partial<SimHighway>) => p.onHighways(ids, () => patch, Object.keys(patch).join())
     const same = <K extends keyof SimHighway>(k: K) => (hs.every(h => h[k] === hs[0]?.[k]) ? hs[0]?.[k] : undefined)
     const oneWay = hs.filter(h => h.dir !== 'two').length
     const suggestedOf = (h: SimHighway) => suggestedWidthFt({ dir: h.dir, lane: h.lane }, p.envelopeFt, p.rule)
     const offSuggested = hs.filter(h => Math.abs(h.widthFt - suggestedOf(h)) > 0.05).length
-    const worst = hs.map(h => p.highwayStatus.get(h.id)).find(s => s === 'violation') ?? hs.map(h => p.highwayStatus.get(h.id)).find(s => s === 'capped')
+    // The worst B56.5 status among them — only once a vehicle drives the layout, and only if each has one.
+    const sts = p.envelopeFt > 0 ? hs.map(h => p.highwayStatus.get(h.id)) : []
+    const worst = sts.find(s => s === 'violation') ?? sts.find(s => s === 'capped')
     return (
       <Inspector title={`${hs.length} highways`} onDelete={p.onDelete}>
         <Summary items={[
           ['Overall length', len(hs.reduce((a, h) => a + h.lengthFt, 0))],
           ['One-way', `${oneWay} of ${hs.length}`],
           ['Width', same('widthFt') != null ? len(same('widthFt')!) : 'Mixed'],
-          ['B56.5', worst ? <span className={`sim-hw-status is-${worst === 'violation' ? 'bad' : 'warn'}`}>{STATUS[worst].split(' — ')[0]}</span> : p.envelopeFt > 0 ? 'Full speed' : '—'],
+          ['B56.5', worst ? <span className={`sim-hw-status is-${worst === 'violation' ? 'bad' : 'warn'}`}>{STATUS[worst].split(' — ')[0]}</span> : sts.length && sts.every(Boolean) ? 'Full speed' : '—'],
         ]} />
         <Section title="Change all" open>
           <label className="sim-field"><span>Direction</span>
@@ -280,7 +283,7 @@ export default function LayoutPanel(p: Props) {
           {offSuggested > 0 && (
             <div className="sim-hw-suggest">
               <span>{offSuggested} not at the suggested width</span>
-              <button type="button" className="btn btn-sm ghost" onClick={() => p.onHighways(ids, h => ({ widthFt: suggestedOf(h) }))}>Use suggested</button>
+              <button type="button" className="btn btn-sm ghost" onClick={() => p.onHighways(ids, h => ({ widthFt: suggestedOf(h) }), 'suggested')}>Use suggested</button>
             </div>
           )}
         </Section>
