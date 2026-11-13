@@ -184,7 +184,7 @@ export interface TypeResult {
    *  `battery` is null until the run has covered two days — charge is judged over days, not a shift. */
   checks: { orders: boolean; utilization: boolean; battery: boolean | null }
   /** Battery detail for the check: average charge at the start of each day, %; vehicle-seconds spent
-   *  waiting for a free charger; the cutsheet floor, %; why the battery check failed, if it did. */
+   *  waiting for a free charger; the charge level a vehicle must stay above, %; why the check failed. */
   battery: { dayStarts: number[]; chargeWaitSec: number; floorPct: number | null; why: string | null; lowest: { shift: number | null; day: number | null; run: number | null } }
   backlogTrend: number
   verdict: Verdict

@@ -5441,7 +5441,8 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-verdict { display: grid; gap: 12px; }
 /* The deciding row — the 05 Dashboard tile: figure, label, the static calc under it, a bar on top
    coloured against its goal. The fleet tile holds each type's photo and stepper. */
-.sim-kpis { display: grid; grid-template-columns: minmax(190px, 1.3fr) minmax(260px, 1.8fr) repeat(4, minmax(130px, 1fr)); gap: 12px; }
+.sim-kpis { display: grid; grid-template-columns: minmax(260px, 1.8fr) minmax(190px, 1.3fr) repeat(4, minmax(130px, 1fr)); gap: 12px; }
+.sim-kpi-hint { color: var(--warn); font-weight: 600; }
 @media (max-width: 1280px) { .sim-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .sim-kpi-fleet { grid-column: span 2; } }
 .sim-kpi {
   position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 5px;

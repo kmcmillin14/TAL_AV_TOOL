@@ -878,7 +878,8 @@ step ribbon is unchanged.
   - *Run tiles (owner, 2026-11-13).* Left to right: the **Verdict** (hero — the outcome, its three
     checks stacked, what sets the fleet), the fleet tile (photo, stepper, Use N in pricing), **1 · Orders
     per hour**, **2 · Utilization** (⋮: target utilization, simulation only; typical 80–85% for
-    opportunity-charged fleets), **3 · Battery** (lowest charge in the first shift, the first day and
+    opportunity-charged fleets; amber **Low — N−1 would run at about X%** when the same work on one
+    vehicle fewer stays at or under the target — an estimate; the one-fewer run decides Oversized), **3 · Battery** (lowest charge in the first shift, the first day and
     the week, and whether it keeps up; ⋮: shift coverage — days a week, shifts a day, shift length,
     simulation only, from Step 1), and **Average speed** across the fleet while moving (feet driven ÷
     seconds moving). Full screen sits with the zoom controls. The verdict run is always a week.
@@ -887,10 +888,12 @@ step ribbon is unchanged.
     1. **Orders** — 98% of generated moves delivered or under way, and no growing backlog.
     2. **Utilization** — at or under the target. Over the target fails. The target starts at Sizing's
        and is changed on the tile for the simulation only (`simSettings.targetUtilization`).
-    3. **Battery keeps up** — judged once the run covers two days (the verdict run is a week); it fails
-       when the average charge on a later morning falls below day 2's (days off are skipped over), a
-       vehicle reaches the cutsheet floor, or vehicles wait for a free charger more than 2% of their
-       staffed time. Shorter runs read "judged over a week".
+    3. **Battery keeps up** — judged once the run covers two days (the verdict run is a week). Charge
+       may fall from day to day through the working week; it fails only when a vehicle drops below
+       the level at which it must charge (lowest level + 10%), when — with off-shift time or days
+       off — the fleet is not back by next week's first morning, or when vehicles wait for a free
+       charger more than 2% of their staffed time. Round the clock, staying above the charge level is
+       the test.
     - **Right-sized at N** (all pass) · **Undersized at N** (any fails; "<check> sets the fleet → about
       M": orders N × demand ÷ moves done, utilization N × needed ÷ target, battery N + 1 — the largest)
       · **Oversized by 1** (one fewer passes all three too — the one-fewer run now runs whenever the

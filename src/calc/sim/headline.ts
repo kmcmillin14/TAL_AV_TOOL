@@ -23,7 +23,9 @@ export interface Headline {
   /** Check 2 — busy ÷ time not charging: what the static calc expects at its fleet, what the work needs.
    *  When moves fall short, `simulated` is what it would need (measured × demand ÷ moves done) and can
    *  be over 1. */
-  utilization: { static: number | null; simulated: number | null; target: number; pass: boolean | null; tone: Tone }
+  utilization: { static: number | null; simulated: number | null; target: number; pass: boolean | null; tone: Tone
+    /** Low enough to try one vehicle fewer: about what N − 1 would run at (≤ the target), else null. */
+    fewerAt: number | null }
   /** Check 3 — charge keeps up (judged over two days or more; null before): lowest charge (%), charge
    *  trips, the average charge each morning, why it failed, and the static calc's hours per charge. */
   battery: { socMin: number | null; chargeTrips: number | null; runHr: number | null; dayStarts: number[]; why: string | null; pass: boolean | null; tone: Tone
@@ -98,7 +100,12 @@ export function runHeadline(
   return {
     fleet: { static: sum(groups.map(engineFleetSold)), tested },
     perHr: { simulated: perHr, target: demand, pass: ordersPass, tone: toneOf(ordersPass) },
-    utilization: { static: cap > 0 ? sum(groups.map(g => g.groupRaw)) / cap : null, simulated: util, target, pass: utilPass, tone: toneOf(utilPass) },
+    utilization: {
+      static: cap > 0 ? sum(groups.map(g => g.groupRaw)) / cap : null, simulated: util, target, pass: utilPass,
+      // The same work on one vehicle fewer: busy time spread over N − 1 (an estimate; the one-fewer run decides).
+      fewerAt: utilPass && tested > 1 && util != null && util * tested / (tested - 1) <= target ? util * tested / (tested - 1) : null,
+      tone: utilPass && tested > 1 && util != null && util * tested / (tested - 1) <= target ? 'warn' : toneOf(utilPass),
+    },
     battery: {
       socMin, chargeTrips: res ? sum(types.map(t => t.chargeTrips)) : null, runHr: runHrs.length ? Math.min(...runHrs) : null,
       dayStarts: types[0]?.battery.dayStarts ?? [], why: battWhy, pass: batteryPass, tone: toneOf(batteryPass),

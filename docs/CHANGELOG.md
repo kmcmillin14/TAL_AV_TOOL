@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-13 — Fleet simulation: battery rule over the week; low utilization; fleet tile first
+
+- **Battery check** (owner): charge may fall day over day through the working week; it fails only when a
+  vehicle drops below its charge level, when off-shift and days-off charging do not bring the fleet back
+  by next week's first morning, or on long charger waits. (Was: any day-over-day fall failed.)
+- **Utilization low:** amber "Low — N−1 would run at about X%" when one fewer would stay under target.
+- Tile order: vehicle type and quantity first, then the verdict.
+
 ## 2026-11-13 — Fleet simulation: Run tiles — verdict first, tile menus, battery by shift/day/week
 
 - The **Verdict** is the left-most tile with its three checks stacked; **⋮** menus edit the target

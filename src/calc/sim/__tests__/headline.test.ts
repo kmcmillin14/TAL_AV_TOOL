@@ -69,4 +69,11 @@ describe('Run headline: the static calc beside the simulation, and the three che
     expect(runHeadline(fleet, { a: 3 }, null, [], 100, { unrunnable: true }).outcome).toBe('notRun')
     expect(runHeadline(fleet, { a: 0, b: 2 }, run([type('a', { fleet: 0, socMin: 0 }), type('b', { fleet: 2, socMin: 55 })]), [], 100).battery.socMin).toBe(55)
   })
+
+  it('utilization low enough for one fewer: a hint with what N − 1 would run at', () => {
+    const low = runHeadline(fleet, { a: 4 }, run([type('a', { fleet: 4, utilization: 0.5 })]), flowsA, 100)
+    expect(low.utilization.fewerAt).toBeCloseTo(0.5 * 4 / 3)
+    expect(low.utilization.tone).toBe('warn')
+    expect(runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.8 })]), flowsA, 100).utilization.fewerAt).toBeNull()
+  })
 })

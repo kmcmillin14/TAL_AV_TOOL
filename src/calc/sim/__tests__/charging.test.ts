@@ -43,7 +43,7 @@ describe('the staffed day and charging (owner, 2026-11-13)', () => {
 })
 
 describe('charge keeps up — the third sizing check', () => {
-  it('is judged once a run covers two days; a week on the sample keeps up; too few chargers do not', () => {
+  it('is judged once a run covers two days; charge may fall through the week if it stays above the charge level and recovers', () => {
     const { layout, flows } = sampleLayout()
     const shift = runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 8 }))!, 8 * 3600)
     expect(results(shift).types[0].checks.battery).toBeNull()
@@ -51,10 +51,14 @@ describe('charge keeps up — the third sizing check', () => {
     const t = results(week).types[0]
     expect(t.checks.battery).toBe(true)
     expect(t.battery.dayStarts.length).toBe(8)
-    // Staffed round the clock at double demand: no off-shift to charge in — the charge does not keep up.
-    const hard = runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 24, demandPct: 200 }))!, 4 * 86400)
-    const h = results(hard).types[0]
-    expect(h.checks.battery === false || h.checks.orders === false).toBe(true)
-    if (h.checks.battery === false) expect(h.battery.why).toBeTruthy()
+    // Round the clock: charge cycles in its band, never below the charge level — it keeps up.
+    const allDay = results(runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 4 }, staffedHr: 24, daysPerWeek: 7 }))!, 7 * 86400)).types[0]
+    expect(allDay.battery.dayStarts.length).toBe(8)
+    expect(allDay.battery.lowest.run!).toBeGreaterThan(29)
+    expect(allDay.checks.battery).toBe(true)
+    // Charge falling through a 5-day week, recovered over the weekend, passes.
+    const wk = results(runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 16, daysPerWeek: 5 }))!, 7 * 86400)).types[0]
+    expect(wk.battery.dayStarts[7]).toBeGreaterThanOrEqual(wk.battery.dayStarts[0] - 2)
+    expect(wk.checks.battery).toBe(true)
   }, 120000)
 })

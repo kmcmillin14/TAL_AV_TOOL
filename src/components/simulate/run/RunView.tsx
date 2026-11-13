@@ -244,7 +244,6 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         {/* The deciding row (Dashboard tiles): the fleet being tested — each type with its photo and
             stepper — then the static calc beside the simulated figures. */}
         <div className="sim-kpis" role="group" aria-label="Static calc and simulation">
-          <VerdictTile h={headline} why={verdictWhy} />
           <div className={`sim-kpi sim-kpi-fleet is-${headline.verdictTone}`}>
             {Object.keys(fleetBy).map(vid => {
               const v = vehicleById.get(vid)
@@ -276,6 +275,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
             })}
             <span className="sim-kpi-lbl">{headline.fleet.tested !== headline.fleet.static ? `Testing ${headline.fleet.tested} · static calc ${headline.fleet.static}` : `Testing the static calc · ${headline.fleet.static}`}</span>
           </div>
+          <VerdictTile h={headline} why={verdictWhy} />
           <HeadlineTiles h={headline} unitSystem={unitSystem} sizingTarget={settings.targetUtilization}
             onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
             coverage={{ days: daysPerWeek, shifts, shiftH, step1 }} onCoverage={setCoverage} />
@@ -371,7 +371,7 @@ function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: 
 }
 
 /** The static calc beside the simulated figures; `why` is the verdict's line (stopped, not run, running). */
-/** The hero (furthest left): the outcome, its three checks stacked, and what sets the fleet. */
+/** The verdict (after the fleet tested): the outcome, its three checks stacked, and what sets the fleet. */
 function VerdictTile({ h, why }: { h: Headline; why: string | null }) {
   const n = h.fleet.tested
   const title = h.outcome === 'right' ? `Right-sized at ${n}` : h.outcome === 'over' ? 'Oversized by 1' : h.outcome === 'under' ? `Undersized at ${n}`
@@ -425,6 +425,7 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
         <span className="sim-kpi-val num">{pctOf(u.simulated)}</span>
         <span className="sim-kpi-lbl">{over ? `2 · Utilization · over by ${Math.round((u.simulated! - 1) * 100)}%` : '2 · Utilization'}</span>
         <span className="sim-kpi-sub">target {pctOf(u.target)} · static {pctOf(u.static)}</span>
+        {u.fewerAt != null && <span className="sim-kpi-sub sim-kpi-hint">Low — {h.fleet.tested - 1} would run at about {pctOf(u.fewerAt)}</span>}
       </div>
       <div className={`sim-kpi is-${b.tone}`}>
         <KebabMenu label="Shift coverage">
