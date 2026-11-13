@@ -875,6 +875,13 @@ step ribbon is unchanged.
     warnings and notes, one row per thing (each loose point is its own row). Clicking a row selects
     what it is about and centres the view on it; a row's fix button picks the tool that fixes it
     (Draw route · Place charger · Link flow · Scale · Open Flows).
+  - *Lasso (owner, 2026-11-13; Milestone 7).* **Lasso (L)**: draw a loop; every highway it touches —
+    crosses or encloses — is selected; with none, the points inside it; Shift adds to the selection.
+    Shift-click a highway adds or removes it; a Shift-drag box selects the points inside it, or with
+    none the highways it touches. Several highways show their **overall length**, how many are
+    one-way, their width (or Mixed) and the worst B56.5 status, and change together: direction, lanes,
+    width, **Use suggested** (each to its own suggested width); dragging one of them, the arrow keys and
+    D move or turn them all; Delete removes them. End handles show on a single highway only.
   - *Full screen (owner, 2026-11-12).* A button in the page head (beside Assumptions) fills the screen
     with the Simulate page — head, vehicles, the editor or Run, and its windows; Esc or the button
     leaves it. On a desktop only.

@@ -195,7 +195,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           {!narrow && (
             <button type="button" className="btn ghost sim-full-btn" aria-pressed={full} onClick={toggleFull}
               aria-label={full ? 'Leave full screen' : 'Full screen'} title={full ? 'Leave full screen (Esc)' : 'Full screen'}>
-              <Icon name={full ? 'collapse' : 'expand'} size={15} />
+              <Icon name={full ? "collapse" : "expand"} size={18} />
             </button>
           )}
           <button type="button" className={`btn ghost sim-assume-btn${drawer ? ' on' : ''}`} aria-pressed={!!drawer} onClick={() => setDrawer(d => (d ? null : { focus: null }))}>

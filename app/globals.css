@@ -3401,6 +3401,7 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-hatch-line { stroke: var(--text-tertiary); stroke-width: 1; }
 .sim-object-draft { fill: var(--sim-sel-soft); stroke: var(--sim-sel); stroke-width: 1.5; stroke-dasharray: 5 4; }
 .sim-marquee { fill: var(--info-soft); stroke: var(--info); stroke-width: 1; stroke-dasharray: 4 3; }
+.sim-lasso { fill: var(--sim-sel-soft); stroke: var(--sim-sel); stroke-width: 1.5; stroke-dasharray: 5 4; stroke-linejoin: round; }
 .sim-object-swatch { width: 14px; height: 10px; border: 1.5px solid currentColor; background: repeating-linear-gradient(45deg, transparent 0 3px, currentColor 3px 4px); opacity: 0.8; }
 .sim-footprint { fill: none; stroke: var(--text-tertiary); stroke-width: 1; stroke-dasharray: 3 3; }
 .sim-footprint.role-pick { stroke: var(--sim-pick); }
@@ -5757,5 +5758,5 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 /* Simulate full screen: the page fills the screen; the workspace takes what the head and vehicles leave. */
 .sim-shell:fullscreen { background: var(--bg-base); padding: 16px 24px; overflow: auto; }
 .sim-shell:fullscreen .sim-work { height: max(560px, calc(100vh / var(--root-zoom) - 200px)); }
-.sim-full-btn { width: 40px; padding: 0; justify-content: center; }
+.sim-full-btn { width: 40px; padding: 0; justify-content: center; color: var(--text-primary); }
 .sim-shell:fullscreen .sim-run .sim-stage { height: max(440px, calc(100vh / var(--root-zoom) - 360px)); }

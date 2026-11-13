@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-13 — Fleet simulation: lasso (Milestone 7, part 2)
+
+- **Lasso tool (L):** draw a loop; every highway it touches is selected (none: the points inside);
+  Shift adds. Shift-click toggles a highway; a Shift-drag box with no points in it takes the highways
+  it touches.
+- **Several highways:** overall length, one-way count, width and worst B56.5 status; change direction,
+  lanes or width together, or **Use suggested**; drag, arrow keys and D act on all; Delete removes all.
+- Calc: `highwaysTouching`, `pointsInLoop`, `updateHighways`, `removeHighways`; geometry
+  `insidePolygon`, `polygonsTouch` (tested).
+- The full-screen button's icon is larger.
+
 ## 2026-11-12 — Fleet simulation: full screen
 
 - A **full screen** button in the Simulate head fills the screen with the page (Layout or Run, with

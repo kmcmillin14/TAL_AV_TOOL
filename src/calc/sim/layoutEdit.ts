@@ -2,7 +2,7 @@
 // Every function returns a new layout; the editor keeps the old one for undo. Units: feet.
 
 import { roundCorners } from './corners'
-import { closestOnLine, insideRect, rectCorners, segmentGeometry } from './geometry'
+import { closestOnLine, insidePolygon, insideRect, rectCorners, segmentGeometry } from './geometry'
 import { buildGraph, pathLen, tree } from './graph'
 import { highwayEnds, highwayFromEnds, insideHighway, ON_HIGHWAY_FT, withHighways } from './highways'
 import type { SimCurve, SimHighway, SimLayout, SimObject, SimPoint, SimPointType, SimRole, SimSegment } from './types'
@@ -393,6 +393,22 @@ export function removePoints<T extends SimLayout>(L: T, ids: string[]): T {
 }
 
 /** Points whose position lies inside the rectangle spanned by two corners (marquee select). */
+/** Points inside a lasso (a closed loop, ft). */
+export function pointsInLoop(L: SimLayout, loop: XY[]): string[] {
+  return loop.length < 3 ? [] : L.points.filter(p => insidePolygon(loop, p)).map(p => p.id)
+}
+
+/** Change several highways at once: `patch` gives each its own change (stations on each go with it). */
+export function updateHighways<T extends SimLayout>(L: T, ids: string[], patch: (h: SimHighway) => Partial<Omit<SimHighway, 'id'>>): T {
+  return ids.reduce((acc, id) => { const h = acc.highways?.find(q => q.id === id); return h ? updateHighway(acc, id, patch(h)) : acc }, L)
+}
+
+/** Remove several highways. */
+export function removeHighways<T extends SimLayout>(L: T, ids: string[]): T {
+  const gone = new Set(ids)
+  return { ...L, highways: (L.highways ?? []).filter(h => !gone.has(h.id)) }
+}
+
 export function pointsInBox(L: SimLayout, a: XY, b: XY): string[] {
   const [x0, x1, y0, y1] = [Math.min(a.x, b.x), Math.max(a.x, b.x), Math.min(a.y, b.y), Math.max(a.y, b.y)]
   return L.points.filter(p => p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1).map(p => p.id)

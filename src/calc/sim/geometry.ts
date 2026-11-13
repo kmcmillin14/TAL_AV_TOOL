@@ -147,3 +147,29 @@ export function insideRect(o: Rect, p: Vec): boolean {
   const lx = dx * Math.cos(th) - dy * Math.sin(th), ly = dx * Math.sin(th) + dy * Math.cos(th)
   return Math.abs(lx) <= o.w / 2 && Math.abs(ly) <= o.h / 2
 }
+
+/** Is `p` inside the closed polygon `poly` (even-odd)? */
+export function insidePolygon(poly: Vec[], p: Vec): boolean {
+  let inside = false
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const a = poly[i], b = poly[j]
+    if ((a.y > p.y) !== (b.y > p.y) && p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y) + a.x) inside = !inside
+  }
+  return inside
+}
+
+/** Do segments a–b and c–d cross or touch? */
+function segmentsMeet(a: Vec, b: Vec, c: Vec, d: Vec): boolean {
+  const o = (p: Vec, q: Vec, r: Vec) => Math.sign((q.x - p.x) * (r.y - p.y) - (q.y - p.y) * (r.x - p.x))
+  const on = (p: Vec, q: Vec, r: Vec) => Math.min(p.x, q.x) <= r.x && r.x <= Math.max(p.x, q.x) && Math.min(p.y, q.y) <= r.y && r.y <= Math.max(p.y, q.y)
+  const [o1, o2, o3, o4] = [o(a, b, c), o(a, b, d), o(c, d, a), o(c, d, b)]
+  return (o1 !== o2 && o3 !== o4) || (o1 === 0 && on(a, b, c)) || (o2 === 0 && on(a, b, d)) || (o3 === 0 && on(c, d, a)) || (o4 === 0 && on(c, d, b))
+}
+
+/** Do two closed polygons touch — overlap, cross, or one inside the other? */
+export function polygonsTouch(p: Vec[], q: Vec[]): boolean {
+  if (p.length < 3 || q.length < 3) return false
+  for (let i = 0; i < p.length; i++) for (let j = 0; j < q.length; j++)
+    if (segmentsMeet(p[i], p[(i + 1) % p.length], q[j], q[(j + 1) % q.length])) return true
+  return insidePolygon(p, q[0]) || insidePolygon(q, p[0])
+}

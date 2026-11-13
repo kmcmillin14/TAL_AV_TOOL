@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { DERIVED, highwayCorners, highwayEnds, highwayFromEnds, insideHighway, withHighways } from '../highways'
-import { addHighway, updateHighway, flowTargets, hitTest, notConnected, placeWithSpur, routeDistanceFt, spurTarget, splitSegment } from '../layoutEdit'
+import { DERIVED, highwayCorners, highwayEnds, highwayFromEnds, highwaysTouching, insideHighway, withHighways } from '../highways'
+import { addHighway, pointsInLoop, removeHighways, updateHighway, updateHighways, flowTargets, hitTest, notConnected, placeWithSpur, routeDistanceFt, spurTarget, splitSegment } from '../layoutEdit'
 import { segmentClearances, B56_5_RULE } from '../clearance'
 import { runInputs } from '../runInputs'
 import type { SimHighway, SimLayout } from '../types'
@@ -9,6 +9,23 @@ const hw = (a: { x: number; y: number }, b: { x: number; y: number }, extra: Par
   highwayFromEnds(a, b, 10, { id: extra.id ?? 'h1', dir: 'two', ...extra })
 
 describe('highways: stored as rectangles, routes derived', () => {
+  it('a lasso selects every highway it touches, and changes or removes them together', () => {
+    const L: SimLayout = {
+      points: [{ id: 'S', x: 20, y: 0, type: 'stand' }, { id: 'far', x: 300, y: 300, type: 'stand' }], segments: [],
+      highways: [hw({ x: 0, y: 0 }, { x: 40, y: 0 }), hw({ x: 0, y: 100 }, { x: 40, y: 100 }, { id: 'h2', dir: 'ab' }), hw({ x: 200, y: 0 }, { x: 200, y: 40 }, { id: 'h3' })],
+    }
+    // A loop that only crosses the first highway's end, and one that encloses the second whole.
+    expect(highwaysTouching(L, [{ x: 35, y: -20 }, { x: 60, y: -20 }, { x: 60, y: 20 }, { x: 35, y: 20 }])).toEqual(['h1'])
+    expect(highwaysTouching(L, [{ x: -10, y: 80 }, { x: 60, y: 80 }, { x: 60, y: 120 }, { x: -10, y: 120 }])).toEqual(['h2'])
+    expect(highwaysTouching(L, [{ x: 100, y: 50 }, { x: 120, y: 50 }, { x: 110, y: 60 }])).toEqual([])
+    expect(pointsInLoop(L, [{ x: 10, y: -5 }, { x: 30, y: -5 }, { x: 30, y: 5 }, { x: 10, y: 5 }])).toEqual(['S'])
+    const wide = updateHighways(L, ['h1', 'h3'], () => ({ widthFt: 14 }))
+    expect(wide.highways!.map(h => h.widthFt)).toEqual([14, 10, 14])
+    const moved = updateHighways(L, ['h1', 'h2'], h => ({ x: h.x + 5 }))
+    expect(moved.points.find(p => p.id === 'S')!.x).toBe(25)                  // the station on h1 goes with it
+    expect(removeHighways(L, ['h1', 'h3']).highways!.map(h => h.id)).toEqual(['h2'])
+  })
+
   it('a point on the centre line goes with the highway when it moves or stretches; the angle stays within ±180°', () => {
     const L: SimLayout = { points: [{ id: 'J', x: 10, y: 0, type: 'junction' }, { id: 'far', x: 10, y: 9, type: 'stand' }], segments: [], highways: [hw({ x: 0, y: 0 }, { x: 40, y: 0 })] }
     const moved = updateHighway(L, 'h1', { y: 2 })

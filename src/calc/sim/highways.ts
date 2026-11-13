@@ -3,7 +3,7 @@
 // distances, validation and snapping alike: the centre line split wherever a point sits on it, where
 // another highway's centre line crosses it, and at its ends. Nothing derived is stored.
 
-import { closestOnLine, insideRect, rectCorners } from './geometry'
+import { closestOnLine, insideRect, polygonsTouch, rectCorners } from './geometry'
 import type { SimHighway, SimLayout, SimPoint, SimSegment } from './types'
 
 type XY = { x: number; y: number }
@@ -34,6 +34,11 @@ export const highwayCorners = (h: SimHighway): XY[] => rectCorners(asRect(h))
 
 /** Inside the rectangle? */
 export const insideHighway = (h: SimHighway, p: XY) => insideRect(asRect(h), p)
+
+/** The highways a lasso (a closed loop, ft) touches — anything it crosses or encloses. */
+export function highwaysTouching(L: SimLayout, loop: XY[]): string[] {
+  return (L.highways ?? []).filter(h => polygonsTouch(loop, highwayCorners(h))).map(h => h.id)
+}
 
 type Ends = { a: XY; b: XY }
 

@@ -22,6 +22,8 @@ export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; whi
 export type Selection =
   | { kind: 'point' | 'segment' | 'flow' | 'object' | 'highway'; id: string }
   | { kind: 'points'; ids: string[] }
+  /** Several highways (lasso, Shift-click). */
+  | { kind: 'highways'; ids: string[] }
   | null
 
 export interface CanvasPointer {
@@ -65,6 +67,8 @@ interface Props {
   rubberFrom?: XY | null
   /** A rectangle being dragged out (marquee or new object), ft. */
   box?: { a: XY; b: XY; kind: 'marquee' | 'object' } | null
+  /** The lasso being drawn (Lasso tool), ft. */
+  lasso?: XY[] | null
   /** Scale marks (two clicks on the drawing), ft. */
   marks?: XY[]
   /** Points being dragged, shown at their new spots until the drop is committed. */
@@ -252,6 +256,7 @@ export default function LayoutCanvas(props: Props) {
   const dpts = new Map(driven.points.map(p => [p.id, pts.get(p.id) ?? p]))
   const selected = (kind: 'point' | 'segment' | 'flow' | 'object' | 'highway', id: string) =>
     (selection?.kind === kind && selection.id === id) || (kind === 'point' && selection?.kind === 'points' && selection.ids.includes(id))
+    || (kind === 'highway' && selection?.kind === 'highways' && selection.ids.includes(id))
   const px = 1 / view.ppf                       // one screen pixel, in feet
   const lanes = props.laneWidths ?? {}
   // Where the override dots go — worked out when the layout or the overrides change, not per move.
@@ -330,7 +335,8 @@ export default function LayoutCanvas(props: Props) {
           <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} selected={selected('segment', s.id.split('~')[0]) || (!!s.highwayId && selected('highway', s.highwayId))} />
         ))}
         {/* The selected highway's end handles, above its lanes so a press reaches them. */}
-        {(layout.highways ?? []).filter(h => selected('highway', h.id)).map(h => <HighwayEnds key={h.id} h={h} px={px} />)}
+        {/* End handles on a single selected highway (several are moved, not stretched). */}
+        {selection?.kind === 'highway' && (layout.highways ?? []).filter(h => h.id === selection.id).map(h => <HighwayEnds key={h.id} h={h} px={px} />)}
 
         {showFlows && flows.map(f => {
           const a = f.fromPointId && pts.get(f.fromPointId), b = f.toPointId && pts.get(f.toPointId)
@@ -369,6 +375,7 @@ export default function LayoutCanvas(props: Props) {
         {selSeg && <RouteBadge s={selSeg} a={pts.get(selSeg.a)} b={pts.get(selSeg.b)} px={px} widthFt={lanes[selSeg.id]} fmtLen={fmtLen} />}
         {selObj && <SizeBadge o={selObj} px={px} fmtLen={fmtLen} />}
 
+        {props.lasso && props.lasso.length > 1 && <polygon points={props.lasso.map(q => `${q.x},${q.y}`).join(' ')} className="sim-lasso" vectorEffect="non-scaling-stroke" />}
         {rect && <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h} className={props.box!.kind === 'object' ? 'sim-object-draft' : 'sim-marquee'} vectorEffect="non-scaling-stroke" />}
 
         {marks.map((m, i) => (
