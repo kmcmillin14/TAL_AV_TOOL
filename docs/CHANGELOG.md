@@ -2,7 +2,8 @@
 
 ## 2026-11-13 — Fleet simulation: static-calc baseline and the deciding headline
 
-- **Run headline row:** the static calc from Step 3 beside the simulation — fleet tested, utilization
+- **Run headline row** — 05 Dashboard tiles, replacing the per-type rows; the fleet tile holds each
+  type's photo and stepper (owner, 2026-11-13: "these bars are redundant"): the static calc from Step 3 beside the simulation — fleet tested, utilization
   (simulated vs static and target), moves per hour of those needed, battery (lowest charge, charges,
   static hours per charge), average wait and verdict, each coloured against its goal.
 - Calc: `runHeadline` (src/calc/sim/headline.ts, tested); `staticUtilization` in src/calc/fleet.ts,

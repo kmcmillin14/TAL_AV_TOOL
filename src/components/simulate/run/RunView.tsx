@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
-import { runHeadline, type Headline } from '@/src/calc/sim/headline'
+import { runHeadline, type Headline, type Tone } from '@/src/calc/sim/headline'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
 import { RUN_DEFAULTS } from '@/src/lib/simFields'
 import { engineFleetTotal } from '@/src/calc/fleet'
@@ -222,43 +222,45 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     <div className="sim-run">
       {/* Verdict — the one figure acted on, per vehicle type. */}
       <section className="sim-verdict" aria-label="Verdict">
-        <HeadlineRow h={headline} />
-        {Object.keys(fleetBy).map(vid => {
-          const v = vehicleById.get(vid)
-          const n = fleetBy[vid] ?? 0
-          const res = R?.res.types.find(x => x.vehicleId === vid) ?? null
-          return (
-            <div key={vid} className="sim-vrow">
-              <button type="button" className="sim-vveh" title="Speeds, size and charging used in the run" onClick={() => onAssumptions(vid)}>
-                {v?.display.heroImage && <img src={v.display.heroImage} alt="" />}
-                <div><div className="nm">{v?.name ?? vid}</div><div className="mf">{v?.display.manufacturer}</div></div>
-              </button>
-              <div className="sim-stepper" role="group" aria-label={`${v?.name ?? 'Vehicle'} fleet`}>
-                <button type="button" aria-label="Fewer vehicles" onClick={() => setFleet(vid, n - 1)}>−</button>
-                <span className="num">{n}</span>
-                <button type="button" aria-label="More vehicles" onClick={() => setFleet(vid, n + 1)}>+</button>
-              </div>
-              {R?.res.gridlock
-                ? <><span className="sim-chip gridlock">Gridlock</span><span className="sim-vstats">Stopped at <b>{clock(R.res.gridlock.t)}</b> · {R.res.gridlock.where} · {R.res.gridlock.vehicle}{R.res.gridlock.blockedBy ? ` waits on ${R.res.gridlock.blockedBy}` : ''}</span></>
-                : res
-                  ? <><span className={`sim-chip ${res.verdict}`}>{VERDICT_LABEL[res.verdict]}</span>
-                      <span className="sim-vstats"><b className="num">{res.perHr.toFixed(1)}</b> / {res.target.toFixed(0)} moves/h · <b className="num">{Math.round(res.avgWait)} s</b> wait · <b className="num">{Math.round(res.utilization * 100)}%</b> busy</span></>
-                  : R
-                    ? <><span className="sim-chip short">Not run</span><span className="sim-vstats">{R.res.excluded.map(x => x.why).filter((w, i, a) => a.indexOf(w) === i).join(' · ') || 'No flow of this vehicle could run'}</span></>
-                    : unrunnable
-                      ? <><span className="sim-chip short">Not run</span><span className="sim-vstats">Nothing the run can place or drive — check Validation in Edit layout</span></>
-                      : <><span className="sim-chip">Simulating</span><span className="sim-vstats">Running a full {shiftH} h shift…</span></>}
-              {R && forSizing && (
-                <PricingAction
-                  project={project} vehicles={vehicles} vehicleId={vid} n={n} engineN={engineFleet[vid] ?? 0}
-                  verdict={R.res.gridlock ? 'gridlock' : res?.verdict ?? null} lower={lower[vid]} inputsKey={inputsKey}
-                  onApplied={appliedFleet => patchSimSettings(project.id, { appliedFleet })}
-                  onStepDown={() => setFleet(vid, n - 1)}
-                />
-              )}
-            </div>
-          )
-        })}
+        {/* The deciding row (Dashboard tiles): the fleet being tested — each type with its photo and
+            stepper — then the static calc beside the simulated figures. */}
+        <div className="sim-kpis" role="group" aria-label="Static calc and simulation">
+          <div className={`sim-kpi sim-kpi-fleet is-${headline.verdictTone}`}>
+            {Object.keys(fleetBy).map(vid => {
+              const v = vehicleById.get(vid)
+              const n = fleetBy[vid] ?? 0
+              const res = R?.res.types.find(x => x.vehicleId === vid) ?? null
+              const many = Object.keys(fleetBy).length > 1
+              return (
+                <div key={vid} className="sim-kpi-veh">
+                  <button type="button" className="sim-vveh" title="Speeds, size and charging used in the run" onClick={() => onAssumptions(vid)}>
+                    {v?.display.heroImage && <img src={v.display.heroImage} alt="" />}
+                    <span className="nm">{v?.name ?? vid}</span>
+                  </button>
+                  <div className="sim-stepper" role="group" aria-label={`${v?.name ?? 'Vehicle'} fleet`}>
+                    <button type="button" aria-label="Fewer vehicles" onClick={() => setFleet(vid, n - 1)}>−</button>
+                    <span className="num">{n}</span>
+                    <button type="button" aria-label="More vehicles" onClick={() => setFleet(vid, n + 1)}>+</button>
+                  </div>
+                  {many && res && !R?.res.gridlock && <span className={`sim-chip sm ${res.verdict}`} title={`${res.perHr.toFixed(1)} / ${res.target.toFixed(0)} moves/h · ${Math.round(res.utilization * 100)}% busy`}>{VERDICT_LABEL[res.verdict]}</span>}
+                  {R && forSizing && (
+                    <PricingAction
+                      project={project} vehicles={vehicles} vehicleId={vid} n={n} engineN={engineFleet[vid] ?? 0}
+                      verdict={R.res.gridlock ? 'gridlock' : res?.verdict ?? null} lower={lower[vid]} inputsKey={inputsKey}
+                      onApplied={appliedFleet => patchSimSettings(project.id, { appliedFleet })}
+                      onStepDown={() => setFleet(vid, n - 1)}
+                    />
+                  )}
+                </div>
+              )
+            })}
+            <span className="sim-kpi-lbl">{headline.fleet.tested !== headline.fleet.static ? `Testing ${headline.fleet.tested} · static calc ${headline.fleet.static}` : `Testing the static calc · ${headline.fleet.static}`}</span>
+          </div>
+          <HeadlineTiles h={headline} why={R?.res.gridlock
+            ? `Stopped at ${clock(R.res.gridlock.t)} · ${R.res.gridlock.where} · ${R.res.gridlock.vehicle}${R.res.gridlock.blockedBy ? ` waits on ${R.res.gridlock.blockedBy}` : ''}`
+            : headline.notRun ? (R?.res.excluded.map(x => x.why).filter((w, i, a) => a.indexOf(w) === i).join(' · ') || 'Nothing the run can place or drive — check Validation in Edit layout')
+            : !R ? `Running a full ${shiftH} h shift…` : null} />
+        </div>
         <div className="sim-vsub">
           {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
           <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <> · <button type="button" className="link-btn" onClick={() => onResetFleet(Object.keys(fleetBy))}>Reset to engine</button></>}</span>
@@ -336,42 +338,31 @@ function VariabilityChip({ out, arrivals }: { out: SimResults[]; arrivals: SimSe
 
 const pctOf = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`)
 
-/** The deciding headline: the static calc's figure beside the simulated one, coloured against the goal. */
-function HeadlineRow({ h }: { h: Headline }) {
+/** One Dashboard-style tile: the figure, its label, the static calc (or the goal) under it, and a
+ *  coloured bar on top against its goal. */
+function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: string; tone: Tone }) {
+  return (
+    <div className={`sim-kpi is-${tone}`}>
+      <span className="sim-kpi-val num">{value}</span>
+      <span className="sim-kpi-lbl">{label}</span>
+      {sub && <span className="sim-kpi-sub">{sub}</span>}
+    </div>
+  )
+}
+
+/** The static calc beside the simulated figures; `why` is the verdict's line (stopped, not run, running). */
+function HeadlineTiles({ h, why }: { h: Headline; why: string | null }) {
   const u = h.utilization, done = h.perHr.simulated, soc = h.battery.socMin
   const tested = h.fleet.tested !== h.fleet.static
   return (
-    <div className="sim-headline" role="group" aria-label="Static calc and simulation">
-      <div className="sim-ht">
-        <span className="lbl">{tested ? 'Testing' : 'Testing the static calc'}</span>
-        <b className="num">{h.fleet.tested}<small> vehicles</small></b>
-        <span className="sub">{tested ? `Static calc ${h.fleet.static}` : 'Step 3 fleet'}</span>
-      </div>
-      <div className={`sim-ht is-${u.tone}`}>
-        <span className="lbl">Utilization</span>
-        <b className="num">{pctOf(u.simulated)}</b>
-        <span className="sub">Static {pctOf(u.static)} · target {pctOf(u.target)}</span>
-      </div>
-      <div className={`sim-ht is-${h.perHr.tone}`}>
-        <span className="lbl">Moves per hour</span>
-        <b className="num">{done == null ? '—' : done.toFixed(1)}</b>
-        <span className="sub">of {h.perHr.target.toFixed(0)} needed</span>
-      </div>
-      <div className={`sim-ht is-${h.battery.tone}`}>
-        <span className="lbl">Battery</span>
-        <b className="num">{soc == null ? '—' : `${Math.round(soc)}%`}<small> lowest</small></b>
-        <span className="sub">{h.battery.chargeTrips == null ? '' : `${h.battery.chargeTrips} charges · `}{h.battery.runHr == null ? 'static —' : `static ${h.battery.runHr.toFixed(1)} h per charge`}</span>
-      </div>
-      <div className="sim-ht">
-        <span className="lbl">Average wait</span>
-        <b className="num">{h.waitSec == null ? '—' : `${Math.round(h.waitSec)} s`}</b>
-        <span className="sub">until a vehicle is sent</span>
-      </div>
-      <div className={`sim-ht sim-ht-verdict is-${h.verdictTone}`}>
-        <span className="lbl">Verdict</span>
-        <b>{h.notRun ? 'Not run' : h.verdict ? VERDICT_LABEL[h.verdict] : 'Simulating…'}</b>
-        <span className="sub">{h.notRun ? 'check Validation in Edit layout' : h.verdict == null ? '' : tested ? `at ${h.fleet.tested} vehicles` : 'the static calc'}</span>
-      </div>
-    </div>
+    <>
+      <Kpi value={pctOf(u.simulated)} label="Utilization" sub={`Static ${pctOf(u.static)} · target ${pctOf(u.target)}`} tone={u.tone} />
+      <Kpi value={done == null ? '—' : done.toFixed(1)} label="Moves per hour" sub={`of ${h.perHr.target.toFixed(0)} needed`} tone={h.perHr.tone} />
+      <Kpi value={soc == null ? '—' : `${Math.round(soc)}%`} label="Lowest battery"
+        sub={`${h.battery.chargeTrips == null ? '' : `${h.battery.chargeTrips} charges · `}${h.battery.runHr == null ? 'static —' : `static ${h.battery.runHr.toFixed(1)} h per charge`}`} tone={h.battery.tone} />
+      <Kpi value={h.waitSec == null ? '—' : `${Math.round(h.waitSec)} s`} label="Average wait" sub="until a vehicle is sent" tone="" />
+      <Kpi value={h.notRun ? 'Not run' : h.verdict ? VERDICT_LABEL[h.verdict] : 'Simulating…'} label="Verdict"
+        sub={why ?? (tested ? `at ${h.fleet.tested} vehicles` : 'the static calc holds')} tone={h.verdictTone} />
+    </>
   )
 }

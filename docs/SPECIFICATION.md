@@ -877,8 +877,9 @@ step ribbon is unchanged.
     (Draw route · Place charger · Link flow · Scale · Open Flows).
   - *Static calc as the baseline; the deciding headline (owner, 2026-11-12).* Run starts from Step 3's
     static calculation — the Fleet Engine's fleet per type — and tests it; the stepper tests other
-    counts. A headline row above the per-type rows decides it, for all types placed, the static calc
-    beside the simulated: **Testing the static calc · 3 vehicles** (or **Testing 4 · Static calc 3**),
+    counts. One row of 05 Dashboard tiles decides it (it replaces the per-type rows), for all types
+    placed, the static calc beside the simulated. The first, wide tile holds each type's photo, name
+    and fleet stepper (and Use N in pricing; with several types, each type's verdict chip): **Testing the static calc · 3 vehicles** (or **Testing 4 · Static calc 3**),
     **Utilization** (busy ÷ time not charging, against the static calc's expectation at its fleet and
     the target), **Moves per hour** of those needed, **Battery** (lowest charge, charges, the static
     calc's hours per charge), **Average wait** and the **Verdict**. Each is coloured against its goal

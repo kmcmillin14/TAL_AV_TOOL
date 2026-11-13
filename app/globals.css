@@ -5438,19 +5438,27 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 /* ---- Run mode ---- */
 .sim-run { display: flex; flex-direction: column; gap: 16px; }
 .sim-run .sim-stage { height: min(64vh, 640px); }
-.sim-verdict { display: grid; gap: 8px; padding: 16px 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); box-shadow: var(--sim-shadow-rest); }
-.sim-vrow { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-/* The deciding headline: static calc beside simulated, one tile per figure. */
-.sim-headline { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
-.sim-ht { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: 10px; background: var(--bg-surface-3); border-left: 3px solid transparent; }
-.sim-ht .lbl { font: 600 11px var(--tal-font-numeric); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); }
-.sim-ht b { font-size: 24px; line-height: 1.2; font-weight: 700; color: var(--text-primary); }
-.sim-ht b small { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
-.sim-ht .sub { font-size: 12px; color: var(--text-secondary); min-height: 1.4em; }
-.sim-ht.is-good { border-left-color: var(--good); } .sim-ht.is-good b { color: var(--good); }
-.sim-ht.is-warn { border-left-color: var(--warn); } .sim-ht.is-warn b { color: var(--warn); }
-.sim-ht.is-bad { border-left-color: var(--bad); } .sim-ht.is-bad b { color: var(--bad); }
-.sim-ht-verdict b { font-size: 20px; }
+.sim-verdict { display: grid; gap: 12px; }
+/* The deciding row — the 05 Dashboard tile: figure, label, the static calc under it, a bar on top
+   coloured against its goal. The fleet tile holds each type's photo and stepper. */
+.sim-kpis { display: grid; grid-template-columns: minmax(300px, 2fr) repeat(5, minmax(120px, 1fr)); gap: 12px; }
+@media (max-width: 1280px) { .sim-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .sim-kpi-fleet { grid-column: 1 / -1; } }
+.sim-kpi {
+  position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px 16px 14px;
+  box-shadow: var(--shadow-card);
+}
+.sim-kpi::before { content: ''; position: absolute; inset: 0 0 auto 0; height: 3px; background: transparent; }
+.sim-kpi.is-good::before { background: var(--good); } .sim-kpi.is-warn::before { background: var(--warn); } .sim-kpi.is-bad::before { background: var(--bad); }
+.sim-kpi-val { font-family: var(--tal-font-numeric); font-variant-numeric: tabular-nums; font-size: 23px; font-weight: 800; line-height: 1.04; color: var(--text-primary); }
+.sim-kpi-lbl { font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-tertiary); }
+.sim-kpi-sub { font-size: 12px; color: var(--text-secondary); }
+.sim-kpi-fleet { gap: 8px; }
+.sim-kpi-veh { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; width: 100%; }
+.sim-kpi-veh .sim-vveh { min-width: 0; gap: 12px; }
+.sim-kpi-veh .sim-vveh img { width: 56px; height: 36px; }
+.sim-kpi-veh .sim-stepper button { width: 36px; height: 36px; }
+.sim-kpi-veh .sim-stepper .num { min-width: 28px; text-align: center; font-size: 20px; font-weight: 800; }
 .sim-vveh { display: flex; align-items: center; gap: 16px; min-width: 200px; }
 .sim-vveh img { width: 62px; height: 40px; object-fit: contain; }
 .sim-vveh .nm { font-weight: 700; font-size: 15px; color: var(--text-primary); }
@@ -5463,8 +5471,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-chip::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
 .sim-chip.meets { background: var(--good-soft); color: var(--good); } .sim-chip.tight { background: var(--warn-soft); color: var(--warn); }
 .sim-chip.short, .sim-chip.gridlock { background: var(--bad-soft); color: var(--bad); }
-.sim-vstats { font-size: 15px; color: var(--text-secondary); }
-.sim-vstats b { color: var(--text-primary); }
 /* Sizing: the last simulation run per type, and a simulated fleet in pricing (D-1). */
 .sim-sizing { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-secondary); }
 .sim-chip.sm { padding: 4px 10px; font-size: 10.5px; }
