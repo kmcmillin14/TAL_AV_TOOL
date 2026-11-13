@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-13 — Fleet simulation: static-calc baseline and the deciding headline
+
+- **Run headline row:** the static calc from Step 3 beside the simulation — fleet tested, utilization
+  (simulated vs static and target), moves per hour of those needed, battery (lowest charge, charges,
+  static hours per charge), average wait and verdict, each coloured against its goal.
+- Calc: `runHeadline` (src/calc/sim/headline.ts, tested); `staticUtilization` in src/calc/fleet.ts,
+  now also used by the Step 4 KPI detail (same figure as before).
+
 ## 2026-11-13 — Fleet simulation: lasso (Milestone 7, part 2)
 
 - **Lasso tool (L):** draw a loop; every highway it touches is selected (none: the points inside);

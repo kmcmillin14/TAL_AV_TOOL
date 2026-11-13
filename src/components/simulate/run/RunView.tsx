@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
+import { runHeadline, type Headline } from '@/src/calc/sim/headline'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
 import { RUN_DEFAULTS } from '@/src/lib/simFields'
 import { engineFleetTotal } from '@/src/calc/fleet'
@@ -211,6 +212,10 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   /** Stable, so the memoized Run details do not re-render every frame. */
   const openAll = useCallback(() => onAssumptions(null), [onAssumptions])
 
+  // The deciding row: the static calc from Step 3 beside what this run measured (all types placed).
+  const targetPerHr = useMemo(() => inputs.flows.filter(f => f.vehicleId in fleetBy).reduce((a, f) => a + f.thruPerHr, 0) * assume.demandPct / 100, [inputs.flows, fleetBy, assume.demandPct])
+  const headline = useMemo(() => runHeadline(fleet, fleetBy, R?.res ?? null, targetPerHr), [fleet, fleetBy, R, targetPerHr])
+
   const S = live.current
   const followed = S && follow >= 0 ? S.veh[follow] : null
 
@@ -218,6 +223,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     <div className="sim-run">
       {/* Verdict — the one figure acted on, per vehicle type. */}
       <section className="sim-verdict" aria-label="Verdict">
+        <HeadlineRow h={headline} />
         {Object.keys(fleetBy).map(vid => {
           const v = vehicleById.get(vid)
           const n = fleetBy[vid] ?? 0
@@ -326,5 +332,54 @@ function VariabilityChip({ out, arrivals }: { out: SimResults[]; arrivals: SimSe
         </span>
       )}
     </span>
+  )
+}
+
+const pctOf = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`)
+/** One tile's tone against its goal: good, a little off, or off. */
+type Tone = 'good' | 'warn' | 'bad' | ''
+
+/** The deciding headline: the static calc's figure beside the simulated one, coloured against the goal. */
+function HeadlineRow({ h }: { h: Headline }) {
+  const u = h.utilization, done = h.perHr.simulated
+  const uTone: Tone = u.simulated == null ? '' : u.simulated <= u.target + 0.02 ? 'good' : u.simulated <= 0.95 ? 'warn' : 'bad'
+  const rate = done == null || !h.perHr.target ? null : done / h.perHr.target
+  const rTone: Tone = rate == null ? '' : rate >= 0.98 ? 'good' : rate >= 0.9 ? 'warn' : 'bad'
+  const soc = h.battery.socMin, bTone: Tone = soc == null ? '' : soc >= 30 ? 'good' : soc >= 20 ? 'warn' : 'bad'
+  const vTone: Tone = !h.verdict || h.verdict === 'warming' ? '' : h.verdict === 'meets' ? 'good' : h.verdict === 'tight' ? 'warn' : 'bad'
+  const tested = h.fleet.tested !== h.fleet.static
+  return (
+    <div className="sim-headline" role="group" aria-label="Static calc and simulation">
+      <div className="sim-ht">
+        <span className="lbl">{tested ? 'Testing' : 'Testing the static calc'}</span>
+        <b className="num">{h.fleet.tested}<small> vehicles</small></b>
+        <span className="sub">{tested ? `Static calc ${h.fleet.static}` : 'Step 3 fleet'}</span>
+      </div>
+      <div className={`sim-ht is-${uTone}`}>
+        <span className="lbl">Utilization</span>
+        <b className="num">{pctOf(u.simulated)}</b>
+        <span className="sub">Static {pctOf(u.static)} · target {pctOf(u.target)}</span>
+      </div>
+      <div className={`sim-ht is-${rTone}`}>
+        <span className="lbl">Moves per hour</span>
+        <b className="num">{done == null ? '—' : done.toFixed(1)}</b>
+        <span className="sub">of {h.perHr.target.toFixed(0)} needed</span>
+      </div>
+      <div className={`sim-ht is-${bTone}`}>
+        <span className="lbl">Battery</span>
+        <b className="num">{soc == null ? '—' : `${Math.round(soc)}%`}<small> lowest</small></b>
+        <span className="sub">{h.battery.chargeTrips == null ? '' : `${h.battery.chargeTrips} charges · `}{h.battery.runHr == null ? 'static —' : `static ${h.battery.runHr.toFixed(1)} h per charge`}</span>
+      </div>
+      <div className="sim-ht">
+        <span className="lbl">Average wait</span>
+        <b className="num">{h.waitSec == null ? '—' : `${Math.round(h.waitSec)} s`}</b>
+        <span className="sub">order to pickup</span>
+      </div>
+      <div className={`sim-ht sim-ht-verdict is-${vTone}`}>
+        <span className="lbl">Verdict</span>
+        <b>{h.verdict ? VERDICT_LABEL[h.verdict] : 'Simulating…'}</b>
+        <span className="sub">{h.verdict == null ? '' : tested ? `at ${h.fleet.tested} vehicles` : 'the static calc'}</span>
+      </div>
+    </div>
   )
 }

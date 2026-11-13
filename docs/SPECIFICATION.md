@@ -875,6 +875,16 @@ step ribbon is unchanged.
     warnings and notes, one row per thing (each loose point is its own row). Clicking a row selects
     what it is about and centres the view on it; a row's fix button picks the tool that fixes it
     (Draw route · Place charger · Link flow · Scale · Open Flows).
+  - *Static calc as the baseline; the deciding headline (owner, 2026-11-12).* Run starts from Step 3's
+    static calculation — the Fleet Engine's fleet per type — and tests it; the stepper tests other
+    counts. A headline row above the per-type rows decides it, for all types placed, the static calc
+    beside the simulated: **Testing the static calc · 3 vehicles** (or **Testing 4 · Static calc 3**),
+    **Utilization** (busy ÷ time not charging, against the static calc's expectation at its fleet and
+    the target), **Moves per hour** of those needed, **Battery** (lowest charge, charges, the static
+    calc's hours per charge), **Average wait** and the **Verdict**. Each is coloured against its goal
+    (utilization at or under target; at least 98% of the moves; lowest charge 30% or more).
+    `runHeadline` (src/calc/sim/headline.ts); the static utilization is `staticUtilization` (shared
+    with the Step 4 KPI detail).
   - *Lasso (owner, 2026-11-13; Milestone 7).* **Lasso (L)**: draw a loop; every highway it touches —
     crosses or encloses — is selected; with none, the points inside it; Shift adds to the selection.
     Shift-click a highway adds or removes it; a Shift-drag box selects the points inside it, or with

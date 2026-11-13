@@ -5,7 +5,7 @@
 import type { FleetModel } from '@/src/lib/fleetModel'
 import { money } from '@/src/lib/vehicleDisplay'
 import { resilience } from '@/src/calc/romSensitivity'
-import { simulatedDelta } from '@/src/calc/fleet'
+import { simulatedDelta, staticUtilization } from '@/src/calc/fleet'
 
 /** A mini horizontal bar in a KPI popover (`frac` is 0–1 of the row's max). */
 export interface KpiBar { label: string; display: string; frac: number }
@@ -22,10 +22,7 @@ export type KpiId =
   | 'fleet' | 'types' | 'flows' | 'throughput' | 'capex' | 'payback'
   | 'opex' | 'offset' | 'net' | 'utilization' | 'resilience' | 'tco' | 'costPerMove'
 
-const utilOf = (g: { groupRaw: number; fleetSold: number; charging: { availability: number | null } }) => {
-  const cap = g.fleetSold * (g.charging.availability ?? 1)
-  return cap > 0 ? g.groupRaw / cap : 0
-}
+const utilOf = (g: Parameters<typeof staticUtilization>[0]) => staticUtilization(g)
 
 const bars = (items: Array<{ label: string; weight: number; display: string }>): KpiBar[] => {
   const max = Math.max(1, ...items.map(i => i.weight))

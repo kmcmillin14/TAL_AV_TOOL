@@ -5440,6 +5440,17 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-run .sim-stage { height: min(64vh, 640px); }
 .sim-verdict { display: grid; gap: 8px; padding: 16px 24px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); box-shadow: var(--sim-shadow-rest); }
 .sim-vrow { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+/* The deciding headline: static calc beside simulated, one tile per figure. */
+.sim-headline { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--border); }
+.sim-ht { display: flex; flex-direction: column; gap: 2px; padding: 8px 12px; border-radius: 10px; background: var(--bg-surface-3); border-left: 3px solid transparent; }
+.sim-ht .lbl { font: 600 11px var(--tal-font-numeric); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); }
+.sim-ht b { font-size: 24px; line-height: 1.2; font-weight: 700; color: var(--text-primary); }
+.sim-ht b small { font-size: 12px; font-weight: 500; color: var(--text-secondary); }
+.sim-ht .sub { font-size: 12px; color: var(--text-secondary); min-height: 1.4em; }
+.sim-ht.is-good { border-left-color: var(--good); } .sim-ht.is-good b { color: var(--good); }
+.sim-ht.is-warn { border-left-color: var(--warn); } .sim-ht.is-warn b { color: var(--warn); }
+.sim-ht.is-bad { border-left-color: var(--bad); } .sim-ht.is-bad b { color: var(--bad); }
+.sim-ht-verdict b { font-size: 20px; }
 .sim-vveh { display: flex; align-items: center; gap: 16px; min-width: 200px; }
 .sim-vveh img { width: 62px; height: 40px; object-fit: contain; }
 .sim-vveh .nm { font-weight: 700; font-size: 15px; color: var(--text-primary); }
