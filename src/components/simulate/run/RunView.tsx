@@ -352,8 +352,6 @@ function VariabilityChip({ out, arrivals }: { out: SimResults[]; arrivals: SimSe
 const pctOf = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`)
 /** Seconds as s, min or h — a backlog's wait can run to hours. */
 const duration = (s: number | null) => (s == null ? '—' : s < 120 ? `${Math.round(s)} s` : s < 7200 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1)} h`)
-/** Over capacity reads OVER 100% (owner, 2026-11-13), with the figure it would need beside it. */
-const utilOf = (x: number | null) => (x != null && x > 1 ? 'OVER 100%' : pctOf(x))
 
 /** One Dashboard-style tile: the figure, its label, the static calc (or the goal) under it, and a
  *  coloured bar on top against its goal. */
@@ -371,10 +369,12 @@ function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: 
 function HeadlineTiles({ h, why }: { h: Headline; why: string | null }) {
   const u = h.utilization, done = h.perHr.simulated, soc = h.battery.socMin
   const tested = h.fleet.tested !== h.fleet.static
+  const over = u.simulated != null && u.simulated > 1
   return (
     <>
-      <Kpi value={utilOf(u.simulated)} label="Utilization"
-        sub={`${u.simulated != null && u.simulated > 1 ? `needs ${pctOf(u.simulated)} · ` : ''}Static ${utilOf(u.static)} · target ${pctOf(u.target)}`} tone={u.tone} />
+      {/* Too few vehicles: the utilization the work needs, over 100% — and by how much (owner, 2026-11-13). */}
+      <Kpi value={pctOf(u.simulated)} label={over ? `Utilization · over by ${Math.round((u.simulated! - 1) * 100)}%` : 'Utilization'}
+        sub={over ? `About ${Math.ceil(h.fleet.tested * u.simulated! / u.target)} vehicles to reach the ${pctOf(u.target)} target · static ${pctOf(u.static)}` : `Static ${pctOf(u.static)} · target ${pctOf(u.target)}`} tone={u.tone} />
       <Kpi value={done == null ? '—' : done.toFixed(1)} label="Moves per hour" sub={`of ${h.perHr.target.toFixed(0)} needed`} tone={h.perHr.tone} />
       <Kpi value={soc == null ? '—' : `${Math.round(soc)}%`} label="Lowest battery"
         sub={`${h.battery.chargeTrips == null ? '' : `${h.battery.chargeTrips} charges · `}${h.battery.runHr == null ? 'static —' : `static ${h.battery.runHr.toFixed(1)} h per charge`}`} tone={h.battery.tone} />

@@ -1,6 +1,6 @@
 # Changelog
 
-## 2026-11-13 — Fleet simulation: staffed day, week runs, charging rules, OVER 100%
+## 2026-11-13 — Fleet simulation: staffed day, week runs, charging rules, over-utilization
 
 - **Shift length / Shifts per day** editable in Assumptions (simulation only; `simSettings.shiftH`,
   `shiftsPerDay`). Engine: no orders off-shift (`src/calc/sim/shift.ts`); rates and utilization per
@@ -10,7 +10,8 @@
 - **Charging rules** (owner): idle vehicles move to free chargers; a vehicle that must charge stays
   until the charge-until level; one that finds no charger moves a full idle vehicle to parking. The
   gridlock sweep's known O-12 cases at 6 vehicles / 130% moved seeds (3 → 4 of 12 runs).
-- **Utilization OVER 100%** when moves fall short of demand (the utilization it would need).
+- **Over-utilized:** when the fleet is too small the Utilization tile shows the real figure (e.g. 249%),
+  "over by 149%", and about how many vehicles reach the target.
 - Average wait reads in min or h when long; "at 1 vehicle".
 
 ## 2026-11-13 — Fleet simulation: static-calc baseline and the deciding headline

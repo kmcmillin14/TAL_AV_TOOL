@@ -15,7 +15,7 @@ export interface Headline {
   fleet: { static: number; tested: number }
   /** Busy ÷ time not charging: what the static calc expects at its fleet, what the run needs. When the
    *  fleet cannot keep up (moves short of the demand), `simulated` is what it would need — measured
-   *  utilization × demand ÷ moves done — and can be over 1 (shown OVER 100%). */
+   *  utilization × demand ÷ moves done — and can be over 1 (shown as its real %, "over by …"). */
   utilization: { static: number | null; simulated: number | null; target: number; tone: Tone }
   /** Moves per hour delivered against the demand the run generates (all types). */
   perHr: { simulated: number | null; target: number; tone: Tone }

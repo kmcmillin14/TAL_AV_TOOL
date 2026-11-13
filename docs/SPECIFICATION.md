@@ -889,9 +889,10 @@ step ribbon is unchanged.
       to a free parking spot.
     - **Battery chart** (Run details): each type's average and lowest charge every 5 minutes against
       the charge threshold.
-    - **OVER 100%:** when the fleet cannot keep up (moves short of the demand), the Utilization tile shows
-      what it would need — measured utilization × demand ÷ moves done — and reads **OVER 100%** with
-      the figure beside it ("needs 249%").
+    - **Over-utilized:** when the fleet is too small (moves short of the demand), the Utilization tile
+      shows the utilization the work needs — measured utilization × demand ÷ moves done — as its real
+      figure (e.g. **249%**, red), labelled "over by 149%", with about how many vehicles would reach the
+      target (fleet × needed ÷ target).
   - *Static calc as the baseline; the deciding headline (owner, 2026-11-12).* Run starts from Step 3's
     static calculation — the Fleet Engine's fleet per type — and tests it; the stepper tests other
     counts. One row of 05 Dashboard tiles decides it (it replaces the per-type rows), for all types
