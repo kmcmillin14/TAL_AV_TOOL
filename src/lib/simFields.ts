@@ -50,7 +50,10 @@ const def = (scope: FieldScope, field: string, group: FieldGroup, level: SimFiel
   ({ key: `${scope}.${field}`, scope, field, group, level, label, unit, ...extra })
 
 /** Run assumptions' defaults (spec D-3 pace; the engine's following gap). */
-export const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as 'regular' | 'random', demandPct: 100, seed: 1 }
+export const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as 'regular' | 'random', demandPct: 100, seed: 1, runLength: 'shift' as RunLength }
+export type RunLength = 'shift' | 'day' | 'week'
+/** A run length in seconds, for a staffed shift of `shiftH` hours. */
+export const runSeconds = (len: RunLength, shiftH: number) => (len === 'week' ? 7 * 86400 : len === 'day' ? 86400 : shiftH * 3600)
 
 export const SIM_FIELDS: SimFieldDef[] = [
   // Vehicle type (values from the vehicle file; per-project overrides)
@@ -76,7 +79,8 @@ export const SIM_FIELDS: SimFieldDef[] = [
   def('run', 'demandPct', 'Demand', 'settings', 'Demand', '%', { min: 10, max: 300, step: 5 }),
   def('run', 'arrivals', 'Demand', 'settings', 'Arrivals', '', { choices: [{ value: 'regular', label: 'Regular' }, { value: 'random', label: 'Random' }] }),
   def('run', 'seed', 'Run', 'advanced', 'Seed', '', { min: 1, max: 99999, step: 1, integer: true }),
-  def('run', 'shiftH', 'Run', 'settings', 'Shift length', 'h', { readOnly: true }),
+  def('run', 'shiftH', 'Run', 'settings', 'Shift length', 'h', { min: 0.5, max: 24, step: 0.5 }),
+  def('run', 'shiftsPerDay', 'Run', 'settings', 'Shifts per day', '', { min: 1, max: 3, step: 1, integer: true }),
   // B56.5 rule (simSettings.clearance)
   def('safety', 'thresholdFps', 'Safety', 'advanced', 'Speed for the larger clearance', 'ft/s', { min: 0.5, max: 20, step: 0.01 }),
   def('safety', 'lowSpeedIn', 'Safety', 'advanced', 'Clearance below that speed', 'in', { min: 0, max: 60, step: 0.5 }),
@@ -104,6 +108,7 @@ export interface FieldContext {
   point?: SimPoint
   segment?: SimSegment
   hoursPerShift?: number | null
+  shiftsPerDay?: number | null
 }
 export interface FieldState { value: Value; base: Value; source: FieldSource }
 
@@ -118,10 +123,11 @@ export function fieldState(d: SimFieldDef, c: FieldContext): FieldState {
       return typeof o === 'number' ? { value: o, base, source: 'Override' } : { value: base, base, source: base == null ? 'Default' : 'JSON' }
     }
     case 'run': {
-      if (d.field === 'shiftH') return { value: c.hoursPerShift ?? 8, base: c.hoursPerShift ?? 8, source: 'Step 1' }
-      const base = RUN_DEFAULTS[d.field as keyof typeof RUN_DEFAULTS]
+      // The staffed day comes from Step 1; the rest are run defaults.
+      const step1 = d.field === 'shiftH' ? c.hoursPerShift ?? 8 : d.field === 'shiftsPerDay' ? c.shiftsPerDay ?? 1 : undefined
+      const base = step1 ?? RUN_DEFAULTS[d.field as keyof typeof RUN_DEFAULTS]
       const v = (ss as Record<string, unknown>)[d.field] as Value | undefined
-      return v != null && v !== base ? { value: v, base, source: 'Override' } : { value: base, base, source: 'Default' }
+      return v != null && v !== base ? { value: v, base, source: 'Override' } : { value: base, base, source: step1 != null ? 'Step 1' : 'Default' }
     }
     case 'safety': {
       const base = clearanceBase[d.field]
@@ -155,7 +161,7 @@ export function fieldPatch(d: SimFieldDef, c: FieldContext, value: Value | undef
       return { simSettings: { overrides } }
     }
     case 'run': {
-      const reset = value == null || value === RUN_DEFAULTS[d.field as keyof typeof RUN_DEFAULTS]
+      const reset = value == null || value === fieldState(d, { ...c, simSettings: {} }).base
       return { simSettings: { [d.field]: reset ? undefined : value } as Partial<SimSettingsData> }
     }
     case 'safety': {
@@ -177,13 +183,13 @@ export const ownerName = (p: SimPoint) => p.name || 'Junction'
 export interface Overridden { def: SimFieldDef; owner: string; ownerId: string; state: FieldState }
 
 /** Every overridden assumption in the project: run, B56.5 rule, the run's vehicle types, points, routes. */
-export function overriddenFields(project: Pick<StoredProject, 'simSettings' | 'simLayout' | 'hoursPerShift'>, vehicles: Vehicle[]): Overridden[] {
+export function overriddenFields(project: Pick<StoredProject, 'simSettings' | 'simLayout' | 'hoursPerShift' | 'shiftsPerDay'>, vehicles: Vehicle[]): Overridden[] {
   const ss = project.simSettings ?? {}
   const out: Overridden[] = []
   const add = (scope: FieldScope, owner: string, ownerId: string, c: FieldContext) => {
     for (const d of fieldsFor(scope)) { const st = fieldState(d, c); if (st.source === 'Override') out.push({ def: d, owner, ownerId, state: st }) }
   }
-  add('run', 'Run', 'run', { simSettings: ss, hoursPerShift: project.hoursPerShift })
+  add('run', 'Run', 'run', { simSettings: ss, hoursPerShift: project.hoursPerShift, shiftsPerDay: project.shiftsPerDay })
   add('safety', 'B56.5 rule', 'safety', { simSettings: ss })
   for (const v of vehicles) add('vehicle', v.name, v.id, { simSettings: ss, vehicle: v })
   for (const p of project.simLayout?.points ?? []) add('point', ownerName(p), p.id, { point: p })

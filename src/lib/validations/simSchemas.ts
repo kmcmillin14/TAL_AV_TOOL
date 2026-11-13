@@ -99,6 +99,12 @@ export const simSettingsSchema = z.object({
   pacePct: z.number().min(10).max(100).optional(),
   safetyFt: z.number().min(0).max(30).optional(),
   arrivals: z.enum(['regular', 'random']).optional(),
+  /** The staffed day, simulation only (absent: Step 1's): hours per shift and shifts per day, back to
+   *  back from midnight; off-shift no orders arrive and vehicles charge. */
+  shiftH: z.number().min(0.5).max(24).optional(),
+  shiftsPerDay: z.number().int().min(1).max(3).optional(),
+  /** How long the verdict run lasts: one shift (default), a day, or a week (to see charge levels). */
+  runLength: z.enum(['shift', 'day', 'week']).optional(),
   /** Earlier vehicle switcher: read once as a one-type `vehicles` list (simVehicleTypes); not written. */
   vehicleAs: z.string().optional(),
   /** The simulation's vehicle types, each with its payload (a Step 1 load or custom dims, in);

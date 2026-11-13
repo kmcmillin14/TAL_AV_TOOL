@@ -24,13 +24,14 @@ describe('Run headline: the static calc beside the simulation', () => {
     const h = runHeadline(fleet, { a: 4, b: 2 }, res, [{ vehicleId: 'a', thruPerHr: 40 }, { vehicleId: 'b', thruPerHr: 12 }], 100)
     expect(h.fleet).toEqual({ static: 5, tested: 6 })
     expect(h.utilization.static).toBeCloseTo(3.4 / (3 * 0.9 + 2))
-    expect(h.utilization.simulated).toBeCloseTo((0.9 * 4 + 0.6 * 2) / 6)
+    // 48 of 52 moves an hour: short, so the tile shows what the fleet would need
+    expect(h.utilization.simulated).toBeCloseTo(((0.9 * 4 + 0.6 * 2) / 6) * 52 / 48)
     expect(h.perHr).toMatchObject({ simulated: 48, target: 52, tone: 'warn' })
     expect(h.waitSec).toBeCloseTo((20 * 300 + 4 * 100) / 400)
     expect(h.battery).toMatchObject({ socMin: 30, chargeTrips: 4, runHr: 6 })
     expect(h.verdict).toBe('tight')
     expect(runHeadline(fleet, { a: 4 }, { ...res, gridlock: { t: 1 } } as unknown as SimResults, [], 100).verdict).toBe('gridlock')
-    expect(h.utilization.tone).toBe('good')                                   // 80% at or under the 85% target
+    expect(h.utilization.tone).toBe('warn')                                   // 87% needed: over the 85% target
   })
 
   it('a type placing no vehicle does not drag the battery to 0; nothing run reads as not run', () => {
@@ -39,5 +40,12 @@ describe('Run headline: the static calc beside the simulation', () => {
     const empty = runHeadline(fleet, { a: 3 }, { verdict: 'warming', gridlock: null, types: [] } as unknown as SimResults, [], 100)
     expect(empty).toMatchObject({ notRun: true, verdict: null, verdictTone: 'bad' })
     expect(runHeadline(fleet, { a: 3 }, null, [], 100, true).notRun).toBe(true)
+  })
+
+  it('a fleet that cannot keep up shows the utilization it would need — over 100%', () => {
+    const res = { verdict: 'short', gridlock: null, types: [type('a', { fleet: 3, utilization: 0.97, perHr: 30, target: 40 })] } as unknown as SimResults
+    const h = runHeadline(fleet, { a: 3 }, res, [{ vehicleId: 'a', thruPerHr: 40 }], 100)
+    expect(h.utilization.simulated).toBeCloseTo(0.97 * 40 / 30)
+    expect(h.utilization.tone).toBe('bad')
   })
 })

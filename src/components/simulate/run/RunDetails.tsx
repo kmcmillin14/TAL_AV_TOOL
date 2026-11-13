@@ -88,12 +88,17 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
           )}
           {R && (
             <dl className="sim-kv">
-              <dt>Battery at end of shift (avg / lowest)</dt><dd>{R.types.map(t => `${Math.round(t.socAvg)}% / ${Math.round(t.socMin)}%`).join(' · ')}</dd>
+              <dt>Battery at the end (avg / lowest)</dt><dd>{R.types.map(t => `${Math.round(t.socAvg)}% / ${Math.round(t.socMin)}%`).join(' · ')}</dd>
               <dt>Trips to charge</dt><dd>{R.types.reduce((a, t) => a + t.chargeTrips, 0)}</dd>
               <dt>Orders waiting at the end</dt><dd>{R.orders.waiting}</dd>
             </dl>
           )}
         </div>
+      </details>
+
+      <details className="sim-disc" open={!!R && R.t > 86400}>
+        <summary>Battery<span className="meta">{R ? R.types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId}: lowest ${Math.round(t.socMin)}% · ${t.chargeTrips} charges`).join(' · ') : 'simulating…'}</span></summary>
+        <div className="sim-disc-body">{S && R ? <BatteryChart S={S} vehicleById={vehicleById} /> : <p className="sim-card-note">Simulating…</p>}</div>
       </details>
 
       <details className="sim-disc">
@@ -209,6 +214,41 @@ function HourChart({ S, target, hours }: { S: SimState; target: number; hours: n
         </ComposedChart>
       </ChartFrame>
       <ChartCaption>{short === 0 ? 'Every hour met the target.' : `${short} of ${data.length} hours below the target.`} Bars: moves delivered · dashed: target · line: most orders waiting (right axis).</ChartCaption>
+    </>
+  )
+}
+
+/** Battery over the run, per vehicle type: the lowest and the average charge every 5 minutes, against
+ *  the level where a vehicle must charge (dashed). Off-shift stretches show the fleet charging back up. */
+function BatteryChart({ S, vehicleById }: { S: SimState; vehicleById: Map<string, Vehicle> }) {
+  const types = [...S.socSeries.keys()].filter(vid => (S.socSeries.get(vid) ?? []).length)
+  if (!types.length) return <p className="sim-card-note">No battery data for these vehicles — charging is off.</p>
+  const days = S.t > 86400
+  const rows = new Map<number, Record<string, number>>()
+  for (const vid of types) for (const [t, min, avg] of S.socSeries.get(vid)!) {
+    const r = rows.get(t) ?? { t: t / 3600 }
+    r[`${vid}:min`] = Math.round(min); r[`${vid}:avg`] = Math.round(avg); rows.set(t, r)
+  }
+  const data = [...rows.values()]
+  const below = S.profiles.get(types[0])?.battery?.chargeBelowPct
+  return (
+    <>
+      <ChartFrame height={220}>
+        <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          <CartesianGrid stroke={GRID_STROKE} strokeDasharray="2 4" vertical={false} />
+          <XAxis dataKey="t" type="number" domain={[0, 'dataMax']} tick={TICK} stroke={AXIS_STROKE}
+            ticks={days ? Array.from({ length: Math.floor(S.t / 86400) + 1 }, (_, i) => i * 24) : undefined}
+            tickFormatter={h => (days ? `Day ${Math.floor(h / 24) + 1}` : `${Math.round(h)}h`)} />
+          <YAxis domain={[0, 100]} tick={TICK} stroke={AXIS_STROKE} width={36} unit="%" />
+          <Tooltip content={<ChartTooltip fmt={n => `${Math.round(n)}%`} />} labelFormatter={h => `${Math.floor(Number(h) / 24) ? `Day ${Math.floor(Number(h) / 24) + 1} · ` : ''}${(Number(h) % 24).toFixed(1)} h`} />
+          {below != null && <ReferenceLine y={below} stroke="var(--bad)" strokeDasharray="5 4" label={{ value: `Charges below ${below}%`, position: 'insideBottomLeft', fill: 'var(--bad)', fontSize: 10 }} />}
+          {types.flatMap((vid, i) => [
+            <Line key={`${vid}:avg`} isAnimationActive={false} dataKey={`${vid}:avg`} name={`${vehicleById.get(vid)?.name ?? vid} — average`} stroke={i ? 'var(--tal-teal, var(--good))' : 'var(--tal-classic-blue)'} strokeWidth={2} dot={false} />,
+            <Line key={`${vid}:min`} isAnimationActive={false} dataKey={`${vid}:min`} name={`${vehicleById.get(vid)?.name ?? vid} — lowest`} stroke={i ? 'var(--tal-teal, var(--good))' : 'var(--tal-classic-blue)'} strokeWidth={1.5} strokeDasharray="4 3" dot={false} />,
+          ])}
+        </ComposedChart>
+      </ChartFrame>
+      <ChartCaption>Solid: average charge · dashed: the lowest vehicle · red: where a vehicle must charge. Idle vehicles wait on chargers; off-shift they charge back up.</ChartCaption>
     </>
   )
 }

@@ -16,6 +16,7 @@ import { canDrop, canPick } from './layoutEdit'
 import { rng } from './rng'
 import type { Gridlock, SimFlag, SimFlow, SimLayout, SimPoint, SimSettings, TimeSplit, TransferOrientation, VehicleSimData } from './types'
 import { defaultOrientation, resolveProfile, type VehicleProfile } from './vehicle'
+import { inShift } from './shift'
 import { emptySplit } from './results'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
@@ -121,6 +122,8 @@ export interface SimState {
   excluded: { flowId: string; why: string }[]
   /** [t, waiting orders] per vehicle type, sampled every 60 s. */
   series: Map<string, [number, number][]>
+  /** Battery per vehicle type every 5 simulated minutes: [t, lowest %, average %]. */
+  socSeries: Map<string, [number, number, number][]>
   gridlock: Gridlock | null
   /** Last time a vehicle with work moved or handled a load (stall detection). */
   lastProgress: number
@@ -183,7 +186,7 @@ export function createSim(
   const profiles = new Map<string, VehicleProfile>()
   const S: SimState = {
     G, P, t: 0, rand, orders: [], waiting: 0, veh: [], locks: new Map(), jlocks: new Map(), flows: [], excluded: [],
-    series: new Map(), gridlock: null, lastProgress: 0, flags: [], profiles,
+    series: new Map(), socSeries: new Map(), gridlock: null, lastProgress: 0, flags: [], profiles,
     hourly: [], zoneStats: new Map(), heat: new Float64Array(G.n),
   }
   const profileFor = (vid: string) => {
@@ -238,7 +241,7 @@ export function createSim(
     }
   }
   if (P.staffedHr >= 24) S.flags.push({ field: 'startSoc', message: 'No off-shift window — vehicles start mid charge band' })
-  for (const vid of profiles.keys()) S.series.set(vid, [])
+  for (const vid of profiles.keys()) { S.series.set(vid, []); S.socSeries.set(vid, []) }
   return S
 }
 
@@ -299,6 +302,18 @@ function goCharge(S: SimState, v: SimVehicle) {
   const n = nearestFree(S, v, S.G.chargers)
   if (n < 0) { if (v.mode !== 'home') goHome(S, v); else v.mode = 'home'; return }
   reserve(S, v, n); v.mode = 'toCharge'; setRoute(S, v, n)
+}
+
+/** A full, idle vehicle on a charger gives it up to `needy`: it moves to a free parking spot (none
+ *  free: it stays). The charger is free once it has left; `needy` takes it on the next check. */
+function bumpFullOffCharger(S: SimState, needy: SimVehicle) {
+  const full = S.veh.filter(u => u !== needy && u.mode === 'home' && !u.mustCharge && u.prof.battery
+    && S.G.points[u.node].type === 'charger' && u.soc >= u.prof.battery.chargeUntilPct)
+    .sort((a, b) => b.soc - a.soc)[0]
+  if (!full) return
+  const n = nearestFree(S, full, S.G.parking)
+  if (n < 0) return
+  reserve(S, full, n); full.mode = 'toHome'; setRoute(S, full, n)
 }
 
 function dispatch(S: SimState) {
@@ -480,12 +495,25 @@ export function step(S: SimState) {
   const t = S.t
   // arrivals
   for (const F of S.flows) while (F.next <= t) {
+    // Off-shift: no orders until the next staffed window opens.
+    if (!inShift(P, F.next)) { F.next = (Math.floor(F.next / 86400) + 1) * 86400 + F.iv * 0.05; continue }
     S.orders.push({ F, t0: F.next, v: null, td: 0 }); F.gen++; S.waiting++
     F.next += P.arrivals === 'random' ? -Math.log(1 - S.rand()) * F.iv : F.iv
   }
   dispatch(S)
   for (const v of S.veh) if (v.mode === 'free') goHome(S, v)
   for (const v of S.veh) if (v.mustCharge && v.mode === 'home' && G.points[v.node].type !== 'charger') goCharge(S, v)
+  // Charging rules (owner, 2026-11-13): a vehicle without a mission belongs on a charger — every 10 s
+  // an idle one at parking takes a free charger; one that must charge and finds none moves a full,
+  // idle vehicle off a charger to a free parking spot.
+  if (Math.floor(t / 10) > Math.floor((t - DT) / 10)) {
+    for (const v of S.veh) {
+      if (v.mode !== 'home' || v.job || !v.prof.battery || G.points[v.node].type === 'charger') continue
+      const n = nearestFree(S, v, G.chargers)
+      if (n >= 0) { reserve(S, v, n); v.mode = v.mustCharge ? 'toCharge' : 'toHome'; setRoute(S, v, n); continue }
+      if (v.mustCharge) bumpFullOffCharger(S, v)
+    }
+  }
 
   // plan: zone and junction permissions limit how far each vehicle may go; nearest claims first
   const accsOf = S.veh.map(v => (MOVING.has(v.mode) && v.pi < v.nodes.length ? pathAccs(S, v) : null))
@@ -664,11 +692,11 @@ export function step(S: SimState) {
       kw = busyKw
       // a trip to a charger is charging logistics; heading home is idle (still dispatchable)
       if (v.mode === 'toCharge') v.tm.charge += DT
-      else if (v.mode === 'toHome') v.tm.idle += DT
+      else if (v.mode === 'toHome') { if (inShift(P, t)) v.tm.idle += DT }
       else if (v.moved > 0) v.tm.travel += DT
       else { v.tm.wait += DT; S.heat[v.atNode ? v.node : v.nodes[Math.min(v.pi, v.nodes.length - 1)]] += DT }
     } else if (v.mode === 'charging') v.tm.charge += DT
-    else v.tm.idle += DT
+    else if (inShift(P, t)) v.tm.idle += DT     // off-shift waiting is not idle time
     if (b) {
       const atCharger = v.atNode && G.points[v.node].type === 'charger' && (v.mode === 'home' || v.mode === 'charging')
       const dSoc = ((atCharger ? b.chargerKw : 0) - kw) * DT * b.pctPerKwSec
@@ -710,6 +738,12 @@ export function step(S: SimState) {
     const node = v.pi < v.nodes.length ? v.nodes[v.pi] : v.node
     const p = G.points[node]
     S.gridlock = { t, kind: 'stall', nodeId: p.id, vehicle: v.id, blockedBy: v.waitFor != null ? S.veh[v.waitFor].id : null, where: p.name ?? nearestLabel(G, node) }
+  }
+  if (Math.floor(t / 300) > Math.floor((t - DT) / 300)) {
+    for (const [vid, ser] of S.socSeries) {
+      const socs = S.veh.filter(v => v.prof.vehicle.id === vid && v.prof.battery).map(v => v.soc)
+      if (socs.length) ser.push([t, Math.min(...socs), socs.reduce((a, b) => a + b, 0) / socs.length])
+    }
   }
   if (Math.floor(t / 60) > Math.floor((t - DT) / 60)) {
     for (const [vid, ser] of S.series) ser.push([t, S.orders.filter(o => o.v == null && o.F.f.vehicleId === vid).length])

@@ -46,7 +46,7 @@ export default function AssumptionsDrawer({ project, vehicles, changed, writeLay
   // Every row: run and rule fields once, vehicle fields per vehicle type; points and routes only
   // where overridden (they are edited in the inspector, on the object itself).
   const rows: Row[] = [
-    ...(only ? [] : [...fieldsFor('run'), ...fieldsFor('safety')].map(d => ({ def: d, ctx: { simSettings: ss, hoursPerShift: project.hoursPerShift }, key: d.key }))),
+    ...(only ? [] : [...fieldsFor('run'), ...fieldsFor('safety')].map(d => ({ def: d, ctx: { simSettings: ss, hoursPerShift: project.hoursPerShift, shiftsPerDay: project.shiftsPerDay }, key: d.key }))),
     ...shown.flatMap(v => fieldsFor('vehicle').map(d => ({ def: d, ctx: { simSettings: ss, vehicle: v }, owner: vehicles.length > 1 && !only ? v.name : undefined, key: `${v.id}.${d.key}` }))),
     ...(only ? [] : changed.filter(o => o.def.scope === 'point' || o.def.scope === 'route').map(o => {
       const point = project.simLayout?.points.find(q => q.id === o.ownerId), segment = project.simLayout?.segments.find(q => q.id === o.ownerId)
@@ -67,7 +67,7 @@ export default function AssumptionsDrawer({ project, vehicles, changed, writeLay
     let settings: Partial<NonNullable<StoredProject['simSettings']>> = {}
     const layoutResets: { id: string; patch: FieldPatch }[] = []
     for (const o of changed) {
-      const ctx = { simSettings: { ...ss, ...settings }, vehicle: vehicles.find(v => v.id === o.ownerId), hoursPerShift: project.hoursPerShift,
+      const ctx = { simSettings: { ...ss, ...settings }, vehicle: vehicles.find(v => v.id === o.ownerId), hoursPerShift: project.hoursPerShift, shiftsPerDay: project.shiftsPerDay,
         point: project.simLayout?.points.find(q => q.id === o.ownerId), segment: project.simLayout?.segments.find(q => q.id === o.ownerId) }
       const patch = fieldPatch(o.def, ctx, undefined)
       if ('simSettings' in patch) settings = { ...settings, ...patch.simSettings }

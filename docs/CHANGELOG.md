@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-13 — Fleet simulation: staffed day, week runs, charging rules, OVER 100%
+
+- **Shift length / Shifts per day** editable in Assumptions (simulation only; `simSettings.shiftH`,
+  `shiftsPerDay`). Engine: no orders off-shift (`src/calc/sim/shift.ts`); rates and utilization per
+  staffed hour — **results change** for runs longer than a shift.
+- **Run length** Shift · Day · Week (`simSettings.runLength`) and **Run week**; battery per type every
+  5 min (`SimState.socSeries`) and a **Battery** chart in Run details.
+- **Charging rules** (owner): idle vehicles move to free chargers; a vehicle that must charge stays
+  until the charge-until level; one that finds no charger moves a full idle vehicle to parking. The
+  gridlock sweep's known O-12 cases at 6 vehicles / 130% moved seeds (3 → 4 of 12 runs).
+- **Utilization OVER 100%** when moves fall short of demand (the utilization it would need).
+- Average wait reads in min or h when long; "at 1 vehicle".
+
 ## 2026-11-13 — Fleet simulation: static-calc baseline and the deciding headline
 
 - **Run headline row** — 05 Dashboard tiles, replacing the per-type rows; the fleet tile holds each

@@ -2,6 +2,7 @@
 // Verdict is utilization-based against the project's own target utilization (spec §6.7, D-9).
 
 import type { SimState } from './engine'
+import { staffedSeconds } from './shift'
 import type { SimResults, TimeSplit, TypeResult, VehicleResult, Verdict } from './types'
 
 export const VERDICT = {
@@ -19,7 +20,8 @@ const RANK: Record<Verdict, number> = { warming: 0, meets: 1, tight: 2, short: 3
 export const emptySplit = (): TimeSplit => ({ travel: 0, handle: 0, reposition: 0, wait: 0, charge: 0, idle: 0 })
 
 export function results(S: SimState): SimResults {
-  const hrs = S.t / 3600
+  // Rates are per staffed hour: off-shift time (no orders) is not counted.
+  const hrs = staffedSeconds(S.P, S.t) / 3600
   const types: TypeResult[] = []
   for (const [vid, prof] of S.profiles) {
     const flows = S.flows.filter(F => F.f.vehicleId === vid)

@@ -11,7 +11,7 @@ import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runHeadline, type Headline, type Tone } from '@/src/calc/sim/headline'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
-import { RUN_DEFAULTS } from '@/src/lib/simFields'
+import { RUN_DEFAULTS, runSeconds } from '@/src/lib/simFields'
 import { engineFleetTotal } from '@/src/calc/fleet'
 import type { SimResults, SimSettings, Verdict } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
@@ -89,11 +89,17 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     pacePct: simSettings.pacePct ?? RUN_DEFAULTS.pacePct, safetyFt: simSettings.safetyFt ?? RUN_DEFAULTS.safetyFt,
     arrivals: simSettings.arrivals ?? RUN_DEFAULTS.arrivals, demandPct: simSettings.demandPct ?? RUN_DEFAULTS.demandPct, seed: simSettings.seed ?? RUN_DEFAULTS.seed,
   }), [simSettings.pacePct, simSettings.safetyFt, simSettings.arrivals, simSettings.demandPct, simSettings.seed])
-  const shiftH = project.hoursPerShift ?? 8
+  // The staffed day (simulation overrides, else Step 1) and how long the verdict run lasts. One-fewer
+  // checks and variability judge one shift, as pricing does.
+  const shiftH = simSettings.shiftH ?? project.hoursPerShift ?? 8
+  const staffedHr = Math.min(24, shiftH * (simSettings.shiftsPerDay ?? project.shiftsPerDay ?? 1))
+  const runLength = simSettings.runLength ?? RUN_DEFAULTS.runLength
+  const runSec = runSeconds(runLength, shiftH)
+  const runLabel = runLength === 'week' ? 'week' : runLength === 'day' ? '24 h day' : `${shiftH} h shift`
   const simConfig = useCallback((seed: number): SimSettings => ({
     fleet: fleetBy, demandPct: assume.demandPct, seed, arrivals: assume.arrivals, pacePct: assume.pacePct, safetyFt: assume.safetyFt,
-    staffedHr: settings.dailyOpHr, targetUtilization: settings.targetUtilization, ...(Object.keys(payloads).length ? { payloadFt: payloads } : {}),
-  }), [fleetBy, assume, settings.dailyOpHr, settings.targetUtilization, payloads])
+    staffedHr, targetUtilization: settings.targetUtilization, ...(Object.keys(payloads).length ? { payloadFt: payloads } : {}),
+  }), [fleetBy, assume, staffedHr, settings.targetUtilization, payloads])
 
   // ---- the verdict: one full shift off-screen; restarted whenever an input changes ----
   const [R, setR] = useState<{ res: SimResults; S: SimState } | null>(null)
@@ -108,8 +114,8 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     const S = createSim(inputs.layout, inputs.flows, simVehicles, simConfig(assume.seed))
     setUnrunnable(!S)
     if (!S) return
-    runInSlices(S, shiftH * 3600, () => setR({ res: results(S), S }), () => tok === token.current)
-  }, [inputs, simVehicles, simConfig, assume.seed, shiftH])
+    runInSlices(S, runSec, () => setR({ res: results(S), S }), () => tok === token.current)
+  }, [inputs, simVehicles, simConfig, assume.seed, runSec])
 
   // ---- the result is kept for Sizing's verdict chip; an applied fleet it confirms is refreshed ----
   useEffect(() => {
@@ -259,12 +265,18 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           <HeadlineTiles h={headline} why={R?.res.gridlock
             ? `Stopped at ${clock(R.res.gridlock.t)} · ${R.res.gridlock.where} · ${R.res.gridlock.vehicle}${R.res.gridlock.blockedBy ? ` waits on ${R.res.gridlock.blockedBy}` : ''}`
             : headline.notRun ? (R?.res.excluded.map(x => x.why).filter((w, i, a) => a.indexOf(w) === i).join(' · ') || 'Nothing the run can place or drive — check Validation in Edit layout')
-            : !R ? `Running a full ${shiftH} h shift…` : null} />
+            : !R ? `Running a full ${runLabel}…` : null} />
         </div>
         <div className="sim-vsub">
           {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
           <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <> · <button type="button" className="link-btn" onClick={() => onResetFleet(Object.keys(fleetBy))}>Reset to engine</button></>}</span>
-          <span>Full {shiftH} h shift · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
+          <div className="seg-toggle sim-seg-toggle sim-runlen" role="radiogroup" aria-label="Run length">
+            {(['shift', 'day', 'week'] as const).map(k => (
+              <button key={k} type="button" role="radio" aria-checked={runLength === k} className={`seg-btn${runLength === k ? ' on' : ''}`}
+                onClick={() => patchSimSettings(project.id, { runLength: k === 'shift' ? undefined : k })}>{k === 'shift' ? 'Shift' : k === 'day' ? 'Day' : 'Week'}</button>
+            ))}
+          </div>
+          <span>{staffedHr < 24 ? `${staffedHr} h staffed a day` : 'Staffed 24 h'} · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
           <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
           <span className="grow" />
           {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}
@@ -298,6 +310,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           </div>
           <button type="button" className="btn btn-sm ghost" disabled={busyFF} onClick={() => S && fastForward(S.t + shiftH * 3600)}>Run shift</button>
           <button type="button" className="btn btn-sm ghost" disabled={busyFF} onClick={() => S && fastForward((Math.floor(S.t / 86400 + 1e-9) + 1) * 86400)}>Run 24 h</button>
+          <button type="button" className="btn btn-sm ghost" disabled={busyFF} onClick={() => S && fastForward(S.t + 7 * 86400)}>Run week</button>
           <button type="button" className="btn btn-sm ghost" onClick={restart}>Restart</button>
           <span className="sim-clock num">{S ? clock(S.t) : '—'}</span>
           {S?.gridlock && <span className="sim-chip gridlock">Gridlock — see the red ring</span>}
@@ -337,6 +350,10 @@ function VariabilityChip({ out, arrivals }: { out: SimResults[]; arrivals: SimSe
 }
 
 const pctOf = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`)
+/** Seconds as s, min or h — a backlog's wait can run to hours. */
+const duration = (s: number | null) => (s == null ? '—' : s < 120 ? `${Math.round(s)} s` : s < 7200 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1)} h`)
+/** Over capacity reads OVER 100% (owner, 2026-11-13), with the figure it would need beside it. */
+const utilOf = (x: number | null) => (x != null && x > 1 ? 'OVER 100%' : pctOf(x))
 
 /** One Dashboard-style tile: the figure, its label, the static calc (or the goal) under it, and a
  *  coloured bar on top against its goal. */
@@ -356,13 +373,14 @@ function HeadlineTiles({ h, why }: { h: Headline; why: string | null }) {
   const tested = h.fleet.tested !== h.fleet.static
   return (
     <>
-      <Kpi value={pctOf(u.simulated)} label="Utilization" sub={`Static ${pctOf(u.static)} · target ${pctOf(u.target)}`} tone={u.tone} />
+      <Kpi value={utilOf(u.simulated)} label="Utilization"
+        sub={`${u.simulated != null && u.simulated > 1 ? `needs ${pctOf(u.simulated)} · ` : ''}Static ${utilOf(u.static)} · target ${pctOf(u.target)}`} tone={u.tone} />
       <Kpi value={done == null ? '—' : done.toFixed(1)} label="Moves per hour" sub={`of ${h.perHr.target.toFixed(0)} needed`} tone={h.perHr.tone} />
       <Kpi value={soc == null ? '—' : `${Math.round(soc)}%`} label="Lowest battery"
         sub={`${h.battery.chargeTrips == null ? '' : `${h.battery.chargeTrips} charges · `}${h.battery.runHr == null ? 'static —' : `static ${h.battery.runHr.toFixed(1)} h per charge`}`} tone={h.battery.tone} />
-      <Kpi value={h.waitSec == null ? '—' : `${Math.round(h.waitSec)} s`} label="Average wait" sub="until a vehicle is sent" tone="" />
+      <Kpi value={duration(h.waitSec)} label="Average wait" sub="until a vehicle is sent" tone="" />
       <Kpi value={h.notRun ? 'Not run' : h.verdict ? VERDICT_LABEL[h.verdict] : 'Simulating…'} label="Verdict"
-        sub={why ?? (tested ? `at ${h.fleet.tested} vehicles` : 'the static calc holds')} tone={h.verdictTone} />
+        sub={why ?? (tested ? `at ${h.fleet.tested} vehicle${h.fleet.tested === 1 ? '' : 's'}` : 'the static calc holds')} tone={h.verdictTone} />
     </>
   )
 }

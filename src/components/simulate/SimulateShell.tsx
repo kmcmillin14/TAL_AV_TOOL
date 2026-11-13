@@ -123,8 +123,8 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     return vehicles.filter(v => ids.has(v.id))
   }, [inputs.flows, vehicles])
   // Only what overrides depend on — a run result saved into simSettings must not rescan the layout.
-  const overrideInputs = useByValue({ ss: project.simSettings && { ...project.simSettings, lastRun: undefined, appliedFleet: undefined, fleet: undefined }, layout: project.simLayout, h: project.hoursPerShift })
-  const changed = useMemo(() => overriddenFields({ simSettings: overrideInputs.ss, simLayout: overrideInputs.layout, hoursPerShift: overrideInputs.h }, runTypes), [overrideInputs, runTypes])
+  const overrideInputs = useByValue({ ss: project.simSettings && { ...project.simSettings, lastRun: undefined, appliedFleet: undefined, fleet: undefined }, layout: project.simLayout, h: project.hoursPerShift, n: project.shiftsPerDay })
+  const changed = useMemo(() => overriddenFields({ simSettings: overrideInputs.ss, simLayout: overrideInputs.layout, hoursPerShift: overrideInputs.h, shiftsPerDay: overrideInputs.n }, runTypes), [overrideInputs, runTypes])
   const closeDrawer = useCallback(() => setDrawer(null), [])
   const overriddenIds = useMemo(() => new Set(changed.filter(o => o.def.scope === 'point' || o.def.scope === 'route').map(o => o.ownerId)), [changed])
   const openAssumptions = useCallback((focus: string | null = null) => setDrawer({ focus }), [])

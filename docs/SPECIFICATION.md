@@ -875,6 +875,23 @@ step ribbon is unchanged.
     warnings and notes, one row per thing (each loose point is its own row). Clicking a row selects
     what it is about and centres the view on it; a row's fix button picks the tool that fixes it
     (Draw route · Place charger · Link flow · Scale · Open Flows).
+  - *The staffed day, run length and charging (owner, 2026-11-13).*
+    - **Shift length** and **Shifts per day** come from Step 1 and can be changed in Assumptions for
+      the simulation only (shown as overrides). Shifts run back to back from midnight; outside the
+      staffed hours no orders arrive and the fleet charges. Rates and utilization are per staffed
+      hour (off-shift waiting is not idle time).
+    - **Run length** (Shift · Day · Week, under the headline): how long the verdict run lasts — a week
+      shows charge levels over several days (a few seconds for the sample). **Run week** plays one.
+    - **Charging rules:** a vehicle without a mission belongs on a charger — an idle one at parking
+      takes a free charger (checked every 10 s); below the charge threshold (lowest level + 10%) a
+      vehicle charges and stays on the charger, taking no work, until it reaches the charge-until level
+      (+30%); one that must charge and finds every charger taken moves a full, idle vehicle off a charger
+      to a free parking spot.
+    - **Battery chart** (Run details): each type's average and lowest charge every 5 minutes against
+      the charge threshold.
+    - **OVER 100%:** when the fleet cannot keep up (moves short of the demand), the Utilization tile shows
+      what it would need — measured utilization × demand ÷ moves done — and reads **OVER 100%** with
+      the figure beside it ("needs 249%").
   - *Static calc as the baseline; the deciding headline (owner, 2026-11-12).* Run starts from Step 3's
     static calculation — the Fleet Engine's fleet per type — and tests it; the stepper tests other
     counts. One row of 05 Dashboard tiles decides it (it replaces the per-type rows), for all types

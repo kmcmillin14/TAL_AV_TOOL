@@ -13,7 +13,9 @@ export type Tone = 'good' | 'warn' | 'bad' | ''
 export interface Headline {
   /** The static calc's fleet and the fleet the run places (the one being tested). */
   fleet: { static: number; tested: number }
-  /** Busy ÷ time not charging: what the static calc expects at its fleet, what the run measured. */
+  /** Busy ÷ time not charging: what the static calc expects at its fleet, what the run needs. When the
+   *  fleet cannot keep up (moves short of the demand), `simulated` is what it would need — measured
+   *  utilization × demand ÷ moves done — and can be over 1 (shown OVER 100%). */
   utilization: { static: number | null; simulated: number | null; target: number; tone: Tone }
   /** Moves per hour delivered against the demand the run generates (all types). */
   perHr: { simulated: number | null; target: number; tone: Tone }
@@ -42,8 +44,10 @@ export function runHeadline(
   const vehicles = sum(types.map(t => t.fleet)), done = sum(types.map(t => t.done))
   // The demand the run generates — the engine's rate per flow (thruPerHr × demand %).
   const target = sum(flows.filter(f => f.vehicleId in placed).map(f => (f.thruPerHr * demandPct) / 100))
-  const util = res && vehicles > 0 ? sum(types.map(t => t.utilization * t.fleet)) / vehicles : null
   const perHr = res ? sum(types.map(t => t.perHr)) : null
+  const measured = res && vehicles > 0 ? sum(types.map(t => t.utilization * t.fleet)) / vehicles : null
+  const short = perHr != null && target > 0 && perHr < target * VERDICT.MIN_DELIVERED
+  const util = measured == null ? null : short ? measured * target / Math.max(perHr!, 1e-9) : measured
   const socMin = types.length ? Math.min(...types.map(t => t.socMin)) : null
   const notRun = unrunnable || (!!res && !types.length && !res.gridlock)
   const verdict = notRun || !res ? null : res.gridlock ? 'gridlock' : res.verdict
