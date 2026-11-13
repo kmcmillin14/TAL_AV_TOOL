@@ -2,47 +2,67 @@
 // Step 3 beside what the simulation measured, for the vehicle types the run places. PURE.
 // The run starts from the static calc's fleet and tests it; the stepper tests other counts.
 
-import { engineFleetSold, staticUtilization } from '@/src/calc/fleet'
+import { engineFleetSold } from '@/src/calc/fleet'
 import type { FleetSummary } from '@/src/calc/types'
+import { VERDICT } from './results'
 import type { SimResults, Verdict } from './types'
+
+/** A tile's colour against its goal — the verdict's own thresholds (results.ts `VERDICT`). */
+export type Tone = 'good' | 'warn' | 'bad' | ''
 
 export interface Headline {
   /** The static calc's fleet and the fleet the run places (the one being tested). */
   fleet: { static: number; tested: number }
   /** Busy ÷ time not charging: what the static calc expects at its fleet, what the run measured. */
-  utilization: { static: number | null; simulated: number | null; target: number }
-  /** Moves per hour delivered against the demand (all types). */
-  perHr: { simulated: number | null; target: number }
-  /** Lowest state of charge any vehicle reached (%), charge trips, and the static calc's hours per charge. */
-  battery: { socMin: number | null; chargeTrips: number | null; runHr: number | null }
-  /** Average order wait, s (weighted by moves delivered). */
+  utilization: { static: number | null; simulated: number | null; target: number; tone: Tone }
+  /** Moves per hour delivered against the demand the run generates (all types). */
+  perHr: { simulated: number | null; target: number; tone: Tone }
+  /** Lowest state of charge any placed vehicle reached (%), charge trips, the static calc's hours per charge. */
+  battery: { socMin: number | null; chargeTrips: number | null; runHr: number | null; tone: Tone }
+  /** Average order wait — created to a vehicle sent — s, weighted by moves done. */
   waitSec: number | null
+  /** The run's verdict; null while it runs. `notRun`: the shift ended (or cannot start) with nothing run. */
   verdict: Verdict | null
+  notRun: boolean
+  verdictTone: Tone
 }
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)
+/** Lowest charge this high (%) is comfortable; below the second it is a problem. */
+const SOC_OK = 30, SOC_LOW = 20
 
-export function runHeadline(fleet: FleetSummary, placed: Record<string, number>, res: SimResults | null, targetPerHr: number): Headline {
+export function runHeadline(
+  fleet: FleetSummary, placed: Record<string, number>, res: SimResults | null,
+  flows: { vehicleId: string; thruPerHr: number }[], demandPct: number, unrunnable = false,
+): Headline {
   const groups = fleet.groups.filter(g => g.vehicleId in placed)
-  const staticN = sum(groups.map(engineFleetSold))
   const cap = sum(groups.map(g => engineFleetSold(g) * (g.charging.availability ?? 1)))
   const runHrs = groups.flatMap(g => (g.charging.runHr != null ? [g.charging.runHr] : []))
-  const types = res?.types.filter(t => t.vehicleId in placed) ?? []
-  const vehicles = sum(types.map(t => t.fleet)), delivered = sum(types.map(t => t.delivered))
+  const types = (res?.types ?? []).filter(t => t.vehicleId in placed && t.fleet > 0)
+  const vehicles = sum(types.map(t => t.fleet)), done = sum(types.map(t => t.done))
+  // The demand the run generates — the engine's rate per flow (thruPerHr × demand %).
+  const target = sum(flows.filter(f => f.vehicleId in placed).map(f => (f.thruPerHr * demandPct) / 100))
+  const util = res && vehicles > 0 ? sum(types.map(t => t.utilization * t.fleet)) / vehicles : null
+  const perHr = res ? sum(types.map(t => t.perHr)) : null
+  const socMin = types.length ? Math.min(...types.map(t => t.socMin)) : null
+  const notRun = unrunnable || (!!res && !types.length && !res.gridlock)
+  const verdict = notRun || !res ? null : res.gridlock ? 'gridlock' : res.verdict
   return {
-    fleet: { static: staticN, tested: sum(Object.values(placed)) },
+    fleet: { static: sum(groups.map(engineFleetSold)), tested: sum(Object.values(placed)) },
     utilization: {
-      static: groups.length === 1 ? staticUtilization(groups[0], engineFleetSold(groups[0])) : cap > 0 ? sum(groups.map(g => g.groupRaw)) / cap : null,
-      simulated: res && vehicles > 0 ? sum(types.map(t => t.utilization * t.fleet)) / vehicles : null,
-      target: fleet.targetUtilization,
+      static: cap > 0 ? sum(groups.map(g => g.groupRaw)) / cap : null, simulated: util, target: fleet.targetUtilization,
+      tone: util == null ? '' : util <= fleet.targetUtilization ? 'good' : util <= VERDICT.UTIL_SHORT ? 'warn' : 'bad',
     },
-    perHr: { simulated: res ? sum(types.map(t => t.perHr)) : null, target: res ? sum(types.map(t => t.target)) : targetPerHr },
+    perHr: {
+      simulated: perHr, target,
+      tone: perHr == null || !target ? '' : perHr / target >= VERDICT.MIN_DELIVERED ? 'good' : perHr / target >= 0.9 ? 'warn' : 'bad',
+    },
     battery: {
-      socMin: types.length ? Math.min(...types.map(t => t.socMin)) : null,
-      chargeTrips: res ? sum(types.map(t => t.chargeTrips)) : null,
-      runHr: runHrs.length ? Math.min(...runHrs) : null,
+      socMin, chargeTrips: res ? sum(types.map(t => t.chargeTrips)) : null, runHr: runHrs.length ? Math.min(...runHrs) : null,
+      tone: socMin == null ? '' : socMin >= SOC_OK ? 'good' : socMin >= SOC_LOW ? 'warn' : 'bad',
     },
-    waitSec: delivered > 0 ? sum(types.map(t => t.avgWait * t.delivered)) / delivered : null,
-    verdict: res ? (res.gridlock ? 'gridlock' : res.verdict) : null,
+    waitSec: done > 0 ? sum(types.map(t => t.avgWait * t.done)) / done : null,
+    verdict, notRun,
+    verdictTone: notRun ? 'bad' : !verdict || verdict === 'warming' ? '' : verdict === 'meets' ? 'good' : verdict === 'tight' ? 'warn' : 'bad',
   }
 }

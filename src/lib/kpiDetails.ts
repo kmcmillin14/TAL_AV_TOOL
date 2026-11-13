@@ -22,7 +22,6 @@ export type KpiId =
   | 'fleet' | 'types' | 'flows' | 'throughput' | 'capex' | 'payback'
   | 'opex' | 'offset' | 'net' | 'utilization' | 'resilience' | 'tco' | 'costPerMove'
 
-const utilOf = (g: Parameters<typeof staticUtilization>[0]) => staticUtilization(g)
 
 const bars = (items: Array<{ label: string; weight: number; display: string }>): KpiBar[] => {
   const max = Math.max(1, ...items.map(i => i.weight))
@@ -106,13 +105,12 @@ export function kpiDetails(
       note: 'Annual labor offset minus annual operating cost.',
     },
     utilization: {
-      bars: bars(fleet.groups.map(g => ({
-        label: nm(g.vehicleId),
+      bars: bars(fleet.groups.map(g => {
         // Utilization is of AVAILABLE time — divide out availability, or the bar
         // silently carries charging downtime that the Charging gauge shows again.
-        weight: utilOf(g),
-        display: `${Math.round(utilOf(g) * 100)}%`,
-      }))),
+        const u = staticUtilization(g)
+        return { label: nm(g.vehicleId), weight: u, display: `${Math.round(u * 100)}%` }
+      })),
       note: `Fleet runs at ${Math.round(avgUtil * 100)}% of provisioned capacity.`,
     },
     resilience: {

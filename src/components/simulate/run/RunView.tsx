@@ -213,8 +213,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const openAll = useCallback(() => onAssumptions(null), [onAssumptions])
 
   // The deciding row: the static calc from Step 3 beside what this run measured (all types placed).
-  const targetPerHr = useMemo(() => inputs.flows.filter(f => f.vehicleId in fleetBy).reduce((a, f) => a + f.thruPerHr, 0) * assume.demandPct / 100, [inputs.flows, fleetBy, assume.demandPct])
-  const headline = useMemo(() => runHeadline(fleet, fleetBy, R?.res ?? null, targetPerHr), [fleet, fleetBy, R, targetPerHr])
+  const headline = useMemo(() => runHeadline(fleet, fleetBy, R?.res ?? null, inputs.flows, assume.demandPct, unrunnable), [fleet, fleetBy, R, inputs.flows, assume.demandPct, unrunnable])
 
   const S = live.current
   const followed = S && follow >= 0 ? S.veh[follow] : null
@@ -336,17 +335,10 @@ function VariabilityChip({ out, arrivals }: { out: SimResults[]; arrivals: SimSe
 }
 
 const pctOf = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`)
-/** One tile's tone against its goal: good, a little off, or off. */
-type Tone = 'good' | 'warn' | 'bad' | ''
 
 /** The deciding headline: the static calc's figure beside the simulated one, coloured against the goal. */
 function HeadlineRow({ h }: { h: Headline }) {
-  const u = h.utilization, done = h.perHr.simulated
-  const uTone: Tone = u.simulated == null ? '' : u.simulated <= u.target + 0.02 ? 'good' : u.simulated <= 0.95 ? 'warn' : 'bad'
-  const rate = done == null || !h.perHr.target ? null : done / h.perHr.target
-  const rTone: Tone = rate == null ? '' : rate >= 0.98 ? 'good' : rate >= 0.9 ? 'warn' : 'bad'
-  const soc = h.battery.socMin, bTone: Tone = soc == null ? '' : soc >= 30 ? 'good' : soc >= 20 ? 'warn' : 'bad'
-  const vTone: Tone = !h.verdict || h.verdict === 'warming' ? '' : h.verdict === 'meets' ? 'good' : h.verdict === 'tight' ? 'warn' : 'bad'
+  const u = h.utilization, done = h.perHr.simulated, soc = h.battery.socMin
   const tested = h.fleet.tested !== h.fleet.static
   return (
     <div className="sim-headline" role="group" aria-label="Static calc and simulation">
@@ -355,17 +347,17 @@ function HeadlineRow({ h }: { h: Headline }) {
         <b className="num">{h.fleet.tested}<small> vehicles</small></b>
         <span className="sub">{tested ? `Static calc ${h.fleet.static}` : 'Step 3 fleet'}</span>
       </div>
-      <div className={`sim-ht is-${uTone}`}>
+      <div className={`sim-ht is-${u.tone}`}>
         <span className="lbl">Utilization</span>
         <b className="num">{pctOf(u.simulated)}</b>
         <span className="sub">Static {pctOf(u.static)} · target {pctOf(u.target)}</span>
       </div>
-      <div className={`sim-ht is-${rTone}`}>
+      <div className={`sim-ht is-${h.perHr.tone}`}>
         <span className="lbl">Moves per hour</span>
         <b className="num">{done == null ? '—' : done.toFixed(1)}</b>
         <span className="sub">of {h.perHr.target.toFixed(0)} needed</span>
       </div>
-      <div className={`sim-ht is-${bTone}`}>
+      <div className={`sim-ht is-${h.battery.tone}`}>
         <span className="lbl">Battery</span>
         <b className="num">{soc == null ? '—' : `${Math.round(soc)}%`}<small> lowest</small></b>
         <span className="sub">{h.battery.chargeTrips == null ? '' : `${h.battery.chargeTrips} charges · `}{h.battery.runHr == null ? 'static —' : `static ${h.battery.runHr.toFixed(1)} h per charge`}</span>
@@ -373,12 +365,12 @@ function HeadlineRow({ h }: { h: Headline }) {
       <div className="sim-ht">
         <span className="lbl">Average wait</span>
         <b className="num">{h.waitSec == null ? '—' : `${Math.round(h.waitSec)} s`}</b>
-        <span className="sub">order to pickup</span>
+        <span className="sub">until a vehicle is sent</span>
       </div>
-      <div className={`sim-ht sim-ht-verdict is-${vTone}`}>
+      <div className={`sim-ht sim-ht-verdict is-${h.verdictTone}`}>
         <span className="lbl">Verdict</span>
-        <b>{h.verdict ? VERDICT_LABEL[h.verdict] : 'Simulating…'}</b>
-        <span className="sub">{h.verdict == null ? '' : tested ? `at ${h.fleet.tested} vehicles` : 'the static calc'}</span>
+        <b>{h.notRun ? 'Not run' : h.verdict ? VERDICT_LABEL[h.verdict] : 'Simulating…'}</b>
+        <span className="sub">{h.notRun ? 'check Validation in Edit layout' : h.verdict == null ? '' : tested ? `at ${h.fleet.tested} vehicles` : 'the static calc'}</span>
       </div>
     </div>
   )

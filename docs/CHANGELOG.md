@@ -7,6 +7,9 @@
   static hours per charge), average wait and verdict, each coloured against its goal.
 - Calc: `runHeadline` (src/calc/sim/headline.ts, tested); `staticUtilization` in src/calc/fleet.ts,
   now also used by the Step 4 KPI detail (same figure as before).
+- Code review: the average wait is weighted by moves done; tiles take the verdict's own thresholds;
+  a type placing no vehicle does not pull the battery to 0%; a run with nothing to run reads **Not run**
+  (not "Simulating…"); the pre-run target uses the engine's demand rate; "until a vehicle is sent".
 
 ## 2026-11-13 — Fleet simulation: lasso (Milestone 7, part 2)
 
