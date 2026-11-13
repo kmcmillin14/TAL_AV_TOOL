@@ -26,9 +26,11 @@ export interface Headline {
   utilization: { static: number | null; simulated: number | null; target: number; pass: boolean | null; tone: Tone }
   /** Check 3 — charge keeps up (judged over two days or more; null before): lowest charge (%), charge
    *  trips, the average charge each morning, why it failed, and the static calc's hours per charge. */
-  battery: { socMin: number | null; chargeTrips: number | null; runHr: number | null; dayStarts: number[]; why: string | null; pass: boolean | null; tone: Tone }
-  /** Average order wait — created to a vehicle sent — s, weighted by moves done. */
-  waitSec: number | null
+  battery: { socMin: number | null; chargeTrips: number | null; runHr: number | null; dayStarts: number[]; why: string | null; pass: boolean | null; tone: Tone
+    /** Lowest charge in the first shift, the first day and the whole run (%), the lowest of the types. */
+    lowest: { shift: number | null; day: number | null; run: number | null } }
+  /** Average speed while moving across the fleet, ft/s (feet driven ÷ seconds moving, all types). */
+  speedFps: number | null
   /** null while the run is going. */
   outcome: Outcome | null
   /** Undersized: the check that needs the most vehicles, and about how many. */
@@ -40,6 +42,10 @@ export interface Headline {
 }
 
 const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0)
+const lowOf = (types: SimResults['types'], k: 'shift' | 'day' | 'run') => {
+  const xs = types.flatMap(t => (t.battery.lowest[k] != null ? [t.battery.lowest[k]!] : []))
+  return xs.length ? Math.min(...xs) : null
+}
 const toneOf = (pass: boolean | null): Tone => (pass == null ? '' : pass ? 'good' : 'bad')
 
 export function runHeadline(
@@ -96,8 +102,9 @@ export function runHeadline(
     battery: {
       socMin, chargeTrips: res ? sum(types.map(t => t.chargeTrips)) : null, runHr: runHrs.length ? Math.min(...runHrs) : null,
       dayStarts: types[0]?.battery.dayStarts ?? [], why: battWhy, pass: batteryPass, tone: toneOf(batteryPass),
+      lowest: { shift: lowOf(types, 'shift'), day: lowOf(types, 'day'), run: lowOf(types, 'run') },
     },
-    waitSec: done > 0 ? sum(types.map(t => t.avgWait * t.done)) / done : null,
+    speedFps: (() => { const ts = types.filter(t => t.avgSpeedFps != null); const w = sum(ts.map(t => t.fleet)); return w > 0 ? sum(ts.map(t => t.avgSpeedFps! * t.fleet)) / w : null })(),
     outcome, setsFleet, verdict, notRun,
     verdictTone: outcome === 'right' ? 'good' : outcome === 'over' ? 'warn' : outcome ? 'bad' : '',
   }

@@ -271,6 +271,7 @@ export const SIM_FIELD_HELP: Record<string, string> = {
   'run.arrivals': 'Regular spaces orders evenly; Random varies them like a real shift.',
   'run.seed': 'Picks the random sequence — the same seed gives the same run.',
   'run.shiftH': 'From Step 1; change it here to try another shift (simulation only).',
+  'run.daysPerWeek': 'From Step 1 (operating days). The rest of the week has no orders; vehicles charge.',
   'run.shiftsPerDay': 'From Step 1. Shifts run back to back from midnight; off-shift no orders arrive and vehicles charge.',
   'safety.thresholdFps': 'At or above this speed the larger clearance applies (B56.5: 1.2 m/s).',
   'safety.lowSpeedIn': 'Minimum gap each side to walls and racks below the threshold speed.',

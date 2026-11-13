@@ -9,7 +9,7 @@ const fleet: FleetSummary = { groups: [group('a', 2.4, 3, 0.9, 6), group('b', 1,
 const pass = { orders: true, utilization: true, battery: true as boolean | null }
 const type = (vehicleId: string, o: Partial<TypeResult>): TypeResult => ({
   vehicleId, fleet: 3, target: 40, perHr: 40, done: 100, avgWait: 10, utilization: 0.8, socMin: 40, chargeTrips: 2,
-  checks: pass, battery: { dayStarts: [100, 98, 97], chargeWaitSec: 0, floorPct: 20, why: null }, verdict: 'meets', ...o,
+  checks: pass, battery: { dayStarts: [100, 98, 97], chargeWaitSec: 0, floorPct: 20, why: null, lowest: { shift: 60, day: 55, run: 50 } }, verdict: 'meets', ...o,
 }) as TypeResult
 const run = (types: TypeResult[], o: Partial<SimResults> = {}) => ({ verdict: 'meets', gridlock: null, types, ...o }) as unknown as SimResults
 const flowsA = [{ vehicleId: 'a', thruPerHr: 40 }]
@@ -31,13 +31,13 @@ describe('Run headline: the static calc beside the simulation, and the three che
     expect(runHeadline(fleet, { a: 3 }, r, flowsA, 100, { oneFewer: { a: 'short' } }).outcome).toBe('right')
   })
 
-  it('totals across types: utilization by fleet, wait by moves done, the lowest charge', () => {
-    const r = run([type('a', { fleet: 4, utilization: 0.9, done: 300, avgWait: 20, socMin: 30 }), type('b', { fleet: 2, utilization: 0.6, done: 100, avgWait: 4, perHr: 12, target: 12 })])
+  it('totals across types: utilization and speed by fleet, the lowest charge', () => {
+    const r = run([type('a', { fleet: 4, utilization: 0.9, done: 300, avgSpeedFps: 4, socMin: 30 }), type('b', { fleet: 2, utilization: 0.6, done: 100, avgSpeedFps: 3, perHr: 12, target: 12 })])
     const h = runHeadline(fleet, { a: 4, b: 2 }, r, [{ vehicleId: 'a', thruPerHr: 40 }, { vehicleId: 'b', thruPerHr: 12 }], 100)
     expect(h.fleet).toEqual({ static: 5, tested: 6 })
     expect(h.utilization.static).toBeCloseTo(3.4 / (3 * 0.9 + 2))
     expect(h.utilization.simulated).toBeCloseTo((0.9 * 4 + 0.6 * 2) / 6)
-    expect(h.waitSec).toBeCloseTo((20 * 300 + 4 * 100) / 400)
+    expect(h.speedFps).toBeCloseTo((4 * 4 + 3 * 2) / 6)
     expect(h.battery).toMatchObject({ socMin: 30, chargeTrips: 4 })
   })
 
@@ -58,7 +58,7 @@ describe('Run headline: the static calc beside the simulation, and the three che
   it('battery: not judged under two days; a failure names why', () => {
     const short = run([type('a', { checks: { ...pass, battery: null } })])
     expect(runHeadline(fleet, { a: 3 }, short, flowsA, 100)).toMatchObject({ outcome: 'right', battery: { pass: null } })
-    const flat = run([type('a', { checks: { ...pass, battery: false }, battery: { dayStarts: [], chargeWaitSec: 0, floorPct: 20, why: 'a vehicle reached the 20% floor' } })])
+    const flat = run([type('a', { checks: { ...pass, battery: false }, battery: { dayStarts: [], chargeWaitSec: 0, floorPct: 20, why: 'a vehicle reached the 20% floor', lowest: { shift: 40, day: 30, run: 20 } } })])
     const h = runHeadline(fleet, { a: 3 }, flat, flowsA, 100)
     expect(h).toMatchObject({ outcome: 'under', setsFleet: { check: 'battery', n: 4 }, battery: { why: 'a vehicle reached the 20% floor' } })
   })

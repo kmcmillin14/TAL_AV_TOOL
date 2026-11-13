@@ -12,6 +12,9 @@ describe('the staffed day and charging (owner, 2026-11-13)', () => {
     expect(inShift(P, 86400 + 60)).toBe(true)
     expect(staffedSeconds(P, 86400 + 3600)).toBe(17 * 3600)
     expect(staffedSeconds({ staffedHr: 24 }, 5000)).toBe(5000)
+    // five working days: day 6 is off
+    expect(inShift({ staffedHr: 8, daysPerWeek: 5 }, 5 * 86400 + 3600)).toBe(false)
+    expect(staffedSeconds({ staffedHr: 8, daysPerWeek: 5 }, 7 * 86400)).toBe(5 * 8 * 3600)
   })
 
   it('no orders off-shift; rates are per staffed hour', () => {

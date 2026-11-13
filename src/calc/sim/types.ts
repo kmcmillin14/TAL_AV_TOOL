@@ -111,6 +111,10 @@ export interface SimSettings {
   safetyFt: number
   /** Staffed hours per day (Step 1 shifts × hours). < 24 → shift starts at max SOC. */
   staffedHr: number
+  /** Working days a week (the first `daysPerWeek` of each 7); the rest have no orders. Absent: 7. */
+  daysPerWeek?: number
+  /** One shift's length, h — the battery's "lowest in a shift" window. Absent: the staffed day. */
+  shiftHr?: number
   /** Project target utilization (0–1). The verdict is measured against it (D-9). */
   targetUtilization: number
   /** Each vehicle type's payload, ft, by vehicle id (its Step 1 load or custom dims). A loaded
@@ -174,12 +178,14 @@ export interface TypeResult {
   socAvg: number
   socMin: number
   chargeTrips: number
+  /** Average speed while moving across the type's fleet, ft/s (feet driven ÷ seconds moving). */
+  avgSpeedFps: number | null
   /** The three sizing checks (owner, 2026-11-13): the fleet is right-sized only if all pass.
    *  `battery` is null until the run has covered two days — charge is judged over days, not a shift. */
   checks: { orders: boolean; utilization: boolean; battery: boolean | null }
   /** Battery detail for the check: average charge at the start of each day, %; vehicle-seconds spent
    *  waiting for a free charger; the cutsheet floor, %; why the battery check failed, if it did. */
-  battery: { dayStarts: number[]; chargeWaitSec: number; floorPct: number | null; why: string | null }
+  battery: { dayStarts: number[]; chargeWaitSec: number; floorPct: number | null; why: string | null; lowest: { shift: number | null; day: number | null; run: number | null } }
   backlogTrend: number
   verdict: Verdict
 }

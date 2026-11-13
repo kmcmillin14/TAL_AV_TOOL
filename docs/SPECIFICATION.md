@@ -875,13 +875,20 @@ step ribbon is unchanged.
     warnings and notes, one row per thing (each loose point is its own row). Clicking a row selects
     what it is about and centres the view on it; a row's fix button picks the tool that fixes it
     (Draw route · Place charger · Link flow · Scale · Open Flows).
+  - *Run tiles (owner, 2026-11-13).* Left to right: the **Verdict** (hero — the outcome, its three
+    checks stacked, what sets the fleet), the fleet tile (photo, stepper, Use N in pricing), **1 · Orders
+    per hour**, **2 · Utilization** (⋮: target utilization, simulation only; typical 80–85% for
+    opportunity-charged fleets), **3 · Battery** (lowest charge in the first shift, the first day and
+    the week, and whether it keeps up; ⋮: shift coverage — days a week, shifts a day, shift length,
+    simulation only, from Step 1), and **Average speed** across the fleet while moving (feet driven ÷
+    seconds moving). Full screen sits with the zoom controls. The verdict run is always a week.
   - *Three sizing checks (owner, 2026-11-13).* A fleet is **right-sized** only if it passes all three;
     the Verdict tile names the outcome and lists them (✓/✗); the tiles carry their number.
     1. **Orders** — 98% of generated moves delivered or under way, and no growing backlog.
     2. **Utilization** — at or under the target. Over the target fails. The target starts at Sizing's
        and is changed on the tile for the simulation only (`simSettings.targetUtilization`).
-    3. **Battery keeps up** — judged once the run covers two days (the verdict run is a **week** by
-       default); it fails when the average charge each morning falls day over day (from day 2), a
+    3. **Battery keeps up** — judged once the run covers two days (the verdict run is a week); it fails
+       when the average charge on a later morning falls below day 2's (days off are skipped over), a
        vehicle reaches the cutsheet floor, or vehicles wait for a free charger more than 2% of their
        staffed time. Shorter runs read "judged over a week".
     - **Right-sized at N** (all pass) · **Undersized at N** (any fails; "<check> sets the fleet → about
@@ -894,8 +901,9 @@ step ribbon is unchanged.
       the simulation only (shown as overrides). Shifts run back to back from midnight; outside the
       staffed hours no orders arrive and the fleet charges. Rates and utilization are per staffed
       hour (off-shift waiting is not idle time).
-    - **Run length** (Shift · Day · Week, under the headline): how long the verdict run lasts — a week
-      shows charge levels over several days (a few seconds for the sample). **Run week** plays one.
+    - **Days a week** (from Step 1's operating days; Mon–Fri when not set): the days after them each
+      week have no orders. The verdict run is a week (a few seconds for the sample); **Run week**
+      plays one.
     - **Charging rules:** a vehicle without a mission belongs on a charger — an idle one at parking
       takes a free charger (checked every 10 s); below the charge threshold (lowest level + 10%) a
       vehicle charges and stays on the charger, taking no work, until it reaches the charge-until level

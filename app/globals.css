@@ -5441,8 +5441,8 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-verdict { display: grid; gap: 12px; }
 /* The deciding row — the 05 Dashboard tile: figure, label, the static calc under it, a bar on top
    coloured against its goal. The fleet tile holds each type's photo and stepper. */
-.sim-kpis { display: grid; grid-template-columns: minmax(300px, 2fr) repeat(5, minmax(120px, 1fr)); gap: 12px; }
-@media (max-width: 1280px) { .sim-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .sim-kpi-fleet { grid-column: 1 / -1; } }
+.sim-kpis { display: grid; grid-template-columns: minmax(190px, 1.3fr) minmax(260px, 1.8fr) repeat(4, minmax(130px, 1fr)); gap: 12px; }
+@media (max-width: 1280px) { .sim-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } .sim-kpi-fleet { grid-column: span 2; } }
 .sim-kpi {
   position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
   background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px 16px 14px;
@@ -5772,14 +5772,37 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-hw-status.is-bad { color: var(--bad); }
 
 
-/* Simulate full screen: the page fills the screen; the workspace takes what the head and vehicles leave. */
 .sim-shell:fullscreen { background: var(--bg-base); padding: 16px 24px; overflow: auto; }
 .sim-shell:fullscreen .sim-work { height: max(560px, calc(100vh / var(--root-zoom) - 200px)); }
-.sim-full-btn { width: 40px; padding: 0; justify-content: center; color: var(--text-primary); }
 .sim-shell:fullscreen .sim-run .sim-stage { height: max(440px, calc(100vh / var(--root-zoom) - 360px)); }
 /* The verdict's three checks, and the editable target on the utilization tile. */
 .sim-kpi-verdict .sim-kpi-val { font-size: 20px; }
-.sim-checks { list-style: none; margin: 2px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12px; color: var(--text-secondary); }
+.sim-checks { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-secondary); }
+.sim-checks li { display: flex; align-items: center; gap: 8px; }
+.sim-checks i { font-style: normal; width: 16px; text-align: center; font-weight: 700; }
+.sim-checks .good i { color: var(--good); }
 .sim-checks .bad { color: var(--bad); font-weight: 600; }
-.sim-kpi-target { display: inline-flex; align-items: center; gap: 4px; }
-.sim-kpi-target select { height: 24px; padding: 0 4px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-surface); font: 600 12px var(--tal-font-numeric); color: var(--text-primary); }
+
+/* Tile menus (⋮): settings for the tile they sit on. */
+.sim-kebab { position: absolute; top: 8px; right: 8px; }
+.sim-kebab-btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; color: var(--text-tertiary); fill: currentColor; }
+.sim-kebab-btn:hover, .sim-kebab-btn[aria-expanded="true"] { background: var(--bg-hover); color: var(--text-primary); }
+.sim-kebab-btn:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 1px; }
+.sim-kebab-pop { position: absolute; top: calc(100% + 4px); right: 0; z-index: 40; width: 260px; padding: 12px; display: flex; flex-direction: column; gap: 8px; background: var(--bg-surface); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: 0 12px 32px rgba(0,0,0,0.18); }
+.sim-kebab-h { margin: 0; font: 700 11px var(--tal-font-numeric); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); }
+.sim-kebab-note { margin: 0; font-size: 12px; color: var(--text-secondary); }
+.sim-kebab-opts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 4px; }
+.sim-kebab-opts button { height: 32px; border: 1px solid var(--border); border-radius: 8px; font: 600 12px var(--tal-font-numeric); color: var(--text-primary); background: var(--bg-surface); }
+.sim-kebab-opts button.on { border-color: var(--sim-sel); background: var(--sim-sel-soft); color: var(--sim-sel); }
+.sim-kebab-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+.sim-kebab-row .sim-input-unit { width: 96px; }
+.sim-kpi { overflow: visible; }
+.sim-kpi::before { border-radius: 12px 12px 0 0; }
+/* The battery tile's windows: shift, day, week, and whether the charge keeps up. */
+.sim-kpi-list { list-style: none; margin: 2px 0 0; padding: 0; width: 100%; display: grid; gap: 2px; font-size: 12px; color: var(--text-secondary); }
+.sim-kpi-list li { display: flex; justify-content: space-between; gap: 8px; }
+.sim-kpi-list li b { color: var(--text-primary); }
+.sim-kpi-list li:last-child { margin-top: 2px; font-weight: 600; }
+.sim-kpi-list li.good { color: var(--good); } .sim-kpi-list li.bad { color: var(--bad); }
+/* Full screen sits with the zoom controls. */
+.sim-full-btn { display: inline-flex; align-items: center; justify-content: center; }

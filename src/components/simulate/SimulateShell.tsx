@@ -9,7 +9,7 @@ import { engineFleetByType } from '@/src/calc/fleet'
 import { engineFleetFor } from '@/src/lib/fleetModel'
 import { payloadsByVehicle, simFlows, simVehicleTypes, type SimVehicleType } from '@/src/calc/sim/simVehicles'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import Icon from '@/src/design-system/components/Icon'
 import { emptyLayout, unlinked } from '@/src/calc/sim/layoutEdit'
@@ -123,8 +123,8 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     return vehicles.filter(v => ids.has(v.id))
   }, [inputs.flows, vehicles])
   // Only what overrides depend on — a run result saved into simSettings must not rescan the layout.
-  const overrideInputs = useByValue({ ss: project.simSettings && { ...project.simSettings, lastRun: undefined, appliedFleet: undefined, fleet: undefined }, layout: project.simLayout, h: project.hoursPerShift, n: project.shiftsPerDay })
-  const changed = useMemo(() => overriddenFields({ simSettings: overrideInputs.ss, simLayout: overrideInputs.layout, hoursPerShift: overrideInputs.h, shiftsPerDay: overrideInputs.n }, runTypes), [overrideInputs, runTypes])
+  const overrideInputs = useByValue({ ss: project.simSettings && { ...project.simSettings, lastRun: undefined, appliedFleet: undefined, fleet: undefined }, layout: project.simLayout, h: project.hoursPerShift, n: project.shiftsPerDay, dp: project.operatingDaysPattern, dc: project.operatingDaysCustom })
+  const changed = useMemo(() => overriddenFields({ simSettings: overrideInputs.ss, simLayout: overrideInputs.layout, hoursPerShift: overrideInputs.h, shiftsPerDay: overrideInputs.n, operatingDaysPattern: overrideInputs.dp, operatingDaysCustom: overrideInputs.dc }, runTypes), [overrideInputs, runTypes])
   const closeDrawer = useCallback(() => setDrawer(null), [])
   const overriddenIds = useMemo(() => new Set(changed.filter(o => o.def.scope === 'point' || o.def.scope === 'route').map(o => o.ownerId)), [changed])
   const openAssumptions = useCallback((focus: string | null = null) => setDrawer({ focus }), [])
@@ -135,20 +135,6 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     if (layoutWriter.current) layoutWriter.current(update)
     else { const cur = getProject(project.id)?.simLayout; if (cur) updateProject(project.id, { simLayout: update(cur) }) }
   }, [project.id])
-
-  // Full screen: the whole Simulate page (head, vehicles, editor or run, drawers) fills the screen;
-  // Esc (or the button) leaves it.
-  const shellRef = useRef<HTMLDivElement>(null)
-  const [full, setFull] = useState(false)
-  useEffect(() => {
-    const on = () => setFull(!!shellRef.current && document.fullscreenElement === shellRef.current)
-    document.addEventListener('fullscreenchange', on)
-    return () => document.removeEventListener('fullscreenchange', on)
-  }, [])
-  const toggleFull = () => {
-    if (document.fullscreenElement) void document.exitFullscreen()
-    else void shellRef.current?.requestFullscreen?.().catch(() => {})
-  }
 
   const loadSample = () => updateProject(project.id, { simLayout: sample.layout as StoredProject['simLayout'], flows: sample.flows as typeof flows })
   /** Clear the layout; flows stay in Sizing, unlinked (their last measured distance kept). Sample flows go. */
@@ -170,7 +156,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   )
 
   return (
-    <div className="sim-shell" ref={shellRef}>
+    <div className="sim-shell">
       <div className="engine-head with-actions sim-head">
         <div className="eh-text">
           <span className="eh-eyebrow mono">
@@ -192,12 +178,6 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
                 {!canRun && <span id="sim-run-why" className={narrow ? 'sim-run-why' : 'sim-sr'}>{checks[0].text}</span>}
                 <button type="button" className="btn primary" disabled={!canRun} aria-describedby={canRun ? undefined : 'sim-run-why'} onClick={() => setMode('run')}>Run <Icon name="arrowR" size={13} /></button>
               </>}
-          {!narrow && (
-            <button type="button" className="btn ghost sim-full-btn" aria-pressed={full} onClick={toggleFull}
-              aria-label={full ? 'Leave full screen' : 'Full screen'} title={full ? 'Leave full screen (Esc)' : 'Full screen'}>
-              <Icon name={full ? "collapse" : "expand"} size={18} />
-            </button>
-          )}
           <button type="button" className={`btn ghost sim-assume-btn${drawer ? ' on' : ''}`} aria-pressed={!!drawer} onClick={() => setDrawer(d => (d ? null : { focus: null }))}>
             Assumptions{changed.length > 0 && <span className="sim-count"><i className="sim-odot" />{changed.length} override{changed.length === 1 ? '' : 's'}</span>}
           </button>

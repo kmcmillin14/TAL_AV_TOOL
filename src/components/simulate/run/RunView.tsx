@@ -11,12 +11,13 @@ import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runHeadline, type Headline, type Tone } from '@/src/calc/sim/headline'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
-import { RUN_DEFAULTS, runSeconds } from '@/src/lib/simFields'
+import { RUN_DEFAULTS, step1DaysPerWeek } from '@/src/lib/simFields'
+import KebabMenu from '../ui/KebabMenu'
 import { engineFleetTotal } from '@/src/calc/fleet'
 import type { SimResults, SimSettings, Verdict } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import { getProject, patchSimSettings, type StoredProject } from '@/src/lib/storage'
-import type { UnitSystem } from '@/src/lib/utils/units'
+import { units, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutCanvas from '../layout/LayoutCanvas'
 import PricingAction from './PricingAction'
@@ -89,19 +90,23 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     pacePct: simSettings.pacePct ?? RUN_DEFAULTS.pacePct, safetyFt: simSettings.safetyFt ?? RUN_DEFAULTS.safetyFt,
     arrivals: simSettings.arrivals ?? RUN_DEFAULTS.arrivals, demandPct: simSettings.demandPct ?? RUN_DEFAULTS.demandPct, seed: simSettings.seed ?? RUN_DEFAULTS.seed,
   }), [simSettings.pacePct, simSettings.safetyFt, simSettings.arrivals, simSettings.demandPct, simSettings.seed])
-  // The staffed day (simulation overrides, else Step 1) and how long the verdict run lasts. One-fewer
-  // checks and variability judge one shift, as pricing does.
-  const shiftH = simSettings.shiftH ?? project.hoursPerShift ?? 8
-  const staffedHr = Math.min(24, shiftH * (simSettings.shiftsPerDay ?? project.shiftsPerDay ?? 1))
-  const runLength = simSettings.runLength ?? RUN_DEFAULTS.runLength
+  // Shift coverage — days a week, shifts a day, shift length: simulation overrides, else Step 1. The
+  // verdict run is a week, so the battery is judged over days; variability judges one shift.
+  const step1 = { shiftH: project.hoursPerShift ?? 8, shifts: project.shiftsPerDay ?? 1, days: step1DaysPerWeek(project) }
+  const shiftH = simSettings.shiftH ?? step1.shiftH
+  const shifts = simSettings.shiftsPerDay ?? step1.shifts
+  const daysPerWeek = simSettings.daysPerWeek ?? step1.days
+  const staffedHr = Math.min(24, shiftH * shifts)
   // The utilization target the run is judged against: a simulation override, else Sizing's.
   const targetU = simSettings.targetUtilization ?? settings.targetUtilization
-  const runSec = runSeconds(runLength, shiftH)
-  const runLabel = runLength === 'week' ? 'week' : runLength === 'day' ? '24 h day' : `${shiftH} h shift`
+  const runSec = 7 * 86400
   const simConfig = useCallback((seed: number): SimSettings => ({
     fleet: fleetBy, demandPct: assume.demandPct, seed, arrivals: assume.arrivals, pacePct: assume.pacePct, safetyFt: assume.safetyFt,
-    staffedHr, targetUtilization: targetU, ...(Object.keys(payloads).length ? { payloadFt: payloads } : {}),
-  }), [fleetBy, assume, staffedHr, targetU, payloads])
+    staffedHr, daysPerWeek, shiftHr: shiftH, targetUtilization: targetU, ...(Object.keys(payloads).length ? { payloadFt: payloads } : {}),
+  }), [fleetBy, assume, staffedHr, daysPerWeek, shiftH, targetU, payloads])
+  /** A shift-coverage change: back to Step 1's value clears the override. */
+  const setCoverage = (k: 'shiftH' | 'shiftsPerDay' | 'daysPerWeek', v: number) =>
+    patchSimSettings(project.id, { [k]: v === (k === 'shiftH' ? step1.shiftH : k === 'shiftsPerDay' ? step1.shifts : step1.days) ? undefined : v })
 
   // ---- the verdict: one full shift off-screen; restarted whenever an input changes ----
   const [R, setR] = useState<{ res: SimResults; S: SimState } | null>(null)
@@ -224,6 +229,11 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   // The deciding row: the static calc from Step 3 beside what this run measured (all types placed).
   const headline = useMemo(() => runHeadline(fleet, fleetBy, R?.res ?? null, inputs.flows, assume.demandPct, { unrunnable, targetUtilization: targetU, oneFewer: lower }), [fleet, fleetBy, R, inputs.flows, assume.demandPct, unrunnable, targetU, lower])
 
+  const verdictWhy = R?.res.gridlock
+    ? `Stopped at ${clock(R.res.gridlock.t)} · ${R.res.gridlock.where} · ${R.res.gridlock.vehicle}${R.res.gridlock.blockedBy ? ` waits on ${R.res.gridlock.blockedBy}` : ''}`
+    : headline.notRun ? (R?.res.excluded.map(x => x.why).filter((w, i, a) => a.indexOf(w) === i).join(' · ') || 'Nothing the run can place or drive — check Validation in Edit layout')
+    : !R ? 'Running a full week…' : null
+
   const S = live.current
   const followed = S && follow >= 0 ? S.veh[follow] : null
 
@@ -234,6 +244,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         {/* The deciding row (Dashboard tiles): the fleet being tested — each type with its photo and
             stepper — then the static calc beside the simulated figures. */}
         <div className="sim-kpis" role="group" aria-label="Static calc and simulation">
+          <VerdictTile h={headline} why={verdictWhy} />
           <div className={`sim-kpi sim-kpi-fleet is-${headline.verdictTone}`}>
             {Object.keys(fleetBy).map(vid => {
               const v = vehicleById.get(vid)
@@ -265,21 +276,14 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
             })}
             <span className="sim-kpi-lbl">{headline.fleet.tested !== headline.fleet.static ? `Testing ${headline.fleet.tested} · static calc ${headline.fleet.static}` : `Testing the static calc · ${headline.fleet.static}`}</span>
           </div>
-          <HeadlineTiles h={headline} onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })} why={R?.res.gridlock
-            ? `Stopped at ${clock(R.res.gridlock.t)} · ${R.res.gridlock.where} · ${R.res.gridlock.vehicle}${R.res.gridlock.blockedBy ? ` waits on ${R.res.gridlock.blockedBy}` : ''}`
-            : headline.notRun ? (R?.res.excluded.map(x => x.why).filter((w, i, a) => a.indexOf(w) === i).join(' · ') || 'Nothing the run can place or drive — check Validation in Edit layout')
-            : !R ? `Running a full ${runLabel}…` : null} />
+          <HeadlineTiles h={headline} unitSystem={unitSystem} sizingTarget={settings.targetUtilization}
+            onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
+            coverage={{ days: daysPerWeek, shifts, shiftH, step1 }} onCoverage={setCoverage} />
         </div>
         <div className="sim-vsub">
           {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
           <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <> · <button type="button" className="link-btn" onClick={() => onResetFleet(Object.keys(fleetBy))}>Reset to engine</button></>}</span>
-          <div className="seg-toggle sim-seg-toggle sim-runlen" role="radiogroup" aria-label="Run length">
-            {(['shift', 'day', 'week'] as const).map(k => (
-              <button key={k} type="button" role="radio" aria-checked={runLength === k} className={`seg-btn${runLength === k ? ' on' : ''}`}
-                onClick={() => patchSimSettings(project.id, { runLength: k === RUN_DEFAULTS.runLength ? undefined : k })}>{k === 'shift' ? 'Shift' : k === 'day' ? 'Day' : 'Week'}</button>
-            ))}
-          </div>
-          <span>{staffedHr < 24 ? `${staffedHr} h staffed a day` : 'Staffed 24 h'} · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
+          <span>A week · {daysPerWeek} day{daysPerWeek === 1 ? '' : 's'} × {shifts} × {shiftH} h shift{shifts === 1 ? '' : 's'} · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
           <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
           <span className="grow" />
           {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}
@@ -353,8 +357,6 @@ function VariabilityChip({ out, arrivals }: { out: SimResults[]; arrivals: SimSe
 }
 
 const pctOf = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`)
-/** Seconds as s, min or h — a backlog's wait can run to hours. */
-const duration = (s: number | null) => (s == null ? '—' : s < 120 ? `${Math.round(s)} s` : s < 7200 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1)} h`)
 
 /** One Dashboard-style tile: the figure, its label, the static calc (or the goal) under it, and a
  *  coloured bar on top against its goal. */
@@ -369,48 +371,93 @@ function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: 
 }
 
 /** The static calc beside the simulated figures; `why` is the verdict's line (stopped, not run, running). */
-function HeadlineTiles({ h, why, onTarget }: { h: Headline; why: string | null; onTarget: (u: number) => void }) {
-  const u = h.utilization, done = h.perHr.simulated, soc = h.battery.socMin, b = h.battery
-  const over = u.simulated != null && u.simulated > 1
-  const n = h.fleet.tested, veh = `${n} vehicle${n === 1 ? '' : 's'}`
-  const mornings = b.dayStarts.length > 2 ? ` · mornings ${Math.round(b.dayStarts[1])}% → ${Math.round(b.dayStarts[b.dayStarts.length - 1])}%` : ''
+/** The hero (furthest left): the outcome, its three checks stacked, and what sets the fleet. */
+function VerdictTile({ h, why }: { h: Headline; why: string | null }) {
+  const n = h.fleet.tested
   const title = h.outcome === 'right' ? `Right-sized at ${n}` : h.outcome === 'over' ? 'Oversized by 1' : h.outcome === 'under' ? `Undersized at ${n}`
     : h.outcome === 'gridlock' ? 'Gridlock' : h.outcome === 'notRun' ? 'Not run' : 'Simulating…'
-  const mark = (p: boolean | null) => (p == null ? '–' : p ? '✓' : '✗')
+  const checks: [string, boolean | null][] = [['Orders', h.perHr.pass], ['Utilization', h.utilization.pass], ['Battery', h.battery.pass]]
+  return (
+    <div className={`sim-kpi sim-kpi-verdict is-${h.verdictTone}`}>
+      <span className="sim-kpi-lbl">Verdict</span>
+      <span className="sim-kpi-val">{title}</span>
+      {why ? <span className="sim-kpi-sub">{why}</span> : h.outcome && h.outcome !== 'notRun' && h.outcome !== 'gridlock' && (
+        <ul className="sim-checks">
+          {checks.map(([l, p], i) => <li key={l} className={p === false ? 'bad' : p ? 'good' : ''}><i aria-hidden>{p == null ? '–' : p ? '✓' : '✗'}</i>{i + 1} · {l}</li>)}
+        </ul>
+      )}
+      {h.setsFleet && <span className="sim-kpi-sub">{h.setsFleet.check === 'orders' ? 'Orders' : h.setsFleet.check === 'utilization' ? 'Utilization' : 'Battery'} sets the fleet → about {h.setsFleet.n}</span>}
+      {h.outcome === 'over' && <span className="sim-kpi-sub">{n - 1} also passes all three</span>}
+      {h.outcome === 'right' && n !== h.fleet.static && <span className="sim-kpi-sub">static calc {h.fleet.static}</span>}
+    </div>
+  )
+}
+
+type Coverage = { days: number; shifts: number; shiftH: number; step1: { shiftH: number; shifts: number; days: number } }
+
+/** The checks' tiles (1 Orders, 2 Utilization, 3 Battery) and the fleet's average speed. */
+function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCoverage }: {
+  h: Headline; unitSystem: UnitSystem; sizingTarget: number; onTarget: (u: number) => void
+  coverage: Coverage; onCoverage: (k: 'shiftH' | 'shiftsPerDay' | 'daysPerWeek', v: number) => void
+}) {
+  const u = h.utilization, done = h.perHr.simulated, b = h.battery
+  const over = u.simulated != null && u.simulated > 1
+  const pctN = (x: number | null) => (x == null ? '—' : `${Math.round(x)}%`)
+  const mornings = b.dayStarts.length > 2 ? ` · mornings ${Math.round(Math.min(...b.dayStarts.slice(1)))}%+` : ''
+  const speed = h.speedFps == null ? '—' : unitSystem === 'metric' ? `${units.distance.toMetric(h.speedFps).toFixed(2)} m/s` : `${h.speedFps.toFixed(1)} ft/s`
+  const targets = [...new Set([60, 65, 70, 75, 80, 85, 90, 95, Math.round(u.target * 100), Math.round(sizingTarget * 100)])].sort((x, y) => x - y)
   return (
     <>
       <Kpi value={done == null ? '—' : done.toFixed(1)} label="1 · Orders per hour" sub={`of ${h.perHr.target.toFixed(0)} needed`} tone={h.perHr.tone} />
-      {/* Too few vehicles: the utilization the work needs, over 100% — and by how much. The target is
-          the simulation's to change (it starts at Sizing's). */}
+      {/* Too few vehicles: the utilization the work needs, over 100% — and by how much. */}
       <div className={`sim-kpi is-${u.tone}`}>
+        <KebabMenu label="Target utilization">
+          <p className="sim-kebab-h">Target utilization</p>
+          <div className="sim-kebab-opts" role="radiogroup" aria-label="Target utilization">
+            {targets.map(p => (
+              <button key={p} type="button" role="radio" aria-checked={Math.round(u.target * 100) === p} className={Math.round(u.target * 100) === p ? 'on' : ''} onClick={() => onTarget(p / 100)}>
+                {p}%{p === Math.round(sizingTarget * 100) ? ' · Sizing' : ''}
+              </button>
+            ))}
+          </div>
+          <p className="sim-kebab-note">Simulation only — Sizing keeps {Math.round(sizingTarget * 100)}%. Typical: 80–85% for opportunity-charged fleets.</p>
+        </KebabMenu>
         <span className="sim-kpi-val num">{pctOf(u.simulated)}</span>
         <span className="sim-kpi-lbl">{over ? `2 · Utilization · over by ${Math.round((u.simulated! - 1) * 100)}%` : '2 · Utilization'}</span>
-        <span className="sim-kpi-sub">
-          <label className="sim-kpi-target">target
-            <select value={Math.round(u.target * 100)} onChange={e => onTarget(Number(e.target.value) / 100)} aria-label="Target utilization">
-              {[...new Set([60, 65, 70, 75, 80, 85, 90, 95, Math.round(u.target * 100)])].sort((x, y) => x - y).map(p => <option key={p} value={p}>{p}%</option>)}
-            </select>
+        <span className="sim-kpi-sub">target {pctOf(u.target)} · static {pctOf(u.static)}</span>
+      </div>
+      <div className={`sim-kpi is-${b.tone}`}>
+        <KebabMenu label="Shift coverage">
+          <p className="sim-kebab-h">Shift coverage</p>
+          <CoverageRow label="Days a week" value={coverage.days} options={[5, 6, 7]} base={coverage.step1.days} onPick={v => onCoverage('daysPerWeek', v)} />
+          <CoverageRow label="Shifts a day" value={coverage.shifts} options={[1, 2, 3]} base={coverage.step1.shifts} onPick={v => onCoverage('shiftsPerDay', v)} />
+          <label className="sim-kebab-row"><span>Shift length</span>
+            <span className="sim-input-unit"><input type="number" min={1} max={24} step={0.5} value={coverage.shiftH} onChange={e => { const v = Number(e.target.value); if (v >= 0.5 && v <= 24) onCoverage('shiftH', v) }} /><span>h</span></span>
           </label>
-          {' · '}static {pctOf(u.static)}
-        </span>
+          <p className="sim-kebab-note">Simulation only — Step 1: {coverage.step1.days} days × {coverage.step1.shifts} × {coverage.step1.shiftH} h. Off-shift and days off, vehicles charge.</p>
+        </KebabMenu>
+        <span className="sim-kpi-val num">{pctN(b.lowest.run)}</span>
+        <span className="sim-kpi-lbl">3 · Battery · lowest</span>
+        <ul className="sim-kpi-list">
+          <li><span>Shift</span><b className="num">{pctN(b.lowest.shift)}</b></li>
+          <li><span>Day</span><b className="num">{pctN(b.lowest.day)}</b></li>
+          <li><span>Week</span><b className="num">{pctN(b.lowest.run)}</b></li>
+          <li className={b.pass === false ? 'bad' : b.pass ? 'good' : ''}>{b.pass == null ? (h.outcome ? 'Judged over a week' : '') : b.pass ? `✓ Keeps up${mornings}` : `✗ ${b.why ?? 'Does not keep up'}`}</li>
+        </ul>
       </div>
-      <Kpi value={soc == null ? '—' : `${Math.round(soc)}%`} label="3 · Battery keeps up"
-        sub={b.pass == null ? (h.outcome ? 'judged over a week — choose Week' : '') : b.pass ? `lowest charge${mornings}` : b.why ?? ''} tone={b.tone} />
-      <Kpi value={duration(h.waitSec)} label="Average wait" sub="until a vehicle is sent" tone="" />
-      <div className={`sim-kpi sim-kpi-verdict is-${h.verdictTone}`}>
-        <span className="sim-kpi-val">{title}</span>
-        <span className="sim-kpi-lbl">Verdict</span>
-        {why ? <span className="sim-kpi-sub">{why}</span> : h.outcome && h.outcome !== 'notRun' && h.outcome !== 'gridlock' && (
-          <ul className="sim-checks">
-            <li className={h.perHr.pass === false ? 'bad' : ''}>{mark(h.perHr.pass)} Orders</li>
-            <li className={u.pass === false ? 'bad' : ''}>{mark(u.pass)} Utilization</li>
-            <li className={b.pass === false ? 'bad' : ''}>{mark(b.pass)} Battery</li>
-          </ul>
-        )}
-        {h.setsFleet && <span className="sim-kpi-sub">{h.setsFleet.check === 'orders' ? 'Orders' : h.setsFleet.check === 'utilization' ? 'Utilization' : 'Battery'} sets the fleet → about {h.setsFleet.n}</span>}
-        {h.outcome === 'over' && <span className="sim-kpi-sub">{n - 1} also passes all three</span>}
-        {h.outcome === 'right' && n !== h.fleet.static && <span className="sim-kpi-sub">at {veh} · static calc {h.fleet.static}</span>}
-      </div>
+      <Kpi value={speed} label="Average speed" sub="across the fleet, while moving" tone="" />
     </>
+  )
+}
+
+function CoverageRow({ label, value, options, base, onPick }: { label: string; value: number; options: number[]; base: number; onPick: (v: number) => void }) {
+  return (
+    <div className="sim-kebab-row"><span>{label}</span>
+      <div className="seg-toggle sim-seg-toggle" role="radiogroup" aria-label={label}>
+        {[...new Set([...options, value])].sort((x, y) => x - y).map(o => (
+          <button key={o} type="button" role="radio" aria-checked={o === value} className={`seg-btn${o === value ? ' on' : ''}`} onClick={() => onPick(o)} title={o === base ? 'Step 1' : undefined}>{o}</button>
+        ))}
+      </div>
+    </div>
   )
 }

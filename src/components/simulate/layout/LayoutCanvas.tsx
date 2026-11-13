@@ -6,6 +6,7 @@
 // are drawn to true scale (§5.8). Tools are handled by the editor — the canvas reports where the
 // pointer is and what is under it.
 
+import FullScreenButton from '../ui/FullScreenButton'
 import { memo, useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
 import Icon from '@/src/design-system/components/Icon'
 import { laneWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
@@ -397,6 +398,7 @@ export default function LayoutCanvas(props: Props) {
         <button type="button" onClick={() => zoomBy(1 / 1.25)} aria-label="Zoom out">−</button>
         <span className="num" aria-label="Zoom">{Math.round((view.ppf / 4) * 100)}%</span>
         <button type="button" onClick={() => zoomBy(1.25)} aria-label="Zoom in">+</button>
+        <FullScreenButton />
       </div>
     </div>
   )

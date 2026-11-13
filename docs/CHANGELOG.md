@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-13 — Fleet simulation: Run tiles — verdict first, tile menus, battery by shift/day/week
+
+- The **Verdict** is the left-most tile with its three checks stacked; **⋮** menus edit the target
+  utilization and the shift coverage (days a week, shifts a day, shift length — simulation only).
+- The battery tile lists the lowest charge in the first shift, the first day and the week, and whether
+  it keeps up. **Average speed** (fleet, while moving) replaces Average wait. Full screen moved next to
+  the zoom controls.
+- Engine: working days a week (`daysPerWeek`; from Step 1's operating days), the battery's lowest per
+  window, distance and moving time per vehicle (`avgSpeedFps`). The verdict run is always a week — the
+  Shift · Day · Week choice is gone (`simSettings.daysPerWeek` replaces `runLength`).
+
 ## 2026-11-13 — Fleet simulation: three sizing checks (orders, utilization, battery)
 
 - **Verdict = three checks:** orders delivered, utilization at or under the target (over it now

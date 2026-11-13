@@ -100,6 +100,9 @@ export interface SimVehicle {
   chargeTrips: number
   /** Seconds spent needing a charge with no charger free (parked, waiting). */
   chargeWaitT: number
+  /** Feet driven, and seconds spent moving (any trip), for the fleet's average speed. */
+  distFt: number
+  moveT: number
   socMin: number
   /** Moves this vehicle delivered (per-vehicle table; Σ = the type's `done`, acceptance 16). */
   done: number
@@ -237,7 +240,7 @@ export function createSim(
         i, id: `${vid}-${j + 1}`, prof, node, atNode: true, nodes: [node], edges: [], pi: 1, s: 0,
         x: p.x, y: p.y, th: -Math.PI / 2, h: -Math.PI / 2, speed: 0, mode: 'home', job: null, loaded: false,
         payload: P.payloadFt?.[vid] ?? null, soc, held: new Set([z]), heldJ: new Set(), tl: 0, repo: 0, want: 0, moved: 0, waitFor: null, waitZone: null, blockedBy: null, headOn: false,
-        cycT: 0, parkT: 0, mustCharge: false, chargeTrips: 0, chargeWaitT: 0, socMin: soc, done: 0,
+        cycT: 0, parkT: 0, mustCharge: false, chargeTrips: 0, chargeWaitT: 0, distFt: 0, moveT: 0, socMin: soc, done: 0,
         tm: emptySplit(), handlingLog: [],
       })
     }
@@ -498,7 +501,7 @@ export function step(S: SimState) {
   // arrivals
   for (const F of S.flows) while (F.next <= t) {
     // Off-shift: no orders until the next staffed window opens.
-    if (!inShift(P, F.next)) { F.next = (Math.floor(F.next / 86400) + 1) * 86400 + F.iv * 0.05; continue }
+    if (!inShift(P, F.next)) { F.next = (Math.floor(F.next / 86400) + 1) * 86400 + F.iv * 0.05; continue }   // next day; a day off skips again
     S.orders.push({ F, t0: F.next, v: null, td: 0 }); F.gen++; S.waiting++
     F.next += P.arrivals === 'random' ? -Math.log(1 - S.rand()) * F.iv : F.iv
   }
@@ -634,6 +637,7 @@ export function step(S: SimState) {
   for (const v of S.veh) {
     let m = v.want
     v.moved = m
+    if (m > 0) { v.distFt += m; v.moveT += DT }
     v.speed = m / DT
     while (m > 1e-9 && v.pi < v.nodes.length) {
       const e = v.edges[v.pi - 1], L = edgeLen(G, e)

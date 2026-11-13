@@ -65,6 +65,7 @@ export function results(S: SimState): SimResults {
       socMin: veh.length ? Math.min(...veh.map(v => v.socMin)) : 0,
       chargeTrips: veh.reduce((a, v) => a + v.chargeTrips, 0),
       checks, battery: battery.detail,
+      avgSpeedFps: (() => { const mt = veh.reduce((a, v) => a + v.moveT, 0); return mt > 0 ? veh.reduce((a, v) => a + v.distFt, 0) / mt : null })(),
       backlogTrend, verdict,
     })
   }
@@ -114,10 +115,14 @@ function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { pass: b
   const dayStarts = Array.from({ length: days + 1 }, (_, d) => (d === 0 ? ser[0] : ser.find(([t]) => t >= d * 86400 - 1e-6))?.[2]).filter((x): x is number => x != null)
   const chargeWaitSec = veh.reduce((a, v) => a + v.chargeWaitT, 0)
   const floorPct = b?.minSocPct ?? null
-  const detail = (why: string | null) => ({ dayStarts, chargeWaitSec, floorPct, why })
+  // The lowest charge within the first shift, the first day and the whole run.
+  const lowIn = (until: number) => { const xs = ser.filter(([t]) => t <= until + 1e-6).map(([, m]) => m); return xs.length ? Math.min(...xs) : null }
+  const lowest = { shift: lowIn((S.P.shiftHr ?? Math.min(24, S.P.staffedHr)) * 3600), day: S.t >= 86400 - 1e-6 ? lowIn(86400) : null, run: lowIn(S.t) }
+  const detail = (why: string | null) => ({ dayStarts, chargeWaitSec, floorPct, why, lowest })
   if (!b || !veh.length || days < 2) return { pass: null, detail: detail(null) }
   if (floorPct != null && Math.min(...veh.map(v => v.socMin)) <= floorPct + 0.5) return { pass: false, detail: detail(`a vehicle reached the ${floorPct}% floor`) }
-  const from = dayStarts[1], last = dayStarts[dayStarts.length - 1]
+  // The lowest morning after day 2's (days off can lift a later morning and hide a working-week sag).
+  const from = dayStarts[1], last = dayStarts.length > 2 ? Math.min(...dayStarts.slice(2)) : undefined
   if (from != null && last != null && last < from - DAY_SAG_PCT) return { pass: false, detail: detail(`charge falls day over day (${Math.round(from)}% → ${Math.round(last)}% each morning)`) }
   const staffed = staffedSeconds(S.P, S.t) * veh.length
   if (staffed > 0 && chargeWaitSec / staffed > CHARGER_WAIT_SHARE) return { pass: false, detail: detail(`vehicles waited ${(chargeWaitSec / 3600).toFixed(1)} h for a free charger`) }
