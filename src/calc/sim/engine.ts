@@ -98,6 +98,8 @@ export interface SimVehicle {
   parkT: number
   mustCharge: boolean
   chargeTrips: number
+  /** Seconds spent needing a charge with no charger free (parked, waiting). */
+  chargeWaitT: number
   socMin: number
   /** Moves this vehicle delivered (per-vehicle table; Σ = the type's `done`, acceptance 16). */
   done: number
@@ -235,7 +237,7 @@ export function createSim(
         i, id: `${vid}-${j + 1}`, prof, node, atNode: true, nodes: [node], edges: [], pi: 1, s: 0,
         x: p.x, y: p.y, th: -Math.PI / 2, h: -Math.PI / 2, speed: 0, mode: 'home', job: null, loaded: false,
         payload: P.payloadFt?.[vid] ?? null, soc, held: new Set([z]), heldJ: new Set(), tl: 0, repo: 0, want: 0, moved: 0, waitFor: null, waitZone: null, blockedBy: null, headOn: false,
-        cycT: 0, parkT: 0, mustCharge: false, chargeTrips: 0, socMin: soc, done: 0,
+        cycT: 0, parkT: 0, mustCharge: false, chargeTrips: 0, chargeWaitT: 0, socMin: soc, done: 0,
         tm: emptySplit(), handlingLog: [],
       })
     }
@@ -696,6 +698,7 @@ export function step(S: SimState) {
       else if (v.moved > 0) v.tm.travel += DT
       else { v.tm.wait += DT; S.heat[v.atNode ? v.node : v.nodes[Math.min(v.pi, v.nodes.length - 1)]] += DT }
     } else if (v.mode === 'charging') v.tm.charge += DT
+    else if (v.mustCharge && v.mode === 'home') { v.chargeWaitT += DT; if (inShift(P, t)) v.tm.idle += DT }   // needs a charger, none free
     else if (inShift(P, t)) v.tm.idle += DT     // off-shift waiting is not idle time
     if (b) {
       const atCharger = v.atNode && G.points[v.node].type === 'charger' && (v.mode === 'home' || v.mode === 'charging')

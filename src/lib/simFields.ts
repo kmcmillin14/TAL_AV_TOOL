@@ -50,7 +50,7 @@ const def = (scope: FieldScope, field: string, group: FieldGroup, level: SimFiel
   ({ key: `${scope}.${field}`, scope, field, group, level, label, unit, ...extra })
 
 /** Run assumptions' defaults (spec D-3 pace; the engine's following gap). */
-export const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as 'regular' | 'random', demandPct: 100, seed: 1, runLength: 'shift' as RunLength }
+export const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as 'regular' | 'random', demandPct: 100, seed: 1, runLength: 'week' as RunLength }
 export type RunLength = 'shift' | 'day' | 'week'
 /** A run length in seconds, for a staffed shift of `shiftH` hours. */
 export const runSeconds = (len: RunLength, shiftH: number) => (len === 'week' ? 7 * 86400 : len === 'day' ? 86400 : shiftH * 3600)

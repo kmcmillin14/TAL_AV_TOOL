@@ -875,6 +875,20 @@ step ribbon is unchanged.
     warnings and notes, one row per thing (each loose point is its own row). Clicking a row selects
     what it is about and centres the view on it; a row's fix button picks the tool that fixes it
     (Draw route · Place charger · Link flow · Scale · Open Flows).
+  - *Three sizing checks (owner, 2026-11-13).* A fleet is **right-sized** only if it passes all three;
+    the Verdict tile names the outcome and lists them (✓/✗); the tiles carry their number.
+    1. **Orders** — 98% of generated moves delivered or under way, and no growing backlog.
+    2. **Utilization** — at or under the target. Over the target fails. The target starts at Sizing's
+       and is changed on the tile for the simulation only (`simSettings.targetUtilization`).
+    3. **Battery keeps up** — judged once the run covers two days (the verdict run is a **week** by
+       default); it fails when the average charge each morning falls day over day (from day 2), a
+       vehicle reaches the cutsheet floor, or vehicles wait for a free charger more than 2% of their
+       staffed time. Shorter runs read "judged over a week".
+    - **Right-sized at N** (all pass) · **Undersized at N** (any fails; "<check> sets the fleet → about
+      M": orders N × demand ÷ moves done, utilization N × needed ÷ target, battery N + 1 — the largest)
+      · **Oversized by 1** (one fewer passes all three too — the one-fewer run now runs whenever the
+      fleet passes, over the same run length) · Gridlock · Not run. The run's verdict word underneath
+      (Sizing's chip, Use N in pricing) is Meets only when all three pass; "Tight" is no longer given.
   - *The staffed day, run length and charging (owner, 2026-11-13).*
     - **Shift length** and **Shifts per day** come from Step 1 and can be changed in Assumptions for
       the simulation only (shown as overrides). Shifts run back to back from midnight; outside the

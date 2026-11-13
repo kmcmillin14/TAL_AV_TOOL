@@ -174,6 +174,12 @@ export interface TypeResult {
   socAvg: number
   socMin: number
   chargeTrips: number
+  /** The three sizing checks (owner, 2026-11-13): the fleet is right-sized only if all pass.
+   *  `battery` is null until the run has covered two days — charge is judged over days, not a shift. */
+  checks: { orders: boolean; utilization: boolean; battery: boolean | null }
+  /** Battery detail for the check: average charge at the start of each day, %; vehicle-seconds spent
+   *  waiting for a free charger; the cutsheet floor, %; why the battery check failed, if it did. */
+  battery: { dayStarts: number[]; chargeWaitSec: number; floorPct: number | null; why: string | null }
   backlogTrend: number
   verdict: Verdict
 }

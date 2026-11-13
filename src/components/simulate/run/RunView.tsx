@@ -94,12 +94,14 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const shiftH = simSettings.shiftH ?? project.hoursPerShift ?? 8
   const staffedHr = Math.min(24, shiftH * (simSettings.shiftsPerDay ?? project.shiftsPerDay ?? 1))
   const runLength = simSettings.runLength ?? RUN_DEFAULTS.runLength
+  // The utilization target the run is judged against: a simulation override, else Sizing's.
+  const targetU = simSettings.targetUtilization ?? settings.targetUtilization
   const runSec = runSeconds(runLength, shiftH)
   const runLabel = runLength === 'week' ? 'week' : runLength === 'day' ? '24 h day' : `${shiftH} h shift`
   const simConfig = useCallback((seed: number): SimSettings => ({
     fleet: fleetBy, demandPct: assume.demandPct, seed, arrivals: assume.arrivals, pacePct: assume.pacePct, safetyFt: assume.safetyFt,
-    staffedHr, targetUtilization: settings.targetUtilization, ...(Object.keys(payloads).length ? { payloadFt: payloads } : {}),
-  }), [fleetBy, assume, staffedHr, settings.targetUtilization, payloads])
+    staffedHr, targetUtilization: targetU, ...(Object.keys(payloads).length ? { payloadFt: payloads } : {}),
+  }), [fleetBy, assume, staffedHr, targetU, payloads])
 
   // ---- the verdict: one full shift off-screen; restarted whenever an input changes ----
   const [R, setR] = useState<{ res: SimResults; S: SimState } | null>(null)
@@ -137,8 +139,9 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const [lower, setLower] = useState<Record<string, Verdict | 'checking'>>({})
   useEffect(() => {
     setLower({})
-    if (!R || R.res.gridlock || !forSizing) return   // only pricing reads it
-    const todo = R.res.types.filter(t => t.verdict === 'meets' && (fleetBy[t.vehicleId] ?? 0) > (engineFleet[t.vehicleId] ?? 0)).map(t => t.vehicleId)
+    if (!R || R.res.gridlock) return
+    // Oversized when one fewer passes all three checks too; pricing reads it as well.
+    const todo = R.res.types.filter(t => t.verdict === 'meets' && (fleetBy[t.vehicleId] ?? 0) > 1).map(t => t.vehicleId)
     const tok = token.current
     const next = (i: number) => {
       if (i >= todo.length || tok !== token.current) return
@@ -146,7 +149,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
       setLower(m => ({ ...m, [vid]: 'checking' }))
       const S = createSim(inputs.layout, inputs.flows, simVehicles, { ...simConfig(assume.seed), fleet: { ...fleetBy, [vid]: fleetBy[vid] - 1 } })
       if (!S) { setLower(m => ({ ...m, [vid]: 'short' })); return next(i + 1) }   // one fewer cannot even be placed
-      runInSlices(S, shiftH * 3600, () => {
+      runInSlices(S, runSec, () => {
         const r = results(S)
         setLower(m => ({ ...m, [vid]: r.gridlock ? 'gridlock' : r.types.find(t => t.vehicleId === vid)?.verdict ?? 'short' }))
         next(i + 1)
@@ -219,7 +222,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const openAll = useCallback(() => onAssumptions(null), [onAssumptions])
 
   // The deciding row: the static calc from Step 3 beside what this run measured (all types placed).
-  const headline = useMemo(() => runHeadline(fleet, fleetBy, R?.res ?? null, inputs.flows, assume.demandPct, unrunnable), [fleet, fleetBy, R, inputs.flows, assume.demandPct, unrunnable])
+  const headline = useMemo(() => runHeadline(fleet, fleetBy, R?.res ?? null, inputs.flows, assume.demandPct, { unrunnable, targetUtilization: targetU, oneFewer: lower }), [fleet, fleetBy, R, inputs.flows, assume.demandPct, unrunnable, targetU, lower])
 
   const S = live.current
   const followed = S && follow >= 0 ? S.veh[follow] : null
@@ -262,7 +265,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
             })}
             <span className="sim-kpi-lbl">{headline.fleet.tested !== headline.fleet.static ? `Testing ${headline.fleet.tested} · static calc ${headline.fleet.static}` : `Testing the static calc · ${headline.fleet.static}`}</span>
           </div>
-          <HeadlineTiles h={headline} why={R?.res.gridlock
+          <HeadlineTiles h={headline} onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })} why={R?.res.gridlock
             ? `Stopped at ${clock(R.res.gridlock.t)} · ${R.res.gridlock.where} · ${R.res.gridlock.vehicle}${R.res.gridlock.blockedBy ? ` waits on ${R.res.gridlock.blockedBy}` : ''}`
             : headline.notRun ? (R?.res.excluded.map(x => x.why).filter((w, i, a) => a.indexOf(w) === i).join(' · ') || 'Nothing the run can place or drive — check Validation in Edit layout')
             : !R ? `Running a full ${runLabel}…` : null} />
@@ -273,7 +276,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           <div className="seg-toggle sim-seg-toggle sim-runlen" role="radiogroup" aria-label="Run length">
             {(['shift', 'day', 'week'] as const).map(k => (
               <button key={k} type="button" role="radio" aria-checked={runLength === k} className={`seg-btn${runLength === k ? ' on' : ''}`}
-                onClick={() => patchSimSettings(project.id, { runLength: k === 'shift' ? undefined : k })}>{k === 'shift' ? 'Shift' : k === 'day' ? 'Day' : 'Week'}</button>
+                onClick={() => patchSimSettings(project.id, { runLength: k === RUN_DEFAULTS.runLength ? undefined : k })}>{k === 'shift' ? 'Shift' : k === 'day' ? 'Day' : 'Week'}</button>
             ))}
           </div>
           <span>{staffedHr < 24 ? `${staffedHr} h staffed a day` : 'Staffed 24 h'} · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
@@ -366,21 +369,48 @@ function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: 
 }
 
 /** The static calc beside the simulated figures; `why` is the verdict's line (stopped, not run, running). */
-function HeadlineTiles({ h, why }: { h: Headline; why: string | null }) {
-  const u = h.utilization, done = h.perHr.simulated, soc = h.battery.socMin
-  const tested = h.fleet.tested !== h.fleet.static
+function HeadlineTiles({ h, why, onTarget }: { h: Headline; why: string | null; onTarget: (u: number) => void }) {
+  const u = h.utilization, done = h.perHr.simulated, soc = h.battery.socMin, b = h.battery
   const over = u.simulated != null && u.simulated > 1
+  const n = h.fleet.tested, veh = `${n} vehicle${n === 1 ? '' : 's'}`
+  const mornings = b.dayStarts.length > 2 ? ` · mornings ${Math.round(b.dayStarts[1])}% → ${Math.round(b.dayStarts[b.dayStarts.length - 1])}%` : ''
+  const title = h.outcome === 'right' ? `Right-sized at ${n}` : h.outcome === 'over' ? 'Oversized by 1' : h.outcome === 'under' ? `Undersized at ${n}`
+    : h.outcome === 'gridlock' ? 'Gridlock' : h.outcome === 'notRun' ? 'Not run' : 'Simulating…'
+  const mark = (p: boolean | null) => (p == null ? '–' : p ? '✓' : '✗')
   return (
     <>
-      {/* Too few vehicles: the utilization the work needs, over 100% — and by how much (owner, 2026-11-13). */}
-      <Kpi value={pctOf(u.simulated)} label={over ? `Utilization · over by ${Math.round((u.simulated! - 1) * 100)}%` : 'Utilization'}
-        sub={over ? `About ${Math.ceil(h.fleet.tested * u.simulated! / u.target)} vehicles to reach the ${pctOf(u.target)} target · static ${pctOf(u.static)}` : `Static ${pctOf(u.static)} · target ${pctOf(u.target)}`} tone={u.tone} />
-      <Kpi value={done == null ? '—' : done.toFixed(1)} label="Moves per hour" sub={`of ${h.perHr.target.toFixed(0)} needed`} tone={h.perHr.tone} />
-      <Kpi value={soc == null ? '—' : `${Math.round(soc)}%`} label="Lowest battery"
-        sub={`${h.battery.chargeTrips == null ? '' : `${h.battery.chargeTrips} charges · `}${h.battery.runHr == null ? 'static —' : `static ${h.battery.runHr.toFixed(1)} h per charge`}`} tone={h.battery.tone} />
+      <Kpi value={done == null ? '—' : done.toFixed(1)} label="1 · Orders per hour" sub={`of ${h.perHr.target.toFixed(0)} needed`} tone={h.perHr.tone} />
+      {/* Too few vehicles: the utilization the work needs, over 100% — and by how much. The target is
+          the simulation's to change (it starts at Sizing's). */}
+      <div className={`sim-kpi is-${u.tone}`}>
+        <span className="sim-kpi-val num">{pctOf(u.simulated)}</span>
+        <span className="sim-kpi-lbl">{over ? `2 · Utilization · over by ${Math.round((u.simulated! - 1) * 100)}%` : '2 · Utilization'}</span>
+        <span className="sim-kpi-sub">
+          <label className="sim-kpi-target">target
+            <select value={Math.round(u.target * 100)} onChange={e => onTarget(Number(e.target.value) / 100)} aria-label="Target utilization">
+              {[...new Set([60, 65, 70, 75, 80, 85, 90, 95, Math.round(u.target * 100)])].sort((x, y) => x - y).map(p => <option key={p} value={p}>{p}%</option>)}
+            </select>
+          </label>
+          {' · '}static {pctOf(u.static)}
+        </span>
+      </div>
+      <Kpi value={soc == null ? '—' : `${Math.round(soc)}%`} label="3 · Battery keeps up"
+        sub={b.pass == null ? (h.outcome ? 'judged over a week — choose Week' : '') : b.pass ? `lowest charge${mornings}` : b.why ?? ''} tone={b.tone} />
       <Kpi value={duration(h.waitSec)} label="Average wait" sub="until a vehicle is sent" tone="" />
-      <Kpi value={h.notRun ? 'Not run' : h.verdict ? VERDICT_LABEL[h.verdict] : 'Simulating…'} label="Verdict"
-        sub={why ?? (tested ? `at ${h.fleet.tested} vehicle${h.fleet.tested === 1 ? '' : 's'}` : 'the static calc holds')} tone={h.verdictTone} />
+      <div className={`sim-kpi sim-kpi-verdict is-${h.verdictTone}`}>
+        <span className="sim-kpi-val">{title}</span>
+        <span className="sim-kpi-lbl">Verdict</span>
+        {why ? <span className="sim-kpi-sub">{why}</span> : h.outcome && h.outcome !== 'notRun' && h.outcome !== 'gridlock' && (
+          <ul className="sim-checks">
+            <li className={h.perHr.pass === false ? 'bad' : ''}>{mark(h.perHr.pass)} Orders</li>
+            <li className={u.pass === false ? 'bad' : ''}>{mark(u.pass)} Utilization</li>
+            <li className={b.pass === false ? 'bad' : ''}>{mark(b.pass)} Battery</li>
+          </ul>
+        )}
+        {h.setsFleet && <span className="sim-kpi-sub">{h.setsFleet.check === 'orders' ? 'Orders' : h.setsFleet.check === 'utilization' ? 'Utilization' : 'Battery'} sets the fleet → about {h.setsFleet.n}</span>}
+        {h.outcome === 'over' && <span className="sim-kpi-sub">{n - 1} also passes all three</span>}
+        {h.outcome === 'right' && n !== h.fleet.static && <span className="sim-kpi-sub">at {veh} · static calc {h.fleet.static}</span>}
+      </div>
     </>
   )
 }

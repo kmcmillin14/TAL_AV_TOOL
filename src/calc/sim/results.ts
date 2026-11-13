@@ -40,12 +40,18 @@ export function results(S: SimState): SimResults {
     const last = ser.length - 1
     const backlogTrend = ser.length > 60 ? ser[last][1] - ser[last - 60][1] : 0
     const delivered = gen > 0 ? (done + inProgress) / gen : 1
+    // The three sizing checks (owner, 2026-11-13): orders delivered, utilization at or under the target,
+    // and charge keeping up. Any failure is "Falls short"; all three pass is "Meets".
+    const battery = batteryCheck(S, vid, veh)
+    const checks = {
+      orders: delivered >= VERDICT.MIN_DELIVERED && backlogTrend < VERDICT.BACKLOG_SHORT_PER_H,
+      utilization: utilization <= S.P.targetUtilization + 1e-9,
+      battery: battery.pass,
+    }
     let verdict: Verdict
     if (S.gridlock) verdict = 'gridlock'
     else if (S.t < VERDICT.WARMUP_S) verdict = 'warming'
-    else if (delivered < VERDICT.MIN_DELIVERED || backlogTrend >= VERDICT.BACKLOG_SHORT_PER_H || utilization > VERDICT.UTIL_SHORT) verdict = 'short'
-    else if (utilization > S.P.targetUtilization || backlogTrend > 0) verdict = 'tight'
-    else verdict = 'meets'
+    else verdict = checks.orders && checks.utilization && checks.battery !== false ? 'meets' : 'short'
     const socs = veh.map(v => v.soc)
     types.push({
       vehicleId: vid, fleet: veh.length,
@@ -58,6 +64,7 @@ export function results(S: SimState): SimResults {
       socAvg: socs.length ? socs.reduce((a, b) => a + b, 0) / socs.length : 0,
       socMin: veh.length ? Math.min(...veh.map(v => v.socMin)) : 0,
       chargeTrips: veh.reduce((a, v) => a + v.chargeTrips, 0),
+      checks, battery: battery.detail,
       backlogTrend, verdict,
     })
   }
@@ -86,6 +93,35 @@ export function results(S: SimState): SimResults {
     excluded: S.excluded,
     orders: { generated, delivered, inProgress, waiting: S.orders.filter(o => o.v == null).length },
   }
+}
+
+/** A day's start-of-day charge may sag this much below the next-to-first day's before it counts as
+ *  not keeping up, % points (noise between days). */
+const DAY_SAG_PCT = 2
+/** Waiting for a free charger beyond this share of the vehicles' staffed time fails the check. */
+const CHARGER_WAIT_SHARE = 0.02
+
+/**
+ * Charge keeps up (owner, 2026-11-13): judged once the run covers two days. It fails when the average
+ * charge at the start of the day falls day over day (from day 2 — day 1 starts from a full overnight
+ * charge), when any vehicle reaches the cutsheet floor, or when vehicles wait for a free charger for
+ * more than 2% of their staffed time.
+ */
+function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { pass: boolean | null; detail: TypeResult['battery'] } {
+  const b = S.profiles.get(vid)?.battery
+  const ser = S.socSeries.get(vid) ?? []
+  const days = Math.floor(S.t / 86400 + 1e-9)
+  const dayStarts = Array.from({ length: days + 1 }, (_, d) => (d === 0 ? ser[0] : ser.find(([t]) => t >= d * 86400 - 1e-6))?.[2]).filter((x): x is number => x != null)
+  const chargeWaitSec = veh.reduce((a, v) => a + v.chargeWaitT, 0)
+  const floorPct = b?.minSocPct ?? null
+  const detail = (why: string | null) => ({ dayStarts, chargeWaitSec, floorPct, why })
+  if (!b || !veh.length || days < 2) return { pass: null, detail: detail(null) }
+  if (floorPct != null && Math.min(...veh.map(v => v.socMin)) <= floorPct + 0.5) return { pass: false, detail: detail(`a vehicle reached the ${floorPct}% floor`) }
+  const from = dayStarts[1], last = dayStarts[dayStarts.length - 1]
+  if (from != null && last != null && last < from - DAY_SAG_PCT) return { pass: false, detail: detail(`charge falls day over day (${Math.round(from)}% → ${Math.round(last)}% each morning)`) }
+  const staffed = staffedSeconds(S.P, S.t) * veh.length
+  if (staffed > 0 && chargeWaitSec / staffed > CHARGER_WAIT_SHARE) return { pass: false, detail: detail(`vehicles waited ${(chargeWaitSec / 3600).toFixed(1)} h for a free charger`) }
+  return { pass: true, detail: detail(null) }
 }
 
 /** How a verdict reads on screen — Simulate's verdict rows and Sizing's chips. */

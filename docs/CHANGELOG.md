@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-13 — Fleet simulation: three sizing checks (orders, utilization, battery)
+
+- **Verdict = three checks:** orders delivered, utilization at or under the target (over it now
+  **fails** — was "Tight"), and charge keeping up over days (new: morning charge must not fall day over
+  day, no vehicle at the floor, little waiting for chargers). **Results change:** a run over target
+  utilization is now Falls short, and the battery can fail a fleet.
+- Verdict tile: **Right-sized / Undersized / Oversized by 1** with ✓/✗ per check and which check sets the
+  fleet. The verdict run is a **week** by default.
+- Target utilization editable on the tile, simulation only (`simSettings.targetUtilization`).
+- Calc: `TypeResult.checks`, `TypeResult.battery`, charger-wait time per vehicle; headline outcome
+  (tested).
+
 ## 2026-11-13 — Fleet simulation: staffed day, week runs, charging rules, over-utilization
 
 - **Shift length / Shifts per day** editable in Assumptions (simulation only; `simSettings.shiftH`,

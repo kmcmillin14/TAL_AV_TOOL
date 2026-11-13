@@ -105,6 +105,8 @@ export const simSettingsSchema = z.object({
   shiftsPerDay: z.number().int().min(1).max(3).optional(),
   /** How long the verdict run lasts: one shift (default), a day, or a week (to see charge levels). */
   runLength: z.enum(['shift', 'day', 'week']).optional(),
+  /** The utilization the run is judged against, simulation only (absent: Sizing's target). */
+  targetUtilization: z.number().min(0.3).max(1).optional(),
   /** Earlier vehicle switcher: read once as a one-type `vehicles` list (simVehicleTypes); not written. */
   vehicleAs: z.string().optional(),
   /** The simulation's vehicle types, each with its payload (a Step 1 load or custom dims, in);

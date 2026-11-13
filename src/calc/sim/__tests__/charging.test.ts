@@ -38,3 +38,20 @@ describe('the staffed day and charging (owner, 2026-11-13)', () => {
     expect((S.socSeries.get('cb18') ?? []).length).toBeGreaterThan(100)
   })
 })
+
+describe('charge keeps up — the third sizing check', () => {
+  it('is judged once a run covers two days; a week on the sample keeps up; too few chargers do not', () => {
+    const { layout, flows } = sampleLayout()
+    const shift = runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 8 }))!, 8 * 3600)
+    expect(results(shift).types[0].checks.battery).toBeNull()
+    const week = runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 8 }))!, 7 * 86400)
+    const t = results(week).types[0]
+    expect(t.checks.battery).toBe(true)
+    expect(t.battery.dayStarts.length).toBe(8)
+    // Staffed round the clock at double demand: no off-shift to charge in — the charge does not keep up.
+    const hard = runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 24, demandPct: 200 }))!, 4 * 86400)
+    const h = results(hard).types[0]
+    expect(h.checks.battery === false || h.checks.orders === false).toBe(true)
+    if (h.checks.battery === false) expect(h.battery.why).toBeTruthy()
+  }, 120000)
+})
