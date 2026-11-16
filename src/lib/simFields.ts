@@ -8,6 +8,7 @@
 // where the vehicle file has no value) · Override (a per-project value changing an assumption).
 // Overrides change the simulation only — never the Fleet Engine or the quote.
 
+import { operatingDaysPerWeek } from '@/src/calc/romAnalytics'
 import { B56_5_RULE } from '@/src/calc/sim/clearance'
 import type { SimPoint, SimSegment } from '@/src/calc/sim/types'
 import { vehicleFileValue, type VehicleOverrideField } from '@/src/calc/sim/vehicle'
@@ -52,12 +53,10 @@ const def = (scope: FieldScope, field: string, group: FieldGroup, level: SimFiel
 /** Run assumptions' defaults (spec D-3 pace; the engine's following gap). */
 export const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as 'regular' | 'random', demandPct: 100, seed: 1 }
 
-/** Step 1's working days a week, from its operating-days pattern (Mon–Fri when not set). */
-export function step1DaysPerWeek(p: { operatingDaysPattern?: string | null; operatingDaysCustom?: string[] | null }): number {
-  const byPattern: Record<string, number> = { 'Mon–Fri': 5, 'Mon–Sat': 6, 'Mon–Sun': 7 }
-  if (p.operatingDaysPattern === 'Custom') return Math.max(1, Math.min(7, p.operatingDaysCustom?.length ?? 5))
-  return byPattern[p.operatingDaysPattern ?? ''] ?? 5
-}
+/** Step 1's working days a week (its operating-days pattern; the same rule as ROM's days a year). With no
+ *  pattern set, every day — as the simulation ran before working days existed. */
+export const step1DaysPerWeek = (p: { operatingDaysPattern?: string | null; operatingDaysCustom?: string[] | null }) =>
+  p.operatingDaysPattern ? operatingDaysPerWeek(p.operatingDaysPattern, p.operatingDaysCustom) : 7
 
 export const SIM_FIELDS: SimFieldDef[] = [
   // Vehicle type (values from the vehicle file; per-project overrides)
@@ -131,7 +130,7 @@ export function fieldState(d: SimFieldDef, c: FieldContext): FieldState {
     }
     case 'run': {
       // The staffed day comes from Step 1; the rest are run defaults.
-      const step1 = d.field === 'shiftH' ? c.hoursPerShift ?? 8 : d.field === 'shiftsPerDay' ? c.shiftsPerDay ?? 1 : d.field === 'daysPerWeek' ? c.daysPerWeek ?? 5 : undefined
+      const step1 = d.field === 'shiftH' ? c.hoursPerShift ?? 8 : d.field === 'shiftsPerDay' ? c.shiftsPerDay ?? 1 : d.field === 'daysPerWeek' ? c.daysPerWeek ?? 7 : undefined
       const base = step1 ?? RUN_DEFAULTS[d.field as keyof typeof RUN_DEFAULTS]
       const v = (ss as Record<string, unknown>)[d.field] as Value | undefined
       return v != null && v !== base ? { value: v, base, source: 'Override' } : { value: base, base, source: step1 != null ? 'Step 1' : 'Default' }

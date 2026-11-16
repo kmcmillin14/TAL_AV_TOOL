@@ -502,6 +502,7 @@ export function step(S: SimState) {
   const P = S.P, G = S.G
   S.t += DT
   const t = S.t
+  const onShift = inShift(P, t)
   // arrivals
   for (const F of S.flows) while (F.next <= t) {
     // Off-shift: no orders until the next staffed window opens.
@@ -683,7 +684,7 @@ export function step(S: SimState) {
     let kw = b ? b.idleKw : 0
     if (v.mode === 'pick' || v.mode === 'drop') {
       kw = busyKw
-      if (!inShift(P, t)) v.busyOff += DT
+      if (!onShift) v.busyOff += DT
       S.lastProgress = S.t
       if (v.repo > 0) { const r = Math.min(v.repo, DT); v.repo -= r; v.tm.reposition += r; v.tl -= DT - r; v.tm.handle += DT - r }
       else { v.tm.handle += DT; v.tl -= DT }
@@ -694,7 +695,7 @@ export function step(S: SimState) {
         } else {
           const o = v.job!, F = o.F
           F.done++; v.done++; F.misSum += S.t - o.td
-          if (!inShift(P, t)) F.late++
+          if (!onShift) F.late++
           const hr = Math.floor(S.t / 3600); S.hourly[hr] = (S.hourly[hr] ?? 0) + 1
           S.orders.splice(S.orders.indexOf(o), 1)
           afterDrop(S, v)
@@ -702,15 +703,15 @@ export function step(S: SimState) {
       }
     } else if (MOVING.has(v.mode)) {
       kw = busyKw
-      if (v.mode !== 'toCharge' && v.mode !== 'toHome' && !inShift(P, t)) v.busyOff += DT
+      if (v.mode !== 'toCharge' && v.mode !== 'toHome' && !onShift) v.busyOff += DT
       // a trip to a charger is charging logistics; heading home is idle (still dispatchable)
       if (v.mode === 'toCharge') v.tm.charge += DT
-      else if (v.mode === 'toHome') { if (inShift(P, t)) v.tm.idle += DT }
+      else if (v.mode === 'toHome') { if (onShift) v.tm.idle += DT }
       else if (v.moved > 0) v.tm.travel += DT
       else { v.tm.wait += DT; S.heat[v.atNode ? v.node : v.nodes[Math.min(v.pi, v.nodes.length - 1)]] += DT }
     } else if (v.mode === 'charging') v.tm.charge += DT
-    else if (v.mustCharge && v.mode === 'home') { v.chargeWaitT += DT; if (inShift(P, t)) v.tm.idle += DT }   // needs a charger, none free
-    else if (inShift(P, t)) v.tm.idle += DT     // off-shift waiting is not idle time
+    else if (v.mustCharge && v.mode === 'home') { v.chargeWaitT += DT; if (onShift) v.tm.idle += DT }   // needs a charger, none free
+    else if (onShift) v.tm.idle += DT     // off-shift waiting is not idle time
     if (b) {
       const atCharger = v.atNode && G.points[v.node].type === 'charger' && (v.mode === 'home' || v.mode === 'charging')
       const dSoc = ((atCharger ? b.chargerKw : 0) - kw) * DT * b.pctPerKwSec

@@ -244,10 +244,10 @@ export const engineFleetByType = (f: FleetSummary): Record<string, number> => Ob
 /** Σ what the Fleet Engine sized across types, before any simulated fleet (D-1). */
 export const engineFleetTotal = (f: FleetSummary): number => f.totalEngineFleetSold ?? f.totalFleetSold
 
-/** The utilization the static calc expects at `n` vehicles (default: its own figure): peak demand ÷
- *  the vehicle-hours left once charging is covered — busy ÷ time not charging, as the run measures it. */
-export function staticUtilization(g: Pick<FleetGroup, 'groupRaw' | 'fleetSold' | 'charging'>, n = g.fleetSold): number {
-  const cap = n * (g.charging.availability ?? 1)
+/** The utilization the static calc expects at its fleet: peak demand ÷ the vehicle-hours left once
+ *  charging is covered — busy ÷ time not charging, as the run measures it. */
+export function staticUtilization(g: Pick<FleetGroup, 'groupRaw' | 'fleetSold' | 'charging'>): number {
+  const cap = g.fleetSold * (g.charging.availability ?? 1)
   return cap > 0 ? g.groupRaw / cap : 0
 }
 

@@ -80,7 +80,7 @@ const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy }: Props) {
   const simSettings = project.simSettings ?? {}
   /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
-  const forSizing = !differs
+  const forSizing = !differs && !ownConditionsOf(simSettings)
   // The key hashes the vehicle files (overrides are hashed from simSettings) — as Sizing does, so a
   // result is only "stale" when its inputs really changed.
   const fileVehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
@@ -92,10 +92,10 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   }), [simSettings.pacePct, simSettings.safetyFt, simSettings.arrivals, simSettings.demandPct, simSettings.seed])
   // Shift coverage — days a week, shifts a day, shift length: simulation overrides, else Step 1. The
   // verdict run is a week, so the battery is judged over days; variability judges one shift.
-  const step1 = { shiftH: project.hoursPerShift ?? 8, shifts: project.shiftsPerDay ?? 1, days: step1DaysPerWeek(project) }
+  const step1 = { shiftH: project.hoursPerShift ?? 8, shiftsPerDay: project.shiftsPerDay ?? 1, daysPerWeek: step1DaysPerWeek(project) }
   const shiftH = simSettings.shiftH ?? step1.shiftH
-  const shifts = simSettings.shiftsPerDay ?? step1.shifts
-  const daysPerWeek = simSettings.daysPerWeek ?? step1.days
+  const shifts = simSettings.shiftsPerDay ?? step1.shiftsPerDay
+  const daysPerWeek = simSettings.daysPerWeek ?? step1.daysPerWeek
   const staffedHr = Math.min(24, shiftH * shifts)
   // The utilization target the run is judged against: a simulation override, else Sizing's.
   const targetU = simSettings.targetUtilization ?? settings.targetUtilization
@@ -106,7 +106,8 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   }), [fleetBy, assume, staffedHr, daysPerWeek, shiftH, targetU, payloads])
   /** A shift-coverage change: back to Step 1's value clears the override. */
   const setCoverage = (k: 'shiftH' | 'shiftsPerDay' | 'daysPerWeek', v: number) =>
-    patchSimSettings(project.id, { [k]: v === (k === 'shiftH' ? step1.shiftH : k === 'shiftsPerDay' ? step1.shifts : step1.days) ? undefined : v })
+    patchSimSettings(project.id, { [k]: v === step1[k] ? undefined : v })
+
 
   // ---- the verdict: one full shift off-screen; restarted whenever an input changes ----
   const [R, setR] = useState<{ res: SimResults; S: SimState } | null>(null)
@@ -146,7 +147,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     setLower({})
     if (!R || R.res.gridlock) return
     // Oversized when one fewer passes all three checks too; pricing reads it as well.
-    const todo = R.res.types.filter(t => t.verdict === 'meets' && (fleetBy[t.vehicleId] ?? 0) > 1).map(t => t.vehicleId)
+    const todo = R.res.types.filter(t => { const n = fleetBy[t.vehicleId] ?? 0; return t.verdict === 'meets' && n > 1 && (t.utilization * n) / (n - 1) <= targetU }).map(t => t.vehicleId)
     const tok = token.current
     const next = (i: number) => {
       if (i >= todo.length || tok !== token.current) return
@@ -173,7 +174,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
       if (k >= VARIABILITY_RUNS || tok !== token.current) return
       const S = createSim(inputs.layout, inputs.flows, simVehicles, simConfig(assume.seed + k))
       if (!S) return
-      runInSlices(S, shiftH * 3600, () => { out.push(results(S)); setVari({ k: k + 1, out: [...out] }); next(k + 1) }, () => tok === token.current)
+      runInSlices(S, runSec, () => { out.push(results(S)); setVari({ k: k + 1, out: [...out] }); next(k + 1) }, () => tok === token.current)
     }
     setVari({ k: 0, out }); next(0)
   }
@@ -278,10 +279,11 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           <VerdictTile h={headline} why={verdictWhy} />
           <HeadlineTiles h={headline} unitSystem={unitSystem} sizingTarget={settings.targetUtilization}
             onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
-            coverage={{ days: daysPerWeek, shifts, shiftH, step1 }} onCoverage={setCoverage} />
+            coverage={{ daysPerWeek, shiftsPerDay: shifts, shiftH, step1 }} onCoverage={setCoverage} />
         </div>
         <div className="sim-vsub">
           {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
+          {!differs && ownConditionsOf(simSettings) && <span className="sim-as-note">Target or shifts set for the simulation only — the price uses Sizing&rsquo;s</span>}
           <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <> · <button type="button" className="link-btn" onClick={() => onResetFleet(Object.keys(fleetBy))}>Reset to engine</button></>}</span>
           <span>A week · {daysPerWeek} day{daysPerWeek === 1 ? '' : 's'} × {shifts} × {shiftH} h shift{shifts === 1 ? '' : 's'} · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
           <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
@@ -356,6 +358,10 @@ function VariabilityChip({ out, arrivals }: { out: SimResults[]; arrivals: SimSe
   )
 }
 
+/** The run is judged under simulation-only conditions (target or shift coverage overridden): it then
+ *  speaks only for the simulation, never for Sizing or the price. */
+const ownConditionsOf = (ss: { targetUtilization?: number; shiftH?: number; shiftsPerDay?: number; daysPerWeek?: number }) =>
+  ss.targetUtilization != null || ss.shiftH != null || ss.shiftsPerDay != null || ss.daysPerWeek != null
 const pctOf = (x: number | null) => (x == null ? '—' : `${Math.round(x * 100)}%`)
 
 /** One Dashboard-style tile: the figure, its label, the static calc (or the goal) under it, and a
@@ -393,7 +399,8 @@ function VerdictTile({ h, why }: { h: Headline; why: string | null }) {
   )
 }
 
-type Coverage = { days: number; shifts: number; shiftH: number; step1: { shiftH: number; shifts: number; days: number } }
+type CoverageValues = { shiftH: number; shiftsPerDay: number; daysPerWeek: number }
+type Coverage = CoverageValues & { step1: CoverageValues }
 
 /** The checks' tiles (1 Orders, 2 Utilization, 3 Battery) and the fleet's average speed. */
 function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCoverage }: {
@@ -432,12 +439,15 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
       <div className={`sim-kpi is-${b.tone}`}>
         <KebabMenu label="Shift coverage">
           <p className="sim-kebab-h">Shift coverage</p>
-          <CoverageRow label="Days a week" value={coverage.days} options={[5, 6, 7]} base={coverage.step1.days} onPick={v => onCoverage('daysPerWeek', v)} />
-          <CoverageRow label="Shifts a day" value={coverage.shifts} options={[1, 2, 3]} base={coverage.step1.shifts} onPick={v => onCoverage('shiftsPerDay', v)} />
+          <CoverageRow label="Days a week" value={coverage.daysPerWeek} options={[5, 6, 7]} base={coverage.step1.daysPerWeek} onPick={v => onCoverage('daysPerWeek', v)} />
+          <CoverageRow label="Shifts a day" value={coverage.shiftsPerDay} options={[1, 2, 3]} base={coverage.step1.shiftsPerDay} onPick={v => onCoverage('shiftsPerDay', v)} />
           <label className="sim-kebab-row"><span>Shift length</span>
-            <span className="sim-input-unit"><input type="number" min={1} max={24} step={0.5} value={coverage.shiftH} onChange={e => { const v = Number(e.target.value); if (v >= 0.5 && v <= 24) onCoverage('shiftH', v) }} /><span>h</span></span>
+            {/* Committed on blur or Enter — each change reruns the week. */}
+            <span className="sim-input-unit"><input key={coverage.shiftH} type="number" min={1} max={24} step={0.5} defaultValue={coverage.shiftH}
+              onBlur={e => { const v = Number(e.target.value); if (v >= 0.5 && v <= 24 && v !== coverage.shiftH) onCoverage('shiftH', v) }}
+              onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }} /><span>h</span></span>
           </label>
-          <p className="sim-kebab-note">Simulation only — Step 1: {coverage.step1.days} days × {coverage.step1.shifts} × {coverage.step1.shiftH} h. Off-shift and days off, vehicles charge.</p>
+          <p className="sim-kebab-note">Simulation only — Step 1: {coverage.step1.daysPerWeek} days × {coverage.step1.shiftsPerDay} × {coverage.step1.shiftH} h. Off-shift and days off, vehicles charge.</p>
         </KebabMenu>
         <span className="sim-kpi-val num">{pctN(b.lowest.run)}</span>
         <span className="sim-kpi-lbl">3 · Battery · lowest</span>

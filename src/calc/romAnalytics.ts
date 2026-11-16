@@ -24,12 +24,18 @@ export function defaultOperatingDaysPerYear(
   pattern?: string | null,
   customDays?: string[] | null,
 ): number {
+  return operatingDaysPerWeek(pattern, customDays) * 52
+}
+
+/** Working days a week from Step 1's operating-days pattern (Mon–Sat when not set) — the one source for
+ *  days a year here and the simulation's staffed week. */
+export function operatingDaysPerWeek(pattern?: string | null, customDays?: string[] | null): number {
   switch (pattern) {
-    case 'Mon–Fri': return 260
-    case 'Mon–Sat': return 312
-    case 'Mon–Sun': return 364
-    case 'Custom':  return customDays?.length ? customDays.length * 52 : 312
-    default:        return 312
+    case 'Mon–Fri': return 5
+    case 'Mon–Sat': return 6
+    case 'Mon–Sun': return 7
+    case 'Custom':  return customDays?.length ? Math.min(7, customDays.length) : 6
+    default:        return 6
   }
 }
 

@@ -71,6 +71,8 @@ export function runHeadline(
   const ran = !!res && types.length > 0
   const ordersPass = ran ? types.every(t => t.checks.orders) : null
   const utilPass = ran && util != null ? util <= target + 1e-9 : null
+  const fewer = utilPass && tested > 1 && util != null ? (util * tested) / (tested - 1) : null
+  const fewerAt = fewer != null && fewer <= target ? fewer : null
   const batteryJudged = types.filter(t => t.checks.battery != null)
   const batteryPass = ran && batteryJudged.length ? batteryJudged.every(t => t.checks.battery) : null
   const battWhy = types.find(t => t.checks.battery === false)?.battery.why ?? null
@@ -101,8 +103,7 @@ export function runHeadline(
     utilization: {
       static: cap > 0 ? sum(groups.map(g => g.groupRaw)) / cap : null, simulated: util, target, pass: utilPass,
       // The same work on one vehicle fewer: busy time spread over N − 1 (an estimate; the one-fewer run decides).
-      fewerAt: utilPass && tested > 1 && util != null && util * tested / (tested - 1) <= target ? util * tested / (tested - 1) : null,
-      tone: utilPass && tested > 1 && util != null && util * tested / (tested - 1) <= target ? 'warn' : toneOf(utilPass),
+      fewerAt, tone: fewerAt != null ? 'warn' : toneOf(utilPass),
     },
     battery: {
       socMin, chargeTrips: res ? sum(types.map(t => t.chargeTrips)) : null, runHr: runHrs.length ? Math.min(...runHrs) : null,

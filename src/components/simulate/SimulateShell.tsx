@@ -125,6 +125,8 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   // Only what overrides depend on — a run result saved into simSettings must not rescan the layout.
   const overrideInputs = useByValue({ ss: project.simSettings && { ...project.simSettings, lastRun: undefined, appliedFleet: undefined, fleet: undefined }, layout: project.simLayout, h: project.hoursPerShift, n: project.shiftsPerDay, dp: project.operatingDaysPattern, dc: project.operatingDaysCustom })
   const changed = useMemo(() => overriddenFields({ simSettings: overrideInputs.ss, simLayout: overrideInputs.layout, hoursPerShift: overrideInputs.h, shiftsPerDay: overrideInputs.n, operatingDaysPattern: overrideInputs.dp, operatingDaysCustom: overrideInputs.dc }, runTypes), [overrideInputs, runTypes])
+  // The simulation's own utilization target is an override too (set on the Utilization tile).
+  const overrideCount = changed.length + (project.simSettings?.targetUtilization != null ? 1 : 0)
   const closeDrawer = useCallback(() => setDrawer(null), [])
   const overriddenIds = useMemo(() => new Set(changed.filter(o => o.def.scope === 'point' || o.def.scope === 'route').map(o => o.ownerId)), [changed])
   const openAssumptions = useCallback((focus: string | null = null) => setDrawer({ focus }), [])
@@ -179,7 +181,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
                 <button type="button" className="btn primary" disabled={!canRun} aria-describedby={canRun ? undefined : 'sim-run-why'} onClick={() => setMode('run')}>Run <Icon name="arrowR" size={13} /></button>
               </>}
           <button type="button" className={`btn ghost sim-assume-btn${drawer ? ' on' : ''}`} aria-pressed={!!drawer} onClick={() => setDrawer(d => (d ? null : { focus: null }))}>
-            Assumptions{changed.length > 0 && <span className="sim-count"><i className="sim-odot" />{changed.length} override{changed.length === 1 ? '' : 's'}</span>}
+            Assumptions{overrideCount > 0 && <span className="sim-count"><i className="sim-odot" />{overrideCount} override{overrideCount === 1 ? '' : 's'}</span>}
           </button>
           {(canSample || !empty) && (
             <details className="sim-more-menu" onClick={e => { if ((e.target as HTMLElement).closest('[role=menuitem]')) e.currentTarget.open = false }}>
@@ -204,7 +206,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <div className="empty-state"><h3>Open on a desktop to edit the layout</h3></div>
         </section>
       ) : running ? (
-        <RunView onAssumptions={openAssumptions} changed={changed.length} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
+        <RunView onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}

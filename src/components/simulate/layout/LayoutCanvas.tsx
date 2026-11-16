@@ -266,6 +266,8 @@ export default function LayoutCanvas(props: Props) {
   const dpts = new Map(driven.points.map(p => [p.id, pts.get(p.id) ?? p]))
   // Where highways connect (junctions) and the ends that join nothing — from the stored layout.
   const conn = useMemo(() => highwayConnections(layout), [layout])
+  /** Routes drawn as lanes (a highway's derived routes are drawn by the highway). */
+  const routes = useMemo(() => driven.segments.filter(s => !s.highwayId), [driven])
   const selected = (kind: 'point' | 'segment' | 'flow' | 'object' | 'highway', id: string) =>
     (selection?.kind === kind && selection.id === id) || (kind === 'point' && selection?.kind === 'points' && selection.ids.includes(id))
     || (kind === 'highway' && selection?.kind === 'highways' && selection.ids.includes(id))
@@ -360,9 +362,9 @@ export default function LayoutCanvas(props: Props) {
         {clearances && <ClearanceOverlay layout={driven} results={clearances} px={px} />}
 
         {/* A highway's derived routes are drawn by the highway itself (its band and arrows). */}
-        {driven.segments.filter(s => !s.highwayId).map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} />)}
-        {driven.segments.filter(s => !s.highwayId).map(s => (
-          <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} selected={selected('segment', s.id.split('~')[0]) || (!!s.highwayId && selected('highway', s.highwayId))} />
+        {routes.map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} />)}
+        {routes.map(s => (
+          <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} selected={selected('segment', s.id.split('~')[0])} />
         ))}
         {/* The selected highway's end handles, above its lanes so a press reaches them. */}
         {/* End handles on a single selected highway (several are moved, not stretched). */}
@@ -497,10 +499,8 @@ const clampPpf = (ppf: number) => Math.min(400, Math.max(0.05, ppf))
 /** The middle of a route, along its line or curve. */
 /** The middle of a route along its curve (badges, the navigator). */
 export const segMid = (s: SimSegment, a: XY, b: XY): XY => { const g = segmentGeometry(a, b, s.curve), m = g.at(g.length / 2); return { x: m.x, y: m.y } }
-/** Arrow spacing along a lane, screen px: a street's lanes, a shared single lane, a one-way route.
- *  Arrows sit on one grid along the lane's axis (owner, 2026-11-16: "arrows should cover the full
- *  highway"), so a straight lane built from several routes is marked evenly end to end, whatever its
- *  junctions. At most this many per route. */
+/** Arrow spacing along a route, screen px: a street's lanes, a shared single lane, a one-way route.
+ *  At most this many per route. */
 const ARROW_GAP_PX = { street: 120, shared: 100, oneWay: 90 }
 const MAX_ARROWS = 40
 /** The least width on screen for a two-lane aisle to show both travel paths, px. */
@@ -527,42 +527,23 @@ const Segment = memo(function Segment({ s, a, b, px, selected, widthFt }: { s: S
       </g>
     )
   }
-  /** The route's line moved `off` ft to the right of a→b. */
-  const offsetPath = (off: number) => {
-    const m = g.curved ? Math.max(8, Math.ceil(g.length / 2)) : 1
-    return Array.from({ length: m + 1 }, (_, i) => { const c = g.at((g.length * i) / m); return `${i ? 'L' : 'M'}${c.x - c.ty * off} ${c.y + c.tx * off}` }).join('')
-  }
   const gap = (twoLane ? ARROW_GAP_PX.street : single && s.dir === 'two' ? ARROW_GAP_PX.shared : ARROW_GAP_PX.oneWay) * px
-  // Where the arrows go, ft from a, with their grid index k (alternation on a shared lane): straight
-  // routes use the grid along their axis — shared by every collinear route of the same lane — curves
-  // are spaced along themselves. A one-way route too short for a grid mark still gets one arrow.
-  const spots: { at: number; k: number }[] = []
-  if (g.curved || g.length < 1e-9) {
-    const m = Math.min(MAX_ARROWS, Math.max(1, Math.floor(g.length / gap)))
-    for (let i = 0; i < m; i++) spots.push({ at: (g.length * (i + 0.5)) / m, k: i })
-  } else {
-    let ux = (b.x - a.x) / g.length, uy = (b.y - a.y) / g.length, sign = 1
-    if (ux < -1e-9 || (Math.abs(ux) <= 1e-9 && uy < 0)) { ux = -ux; uy = -uy; sign = -1 }
-    const wa = a.x * ux + a.y * uy, wb = wa + sign * g.length
-    const lo = Math.min(wa, wb), hi = Math.max(wa, wb)
-    for (let k = Math.ceil(lo / gap - 0.5); (k + 0.5) * gap <= hi && spots.length < MAX_ARROWS; k++) {
-      const w = (k + 0.5) * gap
-      if (w >= lo) spots.push({ at: sign > 0 ? w - wa : wa - w, k })
-    }
-  }
-  if (!spots.length && s.dir !== 'two') spots.push({ at: g.length / 2, k: 0 })
+  // Evenly along the route, spaced in screen pixels (a highway draws its own arrows end to end).
+  const m = Math.min(MAX_ARROWS, Math.max(1, Math.floor(g.length / gap)))
+  const spots = Array.from({ length: m }, (_, k) => ({ at: (g.length * (k + 0.5)) / m, k }))
   return (
     <g className={`sim-seg${selected ? ' is-selected' : ''}${twoLane ? ' is-two' : ''}`}>
       <path d={pathOf(a, b, s)} className="sim-tape" vectorEffect="non-scaling-stroke" />
       {street && (
         <>
-          <path d={offsetPath(d)} className="sim-lane-path" vectorEffect="non-scaling-stroke" />
-          <path d={offsetPath(-d)} className="sim-lane-path" vectorEffect="non-scaling-stroke" />
           {spots.map(({ at, k }) => [arrow(`f${k}`, at, 1, false, true), arrow(`b${k}`, at, -1, true, true)])}
         </>
       )}
       {/* single-lane two-way: one path shared — arrows alternate; a lone arrow would read one-way */}
-      {s.dir === 'two' && single && spots.map(({ at, k }) => arrow(`${k}`, at, 0, ((k % 2) + 2) % 2 === 1))}
+      {/* single-lane two-way: one path shared — arrows alternate; a lone arrow would read one-way */}
+      {s.dir === 'two' && single && (m === 1
+        ? [arrow('f', g.length * 0.35, 0, true), arrow('b', g.length * 0.65, 0, false)]
+        : spots.map(({ at, k }) => arrow(`${k}`, at, 0, k % 2 === 1)))}
       {s.dir !== 'two' && spots.map(({ at, k }) => arrow(`${k}`, at, 0, s.dir === 'ba'))}
     </g>
   )
@@ -687,18 +668,18 @@ function NamePill({ y, text }: { y: number; text: string }) {
  *  two lanes: one row per half, keeping right; two-way, one lane: ⇄ markers. */
 const HW_ARROW_GAP_PX = 110
 /** A highway's band at its real width; its edge turns amber or red where B56.5 slows or blocks it. */
-function HighwayBand({ h, selected, draft, status }: { h: SimHighway; selected?: boolean; draft?: boolean; status?: string }) {
+const HighwayBand = memo(function HighwayBand({ h, selected, draft, status }: { h: SimHighway; selected?: boolean; draft?: boolean; status?: string }) {
   return (
     <g className={`sim-highway${selected ? ' is-selected' : ''}${draft ? ' is-draft' : ''}${status === 'capped' ? ' is-capped' : status === 'violation' ? ' is-violation' : ''}`}>
       <polygon points={highwayCorners(h).map(q => `${q.x},${q.y}`).join(' ')} vectorEffect="non-scaling-stroke" />
     </g>
   )
-}
+})
 
 /** A highway's direction arrows inside its band, evenly spaced in screen pixels from one end to the
  *  other and left out inside junctions; one-way: one row down the middle; two-way, two lanes: one row
  *  per half, keeping right; two-way, one lane: ⇄ markers. And its one-click direction badge. */
-function HighwayMarks({ h, px, selected, draft, joins, badge }: { h: SimHighway; px: number; selected?: boolean; draft?: boolean; joins: HighwayJoin[]; badge?: boolean }) {
+const HighwayMarks = memo(function HighwayMarks({ h, px, selected, draft, joins, badge }: { h: SimHighway; px: number; selected?: boolean; draft?: boolean; joins: HighwayJoin[]; badge?: boolean }) {
   const { a, b } = highwayEnds(h)
   const L = h.lengthFt, ux = (b.x - a.x) / (L || 1), uy = (b.y - a.y) / (L || 1)
   const gap = HW_ARROW_GAP_PX * px, n = Math.max(1, Math.floor(L / gap))
@@ -733,7 +714,7 @@ function HighwayMarks({ h, px, selected, draft, joins, badge }: { h: SimHighway;
       )}
     </g>
   )
-}
+})
 
 /** A selected highway's end handles: drag one to stretch or turn it. */
 function HighwayEnds({ h, px }: { h: SimHighway; px: number }) {

@@ -10,8 +10,6 @@ export const VERDICT = {
   WARMUP_S: 1800,
   /** Share of generated moves that must be delivered or under way. */
   MIN_DELIVERED: 0.98,
-  /** Utilization above this is "Falls short" whatever the target. */
-  UTIL_SHORT: 0.95,
   /** Waiting orders added per hour that count as a growing backlog. */
   BACKLOG_SHORT_PER_H: 1,
 } as const
@@ -109,10 +107,10 @@ const CHARGER_WAIT_SHARE = 0.02
 
 /**
  * Charge keeps up (owner, 2026-11-13): judged once the run covers two days. Charge may fall from day to
- * day through the working week — what matters is that no vehicle drops below the level at which it must
- * charge, and that off-shift and days-off charging bring the fleet back by the start of the next week.
- * It fails when a vehicle drops below the charge level, when the next week's first morning is below
- * this week's, or when vehicles wait for a free charger more than 2% of their staffed time.
+ * day through the working week — what matters is that vehicles charge when they reach the charge level
+ * without running flat, and that off-shift and days-off charging bring the fleet back by the start of
+ * the next week. It fails when a vehicle reaches the cutsheet floor, when the next week's first morning
+ * is below this week's, or when vehicles wait for a free charger more than 2% of their staffed time.
  */
 function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { pass: boolean | null; detail: TypeResult['battery'] } {
   const b = S.profiles.get(vid)?.battery
@@ -122,14 +120,16 @@ function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { pass: b
   // morning it ends on).
   const dayStarts = Array.from({ length: days + 1 }, (_, d) => (d === 0 ? ser[0] : ser.find(([t]) => t >= d * 86400 - 1e-6) ?? (d === days ? ser[ser.length - 1] : undefined))?.[2]).filter((x): x is number => x != null)
   const chargeWaitSec = veh.reduce((a, v) => a + v.chargeWaitT, 0)
-  const floorPct = b?.chargeBelowPct ?? null
+  const floorPct = b?.minSocPct ?? null
   // The lowest charge within the first shift, the first day and the whole run.
   const lowIn = (until: number) => { const xs = ser.filter(([t]) => t <= until + 1e-6).map(([, m]) => m); return xs.length ? Math.min(...xs) : null }
   const lowest = { shift: lowIn((S.P.shiftHr ?? Math.min(24, S.P.staffedHr)) * 3600), day: S.t >= 86400 - 1e-6 ? lowIn(86400) : null, run: lowIn(S.t) }
   const detail = (why: string | null) => ({ dayStarts, chargeWaitSec, floorPct, why, lowest })
   if (!b || !veh.length || days < 2) return { pass: null, detail: detail(null) }
   const low = Math.min(...veh.map(v => v.socMin))
-  if (low < b.chargeBelowPct - 0.5) return { pass: false, detail: detail(`dropped to ${Math.round(low)}%, below the ${b.chargeBelowPct}% charge level`) }
+  // Below the charge level a vehicle heads to a charger, draining a little more on the way — normal.
+  // Reaching the cutsheet floor is not.
+  if (low <= b.minSocPct + 0.5) return { pass: false, detail: detail(`a vehicle reached the ${b.minSocPct}% floor`) }
   // With off-shift or days off the fleet should be back by next week's first morning; round the clock
   // there is no such morning — staying above the charge level is the test.
   const offTime = S.P.staffedHr < 24 || (S.P.daysPerWeek ?? 7) < 7

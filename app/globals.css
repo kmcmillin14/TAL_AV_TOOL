@@ -3245,10 +3245,7 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-stage svg { display: block; }
 .sim-stage:focus { outline: none; }
 .sim-legend span { display: inline-flex; align-items: center; gap: 4px; }
-.sim-legend .lg-path { fill: none; stroke: var(--tape); stroke-width: 1; opacity: 0.5; }
-.lg-tape { fill: none; stroke: var(--tape); stroke-width: 1.5; }
-.sim-legend .lg-tape.is-two { stroke-dasharray: 5 3; }
-.sim-legend .lg-arrow { fill: var(--tape); stroke: none; }
+.sim-legend .sim-legend .lg-arrow { fill: var(--tape); stroke: none; }
 .sim-legend .sw { width: 10px; height: 10px; border-radius: 3px; border: 2px solid; }
 .sim-legend .sw.pick { border-color: var(--sim-pick); }
 .sim-legend .sw.drop { border-color: var(--sim-drop); }
@@ -3314,9 +3311,6 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-grid-line { stroke: var(--scene-grid); stroke-width: 1; }
 .sim-grid-major { stroke: var(--scene-grid-major); stroke-width: 1; }
 .sim-lane { fill: none; stroke: var(--lane); stroke-linecap: square; }
-.sim-tape { fill: none; stroke: var(--tape); stroke-width: 1.5; opacity: 0.75; }
-.sim-seg.is-two .sim-tape { stroke-dasharray: 8 6; }
-.sim-seg.is-selected .sim-tape { stroke: var(--sim-sel); stroke-width: 3; opacity: 1; }
 .sim-arrow path { fill: var(--tape); opacity: 0.9; }
 .sim-seg.is-selected .sim-arrow path { fill: var(--sim-sel); }
 .sim-pt-junction circle { fill: var(--text-secondary); }
@@ -3379,7 +3373,6 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-zoomctl > span { min-width: 40px; text-align: center; }
 .sim-zoom { color: var(--text-tertiary); padding: 0 8px; }
 /* Two-way street: one faint travel path per direction, either side of the dashed centre line. */
-.sim-lane-path { fill: none; stroke: var(--tape); stroke-width: 1; opacity: 0.45; }
 /* The selected route's badge (direction — click to change — and length); the selected object's size. */
 .sim-rbadge { cursor: pointer; }
 .sim-rbadge rect { fill: var(--bg-surface); stroke: var(--sim-sel); stroke-width: 1.5; }
@@ -5463,7 +5456,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-vveh { display: flex; align-items: center; gap: 16px; min-width: 200px; }
 .sim-vveh img { width: 62px; height: 40px; object-fit: contain; }
 .sim-vveh .nm { font-weight: 700; font-size: 15px; color: var(--text-primary); }
-.sim-vveh .mf { font-size: 11px; color: var(--text-tertiary); }
 .sim-stepper { display: inline-flex; align-items: center; border: 1px solid var(--border-strong); border-radius: 10px; overflow: hidden; }
 .sim-stepper button { width: 44px; height: 44px; border: 0; background: none; font-size: 18px; color: var(--text-secondary); cursor: pointer; transition: background 0.2s ease; }
 .sim-stepper button:hover { background: var(--bg-hover); color: var(--text-primary); }
@@ -5810,9 +5802,8 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 
 /* The unified aisle look (owner, 2026-11-16): a band at its real width, direction shown by arrows
    inside it from end to end — no centre tape, no lane lines. Colour only where B56.5 slows or blocks. */
-.sim-tape { stroke: transparent; }
+.sim-tape { fill: none; stroke: transparent; }
 .sim-seg.is-selected .sim-tape { stroke: var(--sim-sel); stroke-width: 2; opacity: 1; }
-.sim-lane-path { display: none; }
 .sim-hw-arrow path { fill: var(--tape); opacity: 0.85; pointer-events: none; }
 .sim-hw-marks.is-selected .sim-hw-arrow path { fill: var(--sim-sel); }
 .sim-hw-marks.is-draft .sim-hw-arrow path { fill: var(--sim-sel); opacity: 0.7; }

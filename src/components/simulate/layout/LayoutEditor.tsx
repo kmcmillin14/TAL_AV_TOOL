@@ -411,11 +411,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     }
     // The direction badge on a highway: one click steps its direction (all of a multi-selection it is in).
     if (hit?.kind === 'hwDir') {
-      const ids = selectedHighways.includes(hit.id) ? selectedHighways : [hit.id]
-      setLayout(updateHighways(layout, ids, h => ({ dir: nextDirection(h.dir) })), `dir:${ids.join()}`)
+      stepHighways(selectedHighways.includes(hit.id) ? selectedHighways : [hit.id])
       return
     }
-    if (hit?.kind === 'dir') { const hw = net.segments.find(s => s.id === hit.id)?.highwayId; stepDirection(hw ? 'highway' : 'segment', hw ?? hit.id); return }
+    if (hit?.kind === 'dir') { stepDirection(hit.id); return }
     if (tool === 'select') { onSelectPress(at, hit, shift || !!toggle); return }
     if (tool === 'lasso') { setDrag({ kind: 'lasso', pts: [at], add: shift }); return }
     if (tool === 'points') {
@@ -455,12 +454,12 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   }
 
   /** The route badge (or D): two-way → one-way → the other way. Lanes stay as set. */
-  const stepDirection = (kind: 'segment' | 'highway', id: string) => {
-    const r = kind === 'segment' ? layout.segments.find(q => q.id === id) : layout.highways?.find(q => q.id === id)
-    if (!r) return
-    const dir = nextDirection(r.dir)
-    setLayout(kind === 'segment' ? updateSegment(layout, id, { dir }) : updateHighway(layout, id, { dir }), `dir:${id}`)
+  const stepDirection = (id: string) => {
+    const r = layout.segments.find(q => q.id === id)
+    if (r) setLayout(updateSegment(layout, id, { dir: nextDirection(r.dir) }), `dir:${id}`)
   }
+  /** A highway's ⇄ badge (or D): every highway given steps its direction together. */
+  const stepHighways = (ids: string[]) => setLayout(updateHighways(layout, ids, h => ({ dir: nextDirection(h.dir) })), `dir:${ids.join()}`)
   /** The layout as a highway drag would leave it: the highway moved whole, or one end at the pointer. */
   const draggedHighway = (d: Extract<Drag, { kind: 'highway' | 'hwEnd' }>): EditorLayout => {
     const h = layout.highways?.find(q => q.id === d.id)
@@ -558,8 +557,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     if (mod || e.altKey) return
     // Space pans — unless a control has focus, where Space presses it.
     if (k === ' ' && !target?.closest('button, input, select, summary, [role="radio"], [role="button"]')) { e.preventDefault(); if (!e.repeat) setSpaceHeld(true); return }
-    if (k === 'd' && selection?.kind === 'segment') { stepDirection('segment', selection.id); return }
-    if (k === 'd' && selectedHighways.length) { setLayout(updateHighways(layout, selectedHighways, h => ({ dir: nextDirection(h.dir) })), `dir:${selectedHighways.join()}`); return }
+    if (k === 'd' && selection?.kind === 'segment') { stepDirection(selection.id); return }
+    if (k === 'd' && selectedHighways.length) { stepHighways(selectedHighways); return }
     const arrow = ({ arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] } as Record<string, [number, number]>)[k]
     if (arrow && !target?.closest('button, summary, [role="radio"]')) { if (nudge(arrow, e.shiftKey ? 10 : 1)) e.preventDefault(); return }
     // Tab steps through the stations — only once the canvas has focus (a click on it), so Tab from

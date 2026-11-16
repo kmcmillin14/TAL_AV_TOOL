@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: reviews of the week runs, verdict and highways
+
+- Code review: a run under simulation-only target or shift coverage no longer speaks for Sizing or the
+  price (no verdict chip, no Use N in pricing; a note says so); the battery check fails at the cutsheet
+  floor, not at the charge level (driving to a charger below it is normal); a project with no operating
+  days pattern runs every day, as before, and the pattern is part of the inputs key; Check variability
+  runs the same week as the verdict; the one-fewer run only where utilization says one fewer may fit;
+  shift length commits on blur; the simulation's own target counts as an override.
+- Cleanup: days a week from one rule (`operatingDaysPerWeek`, also ROM's days a year); `inShift` once
+  per step; dead `UTIL_SHORT`, lane-path and tape CSS removed; highway layers memoized; routes back to
+  even arrow spacing (highways draw their own); one step-direction helper per kind.
+- Not changed: a move finished early the next shift still counts on time (late = finished off-shift).
+
 ## 2026-11-16 — Fleet simulation: highways stay separate; a dot at each connection
 
 - Owner: "too complex, highways are merged together". Junctions no longer merge into one floor: each

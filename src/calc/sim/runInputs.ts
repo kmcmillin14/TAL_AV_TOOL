@@ -66,6 +66,8 @@ export interface SimInputsLike {
   hoursPerShift?: number | null
   shiftsPerDay?: number | null
   targetUtilization?: number | null
+  operatingDaysPattern?: string | null
+  operatingDaysCustom?: string[] | null
   simSettings?: { pacePct?: number; safetyFt?: number; arrivals?: string; demandPct?: number; seed?: number; clearance?: unknown; overrides?: unknown; vehicles?: unknown; shiftH?: number; shiftsPerDay?: number; daysPerWeek?: number; targetUtilization?: number } | null
 }
 
@@ -90,6 +92,8 @@ export function simInputsKey(p: SimInputsLike, vehicles?: Map<string, Vehicle>):
     // Once the simulation's vehicles are chosen, the payloads of those the flows use (absent: Sizing's
     // vehicles with the largest load — older keys unchanged). Unused types are not inputs.
     // The simulation's own staffed day and run length, once set (absent: Step 1's — older keys unchanged).
+    // Step 1's operating days set the staffed week (absent: older keys unchanged).
+    ...(p.operatingDaysPattern ? [[p.operatingDaysPattern, p.operatingDaysCustom ?? null]] : []),
     ...(ss.shiftH != null || ss.shiftsPerDay != null || ss.daysPerWeek != null || ss.targetUtilization != null ? [[ss.shiftH ?? null, ss.shiftsPerDay ?? null, ss.daysPerWeek ?? null, ss.targetUtilization ?? null]] : []),
     ...(ss.vehicles ? [usedPayloads(ss.vehicles as SimVehicleType[], ids, (p.loads ?? []) as { id: string }[])] : []),
   ])
