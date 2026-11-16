@@ -94,9 +94,9 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const inputsKey = useMemo(() => simInputsKey(project, fileVehicleById), [project, fileVehicleById])
 
   const assume: Assumptions = useMemo(() => ({
-    pacePct: simSettings.pacePct ?? RUN_DEFAULTS.pacePct, safetyFt: simSettings.safetyFt ?? RUN_DEFAULTS.safetyFt,
+    pacePct: simSettings.pacePct ?? RUN_DEFAULTS.pacePct, trafficPct: simSettings.trafficPct ?? RUN_DEFAULTS.trafficPct, safetyFt: simSettings.safetyFt ?? RUN_DEFAULTS.safetyFt,
     arrivals: simSettings.arrivals ?? RUN_DEFAULTS.arrivals, demandPct: simSettings.demandPct ?? RUN_DEFAULTS.demandPct, seed: simSettings.seed ?? RUN_DEFAULTS.seed,
-  }), [simSettings.pacePct, simSettings.safetyFt, simSettings.arrivals, simSettings.demandPct, simSettings.seed])
+  }), [simSettings.pacePct, simSettings.trafficPct, simSettings.safetyFt, simSettings.arrivals, simSettings.demandPct, simSettings.seed])
   // Shift coverage — days a week, shifts a day, shift length: simulation overrides, else Step 1. The
   // verdict run is a week, so the battery is judged over days; variability judges one shift.
   const step1 = { shiftH: project.hoursPerShift ?? 8, shiftsPerDay: project.shiftsPerDay ?? 1, daysPerWeek: step1DaysPerWeek(project) }
@@ -108,7 +108,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const targetU = simSettings.targetUtilization ?? settings.targetUtilization
   const runSec = 7 * 86400
   const simConfig = useCallback((seed: number): SimSettings => ({
-    fleet: fleetBy, demandPct: assume.demandPct, seed, arrivals: assume.arrivals, pacePct: assume.pacePct, safetyFt: assume.safetyFt,
+    fleet: fleetBy, demandPct: assume.demandPct, seed, arrivals: assume.arrivals, pacePct: assume.pacePct, trafficPct: assume.trafficPct, safetyFt: assume.safetyFt,
     staffedHr, daysPerWeek, shiftHr: shiftH, targetUtilization: targetU, ...(Object.keys(payloads).length ? { payloadFt: payloads } : {}),
   }), [fleetBy, assume, staffedHr, daysPerWeek, shiftH, targetU, payloads])
   /** A shift-coverage change: back to Step 1's value clears the override. */
@@ -296,7 +296,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
         {!differs && ownConditions && <span className="sim-as-note">Target or shifts set for the simulation only — the price uses Sizing&rsquo;s</span>}
         <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b></span>
-        <span>A week · {daysPerWeek} day{daysPerWeek === 1 ? '' : 's'} × {shifts} × {shiftH} h shift{shifts === 1 ? '' : 's'} · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
+        <span>A week · {daysPerWeek} day{daysPerWeek === 1 ? '' : 's'} × {shifts} × {shiftH} h shift{shifts === 1 ? '' : 's'} · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%{assume.trafficPct ? ` · traffic ${assume.trafficPct}%` : ''}</span>
         <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
         {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}
         {vari && vari.k >= VARIABILITY_RUNS && <VariabilityChip out={vari.out} arrivals={assume.arrivals} />}

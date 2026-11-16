@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { chargingAvailability } from '../../fleet'
 import { cycleBreakdown } from '../../flowMetrics'
 import { createSim, DT, jobLegs, layoutReady, runFor, step, type SimState } from '../engine'
+import { resolveProfile } from '../vehicle'
 import { angleDiff, distanceToGeometry } from '../geometry'
 import { results } from '../results'
 import type { SimFlow, SimLayout, VehicleSimData } from '../types'
@@ -452,5 +453,22 @@ describe('run-view statistics agree with the results', () => {
     const heat = S.heat.reduce((a, b) => a + b, 0)
     const waited = S.veh.reduce((a, v) => a + v.tm.wait, 0)
     expect(heat).toBeCloseTo(waited, 6)
+  })
+})
+
+describe('site traffic (owner, option 1)', () => {
+  it('slows every travel speed by its share and leaves motion and handling alone', () => {
+    const base = resolveProfile(cb18, cb18.calc.sim, 70)
+    const busy = resolveProfile(cb18, cb18.calc.sim, 70, 20)
+    expect(busy.speedLoaded).toBeCloseTo(base.speedLoaded * 0.8, 9)
+    expect(busy.speedEmpty).toBeCloseTo(base.speedEmpty * 0.8, 9)
+    expect(busy.turnSpeed).toBeCloseTo(base.turnSpeed * 0.8, 9)
+    expect(busy.accel).toBe(base.accel)
+    expect(resolveProfile(cb18, cb18.calc.sim, 70, 90).speedLoaded).toBeCloseTo(base.speedLoaded * 0.5, 9)   // capped at 50%
+  })
+
+  it('makes each move take longer in the run', () => {
+    const per = (trafficPct: number) => { const S = sim(corridor(400), flowAB(30), { trafficPct }); runFor(S, 3600); return results(S).types[0].vehicleSecPerMove! }
+    expect(per(25)).toBeGreaterThan(per(0) * 1.1)
   })
 })

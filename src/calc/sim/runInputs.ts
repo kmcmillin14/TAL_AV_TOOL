@@ -68,7 +68,7 @@ export interface SimInputsLike {
   targetUtilization?: number | null
   operatingDaysPattern?: string | null
   operatingDaysCustom?: string[] | null
-  simSettings?: { pacePct?: number; safetyFt?: number; arrivals?: string; demandPct?: number; seed?: number; clearance?: unknown; overrides?: unknown; vehicles?: unknown; shiftH?: number; shiftsPerDay?: number; daysPerWeek?: number; targetUtilization?: number } | null
+  simSettings?: { pacePct?: number; trafficPct?: number; safetyFt?: number; arrivals?: string; demandPct?: number; seed?: number; clearance?: unknown; overrides?: unknown; vehicles?: unknown; shiftH?: number; shiftsPerDay?: number; daysPerWeek?: number; targetUtilization?: number } | null
 }
 
 /**
@@ -95,6 +95,8 @@ export function simInputsKey(p: SimInputsLike, vehicles?: Map<string, Vehicle>):
     // Step 1's operating days set the staffed week (absent: older keys unchanged).
     ...(p.operatingDaysPattern ? [[p.operatingDaysPattern, p.operatingDaysCustom ?? null]] : []),
     ...(ss.shiftH != null || ss.shiftsPerDay != null || ss.daysPerWeek != null || ss.targetUtilization != null ? [[ss.shiftH ?? null, ss.shiftsPerDay ?? null, ss.daysPerWeek ?? null, ss.targetUtilization ?? null]] : []),
+    // Site traffic, once set (absent: older keys unchanged).
+    ...(ss.trafficPct ? [['traffic', ss.trafficPct]] : []),
     ...(ss.vehicles ? [usedPayloads(ss.vehicles as SimVehicleType[], ids, (p.loads ?? []) as { id: string }[])] : []),
   ])
   let h = 0x811c9dc5

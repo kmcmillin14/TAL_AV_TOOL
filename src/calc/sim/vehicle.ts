@@ -51,7 +51,9 @@ const has = (v: number | null | undefined): v is number => typeof v === 'number'
 /** A percentage where 0 is a real value (e.g. a 0% minimum SOC). */
 const hasPct = (v: number | null | undefined): v is number => typeof v === 'number' && Number.isFinite(v) && v >= 0
 
-export function resolveProfile(vehicle: Vehicle, sim: VehicleSimData | null | undefined, pacePct: number): VehicleProfile {
+/** `trafficPct`: site traffic — every travel speed slowed by this share (acceleration, braking and
+ *  handling unchanged). */
+export function resolveProfile(vehicle: Vehicle, sim: VehicleSimData | null | undefined, pacePct: number, trafficPct = 0): VehicleProfile {
   const c = vehicle.calc
   const s = sim ?? {}
   const flags: SimFlag[] = []
@@ -59,7 +61,8 @@ export function resolveProfile(vehicle: Vehicle, sim: VehicleSimData | null | un
 
   const motionKnown = has(s.accelFps2) && has(s.decelFps2)
   if (!motionKnown) flag('motion', `Motion data missing — using pace ${pacePct}%`)
-  const k = motionKnown ? 1 : pacePct / 100
+  const slow = 1 - Math.min(50, Math.max(0, trafficPct)) / 100
+  const k = (motionKnown ? 1 : pacePct / 100) * slow
   const speedLoaded = c.speedLoadedFps * k
   const speedEmpty = (c.speedUnloadedFps ?? c.speedLoadedFps) * k
 
@@ -100,8 +103,8 @@ export function resolveProfile(vehicle: Vehicle, sim: VehicleSimData | null | un
     vehicle,
     lengthFt,
     speedLoaded, speedEmpty,
-    turnSpeed: has(s.turnSpeedFps) ? s.turnSpeedFps : speedLoaded,
-    reverseSpeed: has(s.reverseSpeedFps) ? s.reverseSpeedFps : speedLoaded,
+    turnSpeed: has(s.turnSpeedFps) ? s.turnSpeedFps * slow : speedLoaded,
+    reverseSpeed: has(s.reverseSpeedFps) ? s.reverseSpeedFps * slow : speedLoaded,
     accel: motionKnown ? s.accelFps2! : null,
     decel: motionKnown ? s.decelFps2! : null,
     approachDistanceFt: has(s.approachDistanceFt) ? s.approachDistanceFt : null,

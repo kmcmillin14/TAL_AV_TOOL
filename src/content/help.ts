@@ -266,6 +266,7 @@ export const SIM_FIELD_HELP: Record<string, string> = {
   'vehicle.minSocPct': 'The battery is never run below this.',
   'vehicle.maxSocPct': 'Charging stops at this level.',
   'run.pacePct': 'Share of rated speed driven when the vehicle file has no acceleration or braking.',
+  'run.trafficPct': 'Slows every vehicle by this share for forklifts, people and cross traffic not drawn — 10–20% for a busy floor.',
   'run.safetyFt': 'Gap kept behind the vehicle ahead, beyond its length and load.',
   'run.demandPct': 'Moves per hour as a share of the Sizing figures — 120% tests growth.',
   'run.arrivals': 'Regular spaces orders evenly; Random varies them like a real shift.',

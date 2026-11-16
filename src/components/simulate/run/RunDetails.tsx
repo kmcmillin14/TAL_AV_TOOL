@@ -19,7 +19,7 @@ import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
 import { STATES } from './RunScene'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
-export interface Assumptions { pacePct: number; safetyFt: number; demandPct: number; arrivals: SimSettings['arrivals']; seed: number }
+export interface Assumptions { pacePct: number; trafficPct: number; safetyFt: number; demandPct: number; arrivals: SimSettings['arrivals']; seed: number }
 
 interface Props {
   R: SimResults | null
@@ -152,7 +152,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
       </details>
 
       <details className="sim-disc">
-        <summary>Assumptions<span className="meta">pace {assume.pacePct}% · safety {fmtLength(assume.safetyFt, unitSystem, 1)} · demand {assume.demandPct}%</span></summary>
+        <summary>Assumptions<span className="meta">pace {assume.pacePct}% · {assume.trafficPct ? `traffic ${assume.trafficPct}% · ` : ''}safety {fmtLength(assume.safetyFt, unitSystem, 1)} · demand {assume.demandPct}%</span></summary>
         <div className="sim-disc-body">
           <p className="sim-readout"><button type="button" className="link-btn" onClick={onOpenAssumptions}>Open assumptions</button></p>
           {S && [...S.profiles.values()].map(p => {

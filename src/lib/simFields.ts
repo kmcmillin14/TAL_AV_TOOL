@@ -51,7 +51,7 @@ const def = (scope: FieldScope, field: string, group: FieldGroup, level: SimFiel
   ({ key: `${scope}.${field}`, scope, field, group, level, label, unit, ...extra })
 
 /** Run assumptions' defaults (spec D-3 pace; the engine's following gap). */
-export const RUN_DEFAULTS = { pacePct: 70, safetyFt: 3, arrivals: 'regular' as 'regular' | 'random', demandPct: 100, seed: 1 }
+export const RUN_DEFAULTS = { pacePct: 70, trafficPct: 0, safetyFt: 3, arrivals: 'regular' as 'regular' | 'random', demandPct: 100, seed: 1 }
 
 /** Step 1's working days a week (its operating-days pattern; the same rule as ROM's days a year). With no
  *  pattern set, every day — as the simulation ran before working days existed. */
@@ -78,6 +78,7 @@ export const SIM_FIELDS: SimFieldDef[] = [
   def('vehicle', 'maxSocPct', 'Charging', 'advanced', 'Highest battery level', '%', { min: 10, max: 100, step: 1 }),
   // Run (simSettings)
   def('run', 'pacePct', 'Motion', 'settings', 'Pace', '%', { min: 10, max: 100, step: 5 }),
+  def('run', 'trafficPct', 'Traffic', 'settings', 'Site traffic', '%', { min: 0, max: 50, step: 5 }),
   def('run', 'safetyFt', 'Traffic', 'settings', 'Following gap', 'ft', { min: 0.5, max: 30, step: 0.5 }),
   def('run', 'demandPct', 'Demand', 'settings', 'Demand', '%', { min: 10, max: 300, step: 5 }),
   def('run', 'arrivals', 'Demand', 'settings', 'Arrivals', '', { choices: [{ value: 'regular', label: 'Regular' }, { value: 'random', label: 'Random' }] }),

@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: site traffic
+
+- **Site traffic** (owner, option 1): one percentage under Assumptions, 0–50%, slows every vehicle's
+  travel speeds in the run to stand in for forklifts, people and cross traffic. Simulation only; part of
+  the run's inputs; shown in the conditions line when set (tested).
+
 ## 2026-11-16 — Fleet simulation: tabs reviews
 
 - Code review: the Sim and Data map keeps its height on a narrow window, and Data's wide panel stacks

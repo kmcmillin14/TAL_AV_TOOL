@@ -74,5 +74,8 @@ describe('simulation vehicles (simulation only)', () => {
     expect(k1).toBe(k2)
     expect(k3).not.toBe(k2)
     expect(k0).toBe(simInputsKey(base))
+    // Site traffic is a run input once set; 0 or absent keeps older keys.
+    expect(simInputsKey({ ...base, simSettings: { trafficPct: 15 } })).not.toBe(k0)
+    expect(simInputsKey({ ...base, simSettings: { trafficPct: 0 } })).toBe(k0)
   })
 })

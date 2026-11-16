@@ -200,7 +200,7 @@ export function createSim(
   }
   const profileFor = (vid: string) => {
     let p = profiles.get(vid)
-    if (!p) { const v = byId.get(vid); if (!v) return null; p = resolveProfile(v, { ...v.calc.sim, ...definedOnly(simData[vid]) }, P.pacePct); profiles.set(vid, p); S.flags.push(...p.flags) }
+    if (!p) { const v = byId.get(vid); if (!v) return null; p = resolveProfile(v, { ...v.calc.sim, ...definedOnly(simData[vid]) }, P.pacePct, P.trafficPct); profiles.set(vid, p); S.flags.push(...p.flags) }
     return p
   }
 

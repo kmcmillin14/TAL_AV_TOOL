@@ -109,6 +109,8 @@ export interface SimSettings {
   pacePct: number
   /** Extra following gap beyond the vehicle length, ft. */
   safetyFt: number
+  /** Site traffic, %: travel speeds slowed by this share (owner, option 1). Absent: 0. */
+  trafficPct?: number
   /** Staffed hours per day (Step 1 shifts × hours). < 24 → shift starts at max SOC. */
   staffedHr: number
   /** Working days a week (the first `daysPerWeek` of each 7); the rest have no orders. Absent: 7. */

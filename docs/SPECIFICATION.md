@@ -785,6 +785,12 @@ step ribbon is unchanged.
     variability is a "Met in k/10" chip that opens to the ranges. Assumptions (pace, safety, demand,
     arrivals, seed) are saved with the project (`simSettings`).
   - Nothing in the run changes the sized fleet or the quote by itself (see Milestone 5).
+  - *Site traffic (owner, 2026-11-12, option 1; simulation only):* one **Site traffic** percentage
+    under Assumptions (Traffic, beside Following gap), 0–50% in 5% steps, default 0. It stands in for
+    what the simulation does not draw — forklifts, people, cross traffic — by slowing every vehicle's
+    travel speeds (loaded, empty, turning, reversing) by that share; acceleration, braking, lift and
+    handling times are unchanged. It is a run input (the result key) and shows in the run's conditions
+    line and the Assumptions summary when set. Sizing and the price never see it.
 - **Run details, completed (Milestone 5).**
   - *Follow a vehicle* (acceptance 15): its job legs are drawn — dashed empty leg from where it is to
     its pick, solid loaded leg to the drop (from where it is once loaded), rings on both ends; a key

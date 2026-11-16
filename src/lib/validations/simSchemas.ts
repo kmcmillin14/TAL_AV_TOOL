@@ -99,6 +99,9 @@ export const simSettingsSchema = z.object({
   /** Run assumptions (Run → Assumptions): pace as % of rated speed (D-3 default 70), the following
    *  gap beyond the envelope, ft, and how orders arrive. */
   pacePct: z.number().min(10).max(100).optional(),
+  /** Site traffic, %: every vehicle's travel speeds slowed by this share (forklifts, people, cross
+   *  traffic the run does not draw). Absent: 0. */
+  trafficPct: z.number().min(0).max(50).optional(),
   safetyFt: z.number().min(0).max(30).optional(),
   arrivals: z.enum(['regular', 'random']).optional(),
   /** The staffed day, simulation only (absent: Step 1's): hours per shift and shifts per day, back to
