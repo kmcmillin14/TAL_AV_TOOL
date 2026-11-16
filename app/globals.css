@@ -3393,7 +3393,6 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-object.is-selected { stroke: var(--sim-sel); stroke-width: 2.5; }
 .sim-hatch-line { stroke: var(--text-tertiary); stroke-width: 1; }
 .sim-object-draft { fill: var(--sim-sel-soft); stroke: var(--sim-sel); stroke-width: 1.5; stroke-dasharray: 5 4; }
-.sim-marquee { fill: var(--info-soft); stroke: var(--info); stroke-width: 1; stroke-dasharray: 4 3; }
 .sim-lasso { fill: var(--sim-sel-soft); stroke: var(--sim-sel); stroke-width: 1.5; stroke-dasharray: 5 4; stroke-linejoin: round; }
 .sim-object-swatch { width: 14px; height: 10px; border: 1.5px solid currentColor; background: repeating-linear-gradient(45deg, transparent 0 3px, currentColor 3px 4px); opacity: 0.8; }
 .sim-footprint { fill: none; stroke: var(--text-tertiary); stroke-width: 1; stroke-dasharray: 3 3; }
@@ -5809,11 +5808,30 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-hw-marks.is-draft .sim-hw-arrow path { fill: var(--sim-sel); opacity: 0.7; }
 .sim-highway.is-capped polygon { stroke: var(--warn); stroke-width: 2; }
 .sim-highway.is-violation polygon { stroke: var(--bad); stroke-width: 2; }
-.sim-hw-dir { cursor: pointer; }
-.sim-hw-dir rect { fill: var(--bg-surface); stroke: var(--border-strong); stroke-width: 1; }
-.sim-hw-dir path { fill: none; stroke: var(--text-secondary); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.sim-hw-dir:hover rect { stroke: var(--sim-sel); }
-.sim-hw-dir:hover path { stroke: var(--sim-sel); }
+/* Path editor (owner, 2026-11-16): double centre line for two lanes; path ends — grabbable on hover
+   (Lasso), connection points (Path tool); lane grips; the selection bar. */
+.sim-hw-centre { fill: none; stroke: var(--tape); stroke-width: 1; opacity: 0.7; pointer-events: none; }
+.sim-hw-marks.is-selected .sim-hw-centre { stroke: var(--sim-sel); }
+.sim-hw-end.is-quiet circle { opacity: 0; transition: opacity 0.12s ease; }
+.sim-hw-end.is-quiet:hover circle { opacity: 1; }
+.sim-hw-connect { pointer-events: none; }
+.sim-hw-connect circle { fill: var(--bg-surface); stroke: var(--sim-sel); stroke-width: 1.5; }
+.sim-hw-grip { cursor: ew-resize; }
+.sim-hw-grip rect { fill: var(--sim-sel); stroke: var(--bg-surface); stroke-width: 1.5; }
+.sim-hw-grip path { fill: none; stroke: var(--bg-surface); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+.sim-selbar {
+  position: absolute; transform: translate(-50%, calc(-100% - 12px)); display: flex; align-items: center; gap: 8px; padding: 4px;
+  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 7px; box-shadow: var(--sim-shadow-float);
+  white-space: nowrap; cursor: default; z-index: 3;
+}
+.sim-selbar .seg { display: flex; padding: 2px; border-radius: 6px; background: var(--bg-surface-2); }
+.sim-selbar .seg button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-width: 36px; height: 32px; padding: 0 8px; border: 0; border-radius: 5px; background: none; font: inherit; font-size: 13px; color: var(--text-secondary); cursor: pointer; }
+.sim-selbar .seg button:hover { color: var(--text-primary); }
+.sim-selbar .seg button.on { background: var(--bg-surface); color: var(--text-primary); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15); font-weight: 600; }
+.sim-selbar .seg button:focus-visible, .sim-selbar-del:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 1px; }
+.sim-selbar-read { padding: 0 4px; font: 500 12px var(--tal-font-numeric); color: var(--text-secondary); }
+.sim-selbar-del { display: inline-flex; align-items: center; justify-content: center; width: 32px; height: 32px; border: 0; border-radius: 5px; background: none; color: var(--bad); cursor: pointer; }
+.sim-selbar-del:hover { background: var(--bg-hover); }
 .sim-opacity-row { display: flex; align-items: center; gap: 8px; }
 .sim-opacity-row input[type="range"] { flex: 1; accent-color: var(--sim-sel); }
 .sim-opacity-row .num { min-width: 40px; text-align: right; font-size: 12px; color: var(--text-secondary); }

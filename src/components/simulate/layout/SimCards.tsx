@@ -127,7 +127,7 @@ export function ValidationList({ checks, status, onLocate, onDetails, onFix }: {
 /** The Flows tab: every flow as two lines — from → to, then vehicle · moves/h · distance — with the
  *  layout distance and its Δ while a link is pending; the Fleet Engine line and "Use layout
  *  distances" (before → after confirmation) at its foot. */
-export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSystem, radiusFor, onFlows, onSelect, selectedId, simVehicleOf }: {
+export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSystem, radiusFor, onFlows, onSelect, selectedId, simVehicleOf, onLinkOnMap }: {
   layout: SimLayout
   flows: ProjectFlow[]
   vehicleById: Map<string, Vehicle>
@@ -140,6 +140,8 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
   /** Each flow's simulation vehicle (shown when it differs from Sizing's). */
   simVehicleOf: Map<string, string | undefined>
   selectedId?: string
+  /** Link a Pick to a Drop on the map (the Flow tool, off the tool bar). */
+  onLinkOnMap?: () => void
 }) {
   const [confirm, setConfirm] = useState(false)
   const fmt = (ft?: number) => fmtLength(ft, unitSystem)
@@ -182,11 +184,12 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
             </li>
           )
         })}
-        {!flows.length && <li className="sim-card-note">No flows yet — add them on Sizing, or link a Pick point to a Drop point with the Flow tool (F).</li>}
+        {!flows.length && <li className="sim-card-note">No flows yet — add them on Sizing, or link a Pick point to a Drop point with Link on the map (F).</li>}
       </ol>
       <div className="sim-flows-foot">
         <span>Fleet Engine: raw <b className="num">{raw.toFixed(2)}</b> → <b className="num">{engineTotal}</b> vehicle{engineTotal === 1 ? '' : 's'}</span>
         <span className="sim-card-note">Utilization {Math.round(settings.targetUtilization * 100)}% · {settings.dailyOpHr} h/day</span>
+        {onLinkOnMap && <button type="button" className="btn btn-sm ghost" onClick={onLinkOnMap} title="Click a Pick, then a Drop (F)">Link on the map</button>}
         {!confirm && (
           <button type="button" className="btn btn-sm ghost" disabled={!matches.length} onClick={() => setConfirm(true)}>
             Use layout distances{matches.length ? ` (${matches.length})` : ''}

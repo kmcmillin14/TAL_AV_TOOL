@@ -392,12 +392,6 @@ export function removePoints<T extends SimLayout>(L: T, ids: string[]): T {
   return { ...L, points: L.points.filter(p => !gone.has(p.id)), segments: L.segments.filter(s => !gone.has(s.a) && !gone.has(s.b)) }
 }
 
-/** Points whose position lies inside the rectangle spanned by two corners (marquee select). */
-export function pointsInBox(L: SimLayout, a: XY, b: XY): string[] {
-  const [x0, x1, y0, y1] = [Math.min(a.x, b.x), Math.max(a.x, b.x), Math.min(a.y, b.y), Math.max(a.y, b.y)]
-  return L.points.filter(p => p.x >= x0 && p.x <= x1 && p.y >= y0 && p.y <= y1).map(p => p.id)
-}
-
 /** Points inside a lasso (a closed loop, ft). */
 export function pointsInLoop(L: SimLayout, loop: XY[]): string[] {
   return loop.length < 3 ? [] : L.points.filter(p => insidePolygon(loop, p)).map(p => p.id)
@@ -530,6 +524,15 @@ export function updateHighway<T extends SimLayout>(L: T, id: string, patch: Part
 /** Snap reach in screen pixels: generous for points (a click near an end joins it), tighter for the rest. */
 const SNAP_PX = { point: 22, route: 12, object: 12, align: 12 }
 
+/** Along the nearest 0°, 45° or 90° direction from `from` (path editor, owner 2026-11-16); the
+ *  distance along it kept. Exact on an axis, so the free-axis rules below still apply there. */
+function angleTo45(from: XY, to: XY): XY {
+  const dx = to.x - from.x, dy = to.y - from.y
+  const a = Math.round(Math.atan2(dy, dx) / (Math.PI / 4)) * (Math.PI / 4)
+  const ux = Math.cos(a), uy = Math.sin(a), l = dx * ux + dy * uy
+  return { x: Math.abs(ux) < 1e-9 ? from.x : from.x + ux * l, y: Math.abs(uy) < 1e-9 ? from.y : from.y + uy * l }
+}
+
 /** Square to `from`: horizontal or vertical, whichever is closer. */
 function squareTo(from: XY, to: XY): XY {
   return Math.abs(to.x - from.x) >= Math.abs(to.y - from.y) ? { x: to.x, y: from.y } : { x: from.x, y: to.y }
@@ -559,17 +562,19 @@ const onGrid = (v: number, step: number) => Math.round(Math.round(v / step) * st
  */
 export function snapDraw(
   L: SimLayout, at: XY,
-  o: { px: number; from?: XY | null; lock?: boolean; offsetFt?: number; exclude?: Set<string>; routes?: boolean },
+  o: { px: number; from?: XY | null; lock?: boolean; offsetFt?: number; exclude?: Set<string>; routes?: boolean; diag?: boolean },
 ): DrawSnap {
   const skip = o.exclude ?? new Set<string>()
   const p = nearestPoint(L, at, SNAP_PX.point * o.px, skip)
   if (p) return { kind: 'point', id: p.id, at: { x: p.x, y: p.y } }
-  const route = o.routes !== false ? nearestRoute(L, at, SNAP_PX.route * o.px, skip) : null
-  if (route) return { kind: 'route', id: route.id, at: route.at }
+  // `diag` (paths): always along 0°/45°/90° from `from`, and `lock` (Shift) means any angle instead.
+  const angled = o.diag && o.from && !o.lock ? angleTo45(o.from, at) : null
+  const route = o.routes !== false ? nearestRoute(L, angled ?? at, SNAP_PX.route * o.px, skip) : null
+  if (route) return { kind: 'route', id: route.id, at: angled ? alongTo(L, route, o.from!, angled) : route.at }
 
   const reach = SNAP_PX.align * o.px
-  const sq = o.from ? squareTo(o.from, at) : null
-  const from = o.from && sq && (o.lock || Math.hypot(sq.x - at.x, sq.y - at.y) <= reach) ? o.from : null
+  const sq = o.from ? (o.diag ? angleTo45(o.from, at) : squareTo(o.from, at)) : null
+  const from = o.from && sq && (o.diag ? !o.lock : o.lock || Math.hypot(sq.x - at.x, sq.y - at.y) <= reach) ? o.from : null
   const q = from ? sq! : at
   const straight = (c: XY) => !from || Math.abs(c.x - from.x) < 1e-6 || Math.abs(c.y - from.y) < 1e-6
   const obj = snapToObjects(L, q, SNAP_PX.object * o.px, o.offsetFt ?? 0, straight)
@@ -589,6 +594,17 @@ export function snapDraw(
     y: gy ? gy.y : freeY ? onGrid(q.y, step) : q.y,
   }
   return { kind: 'free', at: r, guides: [gx, gy].flatMap(g => (g ? [{ x: g.x, y: g.y }] : [])) }
+}
+
+/** Where the line `from` → `to` meets route `r` (straight routes), so a path joining it keeps its
+ *  angle; else the nearest spot on the route. */
+function alongTo(L: SimLayout, r: { id: string; at: XY }, from: XY, to: XY): XY {
+  const s = L.segments.find(q => q.id === r.id), byId = pointById(L), a = s && byId.get(s.a), b = s && byId.get(s.b)
+  if (!s || !a || !b || s.curve) return r.at
+  const dx = to.x - from.x, dy = to.y - from.y, ex = b.x - a.x, ey = b.y - a.y, den = dx * ey - dy * ex
+  if (Math.abs(den) < 1e-9) return r.at
+  const u = ((a.x - from.x) * dy - (a.y - from.y) * dx) / den
+  return u >= 0 && u <= 1 ? { x: a.x + ex * u, y: a.y + ey * u } : r.at
 }
 
 /**
@@ -649,6 +665,35 @@ export function placeWithSpur<T extends SimLayout>(L: T, at: XY, type: SimPointT
 }
 
 /** The next direction for a route when its badge is clicked: two-way → one-way → the other way. */
+/** Highway ends within reach of `at` (a corner) other than `skip`'s — dragged together with it. */
+export function highwayEndsAt(L: SimLayout, at: XY, skip: string): { id: string; end: 'a' | 'b' }[] {
+  return (L.highways ?? []).flatMap(h => {
+    if (h.id === skip) return []
+    const e = highwayEnds(h)
+    return (['a', 'b'] as const).filter(k => Math.hypot(e[k].x - at.x, e[k].y - at.y) <= ON_HIGHWAY_FT).map(end => ({ id: h.id, end }))
+  })
+}
+
+/** Highway ends moved to `to` (each turning about its other end); one shorter than 2 ft is left. */
+export function moveHighwayEnds<T extends SimLayout>(L: T, ends: { id: string; end: 'a' | 'b' }[], to: XY): T {
+  return ends.reduce((acc, { id, end }) => {
+    const h = acc.highways?.find(q => q.id === id)
+    if (!h) return acc
+    const e = { ...highwayEnds(h), [end]: to }
+    if (Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y) < 2) return acc
+    const { x, y, lengthFt, angleDeg } = highwayFromEnds(e.a, e.b, h.widthFt, h)
+    return updateHighway(acc, id, { x, y, lengthFt, angleDeg })
+  }, L)
+}
+
+/** A highway's lanes: 2 = two-way, a lane each way; 1 = one shared lane, or one-way (path editor). */
+export const highwayLanes = (h: Pick<SimHighway, 'dir' | 'lane'>): 1 | 2 => (h.dir === 'two' && h.lane !== 'single' ? 2 : 1)
+
+/** Direction and lanes for a lane count: 2 lanes is always two-way; 1 keeps one-way, else shares. */
+export function laneKind(h: Pick<SimHighway, 'dir'>, lanes: 1 | 2): Pick<SimHighway, 'dir' | 'lane'> {
+  return lanes === 2 ? { dir: 'two', lane: 'two' } : h.dir === 'two' ? { dir: 'two', lane: 'single' } : { dir: h.dir, lane: undefined }
+}
+
 export function nextDirection(dir: SimSegment['dir']): SimSegment['dir'] {
   return dir === 'two' ? 'ab' : dir === 'ab' ? 'ba' : 'two'
 }

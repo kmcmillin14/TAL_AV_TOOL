@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DERIVED, highwayConnections, highwayCorners, highwayEnds, highwayFromEnds, highwaysTouching, inJunction, insideHighway, withHighways } from '../highways'
-import { addHighway, pointsInLoop, removeHighways, updateHighway, updateHighways, flowTargets, hitTest, notConnected, placeWithSpur, routeDistanceFt, spurTarget, splitSegment } from '../layoutEdit'
+import { addHighway, pointsInLoop, removeHighways, updateHighway, updateHighways, flowTargets, hitTest, notConnected, placeWithSpur, routeDistanceFt, spurTarget, splitSegment, snapDraw, highwayEndsAt, moveHighwayEnds, highwayLanes, laneKind } from '../layoutEdit'
 import { segmentClearances, B56_5_RULE } from '../clearance'
 import { runInputs } from '../runInputs'
 import type { SimHighway, SimLayout } from '../types'
@@ -190,5 +190,48 @@ describe('a run on highways alone', () => {
     runFor(S, 2 * 3600)
     const t = results(S).types.find(x => x.vehicleId === 'cb18')!
     expect(t.done).toBeGreaterThan(10)
+  })
+})
+
+describe('path editor (owner, 2026-11-16)', () => {
+  const two = (id: string, a: { x: number; y: number }, b: { x: number; y: number }) => highwayFromEnds(a, b, 10, { id, dir: 'two', lane: 'single' })
+  const L0 = { points: [], segments: [], highways: [two('h1', { x: 0, y: 0 }, { x: 100, y: 0 }), two('h2', { x: 100, y: 0 }, { x: 100, y: 60 })] }
+
+  it('snaps a drawn end to 45° and, with Shift, to any angle', () => {
+    const empty = { points: [], segments: [] }
+    const s = snapDraw(empty, { x: 50, y: 46 }, { px: 0.01, from: { x: 0, y: 0 }, diag: true })
+    expect(s.at.x).toBeCloseTo(s.at.y, 6)
+    const flat = snapDraw(empty, { x: 50, y: 8 }, { px: 0.01, from: { x: 0, y: 0 }, diag: true })
+    expect(flat.at.y).toBe(0)
+    const free = snapDraw(empty, { x: 50, y: 46 }, { px: 0.01, from: { x: 0, y: 0 }, diag: true, lock: true })
+    expect(free.at.y).not.toBeCloseTo(free.at.x, 1)
+  })
+
+  it('joins another path along the drawn angle', () => {
+    // From (60, 40) at 45° up-left towards h1's centre line (y = 0): lands at x = 20.
+    const s = snapDraw(withHighways(L0), { x: 20.3, y: 0.4 }, { px: 0.05, from: { x: 60, y: 40 }, diag: true })
+    expect(s.kind).toBe('route')
+    expect(s.at.x).toBeCloseTo(20, 6)
+    expect(s.at.y).toBeCloseTo(0, 6)
+  })
+
+  it('finds the ends at a corner and moves them together', () => {
+    const at = { x: 100, y: 0 }
+    expect(highwayEndsAt(L0, at, 'h1')).toEqual([{ id: 'h2', end: 'a' }])
+    const moved = moveHighwayEnds(L0, [{ id: 'h1', end: 'b' }, { id: 'h2', end: 'a' }], { x: 90, y: 10 })
+    const [h1, h2] = moved.highways!.map(highwayEnds)
+    expect(h1.b.x).toBeCloseTo(90); expect(h1.b.y).toBeCloseTo(10)
+    expect(h2.a.x).toBeCloseTo(90); expect(h2.a.y).toBeCloseTo(10)
+    expect(h2.b.y).toBeCloseTo(60)
+  })
+
+  it('counts lanes and sets direction for a lane count', () => {
+    expect(highwayLanes({ dir: 'two', lane: 'two' })).toBe(2)
+    expect(highwayLanes({ dir: 'two' })).toBe(2)
+    expect(highwayLanes({ dir: 'two', lane: 'single' })).toBe(1)
+    expect(highwayLanes({ dir: 'ab', lane: 'two' })).toBe(1)
+    expect(laneKind({ dir: 'ab' }, 2)).toEqual({ dir: 'two', lane: 'two' })
+    expect(laneKind({ dir: 'two' }, 1)).toEqual({ dir: 'two', lane: 'single' })
+    expect(laneKind({ dir: 'ba' }, 1)).toEqual({ dir: 'ba', lane: undefined })
   })
 })

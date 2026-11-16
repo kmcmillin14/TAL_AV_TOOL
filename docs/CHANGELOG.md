@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: the path editor
+
+- Owner: "the route drawing UI is bad" → one idea, a **vehicle path** (a highway underneath; nothing
+  new is stored, saved projects load unchanged). Tool bar: **Path · Endpoint · Lasso · Undo · Redo**;
+  Scale, Flow, Hand and Route stay on their keys and in the side panel.
+- Paths start one lane, two-way; a **selection bar** sets direction (⇄ / → / ←) and **1 or 2 lanes**
+  (suggested width follows), and a side grip drags one lane out to two.
+- Angles snap to 0°, 45° and 90° (Shift: any); connection points show while drawing; a length · angle
+  label follows the pointer; any path end drags without selecting first, and a joined corner moves as
+  one.
+- Clearer marks: paired opposite arrows and a double centre line for two lanes; double-headed arrows
+  for one shared lane. The on-band direction badge is removed (the bar and D replace it).
+- While drawing, a click on something drawn selects it and returns to Lasso; Enter returns to Lasso.
+- Removed: Select merged into Lasso (empty-floor drag draws a loop; Space or the middle button pans);
+  the Shift-drag box and `pointsInBox` (the loop does it).
+
 ## 2026-11-16 — Fleet simulation: fleet manager note
 
 - Validation notes (information only) when the simulated vehicles use different fleet managers; the run

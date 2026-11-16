@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  addObject, convertPoint, copyPoints, drawGridFt, mergePoints, nextDirection, placeWithSpur, snapDraw, snapToObjects, spurTarget, SPUR_REACH_FT, hitTest as hit2, movePoints, objectCorners, pointsInBox, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
+  addObject, convertPoint, copyPoints, drawGridFt, mergePoints, nextDirection, placeWithSpur, snapDraw, snapToObjects, spurTarget, SPUR_REACH_FT, hitTest as hit2, movePoints, objectCorners, removePoints, repeatPoint, segmentLengthFt, setCurve, splineHandles,
   addPoint, addSegment, emptyLayout, flowRefusal, flowTargets, flowStartRefusal, hitTest, linkFlow, linkSuggestions, measureFlows, notConnected,
   placeOnSegment, rescaleLayout, routeDistanceFt, splitSegment, updatePoint, updateSegment, withLayoutDistance,
 } from '../layoutEdit'
@@ -170,11 +170,6 @@ describe('copy, move, remove, marquee', () => {
     const { L, a, b } = line()
     expect(routeDistanceFt(movePoints(L, [a, b], { x: 3, y: 4 }), a, b)).toBeCloseTo(400, 1)
     expect(removePoints(L, [a, b])).toMatchObject({ points: [], segments: [] })
-  })
-
-  it('selects the points inside a box', () => {
-    const { L, a } = line()
-    expect(pointsInBox(L, { x: -5, y: -5 }, { x: 100, y: 5 })).toEqual([a])
   })
 })
 

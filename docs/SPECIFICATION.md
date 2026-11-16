@@ -962,13 +962,41 @@ step ribbon is unchanged.
     (utilization at or under target; at least 98% of the moves; lowest charge 30% or more).
     `runHeadline` (src/calc/sim/headline.ts); the static utilization is `staticUtilization` (shared
     with the Step 4 KPI detail).
+  - *Path editor (owner, 2026-11-16; supersedes the tool list above where they differ).* Routes and
+    aisles are one idea — a **vehicle path** (stored as a highway; nothing new is stored). The tool bar
+    is **Path (P) · Endpoint (E) · Lasso (L) · Undo · Redo**.
+    - *Path:* drag from one end to the other. Every path end shows as a connection point while the
+      tool is on; an end snaps to another path's end, onto another path (along the drawn line), lines
+      up with other ends (dashed guide) or lands on the grid. Angles snap to **0°, 45° and 90°**;
+      Shift draws any angle. A label shows the length and angle while dragging. A new path is **one
+      lane, two-way** at its suggested width; options come after drawing, not before.
+    - *Endpoint:* the old Place tool (pick, drop, conveyor, dock, charger, parking, object) —
+      unchanged.
+    - *Lasso:* a click selects (Ctrl/Shift-click adds); a loop selects several; dragging a selected
+      path moves it. Any path end can be dragged without selecting first — it turns in 45° steps
+      about the other end (Shift: any angle), and ends that meet there move with it so a corner stays
+      joined. A placed endpoint is dragged as before.
+    - *Selection bar:* above the selected path(s): direction **⇄ / → / ←** (arrows drawn along the
+      path) · **1 lane | 2 lanes** · length · delete. **2 lanes** is two-way with one lane each way;
+      **1 lane** is a shared lane (two-way) or one-way. Changing the lane count sets the suggested
+      width for it; the inspector still takes any width. A **grip** on each long edge of a single
+      selected path drags it out to two lanes or in to one.
+    - *Marks:* one-way — arrows one way the full length; two-way, two lanes — paired opposite arrows
+      with a double centre line (no passing); two-way, one lane — double-headed arrows. The badge on
+      the band is gone (the selection bar and D change direction).
+    - *Moving between tools:* while drawing a path or placing an endpoint, a **click** (no drag) on
+      something already drawn selects it and returns to Lasso; **Enter** returns to Lasso keeping the
+      selection; **Esc** returns to Lasso and clears it.
+    - *Kept, off the bar:* Scale is started from the Drawing card (S still works); Flow linking from
+      the Flows tab's **Link on the map** and a point's **Add flow to…** (F still works); Space or the
+      middle button pans (H still works); R still draws a free route; V is Lasso.
   - *Lasso (owner, 2026-11-13; Milestone 7).* **Lasso (L)**: draw a loop; every highway it touches —
     crosses or encloses — is selected; with none, the points inside it; Shift adds to the selection.
-    Shift-click a highway adds or removes it; a Shift-drag box selects the points inside it, or with
-    none the highways it touches. Several highways show their **overall length**, how many are
+    Shift-click a highway adds or removes it (the Shift-drag box is replaced by the loop — path
+    editor). Several highways show their **overall length**, how many are
     one-way, their width (or Mixed) and the worst B56.5 status, and change together: direction, lanes,
     width, **Use suggested** (each to its own suggested width); dragging one of them, the arrow keys and
-    D move or turn them all; Delete removes them. End handles show on a single highway only.
+    D move or turn them all; Delete removes them.
   - *Full screen (owner, 2026-11-12).* A button in the page head (beside Assumptions) fills the screen
     with the Simulate page — head, vehicles, the editor or Run, and its windows; Esc or the button
     leaves it. On a desktop only.

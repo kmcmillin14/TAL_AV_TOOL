@@ -19,7 +19,7 @@ import type { ProjectFlow } from './useLayoutEditor'
 
 export type XY = { x: number; y: number }
 export type Handle = 'mid' | 'c1' | 'c2'
-export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string } | { kind: 'hwEnd'; id: string; end: 'a' | 'b' } | { kind: 'hwDir'; id: string } | { kind: 'hwJoin'; id: string; end: 'a' | 'b' }
+export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string } | { kind: 'hwEnd'; id: string; end: 'a' | 'b' } | { kind: 'hwGrip'; id: string } | { kind: 'hwJoin'; id: string; end: 'a' | 'b' }
 export type Selection =
   | { kind: 'point' | 'segment' | 'flow' | 'object' | 'highway'; id: string }
   | { kind: 'points'; ids: string[] }
@@ -70,8 +70,8 @@ interface Props {
   panOnEmpty?: boolean
   /** A line from here to the pointer (route or flow being drawn). */
   rubberFrom?: XY | null
-  /** A rectangle being dragged out (marquee or new object), ft. */
-  box?: { a: XY; b: XY; kind: 'marquee' | 'object' } | null
+  /** A new object being dragged out, ft. */
+  box?: { a: XY; b: XY; kind: 'object' } | null
   /** The lasso being drawn (Lasso tool), ft. */
   lasso?: XY[] | null
   /** Scale marks (two clicks on the drawing), ft. */
@@ -120,6 +120,11 @@ interface Props {
   showLabels?: boolean
   /** Highway tool: the highway being dragged out. */
   draftHighway?: SimHighway | null
+  /** Path ends: 'grab' — every end can be dragged (a handle shows on hover; Lasso); 'connect' — every
+   *  end shows as a connection point (Path tool). Selected highways always show their handles. */
+  pathEnds?: 'grab' | 'connect'
+  /** Floated above the selection, ft (the path editor's selection bar). */
+  selectionBar?: { at: XY; node: ReactNode } | null
   /** Flow tool: the points a flow can link to from its start (lit) or not (dimmed, with why). */
   flowTargets?: Map<string, FlowTarget> | null
   /** Flow tool: the hovered target's path along the routes, and its length. */
@@ -228,8 +233,8 @@ export default function LayoutCanvas(props: Props) {
     if (d) return { kind: 'dir', id: d.getAttribute('data-dir')! }
     const hj = (target as Element).closest?.('[data-hwjoin]')
     if (hj) { const [id, end] = hj.getAttribute('data-hwjoin')!.split(':'); return { kind: 'hwJoin', id, end: end as 'a' | 'b' } }
-    const hd = (target as Element).closest?.('[data-hwdir]')
-    if (hd) return { kind: 'hwDir', id: hd.getAttribute('data-hwdir')! }
+    const hg = (target as Element).closest?.('[data-hwgrip]')
+    if (hg) return { kind: 'hwGrip', id: hg.getAttribute('data-hwgrip')! }
     return hitTest(layout, at, POINT_PX * px, SEG_PX * px)
   }
 
@@ -266,6 +271,8 @@ export default function LayoutCanvas(props: Props) {
   const dpts = new Map(driven.points.map(p => [p.id, pts.get(p.id) ?? p]))
   // Where highways connect (junctions) and the ends that join nothing — from the stored layout.
   const conn = useMemo(() => highwayConnections(layout), [layout])
+  /** Near-miss ends: their amber cap takes the click (Join), so no hover handle covers it. */
+  const nearEnds = useMemo(() => new Set(conn.loose.filter(e => e.near).map(e => `${e.id}:${e.end}`)), [conn])
   /** Routes drawn as lanes (a highway's derived routes are drawn by the highway). */
   const routes = useMemo(() => driven.segments.filter(s => !s.highwayId), [driven])
   const selected = (kind: 'point' | 'segment' | 'flow' | 'object' | 'highway', id: string) =>
@@ -340,10 +347,10 @@ export default function LayoutCanvas(props: Props) {
 
         {(layout.objects ?? []).map(o => <ObjectShape key={o.id} o={o} selected={selected('object', o.id)} />)}
         {/* Highways: each its own band and outline (owner, 2026-11-16: "keep highways separate"), its
-            arrows (not where it overlaps another), its direction badge; a dot where two connect and a cap
+            arrows (not where it overlaps another); a dot where two connect and a cap
             on an end that connects to nothing. */}
         {(layout.highways ?? []).map(h => <HighwayBand key={h.id} h={h} selected={selected('highway', h.id)} status={props.highwayStatus?.get(h.id)} />)}
-        {(layout.highways ?? []).map(h => <HighwayMarks key={h.id} h={h} px={px} selected={selected('highway', h.id)} joins={conn.joins} badge={!props.scene} />)}
+        {(layout.highways ?? []).map(h => <HighwayMarks key={h.id} h={h} px={px} selected={selected('highway', h.id)} joins={conn.joins} />)}
         {conn.joins.map((j, i) => (
           <g key={i} transform={`translate(${j.at.x} ${j.at.y}) scale(${px})`} className="sim-hw-node">
             <title>Connected</title>
@@ -366,9 +373,11 @@ export default function LayoutCanvas(props: Props) {
         {routes.map(s => (
           <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} selected={selected('segment', s.id.split('~')[0])} />
         ))}
-        {/* The selected highway's end handles, above its lanes so a press reaches them. */}
-        {/* End handles on a single selected highway (several are moved, not stretched). */}
-        {selection?.kind === 'highway' && (layout.highways ?? []).filter(h => h.id === selection.id).map(h => <HighwayEnds key={h.id} h={h} px={px} />)}
+        {/* Path ends, above the lanes so a press reaches them: handles on the selection; every other
+            end grabbable (Lasso, shown on hover) or shown as a connection point (Path tool). */}
+        {(layout.highways ?? []).map(h => (selected('highway', h.id) ? <HighwayEnds key={h.id} h={h} px={px} />
+          : props.pathEnds ? <HighwayEnds key={h.id} h={h} px={px} quiet={props.pathEnds} skip={nearEnds} /> : null))}
+        {props.pathEnds === 'grab' && selection?.kind === 'highway' && (layout.highways ?? []).filter(h => h.id === selection.id).map(h => <LaneGrips key={h.id} h={h} px={px} />)}
 
         {showFlows && flows.map(f => {
           const a = f.fromPointId && pts.get(f.fromPointId), b = f.toPointId && pts.get(f.toPointId)
@@ -408,7 +417,7 @@ export default function LayoutCanvas(props: Props) {
         {selObj && <SizeBadge o={selObj} px={px} fmtLen={fmtLen} />}
 
         {props.lasso && props.lasso.length > 1 && <polygon points={props.lasso.map(q => `${q.x},${q.y}`).join(' ')} className="sim-lasso" vectorEffect="non-scaling-stroke" />}
-        {rect && <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h} className={props.box!.kind === 'object' ? 'sim-object-draft' : 'sim-marquee'} vectorEffect="non-scaling-stroke" />}
+        {rect && <rect x={rect.x} y={rect.y} width={rect.w} height={rect.h} className="sim-object-draft" vectorEffect="non-scaling-stroke" />}
 
         {marks.map((m, i) => (
           <g key={i} transform={`translate(${m.x} ${m.y}) scale(${px})`} className="sim-mark">
@@ -420,6 +429,12 @@ export default function LayoutCanvas(props: Props) {
         )}
       </svg>
       {props.emptyPrompt && !layout.points.length && <div className="sim-empty-prompt">{props.emptyPrompt}</div>}
+      {props.selectionBar && (
+        <div className="sim-selbar" style={{ left: (props.selectionBar.at.x - view.x) * view.ppf, top: (props.selectionBar.at.y - view.y) * view.ppf }}
+          onPointerDown={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()}>
+          {props.selectionBar.node}
+        </div>
+      )}
       {props.children}
       {props.showLegend && <Legend clearances={!!clearances} />}
       <div className="sim-zoomctl" onPointerDown={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()}>
@@ -464,7 +479,7 @@ function SnapMark({ snap, from, px, fmtLen }: { snap: DrawSnap; from: XY | null;
           : snap.kind === 'route' ? <rect x={-6} y={-6} width={12} height={12} transform="rotate(45)" className="sim-snap-ring" />
           : snap.kind === 'object' ? <rect x={-6} y={-6} width={12} height={12} className="sim-snap-ring" />
           : <circle r={2.5} className="sim-snap-dot" />}
-        {from && len > 0 && <text x={14} y={-12} className="sim-rubber-len">{fmtLen(len)}</text>}
+        {from && len > 0 && <text x={14} y={-12} className="sim-rubber-len">{fmtLen(len)} · {(((Math.round(Math.atan2(y - from.y, x - from.x) * 180 / Math.PI) % 180) + 180) % 180)}°</text>}
       </g>
     </g>
   )
@@ -676,10 +691,13 @@ const HighwayBand = memo(function HighwayBand({ h, selected, draft, status }: { 
   )
 })
 
-/** A highway's direction arrows inside its band, evenly spaced in screen pixels from one end to the
- *  other and left out inside junctions; one-way: one row down the middle; two-way, two lanes: one row
- *  per half, keeping right; two-way, one lane: ⇄ markers. And its one-click direction badge. */
-const HighwayMarks = memo(function HighwayMarks({ h, px, selected, draft, joins, badge }: { h: SimHighway; px: number; selected?: boolean; draft?: boolean; joins: HighwayJoin[]; badge?: boolean }) {
+/** A highway's marks inside its band, evenly spaced in screen pixels and left out inside junctions
+ *  (path editor, owner 2026-11-16): one-way — arrows one way down the middle; two-way, two lanes —
+ *  paired opposite arrows either side of a double centre line (no passing); two-way, one lane —
+ *  double-headed arrows. */
+const ARROW = 'M-10 -1.5H3V-5L10 0L3 5V1.5H-10Z'
+const ARROW_BOTH = 'M-11 0L-5 -5V-1.5H5V-5L11 0L5 5V1.5H-5V5Z'
+const HighwayMarks = memo(function HighwayMarks({ h, px, selected, draft, joins }: { h: SimHighway; px: number; selected?: boolean; draft?: boolean; joins: HighwayJoin[] }) {
   const { a, b } = highwayEnds(h)
   const L = h.lengthFt, ux = (b.x - a.x) / (L || 1), uy = (b.y - a.y) / (L || 1)
   const gap = HW_ARROW_GAP_PX * px, n = Math.max(1, Math.floor(L / gap))
@@ -694,34 +712,55 @@ const HighwayMarks = memo(function HighwayMarks({ h, px, selected, draft, joins,
     else if (h.dir === 'two') marks.push({ ...at(s, 0), deg: ang, both: true })
     else marks.push({ ...at(s, 0), deg: ang + (h.dir === 'ba' ? 180 : 0) })
   }
-  const mid = at(L / 2, 0)
+  // The double centre line, in pieces between junctions (sampled every couple of screen pixels' worth).
+  const centre: string[] = []
+  if (twoLane) {
+    const step = Math.max(L / 400, 4 * px)
+    let from: number | null = null
+    for (let s = 0; s <= L + 1e-9; s += step) {
+      const inside = inJunction(joins, at(Math.min(s, L), 0))
+      if (!inside && from == null) from = s
+      if ((inside || s + step > L + 1e-9) && from != null) {
+        const to = inside ? s - step : L
+        if (to > from) for (const o of [-1.6 * px, 1.6 * px]) { const p = at(from, o), q = at(to, o); centre.push(`M${p.x} ${p.y}L${q.x} ${q.y}`) }
+        from = null
+      }
+    }
+  }
   return (
     <g className={`sim-hw-marks${selected ? ' is-selected' : ''}${draft ? ' is-draft' : ''}`}>
+      {centre.length > 0 && <path d={centre.join('')} className="sim-hw-centre" vectorEffect="non-scaling-stroke" />}
       {marks.map((m, i) => (
         <g key={i} transform={`translate(${m.x} ${m.y}) rotate(${m.deg}) scale(${px})`} className="sim-hw-arrow">
-          <path d={m.both ? 'M-11 0L-4 -5V5ZM11 0L4 -5V5Z' : 'M7 0L-5 -6L-2 0L-5 6Z'} />
+          <path d={m.both ? ARROW_BOTH : ARROW} />
         </g>
       ))}
-      {/* One click changes direction: two-way → start → end → end → start (owner: "easily changeable"). */}
-      {badge && !draft && L / px > 140 && !inJunction(joins, mid) && (
-        <g transform={`translate(${mid.x} ${mid.y}) scale(${px})`} className="sim-hw-dir" data-hwdir={h.id} role="button" aria-label="Change direction">
-          <title>{h.dir === 'two' ? 'Two-way — click for one-way' : 'One-way — click to change'}</title>
-          <rect x={-15} y={-11} width={30} height={22} rx={11} />
-          <g transform={`rotate(${h.dir === 'ba' ? ang + 180 : ang})`}>
-            {h.dir === 'two' ? <path d="M-7 -3H5M2 -6L6 -3L2 0M7 3H-5M-2 0L-6 3L-2 6" /> : <path d="M-7 0H6M2 -4L7 0L2 4" />}
-          </g>
-        </g>
-      )}
     </g>
   )
 })
 
-/** A selected highway's end handles: drag one to stretch or turn it. */
-function HighwayEnds({ h, px }: { h: SimHighway; px: number }) {
+/** A highway's end handles: drag one to stretch or turn it. `quiet`: 'grab' — shown on hover only;
+ *  'connect' — a small connection point, not pressable (a press there starts a new path). */
+function HighwayEnds({ h, px, quiet, skip }: { h: SimHighway; px: number; quiet?: 'grab' | 'connect'; skip?: Set<string> }) {
   const { a, b } = highwayEnds(h)
-  return <>{([['a', a], ['b', b]] as const).map(([end, q]) => (
-    <g key={end} transform={`translate(${q.x} ${q.y}) scale(${px})`} className="sim-handle sim-hw-end" data-hw-end={end} data-hw={h.id}>
-      <circle r={7} />
+  return <>{([['a', a], ['b', b]] as const).filter(([end]) => !(quiet === 'grab' && skip?.has(`${h.id}:${end}`))).map(([end, q]) => (
+    <g key={end} transform={`translate(${q.x} ${q.y}) scale(${px})`}
+      className={quiet === 'connect' ? 'sim-hw-connect' : `sim-handle sim-hw-end${quiet ? ' is-quiet' : ''}`}
+      {...(quiet === 'connect' ? {} : { 'data-hw-end': end, 'data-hw': h.id })}>
+      <circle r={quiet === 'connect' ? 4 : 7} />
+    </g>
+  ))}</>
+}
+
+/** A grip on each long edge of the selected highway: drag out to two lanes, in to one. */
+function LaneGrips({ h, px }: { h: SimHighway; px: number }) {
+  const r = (h.angleDeg * Math.PI) / 180, nx = -Math.sin(r), ny = Math.cos(r), off = h.widthFt / 2
+  return <>{[1, -1].map(side => (
+    <g key={side} transform={`translate(${h.x + nx * off * side} ${h.y + ny * off * side}) rotate(${h.angleDeg + 90}) scale(${px})`}
+      className="sim-hw-grip" data-hwgrip={h.id} role="button" aria-label="Drag to change lanes">
+      <title>Drag out for two lanes, in for one</title>
+      <rect x={-9} y={-6} width={18} height={12} rx={6} />
+      <path d="M-5 0H5M-2.5 -2.5L-5 0L-2.5 2.5M2.5 -2.5L5 0L2.5 2.5" />
     </g>
   ))}</>
 }
