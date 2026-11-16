@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: path editor reviews
+
+- Code review: a click on a path end no longer moves it; a dragged corner moves as one or not at all,
+  with stations carried as for moved highways; direction changes keep lanes and width (D steps round
+  and back); the Route tool keeps its two-lane default (only paths start one lane); the angle label
+  reads as seen (up-right 45°); a path joining another along its angle never jumps far along a nearly
+  parallel one; Esc, Enter and tool keys drop a drag in progress and an armed endpoint; Join uses the
+  same end move; the double centre line is cut exactly at junctions.
+- Cleanup: one lane rule (`highwayLanes`, `laneKind` in highways.ts) replaces five copies; the
+  inspector's lane control sets the width the same way as the bar; one tool table; the selection bar
+  is its own component (`PathBar`); connection points their own; the pivot, snap layout and grip
+  threshold are worked out once per drag; `HighwayEnds` memoized; the single-value box kind and the
+  Shift guard left from Select are gone.
+
 ## 2026-11-16 — Fleet simulation: the path editor
 
 - Owner: "the route drawing UI is bad" → one idea, a **vehicle path** (a highway underneath; nothing

@@ -12,6 +12,7 @@
 
 import { closestOnLine, segmentGeometry } from './geometry'
 import { buildGraph, route } from './graph'
+import { highwayLanes } from './highways'
 import { objectCorners, pointById } from './layoutEdit'
 import type { SimLayout } from './types'
 
@@ -83,7 +84,7 @@ export function segmentClearances(L: SimLayout, envelopeFt: (segId: string) => n
     const a = byId.get(s.a), b = byId.get(s.b)
     if (!a || !b) return []
     const env = envelopeFt(s.id)
-    const lanes: 1 | 2 = s.dir === 'two' && s.lane !== 'single' ? 2 : 1
+    const lanes = highwayLanes(s)
     // How far the outer envelope edge sits from the centreline, for a middle clearance `c`.
     const edgeAt = (c: number, l: 1 | 2) => (l === 2 ? middle(c) / 2 + env : env / 2)
     const g = segmentGeometry(a, b, s.curve)
@@ -177,7 +178,7 @@ export function envelopes(
  * envelope yet (no vehicle drives it), the proof of concept's 10 ft two-lane / 6 ft single-lane.
  */
 export function laneWidthFt(seg: { dir: 'two' | 'ab' | 'ba'; lane?: 'single' | 'two' }, envelopeFt = 0, rule: ClearanceRule = B56_5_RULE): number {
-  const twoLanes = seg.dir === 'two' && seg.lane !== 'single'
+  const twoLanes = highwayLanes(seg) === 2
   if (!(envelopeFt > 0)) return twoLanes ? 10 : 6
   const c = rule.fullSpeedIn / 12
   return twoLanes ? 2 * envelopeFt + 2 * c + (rule.sharedBetweenVehicles ? c : 2 * c) : envelopeFt + 2 * c

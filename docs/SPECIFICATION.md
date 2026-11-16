@@ -978,8 +978,11 @@ step ribbon is unchanged.
       joined. A placed endpoint is dragged as before.
     - *Selection bar:* above the selected path(s): direction **⇄ / → / ←** (arrows drawn along the
       path) · **1 lane | 2 lanes** · length · delete. **2 lanes** is two-way with one lane each way;
-      **1 lane** is a shared lane (two-way) or one-way. Changing the lane count sets the suggested
-      width for it; the inspector still takes any width. A **grip** on each long edge of a single
+      **1 lane** is a shared lane (two-way) or one-way. Changing the lane count — here, with the grip or
+      in the inspector — sets the suggested width for it; a typed width stays. Changing direction
+      (here, D or the inspector) changes only the direction: the lanes and width stay, so stepping
+      round comes back as it was (one-way drives one lane). A click on an end, without dragging,
+      changes nothing; a corner moves as one or not at all (no end shorter than 2 ft). A **grip** on each long edge of a single
       selected path drags it out to two lanes or in to one.
     - *Marks:* one-way — arrows one way the full length; two-way, two lanes — paired opposite arrows
       with a double centre line (no passing); two-way, one lane — double-headed arrows. The badge on

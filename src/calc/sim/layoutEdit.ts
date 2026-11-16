@@ -5,6 +5,7 @@ import { roundCorners } from './corners'
 import { closestOnLine, insidePolygon, insideRect, rectCorners, segmentGeometry } from './geometry'
 import { buildGraph, pathLen, tree } from './graph'
 import { highwayEnds, highwayFromEnds, insideHighway, ON_HIGHWAY_FT, withHighways } from './highways'
+export { highwayLanes, laneKind } from './highways'
 import type { SimCurve, SimHighway, SimLayout, SimObject, SimPoint, SimPointType, SimRole, SimSegment } from './types'
 
 type XY = { x: number; y: number }
@@ -570,7 +571,7 @@ export function snapDraw(
   // `diag` (paths): always along 0°/45°/90° from `from`, and `lock` (Shift) means any angle instead.
   const angled = o.diag && o.from && !o.lock ? angleTo45(o.from, at) : null
   const route = o.routes !== false ? nearestRoute(L, angled ?? at, SNAP_PX.route * o.px, skip) : null
-  if (route) return { kind: 'route', id: route.id, at: angled ? alongTo(L, route, o.from!, angled) : route.at }
+  if (route) return { kind: 'route', id: route.id, at: angled ? alongTo(L, route, o.from!, angled, SNAP_PX.route * o.px) : route.at }
 
   const reach = SNAP_PX.align * o.px
   const sq = o.from ? (o.diag ? angleTo45(o.from, at) : squareTo(o.from, at)) : null
@@ -596,15 +597,16 @@ export function snapDraw(
   return { kind: 'free', at: r, guides: [gx, gy].flatMap(g => (g ? [{ x: g.x, y: g.y }] : [])) }
 }
 
-/** Where the line `from` → `to` meets route `r` (straight routes), so a path joining it keeps its
- *  angle; else the nearest spot on the route. */
-function alongTo(L: SimLayout, r: { id: string; at: XY }, from: XY, to: XY): XY {
-  const s = L.segments.find(q => q.id === r.id), byId = pointById(L), a = s && byId.get(s.a), b = s && byId.get(s.b)
+/** Where the line `from` → `to` meets route `r` (straight routes) within `reach` of `to`, so a path
+ *  joining it keeps its angle; else (nearly parallel, or far) the nearest spot on the route. */
+function alongTo(L: SimLayout, r: { id: string; at: XY }, from: XY, to: XY, reach: number): XY {
+  const s = L.segments.find(q => q.id === r.id), a = s && L.points.find(p => p.id === s.a), b = s && L.points.find(p => p.id === s.b)
   if (!s || !a || !b || s.curve) return r.at
   const dx = to.x - from.x, dy = to.y - from.y, ex = b.x - a.x, ey = b.y - a.y, den = dx * ey - dy * ex
   if (Math.abs(den) < 1e-9) return r.at
   const u = ((a.x - from.x) * dy - (a.y - from.y) * dx) / den
-  return u >= 0 && u <= 1 ? { x: a.x + ex * u, y: a.y + ey * u } : r.at
+  const q = { x: a.x + ex * u, y: a.y + ey * u }
+  return u >= 0 && u <= 1 && Math.hypot(q.x - to.x, q.y - to.y) <= reach ? q : r.at
 }
 
 /**
@@ -664,7 +666,6 @@ export function placeWithSpur<T extends SimLayout>(L: T, at: XY, type: SimPointT
   return { layout: addSegment(split.layout, split.id, placed.id, spur).layout, id: placed.id }
 }
 
-/** The next direction for a route when its badge is clicked: two-way → one-way → the other way. */
 /** Highway ends within reach of `at` (a corner) other than `skip`'s — dragged together with it. */
 export function highwayEndsAt(L: SimLayout, at: XY, skip: string): { id: string; end: 'a' | 'b' }[] {
   return (L.highways ?? []).flatMap(h => {
@@ -674,26 +675,21 @@ export function highwayEndsAt(L: SimLayout, at: XY, skip: string): { id: string;
   })
 }
 
-/** Highway ends moved to `to` (each turning about its other end); one shorter than 2 ft is left. */
+/** Highway ends moved to `to`, each turning about its other end — all or none (a joined corner never
+ *  comes apart): unchanged when any would be shorter than 2 ft. Stations go with them as in
+ *  `updateHighways` (each point's highway decided once, before anything moves). */
 export function moveHighwayEnds<T extends SimLayout>(L: T, ends: { id: string; end: 'a' | 'b' }[], to: XY): T {
-  return ends.reduce((acc, { id, end }) => {
-    const h = acc.highways?.find(q => q.id === id)
-    if (!h) return acc
-    const e = { ...highwayEnds(h), [end]: to }
-    if (Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y) < 2) return acc
-    const { x, y, lengthFt, angleDeg } = highwayFromEnds(e.a, e.b, h.widthFt, h)
-    return updateHighway(acc, id, { x, y, lengthFt, angleDeg })
-  }, L)
+  const endOf = new Map(ends.map(e => [e.id, e.end]))
+  const moved = (h: SimHighway) => ({ ...highwayEnds(h), [endOf.get(h.id)!]: to })
+  const hs = (L.highways ?? []).filter(h => endOf.has(h.id))
+  if (hs.some(h => { const e = moved(h); return Math.hypot(e.b.x - e.a.x, e.b.y - e.a.y) < 2 })) return L
+  return updateHighways(L, hs.map(h => h.id), h => {
+    const e = moved(h), { x, y, lengthFt, angleDeg } = highwayFromEnds(e.a, e.b, h.widthFt, h)
+    return { x, y, lengthFt, angleDeg }
+  })
 }
 
-/** A highway's lanes: 2 = two-way, a lane each way; 1 = one shared lane, or one-way (path editor). */
-export const highwayLanes = (h: Pick<SimHighway, 'dir' | 'lane'>): 1 | 2 => (h.dir === 'two' && h.lane !== 'single' ? 2 : 1)
-
-/** Direction and lanes for a lane count: 2 lanes is always two-way; 1 keeps one-way, else shares. */
-export function laneKind(h: Pick<SimHighway, 'dir'>, lanes: 1 | 2): Pick<SimHighway, 'dir' | 'lane'> {
-  return lanes === 2 ? { dir: 'two', lane: 'two' } : h.dir === 'two' ? { dir: 'two', lane: 'single' } : { dir: h.dir, lane: undefined }
-}
-
+/** The next direction (badge or D): two-way → one-way → the other way. */
 export function nextDirection(dir: SimSegment['dir']): SimSegment['dir'] {
   return dir === 'two' ? 'ab' : dir === 'ab' ? 'ba' : 'two'
 }

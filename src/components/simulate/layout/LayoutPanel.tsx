@@ -7,6 +7,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { laneWidthFt, suggestedWidthFt, type ClearanceRule, type SegmentClearance } from '@/src/calc/sim/clearance'
+import { highwayLanes } from '@/src/calc/sim/highways'
 import { linkedFlows } from '@/src/calc/sim/readiness'
 import {
   FLOW_POINT_TYPES, flowTargets, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
@@ -299,7 +300,7 @@ export default function LayoutPanel(p: Props) {
     // Suggested width: the envelope plus the B56.5 clearance per side at full speed (shared between two
     // lanes). The status is the run's own clearance check on the highway's routes.
     const suggested = suggestedWidthFt(kind, env, p.rule)
-    const twoLanes = h.dir === 'two' && h.lane !== 'single'
+    const twoLanes = highwayLanes(h) === 2
     const inch = (ft: number) => { const i = ft * 12; return p.unitSystem === 'metric' ? `${Math.round(units.dimension.toMetric(i))} mm` : `${Math.round(i * 10) / 10} in` }
     const c = p.rule.fullSpeedIn / 12
     const working = env > 0

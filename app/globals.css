@@ -5814,8 +5814,7 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-hw-marks.is-selected .sim-hw-centre { stroke: var(--sim-sel); }
 .sim-hw-end.is-quiet circle { opacity: 0; transition: opacity 0.12s ease; }
 .sim-hw-end.is-quiet:hover circle { opacity: 1; }
-.sim-hw-connect { pointer-events: none; }
-.sim-hw-connect circle { fill: var(--bg-surface); stroke: var(--sim-sel); stroke-width: 1.5; }
+.sim-hw-connect { fill: var(--bg-surface); stroke: var(--sim-sel); stroke-width: 1.5; vector-effect: non-scaling-stroke; pointer-events: none; }
 .sim-hw-grip { cursor: ew-resize; }
 .sim-hw-grip rect { fill: var(--sim-sel); stroke: var(--bg-surface); stroke-width: 1.5; }
 .sim-hw-grip path { fill: none; stroke: var(--bg-surface); stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }

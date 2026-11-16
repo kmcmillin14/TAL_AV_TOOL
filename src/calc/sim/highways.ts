@@ -15,6 +15,15 @@ export const DERIVED = 'hw:'
 
 const unit = (h: SimHighway) => { const r = (h.angleDeg * Math.PI) / 180; return { x: Math.cos(r), y: Math.sin(r) } }
 
+/** Lanes on a route or highway: 2 = two-way, a lane each way; 1 = one shared lane, or one-way. */
+export const highwayLanes = (h: Pick<SimSegment, 'dir' | 'lane'>): 1 | 2 => (h.dir === 'two' && h.lane !== 'single' ? 2 : 1)
+
+/** Direction and lanes for a lane count (path editor): 2 lanes is always two-way; 1 keeps one-way,
+ *  else shares one lane. */
+export function laneKind(h: Pick<SimHighway, 'dir'>, lanes: 1 | 2): Pick<SimHighway, 'dir' | 'lane'> {
+  return lanes === 2 ? { dir: 'two', lane: 'two' } : h.dir === 'two' ? { dir: 'two', lane: 'single' } : { dir: h.dir, lane: undefined }
+}
+
 /** The centre line's two ends: `a` (the start end) and `b`. */
 export function highwayEnds(h: SimHighway): { a: XY; b: XY } {
   const u = unit(h), half = h.lengthFt / 2

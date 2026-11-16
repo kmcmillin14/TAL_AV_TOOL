@@ -225,6 +225,11 @@ describe('path editor (owner, 2026-11-16)', () => {
     expect(h2.b.y).toBeCloseTo(60)
   })
 
+  it('moves a corner as one or not at all', () => {
+    // h2 would be under 2 ft: neither end moves, so the corner stays joined.
+    expect(moveHighwayEnds(L0, [{ id: 'h1', end: 'b' }, { id: 'h2', end: 'a' }], { x: 100, y: 59 })).toBe(L0)
+  })
+
   it('counts lanes and sets direction for a lane count', () => {
     expect(highwayLanes({ dir: 'two', lane: 'two' })).toBe(2)
     expect(highwayLanes({ dir: 'two' })).toBe(2)

@@ -14,7 +14,7 @@ import { segmentGeometry } from '@/src/calc/sim/geometry'
 import { hitTest, objectCorners, type DrawSnap, type FlowTarget } from '@/src/calc/sim/layoutEdit'
 import { fmtLength } from '@/src/lib/utils/units'
 import type { SimHighway, SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/types'
-import { highwayConnections, highwayCorners, highwayEnds, inJunction, type HighwayJoin } from '@/src/calc/sim/highways'
+import { highwayConnections, highwayCorners, highwayEnds, highwayLanes, inJunction, type HighwayJoin } from '@/src/calc/sim/highways'
 import type { ProjectFlow } from './useLayoutEditor'
 
 export type XY = { x: number; y: number }
@@ -66,12 +66,12 @@ interface Props {
   showFlows?: boolean
   /** B56.5 results per route, when the overlay is on. */
   clearances?: SegmentClearance[] | null
-  /** Dragging empty space pans (Select tool, no Shift); otherwise a press on empty space goes to the tool. */
+  /** Dragging empty space pans (Run mode; the editor turns it off: empty floor draws a lasso). */
   panOnEmpty?: boolean
   /** A line from here to the pointer (route or flow being drawn). */
   rubberFrom?: XY | null
   /** A new object being dragged out, ft. */
-  box?: { a: XY; b: XY; kind: 'object' } | null
+  box?: { a: XY; b: XY } | null
   /** The lasso being drawn (Lasso tool), ft. */
   lasso?: XY[] | null
   /** Scale marks (two clicks on the drawing), ft. */
@@ -240,7 +240,7 @@ export default function LayoutCanvas(props: Props) {
 
   const down = (e: RPointerEvent<HTMLDivElement>) => {
     const { px, ...at } = toFt(e), hit = hitAt(at, px, e.target)
-    if (props.panAlways || e.button === 1 || (e.button === 0 && !hit && panOnEmpty && !e.shiftKey)) {
+    if (props.panAlways || e.button === 1 || (e.button === 0 && !hit && panOnEmpty)) {
       const m = localPx(e.currentTarget, e.clientX, e.clientY)
       pan.current = { sx: m.x, sy: m.y, vx: view.x, vy: view.y }
       e.currentTarget.setPointerCapture(e.pointerId)
@@ -376,8 +376,9 @@ export default function LayoutCanvas(props: Props) {
         {/* Path ends, above the lanes so a press reaches them: handles on the selection; every other
             end grabbable (Lasso, shown on hover) or shown as a connection point (Path tool). */}
         {(layout.highways ?? []).map(h => (selected('highway', h.id) ? <HighwayEnds key={h.id} h={h} px={px} />
-          : props.pathEnds ? <HighwayEnds key={h.id} h={h} px={px} quiet={props.pathEnds} skip={nearEnds} /> : null))}
-        {props.pathEnds === 'grab' && selection?.kind === 'highway' && (layout.highways ?? []).filter(h => h.id === selection.id).map(h => <LaneGrips key={h.id} h={h} px={px} />)}
+          : props.pathEnds === 'grab' ? <HighwayEnds key={h.id} h={h} px={px} quiet skip={nearEnds} /> : null))}
+        {props.pathEnds === 'connect' && <PathConnectPoints highways={layout.highways ?? []} px={px} />}
+        {props.pathEnds === 'grab' && selection?.kind === 'highway' && (() => { const h = layout.highways?.find(q => q.id === selection.id); return h && <LaneGrips h={h} px={px} /> })()}
 
         {showFlows && flows.map(f => {
           const a = f.fromPointId && pts.get(f.fromPointId), b = f.toPointId && pts.get(f.toPointId)
@@ -479,11 +480,14 @@ function SnapMark({ snap, from, px, fmtLen }: { snap: DrawSnap; from: XY | null;
           : snap.kind === 'route' ? <rect x={-6} y={-6} width={12} height={12} transform="rotate(45)" className="sim-snap-ring" />
           : snap.kind === 'object' ? <rect x={-6} y={-6} width={12} height={12} className="sim-snap-ring" />
           : <circle r={2.5} className="sim-snap-dot" />}
-        {from && len > 0 && <text x={14} y={-12} className="sim-rubber-len">{fmtLen(len)} · {(((Math.round(Math.atan2(y - from.y, x - from.x) * 180 / Math.PI) % 180) + 180) % 180)}°</text>}
+        {from && len > 0 && <text x={14} y={-12} className="sim-rubber-len">{fmtLen(len)} · {bearingDeg(from, snap.at)}°</text>}
       </g>
     </g>
   )
 }
+
+/** A line's angle as seen on screen (y down), 0–179°: up and to the right reads 45°. */
+const bearingDeg = (from: XY, to: XY) => ((Math.round((Math.atan2(from.y - to.y, to.x - from.x) * 180) / Math.PI) % 180) + 180) % 180
 
 /** A grid step (ft) that lands 30–150 px apart on screen. */
 function gridStep(ppf: number): number {
@@ -703,7 +707,7 @@ const HighwayMarks = memo(function HighwayMarks({ h, px, selected, draft, joins 
   const gap = HW_ARROW_GAP_PX * px, n = Math.max(1, Math.floor(L / gap))
   const ang = (Math.atan2(uy, ux) * 180) / Math.PI
   const at = (s: number, off: number) => ({ x: a.x + ux * s - uy * off, y: a.y + uy * s + ux * off })
-  const twoLane = h.dir === 'two' && h.lane !== 'single'
+  const twoLane = highwayLanes(h) === 2
   const marks: { x: number; y: number; deg: number; both?: boolean }[] = []
   for (let i = 0; i < n; i++) {
     const s = (L * (i + 0.5)) / n
@@ -712,19 +716,18 @@ const HighwayMarks = memo(function HighwayMarks({ h, px, selected, draft, joins 
     else if (h.dir === 'two') marks.push({ ...at(s, 0), deg: ang, both: true })
     else marks.push({ ...at(s, 0), deg: ang + (h.dir === 'ba' ? 180 : 0) })
   }
-  // The double centre line, in pieces between junctions (sampled every couple of screen pixels' worth).
+  // The double centre line, cut where a junction crosses it: each junction's span along the line.
   const centre: string[] = []
   if (twoLane) {
-    const step = Math.max(L / 400, 4 * px)
-    let from: number | null = null
-    for (let s = 0; s <= L + 1e-9; s += step) {
-      const inside = inJunction(joins, at(Math.min(s, L), 0))
-      if (!inside && from == null) from = s
-      if ((inside || s + step > L + 1e-9) && from != null) {
-        const to = inside ? s - step : L
-        if (to > from) for (const o of [-1.6 * px, 1.6 * px]) { const p = at(from, o), q = at(to, o); centre.push(`M${p.x} ${p.y}L${q.x} ${q.y}`) }
-        from = null
-      }
+    const cuts = joins.filter(j => j.ids.includes(h.id)).map(j => {
+      const t = j.poly.map(q => (q.x - a.x) * ux + (q.y - a.y) * uy)
+      return [Math.min(...t), Math.max(...t)] as const
+    }).sort((p, q) => p[0] - q[0])
+    let from = 0
+    for (const [lo, hi] of [...cuts, [L, L] as const]) {
+      const to = Math.min(lo, L)
+      if (to > from) for (const o of [-1.6 * px, 1.6 * px]) { const p = at(from, o), q = at(to, o); centre.push(`M${p.x} ${p.y}L${q.x} ${q.y}`) }
+      from = Math.max(from, hi)
     }
   }
   return (
@@ -739,16 +742,21 @@ const HighwayMarks = memo(function HighwayMarks({ h, px, selected, draft, joins 
   )
 })
 
-/** A highway's end handles: drag one to stretch or turn it. `quiet`: 'grab' — shown on hover only;
- *  'connect' — a small connection point, not pressable (a press there starts a new path). */
-function HighwayEnds({ h, px, quiet, skip }: { h: SimHighway; px: number; quiet?: 'grab' | 'connect'; skip?: Set<string> }) {
+/** A highway's end handles: drag one to stretch or turn it. `quiet`: shown on hover only, and not on
+ *  the ends in `skip` (a near miss — its amber cap takes the click to join). */
+const HighwayEnds = memo(function HighwayEnds({ h, px, quiet, skip }: { h: SimHighway; px: number; quiet?: boolean; skip?: Set<string> }) {
   const { a, b } = highwayEnds(h)
-  return <>{([['a', a], ['b', b]] as const).filter(([end]) => !(quiet === 'grab' && skip?.has(`${h.id}:${end}`))).map(([end, q]) => (
-    <g key={end} transform={`translate(${q.x} ${q.y}) scale(${px})`}
-      className={quiet === 'connect' ? 'sim-hw-connect' : `sim-handle sim-hw-end${quiet ? ' is-quiet' : ''}`}
-      {...(quiet === 'connect' ? {} : { 'data-hw-end': end, 'data-hw': h.id })}>
-      <circle r={quiet === 'connect' ? 4 : 7} />
+  return <>{([['a', a], ['b', b]] as const).filter(([end]) => !(quiet && skip?.has(`${h.id}:${end}`))).map(([end, q]) => (
+    <g key={end} transform={`translate(${q.x} ${q.y}) scale(${px})`} className={`sim-handle sim-hw-end${quiet ? ' is-quiet' : ''}`} data-hw-end={end} data-hw={h.id}>
+      <circle r={7} />
     </g>
+  ))}</>
+})
+
+/** Path tool: every path end as a connection point (not pressable — a press there starts a new path). */
+function PathConnectPoints({ highways, px }: { highways: SimHighway[]; px: number }) {
+  return <>{highways.flatMap(h => { const e = highwayEnds(h); return [e.a, e.b] }).map((q, i) => (
+    <circle key={i} cx={q.x} cy={q.y} r={4 * px} className="sim-hw-connect" />
   ))}</>
 }
 

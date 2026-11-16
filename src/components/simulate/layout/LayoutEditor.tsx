@@ -19,7 +19,7 @@ import { roundCorners } from '@/src/calc/sim/corners'
 import {
   addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowStartRefusal, flowTargets, hitTest, FLOW_POINT_TYPES, linkFlow, movePoints,
   notConnected, placeOnSegment, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
-  mergePoints, nextDirection, placeWithSpur, addHighway, highwayEndsAt, highwayLanes, laneKind, moveHighwayEnds, removeHighways, updateHighway, updateHighways, pointsInLoop, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
+  mergePoints, nextDirection, placeWithSpur, addHighway, highwayEndsAt, highwayLanes, laneKind, moveHighwayEnds, removeHighways, updateHighways, pointsInLoop, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import { fixAction, type checkStatus, type ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimHighway, SimLayout, SimPointType, SimRole, SimSegment } from '@/src/calc/sim/types'
@@ -37,6 +37,7 @@ import { Section } from '../inspector/InspectorParts'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import LayoutCanvas, { POINT_HIT_PX, type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
 import LayoutPanel, { Segmented } from './LayoutPanel'
+import PathBar from './PathBar'
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
 /** The side panel's tabs. */
@@ -45,33 +46,22 @@ export type PanelTab = 'layout' | 'flows' | 'checks'
 type Tool = 'lasso' | 'hand' | 'points' | 'routes' | 'highway' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
 const DRAG_PX = 8
-/** The tool bar (owner, 2026-11-16: "Paths, endpoints, lasso, undo, redo"). */
-const TOOLS: { id: Tool; label: string; key: string }[] = [
-  { id: 'highway', label: 'Path', key: 'P' },
-  { id: 'points', label: 'Endpoint', key: 'E' },
-  { id: 'lasso', label: 'Lasso', key: 'L' },
-]
-/** Every tool key — the bar's, and the tools kept off it (spec: "Kept, off the bar"). */
-const KEYS: Record<string, Tool> = { p: 'highway', w: 'highway', e: 'points', l: 'lasso', v: 'lasso', h: 'hand', r: 'routes', f: 'flows', s: 'scale' }
-const HINT: Record<Tool, string> = {
-  highway: 'Drag to draw a path · click a path to edit it · Enter to select',
-  points: 'Click beside a path to add an endpoint · Shift places it unconnected · Enter to select',
-  lasso: 'Click to select · draw a loop for several · drag a path end to turn it',
-  hand: 'Drag to move around · hold Space to pan in any tool',
-  routes: 'Click or drag to draw a route · the + shows where it lands · start on a route to branch from it',
-  flows: 'Click a Pick (or a Drop) — the points it can link to light up',
-  scale: 'Click both ends of a known dimension',
+/** Every tool, once (owner, 2026-11-16: the bar is "Paths, endpoints, lasso, undo, redo"; the rest
+ *  stay on their keys — spec "Kept, off the bar"). The first key is the one shown. */
+const TOOL_DEFS: Record<Tool, { keys: string[]; hint: string; bar?: { label: string; icon: string } }> = {
+  highway: { keys: ['p', 'w'], hint: 'Drag to draw a path · click a path to edit it · Enter to select', bar: { label: 'Path', icon: 'M3 6h18M3 18h18M8 12h8M14 10l2 2-2 2M10 10l-2 2 2 2' } },
+  points: { keys: ['e'], hint: 'Click beside a path to add an endpoint · Shift places it unconnected · Enter to select', bar: { label: 'Endpoint', icon: 'M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z' } },
+  lasso: { keys: ['l', 'v'], hint: 'Click to select · draw a loop for several · drag a path end to turn it', bar: { label: 'Lasso', icon: 'M8 17.5C4.5 16.5 3 14 3 11.5 3 7 7 4 12 4s9 3 9 7.5-4 7.5-9 7.5c-1.5 0-3-.2-4-.5M8 17.5c-1 1-1 3 1 3.5' } },
+  hand: { keys: ['h'], hint: 'Drag to move around · hold Space to pan in any tool' },
+  routes: { keys: ['r'], hint: 'Click or drag to draw a route · the + shows where it lands · start on a route to branch from it' },
+  flows: { keys: ['f'], hint: 'Click a Pick (or a Drop) — the points it can link to light up' },
+  scale: { keys: ['s'], hint: 'Click both ends of a known dimension' },
 }
-/** Tool icons — the proof of concept's set, plus Flow. */
-const TOOL_ICON: Record<Tool | 'undo' | 'redo', string> = {
-  lasso: 'M8 17.5C4.5 16.5 3 14 3 11.5 3 7 7 4 12 4s9 3 9 7.5-4 7.5-9 7.5c-1.5 0-3-.2-4-.5M8 17.5c-1 1-1 3 1 3.5', routes: 'M4 20V8h8v8h8V4', highway: 'M3 6h18M3 18h18M8 12h8M14 10l2 2-2 2M10 10l-2 2 2 2',
-  hand: 'M8 13V5.5a1.5 1.5 0 013 0V12M11 11.5v-7a1.5 1.5 0 013 0V12M14 6.5a1.5 1.5 0 013 0V13M17 9.5a1.5 1.5 0 013 0V15a6 6 0 01-6 6h-2a6 6 0 01-4.9-2.5L4.5 14a1.5 1.5 0 012.4-1.8L8 13.5',
-  points: 'M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z',
-  flows: 'M4 18c6 0 9-12 16-12M15 3l5 3-5 3', scale: 'M3 17L17 3l4 4L7 21zM7 13l2 2M10 10l2 2M13 7l2 2',
-  undo: 'M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3', redo: 'M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3',
-}
-function ToolIcon({ name }: { name: keyof typeof TOOL_ICON }) {
-  return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={TOOL_ICON[name]} /></svg>
+const BAR = (Object.entries(TOOL_DEFS) as [Tool, (typeof TOOL_DEFS)[Tool]][]).flatMap(([id, t]) => (t.bar ? [{ id, key: t.keys[0].toUpperCase(), ...t.bar }] : []))
+const KEYS = Object.fromEntries((Object.entries(TOOL_DEFS) as [Tool, (typeof TOOL_DEFS)[Tool]][]).flatMap(([id, t]) => t.keys.map(k => [k, id]))) as Record<string, Tool>
+const UNDO_ICON = 'M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3', REDO_ICON = 'M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3'
+function ToolIcon({ d }: { d: string }) {
+  return <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={d} /></svg>
 }
 type Placeable = SimPointType | 'object'
 const PALETTE: Placeable[] = [...FLOW_POINT_TYPES, ...VEHICLE_POINT_TYPES, 'object']
@@ -99,7 +89,8 @@ type Drag =
   | { kind: 'points'; ids: string[]; from: XY; at: XY; snap?: DrawSnap }
   | { kind: 'handle'; segId: string; which: Handle; at: XY }
   | { kind: 'object'; id: string; from: XY; at: XY }
-  | { kind: 'box'; box: 'object'; from: XY; at: XY }
+  /** Endpoint tool's Object: a wall, column or rack face being dragged out. */
+  | { kind: 'box'; from: XY; at: XY }
   /** Highway tool: dragging one out from end to end (each end snapped). */
   | { kind: 'hwDraw'; from: XY; at: XY; snap: DrawSnap; hit: CanvasPointer['hit'] }
   /** A highway moved whole, or one of its ends dragged (stretch / turn). */
@@ -108,9 +99,11 @@ type Drag =
   /** Lasso tool: the loop drawn so far; `add` (Shift) adds to the selection. */
   | { kind: 'lasso'; pts: XY[]; add: boolean }
   /** `linked`: other highways' ends at the same spot (a corner) — they move with it. */
-  | { kind: 'hwEnd'; id: string; end: 'a' | 'b'; at: XY; snap?: DrawSnap; linked: { id: string; end: 'a' | 'b' }[] }
-  /** A lane grip: one lane or two, by how far out it is dragged. */
-  | { kind: 'hwGrip'; id: string; lanes: 1 | 2 }
+  /** `pivot`: the other end, which it turns about; `rest`: what it snaps to (the layout without the
+   *  moving highways) — both worked out once, at the press. */
+  | { kind: 'hwEnd'; id: string; end: 'a' | 'b'; at: XY; snap?: DrawSnap; linked: { id: string; end: 'a' | 'b' }[]; pivot: XY; rest: SimLayout }
+  /** A lane grip: two lanes once dragged further than `twoAt` from the centre line (`c`, normal `n`). */
+  | { kind: 'hwGrip'; id: string; lanes: 1 | 2; c: XY; n: XY; twoAt: number }
 
 interface Props {
   project: StoredProject
@@ -145,6 +138,7 @@ interface Props {
   vehicleTypes?: Vehicle[]
   onFlowVehicle?: (flowId: string, vehicleId: string) => void
 }
+const PATH_KIND = { dir: 'two', lane: 'single' } as const
 const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
@@ -215,12 +209,13 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     [layout, simFlows, simVehicleById, rule, payloads],
   )
   const clearances = showClearance ? inputs.clearances : null
-  /** Direction and lanes for the routes and paths drawn next (Route tool options; a path always starts
-   *  one lane, two-way — owner: "one lane, expand to two"). One-way runs the way it is drawn. */
-  const [routeKind, setRouteKind] = useState<Pick<SimSegment, 'dir' | 'lane'>>({ dir: 'two', lane: 'single' })
+  /** Direction and lanes for the routes drawn next (Route tool options). One-way runs the way it is drawn. */
+  const [routeKind, setRouteKind] = useState<Pick<SimSegment, 'dir' | 'lane'>>({ dir: 'two', lane: 'two' })
   // New routes and highways are drawn at the suggested B56.5 width, and snap half of it off an object,
   // so the lane keeps its clearance.
   const newWidthFt = suggestedWidthFt(routeKind, inputs.envelopeFt, rule), snapOffsetFt = newWidthFt / 2
+  /** A new path is one lane, two-way (owner: "one lane, expand to two"), at the suggested width. */
+  const pathWidthFt = suggestedWidthFt(PATH_KIND, inputs.envelopeFt, rule)
   /** Each highway's worst B56.5 status, from the same clearances a run uses (its derived routes). */
   const highwayStatus = useMemo(() => {
     const of = new Map(net.segments.flatMap(s => (s.highwayId ? [[s.id, s.highwayId] as const] : [])))
@@ -245,7 +240,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const cancel = () => { setChainFrom(null); setMarks(null); setArmed(null) }
   const chooseTool = (t: Tool) => {
     if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); setTab('layout') } return }
-    setTool(t); cancel()
+    setTool(t); cancel(); setDrag(null)
   }
   /** Undo/redo can remove what a half-drawn route or a selection points at: drop both. */
   const undo = () => { cancel(); setSelection(null); editor.undo() }
@@ -254,7 +249,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const selectedHighways = selection?.kind === 'highways' ? selection.ids : selection?.kind === 'highway' ? [selection.id] : []
   const highwaySelection = (ids: string[]): Selection => (ids.length > 1 ? { kind: 'highways', ids } : ids.length ? { kind: 'highway', id: ids[0] } : null)
   const pointSelection = (ids: string[]): Selection => (ids.length > 1 ? { kind: 'points', ids } : ids.length ? { kind: 'point', id: ids[0] } : null)
-  /** A lasso or Shift-drag box: the highways it touches; with none, the points inside. `add` keeps
+  /** A lasso loop: the highways it touches; with none, the points inside. `add` keeps
    *  what was selected (of the same kind). */
   const selectLoop = (loop: XY[], add: boolean) => {
     const hw = highwaysTouching(layout, loop)
@@ -269,7 +264,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     snapDraw(net, at, { px, from: chainFrom ? byId.get(chainFrom) : null, lock, offsetFt: snapOffsetFt })
   /** Where a highway end lands — the same snaps as a route end; off an object by half its width. */
   const hwSnap = (at: XY, lock: boolean, px: number, from: XY | null) =>
-    snapDraw(net, at, { px, from, lock, offsetFt: snapOffsetFt, diag: true })
+    snapDraw(net, at, { px, from, lock, offsetFt: pathWidthFt / 2, diag: true })
   /** One route click: start, continue or join. A press-drag-release is two of these (drag to draw). */
   const routeClick = (at: XY, lock: boolean, px: number) => {
     const end = anchor(routeSnap(at, lock, px))
@@ -308,7 +303,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       const h = layout.highways?.find(q => q.id === hit.id)
       if (!h) return
       setSelection({ kind: 'highway', id: hit.id })
-      setDrag({ kind: 'hwEnd', id: hit.id, end: hit.end, at, linked: highwayEndsAt(layout, highwayEnds(h)[hit.end], hit.id) })
+      const e = highwayEnds(h), end = e[hit.end], linked = highwayEndsAt(layout, end, hit.id)
+      const moving = new Set([hit.id, ...linked.map(l => l.id)])
+      const rest = withHighways<SimLayout>({ ...layout, highways: layout.highways?.filter(q => !moving.has(q.id)) })
+      setDrag({ kind: 'hwEnd', id: hit.id, end: hit.end, at: end, linked, pivot: e[hit.end === 'a' ? 'b' : 'a'], rest })
       return
     }
     if (hit?.kind === 'highway') {
@@ -325,24 +323,23 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   }
   /** A click (no drag) on something drawn while drawing: select it and go back to Lasso. */
   const selectDrawn = (hit: CanvasPointer['hit']): boolean => {
-    const sel: Selection = hit?.kind === 'point' || hit?.kind === 'highway' || hit?.kind === 'object' ? { kind: hit.kind, id: hit.id }
-      : hit?.kind === 'segment' ? { kind: 'segment', id: hit.id } : null
+    const sel: Selection = hit?.kind === 'point' || hit?.kind === 'highway' || hit?.kind === 'object' || hit?.kind === 'segment' ? { kind: hit.kind, id: hit.id } : null
     if (!sel) return false
     setSelection(sel); setTool('lasso'); setHover(null)
     return true
   }
-  /** Lanes for highways: the direction that fits (2 lanes is two-way) and the suggested width for it. */
-  const lanePatch = (h: SimHighway, lanes: 1 | 2) => {
-    const k = laneKind(h, lanes)
-    return highwayLanes(h) === lanes && h.dir === k.dir ? {} : { ...k, widthFt: suggestedWidthFt(k, inputs.envelopeFt, rule) }
+  /** A highway patch that changes its lane count brings the suggested width for the new count (the
+   *  selection bar, the grip and the inspector alike); the width typed in the inspector stays. */
+  const withLaneWidth = (h: SimHighway, patch: Partial<SimHighway>): Partial<SimHighway> => {
+    const k = { dir: patch.dir ?? h.dir, lane: 'lane' in patch ? patch.lane : h.lane }
+    return highwayLanes(k) !== highwayLanes(h) && patch.widthFt == null ? { ...patch, widthFt: suggestedWidthFt(k, inputs.envelopeFt, rule) } : patch
   }
-  /** A direction for a highway: one-way is one lane; two-way keeps its lanes. Width follows a lane change. */
-  const dirPatch = (h: SimHighway, dir: SimHighway['dir']) => {
-    const lanes = dir === 'two' ? highwayLanes(h) : 1, k = laneKind({ dir }, lanes)
-    return lanes === highwayLanes(h) ? k : { ...k, widthFt: suggestedWidthFt(k, inputs.envelopeFt, rule) }
-  }
+  /** Lanes for a highway: the direction that fits (2 lanes is two-way), and the width with it. */
+  const lanePatch = (h: SimHighway, lanes: 1 | 2) => withLaneWidth(h, laneKind(h, lanes))
   const setLanes = (ids: string[], lanes: 1 | 2) => setLayout(updateHighways(layout, ids, h => lanePatch(h, lanes)))
-  const setDirection = (ids: string[], dir: SimHighway['dir']) => setLayout(updateHighways(layout, ids, h => dirPatch(h, dir)), `dir:${ids.join()}`)
+  /** Direction only: the stored lanes and the width stay, so stepping round comes back as it was
+   *  (one-way drives one lane whatever is stored). */
+  const setDirection = (ids: string[], dir: (h: SimHighway) => SimHighway['dir']) => setLayout(updateHighways(layout, ids, h => ({ dir: dir(h) })), `dir:${ids.join()}`)
 
   const onRelease = (d: Drag) => {
     if (d.kind === 'lasso') { selectLoop(d.pts, d.add); return }
@@ -378,15 +375,15 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       const s = layout.segments.find(q => q.id === d.segId)
       if (s) setLayout(setCurve(layout, s.id, d.which === 'mid' ? { kind: 'arc', mid: d.at }
         : s.curve?.kind === 'bezier' ? { ...s.curve, [d.which]: d.at } : s.curve))
-    } else if (d.kind === 'box' && d.box === 'object') {
+    } else if (d.kind === 'box') {
       const made = addObject(layout, d.from, d.at)
       if (made.id) { setLayout(made.layout); setSelection({ kind: 'object', id: made.id }) }
     } else if (d.kind === 'hwDraw') {
-      const made = addHighway(layout, d.from, d.at, newWidthFt, routeKind)
+      const made = addHighway(layout, d.from, d.at, pathWidthFt, PATH_KIND)
       if (made.id) { setLayout(made.layout); setSelection({ kind: 'highway', id: made.id }) }
       else selectDrawn(d.hit)
     } else if (d.kind === 'highway' || d.kind === 'hwEnd') {
-      if (d.kind === 'hwEnd' || dx || dy) setLayout(draggedHighway(d))   // a plain click only selects
+      if ((d.kind === 'hwEnd' && d.snap) || dx || dy) setLayout(draggedHighway(d))   // a plain click only selects
     }
   }
 
@@ -407,18 +404,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       } else if (drag?.kind === 'hwEnd') {
         // An end turns about the other in 45° steps (Shift: any angle) and snaps like a path end. Never
         // onto itself or the ends moving with it: it snaps against the layout without them.
-        const h = layout.highways?.find(q => q.id === drag.id), ends = h && highwayEnds(h)
-        const moving = new Set([drag.id, ...drag.linked.map(l => l.id)])
-        const rest = withHighways<SimLayout>({ ...layout, highways: layout.highways?.filter(q => !moving.has(q.id)) })
-        const snap = snapDraw(rest, at, { px, from: ends ? ends[drag.end === 'a' ? 'b' : 'a'] : null, lock: shift, offsetFt: snapOffsetFt, diag: true })
+        const snap = snapDraw(drag.rest, at, { px, from: drag.pivot, lock: shift, offsetFt: pathWidthFt / 2, diag: true })
         setDrag({ ...drag, at: snap.at, snap })
       } else if (drag?.kind === 'hwGrip') {
-        // Out past halfway between the one- and two-lane widths: two lanes.
-        const h = layout.highways?.find(q => q.id === drag.id)
-        if (!h) return
-        const r = (h.angleDeg * Math.PI) / 180, across = Math.abs((at.x - h.x) * -Math.sin(r) + (at.y - h.y) * Math.cos(r))
-        const w = (n: 1 | 2) => suggestedWidthFt(laneKind(h, n), inputs.envelopeFt, rule)
-        const lanes = 2 * across > (w(1) + w(2)) / 2 ? 2 : 1
+        const lanes = Math.abs((at.x - drag.c.x) * drag.n.x + (at.y - drag.c.y) * drag.n.y) > drag.twoAt ? 2 : 1
         if (lanes !== drag.lanes) setDrag({ ...drag, lanes })
       } else if (drag?.kind === 'lasso') {
         const last = drag.pts[drag.pts.length - 1]
@@ -446,24 +435,21 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     // A near-miss end: one click joins it to the nearest aisle's centre line.
     if (hit?.kind === 'hwJoin') {
       const join = highwayConnections(layout).loose.find(x => x.id === hit.id && x.end === hit.end)?.join
-      const h = join && layout.highways?.find(q => q.id === join.id)
-      if (h && join) {
-        const ends = { ...highwayEnds(h), [join.end]: join.to }
-        const { x, y, lengthFt, angleDeg } = highwayFromEnds(ends.a, ends.b, h.widthFt, h)
-        setLayout(updateHighway(layout, h.id, { x, y, lengthFt, angleDeg }))
-        setSelection({ kind: 'highway', id: h.id })
-      }
+      if (join) { setLayout(moveHighwayEnds(layout, [join], join.to)); setSelection({ kind: 'highway', id: join.id }) }
       return
     }
     if (hit?.kind === 'hwGrip') {
+      // Out past halfway between the one- and two-lane widths: two lanes.
       const h = layout.highways?.find(q => q.id === hit.id)
-      if (h) setDrag({ kind: 'hwGrip', id: h.id, lanes: highwayLanes(h) })
+      const w = (n: 1 | 2) => (h ? suggestedWidthFt(laneKind(h, n), inputs.envelopeFt, rule) : 0)
+      const r = ((h?.angleDeg ?? 0) * Math.PI) / 180
+      if (h) setDrag({ kind: 'hwGrip', id: h.id, lanes: highwayLanes(h), c: { x: h.x, y: h.y }, n: { x: -Math.sin(r), y: Math.cos(r) }, twoAt: (w(1) + w(2)) / 4 })
       return
     }
     if (hit?.kind === 'dir') { stepDirection(hit.id); return }
     if (tool === 'lasso') { onSelectPress(at, hit, shift || !!toggle); return }
     if (tool === 'points') {
-      if (placeType === 'object') { setDrag({ kind: 'box', box: 'object', from: at, at }); return }
+      if (placeType === 'object') { setDrag({ kind: 'box', from: at, at }); return }
       // The same snap as routes: onto a route within reach (it joins); an existing point is selected
       // and the tool goes back to Lasso.
       const snap = placeSnap(at, px, shift)
@@ -504,8 +490,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     const r = layout.segments.find(q => q.id === id)
     if (r) setLayout(updateSegment(layout, id, { dir: nextDirection(r.dir) }), `dir:${id}`)
   }
-  /** D: every highway given steps its direction (lanes and width follow, as on the selection bar). */
-  const stepHighways = (ids: string[]) => setLayout(updateHighways(layout, ids, h => dirPatch(h, nextDirection(h.dir))), `dir:${ids.join()}`)
+  /** D: every highway given steps its direction together. */
+  const stepHighways = (ids: string[]) => setDirection(ids, h => nextDirection(h.dir))
   /** The layout as a highway drag would leave it: the highway moved whole, or one end at the pointer. */
   const draggedHighway = (d: Extract<Drag, { kind: 'highway' | 'hwEnd' }>): EditorLayout =>
     d.kind === 'highway' ? updateHighways(layout, d.ids, q => ({ x: q.x + d.at.x - d.from.x, y: q.y + d.at.y - d.from.y }))
@@ -619,7 +605,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     // Enter: finish what is half-drawn, else back to Lasso keeping the selection; Esc also clears it.
     else if (e.key === 'Escape' || e.key === 'Enter') {
       if (chainFrom || marks) cancel()
-      else { setTool('lasso'); setHover(null); if (e.key === 'Escape') setSelection(null) }
+      else { chooseTool('lasso'); setHover(null); if (e.key === 'Escape') setSelection(null) }
     }
     else if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); deleteSelection() }
   }
@@ -670,7 +656,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     : tool === 'routes' && chainFrom ? 'Click where the + is to continue · it joins points and routes it touches · Shift keeps it straight · right-click or Enter to finish'
     : tool === 'points' && armed ? `Click on a route to place “${armed.name}”`
     : tool === 'points' && placeType === 'object' ? 'Drag out a wall, column or rack face'
-    : HINT[tool]
+    : TOOL_DEFS[tool].hint
   const imageFt = bg && image ? { href: image, widthFt: (bg.widthPx ?? 0) * scale, heightFt: (bg.heightPx ?? 0) * scale, opacity: bg.opacity } : null
   // What the canvas shows mid-drag: moved points/objects, a bent handle, a box being dragged out.
   const shownLayout = drag?.kind === 'handle'
@@ -685,49 +671,16 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           : layout
   /** The highway being dragged out (Highway tool). */
   const draftHighway = drag?.kind === 'hwDraw' && Math.hypot(drag.at.x - drag.from.x, drag.at.y - drag.from.y) > 0.5
-    ? highwayFromEnds(drag.from, drag.at, newWidthFt, { id: 'draft', ...routeKind }) : null
+    ? highwayFromEnds(drag.from, drag.at, pathWidthFt, { id: 'draft', ...PATH_KIND }) : null
   const offset = drag?.kind === 'points' ? { ids: new Set(drag.ids), d: { x: drag.at.x - drag.from.x, y: drag.at.y - drag.from.y } } : null
 
-  /** While an end is dragged: the end it turns about (the length · angle label measures from it). */
-  const hwEndFrom = (() => {
-    if (drag?.kind !== 'hwEnd') return null
-    const h = layout.highways?.find(q => q.id === drag.id)
-    return h ? highwayEnds(h)[drag.end === 'a' ? 'b' : 'a'] : null
-  })()
   // The selection bar (owner, 2026-11-16): above the selected path(s) — direction, lanes, length, delete.
   const selHw = drag ? [] : (layout.highways ?? []).filter(h => selectedHighways.includes(h.id))
   const selBar = selHw.length ? (() => {
-    const cs = selHw.flatMap(highwayCorners), xs = cs.map(q => q.x), ys = cs.map(q => q.y)
-    const dir = selHw.every(h => h.dir === selHw[0].dir) ? selHw[0].dir : null
-    const lanes = selHw.every(h => highwayLanes(h) === highwayLanes(selHw[0])) ? highwayLanes(selHw[0]) : null
-    const ang = selHw[0].angleDeg, ids = selHw.map(h => h.id)
-    const total = selHw.reduce((t, h) => t + h.lengthFt, 0), len = (ft: number) => fmtLength(ft, unitSystem, 0)
-    const DIRS: { id: SimHighway['dir']; label: string; d: string; turn: number }[] = [
-      { id: 'two', label: 'Two-way', d: 'M4 12h16M8 8l-4 4 4 4M16 8l4 4-4 4', turn: 0 },
-      { id: 'ab', label: 'One-way', d: 'M4 12h16M15 7l5 5-5 5', turn: 0 },
-      { id: 'ba', label: 'One-way, the other way', d: 'M4 12h16M15 7l5 5-5 5', turn: 180 },
-    ]
+    const cs = selHw.flatMap(highwayCorners), xs = cs.map(q => q.x), ys = cs.map(q => q.y), ids = selHw.map(h => h.id)
     return {
       at: { x: (Math.min(...xs) + Math.max(...xs)) / 2, y: Math.min(...ys) },
-      node: <>
-        <div className="seg" role="group" aria-label="Direction">
-          {DIRS.map(o => (
-            <button key={o.id} type="button" className={dir === o.id ? 'on' : ''} aria-pressed={dir === o.id} title={`${o.label} (D)`} aria-label={o.label} onClick={() => setDirection(ids, o.id)}>
-              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden style={{ transform: `rotate(${ang + o.turn}deg)` }}><path d={o.d} /></svg>
-            </button>
-          ))}
-        </div>
-        <div className="seg" role="group" aria-label="Lanes">
-          {([1, 2] as const).map(n => (
-            <button key={n} type="button" className={lanes === n ? 'on' : ''} aria-pressed={lanes === n} onClick={() => setLanes(ids, n)}
-              title={n === 2 ? 'Two-way, a lane each way — no passing' : 'One lane: shared two-way, or one-way'}>{n === 1 ? '1 lane' : '2 lanes'}</button>
-          ))}
-        </div>
-        <span className="sim-selbar-read">{selHw.length === 1 ? `${len(total)} · ${len(selHw[0].widthFt)} wide` : `${selHw.length} paths · ${len(total)}`}</span>
-        <button type="button" className="sim-selbar-del" onClick={deleteSelection} title="Delete (Del)" aria-label="Delete">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" /></svg>
-        </button>
-      </>,
+      node: <PathBar paths={selHw} fmtLen={ft => fmtLength(ft, unitSystem, 0)} onDirection={dir => setDirection(ids, () => dir)} onLanes={n => setLanes(ids, n)} onDelete={deleteSelection} />,
     }
   })() : null
 
@@ -770,8 +723,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             panOnEmpty={false}
             panAlways={tool === 'hand' || spaceHeld}
             fmtLen={ft => fmtLength(ft, unitSystem, 1)}
-            rubberFrom={drag?.kind === 'hwDraw' ? drag.from : hwEndFrom ?? (chainFrom ? byId.get(chainFrom) ?? null : null)}
-            box={drag?.kind === 'box' ? { a: drag.from, b: drag.at, kind: drag.box } : null}
+            rubberFrom={drag?.kind === 'hwDraw' ? drag.from : drag?.kind === 'hwEnd' ? drag.pivot : chainFrom ? byId.get(chainFrom) ?? null : null}
+            box={drag?.kind === 'box' ? { a: drag.from, b: drag.at } : null}
             lasso={drag?.kind === 'lasso' ? drag.pts : null}
             marks={marks ?? []}
             offset={offset}
@@ -801,15 +754,15 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           >
             {/* Floating tool bar (proof-of-concept look): tools, then undo/redo. */}
             <div className="sim-tools" role="toolbar" aria-label="Layout tools" onPointerDown={e => e.stopPropagation()}>
-              {TOOLS.map(t => (
+              {BAR.map(t => (
                 <button key={t.id} type="button" className={`sim-tool${tool === t.id && !marks ? ' on' : ''}`} aria-pressed={tool === t.id}
-                  title={`${t.label} (${t.key}) — ${HINT[t.id]}`} aria-label={t.label} onClick={() => chooseTool(t.id)}>
-                  <ToolIcon name={t.id} />
+                  title={`${t.label} (${t.key}) — ${TOOL_DEFS[t.id].hint}`} aria-label={t.label} onClick={() => chooseTool(t.id)}>
+                  <ToolIcon d={t.icon} />
                 </button>
               ))}
               <div className="sim-tool-sep" />
-              <button type="button" className="sim-tool" disabled={!canUndo} onClick={undo} title="Undo (⌘Z)" aria-label="Undo"><ToolIcon name="undo" /></button>
-              <button type="button" className="sim-tool" disabled={!canRedo} onClick={redo} title="Redo (⇧⌘Z)" aria-label="Redo"><ToolIcon name="redo" /></button>
+              <button type="button" className="sim-tool" disabled={!canUndo} onClick={undo} title="Undo (⌘Z)" aria-label="Undo"><ToolIcon d={UNDO_ICON} /></button>
+              <button type="button" className="sim-tool" disabled={!canRedo} onClick={redo} title="Redo (⇧⌘Z)" aria-label="Redo"><ToolIcon d={REDO_ICON} /></button>
             </div>
             {tool === 'points' && !marks && (
               <div className="sim-palette" aria-label="Point type" onPointerDown={e => e.stopPropagation()}>
@@ -882,8 +835,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   onSegment={(id, patch) => setLayout(updateSegment(layout, id, patch))}
                   onCurve={(id, kind) => setLayout(setCurve(layout, id, kind === 'spline' ? splineHandles(layout, id) ?? undefined : undefined))}
                   onObject={(id, patch) => setLayout(updateObject(layout, id, patch), `object:${id}:${Object.keys(patch).join()}`)}
-                  onHighways={(ids, patch, what) => setLayout(updateHighways(layout, ids, patch), `highways:${ids.join()}:${what}`)}
-                  onHighway={(id, patch) => setLayout(updateHighway(layout, id, patch), `highway:${id}:${Object.keys(patch).join()}`)}
+                  onHighways={(ids, patch, what) => setLayout(updateHighways(layout, ids, h => ('lane' in patch(h) ? withLaneWidth(h, patch(h)) : patch(h))), `highways:${ids.join()}:${what}`)}
+                  onHighway={(id, patch) => setLayout(updateHighways(layout, [id], h => ('lane' in patch ? withLaneWidth(h, patch) : patch)), `highway:${id}:${Object.keys(patch).join()}`)}
                   envelopeFt={inputs.envelopeFt}
                   highwayStatus={highwayStatus}
                   simVehicleOf={simVehicleOf}
