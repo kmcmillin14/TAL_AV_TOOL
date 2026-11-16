@@ -27,15 +27,21 @@ export function results(S: SimState): SimResults {
     const flows = S.flows.filter(F => F.f.vehicleId === vid)
     const veh = S.veh.filter(v => v.prof.vehicle.id === vid)
     const gen = flows.reduce((a, F) => a + F.gen, 0)
-    const done = flows.reduce((a, F) => a + F.done, 0)
+    // Moves finished off-shift are the backlog worked off after hours — late, not delivered on time.
+    const done = flows.reduce((a, F) => a + F.done - F.late, 0)
     const disp = flows.reduce((a, F) => a + F.dispatched, 0)
     const waitSum = flows.reduce((a, F) => a + F.waitSum, 0)
     const inProgress = S.orders.filter(o => o.v != null && o.F.f.vehicleId === vid).length
     const time = emptySplit()
     for (const v of veh) for (const k of Object.keys(time) as (keyof TimeSplit)[]) time[k] += v.tm[k]
     const busy = time.travel + time.handle + time.reposition + time.wait
-    const available = busy + time.idle
-    const utilization = available > 0 ? busy / available : 0
+    // Utilization is busy ÷ the shift's working time (not charging). Busy time off-shift — catching up a
+    // backlog — is overtime: it counts as work but adds no capacity, so an undersized fleet reads over 100%.
+    const busyOff = veh.reduce((a, v) => a + v.busyOff, 0)
+    const available = busy - busyOff + time.idle
+    // Orders never finished (still waiting at the end) would need more busy time again, in proportion.
+    const finished = flows.reduce((a, F) => a + F.done, 0) + inProgress
+    const utilization = available > 0 ? (busy / available) * (finished > 0 && finished < gen ? gen / finished : 1) : 0
     const ser = S.series.get(vid) ?? []
     const last = ser.length - 1
     const backlogTrend = ser.length > 60 ? ser[last][1] - ser[last - 60][1] : 0
@@ -73,7 +79,7 @@ export function results(S: SimState): SimResults {
     const busy = v.tm.travel + v.tm.handle + v.tm.reposition + v.tm.wait
     return {
       id: v.id, vehicleId: v.prof.vehicle.id, done: v.done, perHr: hrs > 0 ? v.done / hrs : 0,
-      utilization: busy + v.tm.idle > 0 ? busy / (busy + v.tm.idle) : 0,
+      utilization: busy - v.busyOff + v.tm.idle > 0 ? busy / (busy - v.busyOff + v.tm.idle) : 0,
       time: { ...v.tm }, soc: v.soc, socMin: v.socMin, chargeTrips: v.chargeTrips,
     }
   })
@@ -86,7 +92,7 @@ export function results(S: SimState): SimResults {
     verdict: S.t < VERDICT.WARMUP_S && !S.gridlock ? 'warming' : verdict,
     types, vehicles,
     flows: S.flows.map(F => ({
-      flowId: F.f.id, measuredFt: F.measuredFt, perHr: hrs > 0 ? F.done / hrs : 0,
+      flowId: F.f.id, measuredFt: F.measuredFt, perHr: hrs > 0 ? (F.done - F.late) / hrs : 0,
       mission: F.done ? F.misSum / F.done : null, wait: F.dispatched ? F.waitSum / F.dispatched : null,
     })),
     gridlock: S.gridlock,

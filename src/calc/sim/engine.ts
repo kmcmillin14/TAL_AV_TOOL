@@ -52,6 +52,8 @@ export interface FlowState {
   measuredFt: number
   gen: number
   done: number
+  /** Moves finished off-shift — the backlog worked off after hours: late, not counted as delivered. */
+  late: number
   misSum: number
   waitSum: number
   dispatched: number
@@ -103,6 +105,8 @@ export interface SimVehicle {
   /** Feet driven, and seconds spent moving (any trip), for the fleet's average speed. */
   distFt: number
   moveT: number
+  /** Busy seconds off-shift (catching up a backlog) — overtime: it counts against the shift's capacity. */
+  busyOff: number
   socMin: number
   /** Moves this vehicle delivered (per-vehicle table; Σ = the type's `done`, acceptance 16). */
   done: number
@@ -219,7 +223,7 @@ export function createSim(
       pickSec: loadSec + lift(pa) + (pa.handshakeSec ?? 0),
       dropSec: unloadSec + lift(pb) + (pb.handshakeSec ?? 0),
       measuredFt: pathLen(G, a!, b!),
-      gen: 0, done: 0, misSum: 0, waitSum: 0, dispatched: 0,
+      gen: 0, done: 0, late: 0, misSum: 0, waitSum: 0, dispatched: 0,
     })
   }
 
@@ -240,7 +244,7 @@ export function createSim(
         i, id: `${vid}-${j + 1}`, prof, node, atNode: true, nodes: [node], edges: [], pi: 1, s: 0,
         x: p.x, y: p.y, th: -Math.PI / 2, h: -Math.PI / 2, speed: 0, mode: 'home', job: null, loaded: false,
         payload: P.payloadFt?.[vid] ?? null, soc, held: new Set([z]), heldJ: new Set(), tl: 0, repo: 0, want: 0, moved: 0, waitFor: null, waitZone: null, blockedBy: null, headOn: false,
-        cycT: 0, parkT: 0, mustCharge: false, chargeTrips: 0, chargeWaitT: 0, distFt: 0, moveT: 0, socMin: soc, done: 0,
+        cycT: 0, parkT: 0, mustCharge: false, chargeTrips: 0, chargeWaitT: 0, distFt: 0, moveT: 0, busyOff: 0, socMin: soc, done: 0,
         tm: emptySplit(), handlingLog: [],
       })
     }
@@ -679,6 +683,7 @@ export function step(S: SimState) {
     let kw = b ? b.idleKw : 0
     if (v.mode === 'pick' || v.mode === 'drop') {
       kw = busyKw
+      if (!inShift(P, t)) v.busyOff += DT
       S.lastProgress = S.t
       if (v.repo > 0) { const r = Math.min(v.repo, DT); v.repo -= r; v.tm.reposition += r; v.tl -= DT - r; v.tm.handle += DT - r }
       else { v.tm.handle += DT; v.tl -= DT }
@@ -689,6 +694,7 @@ export function step(S: SimState) {
         } else {
           const o = v.job!, F = o.F
           F.done++; v.done++; F.misSum += S.t - o.td
+          if (!inShift(P, t)) F.late++
           const hr = Math.floor(S.t / 3600); S.hourly[hr] = (S.hourly[hr] ?? 0) + 1
           S.orders.splice(S.orders.indexOf(o), 1)
           afterDrop(S, v)
@@ -696,6 +702,7 @@ export function step(S: SimState) {
       }
     } else if (MOVING.has(v.mode)) {
       kw = busyKw
+      if (v.mode !== 'toCharge' && v.mode !== 'toHome' && !inShift(P, t)) v.busyOff += DT
       // a trip to a charger is charging logistics; heading home is idle (still dispatchable)
       if (v.mode === 'toCharge') v.tm.charge += DT
       else if (v.mode === 'toHome') { if (inShift(P, t)) v.tm.idle += DT }

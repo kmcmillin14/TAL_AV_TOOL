@@ -62,3 +62,17 @@ describe('charge keeps up — the third sizing check', () => {
     expect(wk.checks.battery).toBe(true)
   }, 120000)
 })
+
+describe('utilization over a week — an undersized fleet reads over 100% (owner, 2026-11-16)', () => {
+  it('work finished off-shift is late and counts as overtime, not capacity', () => {
+    const { layout, flows } = sampleLayout()
+    const one = results(runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 1 }, staffedHr: 8, daysPerWeek: 5 }))!, 7 * 86400)).types[0]
+    const need = flows.reduce((a, f) => a + f.thruPerHr, 0)
+    expect(one.utilization).toBeGreaterThan(1)                 // the work needs more than one vehicle's shift
+    expect(one.perHr).toBeLessThan(need * 0.9)                 // late moves are not delivered on time
+    expect(one.checks.orders).toBe(false)
+    const three = results(runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 8, daysPerWeek: 5 }))!, 7 * 86400)).types[0]
+    expect(three.utilization).toBeLessThan(0.9)
+    expect(three.checks.orders).toBe(true)
+  }, 120000)
+})

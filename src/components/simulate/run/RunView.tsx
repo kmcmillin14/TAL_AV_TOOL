@@ -423,7 +423,9 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
           <p className="sim-kebab-note">Simulation only — Sizing keeps {Math.round(sizingTarget * 100)}%. Typical: 80–85% for opportunity-charged fleets.</p>
         </KebabMenu>
         <span className="sim-kpi-val num">{pctOf(u.simulated)}</span>
-        <span className="sim-kpi-lbl">{over ? `2 · Utilization · over by ${Math.round((u.simulated! - 1) * 100)}%` : '2 · Utilization'}</span>
+        {/* Red says by how much: over the target (pts), or over capacity (the work needs more than the fleet has). */}
+        <span className="sim-kpi-lbl">2 · Utilization{over ? ` · over capacity by ${Math.round((u.simulated! - 1) * 100)}%`
+          : u.pass === false ? ` · over target by ${Math.round((u.simulated! - u.target) * 100)} pts` : ''}</span>
         <span className="sim-kpi-sub">target {pctOf(u.target)} · static {pctOf(u.static)}</span>
         {u.fewerAt != null && <span className="sim-kpi-sub sim-kpi-hint">Low — {h.fleet.tested - 1} would run at about {pctOf(u.fewerAt)}</span>}
       </div>

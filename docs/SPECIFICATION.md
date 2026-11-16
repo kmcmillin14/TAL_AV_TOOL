@@ -875,6 +875,17 @@ step ribbon is unchanged.
     warnings and notes, one row per thing (each loose point is its own row). Clicking a row selects
     what it is about and centres the view on it; a row's fix button picks the tool that fixes it
     (Draw route · Place charger · Link flow · Scale · Open Flows).
+  - *Utilization, measured (owner, 2026-11-16).* Busy time (travelling, handling, repositioning,
+    waiting in traffic) ÷ the shift's working time not spent charging. Work done off-shift — a backlog
+    worked off after hours — counts as busy but adds no capacity (overtime), and moves finished
+    off-shift are late (not counted as delivered); orders still unfinished at the end scale the busy
+    time up in proportion. So a fleet that is too small reads over 100% ("over capacity by X%").
+    Colours: **green** at or under the target with no room for one fewer; **amber** "Low — N−1 would
+    run at about X%" (one fewer would still be at or under the target); **red** over the target ("over
+    target by X pts") or over capacity. Tiles share the width evenly.
+  - *Lane arrows (owner, 2026-11-16).* Arrows sit on one grid along each lane's axis, so a straight
+    highway made of several routes is marked evenly end to end, whatever its junctions; curves are
+    spaced along themselves; a short one-way route still shows one.
   - *Run tiles (owner, 2026-11-13).* Left to right: the **Verdict** (hero — the outcome, its three
     checks stacked, what sets the fleet), the fleet tile (photo, stepper, Use N in pricing), **1 · Orders
     per hour**, **2 · Utilization** (⋮: target utilization, simulation only; typical 80–85% for

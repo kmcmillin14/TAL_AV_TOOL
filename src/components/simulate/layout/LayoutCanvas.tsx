@@ -468,10 +468,12 @@ const clampPpf = (ppf: number) => Math.min(400, Math.max(0.05, ppf))
 /** The middle of a route, along its line or curve. */
 /** The middle of a route along its curve (badges, the navigator). */
 export const segMid = (s: SimSegment, a: XY, b: XY): XY => { const g = segmentGeometry(a, b, s.curve), m = g.at(g.length / 2); return { x: m.x, y: m.y } }
-/** Arrow spacing on a route, screen px: a street's lanes, a shared single lane, a one-way route. And
- *  at most this many per lane, so zooming in never builds thousands of arrows off screen. */
-const ARROW_GAP_PX = { street: 90, shared: 56, oneWay: 34 }
-const MAX_ARROWS = 32
+/** Arrow spacing along a lane, screen px: a street's lanes, a shared single lane, a one-way route.
+ *  Arrows sit on one grid along the lane's axis (owner, 2026-11-16: "arrows should cover the full
+ *  highway"), so a straight lane built from several routes is marked evenly end to end, whatever its
+ *  junctions. At most this many per route. */
+const ARROW_GAP_PX = { street: 120, shared: 100, oneWay: 90 }
+const MAX_ARROWS = 40
 /** The least width on screen for a two-lane aisle to show both travel paths, px. */
 const STREET_PX = 18
 
@@ -501,8 +503,25 @@ const Segment = memo(function Segment({ s, a, b, px, selected, widthFt }: { s: S
     const m = g.curved ? Math.max(8, Math.ceil(g.length / 2)) : 1
     return Array.from({ length: m + 1 }, (_, i) => { const c = g.at((g.length * i) / m); return `${i ? 'L' : 'M'}${c.x - c.ty * off} ${c.y + c.tx * off}` }).join('')
   }
-  const gap = twoLane ? ARROW_GAP_PX.street : single && s.dir === 'two' ? ARROW_GAP_PX.shared : ARROW_GAP_PX.oneWay
-  const n = Math.min(MAX_ARROWS, Math.max(1, Math.floor(g.length / (gap * px))))
+  const gap = (twoLane ? ARROW_GAP_PX.street : single && s.dir === 'two' ? ARROW_GAP_PX.shared : ARROW_GAP_PX.oneWay) * px
+  // Where the arrows go, ft from a, with their grid index k (alternation on a shared lane): straight
+  // routes use the grid along their axis — shared by every collinear route of the same lane — curves
+  // are spaced along themselves. A one-way route too short for a grid mark still gets one arrow.
+  const spots: { at: number; k: number }[] = []
+  if (g.curved || g.length < 1e-9) {
+    const m = Math.min(MAX_ARROWS, Math.max(1, Math.floor(g.length / gap)))
+    for (let i = 0; i < m; i++) spots.push({ at: (g.length * (i + 0.5)) / m, k: i })
+  } else {
+    let ux = (b.x - a.x) / g.length, uy = (b.y - a.y) / g.length, sign = 1
+    if (ux < -1e-9 || (Math.abs(ux) <= 1e-9 && uy < 0)) { ux = -ux; uy = -uy; sign = -1 }
+    const wa = a.x * ux + a.y * uy, wb = wa + sign * g.length
+    const lo = Math.min(wa, wb), hi = Math.max(wa, wb)
+    for (let k = Math.ceil(lo / gap - 0.5); (k + 0.5) * gap <= hi && spots.length < MAX_ARROWS; k++) {
+      const w = (k + 0.5) * gap
+      if (w >= lo) spots.push({ at: sign > 0 ? w - wa : wa - w, k })
+    }
+  }
+  if (!spots.length && s.dir !== 'two') spots.push({ at: g.length / 2, k: 0 })
   return (
     <g className={`sim-seg${selected ? ' is-selected' : ''}${twoLane ? ' is-two' : ''}`}>
       <path d={pathOf(a, b, s)} className="sim-tape" vectorEffect="non-scaling-stroke" />
@@ -510,17 +529,12 @@ const Segment = memo(function Segment({ s, a, b, px, selected, widthFt }: { s: S
         <>
           <path d={offsetPath(d)} className="sim-lane-path" vectorEffect="non-scaling-stroke" />
           <path d={offsetPath(-d)} className="sim-lane-path" vectorEffect="non-scaling-stroke" />
-          {Array.from({ length: n }, (_, i) => [
-            arrow(`f${i}`, (g.length * (i + 0.3)) / n, 1, false, true),
-            arrow(`b${i}`, (g.length * (i + 0.7)) / n, -1, true, true),
-          ])}
+          {spots.map(({ at, k }) => [arrow(`f${k}`, at, 1, false, true), arrow(`b${k}`, at, -1, true, true)])}
         </>
       )}
       {/* single-lane two-way: one path shared — arrows alternate; a lone arrow would read one-way */}
-      {s.dir === 'two' && single && (n === 1
-        ? [arrow('f', g.length * 0.35, 0, true), arrow('b', g.length * 0.65, 0, false)]
-        : Array.from({ length: n }, (_, i) => arrow(`${i}`, (g.length * (i + 0.5)) / n, 0, i % 2 === 1)))}
-      {s.dir !== 'two' && Array.from({ length: n }, (_, i) => arrow(`${i}`, (g.length * (i + 0.5)) / n, 0, s.dir === 'ba'))}
+      {s.dir === 'two' && single && spots.map(({ at, k }) => arrow(`${k}`, at, 0, ((k % 2) + 2) % 2 === 1))}
+      {s.dir !== 'two' && spots.map(({ at, k }) => arrow(`${k}`, at, 0, s.dir === 'ba'))}
     </g>
   )
 })

@@ -42,9 +42,9 @@ describe('Run headline: the static calc beside the simulation, and the three che
   })
 
   it('a fleet that cannot keep up: utilization over 100%, undersized, and the check that sets the fleet', () => {
-    const r = run([type('a', { fleet: 1, utilization: 0.97, perHr: 16, checks: { ...pass, orders: false } })], { verdict: 'short' })
+    const r = run([type('a', { fleet: 1, utilization: 0.97 * 40 / 16, perHr: 16, checks: { ...pass, orders: false } })], { verdict: 'short' })
     const h = runHeadline(fleet, { a: 1 }, r, flowsA, 100)
-    expect(h.utilization.simulated).toBeCloseTo(0.97 * 40 / 16)
+    expect(h.utilization.simulated).toBeCloseTo(0.97 * 40 / 16)               // taken as the run reports it
     expect(h).toMatchObject({ outcome: 'under', perHr: { pass: false }, utilization: { pass: false, tone: 'bad' } })
     expect(h.setsFleet).toEqual({ check: 'orders', n: 3 })                       // orders and utilization both need 3; the first named wins
   })

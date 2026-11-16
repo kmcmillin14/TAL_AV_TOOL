@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: utilization counts overtime; lane arrows along whole highways
+
+- **Fix — utilization of an undersized fleet:** over a week, backlog worked off after the shift was
+  counted as on-time work, so an undersized fleet read ~100% and its orders looked met. Off-shift busy
+  time is now overtime (no added capacity) and off-shift completions are late: 2 CB18s on the sample
+  read 122% (static calc: ~121%), 1 reads 314%. **Results change** for undersized fleets.
+- Utilization tile: red says "over target by X pts" or "over capacity by X%"; amber "Low — N−1…".
+- Tiles share the width evenly. Lane arrows sit on one grid along each lane's axis (continuous across
+  junctions of a straight highway) instead of per route.
+
 ## 2026-11-13 — Fleet simulation: battery rule over the week; low utilization; fleet tile first
 
 - **Battery check** (owner): charge may fall day over day through the working week; it fails only when a

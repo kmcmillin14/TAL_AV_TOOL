@@ -6,7 +6,6 @@
 
 import { engineFleetSold } from '@/src/calc/fleet'
 import type { FleetSummary } from '@/src/calc/types'
-import { VERDICT } from './results'
 import type { SimResults, Verdict } from './types'
 
 /** A tile's colour against its check. */
@@ -20,9 +19,8 @@ export interface Headline {
   fleet: { static: number; tested: number }
   /** Check 1 — moves per hour delivered against the demand the run generates (all types). */
   perHr: { simulated: number | null; target: number; pass: boolean | null; tone: Tone }
-  /** Check 2 — busy ÷ time not charging: what the static calc expects at its fleet, what the work needs.
-   *  When moves fall short, `simulated` is what it would need (measured × demand ÷ moves done) and can
-   *  be over 1. */
+  /** Check 2 — busy ÷ the shift's time not charging: what the static calc expects at its fleet, what the
+   *  work needs (with overtime and unfinished orders — over 1 when the fleet is too small). */
   utilization: { static: number | null; simulated: number | null; target: number; pass: boolean | null; tone: Tone
     /** Low enough to try one vehicle fewer: about what N − 1 would run at (≤ the target), else null. */
     fewerAt: number | null }
@@ -65,9 +63,9 @@ export function runHeadline(
   // The demand the run generates — the engine's rate per flow (thruPerHr × demand %).
   const demand = sum(flows.filter(f => f.vehicleId in placed).map(f => (f.thruPerHr * demandPct) / 100))
   const perHr = res ? sum(types.map(t => t.perHr)) : null
-  const measured = res && vehicles > 0 ? sum(types.map(t => t.utilization * t.fleet)) / vehicles : null
-  const short = perHr != null && demand > 0 && perHr < demand * VERDICT.MIN_DELIVERED
-  const util = measured == null ? null : short ? measured * demand / Math.max(perHr!, 1e-9) : measured
+  // The run's utilization already counts overtime and unfinished orders (results.ts), so over capacity
+  // reads over 100% without scaling here.
+  const util = res && vehicles > 0 ? sum(types.map(t => t.utilization * t.fleet)) / vehicles : null
   const socMin = types.length ? Math.min(...types.map(t => t.socMin)) : null
 
   const ran = !!res && types.length > 0
