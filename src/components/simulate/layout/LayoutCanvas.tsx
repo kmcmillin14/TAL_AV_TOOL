@@ -14,12 +14,12 @@ import { segmentGeometry } from '@/src/calc/sim/geometry'
 import { hitTest, objectCorners, type DrawSnap, type FlowTarget } from '@/src/calc/sim/layoutEdit'
 import { fmtLength } from '@/src/lib/utils/units'
 import type { SimHighway, SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/types'
-import { highwayCorners, highwayEnds } from '@/src/calc/sim/highways'
+import { highwayConnections, highwayCorners, highwayEnds, inJunction, type HighwayJoin } from '@/src/calc/sim/highways'
 import type { ProjectFlow } from './useLayoutEditor'
 
 export type XY = { x: number; y: number }
 export type Handle = 'mid' | 'c1' | 'c2'
-export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string } | { kind: 'hwEnd'; id: string; end: 'a' | 'b' } | { kind: 'hwDir'; id: string }
+export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string } | { kind: 'hwEnd'; id: string; end: 'a' | 'b' } | { kind: 'hwDir'; id: string } | { kind: 'hwJoin'; id: string; end: 'a' | 'b' }
 export type Selection =
   | { kind: 'point' | 'segment' | 'flow' | 'object' | 'highway'; id: string }
   | { kind: 'points'; ids: string[] }
@@ -160,6 +160,7 @@ export default function LayoutCanvas(props: Props) {
   useEffect(() => {
     const xs = layout.points.map(p => p.x), ys = layout.points.map(p => p.y)
     for (const o of layout.objects ?? []) for (const c of objectCorners(o)) { xs.push(c.x); ys.push(c.y) }
+    for (const h of layout.highways ?? []) for (const c of highwayCorners(h)) { xs.push(c.x); ys.push(c.y) }
     if (image) { xs.push(0, image.widthFt); ys.push(0, image.heightFt) }
     if (!xs.length) { setView({ x: -20, y: -20, ppf: 4 }); return }
     const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)]
@@ -225,6 +226,8 @@ export default function LayoutCanvas(props: Props) {
     if (e) return { kind: 'hwEnd', id: e.getAttribute('data-hw')!, end: e.getAttribute('data-hw-end') as 'a' | 'b' }
     const d = (target as Element).closest?.('[data-dir]')
     if (d) return { kind: 'dir', id: d.getAttribute('data-dir')! }
+    const hj = (target as Element).closest?.('[data-hwjoin]')
+    if (hj) { const [id, end] = hj.getAttribute('data-hwjoin')!.split(':'); return { kind: 'hwJoin', id, end: end as 'a' | 'b' } }
     const hd = (target as Element).closest?.('[data-hwdir]')
     if (hd) return { kind: 'hwDir', id: hd.getAttribute('data-hwdir')! }
     return hitTest(layout, at, POINT_PX * px, SEG_PX * px)
@@ -261,6 +264,8 @@ export default function LayoutCanvas(props: Props) {
   const shown = (p: SimPoint) => (offset?.ids.has(p.id) ? { ...p, x: p.x + offset.d.x, y: p.y + offset.d.y } : p)
   const pts = new Map(layout.points.map(p => [p.id, shown(p)]))
   const dpts = new Map(driven.points.map(p => [p.id, pts.get(p.id) ?? p]))
+  // Where highways connect (junctions) and the ends that join nothing — from the stored layout.
+  const conn = useMemo(() => highwayConnections(layout), [layout])
   const selected = (kind: 'point' | 'segment' | 'flow' | 'object' | 'highway', id: string) =>
     (selection?.kind === kind && selection.id === id) || (kind === 'point' && selection?.kind === 'points' && selection.ids.includes(id))
     || (kind === 'highway' && selection?.kind === 'highways' && selection.ids.includes(id))
@@ -332,8 +337,19 @@ export default function LayoutCanvas(props: Props) {
         {image && <image href={image.href} x={0} y={0} width={image.widthFt} height={image.heightFt} preserveAspectRatio="none" className="sim-drawing" opacity={image.opacity ?? 0.9} />}
 
         {(layout.objects ?? []).map(o => <ObjectShape key={o.id} o={o} selected={selected('object', o.id)} />)}
-        {(layout.highways ?? []).map(h => <HighwayShape key={h.id} h={h} px={px} selected={selected('highway', h.id)} status={props.highwayStatus?.get(h.id)} badge={!props.scene} />)}
-        {props.draftHighway && <HighwayShape h={props.draftHighway} px={px} draft />}
+        {/* Highways: bands, then the junctions where they connect (one floor, no edge lines), then the
+            arrows (not inside a junction), direction badges and the ends that connect to nothing. */}
+        {(layout.highways ?? []).map(h => <HighwayBand key={h.id} h={h} selected={selected('highway', h.id)} status={props.highwayStatus?.get(h.id)} />)}
+        {conn.joins.map((j, i) => <polygon key={i} points={j.poly.map(q => `${q.x},${q.y}`).join(' ')} className="sim-hw-junction" />)}
+        {(layout.highways ?? []).map(h => <HighwayMarks key={h.id} h={h} px={px} selected={selected('highway', h.id)} joins={conn.joins} badge={!props.scene} />)}
+        {!props.scene && conn.loose.map(e => (
+          <g key={`${e.id}:${e.end}`} transform={`translate(${e.at.x} ${e.at.y}) scale(${px})`} className={`sim-hw-cap${e.near ? ' is-near' : ''}`}
+            {...(e.near ? { 'data-hwjoin': `${e.id}:${e.end}` } : {})} role={e.near ? 'button' : undefined}>
+            <title>{e.near ? 'Not connected — click to join the nearest aisle' : 'Not connected — this end joins nothing'}</title>
+            <circle r={6} />
+          </g>
+        ))}
+        {props.draftHighway && <><HighwayBand h={props.draftHighway} draft /><HighwayMarks h={props.draftHighway} px={px} draft joins={[]} /></>}
 
         {clearances && <ClearanceOverlay layout={driven} results={clearances} px={px} />}
 
@@ -664,7 +680,19 @@ function NamePill({ y, text }: { y: number; text: string }) {
  *  (owner, 2026-11-16: one band, direction shown simply). One-way: one row down the middle; two-way,
  *  two lanes: one row per half, keeping right; two-way, one lane: ⇄ markers. */
 const HW_ARROW_GAP_PX = 110
-function HighwayShape({ h, px, selected, draft, status, badge }: { h: SimHighway; px: number; selected?: boolean; draft?: boolean; status?: string; badge?: boolean }) {
+/** A highway's band at its real width; its edge turns amber or red where B56.5 slows or blocks it. */
+function HighwayBand({ h, selected, draft, status }: { h: SimHighway; selected?: boolean; draft?: boolean; status?: string }) {
+  return (
+    <g className={`sim-highway${selected ? ' is-selected' : ''}${draft ? ' is-draft' : ''}${status === 'capped' ? ' is-capped' : status === 'violation' ? ' is-violation' : ''}`}>
+      <polygon points={highwayCorners(h).map(q => `${q.x},${q.y}`).join(' ')} vectorEffect="non-scaling-stroke" />
+    </g>
+  )
+}
+
+/** A highway's direction arrows inside its band, evenly spaced in screen pixels from one end to the
+ *  other and left out inside junctions; one-way: one row down the middle; two-way, two lanes: one row
+ *  per half, keeping right; two-way, one lane: ⇄ markers. And its one-click direction badge. */
+function HighwayMarks({ h, px, selected, draft, joins, badge }: { h: SimHighway; px: number; selected?: boolean; draft?: boolean; joins: HighwayJoin[]; badge?: boolean }) {
   const { a, b } = highwayEnds(h)
   const L = h.lengthFt, ux = (b.x - a.x) / (L || 1), uy = (b.y - a.y) / (L || 1)
   const gap = HW_ARROW_GAP_PX * px, n = Math.max(1, Math.floor(L / gap))
@@ -674,21 +702,21 @@ function HighwayShape({ h, px, selected, draft, status, badge }: { h: SimHighway
   const marks: { x: number; y: number; deg: number; both?: boolean }[] = []
   for (let i = 0; i < n; i++) {
     const s = (L * (i + 0.5)) / n
-    if (twoLane) { marks.push({ ...at(s, h.widthFt / 4), deg: ang }, { ...at(s, -h.widthFt / 4), deg: ang + 180 }) }
+    if (inJunction(joins, at(s, 0))) continue
+    if (twoLane) marks.push({ ...at(s, h.widthFt / 4), deg: ang }, { ...at(s, -h.widthFt / 4), deg: ang + 180 })
     else if (h.dir === 'two') marks.push({ ...at(s, 0), deg: ang, both: true })
     else marks.push({ ...at(s, 0), deg: ang + (h.dir === 'ba' ? 180 : 0) })
   }
   const mid = at(L / 2, 0)
   return (
-    <g className={`sim-highway${selected ? ' is-selected' : ''}${draft ? ' is-draft' : ''}${status === 'capped' ? ' is-capped' : status === 'violation' ? ' is-violation' : ''}`}>
-      <polygon points={highwayCorners(h).map(q => `${q.x},${q.y}`).join(' ')} vectorEffect="non-scaling-stroke" />
+    <g className={`sim-hw-marks${selected ? ' is-selected' : ''}${draft ? ' is-draft' : ''}`}>
       {marks.map((m, i) => (
         <g key={i} transform={`translate(${m.x} ${m.y}) rotate(${m.deg}) scale(${px})`} className="sim-hw-arrow">
           <path d={m.both ? 'M-11 0L-4 -5V5ZM11 0L4 -5V5Z' : 'M7 0L-5 -6L-2 0L-5 6Z'} />
         </g>
       ))}
       {/* One click changes direction: two-way → start → end → end → start (owner: "easily changeable"). */}
-      {badge && !draft && L / px > 140 && (
+      {badge && !draft && L / px > 140 && !inJunction(joins, mid) && (
         <g transform={`translate(${mid.x} ${mid.y}) scale(${px})`} className="sim-hw-dir" data-hwdir={h.id} role="button" aria-label="Change direction">
           <title>{h.dir === 'two' ? 'Two-way — click for one-way' : 'One-way — click to change'}</title>
           <rect x={-15} y={-11} width={30} height={22} rx={11} />

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: where highways connect
+
+- **Junctions:** crossings, T's and corners draw as one merged floor area (no edge lines or arrows
+  inside; corners filled). **Loose ends** get a red cap; **near misses** an amber cap that joins in one
+  click (straight on along an aisle's own line). Validation: "The highways form N separate networks".
+- Calc: `highwayConnections` (junction polygons, loose ends, joins), `inJunction` (tested). Fit now
+  includes highways (it ignored them).
+
 ## 2026-11-16 — Fleet simulation: the aisle look — bands, arrows end to end, ⇄ badge
 
 - Highways draw as one band with direction arrows end to end and a one-click **⇄** direction badge;

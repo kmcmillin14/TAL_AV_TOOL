@@ -1,14 +1,53 @@
 import { describe, expect, it } from 'vitest'
-import { DERIVED, highwayCorners, highwayEnds, highwayFromEnds, highwaysTouching, insideHighway, withHighways } from '../highways'
+import { DERIVED, highwayConnections, highwayCorners, highwayEnds, highwayFromEnds, highwaysTouching, inJunction, insideHighway, withHighways } from '../highways'
 import { addHighway, pointsInLoop, removeHighways, updateHighway, updateHighways, flowTargets, hitTest, notConnected, placeWithSpur, routeDistanceFt, spurTarget, splitSegment } from '../layoutEdit'
 import { segmentClearances, B56_5_RULE } from '../clearance'
 import { runInputs } from '../runInputs'
 import type { SimHighway, SimLayout } from '../types'
+import { readinessChecks } from '../readiness'
 
 const hw = (a: { x: number; y: number }, b: { x: number; y: number }, extra: Partial<SimHighway> = {}): SimHighway =>
   highwayFromEnds(a, b, 10, { id: extra.id ?? 'h1', dir: 'two', ...extra })
 
 describe('highways: stored as rectangles, routes derived', () => {
+  it('validation warns when the highways form separate networks', () => {
+    const two: SimLayout = { points: [], segments: [], highways: [hw({ x: 0, y: 0 }, { x: 50, y: 0 }), hw({ x: 0, y: 100 }, { x: 50, y: 100 }, { id: 'h2' })] }
+    const msg = (L: SimLayout) => readinessChecks({ layout: L, flows: [], vehicles: [], fleetNeeded: 0 }).map(c => c.text).join(' | ')
+    expect(msg(two)).toMatch(/2 separate networks/)
+    const joined = { ...two, highways: [...two.highways!, hw({ x: 25, y: 0 }, { x: 25, y: 100 }, { id: 'h3' })] }
+    expect(msg(joined)).not.toMatch(/separate networks/)
+  })
+
+  it('connections: a crossing, a T and a corner each make one junction; loose ends and near misses are found', () => {
+    const L: SimLayout = { points: [], segments: [], highways: [
+      hw({ x: 0, y: 0 }, { x: 100, y: 0 }),                          // h1 main
+      hw({ x: 50, y: -40 }, { x: 50, y: 40 }, { id: 'h2' }),          // crosses h1
+      hw({ x: 80, y: 0 }, { x: 80, y: 40 }, { id: 'h3' }),            // T off h1 (end on its centre line)
+      hw({ x: 100, y: 0 }, { x: 100, y: -40 }, { id: 'h4' }),         // corner at h1's end
+      hw({ x: 0, y: 60 }, { x: 0, y: 103 }, { id: 'h5' }),            // stops 3 ft short of h6: near miss
+      hw({ x: -30, y: 106 }, { x: 30, y: 106 }, { id: 'h6' }),
+    ] }
+    const { joins, loose } = highwayConnections(L)
+    const pair = (a: string, b: string) => joins.find(j => j.ids.includes(a) && j.ids.includes(b))
+    expect(pair('h1', 'h2')!.at).toMatchObject({ x: 50, y: 0 })
+    expect(pair('h1', 'h3')).toBeTruthy()
+    const corner = pair('h1', 'h4')!
+    expect(inJunction([corner], { x: 104, y: 4 })).toBe(true)          // the outer corner is filled
+    expect(inJunction(joins, { x: 30, y: 0 })).toBe(false)             // open aisle: not a junction
+    const ends = loose.map(e => `${e.id}:${e.end}`)
+    expect(ends).toEqual(expect.arrayContaining(['h1:a', 'h2:a', 'h2:b', 'h3:b', 'h4:b', 'h5:a', 'h5:b', 'h6:a', 'h6:b']))
+    expect(ends).not.toContain('h1:b')                                    // the corner joins it
+    const near = loose.find(e => e.id === 'h5' && e.end === 'b')!.near!
+    expect(near.x).toBeCloseTo(0); expect(near.y).toBeCloseTo(106)                // straight on, along its own line
+    expect(loose.find(e => e.id === 'h2' && e.end === 'a')!.near).toBeNull()
+    expect(loose.find(e => e.id === 'h5' && e.end === 'b')!.join).toMatchObject({ id: 'h5', end: 'b' })   // h5 runs straight on
+    // A side-on near miss: v stops beside h's end but its own line misses h; h runs straight on into v.
+    const side: SimLayout = { points: [], segments: [], highways: [hw({ x: 0, y: 0 }, { x: 100, y: 0 }, { id: 'v' }), hw({ x: 50, y: 30 }, { x: 50, y: 10 }, { id: 'h' })] }
+    const rot: SimLayout = { ...side, highways: [hw({ x: 170, y: 0 }, { x: 170, y: 120 }, { id: 'v' }), hw({ x: 0, y: 120 }, { x: 160, y: 120 }, { id: 'h' })] }
+    expect(highwayConnections(side).loose.find(e => e.id === 'h' && e.end === 'b')!.join).toMatchObject({ id: 'h', end: 'b' })
+    expect(highwayConnections(rot).loose.find(e => e.id === 'v' && e.end === 'b')!.join).toMatchObject({ id: 'h', end: 'b' })
+  })
+
   it('a lasso selects every highway it touches, and changes or removes them together', () => {
     const L: SimLayout = {
       points: [{ id: 'S', x: 20, y: 0, type: 'stand' }, { id: 'far', x: 300, y: 300, type: 'stand' }], segments: [],

@@ -5762,7 +5762,7 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-flow-preview polyline { fill: none; stroke: var(--sim-sel); stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 8 6; }
 
 /* Highways (Milestone 7): the aisle's rectangle under its derived lanes; end handles when selected. */
-.sim-highway polygon { fill: color-mix(in srgb, var(--lane) 35%, transparent); stroke: var(--border-strong); stroke-width: 1; cursor: pointer; }
+.sim-highway polygon { fill: color-mix(in srgb, var(--lane) 35%, var(--scene-bg)); stroke: var(--border-strong); stroke-width: 1; cursor: pointer; }
 .sim-highway.is-selected polygon { stroke: var(--sim-sel); stroke-width: 2; fill: color-mix(in srgb, var(--sim-sel) 8%, transparent); }
 .sim-highway.is-draft polygon { fill: var(--sim-sel-soft); stroke: var(--sim-sel); stroke-width: 1.5; stroke-dasharray: 6 4; pointer-events: none; }
 .sim-hw-suggest { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; font-size: 12px; color: var(--text-secondary); }
@@ -5814,8 +5814,8 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-seg.is-selected .sim-tape { stroke: var(--sim-sel); stroke-width: 2; opacity: 1; }
 .sim-lane-path { display: none; }
 .sim-hw-arrow path { fill: var(--tape); opacity: 0.85; pointer-events: none; }
-.sim-highway.is-selected .sim-hw-arrow path { fill: var(--sim-sel); }
-.sim-highway.is-draft .sim-hw-arrow path { fill: var(--sim-sel); opacity: 0.7; }
+.sim-hw-marks.is-selected .sim-hw-arrow path { fill: var(--sim-sel); }
+.sim-hw-marks.is-draft .sim-hw-arrow path { fill: var(--sim-sel); opacity: 0.7; }
 .sim-highway.is-capped polygon { stroke: var(--warn); stroke-width: 2; }
 .sim-highway.is-violation polygon { stroke: var(--bad); stroke-width: 2; }
 .sim-hw-dir { cursor: pointer; }
@@ -5827,3 +5827,9 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-opacity-row input[type="range"] { flex: 1; accent-color: var(--sim-sel); }
 .sim-opacity-row .num { min-width: 40px; text-align: right; font-size: 12px; color: var(--text-secondary); }
 .lg-band { fill: color-mix(in srgb, var(--lane) 60%, transparent); stroke: var(--border-strong); stroke-width: 0.75; }
+/* Where highways connect: one floor (the band's own colour, no edge lines), and ends that join nothing. */
+.sim-hw-junction { fill: color-mix(in srgb, var(--lane) 35%, var(--scene-bg)); stroke: none; pointer-events: none; }
+.sim-hw-cap circle { fill: var(--bg-surface); stroke: var(--bad); stroke-width: 2.5; }
+.sim-hw-cap.is-near { cursor: pointer; }
+.sim-hw-cap.is-near circle { stroke: var(--warn); fill: color-mix(in srgb, var(--warn) 18%, var(--bg-surface)); }
+.sim-hw-cap.is-near:hover circle { stroke-width: 3.5; }

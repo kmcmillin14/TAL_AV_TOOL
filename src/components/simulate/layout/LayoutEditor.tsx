@@ -12,7 +12,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { linkedFlows } from '@/src/calc/sim/readiness'
 import { pathPoints } from '@/src/calc/sim/engine'
 import { buildGraph } from '@/src/calc/sim/graph'
-import { highwayEnds, highwayFromEnds, highwaysTouching, withHighways } from '@/src/calc/sim/highways'
+import { highwayConnections, highwayEnds, highwayFromEnds, highwaysTouching, withHighways } from '@/src/calc/sim/highways'
 import { suggestedWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { clearanceRule, runInputs } from '@/src/calc/sim/runInputs'
 import { roundCorners } from '@/src/calc/sim/corners'
@@ -395,6 +395,18 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       else if (tool === 'routes' && press.current && Math.hypot(at.x - press.current.x, at.y - press.current.y) > DRAG_PX * px) routeClick(at, shift, px)
       press.current = null
       setDrag(null)
+      return
+    }
+    // A near-miss end: one click joins it to the nearest aisle's centre line.
+    if (hit?.kind === 'hwJoin') {
+      const join = highwayConnections(layout).loose.find(x => x.id === hit.id && x.end === hit.end)?.join
+      const h = join && layout.highways?.find(q => q.id === join.id)
+      if (h && join) {
+        const ends = { ...highwayEnds(h), [join.end]: join.to }
+        const { x, y, lengthFt, angleDeg } = highwayFromEnds(ends.a, ends.b, h.widthFt, h)
+        setLayout(updateHighway(layout, h.id, { x, y, lengthFt, angleDeg }))
+        setSelection({ kind: 'highway', id: h.id })
+      }
       return
     }
     // The direction badge on a highway: one click steps its direction (all of a multi-selection it is in).

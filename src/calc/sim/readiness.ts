@@ -62,6 +62,9 @@ export function readinessChecks(input: ReadinessInput & { fleetNeeded: number; d
   const byId = new Map(vehicles.map(v => [v.id, v]))
   const linked = linkedFlows(flows)
   const loose = notConnected(layout)
+  // Aisles in more than one piece: a vehicle cannot drive from one to the other (owner, 2026-11-16).
+  const pieces = highwayPieces(layout)
+  if (pieces > 1) out.push({ level: 'warn', text: `The highways form ${pieces} separate networks — join them so vehicles can drive between them.`, fix: 'route' })
   for (const p of loose) out.push({ level: 'warn', text: `Not connected: ${p.name || p.id} — draw a route to it.`, target: { kind: 'point', id: p.id }, fix: 'route' })
   const unplaced = flows.filter(f => !(f.fromPointId && f.toPointId))
   if (unplaced.length) out.push({ level: 'warn', text: `${unplaced.length} Sizing flow${unplaced.length === 1 ? ' is' : 's are'} not on the layout — left out of the run.`, fix: 'flowsTab' })
@@ -105,4 +108,14 @@ export function fixAction({ fix, target }: ReadinessCheck): FixAction | null {
 export function checkStatus(checks: ReadinessCheck[]): { tone: 'bad' | 'warn' | 'good'; blockers: number; warnings: number } {
   const blockers = checks.filter(c => c.level === 'bad').length, warnings = checks.filter(c => c.level === 'warn').length
   return { tone: blockers ? 'bad' : warnings ? 'warn' : 'good', blockers, warnings }
+}
+
+/** How many separate networks the highways form (joined through crossings, shared ends and routes). */
+function highwayPieces(layout: SimLayout): number {
+  if (!layout.highways?.length) return 0
+  const net = withHighways(layout)
+  const parent = new Map<string, string>()
+  const find = (x: string): string => { let r = x; while (parent.has(r) && parent.get(r) !== r) r = parent.get(r)!; parent.set(x, r); return r }
+  for (const s of net.segments) { const a = find(s.a), b = find(s.b); if (!parent.has(a)) parent.set(a, a); if (a !== b) parent.set(b, a) }
+  return new Set(net.segments.filter(s => s.highwayId).map(s => find(s.a))).size
 }

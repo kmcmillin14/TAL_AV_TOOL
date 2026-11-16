@@ -883,6 +883,15 @@ step ribbon is unchanged.
     Colours: **green** at or under the target with no room for one fewer; **amber** "Low — N−1 would
     run at about X%" (one fewer would still be at or under the target); **red** over the target ("over
     target by X pts") or over capacity. Tiles share the width evenly.
+  - *Where highways connect (owner, 2026-11-16).* Two highways join where their centre lines cross,
+    where one's end sits on the other's centre line (a T) or where their ends meet (a corner) — the
+    rule `withHighways` routes by. The overlap of the two bands is drawn as one **junction**: the floor
+    reads as one aisle (no edge lines inside it, no arrows; a corner's outer corner is filled), and it
+    is the zone the engine lets one vehicle through at a time (`highwayConnections`). An end joined to
+    nothing gets a **red cap**; one that stops within reach of another highway (its half-widths + 6 ft)
+    gets an **amber cap** — one click joins them, extending a highway straight along its own line (this
+    one's, else the other's that also stops short; else to the nearest spot). Validation warns when the
+    highways form separate networks. Fit includes the highways.
   - *The aisle look (owner, 2026-11-16).* A highway is one band at its real width with its direction
     shown by arrows inside it, evenly spaced from end to end (one row one-way; one row per half, keeping
     right, two-way; ⇄ markers on a single-lane two-way). Its derived routes carry no markings of their
