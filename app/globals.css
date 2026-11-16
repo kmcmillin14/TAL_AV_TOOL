@@ -5675,6 +5675,9 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-valid { display: flex; flex-direction: column; gap: 8px; }
 .sim-valid-head { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); }
 .sim-run-why { max-width: 280px; font-size: 13px; color: var(--text-tertiary); }
+/* The page's tabs: Layout · Sim · Data (owner, 2026-11-16). */
+.sim-modes .seg-btn { min-width: 72px; }
+.sim-modes .seg-btn.on { background: var(--sim-sel-soft); color: var(--sim-sel); }
 /* Read by screen readers, not shown. */
 .sim-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .sim-valid-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }

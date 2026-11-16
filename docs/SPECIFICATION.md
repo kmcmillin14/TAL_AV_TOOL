@@ -740,8 +740,12 @@ step ribbon is unchanged.
   - *Flows — from Sizing* table: Sizing distance, distance on the layout, Δ, and the Fleet Engine;
     **Use layout distances** links name-matched flows after a confirmation showing Fleet Engine
     before → after (it moves the quote).
-  - *Head (apple-ui-design pass):* one primary action — **Run** (red) once validation has no red
-    item (the Validation button beside it says why when not); **Edit layout** in Run mode. A ⋯ menu holds **Load sample**
+  - *Tabs (owner, 2026-11-16: "data in a tab — Layout · Sim · Data"; replaces Run / Edit layout):*
+    the page head has three tabs. **Layout** is the editor; **Sim** plays the run on the map; **Data**
+    holds the run's charts and tables (formerly below the map). Sim and Data share one run and show
+    the verdict tiles on top; they are offered once validation has no red item (disabled, with the
+    first blocker as the reason, until then). The Validation button shows on Layout.
+  - *Head (apple-ui-design pass):* the tabs above; Assumptions; a ⋯ menu holds **Load sample**
     (offered only on a project with no flows, so it can never change a real quote; its flows are
     prefixed `sample-` and removed by "Clear and draw your own") and **Clear layout…**. Back to Sizing
     is a link beside the step label.

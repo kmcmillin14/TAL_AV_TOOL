@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: Layout · Sim · Data tabs
+
+- Owner: "instead of the data below the sim window, the data in a tab". The page head's **Run** and
+  **Edit layout** become three tabs: **Layout** (the editor), **Sim** (the map playing the run) and
+  **Data** (the run's charts and tables, formerly under the map). Sim and Data share one run and the
+  verdict tiles; both wait for a runnable layout, as Run did.
+
 ## 2026-11-16 — Fleet simulation: path editor reviews
 
 - Code review: a click on a path end no longer moves it; a dragged corner moves as one or not at all,

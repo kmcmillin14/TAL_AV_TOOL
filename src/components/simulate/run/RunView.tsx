@@ -56,6 +56,9 @@ interface Props {
   onResetFleet: (vehicleIds: string[]) => void
   engineFleet: Record<string, number>
   fleetBy: Record<string, number>
+  /** The page's tab (owner, 2026-11-16: "Layout · Sim · Data"): the map playing the run, or the run's
+   *  data (charts and tables). Both share this run and its verdict tiles. */
+  view: 'sim' | 'data'
 }
 
 const clock = (t: number) => {
@@ -77,7 +80,7 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 /** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy }: Props) {
+export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view }: Props) {
   const simSettings = project.simSettings ?? {}
   /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
   const forSizing = !differs && !ownConditionsOf(simSettings)
@@ -294,8 +297,8 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         </div>
       </section>
 
-      {/* The map, playing the same run. */}
-      <LayoutCanvas
+      {/* Sim: the map, playing the same run. Data: the run's charts and tables. */}
+      {view === 'sim' ? <LayoutCanvas
         layout={inputs.layout}
         laneWidths={inputs.laneWidths}
         fitInset={RUN_INSET}
@@ -326,12 +329,12 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           <span className="grow" />
           <span className="sim-states">{STATES.map(([k, l]) => <span key={k}><i className={`st-${k}`} />{l}</span>)}</span>
         </div>
-      </LayoutCanvas>
-
-      <RunDetails
-        R={R?.res ?? null} S={R?.S ?? null} project={project} vehicleById={vehicleById} unitSystem={unitSystem}
-        inputs={inputs} assume={assume} onOpenAssumptions={openAll}
-      />
+      </LayoutCanvas> : (
+        <RunDetails
+          R={R?.res ?? null} S={R?.S ?? null} project={project} vehicleById={vehicleById} unitSystem={unitSystem}
+          inputs={inputs} assume={assume} onOpenAssumptions={openAll}
+        />
+      )}
     </div>
   )
 }
