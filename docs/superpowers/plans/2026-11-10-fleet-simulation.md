@@ -313,7 +313,11 @@ Order: vehicles cleanup review → lasso (Task 7) → these → rack areas (Task
 
 **Update (owner, same day): "too complex".** Kept: highways stay **separate** (own band and outline, a dot
 at each connection) and **straight** (a corner is two highways meeting). Set aside: bends inside a
-highway, ports, hold lines, turn paths. Not decided: lane counts, visible corner curves.
+highway, ports, hold lines, turn paths. Decided (owner, Q&A): **lane counts** each way, set with a
+stepper (to build; no passing — lanes are separate paths); corner curves **hidden** (the run rounds
+them); station stubs meet the **centre line**. Next: reviews, then the fleet manager flag.
+
+- [ ] Lane counts on highways (stepper; width follows lanes; per-lane arrows; solid lane lines).
 
 Design page: https://claude.ai/artifact/9N4ec1cDtvQtfsmZS9AJPK. One drawing primitive, the **aisle**
 (Route and Highway merge; routes stay underneath as the run's graph). Decisions:
