@@ -309,6 +309,25 @@ Order: vehicles cleanup review → lasso (Task 7) → these → rack areas (Task
   congestion from forklifts, people and other traffic — it slows every vehicle everywhere (on top of
   pace %). Shown in Run's assumptions line. (Zones and simulated other traffic were declined for now.)
 
+### Task 7b: Aisle redesign (owner, 2026-11-16) — "simple and easy to configure"
+
+Design page: https://claude.ai/artifact/9N4ec1cDtvQtfsmZS9AJPK. One drawing primitive, the **aisle**
+(Route and Highway merge; routes stay underneath as the run's graph). Decisions:
+- Width from B56.5 for vehicle, payload and lanes; default two-way 1+1; the on-aisle pill cycles
+  ⇄ 1+1 → 1 → ← 1 → ⇆ shared; more lanes via a stepper in the side panel only.
+- Lanes are separate paths; **passing is never allowed** (solid lines between lanes; a lane is chosen
+  at the junction before).
+- Corners round to the **largest turning radius** among the vehicles — one curve for all; a round
+  handle widens a corner; amber when it does not fit.
+- Turns at junctions come from lane directions only — **no per-turn settings**; hold lines where lanes
+  enter a junction (one vehicle at a time, as the engine already does).
+- Ports (end, lane, T, station-on-edge) show only while drawing or dragging.
+
+- [ ] Phase 1: aisles with bends and lanes (polyline storage; existing highways load as one leg).
+- [ ] Phase 2: corner curves from the turning radius (move roundCorners here; visible and editable).
+- [ ] Phase 3: requirements while drawing (ghost band, snap rings, live length/width, rack clearance).
+- [ ] Phase 4: ports, hold lines, turn paths; Route + Highway become Aisle.
+
 ### Task 7: Highways, areas, racking and floor lanes (Milestone 7)
 
 - [ ] **Highway object:** a rectangle (x, y, length, width, angle; ft) with direction, U-turns and
