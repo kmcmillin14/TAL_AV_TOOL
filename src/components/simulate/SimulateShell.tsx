@@ -21,6 +21,7 @@ import sample from '@/src/content/samples/simulate-sample.json'
 import { getProject, patchSimSettings, updateProject, type StoredProject } from '@/src/lib/storage'
 import { useByValue } from '@/src/lib/useByValue'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
+import SimTabs from './ui/SimTabs'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutEditor, { type PanelTab } from './layout/LayoutEditor'
@@ -108,10 +109,13 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   )
   const status = useMemo(() => checkStatus(checks), [checks])
   /** The editor's side-panel tab — owned here so the Validation button can open it. */
-  const [tab, setTab] = useState<PanelTab>('layout')
+  const [tab, setTab] = useState<PanelTab>('edit')
   const canRun = status.blockers === 0
   // Run mode is shown only while the run can happen; a new red item drops back to the layout.
-  const running = mode !== 'layout' && canRun
+  // What shows: Sim or Data only while the run can happen. A new red item drops back to Layout and
+  // stays there (no jump back into Sim once it is fixed — Sim is a click away).
+  if (!canRun && mode !== 'layout') setMode('layout')
+  const shown = canRun ? mode : 'layout', running = shown !== 'layout'
   const empty = !simLayout?.points.length && !simLayout?.highways?.length
   const sampleOn = flows.some(f => isSample(f.id))
   // The sample brings its own flows, so it is offered only where it cannot change a real quote.
@@ -130,7 +134,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const closeDrawer = useCallback(() => setDrawer(null), [])
   const overriddenIds = useMemo(() => new Set(changed.filter(o => o.def.scope === 'point' || o.def.scope === 'route').map(o => o.ownerId)), [changed])
   const openAssumptions = useCallback((focus: string | null = null) => setDrawer({ focus }), [])
-  // The open editor's layout writer (its undo history); without it (Run mode) the drawer writes storage.
+  // The open editor's layout writer (its undo history); without it (Sim, Data) the drawer writes storage.
   const layoutWriter = useRef<((update: (L: NonNullable<StoredProject['simLayout']>) => NonNullable<StoredProject['simLayout']>) => void) | null>(null)
   const registerLayoutWriter = useCallback((w: typeof layoutWriter.current) => { layoutWriter.current = w }, [])
   const writeLayout = useCallback((update: (L: NonNullable<StoredProject['simLayout']>) => NonNullable<StoredProject['simLayout']>) => {
@@ -151,18 +155,10 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
 
   // The page's tabs (owner, 2026-11-16): Layout · Sim · Data at the top of the side panel, the map always
   // on the left. Sim and Data need a runnable layout (disabled with the first blocker as the reason).
+  const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix Validation first'} — click for the list`
   const modeTabs = (
-    <div className="sim-tabs sim-modes" role="tablist" aria-label="Simulate">
-      {(['layout', 'sim', 'data'] as const).map(m => {
-        const on = m === 'layout' ? !running : mode === m && running, off = m !== 'layout' && !canRun
-        return (
-          <button key={m} type="button" role="tab" aria-selected={on} className={on ? 'on' : ''} disabled={off}
-            aria-describedby={off ? 'sim-run-why' : undefined} title={off ? checks[0]?.text : undefined} onClick={() => setMode(m)}>
-            {m === 'layout' ? 'Layout' : m === 'sim' ? 'Sim' : 'Data'}
-          </button>
-        )
-      })}
-    </div>
+    <SimTabs label="Simulate" idPrefix="sim-mode" value={shown} onChange={setMode} onBlocked={() => setTab('checks')}
+      tabs={[{ id: 'layout', label: 'Layout' }, { id: 'sim', label: 'Sim', blocked }, { id: 'data', label: 'Data', blocked }]} />
   )
 
   // The banner sits at the top of the side panel (on a phone, above the page).
@@ -191,8 +187,6 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
               {status.warnings > 0 && <span className="sim-valid-sub">{status.warnings} warning{status.warnings === 1 ? '' : 's'}</span>}
             </button>
           )}
-          {/* The first blocker in words: read with Sim and Data by screen readers, shown on a narrow screen. */}
-          {!canRun && <span id="sim-run-why" className={narrow ? 'sim-run-why' : 'sim-sr'}>{checks[0].text}</span>}
           <button type="button" className={`btn ghost sim-assume-btn${drawer ? ' on' : ''}`} aria-pressed={!!drawer} onClick={() => setDrawer(d => (d ? null : { focus: null }))}>
             Assumptions{overrideCount > 0 && <span className="sim-count"><i className="sim-odot" />{overrideCount} override{overrideCount === 1 ? '' : 's'}</span>}
           </button>
@@ -219,7 +213,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <div className="empty-state"><h3>Open on a desktop to edit the layout</h3></div>
         </section>
       ) : running ? (
-        <RunView view={mode === 'data' ? 'data' : 'sim'} modeTabs={modeTabs} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
+        <RunView view={shown === 'data' ? 'data' : 'sim'} modeTabs={modeTabs} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}

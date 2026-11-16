@@ -38,10 +38,11 @@ import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import LayoutCanvas, { POINT_HIT_PX, type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
 import LayoutPanel, { Segmented } from './LayoutPanel'
 import PathBar from './PathBar'
+import SimTabs from '../ui/SimTabs'
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
 /** The side panel's tabs. */
-export type PanelTab = 'layout' | 'flows' | 'checks'
+export type PanelTab = 'edit' | 'flows' | 'checks'
 
 type Tool = 'lasso' | 'hand' | 'points' | 'routes' | 'highway' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
@@ -138,7 +139,7 @@ interface Props {
   vehicleTypes?: Vehicle[]
   onFlowVehicle?: (flowId: string, vehicleId: string) => void
   /** The page's tabs (Layout · Sim · Data), at the top of the side panel. */
-  modeTabs?: ReactNode
+  modeTabs: ReactNode
 }
 const PATH_KIND = { dir: 'two', lane: 'single' } as const
 const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
@@ -241,7 +242,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   /** Stop whatever is half-drawn: a route, a flow, the scale marks. */
   const cancel = () => { setChainFrom(null); setMarks(null); setArmed(null) }
   const chooseTool = (t: Tool) => {
-    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); setTab('layout') } return }
+    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); setTab('edit') } return }
     setTool(t); cancel(); setDrag(null)
   }
   /** Undo/redo can remove what a half-drawn route or a selection points at: drop both. */
@@ -507,7 +508,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     setFlows([...flows, flow])
     setSelection({ kind: 'flow', id: flow.id })
     setJustAdded(focusRate ? flow.id : null)
-    setTab('layout')
+    setTab('edit')
   }
 
   const deleteSelection = () => {
@@ -794,19 +795,12 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
         <div className="sim-side">
           {modeTabs}
           {/* Inside Layout: Edit (the selection, Drawing, Place on routes) · Flows · Validation. */}
-          <div className="sim-tabs sim-subtabs" role="tablist" aria-label="Layout panel">
-            <button type="button" role="tab" aria-selected={tab === 'layout'} className={tab === 'layout' ? 'on' : ''} onClick={() => setTab('layout')}>Edit</button>
-            <button type="button" role="tab" aria-selected={tab === 'flows'} className={tab === 'flows' ? 'on' : ''} onClick={() => setTab('flows')}>
-              Flows <span className="num">{linked.length}/{flows.length}</span>
-            </button>
-            <button type="button" role="tab" aria-selected={tab === 'checks'} className={tab === 'checks' ? 'on' : ''} onClick={() => setTab('checks')}>
-              Validation
-            </button>
-          </div>
-          <div className="sim-side-body" role="tabpanel">
+          <SimTabs small label="Layout panel" idPrefix="sim-panel" value={tab} onChange={setTab}
+            tabs={[{ id: 'edit', label: 'Edit' }, { id: 'flows', label: <>Flows <span className="num">{linked.length}/{flows.length}</span></> }, { id: 'checks', label: 'Validation' }]} />
+          <div className="sim-side-body" role="tabpanel" aria-labelledby={`sim-panel-${tab}`}>
             {banner}
             {tab === 'checks' ? (
-              <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); setTab('layout') }} onFix={onFix} />
+              <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); setTab('edit') }} onFix={onFix} />
             ) : tab === 'flows' ? (
               <FlowsList
                 layout={layout}

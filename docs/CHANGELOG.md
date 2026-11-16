@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: tabs reviews
+
+- Code review: the Sim and Data map keeps its height on a narrow window, and Data's wide panel stacks
+  there; a resized map keeps what was in the middle in the middle (Sim ↔ Data); two rows of route
+  arrows only where there is room for them; a blocker no longer jumps the page back into Sim once
+  fixed; Data's tile reads "Checks — n of 3 pass", not the verdict word again; a type's chip keeps its
+  moves/h and busy tooltip; a blocked Sim or Data tab says why on hover and a click opens Validation;
+  the tabs name their panel.
+- Cleanup: one tab strip (`SimTabs`) for both rows; what shows is derived from one value; Layout's
+  first sub-tab is `edit`; one arrow mark (`ArrowMark`) for routes and paths; Sim and Data stay
+  mounted (tab switches keep the charts and an open confirm); dead CSS and comments removed.
+
 ## 2026-11-16 — Fleet simulation: the tabs move to the side panel
 
 - Owner: "Layout, Sim, Data on the right side, no redundant info from Sim to Data". The map stays on the

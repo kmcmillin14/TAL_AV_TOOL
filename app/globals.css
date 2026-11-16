@@ -5424,15 +5424,14 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-tbl td.warn { color: var(--warn); } .sim-tbl td.bad { color: var(--bad); }
 .sim-tag { margin-left: 8px; padding: 0 8px; border-radius: 99px; font: 600 12px var(--tal-font-family); color: var(--sim-sel); background: var(--sim-sel-soft); }
 .sim-tag.stale { color: var(--warn); background: var(--warn-soft); }
-.sim-vsub .grow, .sim-hud .grow { flex: 1; }
+.sim-hud .grow { flex: 1; }
 .sim-confirm { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; background: var(--warn-soft); color: var(--text-primary); font-size: 13px; }
 
 /* ---- Run mode ---- */
 /* The deciding row — the 05 Dashboard tile: figure, label, the static calc under it, a bar on top
    coloured against its goal. The fleet tile holds each type's photo and stepper. */
-.sim-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
+.sim-kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .sim-kpi-hint { color: var(--warn); font-weight: 600; }
-@media (max-width: 1280px) { .sim-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .sim-kpi {
   position: relative; overflow: hidden; display: flex; flex-direction: column; align-items: flex-start; gap: 5px;
   background: var(--bg-surface); border: 1px solid var(--border); border-radius: 12px; padding: 15px 16px 14px;
@@ -5610,8 +5609,8 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 
 /* ---- Quality-of-life pass (2026-11-12): full-height workspace ------------------------------- */
 /* The editor fills the window under the page head: step strip · canvas · status line | side panel. */
-.sim-editor .sim-stage { flex: 1; height: auto; min-height: 0; }
-@container (max-width: 900px) { .sim-editor .sim-stage { flex: none; height: 62vh; } }
+:is(.sim-editor, .sim-run) .sim-stage { flex: 1; height: auto; min-height: 0; }
+@container (max-width: 900px) { :is(.sim-editor, .sim-run) .sim-stage { flex: none; height: 62vh; } }
 .sim-status { margin: 0; min-height: 18px; font-size: 12px; line-height: 18px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Side panel: tabs, then one scrolling body. */
@@ -5659,7 +5658,7 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-zoomctl-sep { width: 1px; height: 20px; margin: 0 4px; background: var(--border); }
 
 /* Segmented choices on the Simulate page: the quiet blue, not the Run red. */
-:is(.sim-editor, .sim-run, .sim-drawer) .seg-btn.on { background: var(--sim-sel-soft); color: var(--sim-sel); }
+:is(.sim-editor, .sim-run, .sim-drawer) .seg-btn.on, .sim-modes button.on { background: var(--sim-sel-soft); color: var(--sim-sel); }
 
 /* Validation (owner, 2026-11-12): live checks — a status button in the head, a list in the panel. */
 .sim-valid-btn { display: inline-flex; align-items: center; gap: 8px; }
@@ -5671,17 +5670,13 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-valid-sub::before { content: "·"; margin-right: 8px; }
 .sim-valid { display: flex; flex-direction: column; gap: 8px; }
 .sim-valid-head { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); }
-.sim-run-why { max-width: 280px; font-size: 13px; color: var(--text-tertiary); }
 /* The page's tabs, top of the side panel: Layout · Sim · Data (owner, 2026-11-16); Layout's own
    Edit · Flows · Validation sit under them, smaller. Data widens the panel for its charts. */
-.sim-modes button.on { background: var(--sim-sel-soft); color: var(--sim-sel); }
-.sim-modes button:disabled { opacity: 0.4; cursor: not-allowed; }
+.sim-tabs button.is-blocked { opacity: 0.45; cursor: help; }
+.sim-data-pane:not([hidden]) { display: flex; flex-direction: column; gap: 12px; }
 .sim-subtabs { padding: 4px 8px; }
 .sim-subtabs button { height: 28px; font-size: 12px; }
-.sim-run.is-data { grid-template-columns: minmax(0, 1fr) 560px; }
-.sim-run .sim-canvas-wrap .sim-stage { flex: 1; height: auto; min-height: 0; }
-.sim-run .sim-side-body .sim-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-.sim-run .sim-side-body .sim-kpi-fleet { border-radius: 10px; }
+@container (min-width: 901px) { .sim-run.is-data { grid-template-columns: minmax(0, 1fr) 560px; } }
 /* Read by screen readers, not shown. */
 .sim-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .sim-valid-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
@@ -5771,6 +5766,7 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-hw-status.is-bad { color: var(--bad); }
 
 
+.sim-shell { container-type: inline-size; }
 .sim-shell:fullscreen { background: var(--bg-base); padding: 16px 24px; overflow: auto; }
 .sim-shell:fullscreen .sim-work { height: max(560px, calc(100vh / var(--root-zoom) - 200px)); }
 /* The verdict's three checks, and the editable target on the utilization tile. */

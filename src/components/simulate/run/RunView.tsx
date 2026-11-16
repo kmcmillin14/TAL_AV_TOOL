@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
-import { runHeadline, type Headline, type Tone } from '@/src/calc/sim/headline'
+import { runHeadline, type Headline, type Outcome, type Tone } from '@/src/calc/sim/headline'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
 import { RUN_DEFAULTS, step1DaysPerWeek } from '@/src/lib/simFields'
 import KebabMenu from '../ui/KebabMenu'
@@ -87,7 +87,7 @@ const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view, modeTabs, banner }: Props) {
   const simSettings = project.simSettings ?? {}
   /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
-  const forSizing = !differs && !ownConditionsOf(simSettings)
+  const ownConditions = ownConditionsOf(simSettings), forSizing = !differs && !ownConditions
   // The key hashes the vehicle files (overrides are hashed from simSettings) — as Sizing does, so a
   // result is only "stale" when its inputs really changed.
   const fileVehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
@@ -247,15 +247,15 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
 
   // Sim (owner, 2026-11-16): the fleet being tested — each type's photo and stepper, coloured green /
   // yellow / red with one word — and the actions on that count. Everything else is Data.
+  const typeIds = Object.keys(fleetBy)
   const fleetPane = (
     <div className={`sim-kpi sim-kpi-fleet is-${headline.verdictTone}`}>
       <span className="sim-kpi-lbl">Fleet</span>
       <span className="sim-kpi-val">{verdictWord(headline)}</span>
-      {Object.keys(fleetBy).map(vid => {
+      {typeIds.map(vid => {
         const v = vehicleById.get(vid)
         const n = fleetBy[vid] ?? 0
         const res = R?.res.types.find(x => x.vehicleId === vid) ?? null
-        const many = Object.keys(fleetBy).length > 1
         return (
           <div key={vid} className="sim-kpi-veh">
             <button type="button" className="sim-vveh" title="Speeds, size and charging used in the run" onClick={() => onAssumptions(vid)}>
@@ -267,7 +267,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
               <span className="num">{n}</span>
               <button type="button" aria-label="More vehicles" onClick={() => setFleet(vid, n + 1)}>+</button>
             </div>
-            {many && res && !R?.res.gridlock && <span className={`sim-chip sm ${res.verdict}`}>{VERDICT_LABEL[res.verdict]}</span>}
+            {typeIds.length > 1 && res && !R?.res.gridlock && <span className={`sim-chip sm ${res.verdict}`} title={`${res.perHr.toFixed(1)} / ${res.target.toFixed(0)} moves/h · ${Math.round(res.utilization * 100)}% busy`}>{VERDICT_LABEL[res.verdict]}</span>}
             {R && forSizing && (
               <PricingAction
                 project={project} vehicles={vehicles} vehicleId={vid} n={n} engineN={engineFleet[vid] ?? 0}
@@ -279,7 +279,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           </div>
         )
       })}
-      {Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <button type="button" className="link-btn sim-kpi-sub" onClick={() => onResetFleet(Object.keys(fleetBy))}>Reset to engine</button>}
+      {Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <button type="button" className="link-btn sim-kpi-sub" onClick={() => onResetFleet(typeIds)}>Reset to engine</button>}
     </div>
   )
 
@@ -294,8 +294,8 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
       </div>
       <div className="sim-vsub">
         {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
-        {!differs && ownConditionsOf(simSettings) && <span className="sim-as-note">Target or shifts set for the simulation only — the price uses Sizing&rsquo;s</span>}
-        <span>{headline.fleet.tested !== headline.fleet.static ? `Testing ${headline.fleet.tested} · ` : ''}{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b></span>
+        {!differs && ownConditions && <span className="sim-as-note">Target or shifts set for the simulation only — the price uses Sizing&rsquo;s</span>}
+        <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b></span>
         <span>A week · {daysPerWeek} day{daysPerWeek === 1 ? '' : 's'} × {shifts} × {shiftH} h shift{shifts === 1 ? '' : 's'} · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
         <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
         {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}
@@ -349,9 +349,10 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
       {/* The side panel: the page's tabs, then Sim's fleet or the run's data. */}
       <div className="sim-side">
         {modeTabs}
-        <div className="sim-side-body" role="tabpanel">
+        <div className="sim-side-body" role="tabpanel" id="sim-mode-panel" aria-labelledby={`sim-mode-${view}`}>
           {banner}
-          {view === 'sim' ? fleetPane : dataPane}
+          <div hidden={view !== 'sim'}>{fleetPane}</div>
+          <div hidden={view !== 'data'} className="sim-data-pane">{dataPane}</div>
         </div>
       </div>
     </div>
@@ -398,21 +399,21 @@ function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: 
   )
 }
 
-/** The static calc beside the simulated figures; `why` is the verdict's line (stopped, not run, running). */
-/** The verdict in one word (Sim's fleet tile). */
-const verdictWord = (h: Headline) => h.outcome === 'right' ? 'Right-sized' : h.outcome === 'over' ? 'Oversized' : h.outcome === 'under' ? 'Undersized'
-  : h.outcome === 'gridlock' ? 'Gridlock' : h.outcome === 'notRun' ? 'Not run' : 'Simulating…'
+const OUTCOME_WORD: Record<Outcome, string> = { right: 'Right-sized', over: 'Oversized', under: 'Undersized', gridlock: 'Gridlock', notRun: 'Not run' }
+/** The verdict in one word — Sim's fleet tile (Data says why, not the word again). */
+const verdictWord = (h: Headline) => (h.outcome ? OUTCOME_WORD[h.outcome] : 'Simulating…')
 
-/** The verdict (Data): the outcome, its three checks stacked, and what sets the fleet. */
+/** Data's checks tile: how many of the three pass, each stacked, and what sets the fleet; `why` is the
+ *  line when there is no verdict to explain (stopped, not run, running). */
 function VerdictTile({ h, why }: { h: Headline; why: string | null }) {
   const n = h.fleet.tested
-  const title = h.outcome === 'right' ? `Right-sized at ${n}` : h.outcome === 'over' ? 'Oversized by 1' : h.outcome === 'under' ? `Undersized at ${n}` : verdictWord(h)
   const checks: [string, boolean | null][] = [['Orders', h.perHr.pass], ['Utilization', h.utilization.pass], ['Battery', h.battery.pass]]
+  const judged = h.outcome && h.outcome !== 'notRun' && h.outcome !== 'gridlock'
   return (
     <div className={`sim-kpi sim-kpi-verdict is-${h.verdictTone}`}>
-      <span className="sim-kpi-lbl">Verdict</span>
-      <span className="sim-kpi-val">{title}</span>
-      {why ? <span className="sim-kpi-sub">{why}</span> : h.outcome && h.outcome !== 'notRun' && h.outcome !== 'gridlock' && (
+      <span className="sim-kpi-lbl">Checks</span>
+      <span className="sim-kpi-val">{judged ? `${checks.filter(([, p]) => p).length} of 3 pass` : verdictWord(h)}</span>
+      {why ? <span className="sim-kpi-sub">{why}</span> : judged && (
         <ul className="sim-checks">
           {checks.map(([l, p], i) => <li key={l} className={p === false ? 'bad' : p ? 'good' : ''}><i aria-hidden>{p == null ? '–' : p ? '✓' : '✗'}</i>{i + 1} · {l}</li>)}
         </ul>

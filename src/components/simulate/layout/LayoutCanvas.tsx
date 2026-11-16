@@ -156,7 +156,14 @@ export default function LayoutCanvas(props: Props) {
   useEffect(() => {
     const el = box.current
     if (!el) return
-    const ro = new ResizeObserver(([e]) => { setSize({ w: e.contentRect.width, h: e.contentRect.height }); setMeasured(true) })
+    let last: { w: number; h: number } | null = null
+    const ro = new ResizeObserver(([e]) => {
+      const w = e.contentRect.width, h = e.contentRect.height, was = last
+      // Resized (a side panel widened, the window): keep what was in the middle in the middle.
+      if (was) setView(v => ({ ...v, x: v.x + (was.w - w) / 2 / v.ppf, y: v.y + (was.h - h) / 2 / v.ppf }))
+      last = { w, h }
+      setSize({ w, h }); setMeasured(true)
+    })
     ro.observe(el)
     return () => ro.disconnect()
   }, [])
@@ -510,20 +517,24 @@ const Lane = memo(function Lane({ s, a, b, px, widthFt }: { s: SimSegment; a?: S
   return <path d={pathOf(a, b, s)} className="sim-lane" strokeWidth={Math.max(w, 4 * px)} />
 })
 
-/** Floor tape down the lane: dashed for two-way, solid with arrowheads for one-way, solid with
- *  "no passing" ticks for a single-lane two-way route. Spaced in screen pixels (acceptance 12). */
 const FEET = (ft: number) => fmtLength(ft, 'imperial', 1)
 /** The canvas zoom range, pixels per foot. */
 const clampPpf = (ppf: number) => Math.min(400, Math.max(0.05, ppf))
-/** The middle of a route, along its line or curve. */
 /** The middle of a route along its curve (badges, the navigator). */
 export const segMid = (s: SimSegment, a: XY, b: XY): XY => { const g = segmentGeometry(a, b, s.curve), m = g.at(g.length / 2); return { x: m.x, y: m.y } }
-/** Arrow spacing along a route, screen px: a street's lanes, a shared single lane, a one-way route.
- *  At most this many per route. */
+/** Arrow spacing along a route, screen px: a street's lanes, two-way in one row, a one-way route. */
 const ARROW_GAP_PX = { street: 120, shared: 100, oneWay: 90 }
+/** At most this many arrows per route. */
 const MAX_ARROWS = 40
+/** The full arrow (one way) and the double-headed one (two ways in one lane) — routes and paths alike. */
+const ARROW = 'M-10 -1.5H3V-5L10 0L3 5V1.5H-10Z'
+const ARROW_BOTH = 'M-11 0L-5 -5V-1.5H5V-5L11 0L5 5V1.5H-5V5Z'
+/** One arrow mark at `x, y`, turned `deg`, a constant size on screen. */
+const ArrowMark = ({ x, y, deg, px, both, className }: { x: number; y: number; deg: number; px: number; both?: boolean; className: string }) => (
+  <g transform={`translate(${x} ${y}) rotate(${deg}) scale(${px})`} className={className}><path d={both ? ARROW_BOTH : ARROW} /></g>
+)
 /** The least width on screen for a two-lane aisle to show both travel paths, px. */
-const STREET_PX = 18
+const STREET_PX = 28
 
 /**
  * A route's floor marking — the same full arrows as a path. Two-way, two-lane: one row per direction,
@@ -533,20 +544,16 @@ const STREET_PX = 18
 const Segment = memo(function Segment({ s, a, b, px, selected, widthFt }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number; selected: boolean; widthFt?: number }) {
   if (!a || !b) return null
   const g = segmentGeometry(a, b, s.curve)
-  const single = s.lane === 'single', twoLane = s.dir === 'two' && !single
+  const twoLane = highwayLanes(s) === 2
   const w = widthFt ?? laneWidthFt(s)
   const street = twoLane && w / px >= STREET_PX
   const d = w / 4                                                    // each lane's centre, off the centre line
   /** An arrowhead `at` ft along, `side` lanes off the centre (+1 = right of a→b), pointing a→b or back. */
   const arrow = (key: string, at: number, side: number, back: boolean, both = false) => {
-    const c = g.at(at), ang = (Math.atan2(c.ty, c.tx) * 180) / Math.PI + (back ? 180 : 0)
-    return (
-      <g key={key} transform={`translate(${c.x - c.ty * d * side} ${c.y + c.tx * d * side}) rotate(${ang}) scale(${px})`} className="sim-arrow">
-        <path d={both ? ARROW_BOTH : ARROW} />
-      </g>
-    )
+    const c = g.at(at)
+    return <ArrowMark key={key} x={c.x - c.ty * d * side} y={c.y + c.tx * d * side} deg={(Math.atan2(c.ty, c.tx) * 180) / Math.PI + (back ? 180 : 0)} px={px} both={both} className="sim-arrow" />
   }
-  const gap = (twoLane ? ARROW_GAP_PX.street : single && s.dir === 'two' ? ARROW_GAP_PX.shared : ARROW_GAP_PX.oneWay) * px
+  const gap = (street ? ARROW_GAP_PX.street : s.dir === 'two' ? ARROW_GAP_PX.shared : ARROW_GAP_PX.oneWay) * px
   // Evenly along the route, spaced in screen pixels (a highway draws its own arrows end to end).
   const m = Math.min(MAX_ARROWS, Math.max(1, Math.floor(g.length / gap)))
   const spots = Array.from({ length: m }, (_, k) => ({ at: (g.length * (k + 0.5)) / m, k }))
@@ -554,9 +561,8 @@ const Segment = memo(function Segment({ s, a, b, px, selected, widthFt }: { s: S
     <g className={`sim-seg${selected ? ' is-selected' : ''}${twoLane ? ' is-two' : ''}`}>
       <path d={pathOf(a, b, s)} className="sim-tape" vectorEffect="non-scaling-stroke" />
       {street && spots.map(({ at, k }) => [arrow(`f${k}`, at, 1, false), arrow(`b${k}`, at, -1, true)])}
-      {/* A two-lane route too narrow on screen for two rows, or one shared lane: double-headed. */}
-      {s.dir === 'two' && !street && spots.map(({ at, k }) => arrow(`${k}`, at, 0, false, true))}
-      {s.dir !== 'two' && spots.map(({ at, k }) => arrow(`${k}`, at, 0, s.dir === 'ba'))}
+      {/* One row: one-way; or two-way in one lane (or two lanes too narrow on screen) — double-headed. */}
+      {!street && spots.map(({ at, k }) => arrow(`${k}`, at, 0, s.dir === 'ba', s.dir === 'two'))}
     </g>
   )
 })
@@ -692,8 +698,6 @@ const HighwayBand = memo(function HighwayBand({ h, selected, draft, status }: { 
  *  (path editor, owner 2026-11-16): one-way — arrows one way down the middle; two-way, two lanes —
  *  paired opposite arrows either side of a double centre line (no passing); two-way, one lane —
  *  double-headed arrows. */
-const ARROW = 'M-10 -1.5H3V-5L10 0L3 5V1.5H-10Z'
-const ARROW_BOTH = 'M-11 0L-5 -5V-1.5H5V-5L11 0L5 5V1.5H-5V5Z'
 const HighwayMarks = memo(function HighwayMarks({ h, px, selected, draft, joins }: { h: SimHighway; px: number; selected?: boolean; draft?: boolean; joins: HighwayJoin[] }) {
   const { a, b } = highwayEnds(h)
   const L = h.lengthFt, ux = (b.x - a.x) / (L || 1), uy = (b.y - a.y) / (L || 1)
@@ -726,11 +730,7 @@ const HighwayMarks = memo(function HighwayMarks({ h, px, selected, draft, joins 
   return (
     <g className={`sim-hw-marks${selected ? ' is-selected' : ''}${draft ? ' is-draft' : ''}`}>
       {centre.length > 0 && <path d={centre.join('')} className="sim-hw-centre" vectorEffect="non-scaling-stroke" />}
-      {marks.map((m, i) => (
-        <g key={i} transform={`translate(${m.x} ${m.y}) rotate(${m.deg}) scale(${px})`} className="sim-hw-arrow">
-          <path d={m.both ? ARROW_BOTH : ARROW} />
-        </g>
-      ))}
+      {marks.map((m, i) => <ArrowMark key={i} {...m} px={px} className="sim-hw-arrow" />)}
     </g>
   )
 })
