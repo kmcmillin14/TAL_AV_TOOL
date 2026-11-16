@@ -46,7 +46,7 @@ type Tool = 'select' | 'lasso' | 'hand' | 'points' | 'routes' | 'highway' | 'flo
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
 const DRAG_PX = 8
 const TOOLS: { id: Tool; label: string; key: string; hint: string }[] = [
-  { id: 'select', label: 'Select', key: 'V', hint: 'Click to select · drag to move · drag empty space to pan · Shift-drag to select several · a route’s badge (or D) changes its direction' },
+  { id: 'select', label: 'Select', key: 'V', hint: 'Click to select · Ctrl- or Shift-click adds · drag to move · drag empty space to pan · Shift-drag or Lasso (L) selects several · an aisle’s ⇄ badge (or D) changes its direction' },
   { id: 'lasso', label: 'Lasso', key: 'L', hint: 'Draw a loop · every highway it touches is selected (none: the points inside) · Shift adds to the selection' },
   { id: 'hand', label: 'Hand', key: 'H', hint: 'Drag to move around · hold Space to pan in any tool' },
   { id: 'highway', label: 'Highway', key: 'W', hint: 'Drag along the aisle from one end to the other · it starts at the suggested width · its ends snap like routes · Shift keeps it square' },
@@ -353,7 +353,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     }
   }
 
-  const onPointer = ({ type, at, hit, shift, px }: CanvasPointer) => {
+  const onPointer = ({ type, at, hit, shift, toggle, px }: CanvasPointer) => {
     if (marks) {
       if (type === 'down' && marks.length < 2) setMarks([...marks, at])
       return
@@ -397,8 +397,14 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       setDrag(null)
       return
     }
+    // The direction badge on a highway: one click steps its direction (all of a multi-selection it is in).
+    if (hit?.kind === 'hwDir') {
+      const ids = selectedHighways.includes(hit.id) ? selectedHighways : [hit.id]
+      setLayout(updateHighways(layout, ids, h => ({ dir: nextDirection(h.dir) })), `dir:${ids.join()}`)
+      return
+    }
     if (hit?.kind === 'dir') { const hw = net.segments.find(s => s.id === hit.id)?.highwayId; stepDirection(hw ? 'highway' : 'segment', hw ?? hit.id); return }
-    if (tool === 'select') { onSelectPress(at, hit, shift); return }
+    if (tool === 'select') { onSelectPress(at, hit, shift || !!toggle); return }
     if (tool === 'lasso') { setDrag({ kind: 'lasso', pts: [at], add: shift }); return }
     if (tool === 'points') {
       if (placeType === 'object') { setDrag({ kind: 'box', box: 'object', from: at, at }); return }
@@ -610,7 +616,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     : tool === 'points' && armed ? `Click on a route to place “${armed.name}”`
     : tool === 'points' && placeType === 'object' ? 'Drag out a wall, column or rack face'
     : TOOLS.find(t => t.id === tool)!.hint
-  const imageFt = bg && image ? { href: image, widthFt: (bg.widthPx ?? 0) * scale, heightFt: (bg.heightPx ?? 0) * scale } : null
+  const imageFt = bg && image ? { href: image, widthFt: (bg.widthPx ?? 0) * scale, heightFt: (bg.heightPx ?? 0) * scale, opacity: bg.opacity } : null
   // What the canvas shows mid-drag: moved points/objects, a bent handle, a box being dragged out.
   const shownLayout = drag?.kind === 'handle'
     ? setCurve(layout, drag.segId, drag.which === 'mid' ? { kind: 'arc', mid: drag.at }
@@ -641,6 +647,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
         onApplyScale={applyScale}
         onCancelScale={cancel}
         onRemove={() => { const { background: _b, ...rest } = layout; setLayout(rest) }}
+        onOpacity={opacity => bg && setLayout({ ...layout, background: { ...bg, opacity } }, 'bg-opacity')}
         extentsFt={bg?.scale && bg.widthPx && bg.heightPx ? { w: bg.widthPx * scale, h: bg.heightPx * scale } : null}
       />
     </Section>
@@ -655,6 +662,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             driven={drag ? withHighways(shownLayout) : driven}
             flows={flows}
             image={imageFt}
+            highwayStatus={highwayStatus}
             selection={selection}
             notConnected={loose}
             showFlows={showFlows}

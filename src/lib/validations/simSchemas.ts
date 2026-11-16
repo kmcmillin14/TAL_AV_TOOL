@@ -62,6 +62,8 @@ export const simBackgroundSchema = z.object({
   /** The layout already held routes when this drawing was loaded: they are in true feet, so setting
    *  this drawing's first scale does not resize them. */
   layoutPredates: z.boolean().optional(),
+  /** How strongly the drawing shows under the layout, 0.05–1 (absent: 0.9). */
+  opacity: z.number().min(0.05).max(1).optional(),
   /** Two clicked points (drawing pixels) and the real length between them. */
   scale: z.object({ a: xy, b: xy, lengthFt: z.number().positive() }).optional(),
   /** data: URL of the rendered page or image — export files only. */

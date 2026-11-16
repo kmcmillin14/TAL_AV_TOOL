@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: the aisle look — bands, arrows end to end, ⇄ badge
+
+- Highways draw as one band with direction arrows end to end and a one-click **⇄** direction badge;
+  their derived routes have no markings of their own; B56.5 colours the band's edge (amber / red).
+- Routes lose their dashed centre tape; the legend shows the band look.
+- **Ctrl/⌘-click** multi-select; **drawing opacity** slider (`background.opacity` in the schema).
+
 ## 2026-11-16 — Fleet simulation: utilization counts overtime; lane arrows along whole highways
 
 - **Fix — utilization of an undersized fleet:** over a week, backlog worked off after the shift was

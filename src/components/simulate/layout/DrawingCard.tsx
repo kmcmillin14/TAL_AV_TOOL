@@ -23,6 +23,8 @@ interface Props {
   onApplyScale: (lengthFt: number) => void
   onCancelScale: () => void
   onRemove: () => void
+  /** The drawing's opacity under the layout (0.05–1). */
+  onOpacity: (opacity: number) => void
   /** Extents of the scaled drawing, ft. */
   extentsFt: { w: number; h: number } | null
 }
@@ -90,6 +92,16 @@ export default function DrawingCard(p: Props) {
         <p className="sim-card-note">
           The image is not loaded in this browser. <button type="button" className="link-btn" onClick={() => { reselect.current = true; input.current?.click() }}>Re-select the file</button>
         </p>
+      )}
+
+      {p.hasImage && (
+        <label className="sim-field sim-opacity">
+          <span>Drawing opacity</span>
+          <span className="sim-opacity-row">
+            <input type="range" min={5} max={100} step={5} value={Math.round((bg.opacity ?? 0.9) * 100)} onChange={e => p.onOpacity(Number(e.target.value) / 100)} aria-label="Drawing opacity" />
+            <span className="num">{Math.round((bg.opacity ?? 0.9) * 100)}%</span>
+          </span>
+        </label>
       )}
 
       {p.scaling ? (

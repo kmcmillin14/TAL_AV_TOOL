@@ -19,7 +19,7 @@ import type { ProjectFlow } from './useLayoutEditor'
 
 export type XY = { x: number; y: number }
 export type Handle = 'mid' | 'c1' | 'c2'
-export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string } | { kind: 'hwEnd'; id: string; end: 'a' | 'b' }
+export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string } | { kind: 'hwEnd'; id: string; end: 'a' | 'b' } | { kind: 'hwDir'; id: string }
 export type Selection =
   | { kind: 'point' | 'segment' | 'flow' | 'object' | 'highway'; id: string }
   | { kind: 'points'; ids: string[] }
@@ -32,6 +32,8 @@ export interface CanvasPointer {
   at: XY
   hit: Hit
   shift: boolean
+  /** Ctrl (⌘ on a Mac) held: add to or take from the selection, like Shift. */
+  toggle?: boolean
   /** One real screen pixel, ft — for snapping distances that should feel the same at every zoom. */
   px: number
 }
@@ -56,7 +58,9 @@ interface Props {
   /** The layout a vehicle drives (corners rounded) — drawn under the routes as drawn. Default: as drawn. */
   driven?: SimLayout
   flows?: ProjectFlow[]
-  image?: { href: string; widthFt: number; heightFt: number } | null
+  image?: { href: string; widthFt: number; heightFt: number; opacity?: number } | null
+  /** Each highway's worst B56.5 status — its band's edge turns amber (slowed) or red (blocked). */
+  highwayStatus?: Map<string, 'clear' | 'full' | 'capped' | 'violation'>
   selection?: Selection
   notConnected?: Set<string>
   showFlows?: boolean
@@ -221,6 +225,8 @@ export default function LayoutCanvas(props: Props) {
     if (e) return { kind: 'hwEnd', id: e.getAttribute('data-hw')!, end: e.getAttribute('data-hw-end') as 'a' | 'b' }
     const d = (target as Element).closest?.('[data-dir]')
     if (d) return { kind: 'dir', id: d.getAttribute('data-dir')! }
+    const hd = (target as Element).closest?.('[data-hwdir]')
+    if (hd) return { kind: 'hwDir', id: hd.getAttribute('data-hwdir')! }
     return hitTest(layout, at, POINT_PX * px, SEG_PX * px)
   }
 
@@ -235,7 +241,7 @@ export default function LayoutCanvas(props: Props) {
     }
     if (e.button !== 0) return
     e.currentTarget.setPointerCapture(e.pointerId)
-    onPointer({ type: 'down', at, hit, shift: e.shiftKey, px })
+    onPointer({ type: 'down', at, hit, shift: e.shiftKey, toggle: e.ctrlKey || e.metaKey, px })
   }
   const move = (e: RPointerEvent<HTMLDivElement>) => {
     const { px, ...at } = toFt(e)
@@ -323,16 +329,17 @@ export default function LayoutCanvas(props: Props) {
         </defs>
         <rect x={view.x} y={view.y} width={size.w / view.ppf} height={size.h / view.ppf} fill="url(#sim-grid)" />
         <rect x={view.x} y={view.y} width={size.w / view.ppf} height={size.h / view.ppf} fill="url(#sim-grid-major)" />
-        {image && <image href={image.href} x={0} y={0} width={image.widthFt} height={image.heightFt} preserveAspectRatio="none" className="sim-drawing" />}
+        {image && <image href={image.href} x={0} y={0} width={image.widthFt} height={image.heightFt} preserveAspectRatio="none" className="sim-drawing" opacity={image.opacity ?? 0.9} />}
 
         {(layout.objects ?? []).map(o => <ObjectShape key={o.id} o={o} selected={selected('object', o.id)} />)}
-        {(layout.highways ?? []).map(h => <HighwayShape key={h.id} h={h} selected={selected('highway', h.id)} />)}
-        {props.draftHighway && <HighwayShape h={props.draftHighway} draft />}
+        {(layout.highways ?? []).map(h => <HighwayShape key={h.id} h={h} px={px} selected={selected('highway', h.id)} status={props.highwayStatus?.get(h.id)} badge={!props.scene} />)}
+        {props.draftHighway && <HighwayShape h={props.draftHighway} px={px} draft />}
 
         {clearances && <ClearanceOverlay layout={driven} results={clearances} px={px} />}
 
-        {driven.segments.map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} />)}
-        {driven.segments.map(s => (
+        {/* A highway's derived routes are drawn by the highway itself (its band and arrows). */}
+        {driven.segments.filter(s => !s.highwayId).map(s => <Lane key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} />)}
+        {driven.segments.filter(s => !s.highwayId).map(s => (
           <Segment key={s.id} s={s} a={dpts.get(s.a)} b={dpts.get(s.b)} px={px} widthFt={lanes[s.id]} selected={selected('segment', s.id.split('~')[0]) || (!!s.highwayId && selected('highway', s.highwayId))} />
         ))}
         {/* The selected highway's end handles, above its lanes so a press reaches them. */}
@@ -653,10 +660,43 @@ function NamePill({ y, text }: { y: number; text: string }) {
 }
 
 /** A highway: its rectangle (the aisle's real width). Its lanes are drawn as routes (derived). */
-function HighwayShape({ h, selected, draft }: { h: SimHighway; selected?: boolean; draft?: boolean }) {
+/** Direction arrows inside a highway's band, evenly spaced in screen pixels from one end to the other
+ *  (owner, 2026-11-16: one band, direction shown simply). One-way: one row down the middle; two-way,
+ *  two lanes: one row per half, keeping right; two-way, one lane: ⇄ markers. */
+const HW_ARROW_GAP_PX = 110
+function HighwayShape({ h, px, selected, draft, status, badge }: { h: SimHighway; px: number; selected?: boolean; draft?: boolean; status?: string; badge?: boolean }) {
+  const { a, b } = highwayEnds(h)
+  const L = h.lengthFt, ux = (b.x - a.x) / (L || 1), uy = (b.y - a.y) / (L || 1)
+  const gap = HW_ARROW_GAP_PX * px, n = Math.max(1, Math.floor(L / gap))
+  const ang = (Math.atan2(uy, ux) * 180) / Math.PI
+  const at = (s: number, off: number) => ({ x: a.x + ux * s - uy * off, y: a.y + uy * s + ux * off })
+  const twoLane = h.dir === 'two' && h.lane !== 'single'
+  const marks: { x: number; y: number; deg: number; both?: boolean }[] = []
+  for (let i = 0; i < n; i++) {
+    const s = (L * (i + 0.5)) / n
+    if (twoLane) { marks.push({ ...at(s, h.widthFt / 4), deg: ang }, { ...at(s, -h.widthFt / 4), deg: ang + 180 }) }
+    else if (h.dir === 'two') marks.push({ ...at(s, 0), deg: ang, both: true })
+    else marks.push({ ...at(s, 0), deg: ang + (h.dir === 'ba' ? 180 : 0) })
+  }
+  const mid = at(L / 2, 0)
   return (
-    <g className={`sim-highway${selected ? ' is-selected' : ''}${draft ? ' is-draft' : ''}`}>
+    <g className={`sim-highway${selected ? ' is-selected' : ''}${draft ? ' is-draft' : ''}${status === 'capped' ? ' is-capped' : status === 'violation' ? ' is-violation' : ''}`}>
       <polygon points={highwayCorners(h).map(q => `${q.x},${q.y}`).join(' ')} vectorEffect="non-scaling-stroke" />
+      {marks.map((m, i) => (
+        <g key={i} transform={`translate(${m.x} ${m.y}) rotate(${m.deg}) scale(${px})`} className="sim-hw-arrow">
+          <path d={m.both ? 'M-11 0L-4 -5V5ZM11 0L4 -5V5Z' : 'M7 0L-5 -6L-2 0L-5 6Z'} />
+        </g>
+      ))}
+      {/* One click changes direction: two-way → start → end → end → start (owner: "easily changeable"). */}
+      {badge && !draft && L / px > 140 && (
+        <g transform={`translate(${mid.x} ${mid.y}) scale(${px})`} className="sim-hw-dir" data-hwdir={h.id} role="button" aria-label="Change direction">
+          <title>{h.dir === 'two' ? 'Two-way — click for one-way' : 'One-way — click to change'}</title>
+          <rect x={-15} y={-11} width={30} height={22} rx={11} />
+          <g transform={`rotate(${h.dir === 'ba' ? ang + 180 : ang})`}>
+            {h.dir === 'two' ? <path d="M-7 -3H5M2 -6L6 -3L2 0M7 3H-5M-2 0L-6 3L-2 6" /> : <path d="M-7 0H6M2 -4L7 0L2 4" />}
+          </g>
+        </g>
+      )}
     </g>
   )
 }
@@ -722,9 +762,9 @@ const FlowArrow = memo(function FlowArrow({ id, a, b, label, px, selected, onCli
 function Legend({ clearances }: { clearances: boolean }) {
   return (
     <div className="sim-legend" aria-label="Legend">
-      <span><svg width="26" height="10"><path d="M2 5H24" className="lg-tape" /><path d="M17 5L11 2V8Z" className="lg-arrow" /></svg>One-way</span>
-      <span><svg width="26" height="14"><path d="M2 7H24" className="lg-tape is-two" /><path d="M2 3H24M2 11H24" className="lg-path" /><path d="M16 3L11 0.8V5.2Z" className="lg-arrow" /><path d="M10 11L15 8.8V13.2Z" className="lg-arrow" /></svg>Two-way, two lanes</span>
-      <span><svg width="26" height="10"><path d="M2 5H24" className="lg-tape" /><path d="M9 5L4 2.5V7.5Z" className="lg-arrow" /><path d="M17 5L22 2.5V7.5Z" className="lg-arrow" /></svg>Two-way, one lane</span>
+      <span><svg width="26" height="14"><rect x="1" y="1" width="24" height="12" rx="1" className="lg-band" /><path d="M16 7L10 4V10Z" className="lg-arrow" /></svg>One-way</span>
+      <span><svg width="26" height="14"><rect x="1" y="1" width="24" height="12" rx="1" className="lg-band" /><path d="M16 4L11 1.8V6.2Z" className="lg-arrow" /><path d="M10 10L15 7.8V12.2Z" className="lg-arrow" /></svg>Two-way, two lanes</span>
+      <span><svg width="26" height="14"><rect x="1" y="1" width="24" height="12" rx="1" className="lg-band" /><path d="M8 7L12 4.5V9.5ZM18 7L14 4.5V9.5Z" className="lg-arrow" /></svg>Two-way, one lane</span>
       <span><i className="sw pick" />Pick</span>
       <span><i className="sw drop" />Drop</span>
       {clearances && <><span><i className="sw clr-full" />Full speed</span><span><i className="sw clr-capped" />Below 1.2 m/s</span><span><i className="sw clr-violation" />Blocked</span></>}

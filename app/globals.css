@@ -5807,3 +5807,23 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-kpi-list li.good { color: var(--good); } .sim-kpi-list li.bad { color: var(--bad); }
 /* Full screen sits with the zoom controls. */
 .sim-full-btn { display: inline-flex; align-items: center; justify-content: center; }
+
+/* The unified aisle look (owner, 2026-11-16): a band at its real width, direction shown by arrows
+   inside it from end to end — no centre tape, no lane lines. Colour only where B56.5 slows or blocks. */
+.sim-tape { stroke: transparent; }
+.sim-seg.is-selected .sim-tape { stroke: var(--sim-sel); stroke-width: 2; opacity: 1; }
+.sim-lane-path { display: none; }
+.sim-hw-arrow path { fill: var(--tape); opacity: 0.85; pointer-events: none; }
+.sim-highway.is-selected .sim-hw-arrow path { fill: var(--sim-sel); }
+.sim-highway.is-draft .sim-hw-arrow path { fill: var(--sim-sel); opacity: 0.7; }
+.sim-highway.is-capped polygon { stroke: var(--warn); stroke-width: 2; }
+.sim-highway.is-violation polygon { stroke: var(--bad); stroke-width: 2; }
+.sim-hw-dir { cursor: pointer; }
+.sim-hw-dir rect { fill: var(--bg-surface); stroke: var(--border-strong); stroke-width: 1; }
+.sim-hw-dir path { fill: none; stroke: var(--text-secondary); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.sim-hw-dir:hover rect { stroke: var(--sim-sel); }
+.sim-hw-dir:hover path { stroke: var(--sim-sel); }
+.sim-opacity-row { display: flex; align-items: center; gap: 8px; }
+.sim-opacity-row input[type="range"] { flex: 1; accent-color: var(--sim-sel); }
+.sim-opacity-row .num { min-width: 40px; text-align: right; font-size: 12px; color: var(--text-secondary); }
+.lg-band { fill: color-mix(in srgb, var(--lane) 60%, transparent); stroke: var(--border-strong); stroke-width: 0.75; }

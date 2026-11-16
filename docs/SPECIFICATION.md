@@ -883,6 +883,14 @@ step ribbon is unchanged.
     Colours: **green** at or under the target with no room for one fewer; **amber** "Low — N−1 would
     run at about X%" (one fewer would still be at or under the target); **red** over the target ("over
     target by X pts") or over capacity. Tiles share the width evenly.
+  - *The aisle look (owner, 2026-11-16).* A highway is one band at its real width with its direction
+    shown by arrows inside it, evenly spaced from end to end (one row one-way; one row per half, keeping
+    right, two-way; ⇄ markers on a single-lane two-way). Its derived routes carry no markings of their
+    own. A **⇄ badge** in the middle changes its direction in one click (two-way → start → end → end →
+    start; all of a multi-selection it belongs to). The band's edge turns amber where B56.5 slows it and
+    red where it is blocked. Routes lose their centre tape (kept only as the selection line). **Ctrl-
+    (⌘-) click** adds to or takes from the selection like Shift. The Drawing card has an **opacity**
+    slider for the background drawing (`background.opacity`, 5–100%).
   - *Lane arrows (owner, 2026-11-16).* Arrows sit on one grid along each lane's axis, so a straight
     highway made of several routes is marked evenly end to end, whatever its junctions; curves are
     spaced along themselves; a short one-way route still shows one.
