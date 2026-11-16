@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createSim, DT, runFor, step } from '../engine'
 import { results } from '../results'
-import { inShift, staffedSeconds } from '../shift'
+import { inShift, isLate, staffedSeconds } from '../shift'
 import { LIBRARY, sampleLayout, settings } from './fixtures'
 
 describe('the staffed day and charging (owner, 2026-11-13)', () => {
@@ -12,6 +12,11 @@ describe('the staffed day and charging (owner, 2026-11-13)', () => {
     expect(inShift(P, 86400 + 60)).toBe(true)
     expect(staffedSeconds(P, 86400 + 3600)).toBe(17 * 3600)
     expect(staffedSeconds({ staffedHr: 24 }, 5000)).toBe(5000)
+    // late: carried past its shift (8 h shifts, 2 a day) beyond the 30-min grace, or finished off-shift
+    const two = { staffedHr: 16, shiftHr: 8 }
+    expect(isLate(two, 7 * 3600, 8.2 * 3600)).toBe(false)
+    expect(isLate(two, 7 * 3600, 9 * 3600)).toBe(true)
+    expect(isLate(two, 15.5 * 3600, 17 * 3600)).toBe(true)
     // five working days: day 6 is off
     expect(inShift({ staffedHr: 8, daysPerWeek: 5 }, 5 * 86400 + 3600)).toBe(false)
     expect(staffedSeconds({ staffedHr: 8, daysPerWeek: 5 }, 7 * 86400)).toBe(5 * 8 * 3600)

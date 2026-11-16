@@ -16,7 +16,8 @@
 - Cleanup: days a week from one rule (`operatingDaysPerWeek`, also ROM's days a year); `inShift` once
   per step; dead `UTIL_SHORT`, lane-path and tape CSS removed; highway layers memoized; routes back to
   even arrow spacing (highways draw their own); one step-direction helper per kind.
-- Not changed: a move finished early the next shift still counts on time (late = finished off-shift).
+- A move is **late** when finished off-shift or more than 30 min after the end of the shift it was
+  ordered in (backlog carried into the next shift); late moves are not delivered on time.
 
 ## 2026-11-16 — Fleet simulation: highways stay separate; a dot at each connection
 

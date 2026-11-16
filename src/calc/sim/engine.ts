@@ -16,7 +16,7 @@ import { canDrop, canPick } from './layoutEdit'
 import { rng } from './rng'
 import type { Gridlock, SimFlag, SimFlow, SimLayout, SimPoint, SimSettings, TimeSplit, TransferOrientation, VehicleSimData } from './types'
 import { defaultOrientation, resolveProfile, type VehicleProfile } from './vehicle'
-import { inShift } from './shift'
+import { inShift, isLate } from './shift'
 import { emptySplit } from './results'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
@@ -52,7 +52,7 @@ export interface FlowState {
   measuredFt: number
   gen: number
   done: number
-  /** Moves finished off-shift — the backlog worked off after hours: late, not counted as delivered. */
+  /** Moves finished late — off-shift, or carried past the shift they were ordered in: not delivered on time. */
   late: number
   misSum: number
   waitSum: number
@@ -695,7 +695,7 @@ export function step(S: SimState) {
         } else {
           const o = v.job!, F = o.F
           F.done++; v.done++; F.misSum += S.t - o.td
-          if (!onShift) F.late++
+          if (isLate(P, o.t0, t)) F.late++   // carried past its shift, or finished off-shift
           const hr = Math.floor(S.t / 3600); S.hourly[hr] = (S.hourly[hr] ?? 0) + 1
           S.orders.splice(S.orders.indexOf(o), 1)
           afterDrop(S, v)
