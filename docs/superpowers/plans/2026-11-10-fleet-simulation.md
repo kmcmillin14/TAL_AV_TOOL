@@ -302,7 +302,7 @@ Order: vehicles cleanup review → lasso (Task 7) → these → rack areas (Task
 - [ ] **Deciding headline row** across the top of Run, static calc beside simulated: fleet,
   utilization (total), pallets/moves per hour vs target, battery (lowest SoC, time charging), average
   wait, verdict.
-- [ ] **Fleet manager flag** (information only — no effect on the run): when the simulated types'
+- [x] **Fleet manager flag** (information only — no effect on the run): when the simulated types'
   `fleetSoftware` differ, a Validation warning and a Run note — the simulation assumes one traffic
   control for all vehicles; a mixed fleet needs zone interlocks or a coordinating layer.
 - [ ] **Site traffic factor** (owner chose option 1 of 3): one percentage under Assumptions for

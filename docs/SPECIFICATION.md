@@ -883,6 +883,10 @@ step ribbon is unchanged.
     Colours: **green** at or under the target with no room for one fewer; **amber** "Low — N−1 would
     run at about X%" (one fewer would still be at or under the target); **red** over the target ("over
     target by X pts") or over capacity. Tiles share the width evenly.
+  - *Fleet managers (owner, 2026-11-12).* When the vehicles the flows use have different fleet managers
+    (`fleetSoftware`), Validation adds an information note naming each; the simulation assumes one
+    traffic control for all vehicles (a mixed fleet needs zone interlocks or a coordinating layer). It
+    changes nothing in the run.
   - *Where highways connect (owner, 2026-11-16).* Two highways join where their centre lines cross,
     where one's end sits on the other's centre line (a T) or where their ends meet (a corner) — the
     rule `withHighways` routes by. Each highway keeps its own band and outline (owner: "keep highways

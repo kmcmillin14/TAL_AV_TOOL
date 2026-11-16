@@ -68,6 +68,10 @@ export function readinessChecks(input: ReadinessInput & { fleetNeeded: number; d
   for (const p of loose) out.push({ level: 'warn', text: `Not connected: ${p.name || p.id} — draw a route to it.`, target: { kind: 'point', id: p.id }, fix: 'route' })
   const unplaced = flows.filter(f => !(f.fromPointId && f.toPointId))
   if (unplaced.length) out.push({ level: 'warn', text: `${unplaced.length} Sizing flow${unplaced.length === 1 ? ' is' : 's are'} not on the layout — left out of the run.`, fix: 'flowsTab' })
+  // Fleet managers (owner, 2026-11-12): the run assumes one traffic control for every vehicle. Information
+  // only — it changes nothing in the run.
+  const managers = [...new Map(linked.flatMap(f => { const v = byId.get(f.vehicleId); return v ? [[v.display.fleetSoftware || 'not specified', v.name] as const] : [] })).entries()]
+  if (managers.length > 1) out.push({ level: 'info', text: `Different fleet managers: ${managers.map(([m, n]) => `${n} (${m})`).join(', ')}. The simulation assumes one traffic control for all vehicles; a mixed fleet needs zone interlocks or a coordinating layer.` })
   let runnable = 0
   for (const f of linked) {
     const why = flowExclusion(G, f, byId, 100)

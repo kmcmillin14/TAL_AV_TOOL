@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: fleet manager note
+
+- Validation notes (information only) when the simulated vehicles use different fleet managers; the run
+  is unchanged (tested).
+
 ## 2026-11-16 — Fleet simulation: reviews of the week runs, verdict and highways
 
 - Code review: a run under simulation-only target or shift coverage no longer speaks for Sizing or the

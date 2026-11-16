@@ -52,6 +52,16 @@ describe('readinessChecks (validation)', () => {
     expect(run([ok])).toEqual([])
   })
 
+  it('notes, as information only, when the flows use vehicles with different fleet managers', () => {
+    const cb18 = LIBRARY.find(v => v.id === 'cb18')!
+    const other = { ...cb18, id: 'x9', name: 'X9', display: { ...cb18.display, fleetSoftware: 'Other FMS' } }
+    const two = readinessChecks({ layout: corridor(100), flows: [ok, { ...ok, id: 'g', vehicleId: 'x9' }] as never, vehicles: [...LIBRARY, other], fleetNeeded: 2 })
+    const note = two.find(c => /fleet managers/.test(c.text))
+    expect(note).toMatchObject({ level: 'info' })
+    expect(note!.text).toMatch(/BlueBotics ANT/)
+    expect(run([ok]).some(c => /fleet managers/.test(c.text))).toBe(false)
+  })
+
   it('asks for routes first, and for a scale on a loaded drawing', () => {
     expect(readinessChecks({ vehicles: LIBRARY, fleetNeeded: 1 })[0]).toMatchObject({ level: 'bad', text: expect.stringContaining('Draw routes') })
     expect(run([ok], { layout: { ...corridor(100), background: {} } as never })[0]).toMatchObject({ level: 'bad', text: expect.stringContaining('not scaled') })
