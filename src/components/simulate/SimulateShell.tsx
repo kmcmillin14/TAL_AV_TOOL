@@ -149,7 +149,23 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     setMode('layout')
   }
 
-  // In Layout mode the banner sits at the top of the side panel; in Run mode (and on a phone) above the page.
+  // The page's tabs (owner, 2026-11-16): Layout · Sim · Data at the top of the side panel, the map always
+  // on the left. Sim and Data need a runnable layout (disabled with the first blocker as the reason).
+  const modeTabs = (
+    <div className="sim-tabs sim-modes" role="tablist" aria-label="Simulate">
+      {(['layout', 'sim', 'data'] as const).map(m => {
+        const on = m === 'layout' ? !running : mode === m && running, off = m !== 'layout' && !canRun
+        return (
+          <button key={m} type="button" role="tab" aria-selected={on} className={on ? 'on' : ''} disabled={off}
+            aria-describedby={off ? 'sim-run-why' : undefined} title={off ? checks[0]?.text : undefined} onClick={() => setMode(m)}>
+            {m === 'layout' ? 'Layout' : m === 'sim' ? 'Sim' : 'Data'}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  // The banner sits at the top of the side panel (on a phone, above the page).
   const banner = sampleOn && (
     <div className="sim-banner">
       <span><b>Sample layout</b> — the CB18 proof-of-concept site.</span>
@@ -177,18 +193,6 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           )}
           {/* The first blocker in words: read with Sim and Data by screen readers, shown on a narrow screen. */}
           {!canRun && <span id="sim-run-why" className={narrow ? 'sim-run-why' : 'sim-sr'}>{checks[0].text}</span>}
-          {/* The page's tabs (owner, 2026-11-16): Layout · Sim · Data. Sim and Data need a runnable layout. */}
-          <div className="seg-toggle sim-modes" role="tablist" aria-label="Simulate">
-            {(['layout', 'sim', 'data'] as const).map(m => {
-              const on = m === 'layout' ? !running : mode === m && running, off = m !== 'layout' && !canRun
-              return (
-                <button key={m} type="button" role="tab" aria-selected={on} className={`seg-btn${on ? ' on' : ''}`} disabled={off || (narrow && m === 'layout')}
-                  aria-describedby={off ? 'sim-run-why' : undefined} title={off ? checks[0]?.text : undefined} onClick={() => setMode(m)}>
-                  {m === 'layout' ? 'Layout' : m === 'sim' ? 'Sim' : 'Data'}
-                </button>
-              )
-            })}
-          </div>
           <button type="button" className={`btn ghost sim-assume-btn${drawer ? ' on' : ''}`} aria-pressed={!!drawer} onClick={() => setDrawer(d => (d ? null : { focus: null }))}>
             Assumptions{overrideCount > 0 && <span className="sim-count"><i className="sim-odot" />{overrideCount} override{overrideCount === 1 ? '' : 's'}</span>}
           </button>
@@ -208,20 +212,20 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
         <VehicleBar types={types} vehicleById={vehicleById} vehicles={vehicles} app={app} sizingIds={sizingIds} loads={loads} staticN={staticN}
           placed={placed} stepped={stepped} unitSystem={unitSystem} onTypes={setTypes} onFleet={setFleet} />
       )}
-      {(running || narrow) && banner}
+      {narrow && banner}
 
       {narrow ? (
         <section className="sim-canvas" aria-label="Simulation layout">
           <div className="empty-state"><h3>Open on a desktop to edit the layout</h3></div>
         </section>
       ) : running ? (
-        <RunView view={mode === 'data' ? 'data' : 'sim'} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
+        <RunView view={mode === 'data' ? 'data' : 'sim'} modeTabs={modeTabs} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           overridden={overriddenIds}
           registerLayoutWriter={registerLayoutWriter}
-          tab={tab} onTab={setTab} status={status} banner={banner} runAs={runAs} payloads={payloads}
+          tab={tab} onTab={setTab} status={status} banner={banner} runAs={runAs} payloads={payloads} modeTabs={modeTabs}
           vehicleTypes={typeVehicles} onFlowVehicle={setFlowVehicle}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>

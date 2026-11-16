@@ -6,7 +6,7 @@
 // the same run (same seed) at ×1/×10/×100. Details sit one click away (progressive disclosure).
 // Nothing here changes the sized fleet or the quote except "Use N in pricing" (D-1, raise-only, confirmed).
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runHeadline, type Headline, type Tone } from '@/src/calc/sim/headline'
@@ -59,6 +59,10 @@ interface Props {
   /** The page's tab (owner, 2026-11-16: "Layout · Sim · Data"): the map playing the run, or the run's
    *  data (charts and tables). Both share this run and its verdict tiles. */
   view: 'sim' | 'data'
+  /** The page's tabs (Layout · Sim · Data), at the top of the side panel. */
+  modeTabs: ReactNode
+  /** The sample banner, at the top of the side panel. */
+  banner?: ReactNode
 }
 
 const clock = (t: number) => {
@@ -80,7 +84,7 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 /** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view }: Props) {
+export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view, modeTabs, banner }: Props) {
   const simSettings = project.simSettings ?? {}
   /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
   const forSizing = !differs && !ownConditionsOf(simSettings)
@@ -241,100 +245,115 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const S = live.current
   const followed = S && follow >= 0 ? S.veh[follow] : null
 
-  return (
-    <div className="sim-run">
-      {/* Verdict — the one figure acted on, per vehicle type. */}
-      <section className="sim-verdict" aria-label="Verdict">
-        {/* The deciding row (Dashboard tiles): the fleet being tested — each type with its photo and
-            stepper — then the static calc beside the simulated figures. */}
-        <div className="sim-kpis" role="group" aria-label="Static calc and simulation">
-          <div className={`sim-kpi sim-kpi-fleet is-${headline.verdictTone}`}>
-            {Object.keys(fleetBy).map(vid => {
-              const v = vehicleById.get(vid)
-              const n = fleetBy[vid] ?? 0
-              const res = R?.res.types.find(x => x.vehicleId === vid) ?? null
-              const many = Object.keys(fleetBy).length > 1
-              return (
-                <div key={vid} className="sim-kpi-veh">
-                  <button type="button" className="sim-vveh" title="Speeds, size and charging used in the run" onClick={() => onAssumptions(vid)}>
-                    {v?.display.heroImage && <img src={v.display.heroImage} alt="" />}
-                    <span className="nm">{v?.name ?? vid}</span>
-                  </button>
-                  <div className="sim-stepper" role="group" aria-label={`${v?.name ?? 'Vehicle'} fleet`}>
-                    <button type="button" aria-label="Fewer vehicles" onClick={() => setFleet(vid, n - 1)}>−</button>
-                    <span className="num">{n}</span>
-                    <button type="button" aria-label="More vehicles" onClick={() => setFleet(vid, n + 1)}>+</button>
-                  </div>
-                  {many && res && !R?.res.gridlock && <span className={`sim-chip sm ${res.verdict}`} title={`${res.perHr.toFixed(1)} / ${res.target.toFixed(0)} moves/h · ${Math.round(res.utilization * 100)}% busy`}>{VERDICT_LABEL[res.verdict]}</span>}
-                  {R && forSizing && (
-                    <PricingAction
-                      project={project} vehicles={vehicles} vehicleId={vid} n={n} engineN={engineFleet[vid] ?? 0}
-                      verdict={R.res.gridlock ? 'gridlock' : res?.verdict ?? null} lower={lower[vid]} inputsKey={inputsKey}
-                      onApplied={appliedFleet => patchSimSettings(project.id, { appliedFleet })}
-                      onStepDown={() => setFleet(vid, n - 1)}
-                    />
-                  )}
-                </div>
-              )
-            })}
-            <span className="sim-kpi-lbl">{headline.fleet.tested !== headline.fleet.static ? `Testing ${headline.fleet.tested} · static calc ${headline.fleet.static}` : `Testing the static calc · ${headline.fleet.static}`}</span>
+  // Sim (owner, 2026-11-16): the fleet being tested — each type's photo and stepper, coloured green /
+  // yellow / red with one word — and the actions on that count. Everything else is Data.
+  const fleetPane = (
+    <div className={`sim-kpi sim-kpi-fleet is-${headline.verdictTone}`}>
+      <span className="sim-kpi-lbl">Fleet</span>
+      <span className="sim-kpi-val">{verdictWord(headline)}</span>
+      {Object.keys(fleetBy).map(vid => {
+        const v = vehicleById.get(vid)
+        const n = fleetBy[vid] ?? 0
+        const res = R?.res.types.find(x => x.vehicleId === vid) ?? null
+        const many = Object.keys(fleetBy).length > 1
+        return (
+          <div key={vid} className="sim-kpi-veh">
+            <button type="button" className="sim-vveh" title="Speeds, size and charging used in the run" onClick={() => onAssumptions(vid)}>
+              {v?.display.heroImage && <img src={v.display.heroImage} alt="" />}
+              <span className="nm">{v?.name ?? vid}</span>
+            </button>
+            <div className="sim-stepper" role="group" aria-label={`${v?.name ?? 'Vehicle'} fleet`}>
+              <button type="button" aria-label="Fewer vehicles" onClick={() => setFleet(vid, n - 1)}>−</button>
+              <span className="num">{n}</span>
+              <button type="button" aria-label="More vehicles" onClick={() => setFleet(vid, n + 1)}>+</button>
+            </div>
+            {many && res && !R?.res.gridlock && <span className={`sim-chip sm ${res.verdict}`}>{VERDICT_LABEL[res.verdict]}</span>}
+            {R && forSizing && (
+              <PricingAction
+                project={project} vehicles={vehicles} vehicleId={vid} n={n} engineN={engineFleet[vid] ?? 0}
+                verdict={R.res.gridlock ? 'gridlock' : res?.verdict ?? null} lower={lower[vid]} inputsKey={inputsKey}
+                onApplied={appliedFleet => patchSimSettings(project.id, { appliedFleet })}
+                onStepDown={() => setFleet(vid, n - 1)}
+              />
+            )}
           </div>
-          <VerdictTile h={headline} why={verdictWhy} />
-          <HeadlineTiles h={headline} unitSystem={unitSystem} sizingTarget={settings.targetUtilization}
-            onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
-            coverage={{ daysPerWeek, shiftsPerDay: shifts, shiftH, step1 }} onCoverage={setCoverage} />
-        </div>
-        <div className="sim-vsub">
-          {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
-          {!differs && ownConditionsOf(simSettings) && <span className="sim-as-note">Target or shifts set for the simulation only — the price uses Sizing&rsquo;s</span>}
-          <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b>{Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <> · <button type="button" className="link-btn" onClick={() => onResetFleet(Object.keys(fleetBy))}>Reset to engine</button></>}</span>
-          <span>A week · {daysPerWeek} day{daysPerWeek === 1 ? '' : 's'} × {shifts} × {shiftH} h shift{shifts === 1 ? '' : 's'} · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
-          <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
-          <span className="grow" />
-          {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}
-          {vari && vari.k >= VARIABILITY_RUNS && <VariabilityChip out={vari.out} arrivals={assume.arrivals} />}
-          {!vari && <button type="button" className="btn btn-sm ghost" onClick={runVariability}>Check variability</button>}
-        </div>
-      </section>
+        )
+      })}
+      {Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <button type="button" className="link-btn sim-kpi-sub" onClick={() => onResetFleet(Object.keys(fleetBy))}>Reset to engine</button>}
+    </div>
+  )
 
-      {/* Sim: the map, playing the same run. Data: the run's charts and tables. */}
-      {view === 'sim' ? <LayoutCanvas
-        layout={inputs.layout}
-        laneWidths={inputs.laneWidths}
-        fitInset={RUN_INSET}
-        panAlways
-        showLabels={labels}
-        follow={followed ? { x: followed.x, y: followed.y } : null}
-        scene={S ? (px => <RunScene S={S} follow={follow} labels={labels} px={px} />) : undefined}
-      >
-        <div className="sim-viewctl" onPointerDown={e => e.stopPropagation()}>
-          <button type="button" className={`btn btn-sm${labels ? ' on' : ''}`} onClick={() => setLabels(l => !l)}>{labels ? 'Hide' : 'Show'} labels</button>
-          <select className="sim-sel" value={follow} onChange={e => setFollow(Number(e.target.value))} aria-label="Follow a vehicle">
-            <option value={-1}>Follow: none</option>
-            {S?.veh.map(v => <option key={v.i} value={v.i}>{v.id}</option>)}
-          </select>
-          {followed && <span className="sim-legs-key"><i className="empty" />Empty to pick<i className="loaded" />Loaded to drop</span>}
-        </div>
-        <div className="sim-hud" onPointerDown={e => e.stopPropagation()}>
-          <button type="button" className="btn primary btn-sm" onClick={() => setRunning(r => !r)}>{running ? 'Pause' : 'Play'}</button>
-          <div className="seg-toggle">
-            {[1, 10, 100].map(x => <button key={x} type="button" className={`seg-btn${speed === x ? ' on' : ''}`} onClick={() => { setSpeed(x); setRunning(true) }}>×{x}</button>)}
+  // Data: the verdict and why, the checks' tiles, the run's conditions, variability, charts and tables.
+  const dataPane = (
+    <>
+      <div className="sim-kpis" role="group" aria-label="Static calc and simulation">
+        <VerdictTile h={headline} why={verdictWhy} />
+        <HeadlineTiles h={headline} unitSystem={unitSystem} sizingTarget={settings.targetUtilization}
+          onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
+          coverage={{ daysPerWeek, shiftsPerDay: shifts, shiftH, step1 }} onCoverage={setCoverage} />
+      </div>
+      <div className="sim-vsub">
+        {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
+        {!differs && ownConditionsOf(simSettings) && <span className="sim-as-note">Target or shifts set for the simulation only — the price uses Sizing&rsquo;s</span>}
+        <span>{headline.fleet.tested !== headline.fleet.static ? `Testing ${headline.fleet.tested} · ` : ''}{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b></span>
+        <span>A week · {daysPerWeek} day{daysPerWeek === 1 ? '' : 's'} × {shifts} × {shiftH} h shift{shifts === 1 ? '' : 's'} · seed {assume.seed} · {assume.arrivals} arrivals · pace {assume.pacePct}%</span>
+        <button type="button" className="sim-chip sm sim-assume-chip" onClick={openAll}>Assumptions{changed ? ` · ${changed} changed` : ''}</button>
+        {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}
+        {vari && vari.k >= VARIABILITY_RUNS && <VariabilityChip out={vari.out} arrivals={assume.arrivals} />}
+        {!vari && <button type="button" className="btn btn-sm ghost" onClick={runVariability}>Check variability</button>}
+      </div>
+      <RunDetails
+        R={R?.res ?? null} S={R?.S ?? null} project={project} vehicleById={vehicleById} unitSystem={unitSystem}
+        inputs={inputs} assume={assume} onOpenAssumptions={openAll}
+      />
+    </>
+  )
+
+  return (
+    <div className={`sim-work sim-run is-${view}`}>
+      {/* The map, always: playing the run. */}
+      <div className="sim-canvas-wrap">
+        <LayoutCanvas
+          layout={inputs.layout}
+          laneWidths={inputs.laneWidths}
+          fitInset={RUN_INSET}
+          panAlways
+          showLabels={labels}
+          follow={followed ? { x: followed.x, y: followed.y } : null}
+          scene={S ? (px => <RunScene S={S} follow={follow} labels={labels} px={px} />) : undefined}
+        >
+          <div className="sim-viewctl" onPointerDown={e => e.stopPropagation()}>
+            <button type="button" className={`btn btn-sm${labels ? ' on' : ''}`} onClick={() => setLabels(l => !l)}>{labels ? 'Hide' : 'Show'} labels</button>
+            <select className="sim-sel" value={follow} onChange={e => setFollow(Number(e.target.value))} aria-label="Follow a vehicle">
+              <option value={-1}>Follow: none</option>
+              {S?.veh.map(v => <option key={v.i} value={v.i}>{v.id}</option>)}
+            </select>
+            {followed && <span className="sim-legs-key"><i className="empty" />Empty to pick<i className="loaded" />Loaded to drop</span>}
           </div>
-          <button type="button" className="btn btn-sm ghost" disabled={busyFF} onClick={() => S && fastForward(S.t + shiftH * 3600)}>Run shift</button>
-          <button type="button" className="btn btn-sm ghost" disabled={busyFF} onClick={() => S && fastForward((Math.floor(S.t / 86400 + 1e-9) + 1) * 86400)}>Run 24 h</button>
-          <button type="button" className="btn btn-sm ghost" disabled={busyFF} onClick={() => S && fastForward(S.t + 7 * 86400)}>Run week</button>
-          <button type="button" className="btn btn-sm ghost" onClick={restart}>Restart</button>
-          <span className="sim-clock num">{S ? clock(S.t) : '—'}</span>
-          {S?.gridlock && <span className="sim-chip gridlock">Gridlock — see the red ring</span>}
-          <span className="grow" />
-          <span className="sim-states">{STATES.map(([k, l]) => <span key={k}><i className={`st-${k}`} />{l}</span>)}</span>
+          <div className="sim-hud" onPointerDown={e => e.stopPropagation()}>
+            <button type="button" className="btn primary btn-sm" onClick={() => setRunning(r => !r)}>{running ? 'Pause' : 'Play'}</button>
+            <div className="seg-toggle">
+              {[1, 10, 100].map(x => <button key={x} type="button" className={`seg-btn${speed === x ? ' on' : ''}`} onClick={() => { setSpeed(x); setRunning(true) }}>×{x}</button>)}
+            </div>
+            <button type="button" className="btn btn-sm ghost" disabled={busyFF} onClick={() => S && fastForward(S.t + shiftH * 3600)}>Run shift</button>
+            <button type="button" className="btn btn-sm ghost" disabled={busyFF} onClick={() => S && fastForward((Math.floor(S.t / 86400 + 1e-9) + 1) * 86400)}>Run 24 h</button>
+            <button type="button" className="btn btn-sm ghost" disabled={busyFF} onClick={() => S && fastForward(S.t + 7 * 86400)}>Run week</button>
+            <button type="button" className="btn btn-sm ghost" onClick={restart}>Restart</button>
+            <span className="sim-clock num">{S ? clock(S.t) : '—'}</span>
+            {S?.gridlock && <span className="sim-chip gridlock">Gridlock — see the red ring</span>}
+            <span className="grow" />
+            <span className="sim-states">{STATES.map(([k, l]) => <span key={k}><i className={`st-${k}`} />{l}</span>)}</span>
+          </div>
+        </LayoutCanvas>
+      </div>
+      {/* The side panel: the page's tabs, then Sim's fleet or the run's data. */}
+      <div className="sim-side">
+        {modeTabs}
+        <div className="sim-side-body" role="tabpanel">
+          {banner}
+          {view === 'sim' ? fleetPane : dataPane}
         </div>
-      </LayoutCanvas> : (
-        <RunDetails
-          R={R?.res ?? null} S={R?.S ?? null} project={project} vehicleById={vehicleById} unitSystem={unitSystem}
-          inputs={inputs} assume={assume} onOpenAssumptions={openAll}
-        />
-      )}
+      </div>
     </div>
   )
 }
@@ -380,11 +399,14 @@ function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: 
 }
 
 /** The static calc beside the simulated figures; `why` is the verdict's line (stopped, not run, running). */
-/** The verdict (after the fleet tested): the outcome, its three checks stacked, and what sets the fleet. */
+/** The verdict in one word (Sim's fleet tile). */
+const verdictWord = (h: Headline) => h.outcome === 'right' ? 'Right-sized' : h.outcome === 'over' ? 'Oversized' : h.outcome === 'under' ? 'Undersized'
+  : h.outcome === 'gridlock' ? 'Gridlock' : h.outcome === 'notRun' ? 'Not run' : 'Simulating…'
+
+/** The verdict (Data): the outcome, its three checks stacked, and what sets the fleet. */
 function VerdictTile({ h, why }: { h: Headline; why: string | null }) {
   const n = h.fleet.tested
-  const title = h.outcome === 'right' ? `Right-sized at ${n}` : h.outcome === 'over' ? 'Oversized by 1' : h.outcome === 'under' ? `Undersized at ${n}`
-    : h.outcome === 'gridlock' ? 'Gridlock' : h.outcome === 'notRun' ? 'Not run' : 'Simulating…'
+  const title = h.outcome === 'right' ? `Right-sized at ${n}` : h.outcome === 'over' ? 'Oversized by 1' : h.outcome === 'under' ? `Undersized at ${n}` : verdictWord(h)
   const checks: [string, boolean | null][] = [['Orders', h.perHr.pass], ['Utilization', h.utilization.pass], ['Battery', h.battery.pass]]
   return (
     <div className={`sim-kpi sim-kpi-verdict is-${h.verdictTone}`}>

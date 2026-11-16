@@ -5428,9 +5428,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-confirm { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-radius: 8px; background: var(--warn-soft); color: var(--text-primary); font-size: 13px; }
 
 /* ---- Run mode ---- */
-.sim-run { display: flex; flex-direction: column; gap: 16px; }
-.sim-run .sim-stage { height: min(64vh, 640px); }
-.sim-verdict { display: grid; gap: 12px; }
 /* The deciding row — the 05 Dashboard tile: figure, label, the static calc under it, a bar on top
    coloured against its goal. The fleet tile holds each type's photo and stepper. */
 .sim-kpis { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 12px; }
@@ -5675,9 +5672,16 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-valid { display: flex; flex-direction: column; gap: 8px; }
 .sim-valid-head { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); }
 .sim-run-why { max-width: 280px; font-size: 13px; color: var(--text-tertiary); }
-/* The page's tabs: Layout · Sim · Data (owner, 2026-11-16). */
-.sim-modes .seg-btn { min-width: 72px; }
-.sim-modes .seg-btn.on { background: var(--sim-sel-soft); color: var(--sim-sel); }
+/* The page's tabs, top of the side panel: Layout · Sim · Data (owner, 2026-11-16); Layout's own
+   Edit · Flows · Validation sit under them, smaller. Data widens the panel for its charts. */
+.sim-modes button.on { background: var(--sim-sel-soft); color: var(--sim-sel); }
+.sim-modes button:disabled { opacity: 0.4; cursor: not-allowed; }
+.sim-subtabs { padding: 4px 8px; }
+.sim-subtabs button { height: 28px; font-size: 12px; }
+.sim-run.is-data { grid-template-columns: minmax(0, 1fr) 560px; }
+.sim-run .sim-canvas-wrap .sim-stage { flex: 1; height: auto; min-height: 0; }
+.sim-run .sim-side-body .sim-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.sim-run .sim-side-body .sim-kpi-fleet { border-radius: 10px; }
 /* Read by screen readers, not shown. */
 .sim-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .sim-valid-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
@@ -5769,7 +5773,6 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 
 .sim-shell:fullscreen { background: var(--bg-base); padding: 16px 24px; overflow: auto; }
 .sim-shell:fullscreen .sim-work { height: max(560px, calc(100vh / var(--root-zoom) - 200px)); }
-.sim-shell:fullscreen .sim-run .sim-stage { height: max(440px, calc(100vh / var(--root-zoom) - 360px)); }
 /* The verdict's three checks, and the editable target on the utilization tile. */
 .sim-kpi-verdict .sim-kpi-val { font-size: 20px; }
 .sim-checks { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-secondary); }

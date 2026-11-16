@@ -137,13 +137,15 @@ interface Props {
   /** The simulation's vehicle types (the flow inspector's Vehicle list) and a flow's choice among them. */
   vehicleTypes?: Vehicle[]
   onFlowVehicle?: (flowId: string, vehicleId: string) => void
+  /** The page's tabs (Layout · Sim · Data), at the top of the side panel. */
+  modeTabs?: ReactNode
 }
 const PATH_KIND = { dir: 'two', lane: 'single' } as const
 const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, tab, onTab: setTab, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, tab, onTab: setTab, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, modeTabs }: Props) {
   const radiusFor = useCallback((id?: string) => (id && vehicleById.get(id)?.calc.turningRadiusFt) || 0, [vehicleById])
   const editor = useLayoutEditor(project, radiusFor)
   const { doc, latest, commit, canUndo, canRedo } = editor
@@ -790,8 +792,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           <p className="sim-status" aria-live="polite">{hint}</p>
         </div>
         <div className="sim-side">
-          <div className="sim-tabs" role="tablist" aria-label="Side panel">
-            <button type="button" role="tab" aria-selected={tab === 'layout'} className={tab === 'layout' ? 'on' : ''} onClick={() => setTab('layout')}>Layout</button>
+          {modeTabs}
+          {/* Inside Layout: Edit (the selection, Drawing, Place on routes) · Flows · Validation. */}
+          <div className="sim-tabs sim-subtabs" role="tablist" aria-label="Layout panel">
+            <button type="button" role="tab" aria-selected={tab === 'layout'} className={tab === 'layout' ? 'on' : ''} onClick={() => setTab('layout')}>Edit</button>
             <button type="button" role="tab" aria-selected={tab === 'flows'} className={tab === 'flows' ? 'on' : ''} onClick={() => setTab('flows')}>
               Flows <span className="num">{linked.length}/{flows.length}</span>
             </button>

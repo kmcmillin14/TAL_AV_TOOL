@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: the tabs move to the side panel
+
+- Owner: "Layout, Sim, Data on the right side, no redundant info from Sim to Data". The map stays on the
+  left; the side panel's tabs are Layout · Sim · Data (Layout's Edit · Flows · Validation under them).
+  Sim shows only the fleet — steppers coloured green / yellow / red with one word, Use N in pricing,
+  Reset to engine; Data has the verdict, checks, tiles, run conditions, variability, charts and tables.
+- Routes draw the same full arrows as paths (the sample site still showed the small triangles).
+
 ## 2026-11-16 — Fleet simulation: Layout · Sim · Data tabs
 
 - Owner: "instead of the data below the sim window, the data in a tab". The page head's **Run** and

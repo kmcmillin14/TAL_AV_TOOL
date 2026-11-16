@@ -526,9 +526,9 @@ const MAX_ARROWS = 40
 const STREET_PX = 18
 
 /**
- * A route's floor marking. Two-way, two-lane: a street — dashed centre line and one travel path per
- * direction with its own arrows, traffic keeping right (as the vehicles drive it). Two-way,
- * single-lane: one path, arrows alternating both ways. One-way: one path, arrows one way.
+ * A route's floor marking — the same full arrows as a path. Two-way, two-lane: one row per direction,
+ * traffic keeping right (as the vehicles drive it). Two-way, single-lane: double-headed arrows.
+ * One-way: arrows one way.
  */
 const Segment = memo(function Segment({ s, a, b, px, selected, widthFt }: { s: SimSegment; a?: SimPoint; b?: SimPoint; px: number; selected: boolean; widthFt?: number }) {
   if (!a || !b) return null
@@ -538,11 +538,11 @@ const Segment = memo(function Segment({ s, a, b, px, selected, widthFt }: { s: S
   const street = twoLane && w / px >= STREET_PX
   const d = w / 4                                                    // each lane's centre, off the centre line
   /** An arrowhead `at` ft along, `side` lanes off the centre (+1 = right of a→b), pointing a→b or back. */
-  const arrow = (key: string, at: number, side: number, back: boolean, small = false) => {
+  const arrow = (key: string, at: number, side: number, back: boolean, both = false) => {
     const c = g.at(at), ang = (Math.atan2(c.ty, c.tx) * 180) / Math.PI + (back ? 180 : 0)
     return (
-      <g key={key} transform={`translate(${c.x - c.ty * d * side} ${c.y + c.tx * d * side}) rotate(${ang}) scale(${px * (small ? 0.8 : 1)})`} className="sim-arrow">
-        <path d="M6 0L-4 -5L-4 5Z" />
+      <g key={key} transform={`translate(${c.x - c.ty * d * side} ${c.y + c.tx * d * side}) rotate(${ang}) scale(${px})`} className="sim-arrow">
+        <path d={both ? ARROW_BOTH : ARROW} />
       </g>
     )
   }
@@ -553,16 +553,9 @@ const Segment = memo(function Segment({ s, a, b, px, selected, widthFt }: { s: S
   return (
     <g className={`sim-seg${selected ? ' is-selected' : ''}${twoLane ? ' is-two' : ''}`}>
       <path d={pathOf(a, b, s)} className="sim-tape" vectorEffect="non-scaling-stroke" />
-      {street && (
-        <>
-          {spots.map(({ at, k }) => [arrow(`f${k}`, at, 1, false, true), arrow(`b${k}`, at, -1, true, true)])}
-        </>
-      )}
-      {/* single-lane two-way: one path shared — arrows alternate; a lone arrow would read one-way */}
-      {/* single-lane two-way: one path shared — arrows alternate; a lone arrow would read one-way */}
-      {s.dir === 'two' && single && (m === 1
-        ? [arrow('f', g.length * 0.35, 0, true), arrow('b', g.length * 0.65, 0, false)]
-        : spots.map(({ at, k }) => arrow(`${k}`, at, 0, k % 2 === 1)))}
+      {street && spots.map(({ at, k }) => [arrow(`f${k}`, at, 1, false), arrow(`b${k}`, at, -1, true)])}
+      {/* A two-lane route too narrow on screen for two rows, or one shared lane: double-headed. */}
+      {s.dir === 'two' && !street && spots.map(({ at, k }) => arrow(`${k}`, at, 0, false, true))}
       {s.dir !== 'two' && spots.map(({ at, k }) => arrow(`${k}`, at, 0, s.dir === 'ba'))}
     </g>
   )
