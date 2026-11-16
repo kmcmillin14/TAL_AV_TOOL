@@ -337,11 +337,17 @@ export default function LayoutCanvas(props: Props) {
         {image && <image href={image.href} x={0} y={0} width={image.widthFt} height={image.heightFt} preserveAspectRatio="none" className="sim-drawing" opacity={image.opacity ?? 0.9} />}
 
         {(layout.objects ?? []).map(o => <ObjectShape key={o.id} o={o} selected={selected('object', o.id)} />)}
-        {/* Highways: bands, then the junctions where they connect (one floor, no edge lines), then the
-            arrows (not inside a junction), direction badges and the ends that connect to nothing. */}
+        {/* Highways: each its own band and outline (owner, 2026-11-16: "keep highways separate"), its
+            arrows (not where it overlaps another), its direction badge; a dot where two connect and a cap
+            on an end that connects to nothing. */}
         {(layout.highways ?? []).map(h => <HighwayBand key={h.id} h={h} selected={selected('highway', h.id)} status={props.highwayStatus?.get(h.id)} />)}
-        {conn.joins.map((j, i) => <polygon key={i} points={j.poly.map(q => `${q.x},${q.y}`).join(' ')} className="sim-hw-junction" />)}
         {(layout.highways ?? []).map(h => <HighwayMarks key={h.id} h={h} px={px} selected={selected('highway', h.id)} joins={conn.joins} badge={!props.scene} />)}
+        {conn.joins.map((j, i) => (
+          <g key={i} transform={`translate(${j.at.x} ${j.at.y}) scale(${px})`} className="sim-hw-node">
+            <title>Connected</title>
+            <circle r={6} />
+          </g>
+        ))}
         {!props.scene && conn.loose.map(e => (
           <g key={`${e.id}:${e.end}`} transform={`translate(${e.at.x} ${e.at.y}) scale(${px})`} className={`sim-hw-cap${e.near ? ' is-near' : ''}`}
             {...(e.near ? { 'data-hwjoin': `${e.id}:${e.end}` } : {})} role={e.near ? 'button' : undefined}>

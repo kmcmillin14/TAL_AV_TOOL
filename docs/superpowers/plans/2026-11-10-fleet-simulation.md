@@ -311,6 +311,10 @@ Order: vehicles cleanup review → lasso (Task 7) → these → rack areas (Task
 
 ### Task 7b: Aisle redesign (owner, 2026-11-16) — "simple and easy to configure"
 
+**Update (owner, same day): "too complex".** Kept: highways stay **separate** (own band and outline, a dot
+at each connection) and **straight** (a corner is two highways meeting). Set aside: bends inside a
+highway, ports, hold lines, turn paths. Not decided: lane counts, visible corner curves.
+
 Design page: https://claude.ai/artifact/9N4ec1cDtvQtfsmZS9AJPK. One drawing primitive, the **aisle**
 (Route and Highway merge; routes stay underneath as the run's graph). Decisions:
 - Width from B56.5 for vehicle, payload and lanes; default two-way 1+1; the on-aisle pill cycles

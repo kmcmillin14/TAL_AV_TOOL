@@ -885,9 +885,10 @@ step ribbon is unchanged.
     target by X pts") or over capacity. Tiles share the width evenly.
   - *Where highways connect (owner, 2026-11-16).* Two highways join where their centre lines cross,
     where one's end sits on the other's centre line (a T) or where their ends meet (a corner) — the
-    rule `withHighways` routes by. The overlap of the two bands is drawn as one **junction**: the floor
-    reads as one aisle (no edge lines inside it, no arrows; a corner's outer corner is filled), and it
-    is the zone the engine lets one vehicle through at a time (`highwayConnections`). An end joined to
+    rule `withHighways` routes by. Each highway keeps its own band and outline (owner: "keep highways
+    separate"); a **dot** marks each connection (no arrows where two overlap) (`highwayConnections`).
+    Highways are straight; a corner is two highways meeting at a dot, and the run rounds it at the
+    turning radius. An end joined to
     nothing gets a **red cap**; one that stops within reach of another highway (its half-widths + 6 ft)
     gets an **amber cap** — one click joins them, extending a highway straight along its own line (this
     one's, else the other's that also stops short; else to the nearest spot). Validation warns when the

@@ -5828,7 +5828,7 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-opacity-row .num { min-width: 40px; text-align: right; font-size: 12px; color: var(--text-secondary); }
 .lg-band { fill: color-mix(in srgb, var(--lane) 60%, transparent); stroke: var(--border-strong); stroke-width: 0.75; }
 /* Where highways connect: one floor (the band's own colour, no edge lines), and ends that join nothing. */
-.sim-hw-junction { fill: color-mix(in srgb, var(--lane) 35%, var(--scene-bg)); stroke: none; pointer-events: none; }
+.sim-hw-node circle { fill: var(--tape); stroke: var(--bg-surface); stroke-width: 2; pointer-events: none; }
 .sim-hw-cap circle { fill: var(--bg-surface); stroke: var(--bad); stroke-width: 2.5; }
 .sim-hw-cap.is-near { cursor: pointer; }
 .sim-hw-cap.is-near circle { stroke: var(--warn); fill: color-mix(in srgb, var(--warn) 18%, var(--bg-surface)); }

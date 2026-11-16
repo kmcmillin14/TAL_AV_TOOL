@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-16 — Fleet simulation: highways stay separate; a dot at each connection
+
+- Owner: "too complex, highways are merged together". Junctions no longer merge into one floor: each
+  highway keeps its band and outline, and a dot marks each connection. Highways stay straight (the
+  bends-and-lanes redesign is set aside for now).
+
 ## 2026-11-16 — Fleet simulation: where highways connect
 
 - **Junctions:** crossings, T's and corners draw as one merged floor area (no edge lines or arrows
