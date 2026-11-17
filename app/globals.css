@@ -3340,6 +3340,7 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-sample b { font-size: 15px; }
 .sim-sample span { font-size: 12px; color: var(--text-secondary); }
 .sim-menu small { margin-left: 6px; color: var(--text-tertiary); }
+.sim-menu-note { margin: 4px 8px 2px; max-width: 220px; font-size: 11px; color: var(--text-tertiary); }
 
 /* Floating controls over the canvas. */
 .sim-tools {

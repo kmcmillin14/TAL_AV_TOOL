@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-17 — Fleet simulation: examples at any time
+
+- An **Examples** menu in the page head, always there: on an empty project the example loads in place; on a
+  project with its own work it opens in a new project, so a real quote is never changed.
+
 ## 2026-11-17 — Fleet simulation: the summary moves into Sim
 
 - Owner: the checks and the Orders, Utilization, Battery and Average speed tiles now stack under the

@@ -21,7 +21,8 @@ import sample from '@/src/content/samples/simulate-sample.json'
 import rackSmall from '@/src/content/samples/simulate-racks-small.json'
 import rackMedium from '@/src/content/samples/simulate-racks-medium.json'
 import rackLarge from '@/src/content/samples/simulate-racks-large.json'
-import { getProject, patchSimSettings, updateProject, type StoredProject } from '@/src/lib/storage'
+import { createProject, getProject, patchSimSettings, updateProject, type StoredProject } from '@/src/lib/storage'
+import { useRouter } from 'next/navigation'
 import { useByValue } from '@/src/lib/useByValue'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
 import SimTabs from './ui/SimTabs'
@@ -155,6 +156,14 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   }, [project.id])
 
   const loadSample = (s: (typeof SAMPLES)[number]) => updateProject(project.id, { simLayout: s.data.layout as StoredProject['simLayout'], flows: s.data.flows as typeof flows })
+  const router = useRouter()
+  /** An example, at any time (owner, 2026-11-17): here on an empty project; otherwise in a new project of
+   *  its own, so this project's layout, flows and quote are never touched. */
+  const openSample = (s: (typeof SAMPLES)[number]) => {
+    if (canSample) { loadSample(s); return }
+    const made = createProject({ projectName: `Example — ${s.label === 'Proof of concept' ? 'proof-of-concept' : s.label.toLowerCase()} site`, simLayout: s.data.layout, flows: s.data.flows } as never)
+    router.push(`/projects/${made.id}/simulate`)
+  }
   /** Clear the layout; flows stay in Sizing, unlinked (their last measured distance kept). Sample flows go. */
   const clearLayout = () => {
     if (!window.confirm('Clear the layout? Flows stay in Sizing with their current distances. The header’s Undo brings it back.')) return
@@ -203,12 +212,19 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <button type="button" className={`btn ghost sim-assume-btn${drawer ? ' on' : ''}`} aria-pressed={!!drawer} onClick={() => setDrawer(d => (d ? null : { focus: null }))}>
             Assumptions{overrideCount > 0 && <span className="sim-count"><i className="sim-odot" />{overrideCount} override{overrideCount === 1 ? '' : 's'}</span>}
           </button>
-          {(canSample || !empty) && (
+          {/* The example sites, always (owner, 2026-11-17). */}
+          <details className="sim-more-menu" onClick={e => { if ((e.target as HTMLElement).closest('[role=menuitem]')) e.currentTarget.open = false }}>
+            <summary className="btn ghost">Examples</summary>
+            <div className="sim-menu" role="menu">
+              {SAMPLES.map(s => <button key={s.key} type="button" role="menuitem" onClick={() => openSample(s)}>{s.label} <small>{s.note}</small></button>)}
+              {!canSample && <p className="sim-menu-note">Opens in a new project — this one stays as it is.</p>}
+            </div>
+          </details>
+          {!empty && (
             <details className="sim-more-menu" onClick={e => { if ((e.target as HTMLElement).closest('[role=menuitem]')) e.currentTarget.open = false }}>
               <summary className="btn ghost" aria-label="More actions">⋯</summary>
               <div className="sim-menu" role="menu">
-                {canSample && SAMPLES.map(s => <button key={s.key} type="button" role="menuitem" onClick={() => loadSample(s)}>Load sample · {s.label} <small>{s.note}</small></button>)}
-                {!empty && <button type="button" role="menuitem" className="danger" onClick={clearLayout}>Clear layout…</button>}
+                <button type="button" role="menuitem" className="danger" onClick={clearLayout}>Clear layout…</button>
               </div>
             </details>
           )}

@@ -825,7 +825,10 @@ step ribbon is unchanged.
   a one-way loop round them, docks in and out, chargers and parking; CB18 putaway and retrieval sized
   by the Fleet Engine to that fleet), and the proof-of-concept site; the ⋯ menu offers the same. The small site's run
   agrees with the static count; the medium and large runs find it one short — the case a simulation is
-  for. As before, a sample loads only on a project with no flows and "Clear and draw your own" removes it.
+  for. An **Examples** menu in the page head offers them at all times (owner, 2026-11-17): on a project with
+  no flows the example loads in place ("Clear and draw your own" removes it); otherwise it opens in a
+  **new project** of its own ("Example — medium site"), so this project's layout, flows and quote are
+  never touched.
 - **Data full screen (owner, 2026-11-17).** The Data tab has a **Full screen** button: the data fills the
   screen (the map steps aside, still playing); the button or Esc brings it back. Where the browser
   refuses full screen, the data still fills the page.
