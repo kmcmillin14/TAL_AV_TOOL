@@ -813,6 +813,22 @@ step ribbon is unchanged.
     the lift to that level and the travel along the aisle to its bay and back; one vehicle at the rack
     at a time (its zone). Stock and slot policy (FIFO, fill %) and floor lanes come next.
   - *Kept for later:* both sides served by one rack (draw two), rotation other than square, floor lanes.
+  - *In the aisle (owner check, 2026-11-17):* a rack drawn beside a path (its face within 12 ft of the
+    centre line) has its endpoint **in the aisle**, on the centre line where the vehicle stops, and its
+    face set off by the gap (`offsetFt`) — no spur; others queue behind it in the aisle. Further away it
+    joins by a spur from its face. Sizing's lift for a rack is its positions' average level height.
+    *Open (engine, noted 2026-11-17):* two rack stops in series on one one-way lane can deadlock — a
+    vehicle bound for the far rack holds it while queued behind one working the near rack, which cannot
+    drive on through it. The examples serve one rack per aisle; floor lanes will need the rule fixed.
+- **Example sites (owner, 2026-11-17).** An empty Simulate page offers **Small · Medium · Large** sites
+  with racking (2 CB18 · 4 racks; 6 CB18 · 8 racks; 12 CB18 · 16 racks; one rack per one-way aisle,
+  a one-way loop round them, docks in and out, chargers and parking; CB18 putaway and retrieval sized
+  by the Fleet Engine to that fleet), and the proof-of-concept site; the ⋯ menu offers the same. The small site's run
+  agrees with the static count; the medium and large runs find it one short — the case a simulation is
+  for. As before, a sample loads only on a project with no flows and "Clear and draw your own" removes it.
+- **Data full screen (owner, 2026-11-17).** The Data tab has a **Full screen** button: the data fills the
+  screen (the map steps aside, still playing); the button or Esc brings it back. Where the browser
+  refuses full screen, the data still fills the page.
 - **Run details, completed (Milestone 5).**
   - *Follow a vehicle* (acceptance 15): its job legs are drawn — dashed empty leg from where it is to
     its pick, solid loaded leg to the drop (from where it is once loaded), rings on both ends; a key

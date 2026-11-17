@@ -1,0 +1,769 @@
+{
+ "_note": "Fleet Simulation sample — medium site with racking (generated): 8 single-deep racks, one per one-way aisle (48 × 40 × 48 in pallets, short face, 3 levels), 2 inbound and 2 outbound docks, 6 chargers, 2 parking; CB18 putaway and retrieval sized by the Fleet Engine to 6 vehicles.",
+ "layout": {
+  "points": [
+   {
+    "id": "p1",
+    "x": 40,
+    "y": 66,
+    "type": "rack",
+    "role": "pickDrop",
+    "name": "Rack 1",
+    "rack": {
+     "lengthFt": 72,
+     "angleDeg": 90,
+     "depthFt": 4,
+     "away": 1,
+     "offsetFt": 4.5,
+     "levels": 3,
+     "perBay": 2,
+     "face": "short",
+     "pallet": {
+      "lengthIn": 48,
+      "widthIn": 40,
+      "heightIn": 48
+     }
+    }
+   },
+   {
+    "id": "p2",
+    "x": 56,
+    "y": 66,
+    "type": "rack",
+    "role": "pickDrop",
+    "name": "Rack 2",
+    "rack": {
+     "lengthFt": 72,
+     "angleDeg": 90,
+     "depthFt": 4,
+     "away": 1,
+     "offsetFt": 4.5,
+     "levels": 3,
+     "perBay": 2,
+     "face": "short",
+     "pallet": {
+      "lengthIn": 48,
+      "widthIn": 40,
+      "heightIn": 48
+     }
+    }
+   },
+   {
+    "id": "p3",
+    "x": 72,
+    "y": 66,
+    "type": "rack",
+    "role": "pickDrop",
+    "name": "Rack 3",
+    "rack": {
+     "lengthFt": 72,
+     "angleDeg": 90,
+     "depthFt": 4,
+     "away": 1,
+     "offsetFt": 4.5,
+     "levels": 3,
+     "perBay": 2,
+     "face": "short",
+     "pallet": {
+      "lengthIn": 48,
+      "widthIn": 40,
+      "heightIn": 48
+     }
+    }
+   },
+   {
+    "id": "p4",
+    "x": 88,
+    "y": 66,
+    "type": "rack",
+    "role": "pickDrop",
+    "name": "Rack 4",
+    "rack": {
+     "lengthFt": 72,
+     "angleDeg": 90,
+     "depthFt": 4,
+     "away": 1,
+     "offsetFt": 4.5,
+     "levels": 3,
+     "perBay": 2,
+     "face": "short",
+     "pallet": {
+      "lengthIn": 48,
+      "widthIn": 40,
+      "heightIn": 48
+     }
+    }
+   },
+   {
+    "id": "p5",
+    "x": 104,
+    "y": 66,
+    "type": "rack",
+    "role": "pickDrop",
+    "name": "Rack 5",
+    "rack": {
+     "lengthFt": 72,
+     "angleDeg": 90,
+     "depthFt": 4,
+     "away": 1,
+     "offsetFt": 4.5,
+     "levels": 3,
+     "perBay": 2,
+     "face": "short",
+     "pallet": {
+      "lengthIn": 48,
+      "widthIn": 40,
+      "heightIn": 48
+     }
+    }
+   },
+   {
+    "id": "p6",
+    "x": 120,
+    "y": 66,
+    "type": "rack",
+    "role": "pickDrop",
+    "name": "Rack 6",
+    "rack": {
+     "lengthFt": 72,
+     "angleDeg": 90,
+     "depthFt": 4,
+     "away": 1,
+     "offsetFt": 4.5,
+     "levels": 3,
+     "perBay": 2,
+     "face": "short",
+     "pallet": {
+      "lengthIn": 48,
+      "widthIn": 40,
+      "heightIn": 48
+     }
+    }
+   },
+   {
+    "id": "p7",
+    "x": 136,
+    "y": 66,
+    "type": "rack",
+    "role": "pickDrop",
+    "name": "Rack 7",
+    "rack": {
+     "lengthFt": 72,
+     "angleDeg": 90,
+     "depthFt": 4,
+     "away": 1,
+     "offsetFt": 4.5,
+     "levels": 3,
+     "perBay": 2,
+     "face": "short",
+     "pallet": {
+      "lengthIn": 48,
+      "widthIn": 40,
+      "heightIn": 48
+     }
+    }
+   },
+   {
+    "id": "p8",
+    "x": 152,
+    "y": 66,
+    "type": "rack",
+    "role": "pickDrop",
+    "name": "Rack 8",
+    "rack": {
+     "lengthFt": 72,
+     "angleDeg": 90,
+     "depthFt": 4,
+     "away": 1,
+     "offsetFt": 4.5,
+     "levels": 3,
+     "perBay": 2,
+     "face": "short",
+     "pallet": {
+      "lengthIn": 48,
+      "widthIn": 40,
+      "heightIn": 48
+     }
+    }
+   },
+   {
+    "id": "p9",
+    "x": 192,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p10",
+    "x": 192,
+    "y": 126,
+    "type": "dock",
+    "name": "Dock In 1",
+    "role": "pick"
+   },
+   {
+    "id": "p11",
+    "x": 208,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p12",
+    "x": 208,
+    "y": 126,
+    "type": "dock",
+    "name": "Dock In 2",
+    "role": "pick"
+   },
+   {
+    "id": "p13",
+    "x": 224,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p14",
+    "x": 224,
+    "y": 126,
+    "type": "dock",
+    "name": "Dock Out 1",
+    "role": "drop"
+   },
+   {
+    "id": "p15",
+    "x": 240,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p16",
+    "x": 240,
+    "y": 126,
+    "type": "dock",
+    "name": "Dock Out 2",
+    "role": "drop"
+   },
+   {
+    "id": "p17",
+    "x": 256,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p18",
+    "x": 256,
+    "y": 98,
+    "type": "charger",
+    "name": "Charger 1"
+   },
+   {
+    "id": "p19",
+    "x": 272,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p20",
+    "x": 272,
+    "y": 98,
+    "type": "charger",
+    "name": "Charger 2"
+   },
+   {
+    "id": "p21",
+    "x": 288,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p22",
+    "x": 288,
+    "y": 98,
+    "type": "charger",
+    "name": "Charger 3"
+   },
+   {
+    "id": "p23",
+    "x": 304,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p24",
+    "x": 304,
+    "y": 98,
+    "type": "charger",
+    "name": "Charger 4"
+   },
+   {
+    "id": "p25",
+    "x": 320,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p26",
+    "x": 320,
+    "y": 98,
+    "type": "charger",
+    "name": "Charger 5"
+   },
+   {
+    "id": "p27",
+    "x": 336,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p28",
+    "x": 336,
+    "y": 98,
+    "type": "charger",
+    "name": "Charger 6"
+   },
+   {
+    "id": "p29",
+    "x": 352,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p30",
+    "x": 352,
+    "y": 98,
+    "type": "parking",
+    "name": "Park 1"
+   },
+   {
+    "id": "p31",
+    "x": 368,
+    "y": 112,
+    "type": "junction"
+   },
+   {
+    "id": "p32",
+    "x": 368,
+    "y": 98,
+    "type": "parking",
+    "name": "Park 2"
+   }
+  ],
+  "segments": [
+   {
+    "id": "s1",
+    "a": "p9",
+    "b": "p10",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s2",
+    "a": "p11",
+    "b": "p12",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s3",
+    "a": "p13",
+    "b": "p14",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s4",
+    "a": "p15",
+    "b": "p16",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s5",
+    "a": "p17",
+    "b": "p18",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s6",
+    "a": "p19",
+    "b": "p20",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s7",
+    "a": "p21",
+    "b": "p22",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s8",
+    "a": "p23",
+    "b": "p24",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s9",
+    "a": "p25",
+    "b": "p26",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s10",
+    "a": "p27",
+    "b": "p28",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s11",
+    "a": "p29",
+    "b": "p30",
+    "dir": "two",
+    "lane": "single"
+   },
+   {
+    "id": "s12",
+    "a": "p31",
+    "b": "p32",
+    "dir": "two",
+    "lane": "single"
+   }
+  ],
+  "highways": [
+   {
+    "id": "h1",
+    "dir": "ab",
+    "name": "Main aisle",
+    "x": 197,
+    "y": 112,
+    "lengthFt": 374,
+    "widthFt": 7,
+    "angleDeg": 0
+   },
+   {
+    "id": "hE",
+    "dir": "ab",
+    "name": "East connector",
+    "x": 384,
+    "y": 66,
+    "lengthFt": 92,
+    "widthFt": 7,
+    "angleDeg": -90
+   },
+   {
+    "id": "h2",
+    "dir": "ab",
+    "name": "Back aisle",
+    "x": 197,
+    "y": 20,
+    "lengthFt": 374,
+    "widthFt": 7,
+    "angleDeg": 180
+   },
+   {
+    "id": "hW",
+    "dir": "ab",
+    "name": "West connector",
+    "x": 10,
+    "y": 66,
+    "lengthFt": 92,
+    "widthFt": 7,
+    "angleDeg": 90
+   },
+   {
+    "id": "h3",
+    "dir": "ab",
+    "name": "Aisle 1",
+    "x": 40,
+    "y": 66,
+    "lengthFt": 92,
+    "widthFt": 6,
+    "angleDeg": -90
+   },
+   {
+    "id": "h4",
+    "dir": "ab",
+    "name": "Aisle 2",
+    "x": 56,
+    "y": 66,
+    "lengthFt": 92,
+    "widthFt": 6,
+    "angleDeg": -90
+   },
+   {
+    "id": "h5",
+    "dir": "ab",
+    "name": "Aisle 3",
+    "x": 72,
+    "y": 66,
+    "lengthFt": 92,
+    "widthFt": 6,
+    "angleDeg": -90
+   },
+   {
+    "id": "h6",
+    "dir": "ab",
+    "name": "Aisle 4",
+    "x": 88,
+    "y": 66,
+    "lengthFt": 92,
+    "widthFt": 6,
+    "angleDeg": -90
+   },
+   {
+    "id": "h7",
+    "dir": "ab",
+    "name": "Aisle 5",
+    "x": 104,
+    "y": 66,
+    "lengthFt": 92,
+    "widthFt": 6,
+    "angleDeg": -90
+   },
+   {
+    "id": "h8",
+    "dir": "ab",
+    "name": "Aisle 6",
+    "x": 120,
+    "y": 66,
+    "lengthFt": 92,
+    "widthFt": 6,
+    "angleDeg": -90
+   },
+   {
+    "id": "h9",
+    "dir": "ab",
+    "name": "Aisle 7",
+    "x": 136,
+    "y": 66,
+    "lengthFt": 92,
+    "widthFt": 6,
+    "angleDeg": -90
+   },
+   {
+    "id": "h10",
+    "dir": "ab",
+    "name": "Aisle 8",
+    "x": 152,
+    "y": 66,
+    "lengthFt": 92,
+    "widthFt": 6,
+    "angleDeg": -90
+   }
+  ]
+ },
+ "flows": [
+  {
+   "id": "sample-medium-in1",
+   "origin": "Dock In 1",
+   "destination": "Rack 1",
+   "fromPointId": "p10",
+   "toPointId": "p1",
+   "distanceFt": 840,
+   "thruPerHr": 3,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-out1",
+   "origin": "Rack 1",
+   "destination": "Dock Out 1",
+   "fromPointId": "p1",
+   "toPointId": "p14",
+   "distanceFt": 396,
+   "thruPerHr": 3,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-in2",
+   "origin": "Dock In 2",
+   "destination": "Rack 2",
+   "fromPointId": "p12",
+   "toPointId": "p2",
+   "distanceFt": 840,
+   "thruPerHr": 3,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-out2",
+   "origin": "Rack 2",
+   "destination": "Dock Out 2",
+   "fromPointId": "p2",
+   "toPointId": "p16",
+   "distanceFt": 428,
+   "thruPerHr": 3,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-in3",
+   "origin": "Dock In 1",
+   "destination": "Rack 3",
+   "fromPointId": "p10",
+   "toPointId": "p3",
+   "distanceFt": 872,
+   "thruPerHr": 3,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-out3",
+   "origin": "Rack 3",
+   "destination": "Dock Out 1",
+   "fromPointId": "p3",
+   "toPointId": "p14",
+   "distanceFt": 428,
+   "thruPerHr": 3,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-in4",
+   "origin": "Dock In 2",
+   "destination": "Rack 4",
+   "fromPointId": "p12",
+   "toPointId": "p4",
+   "distanceFt": 872,
+   "thruPerHr": 3,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-out4",
+   "origin": "Rack 4",
+   "destination": "Dock Out 2",
+   "fromPointId": "p4",
+   "toPointId": "p16",
+   "distanceFt": 460,
+   "thruPerHr": 3,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-in5",
+   "origin": "Dock In 1",
+   "destination": "Rack 5",
+   "fromPointId": "p10",
+   "toPointId": "p5",
+   "distanceFt": 904,
+   "thruPerHr": 4,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-out5",
+   "origin": "Rack 5",
+   "destination": "Dock Out 1",
+   "fromPointId": "p5",
+   "toPointId": "p14",
+   "distanceFt": 460,
+   "thruPerHr": 4,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-in6",
+   "origin": "Dock In 2",
+   "destination": "Rack 6",
+   "fromPointId": "p12",
+   "toPointId": "p6",
+   "distanceFt": 904,
+   "thruPerHr": 4,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-out6",
+   "origin": "Rack 6",
+   "destination": "Dock Out 2",
+   "fromPointId": "p6",
+   "toPointId": "p16",
+   "distanceFt": 492,
+   "thruPerHr": 4,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-in7",
+   "origin": "Dock In 1",
+   "destination": "Rack 7",
+   "fromPointId": "p10",
+   "toPointId": "p7",
+   "distanceFt": 936,
+   "thruPerHr": 4,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-out7",
+   "origin": "Rack 7",
+   "destination": "Dock Out 1",
+   "fromPointId": "p7",
+   "toPointId": "p14",
+   "distanceFt": 492,
+   "thruPerHr": 4,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-in8",
+   "origin": "Dock In 2",
+   "destination": "Rack 8",
+   "fromPointId": "p12",
+   "toPointId": "p8",
+   "distanceFt": 936,
+   "thruPerHr": 4,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  },
+  {
+   "id": "sample-medium-out8",
+   "origin": "Rack 8",
+   "destination": "Dock Out 2",
+   "fromPointId": "p8",
+   "toPointId": "p16",
+   "distanceFt": 524,
+   "thruPerHr": 4,
+   "routeLayout": "medium",
+   "liftHeightFt": 4.9,
+   "vehicleId": "cb18",
+   "distanceSource": "layout"
+  }
+ ]
+}

@@ -5,6 +5,7 @@ import { roundCorners } from './corners'
 import { closestOnLine, insidePolygon, insideRect, rectCorners, segmentGeometry } from './geometry'
 import { buildGraph, pathLen, tree } from './graph'
 import { highwayEnds, highwayFromEnds, insideHighway, ON_HIGHWAY_FT, withHighways } from './highways'
+import { rackMeanLiftFt, type RackLoad } from './racks'
 export { highwayLanes, laneKind } from './highways'
 import type { SimCurve, SimHighway, SimLayout, SimObject, SimPoint, SimPointType, SimRole, SimSegment } from './types'
 
@@ -256,17 +257,19 @@ export function linkFlow<F extends LayoutFlow>(L: SimLayout, flow: F, from: stri
  *  height + drop height (the simulation lifts at each end; Sizing counts one lift per cycle). Never
  *  typed for a linked flow (spec §5.2, §5.4). Unlinked flows are unchanged; a pair with no route
  *  keeps its typed distance — the run lists "No route" rather than inventing a number. */
-export function withLayoutDistance<F extends LayoutFlow>(L: SimLayout, flow: F, G = buildGraph(L)): F {
+export function withLayoutDistance<F extends LayoutFlow>(L: SimLayout, flow: F, G = buildGraph(L), loads: RackLoad[] = []): F {
   if (flow.distanceSource !== 'layout' || !flow.fromPointId || !flow.toPointId) return flow
   const byId = pointById(L)
-  const lift = (byId.get(flow.fromPointId)?.heightFt ?? 0) + (byId.get(flow.toPointId)?.heightFt ?? 0)
+  // A rack's lift is its positions' average level height (each move goes to a different one).
+  const liftAt = (p?: SimPoint) => (p?.rack ? rackMeanLiftFt(p, loads) : p?.heightFt ?? 0)
+  const lift = liftAt(byId.get(flow.fromPointId)) + liftAt(byId.get(flow.toPointId))
   const d = routeDistanceFt(L, flow.fromPointId, flow.toPointId, G)
   return { ...flow, liftHeightFt: lift, ...(isFinite(d) ? { distanceFt: Math.round(d * 10) / 10 } : {}) }
 }
 
 /** Every linked flow re-measured on the layout a vehicle drives: corners rounded to the flow's
  *  vehicle turning radius (`radiusFor`, spec §5.5; 0 = turns in place). One graph per radius. */
-export function measureFlows<F extends LayoutFlow & { vehicleId?: string }>(L: SimLayout, flows: F[], radiusFor: (vehicleId?: string) => number = () => 0): F[] {
+export function measureFlows<F extends LayoutFlow & { vehicleId?: string }>(L: SimLayout, flows: F[], radiusFor: (vehicleId?: string) => number = () => 0, loads: RackLoad[] = []): F[] {
   if (!flows.some(f => f.distanceSource === 'layout')) return flows
   const graphs = new Map<number, { L: SimLayout; G: ReturnType<typeof buildGraph> }>()
   const driven = (r: number) => {
@@ -277,7 +280,7 @@ export function measureFlows<F extends LayoutFlow & { vehicleId?: string }>(L: S
   return flows.map(f => {
     if (f.distanceSource !== 'layout') return f
     const { L: R, G } = driven(radiusFor(f.vehicleId))
-    return withLayoutDistance(R, f, G)
+    return withLayoutDistance(R, f, G, loads)
   })
 }
 

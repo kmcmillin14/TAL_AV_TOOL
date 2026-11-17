@@ -41,6 +41,10 @@ export interface SimRack {
    *  the face direction, −1 = left). */
   depthFt: number
   away: 1 | -1
+  /** From the point to the served face, ft: the point stands in the aisle (on the path's centre line,
+   *  where the vehicle stops) and the face is this far off to the `away` side. Absent: 0 (the point is
+   *  on the face, joined by a spur). */
+  offsetFt?: number
   levels: number
   perBay: number
   /** The pallet side facing the aisle. */

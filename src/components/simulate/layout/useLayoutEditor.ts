@@ -40,7 +40,7 @@ export function useLayoutEditor(project: StoredProject, radiusFor: (vehicleId?: 
         const o = prev.flows[i]
         return f.fromPointId === o.fromPointId && f.toPointId === o.toPointId && f.vehicleId === o.vehicleId
       })
-    updateProject(project.id, { simLayout: next.layout, flows: sameLinks ? next.flows : measureFlows(next.layout, next.flows, radiusFor) })
+    updateProject(project.id, { simLayout: next.layout, flows: sameLinks ? next.flows : measureFlows(next.layout, next.flows, radiusFor, project.loads ?? []) })
     bump(n => n + 1)
   }, [project.id, radiusFor])
 

@@ -18,6 +18,9 @@ import { withVehicleOverrides } from '@/src/calc/sim/vehicle'
 import { clearanceRule, runFleet, runInputs } from '@/src/calc/sim/runInputs'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import sample from '@/src/content/samples/simulate-sample.json'
+import rackSmall from '@/src/content/samples/simulate-racks-small.json'
+import rackMedium from '@/src/content/samples/simulate-racks-medium.json'
+import rackLarge from '@/src/content/samples/simulate-racks-large.json'
 import { getProject, patchSimSettings, updateProject, type StoredProject } from '@/src/lib/storage'
 import { useByValue } from '@/src/lib/useByValue'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
@@ -34,6 +37,15 @@ import { overriddenFields } from '@/src/lib/simFields'
 const SAMPLE_PREFIX = 'sample-'
 const NO_LOADS: NonNullable<StoredProject['loads']> = []
 const isSample = (id: string) => id.startsWith(SAMPLE_PREFIX)
+/** The example sites (owner, 2026-11-17: small, medium and large fleets, with racking; the proof of
+ *  concept kept). Their flow ids carry the key (`sample-small-…`); the proof of concept's do not. */
+const SAMPLES = [
+  { key: 'small', label: 'Small', note: '2 CB18 · 4 racks', data: rackSmall },
+  { key: 'medium', label: 'Medium', note: '6 CB18 · 8 racks', data: rackMedium },
+  { key: 'large', label: 'Large', note: '12 CB18 · 16 racks', data: rackLarge },
+  { key: 'poc', label: 'Proof of concept', note: 'CB18 site, no racks', data: sample },
+] as const
+const sampleOf = (flowId: string) => SAMPLES.find(s => s.key !== 'poc' && flowId.startsWith(`${SAMPLE_PREFIX}${s.key}-`)) ?? SAMPLES[3]
 
 interface Props {
   project: StoredProject
@@ -142,7 +154,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     else { const cur = getProject(project.id)?.simLayout; if (cur) updateProject(project.id, { simLayout: update(cur) }) }
   }, [project.id])
 
-  const loadSample = () => updateProject(project.id, { simLayout: sample.layout as StoredProject['simLayout'], flows: sample.flows as typeof flows })
+  const loadSample = (s: (typeof SAMPLES)[number]) => updateProject(project.id, { simLayout: s.data.layout as StoredProject['simLayout'], flows: s.data.flows as typeof flows })
   /** Clear the layout; flows stay in Sizing, unlinked (their last measured distance kept). Sample flows go. */
   const clearLayout = () => {
     if (!window.confirm('Clear the layout? Flows stay in Sizing with their current distances. The header’s Undo brings it back.')) return
@@ -162,9 +174,10 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   )
 
   // The banner sits at the top of the side panel (on a phone, above the page).
-  const banner = sampleOn && (
+  const shownSample = sampleOn ? sampleOf(flows.find(f => isSample(f.id))!.id) : null
+  const banner = shownSample && (
     <div className="sim-banner">
-      <span><b>Sample layout</b> — the CB18 proof-of-concept site.</span>
+      <span><b>Sample layout</b> — {shownSample.key === 'poc' ? 'the CB18 proof-of-concept site' : `${shownSample.label.toLowerCase()} site with racking (${shownSample.note})`}.</span>
       <button type="button" className="link-btn" onClick={clearLayout}>Clear and draw your own</button>
     </div>
   )
@@ -194,7 +207,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
             <details className="sim-more-menu" onClick={e => { if ((e.target as HTMLElement).closest('[role=menuitem]')) e.currentTarget.open = false }}>
               <summary className="btn ghost" aria-label="More actions">⋯</summary>
               <div className="sim-menu" role="menu">
-                {canSample && <button type="button" role="menuitem" onClick={loadSample}>Load sample</button>}
+                {canSample && SAMPLES.map(s => <button key={s.key} type="button" role="menuitem" onClick={() => loadSample(s)}>Load sample · {s.label} <small>{s.note}</small></button>)}
                 {!empty && <button type="button" role="menuitem" className="danger" onClick={clearLayout}>Clear layout…</button>}
               </div>
             </details>
@@ -223,9 +236,15 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           vehicleTypes={typeVehicles} onFlowVehicle={setFlowVehicle}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
-              <p>Draw routes along the aisles — or start from a finished site.</p>
-              <button type="button" className="btn primary" onClick={loadSample}>Open the example site</button>
-              <span>The CB18 proof-of-concept site: 4 flows, chargers and parking, ready to Run.</span>
+              <p>Draw paths along the aisles — or start from an example site.</p>
+              <div className="sim-samples">
+                {SAMPLES.slice(0, 3).map(s => (
+                  <button key={s.key} type="button" className="sim-sample" onClick={() => loadSample(s)}>
+                    <b>{s.label}</b><span>{s.note}</span>
+                  </button>
+                ))}
+              </div>
+              <span>With racking, docks, chargers and parking — ready to run. Or the <button type="button" className="link-btn" onClick={() => loadSample(SAMPLES[3])}>proof-of-concept site</button>.</span>
             </div>
           ) : 'Draw routes along the aisles.'}
         />

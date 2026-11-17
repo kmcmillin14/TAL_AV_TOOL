@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-17 — Fleet simulation: example sites with racking; Data full screen
+
+- **Small · Medium · Large** example sites with racking (2, 6 and 12 CB18), from the empty page or ⋯;
+  the proof-of-concept site kept. Each loads, passes Validation and sizes to its fleet (tested).
+- A rack drawn beside a path stands in the aisle (its endpoint on the centre line, the face set off),
+  not on a spur — racks on spurs could deadlock a one-way aisle. Sizing's lift at a rack is its average
+  level height.
+- **Data full screen**: the Data tab fills the screen; the button or Esc returns.
+- Fixed: the Sim map drew no aisles for a site drawn with paths (the run's copy turns them into routes,
+  which the map skipped); rack labels run along their rack.
+
 ## 2026-11-17 — Fleet simulation: racks (Milestone 7a)
 
 - **Racks** (owner, sketch agreed): an endpoint drawn as a rectangle; the pallet (a Step 1 load, or chosen)

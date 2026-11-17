@@ -6,6 +6,7 @@
 //   Flows           — the Flows tab: every flow, its Sizing distance and its distance on the layout, the
 //                     Fleet Engine figure, and linking with a before → after confirmation (it moves the quote)
 
+import type { RackLoad } from '@/src/calc/sim/racks'
 import { useMemo, useState } from 'react'
 import { engineFleetTotal } from '@/src/calc/fleet'
 import { engineFleetFor } from '@/src/lib/fleetModel'
@@ -127,7 +128,7 @@ export function ValidationList({ checks, status, onLocate, onDetails, onFix }: {
 /** The Flows tab: every flow as two lines — from → to, then vehicle · moves/h · distance — with the
  *  layout distance and its Δ while a link is pending; the Fleet Engine line and "Use layout
  *  distances" (before → after confirmation) at its foot. */
-export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSystem, radiusFor, onFlows, onSelect, selectedId, simVehicleOf, onLinkOnMap }: {
+export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSystem, radiusFor, onFlows, onSelect, selectedId, simVehicleOf, onLinkOnMap, loads = [] }: {
   layout: SimLayout
   flows: ProjectFlow[]
   vehicleById: Map<string, Vehicle>
@@ -142,6 +143,8 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
   selectedId?: string
   /** Link a Pick to a Drop on the map (the Flow tool, off the tool bar). */
   onLinkOnMap?: () => void
+  /** Step 1 loads — a rack's lift (its pallet). */
+  loads?: RackLoad[]
 }) {
   const [confirm, setConfirm] = useState(false)
   const fmt = (ft?: number) => fmtLength(ft, unitSystem)
@@ -152,8 +155,8 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
   const pending = useMemo(() => {
     const byId = new Map(flows.map(f => [f.id, f]))
     const linked = matches.map(m => linkFlow(layout, byId.get(m.flowId)!, m.from!, m.to!))
-    return new Map(measureFlows(layout, linked, radiusFor).map(f => [f.id, f]))
-  }, [layout, flows, matches, radiusFor])
+    return new Map(measureFlows(layout, linked, radiusFor, loads).map(f => [f.id, f]))
+  }, [layout, flows, matches, radiusFor, loads])
   const linkedAll = useMemo(() => flows.map(f => pending.get(f.id) ?? f), [flows, pending])
   // The Fleet Engine's own figures — without a simulated fleet applied to pricing (D-1).
   const engineTotal = engineFleetTotal(fleet)

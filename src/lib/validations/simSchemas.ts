@@ -25,6 +25,7 @@ export const simPointSchema = z.object({
     angleDeg: z.number().min(-360).max(360),
     depthFt: z.number().positive().max(100),
     away: z.union([z.literal(1), z.literal(-1)]),
+    offsetFt: z.number().min(0).max(50).optional(),
     levels: z.number().int().min(1).max(12),
     perBay: z.number().int().min(1).max(6),
     face: z.enum(['short', 'long']),

@@ -57,8 +57,9 @@ export function rackGeometry(p: SimPoint, loads: RackLoad[]): RackGeometry | nul
   const bayIn = r.perBay * slotIn + RACK_GAP_IN
   const bays = pallet && bayIn > 0 ? Math.max(1, Math.floor((r.lengthFt * 12) / bayIn + 1e-6)) : 0   // a length set from a total lands exactly on a bay
   const longCount = bays * r.perBay
-  const u = unit(r.angleDeg), n = { x: -u.y * r.away, y: u.x * r.away }, h = r.lengthFt / 2
-  const a = { x: p.x - u.x * h, y: p.y - u.y * h }, b = { x: p.x + u.x * h, y: p.y + u.y * h }
+  const u = unit(r.angleDeg), n = { x: -u.y * r.away, y: u.x * r.away }, h = r.lengthFt / 2, off = r.offsetFt ?? 0
+  const f0 = { x: p.x + n.x * off, y: p.y + n.y * off }   // the face's middle (the point stands off it, in the aisle)
+  const a = { x: f0.x - u.x * h, y: f0.y - u.y * h }, b = { x: f0.x + u.x * h, y: f0.y + u.y * h }
   const back = (q: XY) => ({ x: q.x + n.x * r.depthFt, y: q.y + n.y * r.depthFt })
   const warnings: string[] = []
   if (!pallet) warnings.push('Choose the pallet')
@@ -96,6 +97,12 @@ export function rackSlots(p: SimPoint, loads: RackLoad[]): { heightFt: number; a
   return out
 }
 
+/** A rack's average lift, ft — the mean of its positions' level heights (Sizing's one lift per move). */
+export function rackMeanLiftFt(p: SimPoint, loads: RackLoad[]): number {
+  const s = rackSlots(p, loads)
+  return s.length ? Math.round((s.reduce((t, q) => t + q.heightFt, 0) / s.length) * 10) / 10 : 0
+}
+
 /** The layout with each rack's positions attached for the run (derived, never stored). */
 export function withRackSlots<T extends SimLayout>(L: T, loads: RackLoad[]): T {
   if (!L.points.some(p => p.rack)) return L
@@ -120,12 +127,13 @@ export function rackFromBox(c0: XY, c1: XY, served: (face: [XY, XY]) => number, 
   return { at: { x: (f[0].x + f[1].x) / 2, y: (f[0].y + f[1].y) / 2 }, rack: { ...base, lengthFt: horiz ? x1 - x0 : y1 - y0, angleDeg, depthFt: horiz ? y1 - y0 : x1 - x0, away } }
 }
 
-/** The rack served from its other long side: the point moves to that face; the body stays put. */
+/** The rack served from its other long side: the point moves across the body to stand as far off the
+ *  other face; the body stays put. */
 export function flipRack(p: SimPoint): SimPoint {
   const r = p.rack
   if (!r) return p
-  const u = unit(r.angleDeg), n = { x: -u.y * r.away, y: u.x * r.away }
-  return { ...p, x: p.x + n.x * r.depthFt, y: p.y + n.y * r.depthFt, rack: { ...r, away: (r.away === 1 ? -1 : 1) } }
+  const u = unit(r.angleDeg), n = { x: -u.y * r.away, y: u.x * r.away }, d = r.depthFt + 2 * (r.offsetFt ?? 0)
+  return { ...p, x: p.x + n.x * d, y: p.y + n.y * d, rack: { ...r, away: (r.away === 1 ? -1 : 1) } }
 }
 
 /** A rack end moved to `to`, ft (the other end stays): longer or shorter along the face, never below `minFt`. */

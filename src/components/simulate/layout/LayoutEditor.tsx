@@ -147,6 +147,8 @@ interface Props {
   modeTabs: ReactNode
 }
 const PATH_KIND = { dir: 'two', lane: 'single' } as const
+/** A rack face this close to a path's centre line stands beside it (its endpoint in the aisle), ft. */
+const RACK_BESIDE_FT = 12
 const NO_LOADS: NonNullable<StoredProject['loads']> = []
 const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
@@ -400,8 +402,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       // Joins the nearest path from the middle of its served face, like any endpoint.
       const made = draftRackFrom(d)
       if (made) {
-        const spur = spurTarget(net, made)
-        const placed = spur ? placeWithSpur(layout, made, 'rack', placeRole, spur) : addPoint(layout, made, 'rack', placeRole)
+        // In the aisle: on a path's centre line (a highway joins it by itself; a drawn route is split).
+        const spur = made.join ? null : spurTarget(net, made)
+        const placed = made.join ? (byIdSeg(made.join.id) && placeOnSegment(layout, made.join.id, made.join.at, 'rack', placeRole)) || addPoint(layout, made.join.at, 'rack', placeRole)
+          : spur ? placeWithSpur(layout, made, 'rack', placeRole, spur) : addPoint(layout, made, 'rack', placeRole)
         setLayout(updatePoint(placed.layout, placed.id, { rack: made.rack, name: `Rack ${layout.points.filter(q => q.rack).length + 1}` }))
         setSelection({ kind: 'point', id: placed.id }); setTool('lasso')
       }
@@ -713,11 +717,19 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
 
   // The selection bar (owner, 2026-11-16): above the selected path(s) — direction, lanes, length, delete.
   const selHw = drag ? [] : (layout.highways ?? []).filter(h => selectedHighways.includes(h.id))
+  /** A stored route (not a highway's derived one). */
+  const byIdSeg = (id: string) => layout.segments.some(q => q.id === id)
   /** A rack dragged out from `from` to `at`: its long side nearest a path is served (null when too small). */
-  function draftRackFrom(d: { from: XY; at: XY }): (SimPoint & { rack: SimRack }) | null {
+  function draftRackFrom(d: { from: XY; at: XY }): (SimPoint & { rack: SimRack; join?: { id: string; at: XY } }) | null {
     const near = (f: [XY, XY]) => { const m = { x: (f[0].x + f[1].x) / 2, y: (f[0].y + f[1].y) / 2 }, t = spurTarget(net, m); return t ? Math.hypot(t.at.x - m.x, t.at.y - m.y) : Infinity }
     const made = rackFromBox(d.from, d.at, near, { levels: 3, perBay: 2, face: 'short', pallet: defaultPallet })
-    return made ? { id: 'draft', ...made.at, type: 'rack', name: 'New rack', rack: made.rack } : null
+    if (!made) return null
+    // Beside a path (within an aisle's reach): the endpoint stands in it, where the vehicle stops, and
+    // the face is set off by the gap — no spur. Further away it joins by a spur from its face.
+    const t = spurTarget(net, made.at), gap = t ? Math.hypot(t.at.x - made.at.x, t.at.y - made.at.y) : Infinity
+    return gap <= RACK_BESIDE_FT
+      ? { id: 'draft', ...t!.at, type: 'rack', name: 'New rack', rack: { ...made.rack, offsetFt: gap }, join: t! }
+      : { id: 'draft', ...made.at, type: 'rack', name: 'New rack', rack: made.rack }
   }
   /** The layout with a rack end dragged to `d.at` (never shorter than one bay). */
   function stretchedRack(d: { id: string; end: 'a' | 'b'; at: XY }): EditorLayout {
@@ -883,6 +895,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                 selectedId={selection?.kind === 'flow' ? selection.id : undefined}
                 onSelect={id => { setTool('lasso'); setSelection({ kind: 'flow', id }) }}
                 onLinkOnMap={() => chooseTool('flows')}
+                loads={loads}
               />
             ) : (
               <>

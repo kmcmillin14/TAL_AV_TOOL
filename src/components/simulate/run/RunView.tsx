@@ -6,6 +6,7 @@
 // the same run (same seed) at ×1/×10/×100. Details sit one click away (progressive disclosure).
 // Nothing here changes the sized fleet or the quote except "Use N in pricing" (D-1, raise-only, confirmed).
 
+import Icon from '@/src/design-system/components/Icon'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
@@ -285,8 +286,27 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   )
 
   // Data: the verdict and why, the checks' tiles, the run's conditions, variability, charts and tables.
+  // Data full screen (owner, 2026-11-17): the data fills the screen, the map steps aside; the button or
+  // Esc brings it back. Where the browser refuses full screen, it still fills the page.
+  const [dataFull, setDataFull] = useState(false)
+  const self = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const on = () => { if (!document.fullscreenElement) setDataFull(false) }
+    document.addEventListener('fullscreenchange', on)
+    return () => document.removeEventListener('fullscreenchange', on)
+  }, [])
+  const toggleDataFull = () => {
+    if (dataFull) { setDataFull(false); if (document.fullscreenElement) void document.exitFullscreen(); return }
+    setDataFull(true)
+    void self.current?.closest<HTMLElement>('.sim-shell')?.requestFullscreen?.().catch(() => {})
+  }
   const dataPane = (
     <>
+      <div className="sim-data-head">
+        <button type="button" className="btn btn-sm ghost" aria-pressed={dataFull} onClick={toggleDataFull} title={dataFull ? 'Back to the map (Esc)' : 'Fill the screen with the data'}>
+          <Icon name={dataFull ? 'collapse' : 'expand'} size={13} /> {dataFull ? 'Exit full screen' : 'Full screen'}
+        </button>
+      </div>
       <div className="sim-kpis" role="group" aria-label="Static calc and simulation">
         <VerdictTile h={headline} why={verdictWhy} />
         <HeadlineTiles h={headline} unitSystem={unitSystem} sizingTarget={settings.targetUtilization}
@@ -311,7 +331,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   )
 
   return (
-    <div className={`sim-work sim-run is-${view}`}>
+    <div ref={self} className={`sim-work sim-run is-${view}${dataFull && view === 'data' ? ' is-datafull' : ''}`}>
       {/* The map, always: playing the run. */}
       <div className="sim-canvas-wrap">
         <LayoutCanvas

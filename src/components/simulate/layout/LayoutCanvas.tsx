@@ -296,7 +296,8 @@ export default function LayoutCanvas(props: Props) {
   /** Near-miss ends: their amber cap takes the click (Join), so no hover handle covers it. */
   const nearEnds = useMemo(() => new Set(conn.loose.filter(e => e.near).map(e => `${e.id}:${e.end}`)), [conn])
   /** Routes drawn as lanes (a highway's derived routes are drawn by the highway). */
-  const routes = useMemo(() => driven.segments.filter(s => !s.highwayId), [driven])
+  // (In the run's layout the highways are already routes — then they are drawn as routes.)
+  const routes = useMemo(() => { const hw = new Set((layout.highways ?? []).map(h => h.id)); return driven.segments.filter(s => !s.highwayId || !hw.has(s.highwayId)) }, [driven, layout.highways])
   const selected = (kind: 'point' | 'segment' | 'flow' | 'object' | 'highway', id: string) =>
     (selection?.kind === kind && selection.id === id) || (kind === 'point' && selection?.kind === 'points' && selection.ids.includes(id))
     || (kind === 'highway' && selection?.kind === 'highways' && selection.ids.includes(id))
@@ -526,7 +527,8 @@ const RackShape = memo(function RackShape({ p, g, px, selected, draft }: { p: Si
   if (!g) return null
   const [a, b, bb, ba] = g.corners
   const len = r.lengthFt || 1, ux = (b.x - a.x) / len, uy = (b.y - a.y) / len, nx = (ba.x - a.x) / (r.depthFt || 1), ny = (ba.y - a.y) / (r.depthFt || 1)
-  const at = (s: number, d: number) => ({ x: p.x + ux * s + nx * d, y: p.y + uy * s + ny * d })
+  const off = r.offsetFt ?? 0   // the point stands in the aisle, the face this far off
+  const at = (s: number, d: number) => ({ x: p.x + ux * s + nx * (off + d), y: p.y + uy * s + ny * (off + d) })
   const pt = (q: XY) => `${q.x},${q.y}`
   const start = -(g.bays * g.bayIn) / 24, bayFt = g.bayIn / 12, slotFt = g.slotIn / 12, faceFt = g.faceIn / 12, depth = Math.min(g.depthIn / 12, r.depthFt)
   const pallets: string[] = [], bays: string[] = []
@@ -547,7 +549,7 @@ const RackShape = memo(function RackShape({ p, g, px, selected, draft }: { p: Si
       {bays.length > 0 && <path d={bays.join('')} className="sim-rack-bay" vectorEffect="non-scaling-stroke" />}
       {pallets.map((q, i) => <polygon key={i} points={q} className="sim-rack-pallet" vectorEffect="non-scaling-stroke" />)}
       <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="sim-rack-face" vectorEffect="non-scaling-stroke" />
-      <g transform={`translate(${mid.x} ${mid.y}) rotate(${deg > 45 && deg < 135 ? deg - 90 : 0}) scale(${px})`} className="sim-rack-label">
+      <g transform={`translate(${mid.x} ${mid.y}) rotate(${deg > 90 ? deg - 180 : deg}) scale(${px})`} className="sim-rack-label">
         <rect x={-text.length * 3.4 - 6} y={-9} width={text.length * 6.8 + 12} height={18} rx={9} />
         <text y={4}>{text}</text>
       </g>
