@@ -82,6 +82,7 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 }
 
 /** Fit margins for the run map: name pills above, the playback bar below — no tool column. */
+const NO_LOADS: NonNullable<StoredProject['loads']> = []
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
 export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view, modeTabs, banner }: Props) {
@@ -316,6 +317,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         <LayoutCanvas
           layout={inputs.layout}
           laneWidths={inputs.laneWidths}
+          loads={project.loads ?? NO_LOADS}
           fitInset={RUN_INSET}
           panAlways
           showLabels={labels}

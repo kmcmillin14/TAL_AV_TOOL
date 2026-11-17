@@ -10,7 +10,8 @@ import FullScreenButton from '../ui/FullScreenButton'
 import { memo, useEffect, useMemo, useRef, useState, type MouseEvent, type PointerEvent as RPointerEvent, type ReactNode } from 'react'
 import Icon from '@/src/design-system/components/Icon'
 import { laneWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
-import { segmentGeometry } from '@/src/calc/sim/geometry'
+import { insidePolygon, segmentGeometry } from '@/src/calc/sim/geometry'
+import { RACK_GAP_IN, rackCount, rackGeometry, type RackGeometry, type RackLoad } from '@/src/calc/sim/racks'
 import { hitTest, objectCorners, type DrawSnap, type FlowTarget } from '@/src/calc/sim/layoutEdit'
 import { fmtLength } from '@/src/lib/utils/units'
 import type { SimHighway, SimLayout, SimObject, SimPoint, SimSegment } from '@/src/calc/sim/types'
@@ -19,7 +20,7 @@ import type { ProjectFlow } from './useLayoutEditor'
 
 export type XY = { x: number; y: number }
 export type Handle = 'mid' | 'c1' | 'c2'
-export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string } | { kind: 'hwEnd'; id: string; end: 'a' | 'b' } | { kind: 'hwGrip'; id: string } | { kind: 'hwJoin'; id: string; end: 'a' | 'b' }
+export type Hit = ReturnType<typeof hitTest> | { kind: 'handle'; id: string; which: Handle } | { kind: 'dir'; id: string } | { kind: 'hwEnd'; id: string; end: 'a' | 'b' } | { kind: 'hwGrip'; id: string } | { kind: 'rackEnd'; id: string; end: 'a' | 'b' } | { kind: 'hwJoin'; id: string; end: 'a' | 'b' }
 export type Selection =
   | { kind: 'point' | 'segment' | 'flow' | 'object' | 'highway'; id: string }
   | { kind: 'points'; ids: string[] }
@@ -125,6 +126,12 @@ interface Props {
   pathEnds?: 'grab' | 'connect'
   /** Floated above the selection, ft (the path editor's selection bar). */
   selectionBar?: { at: XY; node: ReactNode } | null
+  /** Step 1 loads — a rack's pallet, for drawing its positions. */
+  loads?: RackLoad[]
+  /** A rack being dragged out (Endpoint tool → Rack). */
+  draftRack?: SimPoint | null
+  /** A live label by the pointer, ft (a rack's count while drawn or stretched). */
+  measure?: { at: XY; text: string } | null
   /** Flow tool: the points a flow can link to from its start (lit) or not (dimmed, with why). */
   flowTargets?: Map<string, FlowTarget> | null
   /** Flow tool: the hovered target's path along the routes, and its length. */
@@ -242,7 +249,13 @@ export default function LayoutCanvas(props: Props) {
     if (hj) { const [id, end] = hj.getAttribute('data-hwjoin')!.split(':'); return { kind: 'hwJoin', id, end: end as 'a' | 'b' } }
     const hg = (target as Element).closest?.('[data-hwgrip]')
     if (hg) return { kind: 'hwGrip', id: hg.getAttribute('data-hwgrip')! }
-    return hitTest(layout, at, POINT_PX * px, SEG_PX * px)
+    const re = (target as Element).closest?.('[data-rack-end]')
+    if (re) return { kind: 'rackEnd', id: re.getAttribute('data-rack')!, end: re.getAttribute('data-rack-end') as 'a' | 'b' }
+    const hit = hitTest(layout, at, POINT_PX * px, SEG_PX * px)
+    if (hit && hit.kind !== 'highway' && hit.kind !== 'object') return hit
+    // A press inside a rack's body selects the rack (its point).
+    const rack = [...rackGeo].reverse().find(([, g]) => g && insidePolygon(g.corners, at))
+    return rack ? { kind: 'point', id: rack[0] } : hit
   }
 
   const down = (e: RPointerEvent<HTMLDivElement>) => {
@@ -278,6 +291,8 @@ export default function LayoutCanvas(props: Props) {
   const dpts = new Map(driven.points.map(p => [p.id, pts.get(p.id) ?? p]))
   // Where highways connect (junctions) and the ends that join nothing — from the stored layout.
   const conn = useMemo(() => highwayConnections(layout), [layout])
+  // Each rack's sizes and body (from its pallet), worked out when the layout or the loads change.
+  const rackGeo = useMemo(() => new Map(layout.points.filter(p => p.rack).map(p => [p.id, rackGeometry(p, props.loads ?? [])] as const)), [layout.points, props.loads])
   /** Near-miss ends: their amber cap takes the click (Join), so no hover handle covers it. */
   const nearEnds = useMemo(() => new Set(conn.loose.filter(e => e.near).map(e => `${e.id}:${e.end}`)), [conn])
   /** Routes drawn as lanes (a highway's derived routes are drawn by the highway). */
@@ -353,6 +368,8 @@ export default function LayoutCanvas(props: Props) {
         {image && <image href={image.href} x={0} y={0} width={image.widthFt} height={image.heightFt} preserveAspectRatio="none" className="sim-drawing" opacity={image.opacity ?? 0.9} />}
 
         {(layout.objects ?? []).map(o => <ObjectShape key={o.id} o={o} selected={selected('object', o.id)} />)}
+        {layout.points.filter(p => p.rack).map(p => <RackShape key={p.id} p={p} g={rackGeo.get(p.id) ?? null} px={px} selected={selected('point', p.id)} />)}
+        {props.draftRack && <RackShape p={props.draftRack} g={rackGeometry(props.draftRack, props.loads ?? [])} px={px} selected draft />}
         {/* Highways: each its own band and outline (owner, 2026-11-16: "keep highways separate"), its
             arrows (not where it overlaps another); a dot where two connect and a cap
             on an end that connects to nothing. */}
@@ -437,6 +454,9 @@ export default function LayoutCanvas(props: Props) {
         )}
       </svg>
       {props.emptyPrompt && !layout.points.length && <div className="sim-empty-prompt">{props.emptyPrompt}</div>}
+      {props.measure && (
+        <div className="sim-measure" style={{ left: (props.measure.at.x - view.x) * view.ppf, top: (props.measure.at.y - view.y) * view.ppf }}>{props.measure.text}</div>
+      )}
       {props.selectionBar && (
         <div className="sim-selbar" style={{ left: (props.selectionBar.at.x - view.x) * view.ppf, top: (props.selectionBar.at.y - view.y) * view.ppf }}
           onPointerDown={e => e.stopPropagation()} onDoubleClick={e => e.stopPropagation()}>
@@ -495,6 +515,53 @@ function SnapMark({ snap, from, px, fmtLen }: { snap: DrawSnap; from: XY | null;
 
 /** A line's angle as seen on screen (y down), 0–179°: up and to the right reads 45°. */
 const bearingDeg = (from: XY, to: XY) => ((Math.round((Math.atan2(from.y - to.y, to.x - from.x) * 180) / Math.PI) % 180) + 180) % 180
+
+/**
+ * A rack (Milestone 7a): its body at true scale, each pallet in its position with the face picked up
+ * marked towards the aisle, bay lines, a label "Rack 1 · 10×3", a red ring when something is wrong.
+ * The served face is the heavy edge; on a selected rack its two ends drag it longer or shorter.
+ */
+const RackShape = memo(function RackShape({ p, g, px, selected, draft }: { p: SimPoint; g: RackGeometry | null; px: number; selected: boolean; draft?: boolean }) {
+  const r = p.rack!
+  if (!g) return null
+  const [a, b, bb, ba] = g.corners
+  const len = r.lengthFt || 1, ux = (b.x - a.x) / len, uy = (b.y - a.y) / len, nx = (ba.x - a.x) / (r.depthFt || 1), ny = (ba.y - a.y) / (r.depthFt || 1)
+  const at = (s: number, d: number) => ({ x: p.x + ux * s + nx * d, y: p.y + uy * s + ny * d })
+  const pt = (q: XY) => `${q.x},${q.y}`
+  const start = -(g.bays * g.bayIn) / 24, bayFt = g.bayIn / 12, slotFt = g.slotIn / 12, faceFt = g.faceIn / 12, depth = Math.min(g.depthIn / 12, r.depthFt)
+  const pallets: string[] = [], bays: string[] = []
+  if (g.pallet && g.bays / px < 4000) for (let i = 0; i < g.bays; i++) {
+    const s0 = start + i * bayFt
+    if (i) { const q0 = at(s0, 0), q1 = at(s0, r.depthFt); bays.push(`M${q0.x} ${q0.y}L${q1.x} ${q1.y}`) }
+    for (let j = 0; j < r.perBay; j++) {
+      const s = s0 + RACK_GAP_IN / 12 + j * slotFt + (slotFt - faceFt) / 2
+      pallets.push([at(s, 0), at(s + faceFt, 0), at(s + faceFt, depth), at(s, depth)].map(pt).join(' '))
+    }
+  }
+  const bad = g.warnings.length > 0
+  const mid = at(0, r.depthFt / 2), deg = ((Math.atan2(uy, ux) * 180) / Math.PI + 360) % 180
+  const text = g.pallet ? `${p.name ?? 'Rack'} · ${g.long}×${r.levels}` : `${p.name ?? 'Rack'} · pallet?`
+  return (
+    <g className={`sim-rack${selected ? ' is-selected' : ''}${bad ? ' is-bad' : ''}${draft ? ' is-draft' : ''}`}>
+      <polygon points={g.corners.map(pt).join(' ')} className="sim-rack-body" vectorEffect="non-scaling-stroke" />
+      {bays.length > 0 && <path d={bays.join('')} className="sim-rack-bay" vectorEffect="non-scaling-stroke" />}
+      {pallets.map((q, i) => <polygon key={i} points={q} className="sim-rack-pallet" vectorEffect="non-scaling-stroke" />)}
+      <line x1={a.x} y1={a.y} x2={b.x} y2={b.y} className="sim-rack-face" vectorEffect="non-scaling-stroke" />
+      <g transform={`translate(${mid.x} ${mid.y}) rotate(${deg > 45 && deg < 135 ? deg - 90 : 0}) scale(${px})`} className="sim-rack-label">
+        <rect x={-text.length * 3.4 - 6} y={-9} width={text.length * 6.8 + 12} height={18} rx={9} />
+        <text y={4}>{text}</text>
+      </g>
+      {bad && <g transform={`translate(${b.x} ${b.y}) scale(${px})`} className="sim-rack-warn"><title>{g.warnings.join(' · ')}</title><circle r={7} /><text y={4}>!</text></g>}
+      {selected && !draft && (['a', 'b'] as const).map(e => {
+        const q = e === 'a' ? at(-len / 2, r.depthFt / 2) : at(len / 2, r.depthFt / 2)
+        return <g key={e} transform={`translate(${q.x} ${q.y}) scale(${px})`} className="sim-handle sim-rack-end" data-rack-end={e} data-rack={p.id}><rect x={-6} y={-6} width={12} height={12} rx={3} /></g>
+      })}
+    </g>
+  )
+})
+
+/** A rack's live count — for the label while it is drawn or stretched. */
+export const rackLabel = (p: SimPoint, loads: RackLoad[]) => { const g = rackGeometry(p, loads); return g ? (g.pallet ? rackCount(g, p.rack!.levels) : 'Choose the pallet') : '' }
 
 /** A grid step (ft) that lands 30–150 px apart on screen. */
 function gridStep(ppf: number): number {

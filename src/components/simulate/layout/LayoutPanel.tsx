@@ -69,6 +69,9 @@ const STATUS: Record<SegmentClearance['status'], string> = {
   clear: 'No object near', full: 'Full speed', capped: 'Below 1.2 m/s — B56.5 reduced clearance', violation: 'Blocked — under the minimum clearance',
 }
 
+/** Point types a point can be switched to here — not a rack, which is drawn with its own tool. */
+const CONVERTIBLE = FLOW_POINT_TYPES.filter(t => t !== 'rack')
+
 export default function LayoutPanel(p: Props) {
   const len = (ft: number) => (isFinite(ft) ? fmtLength(ft, p.unitSystem, 1) : 'No route')
   const byId = useMemo(() => pointById(p.layout), [p.layout])
@@ -127,7 +130,7 @@ export default function LayoutPanel(p: Props) {
           ['Type', pt.type === 'junction' ? 'Junction' : `${POINT_LABEL[pt.type]}${isFlowPoint ? ` · ${ROLE_OPTIONS.find(r => r.id === (pt.role ?? 'pick'))?.label}` : ''}`],
           ['Routes', routes || 'Not connected'],
           ...(isFlowPoint ? [['Flows', flowsHere.length ? `${flowsHere.length} · ${flowsHere.reduce((t, f) => t + (f.thruPerHr || 0), 0)}/h` : 'None'] as [string, string]] : []),
-          ...(isFlowPoint ? [['Height', pt.heightFt ? fmtLength(pt.heightFt, p.unitSystem, 1) : 'Floor'] as [string, string]] : []),
+          ...(isFlowPoint && !pt.rack ? [['Height', pt.heightFt ? fmtLength(pt.heightFt, p.unitSystem, 1) : 'Floor'] as [string, string]] : []),
         ]} />
         <Section title="Settings" open>
           {pt.type === 'junction' && (
@@ -137,7 +140,7 @@ export default function LayoutPanel(p: Props) {
                 if (type) p.onConvert(pt.id, type)
               }}>
                 <option value="">A junction (route node)</option>
-                <optgroup label="Flow points">{FLOW_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
+                <optgroup label="Flow points">{CONVERTIBLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
                 <optgroup label="Vehicle points">{VEHICLE_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
               </select>
             </label>
@@ -147,15 +150,16 @@ export default function LayoutPanel(p: Props) {
               <label className="sim-field"><span>Name</span>
                 <input value={pt.name ?? ''} maxLength={80} onChange={e => p.onPoint(pt.id, { name: e.target.value })} />
               </label>
-              <label className="sim-field"><span>Equipment</span>
+              {/* A rack is drawn with the Rack tool and stays a rack (its bar sets the rest). */}
+              {!pt.rack && <label className="sim-field"><span>Equipment</span>
                 <select value={pt.type} onChange={e => {
                   const type = e.target.value as SimPointType
                   p.onPoint(pt.id, { type, role: FLOW_POINT_TYPES.includes(type) ? pt.role ?? 'pick' : undefined })
                 }}>
-                  <optgroup label="Flow points">{FLOW_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
+                  <optgroup label="Flow points">{CONVERTIBLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
                   <optgroup label="Vehicle points">{VEHICLE_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
                 </select>
-              </label>
+              </label>}
             </>
           )}
           {isFlowPoint && (

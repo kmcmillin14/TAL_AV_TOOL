@@ -97,8 +97,8 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   /** Back to the static calc for these types. */
   const resetFleet = useCallback((ids: string[]) => patchSimSettings(project.id, { fleet: Object.fromEntries(Object.entries(stepperV ?? {}).filter(([vid]) => !ids.includes(vid))) }), [stepperV, project.id])
   const inputs = useMemo(
-    () => runInputs(layoutV ?? emptyLayout(), flowsV, simVehicleById, clearanceRule(clearance), payloads),
-    [layoutV, flowsV, simVehicleById, clearance, payloads],
+    () => runInputs(layoutV ?? emptyLayout(), flowsV, simVehicleById, clearanceRule(clearance), payloads, loads),
+    [layoutV, flowsV, simVehicleById, clearance, payloads, loads],
   )
   /** The fleet the run places, per type with a linked flow — one map for the chips, validation and Run. */
   const placed = useByValue(useMemo(() => runFleet(staticN, stepperV, inputs.flows.map(f => f.vehicleId)), [staticN, stepperV, inputs.flows]))

@@ -3,6 +3,7 @@
 // fleet (spec §5.5) and the B56.5 rule applied — slowed where clearance is reduced, blocked where it
 // is under the minimum (§5.9). Flows are the project's flows linked to points.
 
+import { withRackSlots, type RackLoad } from './racks'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import { applyClearance, B56_5_RULE, envelopes, laneWidthFt, segmentClearances, type ClearanceRule, type SegmentClearance } from './clearance'
 import { roundCorners } from './corners'
@@ -30,8 +31,11 @@ export function runInputs(
   rule: ClearanceRule,
   /** Each vehicle type's payload, ft, by vehicle id (`payloadsByVehicle`). */
   payloads: Record<string, { width: number }> = {},
+  /** Step 1 loads — a rack's pallet (its positions for the run). */
+  loads: RackLoad[] = [],
 ): RunInputs {
-  const drawn = withHighways(layout)   // highways become routes (derived, never stored)
+  // Highways become routes and racks get their positions (both derived, never stored).
+  const drawn = withHighways(withRackSlots(layout, loads))
   const linked = linkedFlows(flows)
   const veh = (id: string) => vehicles.get(id)
   const env = envelopes(drawn, linked.map(f => ({ ...f, vehicleWidthFt: veh(f.vehicleId)?.calc.widthFt ?? 0, payloadWidthFt: payloads[f.vehicleId]?.width ?? 0 })))

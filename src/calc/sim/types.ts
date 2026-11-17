@@ -3,7 +3,7 @@
 
 /** What a point is (its glyph). Flow points carry a role; charger/parking are vehicle points. */
 export type SimPointType =
-  | 'junction' | 'stand' | 'conveyor' | 'machine' | 'dock' | 'charger' | 'parking'
+  | 'junction' | 'stand' | 'conveyor' | 'machine' | 'dock' | 'charger' | 'parking' | 'rack'
 
 /** What happens at a flow point. */
 export type SimRole = 'pick' | 'drop' | 'pickDrop'
@@ -25,6 +25,31 @@ export interface SimPoint {
   approachHeadingDeg?: number
   /** Extra seconds for a conveyor/machine handshake at this point. */
   handshakeSec?: number
+  /** A rack (type 'rack'; Milestone 7a): its body and how it is filled. The point is the middle of
+   *  the served face — where a vehicle stops in the aisle. */
+  rack?: SimRack
+  /** Derived for the run, never stored: each position's lift height and offset along the face, ft. */
+  rackSlots?: { heightFt: number; alongFt: number }[]
+}
+
+/** A single-deep rack (owner, 2026-11-17). Lengths in ft; pallet and position sizes in inches. */
+export interface SimRack {
+  /** Along the served face, ft, and its direction (degrees, 0 = +x). */
+  lengthFt: number
+  angleDeg: number
+  /** As drawn: from the face into the rack, ft; the body lies to this side of the face (+1 = right of
+   *  the face direction, −1 = left). */
+  depthFt: number
+  away: 1 | -1
+  levels: number
+  perBay: number
+  /** The pallet side facing the aisle. */
+  face: 'short' | 'long'
+  /** A Step 1 load, or custom dims; absent → not chosen yet. */
+  pallet?: { loadId: string } | { lengthIn: number; widthIn: number; heightIn: number }
+  /** Edited position width / level height, in (absent → from the pallet). */
+  slotIn?: number
+  levelIn?: number
 }
 
 /** Optional curve on a segment. `arc`: circular arc through `mid`. `bezier`: cubic with two handles. */

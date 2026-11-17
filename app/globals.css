@@ -5673,6 +5673,34 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 /* The page's tabs, top of the side panel: Layout · Sim · Data (owner, 2026-11-16); Layout's own
    Edit · Flows · Validation sit under them, smaller. Data widens the panel for its charts. */
 .sim-tabs button.is-blocked { opacity: 0.45; cursor: help; }
+/* Racks (Milestone 7a): body, bays, pallets (face picked up toward the aisle), label, warning. */
+.sim-rack-body { fill: color-mix(in srgb, var(--sim-rack, #6d5a8c) 10%, var(--bg-surface)); stroke: var(--sim-rack, #6d5a8c); stroke-width: 1.25; }
+.sim-rack-bay { fill: none; stroke: var(--sim-rack, #6d5a8c); stroke-width: 0.75; opacity: 0.7; }
+.sim-rack-pallet { fill: var(--bg-surface); stroke: var(--sim-rack, #6d5a8c); stroke-width: 0.6; opacity: 0.9; }
+.sim-rack-face { stroke: var(--sim-rack, #6d5a8c); stroke-width: 3; }
+.sim-rack-label rect { fill: var(--sim-rack, #6d5a8c); }
+.sim-rack-label text { fill: #fff; font: 600 11px var(--tal-font-family); text-anchor: middle; }
+.sim-rack.is-selected .sim-rack-body { stroke: var(--sim-sel); stroke-width: 2; }
+.sim-rack.is-bad .sim-rack-body { stroke: var(--bad); }
+.sim-rack.is-draft { opacity: 0.8; }
+.sim-rack-warn circle { fill: var(--bad); }
+.sim-rack-warn text { fill: #fff; font: 700 11px var(--tal-font-family); text-anchor: middle; }
+.sim-rack-end { cursor: ew-resize; }
+.sim-rackbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: min(620px, 70cqw); white-space: normal; font-size: 13px; color: var(--text-secondary); }
+.sim-selbar:has(.sim-rackbar) { white-space: normal; }
+.sim-rackbar select, .sim-rackbar input { height: 30px; font: inherit; font-size: 13px; color: var(--text-primary); background: var(--bg-surface-2); border: 1px solid var(--border); border-radius: 5px; padding: 0 6px; }
+.sim-rackbar input { width: 56px; text-align: right; font-family: var(--tal-font-numeric); }
+.sim-rackbar-pallet, .sim-rackbar-total, .sim-rackbar-size, .sim-rackbar-dims { display: inline-flex; align-items: center; gap: 4px; }
+.sim-rackbar-pallet.is-need select { border-color: var(--bad); color: var(--bad); }
+.sim-rackbar small { font-size: 11px; color: var(--text-tertiary); }
+.sim-rackbar-step { display: inline-flex; align-items: center; gap: 2px; padding: 2px; border-radius: 6px; background: var(--bg-surface-2); }
+.sim-rackbar-step button { width: 28px; height: 28px; border: 0; border-radius: 5px; background: none; color: var(--text-primary); font: inherit; font-size: 16px; cursor: pointer; }
+.sim-rackbar-step button:disabled { opacity: 0.35; cursor: default; }
+.sim-rackbar-step > span { padding: 0 4px; white-space: nowrap; }
+.sim-rackbar-warn { flex-basis: 100%; color: var(--bad); font-weight: 600; font-size: 12px; }
+.sim-rackbar-flip { color: var(--text-secondary); }
+.sim-measure { position: absolute; transform: translate(14px, calc(-100% - 8px)); padding: 4px 8px; border-radius: 6px; background: var(--text-primary); color: var(--bg-surface);
+  font: 600 12px var(--tal-font-numeric); white-space: nowrap; pointer-events: none; z-index: 4; }
 .sim-data-pane:not([hidden]) { display: flex; flex-direction: column; gap: 12px; }
 .sim-subtabs { padding: 4px 8px; }
 .sim-subtabs button { height: 28px; font-size: 12px; }

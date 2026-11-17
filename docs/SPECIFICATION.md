@@ -791,6 +791,28 @@ step ribbon is unchanged.
     travel speeds (loaded, empty, turning, reversing) by that share; acceleration, braking, lift and
     handling times are unchanged. It is a run input (the result key) and shows in the run's conditions
     line and the Assumptions summary when set. Sizing and the price never see it.
+- **Racks (Milestone 7a, owner 2026-11-16/17; sketch agreed first).**
+  - *An endpoint:* a rack is one point (type **Rack**, Pick / Drop / Pick & drop like a stand) whose
+    position is the middle of its **served face** — where the vehicle stops in the aisle. Flows link
+    to the rack as a whole; each move goes to one of its positions. Single-deep only (owner).
+  - *Drawing:* Endpoint tool → **Rack**, drag out a rectangle. The long side nearest a path is the
+    served side (one click flips it); it joins that path like any endpoint. While dragging — and while
+    dragging a selected rack's end handle to make it longer — a label reads **"N long × L high =
+    T positions"** and the pallets fill in. Typing a **total** in the rack bar snaps the length to the
+    fewest bays that hold at least that many.
+  - *Pallet:* confirmed per rack — the simulation vehicles' payload (a Step 1 load), preselected and
+    marked with its source; if none is chosen, the rack asks ("Choose the pallet", red until set).
+    **Face picked up:** Short or Long (with its length) — the side facing the aisle.
+  - *Position size, from those (editable, Reset back):* width = face + 4 in; height = load height +
+    5 in beam + 6 in lift-off; depth = the pallet's other side. Bay = pallets per bay × width + 4 in.
+    Positions long = bays × pallets per bay; levels set in the bar.
+  - *Checks:* the top beam ((levels − 1) × height) above a flow's vehicle reach (`maxLiftHeightFt`)
+    refuses that flow (red, reason shown; acceptance 18); no pallet chosen, and a rack drawn shallower
+    than its pallet, warn.
+  - *In the run:* each move at a rack goes to the next position in turn (levels and bays cycled), adding
+    the lift to that level and the travel along the aisle to its bay and back; one vehicle at the rack
+    at a time (its zone). Stock and slot policy (FIFO, fill %) and floor lanes come next.
+  - *Kept for later:* both sides served by one rack (draw two), rotation other than square, floor lanes.
 - **Run details, completed (Milestone 5).**
   - *Follow a vehicle* (acceptance 15): its job legs are drawn — dashed empty leg from where it is to
     its pick, solid loaded leg to the drop (from where it is once loaded), rings on both ends; a key

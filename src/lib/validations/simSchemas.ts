@@ -10,7 +10,7 @@ export const simPointSchema = z.object({
   id: z.string(),
   x: z.number(),
   y: z.number(),
-  type: z.enum(['junction', 'stand', 'conveyor', 'machine', 'dock', 'charger', 'parking']),
+  type: z.enum(['junction', 'stand', 'conveyor', 'machine', 'dock', 'charger', 'parking', 'rack']),
   role: z.enum(['pick', 'drop', 'pickDrop']).optional(),
   name: z.string().max(80).optional(),
   heightFt: z.number().min(0).max(100).optional(),
@@ -19,6 +19,22 @@ export const simPointSchema = z.object({
   /** Direction a vehicle travels into the position, degrees; absent → along its route. */
   approachHeadingDeg: z.number().optional(),
   handshakeSec: z.number().min(0).max(3600).optional(),
+  /** A rack (Milestone 7a): the point is the middle of its served face. Single-deep. */
+  rack: z.object({
+    lengthFt: z.number().positive().max(2000),
+    angleDeg: z.number().min(-360).max(360),
+    depthFt: z.number().positive().max(100),
+    away: z.union([z.literal(1), z.literal(-1)]),
+    levels: z.number().int().min(1).max(12),
+    perBay: z.number().int().min(1).max(6),
+    face: z.enum(['short', 'long']),
+    pallet: z.union([
+      z.object({ loadId: z.string() }),
+      z.object({ lengthIn: z.number().positive().max(200), widthIn: z.number().positive().max(200), heightIn: z.number().positive().max(200) }),
+    ]).optional(),
+    slotIn: z.number().positive().max(200).optional(),
+    levelIn: z.number().positive().max(300).optional(),
+  }).optional(),
 })
 
 export const simSegmentSchema = z.object({

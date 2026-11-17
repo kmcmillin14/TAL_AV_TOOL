@@ -49,6 +49,11 @@ export interface FlowState {
   next: number
   pickSec: number
   dropSec: number
+  /** At a rack (Milestone 7a): extra seconds per position — lift to its level and travel along the
+   *  aisle to its bay and back — taken in turn; `rackK` counts the moves at each end. */
+  rackPick?: number[]
+  rackDrop?: number[]
+  rackK?: [number, number]
   measuredFt: number
   gen: number
   done: number
@@ -168,7 +173,17 @@ export function flowExclusion(G: Graph, f: SimFlow, byId: Map<string, Vehicle>, 
     : !byId.has(f.vehicleId) ? 'Vehicle not in the library'
     : !byId.get(f.vehicleId)!.transferMethods?.[f.transferMethodIdx ?? 0] ? 'Transfer method not on this vehicle'
     : !isFinite(pathLen(G, a, b)) ? 'No route'
-    : null
+    : rackRefusal(G.points[a], byId.get(f.vehicleId)!) ?? rackRefusal(G.points[b], byId.get(f.vehicleId)!)
+}
+
+/** Why a vehicle cannot work this rack (acceptance 18), or null: no pallet chosen, or the top beam
+ *  above its reach. */
+function rackRefusal(p: SimPoint, v: Vehicle): string | null {
+  if (!p.rack) return null
+  if (!p.rackSlots?.length) return `${p.name ?? 'Rack'}: choose the pallet`
+  const top = Math.max(...p.rackSlots.map(s => s.heightFt)), reach = v.calc.maxLiftHeightFt
+  return reach != null && top > reach + 1e-9
+    ? `${p.name ?? 'Rack'}: top level at ${top.toFixed(1)} ft is above ${v.name} reach (${reach.toFixed(1)} ft)` : null
 }
 
 /** An override's set values only: an empty (null/undefined) override never hides the JSON value. */
@@ -217,7 +232,10 @@ export function createSim(
     const lift = (p: SimPoint) => liftSeconds(p.heightFt ?? 0, transfer, prof.vehicle.calc.liftSpeedFps)
     const rate = f.thruPerHr * P.demandPct / 100
     const iv = 3600 / rate
+    // A rack's positions in turn: lift to the level, travel to the bay and back (empty to pick, loaded to drop).
+    const atRack = (p: SimPoint, speed: number) => p.rackSlots?.length ? p.rackSlots.map(sl => liftSeconds(sl.heightFt, transfer, prof.vehicle.calc.liftSpeedFps) + (2 * Math.abs(sl.alongFt)) / speed) : undefined
     S.flows.push({
+      rackPick: atRack(pa, prof.speedEmpty), rackDrop: atRack(pb, prof.speedLoaded), rackK: [0, 0],
       f, prof, orientation, from: a!, to: b!, rate, iv,
       next: iv * (0.05 + 0.95 * rand()),
       pickSec: loadSec + lift(pa) + (pa.handshakeSec ?? 0),
@@ -402,7 +420,8 @@ function startHandling(S: SimState, v: SimVehicle, picking: boolean) {
   v.handlingLog.push({ node: v.node, arrivalH: v.h, required: req, repoSec: repo })
   v.h = req
   v.repo = repo
-  v.tl = picking ? F.pickSec : F.dropSec
+  const extra = picking ? F.rackPick : F.rackDrop
+  v.tl = (picking ? F.pickSec : F.dropSec) + (extra ? extra[F.rackK![picking ? 0 : 1]++ % extra.length] : 0)
   v.mode = picking ? 'pick' : 'drop'
   const z = S.G.zone[v.node]
   if (z) zoneStat(S, z).visits++

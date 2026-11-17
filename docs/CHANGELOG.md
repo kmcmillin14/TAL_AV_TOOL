@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-17 — Fleet simulation: racks (Milestone 7a)
+
+- **Racks** (owner, sketch agreed): an endpoint drawn as a rectangle; the pallet (a Step 1 load, or chosen)
+  and the face picked up (short / long) size each position — editable; a live "N long × L high = T
+  positions" while drawing or stretching; type a total and the rack snaps to it. Single-deep only.
+- A top beam above the vehicle's reach refuses the flow (acceptance 18). In the run each move goes to the
+  next position in turn: lift to its level and travel along the aisle are added (tested).
+
 ## 2026-11-16 — Fleet simulation: site traffic
 
 - **Site traffic** (owner, option 1): one percentage under Assumptions, 0–50%, slows every vehicle's

@@ -21,12 +21,12 @@ function nextId(prefix: string, taken: { id: string }[]): string {
 }
 
 /** Points that carry flows (pick/drop work); the rest are vehicle points or junctions. */
-export const FLOW_POINT_TYPES: SimPointType[] = ['stand', 'conveyor', 'machine', 'dock']
+export const FLOW_POINT_TYPES: SimPointType[] = ['stand', 'conveyor', 'machine', 'dock', 'rack']
 export const VEHICLE_POINT_TYPES: SimPointType[] = ['charger', 'parking']
 
 const TYPE_NAME: Record<SimPointType, string> = {
   junction: 'Junction', stand: 'Stand', conveyor: 'Conveyor', machine: 'Machine', dock: 'Dock',
-  charger: 'Charger', parking: 'Parking',
+  charger: 'Charger', parking: 'Parking', rack: 'Rack',
 }
 
 /** Place a point. Flow points get a role (default Pick) and a numbered name; junctions get neither. */
