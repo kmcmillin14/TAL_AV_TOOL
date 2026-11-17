@@ -5709,6 +5709,8 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
   font: 600 12px var(--tal-font-numeric); white-space: nowrap; pointer-events: none; z-index: 4; }
 .sim-data-pane:not([hidden]) { display: flex; flex-direction: column; gap: 12px; }
 .sim-data-head { display: flex; justify-content: flex-end; }
+.sim-sim-pane:not([hidden]) { display: flex; flex-direction: column; gap: 12px; }
+.sim-kpis.is-stack { grid-template-columns: minmax(0, 1fr); }
 /* Data full screen: the data fills the workspace; the map steps aside (it keeps playing). */
 .sim-run.is-datafull { grid-template-columns: minmax(0, 1fr) !important; height: auto; min-height: calc(100vh / var(--root-zoom) - 220px); }
 .sim-run.is-datafull > .sim-canvas-wrap { display: none; }

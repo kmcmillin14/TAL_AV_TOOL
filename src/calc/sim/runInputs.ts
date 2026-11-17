@@ -59,7 +59,8 @@ export function clearanceRule(c?: { thresholdFps: number; lowSpeedIn: number; fu
 /** The fleet a run places: per vehicle type with a flow on the layout, the stepper's value if set,
  *  else the Fleet Engine's. Types with no linked flow are left out — they would only take homes. */
 export function runFleet(engine: Record<string, number>, overrides: Record<string, number> = {}, linkedVehicleIds: string[]): Record<string, number> {
-  return Object.fromEntries([...new Set(linkedVehicleIds)].map(vid => [vid, overrides[vid] ?? engine[vid] ?? 0]))
+  // A flow with no vehicle yet is not a fleet type (it is excluded from the run with its reason).
+  return Object.fromEntries([...new Set(linkedVehicleIds)].filter(Boolean).map(vid => [vid, overrides[vid] ?? engine[vid] ?? 0]))
 }
 
 /** What a simulation result depends on, as stored on the project (spec §9 stale marker). */

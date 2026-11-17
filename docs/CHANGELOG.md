@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-17 — Fleet simulation: the summary moves into Sim
+
+- Owner: the checks and the Orders, Utilization, Battery and Average speed tiles now stack under the
+  fleet in **Sim** as a hero summary; Data keeps the run's conditions, variability, charts and tables.
+- Fixed: a flow on the map with no vehicle yet showed as a second, nameless fleet row (a stepper at 0).
+
 ## 2026-11-17 — Fleet simulation: example sites with racking; Data full screen
 
 - **Small · Medium · Large** example sites with racking (2, 6 and 12 CB18), from the empty page or ⋯;

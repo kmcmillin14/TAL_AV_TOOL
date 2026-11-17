@@ -249,7 +249,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
 
   // Sim (owner, 2026-11-16): the fleet being tested — each type's photo and stepper, coloured green /
   // yellow / red with one word — and the actions on that count. Everything else is Data.
-  const typeIds = Object.keys(fleetBy)
+  const typeIds = Object.keys(fleetBy).filter(vid => vehicleById.has(vid))
   const fleetPane = (
     <div className={`sim-kpi sim-kpi-fleet is-${headline.verdictTone}`}>
       <span className="sim-kpi-lbl">Fleet</span>
@@ -300,18 +300,21 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     setDataFull(true)
     void self.current?.closest<HTMLElement>('.sim-shell')?.requestFullscreen?.().catch(() => {})
   }
+  // The hero summary under the fleet in Sim (owner, 2026-11-17): the checks, then each figure, stacked.
+  const summary = (
+    <div className="sim-kpis is-stack" role="group" aria-label="Static calc and simulation">
+      <VerdictTile h={headline} why={verdictWhy} />
+      <HeadlineTiles h={headline} unitSystem={unitSystem} sizingTarget={settings.targetUtilization}
+        onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
+        coverage={{ daysPerWeek, shiftsPerDay: shifts, shiftH, step1 }} onCoverage={setCoverage} />
+    </div>
+  )
   const dataPane = (
     <>
       <div className="sim-data-head">
         <button type="button" className="btn btn-sm ghost" aria-pressed={dataFull} onClick={toggleDataFull} title={dataFull ? 'Back to the map (Esc)' : 'Fill the screen with the data'}>
           <Icon name={dataFull ? 'collapse' : 'expand'} size={13} /> {dataFull ? 'Exit full screen' : 'Full screen'}
         </button>
-      </div>
-      <div className="sim-kpis" role="group" aria-label="Static calc and simulation">
-        <VerdictTile h={headline} why={verdictWhy} />
-        <HeadlineTiles h={headline} unitSystem={unitSystem} sizingTarget={settings.targetUtilization}
-          onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
-          coverage={{ daysPerWeek, shiftsPerDay: shifts, shiftH, step1 }} onCoverage={setCoverage} />
       </div>
       <div className="sim-vsub">
         {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
@@ -373,7 +376,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         {modeTabs}
         <div className="sim-side-body" role="tabpanel" id="sim-mode-panel" aria-labelledby={`sim-mode-${view}`}>
           {banner}
-          <div hidden={view !== 'sim'}>{fleetPane}</div>
+          <div hidden={view !== 'sim'} className="sim-sim-pane">{fleetPane}{summary}</div>
           <div hidden={view !== 'data'} className="sim-data-pane">{dataPane}</div>
         </div>
       </div>

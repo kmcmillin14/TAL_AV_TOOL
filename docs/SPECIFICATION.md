@@ -744,11 +744,11 @@ step ribbon is unchanged.
     redundant info from sim to data"; replaces Run / Edit layout):* the map always fills the left; the
     side panel's tabs are **Layout · Sim · Data**. **Layout** is the editing panel, its own
     **Edit · Flows · Validation** in a smaller row under them. **Sim** plays the run on the map and
-    shows only the fleet being tested — each type's stepper, coloured green / yellow / red with one word
-    (Right-sized, Undersized, Oversized, Gridlock) — with Use N in pricing and Reset to engine. **Data**
-    (a wider panel) has everything else: the verdict and its checks, the Orders, Utilization, Battery
-    and Average speed tiles, the run's conditions, variability, and the charts and tables. Nothing
-    shows in both. Sim and Data share one run and are offered once validation has no red item
+    shows the fleet being tested — each type's stepper, coloured green / yellow / red with one word
+    (Right-sized, Undersized, Oversized, Gridlock), with Use N in pricing and Reset to engine — and
+    under it the **hero summary**, stacked (owner, 2026-11-17): Checks (n of 3 pass), Orders per hour,
+    Utilization, Battery, Average speed. **Data** (a wider panel) has the rest: the run's conditions,
+    variability, and the charts and tables. Nothing shows in both. Sim and Data share one run and are offered once validation has no red item
     (disabled, with the first blocker as the reason, until then). The Validation button shows on
     Layout.
   - *Route arrows (owner, 2026-11-16):* routes draw the same full arrows as paths — one-way one row,

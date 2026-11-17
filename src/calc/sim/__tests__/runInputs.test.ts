@@ -50,5 +50,6 @@ describe('runFleet', () => {
   it('places only types with a linked flow, the stepper value winning over the engine', () => {
     expect(runFleet({ cb18: 3, '8hbc40a': 2 }, { cb18: 5 }, ['cb18', 'cb18'])).toEqual({ cb18: 5 })
     expect(runFleet({ cb18: 3 }, {}, ['cb18', 'm10'])).toEqual({ cb18: 3, m10: 0 })
+    expect(runFleet({ cb18: 3 }, {}, ['cb18', ''])).toEqual({ cb18: 3 })   // a flow with no vehicle yet is no type
   })
 })
