@@ -30,9 +30,10 @@ name for file compatibility and still means *Pricing reviewed*.
 |---|---|
 | Financials hero (ROM CAPEX, net benefit, payback, labor offset, annual OPEX, TCO, cost / move), ROM pricing, payback and TCO charts, CAPEX chart | **05 Pricing**, below the quotation |
 | Economic inputs edited only through the drivers rail — **maintenance % of CAPEX** and **service life** | **05 Pricing**, as plain baseline inputs (*Economic assumptions*) beside the financials |
-| Fleet & flow hero, operation map, *What the fleet does*, utilization, availability / charging gauges, battery state of charge and runtime, redundancy | **04 Simulation**, its opening *Operations* view — the static estimate, then estimate and simulated side by side after a run |
-| Requirements met | **02 Compatibility** (and the deck appendix) |
-| Methodology and assumptions panels | Each with the figures it explains: operations in 04, economics in 05 |
+| Fleet & flow hero, operation map, *What the fleet does*, utilization, availability / charging gauges, battery state of charge and runtime, redundancy, *How the fleet is calculated* | **04 Simulation**, its **Operations** view (`RomView view="operations"`) — the static estimate, labelled with the fleet state. It opens there until a layout is drawn, then on **Layout check** (the verification workspace); one switch in the head moves between them. Estimate beside simulated after a run comes with the Results stage. |
+| The opening claim (*N vehicles. $X – $Y. Pays back in N years.*) | **05 Pricing**, the first line of *Return on investment* |
+| Requirements met | **02 Compatibility**, a *Requirements met by the sized fleet* disclosure below the cards once Sizing assigns vehicles |
+| Methodology and assumptions panels | Each with the figures it explains: *Operations* assumptions (now including target utilization) in 04, *Economics* in 05 — where maintenance % and service life are edited in place |
 | Export bar (Customer deck, Internal model, Save revision) | **06 Export** |
 | **Scenario drivers** (rail, Baseline / Scenario toggle, *Scenario vs baseline*, `src/lib/scenario.ts`) | **Removed (owner, 2026-11-18).** The baseline inputs they could edit live in Step 1 (operators, shifts, labor rate), Step 3 (target utilization) and 05 Pricing (maintenance, service life). Throughput boost had no baseline; a what-if on volume is now an edit to the flows in Sizing. |
 
@@ -50,11 +51,10 @@ name for file compatibility and still means *Pricing reviewed*.
   same `computeFleetModel`, so 05 and 06 can never disagree.
 
 **Export (06):** the step opens on the **customer presentation** — its sections listed in deck
-order with the section picker inline (formerly the `PptxSectionPicker` dialog), a pricing-gate
-notice when the quote is withheld, and **Download presentation** (`.pptx`) as the one primary
-action. *Internal model* (`.xlsx`) and *Save revision* (`.json`) sit beside it. The header's
-export menu keeps working on every step; the labelled actions that were on the Dashboard's head
-live here. The deck gains a *Fleet size verification* line on its sizing slide (state and count),
+order with the section picker inline (`PptxSectionPicker` without `onClose`; the header menu still
+opens it as a dialog), a pricing-gate notice when the quote is withheld, and **Download
+presentation** (`.pptx`) as the one primary action. *Internal model* (`.xlsx`) and *Save revision*
+(`.json`) sit beside it. The header's export menu keeps working on every step. The deck gains a *Fleet size verification* line on its sizing slide (state and count),
 so a verified fleet says so to the customer.
 
 ---
@@ -107,14 +107,12 @@ per audience** (2026-07-21) — the icon export menu shows exactly three:
 (`.json`). The main-app PDF export was retired; the `.pdf` **import** path on
 Step 00 is unchanged (it reads the questionnaire's branded PDF), and
 `exportProjectPdf` survives as the pure builder behind that round-trip's tests.
-On **06 Export only** (was the Dashboard, 2026-11-18), the labeled actions render in the page
-header's blank space (`src/components/ExportActions.tsx`, plus the step's export panel):
+On **06 Export** (was the Dashboard, 2026-11-18) the page itself is the set of labelled actions
+(`src/components/rom/ExportPanel.tsx`): the **customer presentation** with its section picker in place
+and **Download presentation**, then **Internal model** (`.xlsx`) and **Save revision** (`.json`, the
+file Step 00's *Import Previous Revision* reads; no auto-bump of Rev — the export filename carries it).
+The former page-head *Save* / *Export ▾* pair (`ExportActions`) is gone: it repeated the page.
 
-- **`Save Revision`** (ghost button) — the `.json` project file Step 00's
-  *Import Previous Revision* reads. No auto-bump of Rev — the engineer edits Rev
-  in the header meta line; the export filename already carries it.
-- **`Export ▾`** — **Customer deck** (`.pptx`, the branded `PptxSectionPicker`)
-  and **Internal model** (`.xlsx` live-formula workbook).
 - **Autosave chip** — next to the buttons, driven by the existing `saveStatus`
   state: **`✓ Saved`** (green) · **`● Saving…`** (warn) · **`⚠ Save failed`** (bad),
   always visible on desktop.

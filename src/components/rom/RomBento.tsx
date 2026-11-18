@@ -17,11 +17,9 @@ import UtilizationChart from './charts/UtilizationChart'
 import ChargingSummary from './charts/ChargingSummary'
 import BatterySocChart from './charts/BatterySocChart'
 import CapexRangeBars from './charts/CapexRangeBars'
-import Icon from '@/src/design-system/components/Icon'
 import type { PricingGate } from '@/src/lib/romComplexityFromProject'
 import PaybackCurve from './charts/PaybackCurve'
 import TcoStacked from './charts/TcoStacked'
-import RequirementsMatrix from './RequirementsMatrix'
 import SensitivityPanel from './SensitivityPanel'
 import AssumptionsPanel from './AssumptionsPanel'
 import MethodologyPanel from './MethodologyPanel'
@@ -39,6 +37,10 @@ interface Props {
   vehicleById: Map<string, Vehicle>
   effDailyOpHr: number
   serviceLifeYears: number
+  /** The money (05 Pricing) or how the fleet operates (04 Simulation) — the Dashboard's two halves. */
+  view: 'finance' | 'operations'
+  /** Saves an edited economic input (finance view). */
+  onPatch?: (patch: Partial<StoredProject>) => void
 }
 
 /** Bento cell — `span` is the column count (1–4 in the 4-col grid). Any cell can
@@ -112,19 +114,6 @@ function CollapsibleSection({ title, defaultOpen = false, children }: { title: s
 /** Stands in for every CAPEX-derived panel while Step 4 is withholding a price.
  *  Says the same thing the Step 4 banner says, so the two surfaces cannot tell
  *  the reader different stories about the same project. */
-function NotPriced({ gate }: { gate: PricingGate }) {
-  return (
-    <p className="rom-bento-notpriced">
-      <Icon name="warn" size={16} />
-      <span>
-        <strong>Not priced.</strong> CAPEX, payback and total cost of ownership all build on
-        Professional services and Software, which are unpriced until these are answered on
-        Step 1: <strong>{gate.missingAll.join(', ')}</strong>.
-      </span>
-    </p>
-  )
-}
-
 export default function RomBento(p: Props) {
   const flowSeries = useMemo(() => flowDiagramSeries(p.flows, p.vehicleById, p.fleet), [p.flows, p.vehicleById, p.fleet])
   const duty = useMemo(() => dutyCycleSeries(p.flows, p.derivedByFlowId, p.fleet), [p.flows, p.derivedByFlowId, p.fleet])
@@ -135,32 +124,32 @@ export default function RomBento(p: Props) {
   const payback = useMemo(() => paybackSeries(p.rom, p.serviceLifeYears), [p.rom, p.serviceLifeYears])
   const tco = useMemo(() => tcoSeries(p.rom, p.serviceLifeYears), [p.rom, p.serviceLifeYears])
 
+  if (p.view === 'finance') {
+    // Payback, TCO and the pricing table all build on CAPEX, and CAPEX is only as good as the complexity
+    // inputs behind it: while Pricing withholds a price, none of these may show it through a side door
+    // (RomView says so once).
+    return (
+      <div className="rom2-bento">
+        {!p.gate.blocked && (
+          <>
+            <Cell title="Payback" span={2}><PaybackCurve series={payback} /></Cell>
+            <Cell title="Total cost of ownership" span={2}><TcoStacked series={tco} /></Cell>
+            <Cell title="ROM pricing" span={2}><RomPricingTable pricing={p.rom.pricing} vehicleById={p.vehicleById} /></Cell>
+            <Cell title="ROM CAPEX" span={2}><CapexRangeBars series={capex} /></Cell>
+          </>
+        )}
+        <Cell title="Assumptions" span={4} cellId="rom-assumptions"><AssumptionsPanel project={p.project} only="Economics" onPatch={p.onPatch} /></Cell>
+      </div>
+    )
+  }
+
   return (
     <div className="rom2-bento">
-      {/* The operation map is the centerpiece — its own full-width row, with the
-          backing data table underneath. */}
+      {/* The operation map is the centerpiece — its own full-width row, with the backing data underneath. */}
       <Cell title="Operation map" span={4}>
         <FlowDiagram series={flowSeries} />
         <FlowMapTable flows={p.flows} derivedByFlowId={p.derivedByFlowId} vehicleById={p.vehicleById} />
       </Cell>
-
-      {/* The money, paired: cash over time, then the line-item detail. */}
-      {/* Payback, TCO and the pricing table all build on CAPEX, and CAPEX is
-          only as good as the complexity inputs behind it. While Step 4 is
-          withholding a price, showing these would put the same unquotable
-          number back on screen through a side door. */}
-      {p.gate.blocked ? (
-        <Cell title="ROM pricing" span={2}>
-          <NotPriced gate={p.gate} />
-        </Cell>
-      ) : (
-        <>
-          <Cell title="Payback" span={2}><PaybackCurve series={payback} /></Cell>
-          <Cell title="Total cost of ownership" span={2}><TcoStacked series={tco} /></Cell>
-          <Cell title="ROM pricing" span={2}><RomPricingTable pricing={p.rom.pricing} vehicleById={p.vehicleById} /></Cell>
-          <Cell title="ROM CAPEX" span={2}><CapexRangeBars series={capex} /></Cell>
-        </>
-      )}
 
       {/* What the fleet does all day. */}
       <Cell title="What the fleet does" span={2}><DutyCycleChart series={duty} /></Cell>
@@ -172,9 +161,7 @@ export default function RomBento(p: Props) {
         <ChargingSummary series={charge} />
       </Cell>
 
-      {/* Trust & robustness. */}
-      <Cell title="Requirements met" span={2}><RequirementsMatrix project={p.project} fleet={p.fleet} vehicleById={p.vehicleById} /></Cell>
-      <Cell title="Redundancy — one vehicle down" span={2} cellId="rom-redundancy"><SensitivityPanel fleet={p.fleet} /></Cell>
+      <Cell title="Redundancy — one vehicle down" span={4} cellId="rom-redundancy"><SensitivityPanel fleet={p.fleet} /></Cell>
 
       <Cell title="How the fleet is calculated" span={4} cellId="rom-fleet-math">
         <FleetMath project={p.project} flows={p.flows} derivedByFlowId={p.derivedByFlowId} fleet={p.fleet} vehicleById={p.vehicleById} />
@@ -182,7 +169,7 @@ export default function RomBento(p: Props) {
           <MethodologyPanel />
         </CollapsibleSection>
       </Cell>
-      <Cell title="Assumptions" span={4} cellId="rom-assumptions"><AssumptionsPanel project={p.project} /></Cell>
+      <Cell title="Assumptions" span={4} cellId="rom-assumptions"><AssumptionsPanel project={p.project} only="Operations" /></Cell>
     </div>
   )
 }

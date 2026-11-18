@@ -455,7 +455,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
 .tbtn:hover { background: var(--bg-hover); color: var(--text-primary); border-color: var(--border-strong); }
 .tbtn svg { width: 14px; height: 14px; }
 
-
 .hero-nav {
   background: var(--bg-base);
   border-top: 1px solid var(--border);
@@ -1759,7 +1758,6 @@ thead .cmp-rowhead { background: var(--bg-surface); }
   box-shadow: 0 1px 0 rgba(255,255,255,0.03), 0 22px 48px rgba(0,0,0,0.22);
   outline: none;
 }
-
 
 .entry-card-index {
   position: absolute;
@@ -3255,7 +3253,6 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-mark path { stroke: var(--sim-sel); stroke-width: 2; }
 .sim-mark-line { stroke: var(--sim-sel); stroke-width: 1.5; stroke-dasharray: 4 3; }
 
-
 .sim-flow { cursor: pointer; }
 .sim-flow-hit { fill: none; stroke: transparent; stroke-width: 14; }
 .sim-flow-path { fill: none; stroke: var(--info); stroke-width: 1.5; }
@@ -3558,7 +3555,6 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 
 .pl-route { margin-left: 8px; font-size: 11px; color: var(--text-tertiary); }
 
-
 .engine-panel {
   background: var(--bg-surface);
   border: 1px solid var(--border);
@@ -3732,13 +3728,6 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom-kpi:hover .rom-kpi-hint, .rom-kpi-pinned .rom-kpi-hint { opacity: 1; }
 .rom-kpi-pinned .rom-kpi-hint { color: var(--accent); }
 /* Scenario delta chip on a KPI tile — larger, semantic color (green = better, red = worse). */
-.rom-kpi-delta {
-  position: absolute; top: 8px; right: 12px;
-  font-family: var(--tal-font-numeric); font-size: 13px; font-weight: 800; letter-spacing: 0.01em;
-  padding: 2px 7px; border-radius: 999px; color: var(--text-secondary);
-}
-.rom-kpi-delta.good { color: var(--good); background: var(--good-soft); }
-.rom-kpi-delta.bad { color: var(--accent); background: var(--accent-soft); }
 
 /* Hero summary boxes — Financials + Fleet, each leads with a headline figure and
    combines its like-items below. Two equal, symmetrical boxes. */
@@ -3814,207 +3803,20 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   .rom2-hero-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
-/* Drivers rail as a native <details>. Desktop: no summary, content always shown
-   (the min-width guard forces content visible even if collapsed on a phone then
-   widened). Phone: summary toggles the panel. */
-/* The drivers rail is the dashboard's control surface: the slider and the
-   figure it moves must never be on different screens.
- *
- * Sticky lives HERE, on the <details> wrapper, not on the .rom2-rail <aside>
- * inside it — where it was declared before, and silently did nothing. A sticky
- * child of <details> is not honoured, and even where it is, the wrapper
- * shrink-wraps in a grid with `align-items: start`, so its box was exactly the
- * rail's own height and there was nowhere to travel. As a grid item the
- * wrapper sticks within its grid AREA, which spans the full main column.
- *
- * `top` clears the sticky hero bar; without it the rail slid underneath.
- * Desktop only — below 1000px the shell is one column and the rail is a
- * collapsible block, where sticking would just eat the screen. */
-.rom-drivers-collapse { min-width: 0; }
-@media (min-width: 1001px) {
-  .rom-drivers-collapse {
-    position: sticky;
-    top: calc(var(--hero-sticky-h) + 12px);
-    align-self: start;
-    max-height: calc(100dvh - var(--hero-sticky-h) - 24px);
-    overflow-y: auto;
-    overscroll-behavior: contain;
-  }
-}
-.rom-drivers-collapse > summary { display: none; }
-@media (min-width: 701px) {
-  .rom-drivers-collapse:not([open]) > :not(summary) { display: block; }
-}
 @media (max-width: 700px) {
-  .rom-drivers-collapse > summary {
-    display: flex; align-items: center; justify-content: space-between; cursor: pointer;
-    padding: 12px 14px; border: 1px solid var(--border); border-radius: 8px;
-    font-weight: 700; font-size: 13px; color: var(--text-primary); list-style: none;
-  }
-  .rom-drivers-collapse > summary::-webkit-details-marker { display: none; }
-  .rom-drivers-collapse > summary::after { content: '⌄'; color: var(--text-tertiary); font-size: 14px; }
-  .rom-drivers-collapse[open] > summary { margin-bottom: 12px; }
-  .rom-drivers-collapse[open] > summary::after { content: '⌃'; }
   /* Export buttons wrap beneath the title on a phone instead of overflowing. */
   .engine-head.with-actions { flex-wrap: wrap; }
   .engine-head.with-actions .eh-actions { margin-left: 0; padding-top: 2px; }
   /* Operation map (flow diagram) scrolls horizontally rather than shrinking. */
   .rom2-opmap-scroll, .rom-opmap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  /* 16px inputs so iOS doesn't zoom the viewport on focus (matches .m-input). */
-  .rom2-driver-input { font-size: 16px; }
   /* Full-screen chart tile goes edge-to-edge on a phone (no wasted margin). */
   .rom2-fs-overlay { padding: 0; }
   .rom2-fs-panel { width: 100%; height: 100%; border-radius: 0; padding: 14px 14px max(14px, env(safe-area-inset-bottom)); }
 }
 
-/* ============================================ STEP 4 — DASHBOARD REBUILD (.rom2-*) ============================================ */
-/* Shell: sticky driver rail + main column. */
-.rom2-shell {
-  display: grid;
-  grid-template-columns: 264px minmax(0, 1fr);
-  gap: 20px;
-  align-items: start;
-  margin-top: 20px;
-}
-/* Presentation mode: the rail becomes a 36px tab and the charts take the rest.
-   The bento re-flows on its own — its container queries measure .rom2-main. */
-.rom2-shell.is-rail-collapsed { grid-template-columns: 36px minmax(0, 1fr); gap: 12px; }
-@media (max-width: 1000px) {
-  .rom2-shell.is-rail-collapsed { grid-template-columns: 1fr; }
-}
-/* The bento sizes to THIS box, not the viewport — see the container queries
-   below. Without it the grid asked the viewport how much room it had while
-   actually living 284px narrower (the rail + gap), so a 1280px laptop drew
-   four columns into ~916px: ~217px per chart. */
-.rom2-main { min-width: 0; display: flex; flex-direction: column; gap: 16px; container-type: inline-size; }
-
-/* Driver rail */
-/* Static by design — stickiness belongs to .rom-drivers-collapse above. */
-.rom2-rail {
-  display: flex; flex-direction: column; gap: 14px;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow: var(--shadow-card);
-  padding: 16px;
-}
-.rom2-rail-head { display: flex; flex-direction: column; gap: 10px; }
-.rom2-rail-titlerow { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.rom2-rail-collapse {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 24px; height: 24px; border: 1px solid var(--border); border-radius: 6px;
-  background: var(--bg-base); color: var(--text-tertiary);
-  cursor: pointer; padding: 0;
-  transition: color 0.12s ease, border-color 0.12s ease;
-}
-/* Points left (hide); the shared icon is a right chevron. */
-.rom2-rail-collapse svg { transform: rotate(180deg); }
-.rom2-rail-collapse:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
-.rom2-rail-collapse:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-
-/* The collapsed rail: a full-height tab, so the way back is always in the same
-   place the rail was. */
-.rom2-rail-tab {
-  position: sticky; top: calc(var(--hero-sticky-h) + 12px);
-  align-self: start;
-  display: flex; flex-direction: column; align-items: center; gap: 10px;
-  width: 36px; padding: 10px 0;
-  background: var(--bg-surface); border: 1px solid var(--border);
-  border-radius: 10px; box-shadow: var(--shadow-card);
-  color: var(--text-tertiary); cursor: pointer;
-  transition: color 0.12s ease, border-color 0.12s ease;
-}
-.rom2-rail-tab:hover { color: var(--text-primary); border-color: var(--text-tertiary); }
-.rom2-rail-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.rom2-rail-tab-chev { display: inline-flex; }
-.rom2-rail-tab-lbl {
-  writing-mode: vertical-rl;
-  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
-  letter-spacing: 0.14em; text-transform: uppercase;
-}
-@media (max-width: 1000px) {
-  .rom2-rail-tab { position: static; width: 100%; flex-direction: row; justify-content: center; padding: 10px; }
-  .rom2-rail-tab-lbl { writing-mode: horizontal-tb; }
-}
-
-/* Scenario delta, read while the slider is still under the cursor. */
-.rom2-rail-delta {
-  display: flex; flex-direction: column; gap: 4px; margin: 2px 0 0;
-  padding: 8px 10px; background: var(--bg-surface-2); border-radius: 8px;
-}
-.rom2-rail-delta > div { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
-.rom2-rail-delta dt {
-  font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700;
-  letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary);
-}
-.rom2-rail-delta dd {
-  margin: 0; font-family: var(--tal-font-numeric); font-size: 12px; font-weight: 700;
-  font-variant-numeric: tabular-nums;
-}
-/* Direction is carried by the sign in the text as well as the colour. */
-.rom2-rail-delta dd.is-good { color: var(--good); }
-.rom2-rail-delta dd.is-bad { color: var(--warn); }
-.rom2-rail-delta-none {
-  margin: 2px 0 0; font-family: var(--tal-font-family); font-size: 11px; color: var(--text-tertiary);
-}
-/* Collapsed-rail variant: one horizontal strip above the KPI band, so hiding
-   the drivers never hides what they changed. */
-.rom2-rail-delta.is-inline {
-  flex-direction: row; flex-wrap: wrap; align-items: center; gap: 6px 24px;
-  margin: 0; padding: 9px 14px; border: 1px solid var(--border);
-}
-.rom2-rail-delta.is-inline > div { justify-content: flex-start; gap: 8px; }
-.rom2-rail-delta.is-inline dd { font-size: 13px; }
-.rom2-rail-delta-none.is-inline {
-  margin: 0; padding: 9px 14px; background: var(--bg-surface-2);
-  border: 1px solid var(--border); border-radius: 8px;
-}
-.rom2-rail-title {
-  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
-  letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-tertiary);
-}
-.rom2-seg { display: flex; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
-.rom2-seg-btn {
-  flex: 1; padding: 6px 8px; font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700;
-  letter-spacing: 0.04em; color: var(--text-secondary); background: var(--bg-base); cursor: pointer;
-  transition: background 0.12s ease, color 0.12s ease;
-}
-.rom2-seg-btn.active { background: var(--accent); color: #fff; }
-.rom2-seg-btn:disabled { color: var(--text-disabled); cursor: not-allowed; }
-
-.rom2-drivers { display: flex; flex-direction: column; gap: 8px; }
-.rom2-driver { display: flex; flex-direction: column; gap: 3px; }
-.rom2-driver-lbl {
-  font-family: var(--tal-font-numeric); font-size: 10px; font-weight: 700;
-  letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary);
-}
-.rom2-driver-lbl em { font-style: normal; color: var(--text-disabled); font-weight: 500; }
-.rom2-driver-input {
-  width: 100%; box-sizing: border-box;
-  font: inherit; font-family: var(--tal-font-numeric); font-size: 14px; font-weight: 600;
-  color: var(--text-primary); background: var(--bg-input);
-  border: 1px solid var(--border); border-radius: 7px; padding: 6px 8px;
-  transition: border-color 0.12s ease, box-shadow 0.12s ease;
-}
-.rom2-driver-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
-.rom2-driver.is-changed .rom2-driver-input { border-color: var(--accent); background: var(--accent-soft); }
-
-.rom2-rail-actions { display: flex; gap: 8px; }
-.rom2-rail-btn {
-  flex: 1; padding: 8px; border-radius: 8px; border: 1px solid var(--border-strong);
-  background: var(--bg-base); color: var(--text-secondary);
-  font-family: var(--tal-font-numeric); font-size: 11px; font-weight: 700; letter-spacing: 0.03em;
-  cursor: pointer; transition: all 0.12s ease;
-}
-.rom2-rail-btn:hover:not(:disabled) { border-color: var(--text-tertiary); color: var(--text-primary); }
-.rom2-rail-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-.rom2-rail-btn-primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-.rom2-rail-btn-primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
-
-/* KPI band — a thin accent frame when showing a scenario. */
-.rom2-kpiband.is-scenario {
-  border: 1px dashed var(--accent); border-radius: 16px; padding: 10px; background: var(--accent-soft);
-}
+/* ============================================ ROM TILES (.rom2-*) — Pricing's return, Simulation's operations (2026-11-18; were the Dashboard) ============================================ */
+/* The bento sizes to THIS box (container queries below), not the viewport. */
+.rom-view { min-width: 0; display: flex; flex-direction: column; gap: 16px; container-type: inline-size; }
 
 /* A gauge that links to its evidence reads as a control, not a readout. */
 .rom2-gauge.is-linked {
@@ -4130,8 +3932,8 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   .rom2-span-2, .rom2-span-4 { grid-column: span 2; }
 }
 @media (max-width: 1000px) {
-  .rom2-shell { grid-template-columns: 1fr; }
-  .rom2-rail { position: static; } /* stickiness lives on the wrapper */
+  
+   /* stickiness lives on the wrapper */
 }
 @container (max-width: 560px) {
   .rom2-bento { grid-template-columns: 1fr; }
@@ -4279,7 +4081,6 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
   --q-type-body:   13px;   /* item rows, prose */
   --q-type-label:  11px;   /* tracked uppercase names, captions, chips */
 }
-
 
 /* The figure, first. It used to sit 762px down — below four categories and a
    disclosure — styled identically to a category subtotal. */
@@ -4627,8 +4428,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .rom-econ-strong dt, .rom-econ-strong dd { font-weight: 800; }
 .rom-econ-accent dd { color: var(--accent); }
 
-.rom-card-export { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
-.rom-export { display: flex; gap: 10px; }
 .rom-export-btn {
   display: inline-flex; align-items: center; gap: 8px; min-height: 44px;
   padding: 0 16px; border-radius: 10px; border: 1px solid var(--border);
@@ -4639,13 +4438,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .rom-export-btn:hover { background: color-mix(in srgb, var(--bg-surface-2) 70%, var(--text-primary) 6%); }
 .rom-export-btn:active { transform: scale(0.97); }
 .rom-export-btn:disabled { opacity: 0.5; cursor: default; }
-/* Primary export — prominent so it's the obvious action on the dashboard. */
-.rom-export-primary {
-  background: var(--accent); border-color: var(--accent); color: #fff;
-  min-height: 50px; padding: 0 24px; font-size: 15px; font-weight: 700;
-  box-shadow: 0 6px 18px rgba(235, 10, 30, 0.22);
-}
-.rom-export-primary:hover { background: color-mix(in srgb, var(--accent) 88%, #000); }
 /* Secondary export — the re-importable save file; present but quieter than the deck. */
 .rom-export-secondary {
   min-height: 50px; padding: 0 20px; font-size: 14px; font-weight: 700;
@@ -5178,7 +4970,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
   .q-form .seg-btn.on { border-color: var(--accent) !important; }
 }
 
-
 /* ---- Header — Save Revision / Export to Customer + autosave chip ---- */
 .hero-actions .hero-btn {
   height: 30px;
@@ -5526,8 +5317,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 
 /* apple-ui-design pass: one primary action, quiet chrome, details one click away. */
 .sim-head .eh-eyebrow { display: inline-flex; align-items: center; white-space: nowrap; }
-.sim-back { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; margin-left: 16px; font: 500 11px var(--tal-font-family); letter-spacing: 0; text-transform: none; color: var(--text-tertiary); text-decoration: none; }
-.sim-back:hover { color: var(--text-primary); }
 .sim-head .btn { height: 40px; }
 .sim-more-menu { position: relative; }
 .sim-more-menu > summary { list-style: none; cursor: pointer; width: 40px; justify-content: center; }
@@ -5729,7 +5518,6 @@ button.sim-valid-text:hover { color: var(--sim-sel); text-decoration: underline;
 button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 2px; }
 .sim-valid-row > .btn { grid-column: 2; justify-self: start; }
 
-
 /* Simulation vehicles: one chip per type (static → simulated), + Vehicle, and the type's popover. */
 .sim-vbar { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 0 0 12px; }
 .sim-vbar-label { font: 600 11px var(--tal-font-numeric); letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); margin-right: 4px; }
@@ -5805,7 +5593,6 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-hw-status.is-good { color: var(--text-primary); }
 .sim-hw-status.is-warn { color: var(--warn); }
 .sim-hw-status.is-bad { color: var(--bad); }
-
 
 .sim-shell { container-type: inline-size; }
 .sim-shell:fullscreen { background: var(--bg-base); padding: 16px 24px; overflow: auto; }
@@ -5916,3 +5703,32 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
   .fv-count { justify-self: end; }
   .fv-detail, .fv-act { grid-column: 1 / -1; justify-self: start; }
 }
+
+/* Seven-step workflow (owner, 2026-11-18): Simulation's head, Pricing's return, Export, Compatibility's
+   requirements. */
+.sim-step-head { display: flex; align-items: center; gap: 16px; margin-left: auto; flex-wrap: wrap; }
+.sim-step-head .sim-tabs { min-width: 260px; }
+.sim-head .eh-actions { margin-left: 16px; }
+.rom-view-empty { margin: 24px 0; color: var(--text-secondary); font-size: 14px; }
+.pricing-return { margin-top: 32px; display: grid; gap: 16px; }
+.pricing-return-h { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.rv-assume2-edit { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--text-secondary); }
+.rv-assume2-edit input { width: 72px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-surface); color: var(--text-primary); font-size: 14px; text-align: right; }
+.rv-assume2-edit input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
+.export-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; margin-top: 16px; }
+.export-deck { display: grid; gap: 16px; padding: 24px; }
+.export-h { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.pptx-pick-body.is-inline { padding: 0; }
+.pptx-inline .pptx-pick-foot { padding-top: 16px; border-top: 1px solid var(--border); }
+.export-side { display: grid; gap: 12px; }
+.export-side .rom-export-btn { justify-content: flex-start; text-align: left; min-height: 64px; width: 100%; }
+.export-side .rom-export-btn span { display: grid; gap: 2px; }
+.export-side .rom-export-btn small { font-weight: 500; font-size: 12px; color: var(--text-secondary); }
+.rom-export-blocked { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 12px 16px; border-radius: 10px; background: var(--warn-soft); color: var(--text-primary); font-size: 13px; }
+.rom-export-blocked svg { color: var(--warn); flex: none; margin-top: 2px; }
+@media (max-width: 900px) { .export-grid { grid-template-columns: 1fr; } }
+.req-met { margin-top: 32px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); }
+.req-met > summary { cursor: pointer; padding: 16px 20px; font-weight: 700; font-size: 14px; color: var(--text-primary); }
+.req-met[open] > summary { border-bottom: 1px solid var(--border); }
+.req-met > :not(summary) { padding: 16px 20px; }
+.rom2-summary.is-single { grid-template-columns: minmax(0, 1fr); }

@@ -6,7 +6,6 @@ import type { RomSummary, RomCostInputs } from '@/src/calc/rom'
 import { resilience } from '@/src/calc/romSensitivity'
 import { chargingSeries } from '@/src/calc/romCharts'
 import { kpiDetails, type KpiId } from '@/src/lib/kpiDetails'
-import type { ScenarioDiff } from '@/src/lib/scenario'
 import type { PricingGate } from '@/src/lib/romComplexityFromProject'
 import KpiTile from './KpiTile'
 import RomGauge from './RomGauge'
@@ -29,8 +28,9 @@ interface Props {
   serviceLifeYears: number
   vehicleById: Map<string, Vehicle>
   names: Record<string, string>
-  /** Scenario-vs-baseline deltas; when present, tiles show a delta chip. */
-  deltas?: ScenarioDiff | null
+  /** Which half of the former Dashboard band (2026-11-18): the money (05 Pricing) or the fleet and its
+   *  gauges (04 Simulation). */
+  view: 'finance' | 'operations'
   /** Withholds CAPEX and everything built on it while complexity inputs are
    *  missing — same rule Step 4 applies, so the surfaces can't disagree. */
   gate: PricingGate
@@ -49,22 +49,9 @@ const CAPEX_DERIVED: ReadonlySet<KpiId> = new Set<KpiId>([
   'capex', 'payback', 'tco', 'costPerMove', 'opex', 'net',
 ])
 
-type Delta = { text: string; tone: 'good' | 'bad' | 'neutral' }
-
-/** Signed delta chip with semantic tone. `good` says which direction is desirable
- *  ('up' = higher is better, 'down' = lower is better, undefined = neutral); the
- *  arrow shows the actual direction, the color shows whether it helped. */
-function chip(d: number | null | undefined, fmt: (n: number) => string, good?: 'up' | 'down'): Delta | undefined {
-  if (d == null || Math.abs(d) < 1e-9) return undefined
-  const up = d > 0
-  const text = `${up ? '▲' : '▼'} ${up ? '+' : '−'}${fmt(Math.abs(d))}`
-  const tone: Delta['tone'] = good == null ? 'neutral' : (good === 'up') === up ? 'good' : 'bad'
-  return { text, tone }
-}
-
 /** Top KPI band — interactive tiles (hover/pin reveals each metric's breakdown).
  *  Fleet sold + ROM CAPEX are the accent headline; the rest are secondary. */
-export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLifeYears, vehicleById, names, deltas, gate }: Props) {
+export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLifeYears, vehicleById, names, view, gate }: Props) {
   const payback = rom.payback.paybackYears
   const throughput = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
   const detail = kpiDetails({ fleet, rom, flows, settings, costs }, names, { serviceLifeYears })
@@ -100,28 +87,21 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
 
   // Tiles rendered inside the two hero boxes (Fleet & flow · Financials). Utilization,
   // availability, charging and redundancy are shown as gauges below, not tiles here.
-  const tiles: Array<{ id: KpiId; label: string; value: string; accent?: boolean; delta?: Delta }> = [
+  const tiles: Array<{ id: KpiId; label: string; value: string; accent?: boolean }> = [
     // ── Fleet & flow ──
-    { id: 'fleet', label: simulatedNote(fleet) ? `Total fleet — ${simulatedNote(fleet)}` : 'Total fleet', value: String(fleet.totalFleetSold), accent: true,
-      delta: chip(deltas?.totalFleetSold, n => String(Math.round(n)), 'down') },
-    { id: 'types', label: 'Vehicle types', value: String(fleet.groups.length),
-      delta: chip(deltas?.vehicleTypes, n => String(Math.round(n))) },
+    { id: 'fleet', label: simulatedNote(fleet) ? `Total fleet — ${simulatedNote(fleet)}` : 'Total fleet', value: String(fleet.totalFleetSold), accent: true },
+    { id: 'types', label: 'Vehicle types', value: String(fleet.groups.length) },
     { id: 'flows', label: 'Flows', value: String(flows.length) },
     { id: 'throughput', label: 'Throughput', value: `${throughput} / hr` },
     // ── Financials ──
     // CAPEX and everything built on it read "Not priced" while the complexity
     // inputs behind professional services / software are missing — the same
     // rule Step 4 applies, so the two surfaces agree.
-    { id: 'capex', label: 'ROM CAPEX', value: blocked ? NOT_PRICED : usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true,
-      delta: blocked ? undefined : chip(deltas?.capexMid, usd, 'down') },
-    { id: 'payback', label: 'Payback', value: blocked ? NOT_PRICED : (payback == null ? '—' : `${payback.toFixed(1)} yr`),
-      delta: blocked ? undefined : chip(deltas?.paybackYears, n => `${n.toFixed(1)} yr`, 'down') },
-    { id: 'net', label: 'Net benefit / yr', value: blocked ? NOT_PRICED : usd(offset - opex), accent: true,
-      delta: blocked ? undefined : chip(deltas?.netAnnualBenefit, usd, 'up') },
-    { id: 'offset', label: 'Labor offset / yr', value: usd(offset),
-      delta: chip(deltas?.annualLaborOffset, usd, 'up') },
-    { id: 'opex', label: 'Annual OPEX', value: blocked ? NOT_PRICED : usd(opex),
-      delta: blocked ? undefined : chip(deltas?.annualOpex, usd, 'down') },
+    { id: 'capex', label: 'ROM CAPEX', value: blocked ? NOT_PRICED : usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true },
+    { id: 'payback', label: 'Payback', value: blocked ? NOT_PRICED : (payback == null ? '—' : `${payback.toFixed(1)} yr`) },
+    { id: 'net', label: 'Net benefit / yr', value: blocked ? NOT_PRICED : usd(offset - opex), accent: true },
+    { id: 'offset', label: 'Labor offset / yr', value: usd(offset) },
+    { id: 'opex', label: 'Annual OPEX', value: blocked ? NOT_PRICED : usd(opex) },
     { id: 'tco', label: `TCO @ ${serviceLifeYears}yr`, value: blocked ? NOT_PRICED : usd(tcoAtLife) },
     { id: 'costPerMove', label: 'Cost / move', value: blocked ? NOT_PRICED : (costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}`) },
   ]
@@ -132,7 +112,7 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
     if (!t) return null
     // Withhold the popover too — it prints the very range the tile is hiding.
     const d = blocked && CAPEX_DERIVED.has(id) ? undefined : detail[id]
-    return <KpiTile key={id} label={t.label} value={t.value} detail={d} accent={t.accent} colorIndex={t.colorIndex} delta={t.delta} />
+    return <KpiTile key={id} label={t.label} value={t.value} detail={d} accent={t.accent} colorIndex={t.colorIndex} />
   }
 
   // Financials leads with CAPEX and shows only the two figures a decision turns
@@ -140,9 +120,9 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   // diligence material and fold away: seven money figures at equal weight is a
   // report, not an answer. Same split the customer deck already makes between
   // fillFinancials (3 tiles) and fillCostDetail (the rest).
-  return (
-    <>
-      <div className="rom2-summary">
+  if (view === 'finance') {
+    return (
+      <div className="rom2-summary is-single">
         <section className="rom2-hero">
           <div className="rom2-hero-head">Financials</div>
           <div className="rom2-hero-lead">{tile('capex')}</div>
@@ -156,7 +136,13 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
             </div>
           </details>
         </section>
+      </div>
+    )
+  }
 
+  return (
+    <>
+      <div className="rom2-summary is-single">
         <section className="rom2-hero">
           <div className="rom2-hero-head">Fleet &amp; flow</div>
           <div className="rom2-hero-lead">{tile('fleet')}</div>
@@ -171,7 +157,7 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
             evidence were a screen and a half apart with nothing joining them. */}
         <RomGauge value={avgUtilOfAvailable ?? 0} label="Utilization" display={avgUtilOfAvailable == null ? '—' : pctChip(avgUtilOfAvailable)}
           evidenceId="rom-utilization" evidenceLabel="the utilization chart"
-          def="Share of the time a vehicle COULD work that it does — charging downtime is excluded and shown separately. This is the figure the Target utilization driver sets." />
+          def="Share of the time a vehicle COULD work that it does — charging downtime is excluded and shown separately. This is the figure Sizing’s target utilization sets." />
         <RomGauge value={avgAvailability} label="Availability" status
           evidenceId="rom-battery" evidenceLabel="the battery state-of-charge chart"
           def="Share of the staffed window a vehicle can be working rather than on a charger. Availability + Charging = 100%." />

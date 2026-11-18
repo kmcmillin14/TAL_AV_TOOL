@@ -1,6 +1,6 @@
 import type { FleetModel } from './fleetModel'
 
-/** The dashboard's opening claim, in three short clauses.
+/** Pricing's return-on-investment claim, in three short clauses (the Dashboard's, until 2026-11-18).
  *
  *  The page used to open with twelve numbers and no statement. A customer's
  *  question is "should we do this?", and twelve figures do not answer it — the

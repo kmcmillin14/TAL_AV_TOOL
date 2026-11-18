@@ -243,8 +243,9 @@ export interface TierDerivation {
 
 /** S21 — the whole sizing story on one slide: claim title, the
  *  Workload + Charging × Buffer = Fleet waterfall as explained tiles, and the
- *  fleet mix. The math lives in the sizing-derivation appendix. */
-export function fillFleetSizing(zip: PizZip, model: FleetModel, names: Record<string, string>): void {
+ *  fleet mix. The math lives in the sizing-derivation appendix. `verified`: the
+ *  fleet passed fleet size verification on the drawn layout (2026-11-18). */
+export function fillFleetSizing(zip: PizZip, model: FleetModel, names: Record<string, string>, verified = false): void {
   const { fleet, flows, settings } = model
   setTitle(zip, ROM_SLIDE.fleetSizing, fleetTitle(model), FALLBACK_TITLE.fleet)
   const f = frame(zip, ROM_SLIDE.fleetSizing)
@@ -267,7 +268,9 @@ export function fillFleetSizing(zip: PizZip, model: FleetModel, names: Record<st
   const mix = fleet.groups.map(g => `${names[g.vehicleId] ?? g.vehicleId} ×${g.fleetSold}`).join('   ·   ')
   f.caption([
     mix ? `Fleet mix — ${mix}` : 'Assign vehicles to flows (Step 3) to size the fleet.',
-    'Sized from your throughput, distances, and shift pattern · full derivation in appendix',
+    verified
+      ? 'Sized from your throughput, distances, and shift pattern · verified by a simulation of the site layout · full derivation in appendix'
+      : 'Sized from your throughput, distances, and shift pattern · full derivation in appendix',
   ])
 }
 

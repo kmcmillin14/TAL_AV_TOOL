@@ -14,17 +14,14 @@ import { APP_VERSION } from '@/src/content/appVersions'
 import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import PptxSectionPicker from './rom/PptxSectionPicker'
 import type { HeaderData } from '@/src/lib/projectHeader'
-import type { HelpSection } from '@/src/content/help'
 
-type StepId = 0 | 1 | 2 | 3 | 4 | 5
+type StepId = 0 | 1 | 2 | 3 | 4 | 5 | 6
 
 interface PersistentHeaderProps {
   project: HeaderData
   currentStep: StepId
   unitSystem: UnitSystem
   onUnitToggle: () => void
-  /** Help section to open, when the page is not a step of its own (Simulate opens 'simulate'). */
-  helpTopic?: HelpSection['id']
 }
 
 type EditField = 'projectName' | 'customerName' | 'facilityLocation' | 'bastianRep' | 'opportunityNumber' | 'versionNumber' | 'createdAt'
@@ -35,8 +32,9 @@ const STEPS: ReadonlyArray<{ id: StepId; label: string; desc: string }> = [
   { id: 1, label: 'Intake',                  desc: 'Load, transfer, environment' },
   { id: 2, label: 'Compatibility',           desc: 'Compatibility & qualification' },
   { id: 3, label: 'Sizing',                  desc: 'Flows, charging & buffer' },
-  { id: 4, label: 'Pricing',                 desc: 'Complexity, adders & sell price' },
-  { id: 5, label: 'Dashboard',               desc: 'Fleet, KPIs & pricing' },
+  { id: 4, label: 'Simulation',              desc: 'Verify the fleet size' },
+  { id: 5, label: 'Pricing',                 desc: 'Sell price & return' },
+  { id: 6, label: 'Export',                  desc: 'Customer presentation' },
 ]
 
 const META_FIELDS = new Set<EditField>(['versionNumber', 'createdAt'])
@@ -46,7 +44,6 @@ export default function PersistentHeader({
   currentStep,
   unitSystem,
   onUnitToggle,
-  helpTopic,
 }: PersistentHeaderProps) {
   const router = useRouter()
   const [editing, setEditing] = useState<EditField | null>(null)
@@ -524,7 +521,7 @@ export default function PersistentHeader({
         </div>
       </nav>
     </header>
-    <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} currentStep={currentStep} topic={helpTopic} />
+    <HelpDrawer open={helpOpen} onClose={() => setHelpOpen(false)} currentStep={currentStep} />
     <GuidedTour />
     {pptxProject && <PptxSectionPicker project={pptxProject} onClose={() => setPptxProject(null)} />}
     {versionLogOpen && <AppVersionLog onClose={() => setVersionLogOpen(false)} />}

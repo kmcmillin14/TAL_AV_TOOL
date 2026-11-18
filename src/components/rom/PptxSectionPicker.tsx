@@ -11,7 +11,8 @@ import {
 
 interface Props {
   project: StoredProject
-  onClose: () => void
+  /** A dialog with Cancel (the header menu); without it the picker renders in place (06 Export). */
+  onClose?: () => void
 }
 
 /** Pre-build picker: choose which sections (and which fleet-vehicle overview
@@ -31,6 +32,7 @@ export default function PptxSectionPicker({ project, onClose }: Props) {
   }, [])
 
   useEffect(() => {
+    if (!onClose) return
     const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape' && !busy) onClose() }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -45,7 +47,7 @@ export default function PptxSectionPicker({ project, onClose }: Props) {
     setBusy(true); setError(null)
     try {
       await exportBrandedRomPptx(project, sel)
-      onClose()
+      if (onClose) onClose(); else setBusy(false)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Export failed')
       setBusy(false)
@@ -60,17 +62,8 @@ export default function PptxSectionPicker({ project, onClose }: Props) {
     </label>
   )
 
-  return (
-    <div className="cmp-overlay" onClick={busy ? undefined : onClose} role="dialog" aria-modal="true" aria-label="Choose PowerPoint sections">
-      <div className="cmp-modal pptx-pick-modal" onClick={e => e.stopPropagation()}>
-        <div className="cmp-head">
-          <h2>Build branded PowerPoint</h2>
-          <button type="button" className="cmp-close" aria-label="Close" onClick={onClose} disabled={busy}>
-            <Icon name="x" size={16} />
-          </button>
-        </div>
-
-        <div className="cmp-scroll pptx-pick-body">
+  const sections = (
+        <div className={onClose ? 'cmp-scroll pptx-pick-body' : 'pptx-pick-body is-inline'}>
           <div className="pptx-pick-hint">Choose the sections to include. The TAL template’s theme and layout are preserved.</div>
           <div className="pptx-pick-grid">
             {PPTX_SECTIONS.map(s => (
@@ -89,6 +82,33 @@ export default function PptxSectionPicker({ project, onClose }: Props) {
             </div>
           )}
         </div>
+  )
+
+  if (!onClose) {
+    return (
+      <div className="pptx-inline">
+        {sections}
+        <div className="pptx-pick-foot">
+          {error && <span className="pptx-pick-error">{error}</span>}
+          <button type="button" className="btn primary" onClick={build} disabled={busy}>
+            <Icon name="download" size={14} /> {busy ? 'Building…' : 'Download presentation'}
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="cmp-overlay" onClick={busy ? undefined : onClose} role="dialog" aria-modal="true" aria-label="Choose PowerPoint sections">
+      <div className="cmp-modal pptx-pick-modal" onClick={e => e.stopPropagation()}>
+        <div className="cmp-head">
+          <h2>Build branded PowerPoint</h2>
+          <button type="button" className="cmp-close" aria-label="Close" onClick={onClose} disabled={busy}>
+            <Icon name="x" size={16} />
+          </button>
+        </div>
+
+        {sections}
 
         <div className="cmp-foot pptx-pick-foot">
           {error && <span className="pptx-pick-error">{error}</span>}

@@ -40,6 +40,8 @@ import { useUnitSystem } from '@/src/lib/uiPrefs'
 import { getProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { useProjectSync } from '@/src/lib/useProjectSync'
+import { computeFleetModel } from '@/src/lib/fleetModel'
+import RequirementsMatrix from '@/src/components/rom/RequirementsMatrix'
 
 type ProjectData = StoredProject
 
@@ -167,6 +169,10 @@ export default function Step2Page() {
    *  advertised Aisle (explicitly not a gate), and its Transfer tag read the
    *  legacy `transferMethod` the Step 1 form stopped writing, so it never
    *  rendered on a current project while the gate was live. */
+  // Requirements met by the sized fleet (moved from the Dashboard, 2026-11-18) — once Sizing assigns vehicles.
+  const vehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
+  const fleet = useMemo(() => (project ? computeFleetModel(project, vehicles).fleet : null), [project, vehicles])
+
   const activeReqs = useMemo(
     () => activeRequirements(appReq, vehicles),
     [appReq, vehicles],
@@ -212,7 +218,7 @@ export default function Step2Page() {
         {/* Page header */}
         <div className="page-header">
           <div className="page-title">
-            <span className="step-num">Step 02 / 05</span>
+            <span className="step-num">Step 02 / 06</span>
             <h1>Vehicle Compatibility</h1>
             <div className="desc">Every vehicle, checked against your requirements.</div>
           </div>
@@ -336,6 +342,13 @@ export default function Step2Page() {
               </div>
             )}
           </>
+        )}
+
+        {fleet && fleet.groups.length > 0 && (
+          <details className="req-met">
+            <summary>Requirements met by the sized fleet</summary>
+            <RequirementsMatrix project={project} fleet={fleet} vehicleById={vehicleById} />
+          </details>
         )}
 
         {/* Bottom nav */}

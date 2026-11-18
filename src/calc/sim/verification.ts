@@ -2,6 +2,10 @@
 // by the static calc, then verified, suggested or not verified by the last simulation run. Pure: reads
 // the stored run and the applied fleet, never runs the simulation.
 
+import { engineFleetByType } from '../fleet'
+import type { FleetSummary } from '../types'
+import type { Vehicle } from '@/src/lib/vehicleLibrary'
+import { simInputsKey, type SimInputsLike } from './runInputs'
 import type { Verdict } from './types'
 
 export type FleetCheckState = 'estimated' | 'verified' | 'suggested' | 'notVerified'
@@ -54,4 +58,15 @@ export const FLEET_CHECK_LABEL: Record<FleetCheckState, string> = {
   verified: 'Verified',
   suggested: 'Suggested',
   notVerified: 'Not verified',
+}
+
+/** Every type's check and the headline state for a project. The inputs hash is computed only when there
+ *  is a stored run or applied count to compare against. Shared by Sizing, Simulation and the deck. */
+export function projectFleetChecks(project: (SimInputsLike & { simSettings?: Stored }) | null, vehicleById: Map<string, Vehicle>, fleet: FleetSummary) {
+  const ss = project?.simSettings
+  const any = !!(ss?.lastRun || (ss?.appliedFleet && Object.keys(ss.appliedFleet).length))
+  const key = project && any ? simInputsKey(project, vehicleById) : ''
+  const staticBy = engineFleetByType(fleet)
+  const checks = fleet.groups.map(g => fleetCheck(g.vehicleId, staticBy[g.vehicleId] ?? 0, ss, key))
+  return { checks, state: fleetCheckSummary(checks), key }
 }

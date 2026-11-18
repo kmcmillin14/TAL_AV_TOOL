@@ -9,10 +9,8 @@ import { TOUR_EVENT } from './GuidedTour'
 interface Props {
   open: boolean
   onClose: () => void
-  /** 0–5; the guide opens to this step's section … */
+  /** 0–6; the guide opens to this step's section. */
   currentStep: number
-  /** … unless the page names its own section (e.g. 'simulate'). */
-  topic?: string
 }
 
 /**
@@ -20,13 +18,13 @@ interface Props {
  * context-aware — it opens to the current step's section — and browsable via the
  * left rail (Overview + every step). Content lives in `src/content/help.ts`.
  */
-export default function HelpDrawer({ open, onClose, currentStep, topic }: Props) {
+export default function HelpDrawer({ open, onClose, currentStep }: Props) {
   const [activeId, setActiveId] = useState<string>('app')
 
   // Open to the current step each time the guide is opened.
   useEffect(() => {
-    if (open) setActiveId(topic ?? `step${currentStep}`)
-  }, [open, currentStep, topic])
+    if (open) setActiveId(`step${currentStep}`)
+  }, [open, currentStep])
 
   useEffect(() => {
     if (!open) return

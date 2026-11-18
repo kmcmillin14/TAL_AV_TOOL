@@ -1,7 +1,7 @@
 // In-app help content. Written for a first-time user ("novice") learning HOW to
 // use the tool — plain language, one worked example per step, and an illustrative
 // mockup. Kept as data (like the vehicle library) so it's easy to edit without
-// touching the UI. One section per id: 'app' (overview) + 'step0'..'step5'.
+// touching the UI. One section per id: 'app' (overview) + 'step0'..'step6'.
 //
 // `figure.mock` names an illustration drawn by HelpMock.tsx. These are simple
 // on-brand mockups today; a real screenshot can replace each one later by adding
@@ -25,7 +25,7 @@ export interface HelpExample {
 }
 
 export interface HelpSection {
-  id: 'app' | 'step0' | 'step1' | 'step2' | 'step3' | 'simulate' | 'step4' | 'step5'
+  id: 'app' | 'step0' | 'step1' | 'step2' | 'step3' | 'step4' | 'step5' | 'step6'
   /** Small label above the title, e.g. "Step 01". */
   eyebrow?: string
   title: string
@@ -41,14 +41,15 @@ export const HELP: HelpSection[] = [
     id: 'app',
     title: 'How this tool works',
     summary:
-      'The Fleet Calculator turns your application requirements into a sized AGV/AMR fleet and a rough-order (ROM) proposal you can hand to a customer. You move left-to-right through six steps in the top ribbon. Nothing is required — fill in what you know and come back later; everything auto-saves to this browser.',
+      'The Fleet Calculator turns your application requirements into a sized AGV/AMR fleet and a rough-order (ROM) proposal you can hand to a customer. You move left-to-right through seven steps in the top ribbon. Nothing is required — fill in what you know and come back later; everything auto-saves to this browser.',
     howTo: [
       'Start (00) — begin a new project, or import a questionnaire / a previous revision.',
       'Application (01) — answer the questionnaire: what you move, how, the site, the schedule, and throughput.',
       'Vehicles (02) — see which vehicles qualify, shown as traffic lights. This step is just information — you don’t pick a vehicle here.',
       'Fleet Engine (03) — lay out each material flow and assign a vehicle; the tool sizes the fleet live.',
-      'ROM Configuration (04) — score Integration and Software complexity per vehicle, pick adders, and see a fleet-wide sell-price total.',
-      'Dashboard (05) — read the economics (CAPEX, payback, KPIs), try what-if scenarios, and export the proposal.',
+      'Simulation (04) — optional: check the fleet on the site layout and how it operates; the fleet reads Verified, or a new count is suggested.',
+      'Pricing (05) — the quotation, then the return: CAPEX, payback, net benefit and cost of ownership.',
+      'Export (06) — choose the presentation’s sections and download it, with the internal workbook and the project file.',
     ],
     example: {
       title: 'The big picture, in one line',
@@ -58,7 +59,7 @@ export const HELP: HelpSection[] = [
         'a CAPEX range, payback, and a PowerPoint proposal out.',
       ],
     },
-    figure: { mock: 'app-flow', caption: 'The six steps, left to right — each feeds the next.' },
+    figure: { mock: 'app-flow', caption: 'The seven steps, left to right — each feeds the next.' },
     tips: [
       'The Imperial / Metric toggle (top-right) only changes what’s displayed — every value is stored in imperial.',
       'Use the accent Export button (top-right) any time to download the PowerPoint proposal, an Excel workbook, or a .json save file.',
@@ -167,8 +168,8 @@ export const HELP: HelpSection[] = [
     ],
   },
   {
-    id: 'simulate',
-    eyebrow: 'Step 03 · Sizing',
+    id: 'step4',
+    eyebrow: 'Step 04',
     title: 'Fleet size verification',
     summary:
       'An optional check of the Sizing fleet on a drawn layout. You draw the site — points, routes and flows — and the simulation runs the vehicles through it to show whether the fleet keeps up and where it gets stuck. Nothing is invented: what is not drawn or not in the vehicle data is flagged.',
@@ -190,8 +191,8 @@ export const HELP: HelpSection[] = [
     ],
   },
   {
-    id: 'step4',
-    eyebrow: 'Step 04',
+    id: 'step5',
+    eyebrow: 'Step 05',
     title: 'Pricing',
     summary:
       'The project quotation. Four priced categories — Hardware, Software, Professional services, and Adders — each with its own subtotal, closed by the total project investment. Underneath, a plain-English panel explains how the project scored: one complexity result for the whole fleet, because complexity comes from the site and the program, not from which chassis you picked.',
@@ -200,6 +201,7 @@ export const HELP: HelpSection[] = [
       'Pick options (warranty, support, training) below the quote — each applies once to the project total, never per vehicle.',
       'Check the scoring panel: each axis shows a named tier (Straightforward / Standard / Complex) and the plain-English reasons behind it. Open “Show scoring detail” for the point math.',
       'Use “Adjust tiers per vehicle” only when one chassis genuinely differs — an override needs a reason and can never drop below that vehicle’s own minimum.',
+      'Below the quote, read the return: CAPEX, payback and net benefit lead; labor offset, OPEX, TCO and cost per move fold under Cost detail. Maintenance and service life are set there too.',
     ],
     example: {
       title: 'Example — a three-chassis fleet',
@@ -216,29 +218,19 @@ export const HELP: HelpSection[] = [
     ],
   },
   {
-    id: 'step5',
-    eyebrow: 'Step 05',
-    title: 'Dashboard',
+    id: 'step6',
+    eyebrow: 'Step 06',
+    title: 'Export',
     summary:
-      'The customer-facing summary built from the fleet total — KPIs (fleet size, CAPEX range, payback, utilization), charts, and the proposal export. A driver rail on the left lets you run what-if scenarios; every KPI and chart recomputes live, and you can toggle Baseline vs Scenario to compare.',
+      'Where the work leaves the tool. The customer presentation comes first: choose its sections, then download it. The internal Excel model and the project file to re-import later sit beside it.',
     howTo: [
-      'Read the headline KPIs at the top: total fleet, ROM CAPEX range, payback, net annual benefit.',
-      'Adjust a driver on the left (throughput boost, shifts, labor rate, buffer…) to see a what-if; the deltas show green when a change helps, red when it hurts.',
-      'Click the maximize icon on any tile to view a chart or table full-screen.',
-      'Export the proposal (PowerPoint) or Save project file (.json) from the buttons at the bottom — or the Export button up top.',
+      'Tick the sections the presentation should include; the product slides list only the vehicles in the fleet.',
+      'Press Download presentation to build the PowerPoint in the TAL template.',
+      'Download the Internal model for a live-formula workbook, or Save revision for the .json that Step 00 imports.',
     ],
-    example: {
-      title: 'Example — a what-if',
-      lines: [
-        'Baseline: 7 vehicles, $1.2–1.5M, 2.8-year payback.',
-        'Set “Throughput boost” to +20% → fleet and CAPEX rise, payback shifts.',
-        'Toggle Baseline / Scenario to compare the two side by side.',
-      ],
-    },
-    figure: { mock: 'dashboard', shot: '/images/help/step4.png', caption: 'Step 05 — KPI band, driver rail for what-ifs, gauges, and the operation map.' },
     tips: [
-      'Scenarios are in-memory — they never change your saved project until you click “Apply to baseline”.',
-      'The PowerPoint export always reflects the baseline numbers, not an unsaved scenario.',
+      'If the quote is withheld for missing Step 1 answers, the presentation still builds and reads “Not priced” where a figure would be.',
+      'The header’s Export menu offers the same files on every step.',
     ],
   },
 ]

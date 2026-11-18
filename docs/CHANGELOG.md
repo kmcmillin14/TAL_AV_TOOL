@@ -1,6 +1,18 @@
 # Changelog
 
-## 2026-11-18 — Workflow: seven steps (docs first; build follows)
+## 2026-11-18 — Workflow: seven steps (built)
+
+- Built as specified below: ribbon 00–06; `simulate` → `step4` (old address redirects), Pricing at
+  `step5`, Export at `step6`. Simulation opens on **Operations** until a layout is drawn, then on
+  **Layout check**, with the fleet state beside the switch. Pricing ends with *Return on
+  investment* (claim, financials, payback / TCO / CAPEX, economic assumptions with maintenance % and
+  service life edited in place; one line instead of the tiles while the quote is withheld).
+  Compatibility gains *Requirements met by the sized fleet*. The deck's sizing slide says when the
+  fleet was verified on the layout.
+- Removed: the Dashboard page, scenario drivers (`RomDrivers`, `scenario.ts` and its test,
+  `useDashboardRail`), the page-head `ExportActions`, the Simulate back link and `helpTopic`, and their CSS.
+
+## 2026-11-18 — Workflow: seven steps (docs first)
 
 - Owner: the ribbon becomes **Start · Intake · Compatibility · Sizing · Simulation · Pricing · Export**.
   Simulation (fleet size verification) is numbered step 04 at `step4`; Pricing moves to `step5`;

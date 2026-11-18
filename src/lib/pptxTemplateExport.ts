@@ -7,6 +7,7 @@
 import PizZip from 'pizzip'
 import type { StoredProject } from '@/src/lib/storage'
 import { computeFleetModel } from '@/src/lib/fleetModel'
+import { projectFleetChecks } from '@/src/calc/sim/verification'
 import { projectFilename } from '@/src/lib/projectFilename'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { removeSlides, replaceInSlides, cloneSlide, setSlideTitle } from '@/src/lib/pptx/ooxml'
@@ -134,7 +135,7 @@ export async function exportBrandedRomPptx(
   // ── Body slides (each filler no-ops on a removed slide).
   fillRequirements(zip, project)                       // S18
   fillVehicleCards(zip, project, vehicles, photos)     // S19
-  fillFleetSizing(zip, model, names)                   // S21
+  fillFleetSizing(zip, model, names, projectFleetChecks(project, vehicleById, model.fleet).state === 'verified') // S21
   fillFinancials(zip, model)                           // S25
   fillInvestment(zip, model, names)                    // S27
 

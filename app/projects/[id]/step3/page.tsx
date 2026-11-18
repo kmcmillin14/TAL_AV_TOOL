@@ -23,7 +23,8 @@ import ChargingPipeline from '@/src/components/engine/ChargingPipeline'
 import BufferPipeline from '@/src/components/engine/BufferPipeline'
 import { pricingGate } from '@/src/lib/romComplexityFromProject'
 import { projectFleetSettings } from '@/src/lib/fleetModel'
-import { FleetCheckBadge, useFleetChecks, VerificationSection } from '@/src/components/step3/FleetVerification'
+import { FleetCheckBadge, useFleetChecks } from '@/src/components/FleetCheckBadge'
+import { VerificationSection } from '@/src/components/step3/FleetVerification'
 
 export default function FleetEnginePage() {
   const params = useParams()
@@ -111,7 +112,7 @@ export default function FleetEnginePage() {
       <div className="workspace">
         <div className="engine-head">
           <div className="eh-text">
-            <span className="eh-eyebrow mono">Step 03 / 05</span>
+            <span className="eh-eyebrow mono">Step 03 / 06</span>
             <h1 className="eh-title">Fleet Engine</h1>
           </div>
         </div>
@@ -146,7 +147,7 @@ export default function FleetEnginePage() {
                   <span className="er-num mono">{fleet.totalFleetSold}</span>
                   <span className="er-num-unit">vehicles</span>
                   {simulatedNote(fleet) && <span className="er-sim-note">{simulatedNote(fleet)}</span>}
-                  <FleetCheckBadge state={verify.state} checks={verify.checks} />
+                  <FleetCheckBadge state={verify.state} checks={verify.checks} href="#engine-verify" />
                 </div>
                 <div className="er-pipeline" aria-label="Fleet build-up">
                   <div className="ep-seg on">
@@ -308,7 +309,7 @@ export default function FleetEnginePage() {
                 : `${fleet.totalFleetSold} ${fleet.totalFleetSold === 1 ? 'vehicle' : 'vehicles'} total`}
             </span>
             <Link href={`/projects/${id}/step4`} className="btn primary">
-              Continue to ROM <Icon name="arrowR" size={13} />
+              Continue to Simulation <Icon name="arrowR" size={13} />
             </Link>
           </div>
         </div>

@@ -3,13 +3,23 @@
 import type { StoredProject } from '@/src/lib/storage'
 import { defaultOperatingDaysPerYear } from '@/src/calc/romAnalytics'
 
-interface Props { project: StoredProject }
+interface Props {
+  project: StoredProject
+  /** One group: Operations sits with the fleet (04 Simulation), Economics with the money (05 Pricing). */
+  only: 'Operations' | 'Economics'
+  /** Saves an edited economic input. Maintenance and service life are edited here (2026-11-18): the
+   *  scenario drivers that used to set them are gone. */
+  onPatch?: (patch: Partial<StoredProject>) => void
+}
 
-interface Row { label: string; value: string; why: string; isDefault: boolean }
+/** An economic input edited in place: stored value = shown value × `scale`. */
+interface Edit { key: 'annualMaintenancePctOfCapex' | 'serviceLifeYears'; shown: number; scale: number; min: number; max: number; suffix: string }
+
+interface Row { label: string; value: string; why: string; isDefault: boolean; edit?: Edit }
 
 /** Auditable assumptions behind the numbers — grouped, with a why per row and a
  *  flag on the ones still using an app default (so it's clear what to verify). */
-export default function AssumptionsPanel({ project: p }: Props) {
+export default function AssumptionsPanel({ project: p, only, onPatch }: Props) {
   const days = p.operatingDaysPerYear
     ?? defaultOperatingDaysPerYear(p.operatingDaysPattern, p.operatingDaysCustom)
 
@@ -23,24 +33,26 @@ export default function AssumptionsPanel({ project: p }: Props) {
         { label: 'Charging', value: 'Staggered across the fleet', why: 'Vehicles are sent to charge before they run flat, so the fleet never queues for chargers at once. Availability is therefore the average over the staffed window. Left to run in lockstep the figure would be the bare duty ratio — 11–16% more vehicles.', isDefault: true },
         { label: 'Chargers', value: 'One per vehicle', why: 'Dock contention is not modelled at this stage: every vehicle is assumed to have a charger when it needs one. This is what makes staggered charging achievable.', isDefault: true },
         { label: 'Operator breaks', value: 'Fleet keeps working', why: 'Breaks are recorded for the proposal but do not shorten the staffed window or credit charging time — the fleet runs through them.', isDefault: true },
+        { label: 'Target utilization', value: `${Math.round((p.targetUtilization ?? 0.90) * 100)}%`, why: 'Share of AVAILABLE working time the fleet runs at — not of the clock. Charging downtime is counted separately and is not usable slack: a vehicle on a charger cannot answer a demand spike. Default 90% because the throughput entered is PEAK, so the fleet already carries a spike allowance.', isDefault: p.targetUtilization == null },
         { label: 'Operating days / year', value: p.operatingDaysPattern && p.operatingDaysPerYear == null ? `${days} (from ${p.operatingDaysPattern})` : String(days), why: 'Annualizes the labor offset.', isDefault: p.operatingDaysPerYear == null },
       ],
     },
     {
       title: 'Economics',
       rows: [
-        { label: 'Target utilization', value: `${Math.round((p.targetUtilization ?? 0.90) * 100)}%`, why: 'Share of AVAILABLE working time the fleet runs at — not of the clock. Charging downtime is counted separately and is not usable slack: a vehicle on a charger cannot answer a demand spike. Default 90% because the throughput entered is PEAK, so the fleet already carries a spike allowance.', isDefault: p.targetUtilization == null },
         { label: 'Operators displaced', value: String(p.numberOfOperators || ((p.operatorsPerShift ?? 0) * (p.shiftsPerDay ?? 1))), why: 'Operators × shifts the fleet replaces.', isDefault: !p.numberOfOperators && !p.operatorsPerShift },
         { label: 'Fully-burdened operator', value: `$${(p.fullyBurdenedRateUsdPerYear ?? 65000).toLocaleString()}/yr`, why: 'All-in annual cost (wage + benefits + overhead).', isDefault: p.fullyBurdenedRateUsdPerYear == null },
-        { label: 'Maintenance', value: `${Math.round((p.annualMaintenancePctOfCapex ?? 0.08) * 100)}%/yr of CAPEX`, why: 'Annual upkeep as a share of CAPEX.', isDefault: p.annualMaintenancePctOfCapex == null },
-                { label: 'Service life', value: `${p.serviceLifeYears ?? 10} yr`, why: 'Equipment lifetime for TCO / payback.', isDefault: p.serviceLifeYears == null },
+        { label: 'Maintenance', value: `${Math.round((p.annualMaintenancePctOfCapex ?? 0.08) * 100)}%/yr of CAPEX`, why: 'Annual upkeep as a share of CAPEX.', isDefault: p.annualMaintenancePctOfCapex == null,
+          edit: { key: 'annualMaintenancePctOfCapex', shown: Math.round((p.annualMaintenancePctOfCapex ?? 0.08) * 100), scale: 0.01, min: 0, max: 50, suffix: '% / yr of CAPEX' } },
+        { label: 'Service life', value: `${p.serviceLifeYears ?? 10} yr`, why: 'Equipment lifetime for TCO / payback.', isDefault: p.serviceLifeYears == null,
+          edit: { key: 'serviceLifeYears', shown: p.serviceLifeYears ?? 10, scale: 1, min: 1, max: 20, suffix: 'yr' } },
       ],
     },
   ]
 
   return (
     <div className="rv-assume2">
-      {groups.map(g => (
+      {groups.filter(g => g.title === only).map(g => (
         <div key={g.title} className="rv-assume2-group">
           <div className="rv-assume2-head">{g.title}</div>
           <dl className="rv-assume2-list">
@@ -50,7 +62,20 @@ export default function AssumptionsPanel({ project: p }: Props) {
                   {r.label}
                   {r.isDefault && <span className="rv-assume2-tag">default</span>}
                 </dt>
-                <dd className="mono">{r.value}</dd>
+                {r.edit && onPatch ? (
+                  <dd className="rv-assume2-edit">
+                    <input
+                      key={r.edit.shown} type="number" className="mono" aria-label={r.label}
+                      defaultValue={r.edit.shown} min={r.edit.min} max={r.edit.max} step={1}
+                      onBlur={e => {
+                        const v = Number(e.target.value), ed = r.edit!
+                        if (Number.isFinite(v) && v !== ed.shown) onPatch({ [ed.key]: Math.min(ed.max, Math.max(ed.min, v)) * ed.scale })
+                      }}
+                      onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
+                    />
+                    <span>{r.edit.suffix}</span>
+                  </dd>
+                ) : <dd className="mono">{r.value}</dd>}
                 <p className="rv-assume2-why">{r.why}</p>
               </div>
             ))}

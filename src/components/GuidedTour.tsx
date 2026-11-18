@@ -69,8 +69,8 @@ const INTRO_GUIDE: Guide = {
   steps: [
     {
       target: '.hero-nav .step-dots',
-      title: 'Six steps, one flow',
-      body: 'This tool sizes an AGV/AMR fleet in six steps. The engineering discipline behind it: Cut waste → Connect the moves → Add the economics. Here is where each step lives.',
+      title: 'Seven steps, one flow',
+      body: 'This tool sizes, verifies and prices an AGV/AMR fleet in seven steps. The engineering discipline behind it: Cut waste → Connect the moves → Add the economics. Here is where each step lives.',
     },
     {
       target: '.hero-nav .step-dot:nth-child(2)',
@@ -89,18 +89,23 @@ const INTRO_GUIDE: Guide = {
     },
     {
       target: '.hero-nav .step-dot:nth-child(5)',
-      title: '④ ROM Configuration',
-      body: 'Score Integration and Software complexity per vehicle, pick adders, and see a fleet-wide sell-price total — budgetary, placeholder pricing until real numbers land.',
+      title: '④ Simulation',
+      body: 'Optional: see how the fleet operates, and check it on the site layout — the fleet reads Verified, or a new count is suggested.',
     },
     {
       target: '.hero-nav .step-dot:nth-child(6)',
-      title: '⑤ Dashboard',
-      body: 'Fleet size, CAPEX, payback, and cost-per-move — then export the customer deck. Adjust the drivers to run what-if scenarios.',
+      title: '⑤ Pricing',
+      body: 'The quotation — hardware, software, professional services and adders — then the return: CAPEX, payback and cost of ownership.',
+    },
+    {
+      target: '.hero-nav .step-dot:nth-child(7)',
+      title: '⑥ Export',
+      body: 'Choose the presentation’s sections and download it, with the internal workbook and the project file.',
     },
   ],
 }
 
-/** Sample DC walkthrough — cross-page, Steps 1→4. Starts automatically when the
+/** Sample DC walkthrough — cross-page, Steps 1→6. Starts automatically when the
  *  Company A sample project is loaded from Step 0. Explains WHY each decision was made. */
 const SAMPLE_RFQ_GUIDE: Guide = {
   id: 'sample-rfq',
@@ -151,46 +156,31 @@ const SAMPLE_RFQ_GUIDE: Guide = {
     },
     {
       route: '/step4',
+      target: '#rom-fleet-math .rom2-cell-head',
+      title: 'How the fleet operates',
+      body: 'Simulation opens on how this fleet works all day — utilization, battery, redundancy — and the full sizing math. Layout check verifies the count on the drawn site.',
+    },
+    {
+      route: '/step5',
       target: '#rom-investment .form-section-header',
       title: 'The project quotation',
       body: 'The total leads, then the four categories that make it up — hardware, software, professional services and adders. Open any row for its detail; tick an adder and the subtotal moves. Section 02 shows what scored the project.',
     },
     {
       route: '/step5',
-      // The Financials hero card — a single bounded surface; ringing the whole
-      // multi-card kpiband drew broken fragments across the card gaps.
+      // The Financials hero card — a single bounded surface.
       target: '.rom2-hero',
       title: 'The ROM you\'d send back',
-      body: 'Fleet, CAPEX range, payback. Adjust drivers for what-ifs, then Export builds the customer deck.',
+      body: 'CAPEX range, payback and net benefit, below the quote. Maintenance and service life are set in the assumptions underneath.',
     },
     {
-      route: '/step5',
-      // Desktop drivers render as aside.rom2-rail; the <summary> only exists in
-      // the collapsed (narrow) layout and is hidden on desktop — no ring showed.
-      target: '.rom2-rail-head',
-      title: 'Drivers & scenario panel',
-      body: 'Run what-ifs here — throughput boost, labor rate, shifts. Every KPI recomputes live; toggle Baseline / Scenario to compare.',
-    },
-    {
-      route: '/step5',
-      target: '#rom-fleet-math .rom2-cell-head',
-      title: 'Fleet & flow math',
-      body: 'The full sizing math — every stage from cycle time to the binding constraint, with this project\'s numbers substituted in.',
-    },
-    {
-      route: '/step5',
-      target: '#rom-assumptions .rom2-cell-head',
-      title: 'Assumptions',
-      body: 'Every assumption is listed and defensible — DoD, availability, headroom. This is what you stand behind in the customer meeting.',
-    },
-    {
-      route: '/step5',
-      target: '.rom-card-export',
+      route: '/step6',
+      target: '.export-deck',
       title: 'Export',
-      body: 'Done? One format per audience — the customer deck (PPTX), the internal model (Excel), and a JSON revision to reopen later.',
+      body: 'Done? Choose the sections and download the customer presentation — plus the internal model (Excel) and a JSON revision to reopen later.',
     },
     {
-      route: '/step5',
+      route: '/step6',
       target: null,
       title: 'Your turn',
       body: 'That\'s the whole flow — RFQ in, defensible ROM out. Ready? This wipes the sample and starts your own application.',

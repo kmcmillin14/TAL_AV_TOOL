@@ -9,9 +9,7 @@ import { engineFleetByType } from '@/src/calc/fleet'
 import { engineFleetFor } from '@/src/lib/fleetModel'
 import { payloadsByVehicle, simFlows, simVehicleTypes, type SimVehicleType } from '@/src/calc/sim/simVehicles'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
-import { useCallback, useMemo, useRef, useState } from 'react'
-import Link from 'next/link'
-import Icon from '@/src/design-system/components/Icon'
+import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import { emptyLayout, unlinked } from '@/src/calc/sim/layoutEdit'
 import { checkStatus, readinessChecks } from '@/src/calc/sim/readiness'
 import { withVehicleOverrides } from '@/src/calc/sim/vehicle'
@@ -55,9 +53,11 @@ interface Props {
   settings: FleetSettings
   fleet: FleetSummary
   unitSystem: UnitSystem
+  /** The step's own head content beside the title — Operations / Layout check and the fleet state. */
+  headExtra?: ReactNode
 }
 
-export default function SimulateShell({ project, vehicles, vehicleById, settings, fleet, unitSystem }: Props) {
+export default function SimulateShell({ project, vehicles, vehicleById, settings, fleet, unitSystem, headExtra }: Props) {
   const narrow = useIsNarrow()
   const [mode, setMode] = useState<'layout' | 'sim' | 'data'>('layout')
   const { simLayout, flows = [] } = project
@@ -162,7 +162,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const openSample = (s: (typeof SAMPLES)[number]) => {
     if (canSample) { loadSample(s); return }
     const made = createProject({ projectName: `Example — ${s.label === 'Proof of concept' ? 'proof-of-concept' : s.label.toLowerCase()} site`, simLayout: s.data.layout, flows: s.data.flows } as never)
-    router.push(`/projects/${made.id}/simulate`)
+    router.push(`/projects/${made.id}/step4`)
   }
   /** Clear the layout; flows stay in Sizing, unlinked (their last measured distance kept). Sample flows go. */
   const clearLayout = () => {
@@ -195,11 +195,10 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     <div className="sim-shell">
       <div className="engine-head with-actions sim-head">
         <div className="eh-text">
-          <span className="eh-eyebrow mono">
-            Step 03 · Sizing <Link href={`/projects/${project.id}/step3`} className="sim-back"><Icon name="arrowL" size={11} /> Back to Sizing</Link>
-          </span>
+          <span className="eh-eyebrow mono">Step 04 / 06</span>
           <h1 className="eh-title">Fleet size verification</h1>
         </div>
+        {headExtra}
         <div className="eh-actions">
           {!running && (
             /* Validation, live: one status, a click opens the list in the side panel. */

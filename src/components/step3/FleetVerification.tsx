@@ -6,43 +6,12 @@
 // the simulation.
 
 import Link from 'next/link'
-import { useMemo } from 'react'
-import { engineFleetByType } from '@/src/calc/fleet'
-import { simInputsKey } from '@/src/calc/sim/runInputs'
-import { FLEET_CHECK_LABEL, fleetCheck, fleetCheckSummary, type FleetCheck, type FleetCheckState } from '@/src/calc/sim/verification'
-import type { FleetSummary } from '@/src/calc/types'
+import type { FleetCheck, FleetCheckState } from '@/src/calc/sim/verification'
+import { fleetCheckWord } from '@/src/components/FleetCheckBadge'
 import Icon from '@/src/design-system/components/Icon'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import { patchSimSettings, type StoredProject } from '@/src/lib/storage'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-
-/** Each type's check and the headline state. The inputs hash is only computed when there is a stored
- *  run or applied count to compare against. */
-export function useFleetChecks(project: StoredProject | null, vehicleById: Map<string, Vehicle>, fleet: FleetSummary) {
-  return useMemo(() => {
-    const ss = project?.simSettings
-    const any = !!(ss?.lastRun || (ss?.appliedFleet && Object.keys(ss.appliedFleet).length))
-    const key = project && any ? simInputsKey(project, vehicleById) : ''
-    const staticBy = engineFleetByType(fleet)
-    const checks = fleet.groups.map(g => fleetCheck(g.vehicleId, staticBy[g.vehicleId] ?? 0, ss, key))
-    return { checks, state: fleetCheckSummary(checks), key }
-  }, [project, vehicleById, fleet])
-}
-
-const word = (c: Pick<FleetCheck, 'state' | 'n'>) => (c.state === 'suggested' ? `Suggested ${c.n}` : FLEET_CHECK_LABEL[c.state])
-
-/** The state beside the fleet total. */
-export function FleetCheckBadge({ state, checks }: { state: FleetCheckState; checks: FleetCheck[] }) {
-  const one = checks.length === 1 ? checks[0] : null
-  const fail = checks.find(c => c.state === 'notVerified')
-  const tone = state === 'notVerified' && fail?.verdict === 'gridlock' ? 'bad' : state
-  return (
-    <a href="#engine-verify" className={`fv-badge ${tone}`} title="Fleet size verification — see 04 Verification">
-      {state === 'verified' && <Icon name="check" size={12} />}
-      {one ? word(one) : FLEET_CHECK_LABEL[state]}
-    </a>
-  )
-}
 
 const DETAIL: Record<FleetCheckState, (c: FleetCheck) => string> = {
   estimated: c => (c.stale ? 'Layout changed since the last run — verify again' : 'Static calculation — not yet checked on a layout'),
@@ -81,7 +50,7 @@ export function VerificationSection({ project, vehicleById, checks, inputsKey }:
                   <span className="mono">{c.staticN}</span>
                   {c.n !== c.staticN && <><span aria-hidden="true">→</span><span className="mono">{c.n}</span></>}
                 </span>
-                <span className={`fv-badge ${tone}`}>{c.state === 'verified' && <Icon name="check" size={12} />}{word(c)}</span>
+                <span className={`fv-badge ${tone}`}>{c.state === 'verified' && <Icon name="check" size={12} />}{fleetCheckWord(c)}</span>
                 <span className="fv-detail">{DETAIL[c.state](c)}</span>
                 <span className="fv-act">
                   {c.state === 'suggested' && <button type="button" className="btn btn-sm primary" onClick={() => use(c)}>Use {c.n}</button>}
@@ -98,7 +67,7 @@ export function VerificationSection({ project, vehicleById, checks, inputsKey }:
             ? 'Check this fleet on the site layout: the simulation runs the stations’ calls through time and confirms the count, or suggests a new one.'
             : 'Suggestions only raise the fleet. Pricing changes only when you press Use.'}
         </p>
-        <Link href={`/projects/${project.id}/simulate`} className="btn ghost">
+        <Link href={`/projects/${project.id}/step4`} className="btn ghost">
           Verify fleet size <Icon name="arrowR" size={13} />
         </Link>
       </div>
