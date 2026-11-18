@@ -146,7 +146,7 @@ export function cleanFormData(data: Partial<ProjectFormData>): Partial<ProjectFo
  *  `gate` mirrors PRICING_GATE_INPUTS in src/lib/romComplexityFromProject.ts;
  *  `compat` mirrors the gate engine in src/calc/gates.ts. */
 const MARK_TITLES: Record<string, string> = {
-  gate: 'Required for pricing — until this is answered, Professional services and Software show $0 on Step 4',
+  gate: 'Required for pricing — until this is answered, Professional services and Software show $0 on Step 5 (Pricing)',
   compat: 'Required for compatibility — Step 2 matches this against every vehicle, and a blank leaves the vehicle In Progress rather than Compatible',
   widens: 'Feeds ROM pricing — leaving it blank scores as "simple" and widens the quoted range',
 }
@@ -1280,7 +1280,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                   {...register('fullyBurdenedRateUsdPerYear', { valueAsNumber: true, onBlur: onBlurSave })}
                 />
               </div>
-              <div className="help">$/yr all-in (wage + benefits + overhead). Feeds Step 4 payback (default $65,000).</div>
+              <div className="help">$/yr all-in (wage + benefits + overhead). Feeds Step 5 payback (default $65,000).</div>
             </div>
           </div>
         </FormSection>

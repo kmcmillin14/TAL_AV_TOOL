@@ -163,6 +163,8 @@ export const simSettingsSchema = z.object({
     types: z.record(z.string(), z.object({
       fleet: z.number().int().min(0).max(500),
       verdict: z.enum(['meets', 'tight', 'short', 'gridlock', 'warming']),
+      /** One vehicle fewer was run and does not meet (or cannot) — the count is the smallest that meets. */
+      smallest: z.boolean().optional(),
     })),
   }).optional(),
 })

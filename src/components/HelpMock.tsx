@@ -26,11 +26,11 @@ function Mock({ id }: { id: MockId }) {
     case 'app-flow':
       return (
         <div className="hm-flowrow">
-          {['Start', 'Application', 'Vehicles', 'Fleet Engine', 'ROM Config', 'Dashboard'].map((s, i) => (
+          {['Start', 'Intake', 'Compatibility', 'Sizing', 'Simulation', 'Pricing', 'Export'].map((s, i, all) => (
             <div className="hm-flowstep" key={s}>
               <span className="hm-chip">{`0${i}`}</span>
               <span className="hm-flowlbl">{s}</span>
-              {i < 5 && <span className="hm-arrow" aria-hidden>→</span>}
+              {i < all.length - 1 && <span className="hm-arrow" aria-hidden>→</span>}
             </div>
           ))}
         </div>

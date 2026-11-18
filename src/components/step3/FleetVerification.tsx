@@ -15,9 +15,15 @@ import { patchSimSettings, type StoredProject } from '@/src/lib/storage'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
 const DETAIL: Record<FleetCheckState, (c: FleetCheck) => string> = {
-  estimated: c => (c.stale ? 'Layout changed since the last run — verify again' : 'Static calculation — not yet checked on a layout'),
-  verified: c => (c.applied ? `Simulation met all three checks at ${c.n}; in pricing` : 'Simulation met all three checks at this count'),
-  suggested: c => `Simulation met all three checks only at ${c.n}`,
+  estimated: c => c.stale ? 'Layout changed since the last run — verify again'
+    : c.verdict === 'warming' ? 'The last run was too short to judge — run a full shift'
+    : c.ranAt != null ? `The last run used ${c.ranAt} and fell short — ${c.staticN} has not been run`
+    : 'Static calculation — not yet checked on a layout',
+  verified: c => c.applied ? `Simulation met all three checks at ${c.n}; in pricing`
+    : c.ranAt != null ? `Simulation met all three checks with ${c.ranAt}, fewer than this count`
+    : 'Simulation met all three checks at this count',
+  suggested: c => c.confirmed ? `Simulation met all three checks only at ${c.n}`
+    : `Simulation met all three checks at ${c.n} — open Simulation to confirm one fewer does not`,
   notVerified: c => (c.verdict === 'gridlock' ? `Gridlock at ${c.n} — fix the layout, then verify again` : `Fell short at ${c.n} — try more vehicles`),
 }
 
@@ -52,8 +58,11 @@ export function VerificationSection({ project, vehicleById, checks, inputsKey }:
                 <FleetCheckBadge checks={[c]} />
                 <span className="fv-detail">{DETAIL[c.state](c)}</span>
                 <span className="fv-act">
-                  {c.state === 'suggested' && <button type="button" className="btn btn-sm primary" onClick={() => use(c)}>Use {c.n}</button>}
+                  {c.state === 'suggested' && c.confirmed && <button type="button" className="btn btn-sm primary" onClick={() => use(c)}>Use {c.n}</button>}
                   {c.applied && <button type="button" className="link-btn" onClick={() => back(c)}>Back to static ({c.staticN})</button>}
+                  {c.dormant != null && (
+                    <button type="button" className="link-btn" title={`Sizing now sizes ${c.staticN}, so the applied ${c.dormant} is not used`} onClick={() => back(c)}>Clear applied {c.dormant}</button>
+                  )}
                 </span>
               </li>
           ))}

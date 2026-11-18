@@ -137,7 +137,12 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   // ---- the result is kept for Sizing's verdict chip; an applied fleet it confirms is refreshed ----
   useEffect(() => {
     if (!R || !forSizing) return
-    const types = Object.fromEntries(R.res.types.map(t => [t.vehicleId, { fleet: fleetBy[t.vehicleId] ?? 0, verdict: R.res.gridlock ? 'gridlock' as const : t.verdict }]))
+    // `smallest`: one fewer cannot meet. Known now when one fewer could not reach the target utilization
+    // (it is not run); otherwise written when the one-fewer run below finishes.
+    const types = Object.fromEntries(R.res.types.map(t => {
+      const n = fleetBy[t.vehicleId] ?? 0, verdict = R.res.gridlock ? 'gridlock' as const : t.verdict
+      return [t.vehicleId, { fleet: n, verdict, ...(verdict === 'meets' && !oneFewerMayMeet(t, n) ? { smallest: true } : {}) }]
+    }))
     const fresh = getProject(project.id)
     if (!fresh) return
     const ss = fresh.simSettings ?? {}
@@ -150,23 +155,35 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [R])
 
-  // ---- "Use N in pricing" needs the smallest fleet that Meets: run one fewer, per type that Meets above the engine ----
+  // ---- "Use N" needs the smallest fleet that Meets: run one fewer, per type that Meets ----
+  /** Could one vehicle fewer still reach the target utilization? If not, it is not worth running. */
+  function oneFewerMayMeet(t: { utilization: number }, n: number) { return n > 1 && (t.utilization * n) / (n - 1) <= targetU }
+  /** Records on the stored run whether this type's count is the smallest that meets (Sizing's Use N). */
+  function markSmallest(vid: string, smallest: boolean) {
+    const fresh = getProject(project.id), run = fresh?.simSettings?.lastRun
+    const t = run?.types[vid]
+    if (!fresh || !run || run.key !== inputsKey || !t || t.fleet !== fleetBy[vid] || t.smallest === smallest) return
+    patchSimSettings(project.id, { lastRun: { ...run, types: { ...run.types, [vid]: { ...t, smallest } } } })
+  }
+
   const [lower, setLower] = useState<Record<string, Verdict | 'checking'>>({})
   useEffect(() => {
     setLower({})
     if (!R || R.res.gridlock) return
     // Oversized when one fewer passes all three checks too; pricing reads it as well.
-    const todo = R.res.types.filter(t => { const n = fleetBy[t.vehicleId] ?? 0; return t.verdict === 'meets' && n > 1 && (t.utilization * n) / (n - 1) <= targetU }).map(t => t.vehicleId)
+    const todo = R.res.types.filter(t => t.verdict === 'meets' && oneFewerMayMeet(t, fleetBy[t.vehicleId] ?? 0)).map(t => t.vehicleId)
     const tok = token.current
     const next = (i: number) => {
       if (i >= todo.length || tok !== token.current) return
       const vid = todo[i]
       setLower(m => ({ ...m, [vid]: 'checking' }))
       const S = createSim(inputs.layout, inputs.flows, simVehicles, { ...simConfig(assume.seed), fleet: { ...fleetBy, [vid]: fleetBy[vid] - 1 } })
-      if (!S) { setLower(m => ({ ...m, [vid]: 'short' })); return next(i + 1) }   // one fewer cannot even be placed
+      if (!S) { setLower(m => ({ ...m, [vid]: 'short' })); markSmallest(vid, true); return next(i + 1) }   // one fewer cannot even be placed
       runInSlices(S, runSec, () => {
         const r = results(S)
-        setLower(m => ({ ...m, [vid]: r.gridlock ? 'gridlock' : r.types.find(t => t.vehicleId === vid)?.verdict ?? 'short' }))
+        const v = r.gridlock ? 'gridlock' : r.types.find(t => t.vehicleId === vid)?.verdict ?? 'short'
+        setLower(m => ({ ...m, [vid]: v }))
+        markSmallest(vid, v !== 'meets')
         next(i + 1)
       }, () => tok === token.current)
     }

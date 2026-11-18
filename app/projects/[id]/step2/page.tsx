@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
 import PersistentHeader from '@/src/components/PersistentHeader'
+import ProjectLoadState from '@/src/components/ProjectLoadState'
 import { headerFromProject } from '@/src/lib/projectHeader'
 import VehicleFilters, { type StatusFilter } from '@/src/components/step2/VehicleFilters'
 import VehicleCard from '@/src/components/step2/VehicleCard'
@@ -186,21 +187,7 @@ export default function Step2Page() {
     [compareIds, qualifiedVehicles]
   )
 
-  if (loading) return (
-    <div className="app-shell">
-      <div className="step2-loading">Loading vehicles...</div>
-    </div>
-  )
-
-  if (error || !project) return (
-    <div className="app-shell">
-      <div className="step2-error">
-        <div className="step2-error-tag">Not Found</div>
-        <h1>Could not load project</h1>
-        <p>{error ?? 'This project does not exist in your browser. Try importing the project file or creating a new project.'}</p>
-      </div>
-    </div>
-  )
+  if (loading || error || !project) return <ProjectLoadState loading={loading} error={error} what="vehicles" />
 
   const headerData = headerFromProject(project)
 

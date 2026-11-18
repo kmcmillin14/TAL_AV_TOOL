@@ -1218,12 +1218,19 @@ step ribbon is unchanged.
     full-shift run stores `simSettings.lastRun` (`key`, and per type `fleet` and `verdict`) only when
     it changed. Sizing's total carries one state, derived per vehicle type by `fleetCheck`
     (`src/calc/sim/verification.ts`) and summed by `fleetCheckSummary`:
-    - **Estimated** — no run for the type, or its inputs changed since (*layout changed — verify again*);
-    - **Verified** — the last run met all three checks at or below the static count, or a raised
-      count is applied and current;
-    - **Suggested N** — the last run met at N above the static count, not yet applied: **Use N**
-      applies it (raise-only, as above);
-    - **Not verified** — the last run fell short or gridlocked at its count (orange; red for gridlock).
+    - **Estimated** — no run for the type; its inputs changed since (*layout changed — verify again*);
+      the last run was too short to judge; or it failed with *fewer* vehicles than the static count
+      (which says nothing about the static count);
+    - **Verified** — the last run met all three checks at or below the static count (the detail
+      names the count run when it was fewer), or a raised count is applied and current;
+    - **Suggested N** — the last run met at N above the static count, not yet applied. **Use N** is
+      offered only once one fewer has been run and does not meet (`lastRun.types[id].smallest`,
+      written by Simulation's one-fewer check) — otherwise the row asks to confirm on Simulation, so
+      Sizing never raises the quote further than needed (raise-only, as above);
+    - **Not verified** — the last run fell short or gridlocked at or above the static count
+      (orange; red for gridlock).
+    An applied count the static calc has since caught up with is unused (raise-only) and Sizing
+    offers **Clear applied N**.
     The headline shows the worst of the types (Not verified → Suggested → Estimated → Verified).
     Sizing's build-up gains a fourth section, **04 Verification**: one row per type with the static
     count, the state and its action (Use N / Back to static), and **Verify fleet size**, which opens

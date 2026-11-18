@@ -68,8 +68,13 @@ export default function AssumptionsPanel({ project: p, only, onPatch }: Props) {
                       key={r.edit.shown} type="number" className="mono" aria-label={r.label}
                       defaultValue={r.edit.shown} min={r.edit.min} max={r.edit.max} step={1}
                       onBlur={e => {
-                        const v = Number(e.target.value), ed = r.edit!
-                        if (Number.isFinite(v) && v !== ed.shown) onPatch({ [ed.key]: Math.min(ed.max, Math.max(ed.min, v)) * ed.scale })
+                        // Whole numbers, clamped; an empty box returns to the default. The box then shows
+                        // what was kept, so it never disagrees with the figures it drives.
+                        const ed = r.edit!, raw = e.target.value.trim(), v = Math.round(Number(raw))
+                        if (raw === '') { onPatch({ [ed.key]: undefined }); return }
+                        const next = Number.isFinite(v) ? Math.min(ed.max, Math.max(ed.min, v)) : ed.shown
+                        e.target.value = String(next)
+                        if (next !== ed.shown) onPatch({ [ed.key]: next * ed.scale })
                       }}
                       onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }}
                     />

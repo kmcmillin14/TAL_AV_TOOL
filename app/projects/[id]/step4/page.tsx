@@ -35,7 +35,7 @@ export default function SimulatePage() {
   const head = (
     <div className="sim-step-head">
       <FleetCheckBadge checks={verify.checks} />
-      <SimTabs label="Fleet size verification" value={view} onChange={setView}
+      <SimTabs label="Simulation view" value={view} onChange={setView}
         tabs={[{ id: 'ops', label: 'Operations' }, { id: 'layout', label: 'Layout check' }]} />
     </div>
   )

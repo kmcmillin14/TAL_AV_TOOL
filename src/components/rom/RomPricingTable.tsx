@@ -41,7 +41,7 @@ export default function RomPricingTable({ pricing, vehicleById }: Props) {
         </summary>
         <p className="rom-price-breakdown-note">
           Hardware only — the headline total above also includes Integration, Software, and
-          Adders (see Step 4).
+          Adders (see the quote above).
         </p>
         <table className="rom-price-table">
           <thead>

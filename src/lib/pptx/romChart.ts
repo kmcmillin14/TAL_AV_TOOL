@@ -110,7 +110,7 @@ export function renderPaybackChartPng(rom: RomSummary): Uint8Array | null {
     ctx.fillStyle = RED; ctx.textAlign = 'center'; ctx.fillText(text, chipX + (tw / 2 + padX), chipY + chipH / 2)
   } else {
     ctx.fillStyle = GRAY; ctx.font = "600 24px 'Toyota Type',-apple-system,sans-serif"; ctx.textAlign = 'left'
-    ctx.fillText('No payback in service life — add operators displaced (Step 4)', x0 + 12, y0 + 18)
+    ctx.fillText('No payback in service life — add operators displaced (Step 1)', x0 + 12, y0 + 18)
   }
 
   // Cumulative line + point markers.

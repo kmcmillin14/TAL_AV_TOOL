@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-11-18 — Fixes after /code-review (10 findings)
+
+- Sizing's **Use N** is offered only when one fewer was run and does not meet (`lastRun…smallest`, set by
+  Simulation's one-fewer check); before, a run at 12 could raise the quote to 12 when 7 would do.
+- A run at another count says only what it can: failing with fewer than the static count leaves it
+  Estimated (it was never run); meeting with fewer verifies it and names the count run; a run too short
+  to judge is Estimated with that reason (it used to read "not yet checked").
+- An applied count the static calc caught up with can be cleared from Sizing (*Clear applied N*).
+- Pricing's maintenance % and service life take whole numbers, show what was kept, and an empty box
+  returns to the default (it used to save 0 / 1 yr, or keep showing a dropped value).
+- Wording: Step 1's pricing-gate and labor-rate help point to Step 5; the deck's no-payback note to
+  Step 1; Help's overview mock draws the seven steps. Steps 2 and 3 use `ProjectLoadState`. The
+  Simulation view switch has its own accessible name.
+
 ## 2026-11-18 — Cleanup after review (/simplify, 4 reviewers)
 
 - No behaviour or figure changes except one: the bottom step bar returns on Simulation's Layout check

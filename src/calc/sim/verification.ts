@@ -21,30 +21,42 @@ export interface FleetCheck {
   applied: boolean
   /** A run or an applied count exists but its inputs changed since. */
   stale: boolean
-  /** The failing verdict, for Not verified. */
+  /** The last run's verdict, when it explains the state (Not verified; a failed or too-short run below). */
   verdict?: Verdict
+  /** The fleet the last run used, when it was not the count the state refers to. */
+  ranAt?: number
+  /** Suggested: one fewer was run and does not meet, so `n` is the smallest — Use N may apply it. */
+  confirmed?: boolean
+  /** An applied count the static calc has caught up with: raise-only pricing ignores it; it can be cleared. */
+  dormant?: number
 }
 
 interface Stored {
-  lastRun?: { key: string; types: Record<string, { fleet: number; verdict: Verdict }> }
+  lastRun?: { key: string; types: Record<string, { fleet: number; verdict: Verdict; smallest?: boolean }> }
   appliedFleet?: Record<string, { fleet: number; key: string }>
 }
 
-/** One type's state. `key` is the current `simInputsKey`. */
+/** One type's state. `key` is the current `simInputsKey`. A run at another count than the static one says
+ *  only what it can: meeting with fewer verifies the static count; failing with fewer says nothing of it. */
 export function fleetCheck(vehicleId: string, staticN: number, stored: Stored | undefined, key: string): FleetCheck {
-  const base = { vehicleId, staticN, n: staticN, applied: false, stale: false }
   const applied = stored?.appliedFleet?.[vehicleId]
   // A raised count in pricing was verified when applied; it stays so while its inputs hold.
   const status = applied && appliedFleetStatus(applied, staticN, key)
+  const base = { vehicleId, staticN, n: staticN, applied: false, stale: false, ...(status === 'unused' ? { dormant: applied!.fleet } : {}) }
   if (applied && status !== 'unused') {
     return status === 'current' ? { ...base, state: 'verified', n: applied.fleet, applied: true } : { ...base, state: 'estimated', n: applied.fleet, applied: true, stale: true }
   }
   const run = stored?.lastRun?.types[vehicleId]
   if (!run) return { ...base, state: 'estimated' }
   if (stored!.lastRun!.key !== key) return { ...base, state: 'estimated', stale: true }
-  if (run.verdict === 'meets') return run.fleet > staticN ? { ...base, state: 'suggested', n: run.fleet } : { ...base, state: 'verified' }
-  if (run.verdict === 'short' || run.verdict === 'gridlock') return { ...base, state: 'notVerified', n: run.fleet, verdict: run.verdict }
-  return { ...base, state: 'estimated' }
+  const failed = run.verdict === 'short' || run.verdict === 'gridlock'
+  if (run.verdict === 'meets') {
+    return run.fleet > staticN
+      ? { ...base, state: 'suggested', n: run.fleet, confirmed: run.smallest === true }
+      : { ...base, state: 'verified', ...(run.fleet < staticN ? { ranAt: run.fleet } : {}) }
+  }
+  if (failed && run.fleet >= staticN) return { ...base, state: 'notVerified', n: run.fleet, verdict: run.verdict }
+  return { ...base, state: 'estimated', ranAt: run.fleet, verdict: run.verdict }
 }
 
 const WORST: FleetCheckState[] = ['notVerified', 'suggested', 'estimated', 'verified']
