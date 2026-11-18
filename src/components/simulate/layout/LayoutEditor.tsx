@@ -32,7 +32,7 @@ import { getDrawingData, type StoredProject } from '@/src/lib/storage'
 import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import DrawingCard from './DrawingCard'
-import { FlowsList, PlaceCard, placeProgress, ValidationList, type Armed } from './SimCards'
+import { ChargersCard, FlowsList, PlaceCard, placeProgress, ValidationList, type Armed } from './SimCards'
 import { Section } from '../inspector/InspectorParts'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import LayoutCanvas, { POINT_HIT_PX, rackLabel, type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
@@ -40,11 +40,11 @@ import LayoutPanel, { Segmented } from './LayoutPanel'
 import PathBar from './PathBar'
 import RackBar from './RackBar'
 import { flipRack, rackFromBox, rackGeometry, rackLengthFor, stretchRack } from '@/src/calc/sim/racks'
-import SimTabs from '../ui/SimTabs'
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
 /** The side panel's tabs. */
-export type PanelTab = 'edit' | 'flows' | 'checks'
+/** The side panel's content, set by the stage strip (2026-11-18): Setup · Layout · Connect · Chargers. */
+export type PanelTab = 'setup' | 'edit' | 'connect' | 'chargers'
 
 type Tool = 'lasso' | 'hand' | 'points' | 'routes' | 'highway' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
@@ -143,8 +143,10 @@ interface Props {
   /** The simulation's vehicle types (the flow inspector's Vehicle list) and a flow's choice among them. */
   vehicleTypes?: Vehicle[]
   onFlowVehicle?: (flowId: string, vehicleId: string) => void
-  /** The page's tabs (Layout · Sim · Data), at the top of the side panel. */
-  modeTabs: ReactNode
+  /** Setup's payloads card (the shell owns the confirmation). */
+  setup: ReactNode
+  /** Chargers to place (`suggestedChargers`). */
+  suggestedChargers: number
 }
 const PATH_KIND = { dir: 'two', lane: 'single' } as const
 /** A rack face this close to a path's centre line stands beside it (its endpoint in the aisle), ft. */
@@ -154,7 +156,7 @@ const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, tab, onTab: setTab, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, modeTabs }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, tab, onTab: setTab, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, setup, suggestedChargers }: Props) {
   /** Step 1 loads — a rack's pallet. */
   const loads = useByValue(project.loads ?? NO_LOADS)
   /** A new rack's pallet, already confirmed upstream (owner, 2026-11-17): the simulation vehicles' first
@@ -262,7 +264,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   /** Stop whatever is half-drawn: a route, a flow, the scale marks. */
   const cancel = () => { setChainFrom(null); setMarks(null); setArmed(null) }
   const chooseTool = (t: Tool) => {
-    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); setTab('edit') } return }
+    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); setTab('setup') } return }
     setTool(t); cancel(); setDrag(null)
   }
   /** Undo/redo can remove what a half-drawn route or a selection points at: drop both. */
@@ -577,8 +579,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const onFix = (c: ReadinessCheck) => {
     const a = fixAction(c)
     if (!a) return
-    if ('tab' in a) { setTab(a.tab); return }
-    if ('arm' in a) { armHome(a.arm); return }
+    if ('tab' in a) { setTab('connect'); return }
+    if ('arm' in a) { setTab('chargers'); armHome(a.arm); return }
     chooseTool(a.tool)                      // cancels any chain — so the route's start is set after it
     if (a.startFrom && byId.has(a.startFrom)) { locate({ kind: 'point', id: a.startFrom }); setChainFrom(a.startFrom) }
   }
@@ -764,11 +766,9 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     }
   })() : null
 
-  // Side panel: the Layout tab's folded cards, with a status word each; scaling brings Drawing to the top.
+  // Side panel: Layout's folded cards, with a status word each; the drawing card is Setup's.
   const { names } = place, toPlace = place.unplaced.length
-  const drawingFold = (
-    <Section key="drawing" title="Drawing" open={!!marks || (!!bg && !bg.scale)}
-      status={!bg ? 'None' : bg.scale ? 'Scaled' : 'Not scaled'} tone={bg && !bg.scale ? 'warn' : undefined}>
+  const drawingCard = (
       <DrawingCard
         background={bg}
         hasImage={!!image}
@@ -783,7 +783,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
         onOpacity={opacity => bg && setLayout({ ...layout, background: { ...bg, opacity } }, 'bg-opacity')}
         extentsFt={bg?.scale && bg.widthPx && bg.heightPx ? { w: bg.widthPx * scale, h: bg.heightPx * scale } : null}
       />
-    </Section>
   )
 
   return (
@@ -873,33 +872,38 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           <p className="sim-status" aria-live="polite">{hint}</p>
         </div>
         <div className="sim-side">
-          {modeTabs}
-          {/* Inside Layout: Edit (the selection, Drawing, Place on routes) · Flows · Validation. */}
-          <SimTabs small label="Layout panel" idPrefix="sim-panel" value={tab} onChange={setTab}
-            tabs={[{ id: 'edit', label: 'Edit' }, { id: 'flows', label: <>Flows <span className="num">{linked.length}/{flows.length}</span></> }, { id: 'checks', label: 'Validation' }]} />
-          <div className="sim-side-body" role="tabpanel" aria-labelledby={`sim-panel-${tab}`}>
+          <div className="sim-side-body">
             {banner}
-            {tab === 'checks' ? (
-              <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); setTab('edit') }} onFix={onFix} />
-            ) : tab === 'flows' ? (
-              <FlowsList
-                layout={layout}
-                flows={flows}
-                simVehicleOf={simVehicleOf}
-                vehicleById={vehicleById}
-                settings={settings}
-                fleet={fleet}
-                unitSystem={unitSystem}
-                radiusFor={radiusFor}
-                onFlows={setFlows}
-                selectedId={selection?.kind === 'flow' ? selection.id : undefined}
-                onSelect={id => { setTool('lasso'); setSelection({ kind: 'flow', id }) }}
-                onLinkOnMap={() => chooseTool('flows')}
-                loads={loads}
-              />
+            {tab === 'setup' ? (
+              <>
+                <Section title="Drawing" open status={!bg ? 'Optional' : bg.scale ? 'Scaled' : 'Not scaled'} tone={bg && !bg.scale ? 'warn' : undefined}>{drawingCard}</Section>
+                <Section title="Payloads" open>{setup}</Section>
+              </>
+            ) : tab === 'connect' ? (
+              <>
+                <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); setTab('edit') }} onFix={onFix} />
+                <Section title={`Flows on the layout · ${linked.length} of ${flows.length}`} open>
+                  <FlowsList
+                    layout={layout}
+                    flows={flows}
+                    simVehicleOf={simVehicleOf}
+                    vehicleById={vehicleById}
+                    settings={settings}
+                    fleet={fleet}
+                    unitSystem={unitSystem}
+                    radiusFor={radiusFor}
+                    onFlows={setFlows}
+                    selectedId={selection?.kind === 'flow' ? selection.id : undefined}
+                    onSelect={id => { setTool('lasso'); setSelection({ kind: 'flow', id }) }}
+                    onLinkOnMap={() => chooseTool('flows')}
+                    loads={loads}
+                  />
+                </Section>
+              </>
+            ) : tab === 'chargers' ? (
+              <ChargersCard layout={layout} suggested={suggestedChargers} onArmHome={armHome} />
             ) : (
               <>
-                {marks && drawingFold}
                 <LayoutPanel
                   layout={layout}
                   flows={flows}
@@ -936,7 +940,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   onRateFocused={() => setJustAdded(null)}
                 />
                 <div className="sim-folds">
-                  {!marks && drawingFold}
                   <Section title="Place on routes" open={toPlace > 0 || !!armed}
                     status={names.length ? (toPlace ? `${toPlace} to place` : 'All placed') : undefined} tone={names.length && !toPlace ? 'good' : undefined}>
                     <PlaceCard
@@ -944,7 +947,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                       names={names}
                       armed={armed}
                       onArm={arm}
-                      onArmHome={armHome}
                     />
                   </Section>
                 </div>

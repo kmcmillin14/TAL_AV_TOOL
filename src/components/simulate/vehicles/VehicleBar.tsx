@@ -42,7 +42,7 @@ const DEFAULT_CUSTOM: Extract<SimPayload, { lengthIn: number }> = { lengthIn: 48
 const showIn = (i: number, u: UnitSystem) => String(u === 'metric' ? Math.round(units.dimension.toMetric(i)) : Math.round(i * 10) / 10)
 const dims = (l: { lengthIn?: number | null; widthIn?: number | null; heightIn?: number | null }, u: UnitSystem) =>
   [l.lengthIn, l.widthIn, l.heightIn].flatMap(i => (i ? [showIn(i, u)] : [])).join(' × ') + ` ${units.dimension.label(u)}`
-const loadLabel = (l: Load, u: UnitSystem) => `${l.unitType || 'Load'} · ${dims(l, u)}`
+export const loadLabel = (l: Load, u: UnitSystem) => `${l.unitType || 'Load'} · ${dims(l, u)}`
 
 export default function VehicleBar(p: Props) {
   const [open, setOpen] = useState<string | null>(null)

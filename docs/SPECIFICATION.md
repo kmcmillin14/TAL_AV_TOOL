@@ -677,6 +677,26 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 > page) and gains the Dashboard's operations tiles as its opening *Operations* view — see
 > *Workflow — seven steps* above. It stays optional: skipping it leaves the fleet *Estimated*.
 
+**Stage strip (owner, 2026-11-18; replaces the Layout · Sim · Data tabs and Layout's Edit · Flows ·
+Validation sub-tabs).** In *Layout check*, one strip above the workspace names the six stages in order;
+each shows a one-line status and can be opened at any time (not a wizard):
+
+| Stage | Opens | Status line | Done when |
+|---|---|---|---|
+| **Setup** | Side panel: the drawing (load, scale, opacity) and the payloads from Step 1, with **Confirm payloads** (`simSettings.payloadsConfirmed`) | *Drawing scaled · 2 payloads* | payloads confirmed (none in Step 1: not done — add them in Intake); the drawing is optional |
+| **Layout** | The editor and its panel (selection, *Place on routes*) | *12 of 16 flows placed* | every Sizing flow has both ends on the map |
+| **Connect** | Validation (blockers first), then the flows on the layout | *2 to fix* / *Connected* | no blockers |
+| **Chargers** | Chargers and parking to place, with a **suggested count** | *2 of 2 chargers* | at least the suggested count placed |
+| **Simulate** | The Sim view | *6 vehicles* / *Not ready* | — |
+| **Results** | The Data view | the fleet state (*Verified*, *Suggested 7*, …) | — |
+
+- *Suggested chargers* = ⌈Σ over types of fleet × (1 − availability)⌉, at least 1 — the vehicles the
+  static charging model has on a charger at once (`suggestedChargers`, `src/calc/sim/verification.ts`).
+- Simulate and Results need a runnable layout; pressed while it is not, they open Connect. A new
+  blocker while in them drops back to Connect. The head's validation status opens Connect.
+- The stage opens on Setup while nothing is drawn, else on Layout. Validation's fix buttons open the
+  stage that fixes them (a missing charger → Chargers).
+
 > **Status:** being built — engine, data model, page, layout editor and run view done (Milestones 1–4; the run view was pulled forward from Milestone 5 with the proof-of-concept features). Branch `feature/fleet-simulation`; full design in
 > `docs/superpowers/specs/2026-11-10-fleet-simulation-design-v2.md`, plan in
 > `docs/superpowers/plans/2026-11-10-fleet-simulation.md`. This section states the behaviour

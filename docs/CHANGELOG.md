@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-18 — Simulation: stage strip and Setup
+
+- Owner (plan step 2): Layout check gets one strip — **Setup · Layout · Connect · Chargers · Simulate ·
+  Results** — each with its status line, in place of the two tab rows. Nothing removed: Edit is Layout,
+  Validation and Flows are Connect, Sim and Data are Simulate and Results.
+- **Setup**: the drawing card moves here, with Step 1's payloads and **Confirm payloads**.
+- **Chargers**: charger and parking placing moves here from *Place on routes*, with a suggested count from
+  the static charging model.
+
 ## 2026-11-18 — Fixes after /code-review (10 findings)
 
 - Sizing's **Use N** is offered only when one fewer was run and does not meet (`lastRun…smallest`, set by

@@ -14,6 +14,7 @@ import { emptyLayout, hasLayout, unlinked } from '@/src/calc/sim/layoutEdit'
 import { checkStatus, readinessChecks } from '@/src/calc/sim/readiness'
 import { withVehicleOverrides } from '@/src/calc/sim/vehicle'
 import { clearanceRule, runFleet, runInputs } from '@/src/calc/sim/runInputs'
+import { suggestedChargers } from '@/src/calc/sim/verification'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import sample from '@/src/content/samples/simulate-sample.json'
 import rackSmall from '@/src/content/samples/simulate-racks-small.json'
@@ -23,7 +24,8 @@ import { createProject, getProject, patchSimSettings, updateProject, type Stored
 import { useRouter } from 'next/navigation'
 import { useByValue } from '@/src/lib/useByValue'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
-import SimTabs from './ui/SimTabs'
+import StageStrip, { type Stage, type StageInfo } from './ui/StageStrip'
+import SetupCard from './layout/SetupCard'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutEditor, { type PanelTab } from './layout/LayoutEditor'
@@ -55,11 +57,18 @@ interface Props {
   unitSystem: UnitSystem
   /** The step's own head content beside the title — Operations / Layout check and the fleet state. */
   headExtra?: ReactNode
+  /** Results' status line: the fleet state (Estimated, Verified, Suggested N, …). */
+  resultLabel: string
 }
 
-export default function SimulateShell({ project, vehicles, vehicleById, settings, fleet, unitSystem, headExtra }: Props) {
+/** Each layout stage's side panel, and back. */
+const STAGE_PANEL = { setup: 'setup', layout: 'edit', connect: 'connect', chargers: 'chargers' } as const satisfies Partial<Record<Stage, PanelTab>>
+const PANEL_STAGE: Record<PanelTab, Stage> = { setup: 'setup', edit: 'layout', connect: 'connect', chargers: 'chargers' }
+
+export default function SimulateShell({ project, vehicles, vehicleById, settings, fleet, unitSystem, headExtra, resultLabel }: Props) {
   const narrow = useIsNarrow()
-  const [mode, setMode] = useState<'layout' | 'sim' | 'data'>('layout')
+  /** The stage strip's stage; until one is picked, Setup while nothing is drawn, else Layout. */
+  const [picked, setStage] = useState<Stage | null>(null)
   const { simLayout, flows = [] } = project
   // What a run drives, built once for validation and the run itself. Kept stable by value: saving
   // a run's result rewrites simSettings, and that must not rebuild the inputs and restart the run.
@@ -121,15 +130,16 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     [layoutV, flowsV, simVehicles, inputs, fleetNeeded],
   )
   const status = useMemo(() => checkStatus(checks), [checks])
-  /** The editor's side-panel tab — owned here so the Validation button can open it. */
-  const [tab, setTab] = useState<PanelTab>('edit')
   const canRun = status.blockers === 0
-  // Run mode is shown only while the run can happen; a new red item drops back to the layout.
-  // What shows: Sim or Data only while the run can happen. A new red item drops back to Layout and
-  // stays there (no jump back into Sim once it is fixed — Sim is a click away).
-  if (!canRun && mode !== 'layout') setMode('layout')
-  const shown = canRun ? mode : 'layout', running = shown !== 'layout'
   const empty = !hasLayout(simLayout)
+  // Simulate and Results only while the run can happen. A new red item drops back to Connect and stays
+  // there (no jump back into the run once it is fixed — it is a click away).
+  const wanted = picked ?? (empty ? 'setup' : 'layout')
+  if (!canRun && (wanted === 'simulate' || wanted === 'results')) setStage('connect')
+  const stage: Stage = !canRun && (wanted === 'simulate' || wanted === 'results') ? 'connect' : wanted
+  const running = stage === 'simulate' || stage === 'results'
+  const tab = STAGE_PANEL[stage as keyof typeof STAGE_PANEL] ?? 'edit'
+  const setTab = useCallback((t: PanelTab) => setStage(PANEL_STAGE[t]), [])
   const sampleOn = flows.some(f => isSample(f.id))
   // The sample brings its own flows, so it is offered only where it cannot change a real quote.
   const canSample = empty && flows.length === 0
@@ -171,16 +181,30 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
       simLayout: emptyLayout(),
       flows: flows.filter(f => !isSample(f.id)).map(unlinked),
     })
-    setMode('layout')
+    setStage('setup')
   }
 
-  // The page's tabs (owner, 2026-11-16): Layout · Sim · Data at the top of the side panel, the map always
-  // on the left. Sim and Data need a runnable layout (disabled with the first blocker as the reason).
-  const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix Validation first'} — click for the list`
-  const modeTabs = (
-    <SimTabs label="Fleet size verification" idPrefix="sim-mode" value={shown} onChange={setMode} onBlocked={() => setTab('checks')}
-      tabs={[{ id: 'layout', label: 'Layout' }, { id: 'sim', label: 'Sim', blocked }, { id: 'data', label: 'Data', blocked }]} />
-  )
+  // The stage strip (owner, 2026-11-18): each stage's one-line status; Simulate and Results need a
+  // runnable layout (pressed while blocked, they open Connect).
+  const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix Validation first'} — opens Connect`
+  const bg = simLayout?.background
+  const linkedN = inputs.flows.length, flowN = flowsV.length
+  const chargersN = simLayout?.points.filter(p => p.type === 'charger').length ?? 0
+  const chargersWanted = useMemo(() => suggestedChargers(simFleet), [simFleet])
+  const confirmed = !!ss?.payloadsConfirmed
+  const stages: StageInfo[] = [
+    { id: 'setup', label: 'Setup', done: confirmed && loads.length > 0,
+      status: [bg ? (bg.scale ? 'Drawing scaled' : 'Drawing not scaled') : 'No drawing', loads.length ? `${loads.length} payload${loads.length === 1 ? '' : 's'}${confirmed ? ' ✓' : ''}` : 'No payloads'].join(' · ') },
+    { id: 'layout', label: 'Layout', done: flowN > 0 && linkedN === flowN,
+      status: flowN ? `${linkedN} of ${flowN} flows placed` : empty ? 'Draw paths, place points' : 'No flows yet' },
+    { id: 'connect', label: 'Connect', done: !empty && status.blockers === 0,
+      status: empty ? '—' : status.blockers ? `${status.blockers} to fix` : 'Connected' },
+    { id: 'chargers', label: 'Chargers', done: chargersN >= chargersWanted,
+      status: chargersN >= chargersWanted ? `${chargersN} placed · ${chargersWanted} suggested` : `${chargersN} of ${chargersWanted} chargers` },
+    { id: 'simulate', label: 'Simulate', blocked, status: canRun ? `${fleetNeeded} vehicle${fleetNeeded === 1 ? '' : 's'}` : 'Not ready' },
+    { id: 'results', label: 'Results', blocked, status: resultLabel },
+  ]
+  const setup = <SetupCard projectId={project.id} loads={loads} confirmed={confirmed} unitSystem={unitSystem} onConfirm={c => patchSimSettings(project.id, { payloadsConfirmed: c || undefined })} />
 
   // The banner sits at the top of the side panel (on a phone, above the page).
   const shownSample = sampleOn ? sampleOf(flows.find(f => isSample(f.id))!.id) : null
@@ -203,7 +227,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           {!running && (
             /* Validation, live: one status, a click opens the list in the side panel. */
             <button type="button" id="sim-valid" className="btn ghost sim-valid-btn"
-              disabled={narrow} onClick={() => setTab('checks')} title={checks[0]?.level === 'bad' ? checks[0].text : 'Open the validation list'}>
+              disabled={narrow} onClick={() => setStage('connect')} title={checks[0]?.level === 'bad' ? checks[0].text : 'Open the validation list'}>
               <i className={`sim-vdot is-${status.tone}`} aria-hidden />{statusLabel(status)}
               {status.warnings > 0 && <span className="sim-valid-sub">{status.warnings} warning{status.warnings === 1 ? '' : 's'}</span>}
             </button>
@@ -235,19 +259,20 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           placed={placed} stepped={stepped} unitSystem={unitSystem} onTypes={setTypes} onFleet={setFleet} />
       )}
       {narrow && banner}
+      {!narrow && <StageStrip stages={stages} value={stage} onChange={setStage} onBlocked={() => setStage('connect')} />}
 
       {narrow ? (
         <section className="sim-canvas" aria-label="Simulation layout">
           <div className="empty-state"><h3>Open on a desktop to edit the layout</h3></div>
         </section>
       ) : running ? (
-        <RunView view={shown === 'data' ? 'data' : 'sim'} modeTabs={modeTabs} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
+        <RunView view={stage === 'results' ? 'data' : 'sim'} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           overridden={overriddenIds}
           registerLayoutWriter={registerLayoutWriter}
-          tab={tab} onTab={setTab} status={status} banner={banner} runAs={runAs} payloads={payloads} modeTabs={modeTabs}
+          tab={tab} onTab={setTab} status={status} banner={banner} runAs={runAs} payloads={payloads} setup={setup} suggestedChargers={chargersWanted}
           vehicleTypes={typeVehicles} onFlowVehicle={setFlowVehicle}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>

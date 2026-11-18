@@ -15,6 +15,7 @@ import SimTabs from '@/src/components/simulate/ui/SimTabs'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import ProjectLoadState from '@/src/components/ProjectLoadState'
 import { hasLayout } from '@/src/calc/sim/layoutEdit'
+import { FLEET_CHECK_LABEL } from '@/src/calc/sim/verification'
 import SimulateShell from '@/src/components/simulate/SimulateShell'
 import { headerFromProject } from '@/src/lib/projectHeader'
 import { useFleetData } from '@/src/lib/useFleetData'
@@ -31,6 +32,7 @@ export default function SimulatePage() {
 
   if (loading || error || !project) return <ProjectLoadState loading={loading} error={error} what="simulation" />
 
+  const resultLabel = verify.state === 'suggested' && verify.checks.length === 1 ? `Suggested ${verify.checks[0].n}` : FLEET_CHECK_LABEL[verify.state]
   const view = picked ?? (hasLayout(project.simLayout) ? 'layout' : 'ops')
   const head = (
     <div className="sim-step-head">
@@ -50,7 +52,7 @@ export default function SimulatePage() {
       />
       <div className="workspace">
         {view === 'layout' ? (
-          <SimulateShell project={project} vehicles={data.vehicles} vehicleById={data.vehicleById} settings={data.settings} fleet={data.fleet} unitSystem={unitSystem} headExtra={head} />
+          <SimulateShell project={project} vehicles={data.vehicles} vehicleById={data.vehicleById} settings={data.settings} fleet={data.fleet} unitSystem={unitSystem} headExtra={head} resultLabel={resultLabel} />
         ) : (
           <>
             <div className="engine-head with-actions sim-head">

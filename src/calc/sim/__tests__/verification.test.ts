@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fleetCheck, fleetCheckSummary } from '../verification'
+import { fleetCheck, fleetCheckSummary, suggestedChargers } from '../verification'
 
 const run = (fleet: number, verdict: 'meets' | 'short' | 'gridlock' | 'tight' | 'warming', key = 'k', smallest?: boolean) => ({ lastRun: { key, types: { cb18: { fleet, verdict, ...(smallest != null ? { smallest } : {}) } } } })
 
@@ -43,5 +43,12 @@ describe('fleet size verification state', () => {
     expect(fleetCheckSummary([c('verified'), c('estimated')])).toBe('estimated')
     expect(fleetCheckSummary([c('suggested'), c('estimated')])).toBe('suggested')
     expect(fleetCheckSummary([c('suggested'), c('notVerified')])).toBe('notVerified')
+  })
+  it('suggests the chargers the static model has busy at once, at least one', () => {
+    const g = (fleetSold: number, availability?: number) => ({ fleetSold, charging: { availability } }) as never
+    expect(suggestedChargers({ groups: [] })).toBe(1)
+    expect(suggestedChargers({ groups: [g(6, 1)] })).toBe(1)
+    expect(suggestedChargers({ groups: [g(6, 0.7)] })).toBe(2)          // 1.8 on charge
+    expect(suggestedChargers({ groups: [g(6, 0.7), g(4, 0.5)] })).toBe(4) // 1.8 + 2
   })
 })

@@ -57,11 +57,9 @@ interface Props {
   onResetFleet: (vehicleIds: string[]) => void
   engineFleet: Record<string, number>
   fleetBy: Record<string, number>
-  /** The page's tab (owner, 2026-11-16: "Layout · Sim · Data"): the map playing the run, or the run's
+  /** The stage (Simulate or Results, 2026-11-18): the map playing the run, or the run's
    *  data (charts and tables). Both share this run and its verdict tiles. */
   view: 'sim' | 'data'
-  /** The page's tabs (Layout · Sim · Data), at the top of the side panel. */
-  modeTabs: ReactNode
   /** The sample banner, at the top of the side panel. */
   banner?: ReactNode
 }
@@ -86,7 +84,7 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 const NO_LOADS: NonNullable<StoredProject['loads']> = []
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view, modeTabs, banner }: Props) {
+export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view, banner }: Props) {
   const simSettings = project.simSettings ?? {}
   /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
   const ownConditions = ownConditionsOf(simSettings), forSizing = !differs && !ownConditions
@@ -390,8 +388,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
       </div>
       {/* The side panel: the page's tabs, then Sim's fleet or the run's data. */}
       <div className="sim-side">
-        {modeTabs}
-        <div className="sim-side-body" role="tabpanel" id="sim-mode-panel" aria-labelledby={`sim-mode-${view}`}>
+        <div className="sim-side-body">
           {banner}
           <div hidden={view !== 'sim'} className="sim-sim-pane">{fleetPane}{summary}</div>
           <div hidden={view !== 'data'} className="sim-data-pane">{dataPane}</div>

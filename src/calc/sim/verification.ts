@@ -83,3 +83,10 @@ export function projectFleetChecks(project: (SimInputsLike & { simSettings?: Sto
   const checks = fleet.groups.map(g => fleetCheck(g.vehicleId, staticBy[g.vehicleId] ?? 0, ss, key))
   return { checks, state: fleetCheckSummary(checks), key }
 }
+
+/** Chargers to place (stage strip, 2026-11-18): the vehicles the static charging model has on a charger at
+ *  once — Σ fleet × (1 − availability), rounded up — and at least one. */
+export function suggestedChargers(fleet: Pick<FleetSummary, 'groups'>): number {
+  const onCharge = fleet.groups.reduce((s, g) => s + g.fleetSold * (1 - (g.charging.availability ?? 1)), 0)
+  return Math.max(1, Math.ceil(onCharge - 1e-9))
+}

@@ -1,7 +1,8 @@
 'use client'
 
 // The layout editor's side panel parts (proof of concept; QoL pass):
-//   Place on routes — the Sizing flows' location names, each placed with one click (plus chargers, parking)
+//   Place on routes — the Sizing flows' location names, each placed with one click
+//   Chargers        — the Chargers stage: chargers and parking to place, against a suggested count
 //   Validation      — the live checks (src/calc/sim/readiness.ts): locate and fix each
 //   Flows           — the Flows tab: every flow, its Sizing distance and its distance on the layout, the
 //                     Fleet Engine figure, and linking with a before → after confirmation (it moves the quote)
@@ -45,16 +46,14 @@ export function placeProgress(layout: SimLayout, flows: ProjectFlow[]) {
   return { names, unplaced: names.filter(n => !layout.points.some(p => sameName(p.name, n.name))) }
 }
 
-export function PlaceCard({ layout, names, armed, onArm, onArmHome }: {
+export function PlaceCard({ layout, names, armed, onArm }: {
   layout: SimLayout
   names: FlowName[]
   armed: Armed | null
   onArm: (a: Armed) => void
-  onArmHome: (type: 'charger' | 'parking') => void
 }) {
   const [types, setTypes] = useState<Record<string, SimPointType>>({})
   const placed = (n: string) => layout.points.filter(p => sameName(p.name, n))
-  const count = (t: SimPointType) => layout.points.filter(p => p.type === t).length
   return (
     <section className="sim-card" aria-label="Place on routes">
       {!names.length && <p className="sim-card-note">No Sizing flows yet — add them on Sizing, or draw flows with the Flow tool.</p>}
@@ -79,10 +78,32 @@ export function PlaceCard({ layout, names, armed, onArm, onArmHome }: {
           </div>
         )
       })}
+    </section>
+  )
+}
+
+/** The Chargers stage: chargers against the suggested count (the static charging model's vehicles on a
+ *  charger at once), then parking — each placed with one click. */
+export function ChargersCard({ layout, suggested, onArmHome }: {
+  layout: SimLayout
+  suggested: number
+  onArmHome: (type: 'charger' | 'parking') => void
+}) {
+  const count = (t: SimPointType) => layout.points.filter(p => p.type === t).length
+  const chargers = count('charger')
+  return (
+    <section className="sim-card" aria-label="Chargers">
+      <p className="sim-card-note">
+        Suggested: <b>{suggested}</b> charger{suggested === 1 ? '' : 's'} — the vehicles Sizing’s charging model has on charge at once.
+        Place them near the busiest route; parking is optional.
+      </p>
       {(['charger', 'parking'] as const).map(t => (
         <div key={t} className="sim-check-item">
           <span className={`sim-dot kind-${t} is-placed`} />
-          <div className="sim-check-main"><div className="nm">{t === 'charger' ? 'Charger' : 'Parking spot'}</div><div className="meta">{count(t)} placed</div></div>
+          <div className="sim-check-main">
+            <div className="nm">{t === 'charger' ? 'Charger' : 'Parking spot'}</div>
+            <div className="meta">{t === 'charger' ? `${chargers} of ${suggested} placed` : `${count(t)} placed`}</div>
+          </div>
           <button type="button" className="btn btn-sm ghost" onClick={() => onArmHome(t)}>Place</button>
         </div>
       ))}

@@ -108,6 +108,8 @@ export const simLayoutSchema = z.object({
 })
 
 export const simSettingsSchema = z.object({
+  /** Setup: Step 1's payloads confirmed for the simulation (one click; the stage strip's Setup). */
+  payloadsConfirmed: z.boolean().optional(),
   /** Vehicles per vehicle id. */
   fleet: z.record(z.string(), z.number().int().min(0).max(500)).optional(),
   demandPct: z.number().min(1).max(500).optional(),
