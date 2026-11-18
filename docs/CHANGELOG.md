@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-18 — Fleet simulation: ordered queue (gridlock prevention)
+
+- Owner: vehicles **queue in order** in a lane — none claims a stop while another vehicle is ahead of it
+  on its path before that stop, and a stop held for an old route is let go on re-route. Two stops in
+  series on a one-way lane no longer deadlock (new test: 5 seeds, 3 vehicles, a day — was 4 of 5 gridlocked).
+- The Small · Medium · Large examples run a full week on 5 seeds with no gridlock.
+- Output moves slightly: the O-12 sweep still gridlocks the same 4 of 12 runs at 6 vehicles / 130 %;
+  one now locks near Wrapper Outfeed instead of Warehouse Infeed.
+
 ## 2026-11-17 — Fleet simulation: examples at any time
 
 - An **Examples** menu in the page head, always there: on an empty project the example loads in place; on a

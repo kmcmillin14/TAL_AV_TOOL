@@ -817,9 +817,13 @@ step ribbon is unchanged.
     centre line) has its endpoint **in the aisle**, on the centre line where the vehicle stops, and its
     face set off by the gap (`offsetFt`) — no spur; others queue behind it in the aisle. Further away it
     joins by a spur from its face. Sizing's lift for a rack is its positions' average level height.
-    *Open (engine, noted 2026-11-17):* two rack stops in series on one one-way lane can deadlock — a
-    vehicle bound for the far rack holds it while queued behind one working the near rack, which cannot
-    drive on through it. The examples serve one rack per aisle; floor lanes will need the rule fixed.
+  - *Ordered queue (owner, 2026-11-18):* a vehicle never claims — or keeps — a stop in the lane while
+    another vehicle is ahead of it on its path before that stop; it follows behind and claims once the
+    one ahead has gone past. A stop it held for an earlier route is let go when it re-routes. (Fixes the
+    deadlock of two stops in series on one one-way lane: the vehicle bound for the far stop no longer
+    holds it while queued behind one working the near stop.) Stops on dead-end spurs keep the spur rule.
+    Next: an aisle lock for dead-end and two-way single-lane aisles (one vehicle in, others wait at the
+    gate).
 - **Example sites (owner, 2026-11-17).** An empty Simulate page offers **Small · Medium · Large** sites
   with racking (2 CB18 · 4 racks; 6 CB18 · 8 racks; 12 CB18 · 16 racks; one rack per one-way aisle,
   a one-way loop round them, docks in and out, chargers and parking; CB18 putaway and retrieval sized

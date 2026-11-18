@@ -300,8 +300,28 @@ function setRoute(S: SimState, v: SimVehicle, dst: number): boolean {
     const r = route(S.G, to, dst); if (!r) return false
     v.nodes = [from, ...r.nodes]; v.edges = [e, ...r.edges]; v.pi = 1
   }
+  dropStale(S, v)
   if (v.atNode && v.pi >= v.nodes.length) arrive(S, v)
   return true
+}
+
+/**
+ * A new route gives up the zones no longer on it (owner, 2026-11-18): a vehicle that held a zone to
+ * drive through it, then turned away for a long way round, kept it for the whole lap — and came up
+ * behind vehicles that had to drive through it. A zone the vehicle is still on (its spot, or its spur)
+ * is kept; the move phase releases that one once the body is clear.
+ */
+function dropStale(S: SimState, v: SimVehicle) {
+  if (!v.held.size) return
+  const ahead = new Set(v.nodes.slice(v.pi))
+  for (const z of [...v.held]) {
+    const n = S.G.zoneNode.get(z)
+    if (n == null || ahead.has(n)) continue
+    const br = S.G.zoneBranch.get(z), q = S.G.points[n]
+    if (br?.has(v.node) || (v.pi < v.nodes.length && br?.has(v.nodes[v.pi])) || Math.hypot(q.x - v.x, q.y - v.y) < envLen(v) + 1) continue
+    v.held.delete(z)
+    if (S.locks.get(z) === v.i) S.locks.delete(z)
+  }
 }
 
 function nearestFree(S: SimState, v: SimVehicle, nodes: number[]) {
@@ -474,6 +494,30 @@ function pathAccs(S: SimState, v: SimVehicle) {
   }
   return a
 }
+/**
+ * Another vehicle on v's path in front of v, up to and including path node i (stopped at one of those
+ * nodes, or driving along v's path between them the same way), or null. A vehicle at v's own spot or
+ * behind it does not count; nor does one crossing at a junction on its way elsewhere once it has left.
+ */
+function aheadBefore(S: SimState, v: SimVehicle, i: number): SimVehicle | null {
+  const on = new Map<number, number>()
+  for (let j = v.pi; j <= i; j++) on.set(v.nodes[j], j)
+  for (const u of S.veh) {
+    if (u === v) continue
+    if (u.atNode || !(MOVING.has(u.mode) && u.pi < u.nodes.length)) {
+      // Stopped (working, waiting, at home): in front if it stands at one of those nodes.
+      if (on.has(u.node)) return u
+      continue
+    }
+    // Driving: on the edge from path node j−1 to j the same way (on v's own edge, only if ahead of it).
+    const from = u.nodes[u.pi - 1], to = u.nodes[u.pi], j = on.get(to)
+    if (j == null) continue
+    const prev = j === v.pi ? v.nodes[v.pi - 1] : v.nodes[j - 1]
+    if (from === prev && (j > v.pi || u.s > v.s)) return u
+  }
+  return null
+}
+
 /** Where v must hold zone z (path index i): at the spur's gate if the gate is still ahead. */
 function claimPoint(S: SimState, v: SimVehicle, accs: number[], i: number, z: string) {
   const gate = S.G.zoneGate.get(z)!
@@ -559,6 +603,12 @@ export function step(S: SimState) {
       if (!z || v.held.has(z)) continue
       const { dist, atGate } = claimPoint(S, v, accs, i, z)
       if (dist > gap + P.safetyFt + 12) break
+      // Ordered queue (owner, 2026-11-18): never claim a zone while another vehicle is still on this
+      // path in front, before it — it has to drive through that zone, and could not if it were held.
+      // Follow behind instead and claim once it has gone past (no passing on a lane).
+      // (A zone on a dead-end spur is never driven through: the spur rule keeps it.)
+      const before = G.zoneGate.get(z) === G.zoneNode.get(z) ? aheadBefore(S, v, i) : null
+      if (before) { limit = atGate ? dist - bodyClear(v) : dist - gap; v.waitZone = z; v.waitFor = before.i; break }
       const h = S.locks.get(z)
       if (h == null) { S.locks.set(z, v.i); v.held.add(z); continue }
       limit = atGate ? dist - bodyClear(v) : dist - gap
@@ -690,7 +740,15 @@ export function step(S: SimState) {
       // aisle keep the POC distance rule.
       const spurZone = gate !== node
       const onSpur = spurZone && ((v.atNode && br.has(v.node)) || br.has(next) || (!v.atNode && br.has(v.node)))
-      if (onRoute || here || onSpur) continue
+      if (here || onSpur) continue
+      if (onRoute && spurZone) continue
+      if (onRoute) {
+        // Ordered queue: a zone still ahead is given back while another vehicle is in front, before it
+        // (it has to drive through) — and claimed again once that one has gone past.
+        const i = v.nodes.indexOf(node, v.pi)
+        const near = Math.hypot(G.points[node].x - v.x, G.points[node].y - v.y) < envLen(v) + 1
+        if (i < 0 || near || !aheadBefore(S, v, i)) continue
+      }
       if (Math.hypot(G.points[gate].x - v.x, G.points[gate].y - v.y) < (spurZone ? bodyClear(v) : envLen(v) + 1)) continue
       v.held.delete(z); if (S.locks.get(z) === v.i) S.locks.delete(z)
     }

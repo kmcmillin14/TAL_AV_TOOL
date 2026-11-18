@@ -166,11 +166,12 @@ describe('acceptance 9 — gridlock is reported, never driven through', () => {
       if (n === 5 && seed === 2 && demandPct === 100) expect(results(S).types[0].delivered).toBeGreaterThan(0.98)
     }
     // Still only the O-12 class at 6 vehicles and 130% demand; since idle vehicles move to chargers
-    // (owner, 2026-11-13) the seeds that hit it changed (3 → 4 of 12 runs at that load).
+    // (owner, 2026-11-13) the seeds that hit it changed (3 → 4 of 12 runs at that load); the ordered
+    // queue (2026-11-18) moved seed 5's to the outfeed — the same runs, no new ones.
     expect(hits).toEqual([
       'fleet 6 seed 1 130%: cycle near Wrapper Outfeed',
       'fleet 6 seed 4 130%: cycle near Wrapper Outfeed',
-      'fleet 6 seed 5 130%: cycle near Warehouse Infeed',
+      'fleet 6 seed 5 130%: cycle near Wrapper Outfeed',
       'fleet 6 seed 6 130%: cycle near Warehouse Infeed',
     ])
   }, 600_000)
