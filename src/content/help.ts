@@ -8,7 +8,7 @@
 // `figure.shot` (an image path) — HelpMock prefers the screenshot when present.
 
 export type MockId =
-  | 'app-flow' | 'entry' | 'form' | 'matrix' | 'engine' | 'dashboard'
+  | 'app-flow' | 'entry' | 'form' | 'matrix' | 'engine'
 
 export interface HelpFigure {
   /** Illustrative mockup id (swap for a real screenshot via `shot` later). */

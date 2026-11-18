@@ -6,8 +6,9 @@
 // the simulation.
 
 import Link from 'next/link'
+import { withApplied, withoutApplied } from '@/src/calc/sim/runInputs'
 import type { FleetCheck, FleetCheckState } from '@/src/calc/sim/verification'
-import { fleetCheckWord } from '@/src/components/FleetCheckBadge'
+import { FleetCheckBadge } from '@/src/components/FleetCheckBadge'
 import Icon from '@/src/design-system/components/Icon'
 import { VehicleDot } from '@/src/components/step3/VehicleSelect'
 import { patchSimSettings, type StoredProject } from '@/src/lib/storage'
@@ -30,17 +31,15 @@ interface SectionProps {
 /** Sizing's 04 Verification: one row per type, and the way to the verification page. */
 export function VerificationSection({ project, vehicleById, checks, inputsKey }: SectionProps) {
   const applied = project.simSettings?.appliedFleet ?? {}
-  const use = (c: FleetCheck) => patchSimSettings(project.id, { appliedFleet: { ...applied, [c.vehicleId]: { fleet: c.n, key: inputsKey } } })
-  const back = (c: FleetCheck) => patchSimSettings(project.id, { appliedFleet: Object.fromEntries(Object.entries(applied).filter(([v]) => v !== c.vehicleId)) })
+  const use = (c: FleetCheck) => patchSimSettings(project.id, { appliedFleet: withApplied(applied, c.vehicleId, c.n, inputsKey) })
+  const back = (c: FleetCheck) => patchSimSettings(project.id, { appliedFleet: withoutApplied(applied, c.vehicleId) })
   const allEstimated = checks.every(c => c.state === 'estimated' && !c.stale)
 
   return (
     <div className="fv">
       {checks.length > 0 && (
         <ul className="fv-rows">
-          {checks.map(c => {
-            const tone = c.state === 'notVerified' && c.verdict === 'gridlock' ? 'bad' : c.state
-            return (
+          {checks.map(c => (
               <li key={c.vehicleId} className="fv-row">
                 <span className="fv-veh">
                   <VehicleDot vehicle={vehicleById.get(c.vehicleId)} size="sm" />
@@ -50,15 +49,14 @@ export function VerificationSection({ project, vehicleById, checks, inputsKey }:
                   <span className="mono">{c.staticN}</span>
                   {c.n !== c.staticN && <><span aria-hidden="true">→</span><span className="mono">{c.n}</span></>}
                 </span>
-                <span className={`fv-badge ${tone}`}>{c.state === 'verified' && <Icon name="check" size={12} />}{fleetCheckWord(c)}</span>
+                <FleetCheckBadge checks={[c]} />
                 <span className="fv-detail">{DETAIL[c.state](c)}</span>
                 <span className="fv-act">
                   {c.state === 'suggested' && <button type="button" className="btn btn-sm primary" onClick={() => use(c)}>Use {c.n}</button>}
                   {c.applied && <button type="button" className="link-btn" onClick={() => back(c)}>Back to static ({c.staticN})</button>}
                 </span>
               </li>
-            )
-          })}
+          ))}
         </ul>
       )}
       <div className="fv-foot">

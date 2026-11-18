@@ -6,7 +6,6 @@ import type { StoredProject } from '@/src/lib/storage'
 
 const sched: AnalyticsSchedule = {
   shiftsPerDay: 2, hoursPerShift: 8, breaksPerShift: 2, breakDurationMin: 15,
-  operatorsPerShift: 3, operatingDaysPerYear: 250,
 }
 
 describe('effDailyOpHr', () => {

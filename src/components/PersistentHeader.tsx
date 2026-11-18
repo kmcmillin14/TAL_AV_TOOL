@@ -8,11 +8,11 @@ import { updateProject, downloadProject, getProject, canUndo, undoLastChange, cl
 import { useTheme } from '@/src/lib/uiPrefs'
 import HelpDrawer from './HelpDrawer'
 import GuidedTour from './GuidedTour'
-import { reportError } from '@/src/lib/notify'
 import AppVersionLog from './AppVersionLog'
 import { APP_VERSION } from '@/src/content/appVersions'
-import { prefetchVehicles, fetchVehiclesCached } from '@/src/lib/vehicleCache'
+import { prefetchVehicles } from '@/src/lib/vehicleCache'
 import PptxSectionPicker from './rom/PptxSectionPicker'
+import { downloadXlsx } from '@/src/lib/downloadXlsx'
 import type { HeaderData } from '@/src/lib/projectHeader'
 
 type StepId = 0 | 1 | 2 | 3 | 4 | 5 | 6
@@ -162,16 +162,7 @@ export default function PersistentHeader({
   const handleExportXlsx = async () => {
     setExportOpen(false)
     const current = getProject(project.id)
-    if (!current) return
-    try {
-      const [{ downloadProjectXlsx }, vehicles] = await Promise.all([
-        import('@/src/lib/xlsxExport'),
-        fetchVehiclesCached(),
-      ])
-      await downloadProjectXlsx(current, vehicles)
-    } catch (err) {
-      reportError('export:xlsx', err, 'Could not generate the workbook. Please retry; if it persists, export a JSON backup.')
-    }
+    if (current) await downloadXlsx(current)
   }
 
   const [undoAvailable, setUndoAvailable] = useState(false)

@@ -5,7 +5,7 @@
 import { engineFleetByType } from '../fleet'
 import type { FleetSummary } from '../types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import { simInputsKey, type SimInputsLike } from './runInputs'
+import { appliedFleetStatus, simInputsKey, type SimInputsLike } from './runInputs'
 import type { Verdict } from './types'
 
 export type FleetCheckState = 'estimated' | 'verified' | 'suggested' | 'notVerified'
@@ -35,8 +35,9 @@ export function fleetCheck(vehicleId: string, staticN: number, stored: Stored | 
   const base = { vehicleId, staticN, n: staticN, applied: false, stale: false }
   const applied = stored?.appliedFleet?.[vehicleId]
   // A raised count in pricing was verified when applied; it stays so while its inputs hold.
-  if (applied && applied.fleet > staticN) {
-    return applied.key === key ? { ...base, state: 'verified', n: applied.fleet, applied: true } : { ...base, state: 'estimated', n: applied.fleet, applied: true, stale: true }
+  const status = applied && appliedFleetStatus(applied, staticN, key)
+  if (applied && status !== 'unused') {
+    return status === 'current' ? { ...base, state: 'verified', n: applied.fleet, applied: true } : { ...base, state: 'estimated', n: applied.fleet, applied: true, stale: true }
   }
   const run = stored?.lastRun?.types[vehicleId]
   if (!run) return { ...base, state: 'estimated' }

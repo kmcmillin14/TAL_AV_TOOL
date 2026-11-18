@@ -500,18 +500,19 @@ function pathAccs(S: SimState, v: SimVehicle) {
  * behind it does not count; nor does one crossing at a junction on its way elsewhere once it has left.
  */
 function aheadBefore(S: SimState, v: SimVehicle, i: number): SimVehicle | null {
-  const on = new Map<number, number>()
-  for (let j = v.pi; j <= i; j++) on.set(v.nodes[j], j)
+  // The last index of `node` on v's path from v.pi to i, or −1. A scan, not a map: it runs per claim per
+  // tick, and the window is a few nodes, so allocating would cost more than it saves.
+  const at = (node: number) => { for (let j = i; j >= v.pi; j--) if (v.nodes[j] === node) return j; return -1 }
   for (const u of S.veh) {
     if (u === v) continue
     if (u.atNode || !(MOVING.has(u.mode) && u.pi < u.nodes.length)) {
       // Stopped (working, waiting, at home): in front if it stands at one of those nodes.
-      if (on.has(u.node)) return u
+      if (at(u.node) >= 0) return u
       continue
     }
     // Driving: on the edge from path node j−1 to j the same way (on v's own edge, only if ahead of it).
-    const from = u.nodes[u.pi - 1], to = u.nodes[u.pi], j = on.get(to)
-    if (j == null) continue
+    const from = u.nodes[u.pi - 1], j = at(u.nodes[u.pi])
+    if (j < 0) continue
     const prev = j === v.pi ? v.nodes[v.pi - 1] : v.nodes[j - 1]
     if (from === prev && (j > v.pi || u.s > v.s)) return u
   }

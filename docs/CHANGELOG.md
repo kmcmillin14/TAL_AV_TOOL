@@ -1,5 +1,24 @@
 # Changelog
 
+## 2026-11-18 — Cleanup after review (/simplify, 4 reviewers)
+
+- No behaviour or figure changes except one: the bottom step bar returns on Simulation's Layout check
+  (static there, so it no longer covers the map; it had been dropped there).
+- One rule each: `fleetCheck` uses `appliedFleetStatus`; Use N / Back to static share `withApplied` /
+  `withoutApplied` (Sizing and Simulation); "a layout is drawn" is `hasLayout`; the state badge derives
+  its state from its checks and is reused by Sizing's rows; the workbook download is `downloadXlsx`;
+  loading / not-found is `ProjectLoadState` (Simulation, Pricing, Export).
+- The ROM tiles split by job, not by a `view` flag: `RomFinance` / `RomOperations` (`RomView.tsx`) and
+  `FinanceBento` / `EconomicsAssumptions` / `OperationsBento` (`RomTiles.tsx`, was `RomBento`). The quote
+  gate is decided once (in `RomFinance`); `RomKpis` lost its dead "Not priced" branches.
+  `dashboardClaim` → `roiClaim`. `AnalyticsSchedule` keeps only the four fields `effDailyOpHr` reads.
+- Step 2 sizes the fleet for *Requirements met* with `fleetFromFlows`, not the whole ROM model.
+- `rom/` counts as shared in the architecture check (ARCHITECTURE §4 updated), not a per-page exception.
+- Engine: the ordered-queue lookup scans the few path nodes instead of allocating a map per claim per tick.
+- Removed leftovers: the Dashboard help mock and its screenshot, `--hero-sticky-h`, `.eh-actions-compact`,
+  orphan comments and an empty media query; `.req-met` / `.rv-assume2-edit` reuse `.sim-disc` /
+  `.sim-input-unit`; one `.step-section-h` heading.
+
 ## 2026-11-18 — Workflow: seven steps (built)
 
 - Built as specified below: ribbon 00–06; `simulate` → `step4` (old address redirects), Pricing at

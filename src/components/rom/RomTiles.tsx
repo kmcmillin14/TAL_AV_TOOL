@@ -17,7 +17,6 @@ import UtilizationChart from './charts/UtilizationChart'
 import ChargingSummary from './charts/ChargingSummary'
 import BatterySocChart from './charts/BatterySocChart'
 import CapexRangeBars from './charts/CapexRangeBars'
-import type { PricingGate } from '@/src/lib/romComplexityFromProject'
 import PaybackCurve from './charts/PaybackCurve'
 import TcoStacked from './charts/TcoStacked'
 import SensitivityPanel from './SensitivityPanel'
@@ -26,21 +25,21 @@ import MethodologyPanel from './MethodologyPanel'
 import FleetMath from './FleetMath'
 import RomPricingTable from './RomPricingTable'
 
-interface Props {
+/** The money, under Pricing's quote (2026-11-18; half of the former Dashboard). */
+interface FinanceProps {
+  rom: RomSummary
+  vehicleById: Map<string, Vehicle>
+  serviceLifeYears: number
+}
+
+/** How the fleet operates, on Simulation (2026-11-18; the other half). */
+interface OperationsProps {
   project: StoredProject
   flows: Flow[]
   derivedByFlowId: Map<string, FlowDerived>
   fleet: FleetSummary
-  rom: RomSummary
-  /** Computed once by the page and shared with RomKpis. */
-  gate: PricingGate
   vehicleById: Map<string, Vehicle>
   effDailyOpHr: number
-  serviceLifeYears: number
-  /** The money (05 Pricing) or how the fleet operates (04 Simulation) — the Dashboard's two halves. */
-  view: 'finance' | 'operations'
-  /** Saves an edited economic input (finance view). */
-  onPatch?: (patch: Partial<StoredProject>) => void
 }
 
 /** Bento cell — `span` is the column count (1–4 in the 4-col grid). Any cell can
@@ -108,40 +107,36 @@ function CollapsibleSection({ title, defaultOpen = false, children }: { title: s
   )
 }
 
-/** The dashboard body as a responsive bento of cards (replaces the scroll-spy
- *  sections). Reuses the existing chart components; the driver rail + KPI band
- *  live in the page shell. */
-/** Stands in for every CAPEX-derived panel while Step 4 is withholding a price.
- *  Says the same thing the Step 4 banner says, so the two surfaces cannot tell
- *  the reader different stories about the same project. */
-export default function RomBento(p: Props) {
+/** Pricing's return on investment as a bento. Payback, TCO and the pricing table all build on CAPEX, so
+ *  the caller renders this only while the quote is priced (RomView says once why it is not). */
+export function FinanceBento(p: FinanceProps) {
+  const capex = useMemo(() => capexBarsSeries(p.rom, p.vehicleById), [p.rom, p.vehicleById])
+  const payback = useMemo(() => paybackSeries(p.rom, p.serviceLifeYears), [p.rom, p.serviceLifeYears])
+  const tco = useMemo(() => tcoSeries(p.rom, p.serviceLifeYears), [p.rom, p.serviceLifeYears])
+  return (
+    <div className="rom2-bento">
+      <Cell title="Payback" span={2}><PaybackCurve series={payback} /></Cell>
+      <Cell title="Total cost of ownership" span={2}><TcoStacked series={tco} /></Cell>
+      <Cell title="ROM pricing" span={2}><RomPricingTable pricing={p.rom.pricing} vehicleById={p.vehicleById} /></Cell>
+      <Cell title="ROM CAPEX" span={2}><CapexRangeBars series={capex} /></Cell>
+    </div>
+  )
+}
+
+/** The economic assumptions, with maintenance and service life edited in place — shown on Pricing whether
+ *  or not the quote is priced. */
+export function EconomicsAssumptions({ project, onPatch }: { project: StoredProject; onPatch: (patch: Partial<StoredProject>) => void }) {
+  return <div className="rom2-bento"><Cell title="Assumptions" span={4} cellId="rom-assumptions"><AssumptionsPanel project={project} only="Economics" onPatch={onPatch} /></Cell></div>
+}
+
+/** Simulation's Operations view as a bento: the operation map, the fleet's day, battery, redundancy and
+ *  the sizing math. */
+export function OperationsBento(p: OperationsProps) {
   const flowSeries = useMemo(() => flowDiagramSeries(p.flows, p.vehicleById, p.fleet), [p.flows, p.vehicleById, p.fleet])
   const duty = useMemo(() => dutyCycleSeries(p.flows, p.derivedByFlowId, p.fleet), [p.flows, p.derivedByFlowId, p.fleet])
   const util = useMemo(() => utilizationSeries(p.fleet, p.vehicleById), [p.fleet, p.vehicleById])
   const charge = useMemo(() => chargingSeries(p.fleet, p.vehicleById), [p.fleet, p.vehicleById])
   const soc = useMemo(() => batterySocSeries(p.fleet, p.vehicleById, p.effDailyOpHr, 0.25), [p.fleet, p.vehicleById, p.effDailyOpHr])
-  const capex = useMemo(() => capexBarsSeries(p.rom, p.vehicleById), [p.rom, p.vehicleById])
-  const payback = useMemo(() => paybackSeries(p.rom, p.serviceLifeYears), [p.rom, p.serviceLifeYears])
-  const tco = useMemo(() => tcoSeries(p.rom, p.serviceLifeYears), [p.rom, p.serviceLifeYears])
-
-  if (p.view === 'finance') {
-    // Payback, TCO and the pricing table all build on CAPEX, and CAPEX is only as good as the complexity
-    // inputs behind it: while Pricing withholds a price, none of these may show it through a side door
-    // (RomView says so once).
-    return (
-      <div className="rom2-bento">
-        {!p.gate.blocked && (
-          <>
-            <Cell title="Payback" span={2}><PaybackCurve series={payback} /></Cell>
-            <Cell title="Total cost of ownership" span={2}><TcoStacked series={tco} /></Cell>
-            <Cell title="ROM pricing" span={2}><RomPricingTable pricing={p.rom.pricing} vehicleById={p.vehicleById} /></Cell>
-            <Cell title="ROM CAPEX" span={2}><CapexRangeBars series={capex} /></Cell>
-          </>
-        )}
-        <Cell title="Assumptions" span={4} cellId="rom-assumptions"><AssumptionsPanel project={p.project} only="Economics" onPatch={p.onPatch} /></Cell>
-      </div>
-    )
-  }
 
   return (
     <div className="rom2-bento">

@@ -201,11 +201,6 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   top: 0;
   z-index: 50;
 }
-/* Height of the sticky hero bar (logo row + step tabs). Anything else that
-   sticks has to clear it, so the number lives in one place. Measured from
-   `.hero-bar.offsetHeight`, NOT getBoundingClientRect — a zoomed viewport
-   (the in-app preview applies zoom: 0.8) scales the rect and under-reports it. */
-:root { --hero-sticky-h: 130px; }
 
 .hero-top {
   position: relative;
@@ -957,6 +952,7 @@ input, select, textarea { font-family: inherit; font-size: inherit; color: inher
   padding: 18px 40px; border-top: 1px solid var(--border);
   background: var(--bg-surface); position: sticky; bottom: 0; z-index: 10;
 }
+.step-nav.is-static { position: static; margin-top: 16px; }
 .row { display: flex; align-items: center; gap: 12px; }
 .hint { font-size: 13px; color: var(--text-tertiary); }
 
@@ -3165,26 +3161,6 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .hm-wf-val { font-family: var(--tal-font-numeric); font-size: 22px; font-weight: 800; color: var(--text-primary); }
 .hm-wf-col.tot .hm-wf-val { color: var(--accent); }
 .hm-wf-lbl { font-family: var(--tal-font-numeric); font-size: 9.5px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); text-align: center; }
-.hm-dash { display: grid; grid-template-columns: 76px 1fr; gap: 8px; }
-.hm-rail {
-  display: flex; flex-direction: column; gap: 5px;
-  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 9px; padding: 9px;
-}
-.hm-rail-t { font-family: var(--tal-font-numeric); font-size: 9px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
-.hm-rail-row { font-size: 10px; color: var(--text-secondary); background: var(--bg-surface-2); border-radius: 4px; padding: 4px 6px; }
-.hm-dash-main { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.hm-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
-.hm-kpi {
-  display: flex; flex-direction: column; gap: 2px;
-  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 7px; padding: 8px;
-}
-.hm-kpi b { font-family: var(--tal-font-numeric); font-size: 14px; color: var(--text-primary); }
-.hm-kpi span { font-family: var(--tal-font-numeric); font-size: 8px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); }
-.hm-chart {
-  display: flex; align-items: flex-end; gap: 6px; height: 56px;
-  background: var(--bg-surface); border: 1px solid var(--border); border-radius: 7px; padding: 8px;
-}
-.hm-chart span { flex: 1; background: var(--accent); border-radius: 3px 3px 0 0; opacity: 0.8; }
 
 @media (max-width: 900px) {
   .help-panel { width: 100vw; height: 100vh; border-radius: 0; }
@@ -3423,8 +3399,7 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-clr-card.is-violation .sim-readout { color: var(--bad); }
 /* Compact, low-key page actions (ROM Save / Export) — smaller + lighter than the
    old full-width Save Revision / Export to Customer pair. */
-.eh-actions-compact { gap: 8px; }
-.btn.btn-sm, .eh-actions-compact .btn { height: 30px; padding: 0 11px; font-size: 12px; gap: 5px; }
+.btn.btn-sm { height: 30px; padding: 0 11px; font-size: 12px; gap: 5px; }
 .eh-eyebrow {
   display: block;
   font-family: var(--tal-font-numeric);
@@ -3727,11 +3702,8 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 .rom-kpi:hover .rom-kpi-hint, .rom-kpi-pinned .rom-kpi-hint { opacity: 1; }
 .rom-kpi-pinned .rom-kpi-hint { color: var(--accent); }
-/* Scenario delta chip on a KPI tile — larger, semantic color (green = better, red = worse). */
-
-/* Hero summary boxes — Financials + Fleet, each leads with a headline figure and
-   combines its like-items below. Two equal, symmetrical boxes. */
-.rom2-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 14px; align-items: stretch; }
+/* Hero summary box — Financials (Pricing) or Fleet & flow (Simulation): a headline figure, its like-items below. */
+.rom2-summary { display: grid; gap: 16px; margin-bottom: 14px; }
 .rom2-hero {
   display: flex; flex-direction: column;
   background: var(--bg-surface); border: 1px solid var(--border);
@@ -3796,7 +3768,6 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 }
 .rom2-gauge:hover .rom2-gauge-tip, .rom2-gauge:focus-within .rom2-gauge-tip { opacity: 1; transform: translateY(0); }
 @media (max-width: 900px) {
-  .rom2-summary { grid-template-columns: 1fr; }
   .rom2-gauges { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 560px) {
@@ -3923,17 +3894,10 @@ select.engine-inline-num { width: 58px; padding-right: 4px; cursor: pointer; }
 .rom2-collapse-chevron { color: var(--text-tertiary); transition: transform 0.18s ease; flex: none; }
 .rom2-collapse.is-open .rom2-collapse-chevron { transform: rotate(180deg); }
 
-/* Container queries, not viewport: the thresholds are the old viewport values
-   minus the 284px the rail used to hide from the calculation. They now hold
-   whether the rail is expanded or collapsed — collapsing simply buys the grid
-   more room and it re-flows on its own. */
+/* Container queries, not viewport: the bento re-flows to the width of `.rom-view`. */
 @container (max-width: 916px) {
   .rom2-bento { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .rom2-span-2, .rom2-span-4 { grid-column: span 2; }
-}
-@media (max-width: 1000px) {
-  
-   /* stickiness lives on the wrapper */
 }
 @container (max-width: 560px) {
   .rom2-bento { grid-template-columns: 1fr; }
@@ -5709,16 +5673,10 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-step-head { display: flex; align-items: center; gap: 16px; margin-left: auto; flex-wrap: wrap; }
 .sim-step-head .sim-tabs { min-width: 260px; }
 .sim-head .eh-actions { margin-left: 16px; }
-.rom-view-empty { margin: 24px 0; color: var(--text-secondary); font-size: 14px; }
 .pricing-return { margin-top: 32px; display: grid; gap: 16px; }
-.pricing-return-h { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); }
-.rv-assume2-edit { display: inline-flex; align-items: center; gap: 8px; margin: 0; font-size: 13px; color: var(--text-secondary); }
-.rv-assume2-edit input { width: 72px; padding: 6px 8px; border: 1px solid var(--border); border-radius: 8px; background: var(--bg-surface); color: var(--text-primary); font-size: 14px; text-align: right; }
-.rv-assume2-edit input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent-soft); }
 .export-grid { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 24px; align-items: start; margin-top: 16px; }
 .export-deck { display: grid; gap: 16px; padding: 24px; }
-.export-h { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); }
-.pptx-pick-body.is-inline { padding: 0; }
+.step-section-h { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); }
 .pptx-inline .pptx-pick-foot { padding-top: 16px; border-top: 1px solid var(--border); }
 .export-side { display: grid; gap: 12px; }
 .export-side .rom-export-btn { justify-content: flex-start; text-align: left; min-height: 64px; width: 100%; }
@@ -5727,8 +5685,5 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .rom-export-blocked { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 12px 16px; border-radius: 10px; background: var(--warn-soft); color: var(--text-primary); font-size: 13px; }
 .rom-export-blocked svg { color: var(--warn); flex: none; margin-top: 2px; }
 @media (max-width: 900px) { .export-grid { grid-template-columns: 1fr; } }
-.req-met { margin-top: 32px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); }
-.req-met > summary { cursor: pointer; padding: 16px 20px; font-weight: 700; font-size: 14px; color: var(--text-primary); }
-.req-met[open] > summary { border-bottom: 1px solid var(--border); }
-.req-met > :not(summary) { padding: 16px 20px; }
-.rom2-summary.is-single { grid-template-columns: minmax(0, 1fr); }
+.req-met { margin-top: 32px; }
+.rv-assume2-edit { margin: 0; width: 200px; }

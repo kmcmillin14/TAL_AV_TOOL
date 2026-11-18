@@ -95,26 +95,6 @@ function Mock({ id }: { id: MockId }) {
         </div>
       )
 
-    case 'dashboard':
-      return (
-        <div className="hm-dash">
-          <div className="hm-rail">
-            <span className="hm-rail-t">Drivers</span>
-            {['Throughput', 'Shifts', 'Buffer'].map(d => <span className="hm-rail-row" key={d}>{d}</span>)}
-          </div>
-          <div className="hm-dash-main">
-            <div className="hm-kpis">
-              {([['Fleet', '7'], ['CAPEX', '$1.3M'], ['Payback', '2.8 yr']] as const).map(([l, v]) => (
-                <div className="hm-kpi" key={l}><b>{v}</b><span>{l}</span></div>
-              ))}
-            </div>
-            <div className="hm-chart" aria-hidden>
-              {[40, 64, 52, 78, 60].map((h, i) => <span key={i} style={{ height: `${h}%` }} />)}
-            </div>
-          </div>
-        </div>
-      )
-
     default:
       return null
   }

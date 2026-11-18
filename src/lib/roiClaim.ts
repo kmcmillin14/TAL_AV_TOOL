@@ -14,7 +14,7 @@ import type { FleetModel } from './fleetModel'
  *  Money clauses are omitted when the project can't be priced — the gate's rule
  *  is that no number beats a bad number, and a headline is the worst place to
  *  break it. */
-export interface DashboardClaim {
+export interface RoiClaim {
   /** Always present once a fleet exists, e.g. "15 vehicles across 3 types". */
   fleet: string | null
   /** ROM range, omitted while pricing is withheld. */
@@ -31,7 +31,7 @@ function compactUsd(n: number): string {
   return `$${Math.round(n).toLocaleString()}`
 }
 
-export function dashboardClaim(model: FleetModel): DashboardClaim {
+export function roiClaim(model: FleetModel): RoiClaim {
   const { fleet, rom, gate } = model
   const total = fleet.totalFleetSold
   const types = fleet.groups.filter(g => g.fleetSold > 0).length

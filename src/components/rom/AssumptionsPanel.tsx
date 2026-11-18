@@ -63,7 +63,7 @@ export default function AssumptionsPanel({ project: p, only, onPatch }: Props) {
                   {r.isDefault && <span className="rv-assume2-tag">default</span>}
                 </dt>
                 {r.edit && onPatch ? (
-                  <dd className="rv-assume2-edit">
+                  <dd className="sim-input-unit rv-assume2-edit">
                     <input
                       key={r.edit.shown} type="number" className="mono" aria-label={r.label}
                       defaultValue={r.edit.shown} min={r.edit.min} max={r.edit.max} step={1}

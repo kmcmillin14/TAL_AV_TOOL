@@ -12,6 +12,8 @@ import type { SimCurve, SimHighway, SimLayout, SimObject, SimPoint, SimPointType
 type XY = { x: number; y: number }
 
 export const emptyLayout = (): SimLayout => ({ points: [], segments: [] })
+/** Something is drawn: a point or a path. */
+export const hasLayout = (l: Pick<SimLayout, 'points' | 'highways'> | undefined): boolean => !!(l?.points.length || l?.highways?.length)
 
 /** The next free id with this prefix (`p1`, `p2`, …). */
 function nextId(prefix: string, taken: { id: string }[]): string {

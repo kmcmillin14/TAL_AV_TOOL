@@ -1,12 +1,9 @@
 'use client'
 
 import type { FleetSummary, Flow, FleetSettings } from '@/src/calc/types'
-import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import type { RomSummary, RomCostInputs } from '@/src/calc/rom'
 import { resilience } from '@/src/calc/romSensitivity'
-import { chargingSeries } from '@/src/calc/romCharts'
 import { kpiDetails, type KpiId } from '@/src/lib/kpiDetails'
-import type { PricingGate } from '@/src/lib/romComplexityFromProject'
 import KpiTile from './KpiTile'
 import RomGauge from './RomGauge'
 
@@ -26,32 +23,15 @@ interface Props {
   settings: FleetSettings
   costs: RomCostInputs
   serviceLifeYears: number
-  vehicleById: Map<string, Vehicle>
   names: Record<string, string>
   /** Which half of the former Dashboard band (2026-11-18): the money (05 Pricing) or the fleet and its
    *  gauges (04 Simulation). */
   view: 'finance' | 'operations'
-  /** Withholds CAPEX and everything built on it while complexity inputs are
-   *  missing — same rule Step 4 applies, so the surfaces can't disagree. */
-  gate: PricingGate
 }
-
-/** What a CAPEX-derived tile shows instead of a figure it cannot stand behind. */
-const NOT_PRICED = 'Not priced'
-
-/** Every tile whose number is derived from CAPEX, and so cannot be shown while
- *  CAPEX is withheld. Annual OPEX and Net benefit are on this list because
- *  `annualMaintenance = capexMid x pct` (src/calc/rom.ts) — printing them as
- *  hard dollars lets a reader divide back out the CAPEX the gate is refusing
- *  to state. The hover detail is withheld with the value for the same reason:
- *  kpiDetails prints the full range and the TCO formula. */
-const CAPEX_DERIVED: ReadonlySet<KpiId> = new Set<KpiId>([
-  'capex', 'payback', 'tco', 'costPerMove', 'opex', 'net',
-])
 
 /** Top KPI band — interactive tiles (hover/pin reveals each metric's breakdown).
  *  Fleet sold + ROM CAPEX are the accent headline; the rest are secondary. */
-export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLifeYears, vehicleById, names, view, gate }: Props) {
+export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLifeYears, names, view }: Props) {
   const payback = rom.payback.paybackYears
   const throughput = Math.round(flows.reduce((s, f) => s + (f.thruPerHr || 0), 0))
   const detail = kpiDetails({ fleet, rom, flows, settings, costs }, names, { serviceLifeYears })
@@ -60,13 +40,11 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   const opex = rom.opex.annualOpex
   const totalRaw = fleet.groups.reduce((s, g) => s + g.groupRaw, 0)
   const totalSold = fleet.groups.reduce((s, g) => s + g.fleetSold, 0)
-  const avgUtil = totalSold > 0 ? totalRaw / totalSold : null
   const tcoAtLife = rom.pricing.totalMid + opex * serviceLifeYears
   const annualMoves = throughput * settings.dailyOpHr * costs.operatingDaysPerYear
   const lifetimeMoves = annualMoves * serviceLifeYears
   const costPerMove = lifetimeMoves > 0 ? tcoAtLife / lifetimeMoves : null
   const res = resilience({ fleet })
-  const blocked = gate.blocked
   const pctChip = (n: number) => `${Math.round(n * 100)}%`
 
   // Fleet-wide gauge aggregates, weighted by units sold. The three gauges must
@@ -94,25 +72,21 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
     { id: 'flows', label: 'Flows', value: String(flows.length) },
     { id: 'throughput', label: 'Throughput', value: `${throughput} / hr` },
     // ── Financials ──
-    // CAPEX and everything built on it read "Not priced" while the complexity
-    // inputs behind professional services / software are missing — the same
-    // rule Step 4 applies, so the two surfaces agree.
-    { id: 'capex', label: 'ROM CAPEX', value: blocked ? NOT_PRICED : usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true },
-    { id: 'payback', label: 'Payback', value: blocked ? NOT_PRICED : (payback == null ? '—' : `${payback.toFixed(1)} yr`) },
-    { id: 'net', label: 'Net benefit / yr', value: blocked ? NOT_PRICED : usd(offset - opex), accent: true },
+    // Shown only while the quote is priced: RomView withholds the whole Financials box otherwise.
+    { id: 'capex', label: 'ROM CAPEX', value: usdRange(rom.pricing.totalMin, rom.pricing.totalMax), accent: true },
+    { id: 'payback', label: 'Payback', value: (payback == null ? '—' : `${payback.toFixed(1)} yr`) },
+    { id: 'net', label: 'Net benefit / yr', value: usd(offset - opex), accent: true },
     { id: 'offset', label: 'Labor offset / yr', value: usd(offset) },
-    { id: 'opex', label: 'Annual OPEX', value: blocked ? NOT_PRICED : usd(opex) },
-    { id: 'tco', label: `TCO @ ${serviceLifeYears}yr`, value: blocked ? NOT_PRICED : usd(tcoAtLife) },
-    { id: 'costPerMove', label: 'Cost / move', value: blocked ? NOT_PRICED : (costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}`) },
+    { id: 'opex', label: 'Annual OPEX', value: usd(opex) },
+    { id: 'tco', label: `TCO @ ${serviceLifeYears}yr`, value: usd(tcoAtLife) },
+    { id: 'costPerMove', label: 'Cost / move', value: (costPerMove == null ? '—' : `$${costPerMove.toFixed(2)}`) },
   ]
 
   const byId = new Map(tiles.map((t, i) => [t.id, { ...t, colorIndex: i }]))
   const tile = (id: KpiId) => {
     const t = byId.get(id)
     if (!t) return null
-    // Withhold the popover too — it prints the very range the tile is hiding.
-    const d = blocked && CAPEX_DERIVED.has(id) ? undefined : detail[id]
-    return <KpiTile key={id} label={t.label} value={t.value} detail={d} accent={t.accent} colorIndex={t.colorIndex} />
+    return <KpiTile key={id} label={t.label} value={t.value} detail={detail[id]} accent={t.accent} colorIndex={t.colorIndex} />
   }
 
   // Financials leads with CAPEX and shows only the two figures a decision turns
@@ -122,7 +96,7 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
   // fillFinancials (3 tiles) and fillCostDetail (the rest).
   if (view === 'finance') {
     return (
-      <div className="rom2-summary is-single">
+      <div className="rom2-summary">
         <section className="rom2-hero">
           <div className="rom2-hero-head">Financials</div>
           <div className="rom2-hero-lead">{tile('capex')}</div>
@@ -142,7 +116,7 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
 
   return (
     <>
-      <div className="rom2-summary is-single">
+      <div className="rom2-summary">
         <section className="rom2-hero">
           <div className="rom2-hero-head">Fleet &amp; flow</div>
           <div className="rom2-hero-lead">{tile('fleet')}</div>

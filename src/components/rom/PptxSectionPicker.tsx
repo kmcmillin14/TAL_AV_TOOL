@@ -63,7 +63,7 @@ export default function PptxSectionPicker({ project, onClose }: Props) {
   )
 
   const sections = (
-        <div className={onClose ? 'cmp-scroll pptx-pick-body' : 'pptx-pick-body is-inline'}>
+        <div className={onClose ? 'cmp-scroll pptx-pick-body' : undefined}>
           <div className="pptx-pick-hint">Choose the sections to include. The TAL template’s theme and layout are preserved.</div>
           <div className="pptx-pick-grid">
             {PPTX_SECTIONS.map(s => (

@@ -120,3 +120,9 @@ const usedPayloads = (types: SimVehicleType[], ids: string[], loads: { id: strin
 export function appliedFleetStatus(applied: { fleet: number; key: string }, engineN: number, inputsKey: string): 'unused' | 'stale' | 'current' {
   return applied.fleet <= engineN ? 'unused' : applied.key !== inputsKey ? 'stale' : 'current'
 }
+
+type AppliedFleet = Record<string, { fleet: number; key: string }>
+/** Use N (raise-only): the applied fleets with `vehicleId` set to `fleet` under the current inputs key. */
+export const withApplied = (all: AppliedFleet, vehicleId: string, fleet: number, inputsKey: string): AppliedFleet => ({ ...all, [vehicleId]: { fleet, key: inputsKey } })
+/** Back to static: the applied fleets without `vehicleId`. */
+export const withoutApplied = (all: AppliedFleet, vehicleId: string): AppliedFleet => Object.fromEntries(Object.entries(all).filter(([v]) => v !== vehicleId))

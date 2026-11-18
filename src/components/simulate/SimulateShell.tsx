@@ -10,7 +10,7 @@ import { engineFleetFor } from '@/src/lib/fleetModel'
 import { payloadsByVehicle, simFlows, simVehicleTypes, type SimVehicleType } from '@/src/calc/sim/simVehicles'
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
-import { emptyLayout, unlinked } from '@/src/calc/sim/layoutEdit'
+import { emptyLayout, hasLayout, unlinked } from '@/src/calc/sim/layoutEdit'
 import { checkStatus, readinessChecks } from '@/src/calc/sim/readiness'
 import { withVehicleOverrides } from '@/src/calc/sim/vehicle'
 import { clearanceRule, runFleet, runInputs } from '@/src/calc/sim/runInputs'
@@ -129,7 +129,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   // stays there (no jump back into Sim once it is fixed — Sim is a click away).
   if (!canRun && mode !== 'layout') setMode('layout')
   const shown = canRun ? mode : 'layout', running = shown !== 'layout'
-  const empty = !simLayout?.points.length && !simLayout?.highways?.length
+  const empty = !hasLayout(simLayout)
   const sampleOn = flows.some(f => isSample(f.id))
   // The sample brings its own flows, so it is offered only where it cannot change a real quote.
   const canSample = empty && flows.length === 0

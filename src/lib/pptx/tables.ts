@@ -268,9 +268,7 @@ export function fillFleetSizing(zip: PizZip, model: FleetModel, names: Record<st
   const mix = fleet.groups.map(g => `${names[g.vehicleId] ?? g.vehicleId} ×${g.fleetSold}`).join('   ·   ')
   f.caption([
     mix ? `Fleet mix — ${mix}` : 'Assign vehicles to flows (Step 3) to size the fleet.',
-    verified
-      ? 'Sized from your throughput, distances, and shift pattern · verified by a simulation of the site layout · full derivation in appendix'
-      : 'Sized from your throughput, distances, and shift pattern · full derivation in appendix',
+    `Sized from your throughput, distances, and shift pattern${verified ? ' · verified by a simulation of the site layout' : ''} · full derivation in appendix`,
   ])
 }
 

@@ -4,7 +4,7 @@
 // shared by Sizing's total and Simulation's head. Reads the stored run only (`fleetCheck`).
 
 import { useMemo } from 'react'
-import { FLEET_CHECK_LABEL, projectFleetChecks, type FleetCheck, type FleetCheckState } from '@/src/calc/sim/verification'
+import { FLEET_CHECK_LABEL, fleetCheckSummary, projectFleetChecks, type FleetCheck } from '@/src/calc/sim/verification'
 import type { FleetSummary } from '@/src/calc/types'
 import Icon from '@/src/design-system/components/Icon'
 import type { StoredProject } from '@/src/lib/storage'
@@ -15,10 +15,11 @@ export function useFleetChecks(project: StoredProject | null, vehicleById: Map<s
   return useMemo(() => projectFleetChecks(project, vehicleById, fleet), [project, vehicleById, fleet])
 }
 
-export const fleetCheckWord = (c: Pick<FleetCheck, 'state' | 'n'>) => (c.state === 'suggested' ? `Suggested ${c.n}` : FLEET_CHECK_LABEL[c.state])
+const fleetCheckWord = (c: Pick<FleetCheck, 'state' | 'n'>) => (c.state === 'suggested' ? `Suggested ${c.n}` : FLEET_CHECK_LABEL[c.state])
 
-/** The state beside a fleet total; with `href`, a link to where it is explained. */
-export function FleetCheckBadge({ state, checks, href }: { state: FleetCheckState; checks: FleetCheck[]; href?: string }) {
+/** The state of a fleet (the worst of its types); with `href`, a link to where it is explained. */
+export function FleetCheckBadge({ checks, href }: { checks: FleetCheck[]; href?: string }) {
+  const state = fleetCheckSummary(checks)
   const one = checks.length === 1 ? checks[0] : null
   const fail = checks.find(c => c.state === 'notVerified')
   const tone = state === 'notVerified' && fail?.verdict === 'gridlock' ? 'bad' : state

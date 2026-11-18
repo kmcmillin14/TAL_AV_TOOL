@@ -147,7 +147,7 @@ export default function FleetEnginePage() {
                   <span className="er-num mono">{fleet.totalFleetSold}</span>
                   <span className="er-num-unit">vehicles</span>
                   {simulatedNote(fleet) && <span className="er-sim-note">{simulatedNote(fleet)}</span>}
-                  <FleetCheckBadge state={verify.state} checks={verify.checks} href="#engine-verify" />
+                  <FleetCheckBadge checks={verify.checks} href="#engine-verify" />
                 </div>
                 <div className="er-pipeline" aria-label="Fleet build-up">
                   <div className="ep-seg on">

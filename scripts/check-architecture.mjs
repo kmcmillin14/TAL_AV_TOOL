@@ -70,17 +70,15 @@ for (const f of walk('app', ['.tsx'])) {
   }
 }
 
-// Simulation (Fleet Simulation, step 04 since 2026-11-18; ARCHITECTURE.md §4) is its own module: its
-// components use only shared modules, and no other step reaches into it (Sizing reads the stored result
-// through calc/sim and links to the route). Its page may also show the shared ROM tiles (`rom/`).
+// Simulation (Fleet Simulation, step 04 since 2026-11-18; ARCHITECTURE.md §4) is its own module: its page
+// and components use only shared modules, and no other step reaches into it (Sizing reads the stored
+// result through calc/sim and links to the route). `rom/` is shared (several steps show its tiles).
 // Static and dynamic imports, to a module's files or to the module folder itself.
-const MODULE_IMPORT = /(?:from|import\()\s*['"][^'"]*(?:components\/|\.\.\/)(step\d|engine|rom|questionnaire|simulate)(?:\/[^'"]*)?['"]/g
-const isSimPage = f => /projects\/\[id\]\/step4\//.test(f)
-const isSim = f => /src\/components\/simulate\//.test(f) || isSimPage(f)
+const MODULE_IMPORT = /(?:from|import\()\s*['"][^'"]*(?:components\/|\.\.\/)(step\d|engine|questionnaire|simulate)(?:\/[^'"]*)?['"]/g
+const isSim = f => /src\/components\/simulate\/|projects\/\[id\]\/step4\//.test(f)
 for (const f of walk('src/components', ['.ts', '.tsx']).concat(walk('app', ['.tsx']))) {
   for (const m of read(f).matchAll(MODULE_IMPORT)) {
-    const allowed = m[1] === 'simulate' || (isSimPage(f) && m[1] === 'rom')
-    if (isSim(f) && !allowed) fail('module-boundary', `${f} imports ${m[1]} (Simulation uses shared modules only)`)
+    if (isSim(f) && m[1] !== 'simulate') fail('module-boundary', `${f} imports ${m[1]} (Simulation uses shared modules only)`)
     if (!isSim(f) && m[1] === 'simulate') fail('module-boundary', `${f} imports simulate (no step reaches into Simulation)`)
   }
 }

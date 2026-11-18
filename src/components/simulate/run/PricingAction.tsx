@@ -5,7 +5,7 @@
 // fleet and ROM before → after, from the same model Step 4, the Dashboard and the deck use.
 
 import { useMemo, useState } from 'react'
-import { appliedFleetStatus } from '@/src/calc/sim/runInputs'
+import { appliedFleetStatus, withApplied, withoutApplied } from '@/src/calc/sim/runInputs'
 import type { Verdict } from '@/src/calc/sim/types'
 import { computeFleetModel } from '@/src/lib/fleetModel'
 import type { StoredProject } from '@/src/lib/storage'
@@ -35,12 +35,12 @@ export default function PricingAction({ project, vehicles, vehicleId, n, engineN
   const [confirm, setConfirm] = useState(false)
   const all: Applied = project.simSettings?.appliedFleet ?? {}
   const applied = all[vehicleId]
-  const without = () => Object.fromEntries(Object.entries(all).filter(([v]) => v !== vehicleId))
+  const without = () => withoutApplied(all, vehicleId)
 
   // Before → after, only while the confirmation is open.
   const change = useMemo(() => {
     if (!confirm) return null
-    const withN = { ...project, simSettings: { ...project.simSettings, appliedFleet: { ...all, [vehicleId]: { fleet: n, key: inputsKey } } } }
+    const withN = { ...project, simSettings: { ...project.simSettings, appliedFleet: withApplied(all, vehicleId, n, inputsKey) } }
     const a = computeFleetModel(project, vehicles), b = computeFleetModel(withN, vehicles)
     return { fleet: [a.fleet.totalFleetSold, b.fleet.totalFleetSold], rom: b.rom.pricing.totalMid > 0 ? [a.rom.pricing.totalMid, b.rom.pricing.totalMid] : null }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -77,7 +77,7 @@ export default function PricingAction({ project, vehicles, vehicleId, n, engineN
         <span className="sim-confirm">
           Pricing fleet {change.fleet[0]} → {change.fleet[1]}{change.rom && <> · ROM {money(change.rom[0])} → {money(change.rom[1])}</>} · labelled “simulated (engine {engineN})”
           <button type="button" className="btn btn-sm ghost" onClick={() => setConfirm(false)}>Cancel</button>
-          <button type="button" className="btn btn-sm primary" onClick={() => { onApplied({ ...all, [vehicleId]: { fleet: n, key: inputsKey } }); setConfirm(false) }}>Use {n}</button>
+          <button type="button" className="btn btn-sm primary" onClick={() => { onApplied(withApplied(all, vehicleId, n, inputsKey)); setConfirm(false) }}>Use {n}</button>
         </span>
       )}
     </span>

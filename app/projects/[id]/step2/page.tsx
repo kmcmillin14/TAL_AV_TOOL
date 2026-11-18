@@ -40,7 +40,8 @@ import { useUnitSystem } from '@/src/lib/uiPrefs'
 import { getProject, type StoredProject } from '@/src/lib/storage'
 import { fetchVehiclesCached } from '@/src/lib/vehicleCache'
 import { useProjectSync } from '@/src/lib/useProjectSync'
-import { computeFleetModel } from '@/src/lib/fleetModel'
+import { projectFleetSettings } from '@/src/lib/fleetModel'
+import { fleetFromFlows } from '@/src/calc/fleet'
 import RequirementsMatrix from '@/src/components/rom/RequirementsMatrix'
 
 type ProjectData = StoredProject
@@ -171,7 +172,7 @@ export default function Step2Page() {
    *  rendered on a current project while the gate was live. */
   // Requirements met by the sized fleet (moved from the Dashboard, 2026-11-18) — once Sizing assigns vehicles.
   const vehicleById = useMemo(() => new Map(vehicles.map(v => [v.id, v])), [vehicles])
-  const fleet = useMemo(() => (project ? computeFleetModel(project, vehicles).fleet : null), [project, vehicles])
+  const fleet = useMemo(() => (project ? fleetFromFlows(project.flows ?? [], vehicleById, projectFleetSettings(project)).fleet : null), [project, vehicleById])
 
   const activeReqs = useMemo(
     () => activeRequirements(appReq, vehicles),
@@ -345,9 +346,9 @@ export default function Step2Page() {
         )}
 
         {fleet && fleet.groups.length > 0 && (
-          <details className="req-met">
+          <details className="sim-disc req-met">
             <summary>Requirements met by the sized fleet</summary>
-            <RequirementsMatrix project={project} fleet={fleet} vehicleById={vehicleById} />
+            <div className="sim-disc-body"><RequirementsMatrix project={project} fleet={fleet} vehicleById={vehicleById} /></div>
           </details>
         )}
 

@@ -3,12 +3,13 @@
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import PersistentHeader from '@/src/components/PersistentHeader'
+import ProjectLoadState from '@/src/components/ProjectLoadState'
 import { headerFromProject } from '@/src/lib/projectHeader'
 import Icon from '@/src/design-system/components/Icon'
 import { useFleetData } from '@/src/lib/useFleetData'
 import { useUnitSystem } from '@/src/lib/uiPrefs'
 import RomFleetSellPrice from '@/src/components/rom/RomFleetSellPrice'
-import RomView from '@/src/components/rom/RomView'
+import { RomFinance } from '@/src/components/rom/RomView'
 import { updateProject, type StoredProject } from '@/src/lib/storage'
 
 export default function RomConfigurationPage() {
@@ -17,27 +18,12 @@ export default function RomConfigurationPage() {
   const { project, setProject, vehicleById, fleet, loading, error } = useFleetData(id)
   const [unitSystem, toggleUnitSystem] = useUnitSystem()
 
-  if (loading) {
-    return <div className="app-shell"><div className="step2-loading">Loading pricing…</div></div>
-  }
-  if (error || !project) {
-    return (
-      <div className="app-shell">
-        <div className="step2-error">
-          <div className="step2-error-tag">Not Found</div>
-          <h1>Could not load project</h1>
-          <p>{error ?? 'This project does not exist in your browser. Try importing the project file or creating a new project.'}</p>
-        </div>
-      </div>
-    )
-  }
-
-  const headerData = headerFromProject(project)
+  if (loading || error || !project) return <ProjectLoadState loading={loading} error={error} what="pricing" />
 
   return (
     <div className="app-shell">
       <PersistentHeader
-        project={headerData}
+        project={headerFromProject(project)}
         currentStep={5}
         unitSystem={unitSystem}
         onUnitToggle={toggleUnitSystem}
@@ -53,8 +39,8 @@ export default function RomConfigurationPage() {
 
         {/* The return on that investment — the Dashboard's financials (2026-11-18). */}
         <section className="pricing-return" aria-labelledby="pricing-return-h">
-          <h2 id="pricing-return-h" className="pricing-return-h">Return on investment</h2>
-          <RomView project={project} vehicleById={vehicleById} view="finance" onPatch={(patch: Partial<StoredProject>) => {
+          <h2 id="pricing-return-h" className="step-section-h">Return on investment</h2>
+          <RomFinance project={project} vehicleById={vehicleById} onPatch={(patch: Partial<StoredProject>) => {
             const next = updateProject(id, patch)
             if (next) setProject(next)
           }} />

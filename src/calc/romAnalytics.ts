@@ -1,13 +1,12 @@
 // src/calc/romAnalytics.ts — derived ROM dashboard schedule helpers. PURE.
 // No React, no fetch, no localStorage, no fs.
 
+/** The staffed day: shifts, their length and their breaks. */
 export interface AnalyticsSchedule {
   shiftsPerDay: number
   hoursPerShift: number
   breaksPerShift: number
   breakDurationMin: number
-  operatorsPerShift: number
-  operatingDaysPerYear: number
 }
 
 /** Effective daily operating hours after breaks, capped at 24.
