@@ -9,7 +9,7 @@ Skills used on this project, when to invoke them, and how they fit together.
 Generates polished, non-generic UI for new sections.
 
 **When to invoke:**
-- Starting a new step page (Step 4, Step 5, etc.)
+- Starting a new step page (Simulation, Pricing, Export, etc.)
 - Building a new component (results dashboard, KPI tile, modal)
 - Redesigning an existing section
 

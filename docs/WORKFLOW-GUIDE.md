@@ -16,9 +16,9 @@ Questionnaire                        Fleet Calculator
   Export PDF  ──────────────────────►  Step 1: Refine inputs
   (JSON embedded inside)               Step 2: Review vehicle matrix
                                        Step 3: Size the fleet
-                                       Step 4: ROM Configuration (sell-price build-up)
-                                       Step 5: ROI dashboard
-                                       Export customer deck (PPTX)
+                                       Step 4: Simulation (verify the fleet size)
+                                       Step 5: Pricing (sell price + ROI)
+                                       Step 6: Export (customer presentation)
 ```
 
 **Key principle:** The questionnaire captures *what the customer knows*. The main app is where the engineer *sizes and prices* the fleet. They share the same data schema — the PDF is the handoff artifact.
@@ -103,7 +103,21 @@ This is where the engineer assigns vehicles and the system sizes the fleet.
 
 > Distance entry is **one-way**. The engine accounts for round-trip internally.
 
-#### Step 4 — ROM Configuration
+#### Step 4 — Simulation (optional)
+
+Checks that the Sizing fleet can keep up with the stations' calls on the real layout.
+
+1. **Setup** — import the layout drawing and set its scale; confirm the payload type(s).
+2. **Layout** — draw routes or place points (either order); Sizing's stations wait in a tray.
+3. **Connect** — join points with routes; unreached stations are marked.
+4. **Chargers** — place the suggested number.
+5. **Simulate** — the static count runs first; one vehicle is added at a time until it passes.
+6. **Results** — the fleet reads **Verified**, or **Suggested N** with the check that failed.
+   **Use N** raises the quote (never lowers it).
+
+Skip it and the fleet stays **Estimated**; Pricing works either way.
+
+#### Step 5 — Pricing (was Step 4 — ROM Configuration)
 
 Internal sell-price build-up for every assigned chassis, closed by a fleet-wide total.
 
@@ -118,15 +132,14 @@ Internal sell-price build-up for every assigned chassis, closed by a fleet-wide 
 
 > All dollar values and multipliers here are placeholders pending real pricing.
 
-#### Step 5 — Dashboard
+#### Return on investment (in Step 5 — Pricing; the Dashboard was retired 2026-11-18)
 
-Return-on-investment summary for the customer deck.
+Below the quotation: CAPEX, payback, net benefit, labor offset, OPEX, TCO and cost per move.
 
 Key inputs (pre-populated from questionnaire; editable):
 - **Operators displaced** (derived from `operatorsPerShift × shiftsPerDay`; overridable)
 - **Fully burdened rate** ($/yr per operator — from §12)
 - **ROI target** (yrs — from §10 Commercial)
-- **Energy cost** ($/kWh)
 - **Service life** (yrs)
 - **Annual maintenance** (% of CapEx)
 
@@ -136,10 +149,12 @@ Output:
 - Payback period vs. ROI target (highlights if fleet pays back within customer's target)
 - Payback chart (used in the PPTX customer deck)
 
-#### Export
+#### Step 6 — Export
 
-- **Export PPTX** — generates a customer-ready PowerPoint deck (one claim per slide, payback chart included).
-- **Export PDF** — full project summary with embedded JSON (importable by another engineer).
+- **Customer presentation** (`.pptx`) — the main action: pick the sections, then download a
+  customer-ready deck (one claim per slide; the sizing slide says whether the fleet was verified).
+- **Internal model** (`.xlsx`) — the live-formula workbook.
+- **Save revision** (`.json`) — the project file Step 0 re-imports.
 
 ---
 
@@ -152,8 +167,8 @@ Output:
 | Engineer imports questionnaire | Main app Step 00 → Import |
 | Engineer reviews vehicle eligibility | Main app Step 2 (read-only) |
 | Engineer assigns vehicles + sizes fleet | Main app Step 3 |
-| Engineer builds ROI case | Main app Step 5 |
-| Generate customer deck | Main app Step 5 → Export PPTX |
+| Engineer builds ROI case | Main app Step 5 — Pricing |
+| Generate customer deck | Main app Step 6 — Export |
 
 ---
 
@@ -175,9 +190,9 @@ driveAisleWidthFt            →   Informational (not a gate)
 rackingAisleWidthFt          →   Informational (not a gate)
 shiftsPerDay × hoursPerShift →   Operating hours (fleet model)
 requiredThroughputPerHour    →   Fleet sizing input (Step 3)
-operatorsPerShift            →   Labor offset (Step 5)
-fullyBurdenedRateUsdPerYear  →   Labor savings calc (Step 5)
-roiTargetYears               →   Payback framing (Step 5)
+operatorsPerShift            →   Labor offset (Step 5 — Pricing)
+fullyBurdenedRateUsdPerYear  →   Labor savings calc (Step 5 — Pricing)
+roiTargetYears               →   Payback framing (Step 5 — Pricing)
 certifications               →   Cert gate (Step 2)
 temperatureEnvironment       →   Temp gate (Step 2)
 ```

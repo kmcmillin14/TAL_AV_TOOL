@@ -1,5 +1,11 @@
 # Fleet Simulation ("Simulate") — design v2
 
+> **Update 2026-11-18 (owner):** the Simulate page becomes ribbon step **04 Simulation** (route `step4`,
+> `/simulate` redirects), named *Fleet size verification*. Pricing moves to step 05, a new **06 Export**
+> step holds the customer presentation, and the Dashboard is retired (financial tiles → Pricing,
+> operations tiles → Simulation, scenario drivers removed). Where this document says "un-numbered
+> page" or "the step ribbon is unchanged", `docs/SPECIFICATION.md` → *Workflow — seven steps* now governs.
+
 **Date:** 2026-11-10
 **Status:** Design — owner decisions recorded 2026-11-10 (§12); awaiting approval of the plan
 (`docs/superpowers/plans/2026-11-10-fleet-simulation.md`) before Milestone 1.

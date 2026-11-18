@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-11-18 — Workflow: seven steps (docs first; build follows)
+
+- Owner: the ribbon becomes **Start · Intake · Compatibility · Sizing · Simulation · Pricing · Export**.
+  Simulation (fleet size verification) is numbered step 04 at `step4`; Pricing moves to `step5`;
+  **Export** (the customer presentation, the workbook and the JSON revision) is a new last step at `step6`.
+- The **Dashboard is retired**: its financial tiles move to Pricing, its operations tiles
+  (operation map, what the fleet does, utilization, battery, redundancy) to Simulation's opening
+  view, *Requirements met* to Compatibility, its export bar to Export.
+- The **scenario drivers are removed** (owner). Maintenance % and service life, which only the
+  drivers rail could edit, become plain inputs in Pricing; the other inputs already live in Step 1
+  and Sizing.
+- `/simulate` redirects to `/step4`; `step4Complete` keeps its name and still means Pricing reviewed.
+- Updated: SPECIFICATION (*Workflow — seven steps*, step headings, header exports), ARCHITECTURE
+  (nav steps, routes, Simulation boundary), WORKFLOW-GUIDE, SKILLS.
+
 ## 2026-11-18 — Fleet size verification: one fleet figure
 
 - Owner (plan agreed): Sizing's total is one figure with a state: **Estimated** (static calc only),

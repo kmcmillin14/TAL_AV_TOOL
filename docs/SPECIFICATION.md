@@ -4,6 +4,61 @@ The functional spec ("what the app does"). For architectural rules ("how it's bu
 
 ---
 
+## Workflow — seven steps (owner, 2026-11-18; in build on `feature/fleet-simulation`)
+
+One project moves left to right through seven steps. Each step has one job and hands the next
+one figure; no step requires the one before it to be finished (partial projects stay valid).
+
+| # | Ribbon label | Job | Route | Was |
+|---|---|---|---|---|
+| 00 | Start | Import or create | `step0` | unchanged |
+| 01 | Intake | Load, transfer, environment, economics inputs | `step1` | unchanged |
+| 02 | Compatibility | Which vehicles qualify; requirements met | `step2` | unchanged (gains *Requirements met*) |
+| 03 | Sizing | How many vehicles — the **estimate** | `step3` | unchanged (gains *04 Verification*) |
+| 04 | Simulation | Can they keep up, and how they operate — **verified or suggested** | `step4` | the un-numbered `simulate` page + the Dashboard's operations tiles |
+| 05 | Pricing | What it costs and what it returns | `step5` | Step 4 *ROM Configuration* + the Dashboard's financial tiles |
+| 06 | Export | The customer presentation and the files to take away | `step6` | the Dashboard's export bar |
+
+**Routes follow the ribbon number** (`app/projects/[id]/stepN`). Old addresses redirect:
+`/simulate` → `/step4`. `/step4` and `/step5` now mean Simulation and Pricing; stored projects
+hold no URLs, so only browser bookmarks are affected. The stored flag `step4Complete` keeps its
+name for file compatibility and still means *Pricing reviewed*.
+
+**What moves where (the Dashboard is retired):**
+
+| Dashboard content | New home |
+|---|---|
+| Financials hero (ROM CAPEX, net benefit, payback, labor offset, annual OPEX, TCO, cost / move), ROM pricing, payback and TCO charts, CAPEX chart | **05 Pricing**, below the quotation |
+| Economic inputs edited only through the drivers rail — **maintenance % of CAPEX** and **service life** | **05 Pricing**, as plain baseline inputs (*Economic assumptions*) beside the financials |
+| Fleet & flow hero, operation map, *What the fleet does*, utilization, availability / charging gauges, battery state of charge and runtime, redundancy | **04 Simulation**, its opening *Operations* view — the static estimate, then estimate and simulated side by side after a run |
+| Requirements met | **02 Compatibility** (and the deck appendix) |
+| Methodology and assumptions panels | Each with the figures it explains: operations in 04, economics in 05 |
+| Export bar (Customer deck, Internal model, Save revision) | **06 Export** |
+| **Scenario drivers** (rail, Baseline / Scenario toggle, *Scenario vs baseline*, `src/lib/scenario.ts`) | **Removed (owner, 2026-11-18).** The baseline inputs they could edit live in Step 1 (operators, shifts, labor rate), Step 3 (target utilization) and 05 Pricing (maintenance, service life). Throughput boost had no baseline; a what-if on volume is now an edit to the flows in Sizing. |
+
+**Upstream → downstream (one figure each):**
+
+- **01 → 02, 03, 04:** loads (payload types), transfer, environment; economics inputs to 05.
+- **02 → 03, 04:** the qualified vehicles; Simulation offers only vehicles that carry the payloads.
+- **03 → 04:** flows (stations, moves per hour, vehicle), the static fleet per type, charging,
+  target utilization. 04 opens on this estimate.
+- **04 → 03, 05:** the fleet state per type (*Estimated / Verified / Suggested N / Not verified*,
+  `fleetCheck`), and a raised count only when **Use N** is pressed (raise-only, `appliedFleet`).
+  Sizing shows the state on its total; Pricing prices `computeFleetModel`, which already includes
+  an applied count.
+- **05 → 06:** the priced fleet model; the deck, the workbook and the JSON revision all read the
+  same `computeFleetModel`, so 05 and 06 can never disagree.
+
+**Export (06):** the step opens on the **customer presentation** — its sections listed in deck
+order with the section picker inline (formerly the `PptxSectionPicker` dialog), a pricing-gate
+notice when the quote is withheld, and **Download presentation** (`.pptx`) as the one primary
+action. *Internal model* (`.xlsx`) and *Save revision* (`.json`) sit beside it. The header's
+export menu keeps working on every step; the labelled actions that were on the Dashboard's head
+live here. The deck gains a *Fleet size verification* line on its sizing slide (state and count),
+so a verified fleet says so to the customer.
+
+---
+
 ## Step 00 — Project Setup / Entry
 
 The entry screen (`app/projects/[id]/step0/page.tsx`), reached when the root route
@@ -52,9 +107,8 @@ per audience** (2026-07-21) — the icon export menu shows exactly three:
 (`.json`). The main-app PDF export was retired; the `.pdf` **import** path on
 Step 00 is unchanged (it reads the questionnaire's branded PDF), and
 `exportProjectPdf` survives as the pure builder behind that round-trip's tests.
-On the **Dashboard (step 05) only**, the labeled actions render in the page
-header's blank space (`src/components/ExportActions.tsx`, plus the page's
-`RomExportBar`):
+On **06 Export only** (was the Dashboard, 2026-11-18), the labeled actions render in the page
+header's blank space (`src/components/ExportActions.tsx`, plus the step's export panel):
 
 - **`Save Revision`** (ghost button) — the `.json` project file Step 00's
   *Import Previous Revision* reads. No auto-bump of Rev — the engineer edits Rev
@@ -354,7 +408,7 @@ rail lists the three sections (`01 Raw Fleet · 02 Charging · 03 Buffer`), high
 view via IntersectionObserver, scrolls on click, and shows the live **TOTAL fleet** figure at the
 top. Sections render as full-width blocks with numbered headers, visually matching the Step 1
 form sections. Both pieces are the shared `src/components/ScrollSpyNav.tsx` /
-`src/components/ScrollSection.tsx`, also used by the Step 5 Dashboard's scrolling layout.
+`src/components/ScrollSection.tsx`, also used by the Pricing and Export steps (was the Step 5 Dashboard).
 
 **Hero** (`.engine-result`): the headline is always the **total fleet sold**; the
 `base · +charging · ×buffer = total` build-up bar shows every segment lit (all stages are visible).
@@ -619,7 +673,11 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 
 ---
 
-## Simulate (optional, after Sizing) — in development
+## Step 04 — Simulation (fleet size verification; optional) — in development
+
+> **2026-11-18:** this page becomes ribbon step **04** at `step4` (was the un-numbered `simulate`
+> page) and gains the Dashboard's operations tiles as its opening *Operations* view — see
+> *Workflow — seven steps* above. It stays optional: skipping it leaves the fleet *Estimated*.
 
 > **Status:** being built — engine, data model, page, layout editor and run view done (Milestones 1–4; the run view was pulled forward from Milestone 5 with the proof-of-concept features). Branch `feature/fleet-simulation`; full design in
 > `docs/superpowers/specs/2026-11-10-fleet-simulation-design-v2.md`, plan in
@@ -1178,7 +1236,11 @@ step ribbon is unchanged.
 
 ---
 
-## Step 4 — ROM Configuration
+## Step 05 — Pricing (was Step 4 — ROM Configuration)
+
+> **2026-11-18:** now ribbon step **05** at `step5`, and it gains the Dashboard's financial tiles
+> and the two economic inputs only the drivers rail could edit (maintenance %, service life) —
+> see *Workflow — seven steps*.
 
 The internal sell-price build-up — Hardware + Integration + Software + Adders — distinct
 from the customer-facing ROM economics on the Dashboard (`src/calc/rom.ts`, CAPEX/OPEX/
@@ -1333,7 +1395,13 @@ configured" state rather than crashing.
 
 ---
 
-## Step 5 — Dashboard
+## Dashboard — retired 2026-11-18 (content moved; reference)
+
+> **2026-11-18 (owner):** the Dashboard step is retired. Its financial tiles move to **05 Pricing**,
+> its operations tiles to **04 Simulation**, *Requirements met* to **02 Compatibility**, the export
+> bar to **06 Export**; the **scenario drivers are removed**. The tile behaviour below still
+> describes those tiles in their new homes; the driver rail, Baseline / Scenario toggle and delta
+> chips no longer apply. See *Workflow — seven steps*.
 
 Customer-facing summary fed by the Fleet Engine `FleetSummary`. Rebuilt (2026-06-22) as an
 interactive **bento dashboard**: a sticky left **driver rail** (`RomDrivers`) edits in-memory
@@ -1608,7 +1676,7 @@ Qty · Unit Price (ROM range) · Line Total (ROM range) + red TOTAL row, from `r
 pure `paybackSeries`) over a 3-row metrics table (simple payback · annual labor offset · annual
 OPEX); table-only fallback when no DOM. Canvas image placed at native aspect ratio.
 
-A **Section Picker** (`PptxSectionPicker`, from the Step 5 export bar and the header menu)
+A **Section Picker** (`PptxSectionPicker`, inline on 06 Export, and from the header menu)
 chooses which sections to include; **Product Overview slides are auto-limited to the
 engineer-assigned fleet chassis** (Cleanfix always dropped). The builder removes unselected and
 retired slides via OOXML (`presentation.xml` sldIdLst + rels + `[Content_Types]`). Cover (S1)

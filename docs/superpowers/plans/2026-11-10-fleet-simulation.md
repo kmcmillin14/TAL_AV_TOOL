@@ -1,5 +1,11 @@
 # Fleet Simulation Implementation Plan
 
+> **Update 2026-11-18 (owner):** the Simulate page becomes ribbon step **04 Simulation** (route `step4`,
+> `/simulate` redirects), named *Fleet size verification*. Pricing moves to step 05, a new **06 Export**
+> step holds the customer presentation, and the Dashboard is retired (financial tiles → Pricing,
+> operations tiles → Simulation, scenario drivers removed). Where this document says "un-numbered
+> page" or "the step ribbon is unchanged", `docs/SPECIFICATION.md` → *Workflow — seven steps* now governs.
+
 > **For agentic workers:** one task per milestone. Each task is test-first for engine and schema
 > work, ends with the gates, `/simplify`, `/code-review`, and a written summary for the owner.
 > **Never push** — commit locally per milestone and stop for approval (CLAUDE.md Pre-Push
