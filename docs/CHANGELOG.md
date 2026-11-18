@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-18 — Fleet size verification: one fleet figure
+
+- Owner (plan agreed): Sizing's total is one figure with a state: **Estimated** (static calc only),
+  **Verified** (the simulation met all three checks), **Suggested N** (it met only above the static
+  count; **Use N** raises the quote, raise-only) or **Not verified** (short or gridlock).
+- Sizing's build-up gains **04 Verification**, one row per vehicle type, and the **Verify fleet size**
+  action. The Simulate page is renamed **Fleet size verification**; the head button and verdict chips
+  it replaces are removed.
+- No figure moves: the fleet, pricing and exports only change when you press Use N, as before.
+
 ## 2026-11-18 — Fleet simulation: ordered queue (gridlock prevention)
 
 - Owner: vehicles **queue in order** in a lane — none claims a stop while another vehicle is ahead of it

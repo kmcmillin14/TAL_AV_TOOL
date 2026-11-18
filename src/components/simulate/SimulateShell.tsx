@@ -178,7 +178,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   // on the left. Sim and Data need a runnable layout (disabled with the first blocker as the reason).
   const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix Validation first'} — click for the list`
   const modeTabs = (
-    <SimTabs label="Simulate" idPrefix="sim-mode" value={shown} onChange={setMode} onBlocked={() => setTab('checks')}
+    <SimTabs label="Fleet size verification" idPrefix="sim-mode" value={shown} onChange={setMode} onBlocked={() => setTab('checks')}
       tabs={[{ id: 'layout', label: 'Layout' }, { id: 'sim', label: 'Sim', blocked }, { id: 'data', label: 'Data', blocked }]} />
   )
 
@@ -198,7 +198,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <span className="eh-eyebrow mono">
             Step 03 · Sizing <Link href={`/projects/${project.id}/step3`} className="sim-back"><Icon name="arrowL" size={11} /> Back to Sizing</Link>
           </span>
-          <h1 className="eh-title">Simulate</h1>
+          <h1 className="eh-title">Fleet size verification</h1>
         </div>
         <div className="eh-actions">
           {!running && (

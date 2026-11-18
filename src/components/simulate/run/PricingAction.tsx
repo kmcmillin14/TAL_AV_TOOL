@@ -61,7 +61,7 @@ export default function PricingAction({ project, vehicles, vehicleId, n, engineN
     return (
       <span className="sim-vact">
         <span className={`sim-tag${stale ? ' stale' : ''}`}>In pricing: {applied.fleet}{stale ? ' · stale — re-run' : ''}</span>
-        <button type="button" className="link-btn" onClick={() => onApplied(without())}>Back to engine ({engineN})</button>
+        <button type="button" className="link-btn" onClick={() => onApplied(without())}>Back to static ({engineN})</button>
       </span>
     )
   }
@@ -72,7 +72,7 @@ export default function PricingAction({ project, vehicles, vehicleId, n, engineN
   }
   return (
     <span className="sim-vact">
-      {!confirm && <button type="button" className="btn btn-sm" onClick={() => setConfirm(true)}>Use {n} in pricing</button>}
+      {!confirm && <button type="button" className="btn btn-sm" onClick={() => setConfirm(true)}>Use {n}</button>}
       {confirm && change && (
         <span className="sim-confirm">
           Pricing fleet {change.fleet[0]} → {change.fleet[1]}{change.rom && <> · ROM {money(change.rom[0])} → {money(change.rom[1])}</>} · labelled “simulated (engine {engineN})”

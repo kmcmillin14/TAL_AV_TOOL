@@ -168,8 +168,8 @@ export const HELP: HelpSection[] = [
   },
   {
     id: 'simulate',
-    eyebrow: 'Sizing · Simulate',
-    title: 'Simulate',
+    eyebrow: 'Step 03 · Sizing',
+    title: 'Fleet size verification',
     summary:
       'An optional check of the Sizing fleet on a drawn layout. You draw the site — points, routes and flows — and the simulation runs the vehicles through it to show whether the fleet keeps up and where it gets stuck. Nothing is invented: what is not drawn or not in the vehicle data is flagged.',
     howTo: [

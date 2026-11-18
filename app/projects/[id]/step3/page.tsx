@@ -23,7 +23,7 @@ import ChargingPipeline from '@/src/components/engine/ChargingPipeline'
 import BufferPipeline from '@/src/components/engine/BufferPipeline'
 import { pricingGate } from '@/src/lib/romComplexityFromProject'
 import { projectFleetSettings } from '@/src/lib/fleetModel'
-import SimVerdictChips from '@/src/components/step3/SimVerdictChips'
+import { FleetCheckBadge, useFleetChecks, VerificationSection } from '@/src/components/step3/FleetVerification'
 
 export default function FleetEnginePage() {
   const params = useParams()
@@ -62,6 +62,7 @@ export default function FleetEnginePage() {
 
   // Whether Step 4 will actually be able to price this project.
   const gate = useMemo(() => (project ? pricingGate(project) : null), [project])
+  const verify = useFleetChecks(project, vehicleById, fleet)
 
   const persistPatch = (patch: EnginePatch) => {
     if (!project) return
@@ -108,17 +109,10 @@ export default function FleetEnginePage() {
       />
 
       <div className="workspace">
-        <div className="engine-head with-actions">
+        <div className="engine-head">
           <div className="eh-text">
             <span className="eh-eyebrow mono">Step 03 / 05</span>
             <h1 className="eh-title">Fleet Engine</h1>
-          </div>
-          {/* Optional check of this fleet on a drawn layout (Fleet Simulation, spec v2 §9). */}
-          <div className="eh-actions">
-            {project && <SimVerdictChips project={project} vehicleById={vehicleById} fleet={fleet} />}
-            <Link href={`/projects/${id}/simulate`} className="btn ghost">
-              Simulate <Icon name="arrowR" size={13} />
-            </Link>
           </div>
         </div>
 
@@ -130,6 +124,7 @@ export default function FleetEnginePage() {
               { id: 'engine-raw', num: '01', label: 'Raw Fleet' },
               { id: 'engine-charging', num: '02', label: 'Charging' },
               { id: 'engine-buffer', num: '03', label: 'Utilization' },
+              { id: 'engine-verify', num: '04', label: 'Verification' },
             ]}
             topSlot={
               <div className="section-nav-progress">
@@ -151,6 +146,7 @@ export default function FleetEnginePage() {
                   <span className="er-num mono">{fleet.totalFleetSold}</span>
                   <span className="er-num-unit">vehicles</span>
                   {simulatedNote(fleet) && <span className="er-sim-note">{simulatedNote(fleet)}</span>}
+                  <FleetCheckBadge state={verify.state} checks={verify.checks} />
                 </div>
                 <div className="er-pipeline" aria-label="Fleet build-up">
                   <div className="ep-seg on">
@@ -273,6 +269,17 @@ export default function FleetEnginePage() {
                 onPatch={persistPatch}
               />
             </ScrollSection>
+
+            {project && (
+              <ScrollSection
+                id="engine-verify"
+                num="04"
+                title="Verification"
+                sub="Simulation — does this fleet keep up with the stations’ calls on the site layout?"
+              >
+                <VerificationSection project={project} vehicleById={vehicleById} checks={verify.checks} inputsKey={verify.key} />
+              </ScrollSection>
+            )}
           </div>
         </div>
 

@@ -5467,9 +5467,7 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-chip.meets { background: var(--good-soft); color: var(--good); } .sim-chip.tight { background: var(--warn-soft); color: var(--warn); }
 .sim-chip.short, .sim-chip.gridlock { background: var(--bad-soft); color: var(--bad); }
 /* Sizing: the last simulation run per type, and a simulated fleet in pricing (D-1). */
-.sim-sizing { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 12.5px; color: var(--text-secondary); }
 .sim-chip.sm { padding: 4px 10px; font-size: 10.5px; }
-.sim-sizing-applied { white-space: nowrap; }
 .er-sim-note { font-size: 12.5px; color: var(--sim-sel); margin-left: 8px; align-self: center; }
 /* Use N in pricing (D-1): one action per verdict row, a tag once applied. */
 .sim-vact { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 13px; }
@@ -5886,3 +5884,35 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-hw-cap.is-near { cursor: pointer; }
 .sim-hw-cap.is-near circle { stroke: var(--warn); fill: color-mix(in srgb, var(--warn) 18%, var(--bg-surface)); }
 .sim-hw-cap.is-near:hover circle { stroke-width: 3.5; }
+
+/* Fleet size verification on Sizing (owner, 2026-11-18): one state on the fleet figure, and 04 Verification.
+   Colour is the state only — green verified, orange suggested / short, red gridlock, grey estimated. */
+.fv-badge { display: inline-flex; align-items: center; gap: 6px; align-self: center; padding: 4px 10px; border-radius: 99px;
+  font: 600 12.5px var(--tal-font-family); white-space: nowrap; text-decoration: none;
+  background: var(--bg-surface-3); color: var(--text-secondary); }
+.fv-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; border: 1.5px solid currentColor; }
+.fv-badge.verified { background: var(--good-soft); color: var(--good); }
+.fv-badge.verified::before { display: none; }
+.fv-badge.suggested, .fv-badge.notVerified { background: var(--warn-soft); color: var(--warn); }
+.fv-badge.suggested::before, .fv-badge.notVerified::before { background: currentColor; }
+.fv-badge.bad { background: var(--bad-soft); color: var(--bad); }
+.fv-badge.bad::before { background: currentColor; }
+a.fv-badge:hover { filter: brightness(0.96); }
+a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.fv { display: grid; gap: 16px; }
+.fv-rows { list-style: none; margin: 0; padding: 0; display: grid; }
+.fv-row { display: grid; grid-template-columns: minmax(150px, 1.2fr) 72px auto minmax(0, 2fr) auto; align-items: center; gap: 16px;
+  padding: 12px 0; border-bottom: 1px solid var(--border); }
+.fv-row:first-child { padding-top: 0; }
+.fv-veh { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; min-width: 0; }
+.fv-count { display: inline-flex; gap: 6px; align-items: baseline; font-size: 15px; font-weight: 700; color: var(--text-secondary); }
+.fv-count .mono:last-child { color: var(--text-primary); }
+.fv-detail { font-size: 13px; color: var(--text-secondary); min-width: 0; }
+.fv-act { display: inline-flex; gap: 12px; align-items: center; justify-self: end; }
+.fv-foot { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+.fv-lead { margin: 0; max-width: 62ch; font-size: 13.5px; color: var(--text-secondary); }
+@media (max-width: 720px) {
+  .fv-row { grid-template-columns: 1fr auto; row-gap: 6px; }
+  .fv-count { justify-self: end; }
+  .fv-detail, .fv-act { grid-column: 1 / -1; justify-self: start; }
+}

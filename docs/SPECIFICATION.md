@@ -1158,9 +1158,21 @@ step ribbon is unchanged.
     stepper, and not flows the run ignores). When they change, the
     applied fleet reads *stale — re-run* in Simulate and on Sizing, and pricing keeps using it. A
     completed run that Meets at the applied figure refreshes the key.
-  - *Sizing verdict chip:* each completed full-shift run stores `simSettings.lastRun` (`key`, and
-    per type `fleet` and `verdict`) only when it changed. Sizing shows one chip per vehicle type
-    beside **Simulate** ("Meets at 3"), muted with *re-run* when stale. The run view keeps its
+  - *One fleet figure (owner, 2026-11-18; replaces the Sizing verdict chip):* each completed
+    full-shift run stores `simSettings.lastRun` (`key`, and per type `fleet` and `verdict`) only when
+    it changed. Sizing's total carries one state, derived per vehicle type by `fleetCheck`
+    (`src/calc/sim/verification.ts`) and summed by `fleetCheckSummary`:
+    - **Estimated** — no run for the type, or its inputs changed since (*layout changed — verify again*);
+    - **Verified** — the last run met all three checks at or below the static count, or a raised
+      count is applied and current;
+    - **Suggested N** — the last run met at N above the static count, not yet applied: **Use N**
+      applies it (raise-only, as above);
+    - **Not verified** — the last run fell short or gridlocked at its count (orange; red for gridlock).
+    The headline shows the worst of the types (Not verified → Suggested → Estimated → Verified).
+    Sizing's build-up gains a fourth section, **04 Verification**: one row per type with the static
+    count, the state and its action (Use N / Back to static), and **Verify fleet size**, which opens
+    the page. The page head's *Simulate* button is gone; the page is titled **Fleet size
+    verification**. The run view keeps its
     inputs stable across storage refreshes, so saving a result or refocusing the window does not
     restart the run.
 
