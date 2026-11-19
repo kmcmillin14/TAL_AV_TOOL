@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-19 — Simulation: one strip, one way forward
+
+- Owner ("too busy"; "clear, intuitive direction… single options, not questions, double icons"): the
+  stage strip is one slim row and the only navigation on the step. Overview (the operations tiles) is its
+  first stage; the Operations / Layout check switch and the head's state badge are gone (Results carries
+  the state). Each stage shows one mark; the open stage's status and a single **Next: ‹stage›** button sit
+  at the end of the row. Setup's payloads have one action (Confirm), then "Confirmed · Edit in Step 1".
+
 ## 2026-11-18 — Simulation: stage strip and Setup
 
 - Owner (plan step 2): Layout check gets one strip — **Setup · Layout · Connect · Chargers · Simulate ·

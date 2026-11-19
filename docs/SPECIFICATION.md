@@ -30,7 +30,7 @@ name for file compatibility and still means *Pricing reviewed*.
 |---|---|
 | Financials hero (ROM CAPEX, net benefit, payback, labor offset, annual OPEX, TCO, cost / move), ROM pricing, payback and TCO charts, CAPEX chart | **05 Pricing**, below the quotation |
 | Economic inputs edited only through the drivers rail — **maintenance % of CAPEX** and **service life** | **05 Pricing**, as plain baseline inputs (*Economic assumptions*) beside the financials |
-| Fleet & flow hero, operation map, *What the fleet does*, utilization, availability / charging gauges, battery state of charge and runtime, redundancy, *How the fleet is calculated* | **04 Simulation**, its **Operations** view (`RomView view="operations"`) — the static estimate, labelled with the fleet state. It opens there until a layout is drawn, then on **Layout check** (the verification workspace); one switch in the head moves between them. Estimate beside simulated after a run comes with the Results stage. |
+| Fleet & flow hero, operation map, *What the fleet does*, utilization, availability / charging gauges, battery state of charge and runtime, redundancy, *How the fleet is calculated* | **04 Simulation**, its first stage, **Overview** (`RomOperations`) — the static estimate. It opens there until a layout is drawn, then on Layout; the stage strip moves between them. Estimate beside simulated after a run comes with the Results stage. |
 | The opening claim (*N vehicles. $X – $Y. Pays back in N years.*) | **05 Pricing**, the first line of *Return on investment* |
 | Requirements met | **02 Compatibility**, a *Requirements met by the sized fleet* disclosure below the cards once Sizing assigns vehicles |
 | Methodology and assumptions panels | Each with the figures it explains: *Operations* assumptions (now including target utilization) in 04, *Economics* in 05 — where maintenance % and service life are edited in place |
@@ -677,12 +677,16 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 > page) and gains the Dashboard's operations tiles as its opening *Operations* view — see
 > *Workflow — seven steps* above. It stays optional: skipping it leaves the fleet *Estimated*.
 
-**Stage strip (owner, 2026-11-18; replaces the Layout · Sim · Data tabs and Layout's Edit · Flows ·
-Validation sub-tabs).** In *Layout check*, one strip above the workspace names the six stages in order;
-each shows a one-line status and can be opened at any time (not a wizard):
+**Stage strip (owner, 2026-11-18; slimmed 2026-11-19: "clear direction, single options").** One slim
+row leads through the whole step — it replaces the Operations / Layout check switch, the head's state
+badge, the Layout · Sim · Data tabs and Layout's Edit · Flows · Validation sub-tabs. Each stage shows one
+mark (its number, or a tick when done); only the open stage's status line is shown, at the end of the row,
+beside **one** button, **Next: ‹stage›** — after Results, **Next: Pricing** (the step has no second
+bottom bar). Any stage can still be opened directly (not a wizard).
 
 | Stage | Opens | Status line | Done when |
 |---|---|---|---|
+| **Overview** | How the Sizing fleet operates, from the static model (the former Dashboard's operations tiles) | *6 vehicles estimated by Sizing* | — |
 | **Setup** | Side panel: the drawing (load, scale, opacity) and the payloads from Step 1, with **Confirm payloads** (`simSettings.payloadsConfirmed`) | *Drawing scaled · 2 payloads* | payloads confirmed (none in Step 1: not done — add them in Intake); the drawing is optional |
 | **Layout** | The editor and its panel (selection, *Place on routes*) | *12 of 16 flows placed* | every Sizing flow has both ends on the map |
 | **Connect** | Validation (blockers first), then the flows on the layout | *2 to fix* / *Connected* | no blockers |
@@ -694,7 +698,7 @@ each shows a one-line status and can be opened at any time (not a wizard):
   static charging model has on a charger at once (`suggestedChargers`, `src/calc/sim/verification.ts`).
 - Simulate and Results need a runnable layout; pressed while it is not, they open Connect. A new
   blocker while in them drops back to Connect. The head's validation status opens Connect.
-- The stage opens on Setup while nothing is drawn, else on Layout. Validation's fix buttons open the
+- The stage opens on Overview while nothing is drawn, else on Layout. A phone shows Overview only. Validation's fix buttons open the
   stage that fixes them (a missing charger → Chargers).
 
 > **Status:** being built — engine, data model, page, layout editor and run view done (Milestones 1–4; the run view was pulled forward from Milestone 5 with the proof-of-concept features). Branch `feature/fleet-simulation`; full design in

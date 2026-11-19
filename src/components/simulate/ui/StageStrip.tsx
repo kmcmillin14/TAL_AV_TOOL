@@ -1,41 +1,58 @@
 'use client'
 
-// The stage strip (owner, 2026-11-18): Setup · Layout · Connect · Chargers · Simulate · Results, in order,
-// each with a one-line status — what is done and what is next, without locking the order. It replaces the
-// Layout · Sim · Data tabs and Layout's Edit · Flows · Validation sub-tabs.
+// The stage strip (owner, 2026-11-18/19): Overview · Setup · Layout · Connect · Chargers · Simulate ·
+// Results — one slim row and one way forward. Each stage shows one mark (its number, or a tick when done);
+// only the open stage's status is shown, beside a single Next button. Any stage can still be opened.
 
-export type Stage = 'setup' | 'layout' | 'connect' | 'chargers' | 'simulate' | 'results'
+import Link from 'next/link'
+import Icon from '@/src/design-system/components/Icon'
+
+export type Stage = 'overview' | 'setup' | 'layout' | 'connect' | 'chargers' | 'simulate' | 'results'
 
 export interface StageInfo {
   id: Stage
   label: string
-  /** One line under the label: what this stage holds now. */
+  /** The open stage's one line: what it holds now. */
   status: string
   done?: boolean
   /** Why it cannot open yet (Simulate, Results); pressing it opens `onBlocked` instead. */
   blocked?: string
 }
 
-export default function StageStrip({ stages, value, onChange, onBlocked }: {
+export default function StageStrip({ stages, value, onChange, onBlocked, then }: {
   stages: StageInfo[]
   value: Stage
   onChange: (s: Stage) => void
   onBlocked: () => void
+  /** Where Next goes after the last stage — the next step of the workflow. */
+  then: { label: string; href: string }
 }) {
+  const at = stages.findIndex(s => s.id === value)
+  const current = stages[at], next = stages[at + 1]
+  const go = (s: StageInfo) => (s.blocked ? onBlocked() : onChange(s.id))
   return (
     <nav className="sim-stages" aria-label="Fleet size verification stages">
       <ol>
         {stages.map((s, i) => (
           <li key={s.id}>
-            <button type="button" aria-current={s.id === value ? 'step' : undefined} title={s.blocked}
+            <button type="button" aria-current={s.id === value ? 'step' : undefined} title={s.blocked ?? s.status}
               className={`sim-stage-btn${s.id === value ? ' is-on' : ''}${s.done ? ' is-done' : ''}${s.blocked ? ' is-blocked' : ''}`}
-              onClick={() => (s.blocked ? onBlocked() : onChange(s.id))}>
-              <span className="sim-stage-name"><span className="sim-stage-n" aria-hidden>{s.done ? '✓' : i + 1}</span>{s.label}</span>
-              <span className="sim-stage-status">{s.status}</span>
+              onClick={() => go(s)}>
+              <span className="sim-stage-n" aria-hidden>{s.done ? <Icon name="check" size={11} /> : i + 1}</span>{s.label}
             </button>
           </li>
         ))}
       </ol>
+      <div className="sim-stage-now" aria-live="polite">
+        <span className="sim-stage-status">{current?.status}</span>
+        {next ? (
+          <button type="button" className="btn btn-sm primary" title={next.blocked} onClick={() => go(next)}>
+            Next: {next.label} <Icon name="arrowR" size={12} />
+          </button>
+        ) : (
+          <Link href={then.href} className="btn btn-sm primary">Next: {then.label} <Icon name="arrowR" size={12} /></Link>
+        )}
+      </div>
     </nav>
   )
 }

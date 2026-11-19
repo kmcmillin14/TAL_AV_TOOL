@@ -14,7 +14,7 @@ export default function SetupCard({ projectId, loads, confirmed, unitSystem, onC
   loads: Load[]
   confirmed: boolean
   unitSystem: UnitSystem
-  onConfirm: (confirmed: boolean) => void
+  onConfirm: () => void
 }) {
   return (
     <section className="sim-card" aria-label="Payloads">
@@ -26,10 +26,10 @@ export default function SetupCard({ projectId, loads, confirmed, unitSystem, onC
             {loads.map(l => <li key={l.id}><span className="sim-dot is-placed" />{loadLabel(l, unitSystem)}</li>)}
           </ul>
           <div className="sim-setup-act">
+            {/* One action: confirm; once confirmed, changing them is done in Step 1. */}
             {confirmed
-              ? <><span className="sim-tag">✓ Payloads confirmed</span><button type="button" className="link-btn" onClick={() => onConfirm(false)}>Undo</button></>
-              : <button type="button" className="btn btn-sm primary" onClick={() => onConfirm(true)}>Confirm payloads</button>}
-            <Link href={`/projects/${projectId}/step1`} className="link-btn">Edit in Step 1</Link>
+              ? <span className="sim-setup-done">Confirmed · <Link href={`/projects/${projectId}/step1`} className="link-btn">Edit in Step 1</Link></span>
+              : <button type="button" className="btn btn-sm primary" onClick={() => onConfirm()}>Confirm payloads</button>}
           </div>
         </>
       )}

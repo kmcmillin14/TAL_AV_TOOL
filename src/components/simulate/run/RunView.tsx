@@ -371,7 +371,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
             {followed && <span className="sim-legs-key"><i className="empty" />Empty to pick<i className="loaded" />Loaded to drop</span>}
           </div>
           <div className="sim-hud" onPointerDown={e => e.stopPropagation()}>
-            <button type="button" className="btn primary btn-sm" onClick={() => setRunning(r => !r)}>{running ? 'Pause' : 'Play'}</button>
+            <button type="button" className="btn ghost btn-sm" onClick={() => setRunning(r => !r)}>{running ? 'Pause' : 'Play'}</button>
             <div className="seg-toggle">
               {[1, 10, 100].map(x => <button key={x} type="button" className={`seg-btn${speed === x ? ' on' : ''}`} onClick={() => { setSpeed(x); setRunning(true) }}>×{x}</button>)}
             </div>

@@ -55,8 +55,8 @@ interface Props {
   settings: FleetSettings
   fleet: FleetSummary
   unitSystem: UnitSystem
-  /** The step's own head content beside the title — Operations / Layout check and the fleet state. */
-  headExtra?: ReactNode
+  /** Overview, the first stage: how the Sizing fleet operates, from the static model. */
+  overview: ReactNode
   /** Results' status line: the fleet state (Estimated, Verified, Suggested N, …). */
   resultLabel: string
 }
@@ -65,9 +65,9 @@ interface Props {
 const STAGE_PANEL = { setup: 'setup', layout: 'edit', connect: 'connect', chargers: 'chargers' } as const satisfies Partial<Record<Stage, PanelTab>>
 const PANEL_STAGE: Record<PanelTab, Stage> = { setup: 'setup', edit: 'layout', connect: 'connect', chargers: 'chargers' }
 
-export default function SimulateShell({ project, vehicles, vehicleById, settings, fleet, unitSystem, headExtra, resultLabel }: Props) {
+export default function SimulateShell({ project, vehicles, vehicleById, settings, fleet, unitSystem, overview, resultLabel }: Props) {
   const narrow = useIsNarrow()
-  /** The stage strip's stage; until one is picked, Setup while nothing is drawn, else Layout. */
+  /** The stage strip's stage; until one is picked, Overview while nothing is drawn, else Layout. */
   const [picked, setStage] = useState<Stage | null>(null)
   const { simLayout, flows = [] } = project
   // What a run drives, built once for validation and the run itself. Kept stable by value: saving
@@ -134,7 +134,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const empty = !hasLayout(simLayout)
   // Simulate and Results only while the run can happen. A new red item drops back to Connect and stays
   // there (no jump back into the run once it is fixed — it is a click away).
-  const wanted = picked ?? (empty ? 'setup' : 'layout')
+  const wanted = picked ?? (empty ? 'overview' : 'layout')
   if (!canRun && (wanted === 'simulate' || wanted === 'results')) setStage('connect')
   const stage: Stage = !canRun && (wanted === 'simulate' || wanted === 'results') ? 'connect' : wanted
   const running = stage === 'simulate' || stage === 'results'
@@ -193,8 +193,9 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const chargersWanted = useMemo(() => suggestedChargers(simFleet), [simFleet])
   const confirmed = !!ss?.payloadsConfirmed
   const stages: StageInfo[] = [
+    { id: 'overview', label: 'Overview', status: simFleet.totalFleetSold ? `${simFleet.totalFleetSold} vehicles estimated by Sizing` : 'No vehicles in Sizing yet' },
     { id: 'setup', label: 'Setup', done: confirmed && loads.length > 0,
-      status: [bg ? (bg.scale ? 'Drawing scaled' : 'Drawing not scaled') : 'No drawing', loads.length ? `${loads.length} payload${loads.length === 1 ? '' : 's'}${confirmed ? ' ✓' : ''}` : 'No payloads'].join(' · ') },
+      status: [bg ? (bg.scale ? 'Drawing scaled' : 'Drawing not scaled') : 'No drawing', loads.length ? `${loads.length} payload${loads.length === 1 ? '' : 's'}${confirmed ? ' confirmed' : ' to confirm'}` : 'No payloads in Step 1'].join(' · ') },
     { id: 'layout', label: 'Layout', done: flowN > 0 && linkedN === flowN,
       status: flowN ? `${linkedN} of ${flowN} flows placed` : empty ? 'Draw paths, place points' : 'No flows yet' },
     { id: 'connect', label: 'Connect', done: !empty && status.blockers === 0,
@@ -204,7 +205,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     { id: 'simulate', label: 'Simulate', blocked, status: canRun ? `${fleetNeeded} vehicle${fleetNeeded === 1 ? '' : 's'}` : 'Not ready' },
     { id: 'results', label: 'Results', blocked, status: resultLabel },
   ]
-  const setup = <SetupCard projectId={project.id} loads={loads} confirmed={confirmed} unitSystem={unitSystem} onConfirm={c => patchSimSettings(project.id, { payloadsConfirmed: c || undefined })} />
+  const setup = <SetupCard projectId={project.id} loads={loads} confirmed={confirmed} unitSystem={unitSystem} onConfirm={() => patchSimSettings(project.id, { payloadsConfirmed: true })} />
 
   // The banner sits at the top of the side panel (on a phone, above the page).
   const shownSample = sampleOn ? sampleOf(flows.find(f => isSample(f.id))!.id) : null
@@ -222,9 +223,8 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <span className="eh-eyebrow mono">Step 04 / 06</span>
           <h1 className="eh-title">Fleet size verification</h1>
         </div>
-        {headExtra}
         <div className="eh-actions">
-          {!running && (
+          {!running && stage !== 'overview' && (
             /* Validation, live: one status, a click opens the list in the side panel. */
             <button type="button" id="sim-valid" className="btn ghost sim-valid-btn"
               disabled={narrow} onClick={() => setStage('connect')} title={checks[0]?.level === 'bad' ? checks[0].text : 'Open the validation list'}>
@@ -254,17 +254,16 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
         </div>
       </div>
 
-      {!narrow && (
+      {!narrow && <StageStrip stages={stages} value={stage} onChange={setStage} onBlocked={() => setStage('connect')} then={{ label: 'Pricing', href: `/projects/${project.id}/step5` }} />}
+      {!narrow && stage !== 'overview' && (
         <VehicleBar types={types} vehicleById={vehicleById} vehicles={vehicles} app={app} sizingIds={sizingIds} loads={loads} staticN={staticN}
           placed={placed} stepped={stepped} unitSystem={unitSystem} onTypes={setTypes} onFleet={setFleet} />
       )}
       {narrow && banner}
-      {!narrow && <StageStrip stages={stages} value={stage} onChange={setStage} onBlocked={() => setStage('connect')} />}
 
-      {narrow ? (
-        <section className="sim-canvas" aria-label="Simulation layout">
-          <div className="empty-state"><h3>Open on a desktop to edit the layout</h3></div>
-        </section>
+      {narrow || stage === 'overview' ? (
+        // A phone gets the overview: the layout stages need a desktop.
+        <>{overview}{narrow && <p className="rom-empty">Open on a desktop to check the fleet on a layout.</p>}</>
       ) : running ? (
         <RunView view={stage === 'results' ? 'data' : 'sim'} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
       ) : (
