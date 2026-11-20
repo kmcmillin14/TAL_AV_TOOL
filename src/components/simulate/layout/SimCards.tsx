@@ -1,11 +1,12 @@
 'use client'
 
-// The layout editor's side panel parts (proof of concept; QoL pass):
-//   Place on routes — the Sizing flows' location names, each placed with one click
-//   Chargers        — the Chargers stage: chargers and parking to place, against a suggested count
-//   Validation      — the live checks (src/calc/sim/readiness.ts): locate and fix each
-//   Flows           — the Flows tab: every flow, its Sizing distance and its distance on the layout, the
+// The layout editor's side panel parts, by stage (stage strip, 2026-11-18):
+//   Place on routes — Layout: the Sizing flows' location names, each placed with one click
+//   Chargers        — Chargers: chargers and parking to place, against a suggested count
+//   Validation      — Connect: the live checks (src/calc/sim/readiness.ts): locate and fix each
+//   Flows           — Connect: every flow, its Sizing distance and its distance on the layout, the
 //                     Fleet Engine figure, and linking with a before → after confirmation (it moves the quote)
+// and the status words the stage strip shares with them (one wording per fact).
 
 import type { RackLoad } from '@/src/calc/sim/racks'
 import { useMemo, useState } from 'react'
@@ -89,8 +90,7 @@ export function ChargersCard({ layout, suggested, onArmHome }: {
   suggested: number
   onArmHome: (type: 'charger' | 'parking') => void
 }) {
-  const count = (t: SimPointType) => layout.points.filter(p => p.type === t).length
-  const chargers = count('charger')
+  const meta = { charger: chargerStatus(chargersPlaced(layout), suggested), parking: `${layout.points.filter(p => p.type === 'parking').length} placed` }
   return (
     <section className="sim-card" aria-label="Chargers">
       <p className="sim-card-note">
@@ -102,7 +102,7 @@ export function ChargersCard({ layout, suggested, onArmHome }: {
           <span className={`sim-dot kind-${t} is-placed`} />
           <div className="sim-check-main">
             <div className="nm">{t === 'charger' ? 'Charger' : 'Parking spot'}</div>
-            <div className="meta">{t === 'charger' ? `${chargers} of ${suggested} placed` : `${count(t)} placed`}</div>
+            <div className="meta">{meta[t]}</div>
           </div>
           <button type="button" className="btn btn-sm ghost" onClick={() => onArmHome(t)}>Place</button>
         </div>
@@ -111,10 +111,17 @@ export function ChargersCard({ layout, suggested, onArmHome }: {
   )
 }
 
-/** The Validation tab: blockers first, then warnings and notes, one row per thing. A row with a
- *  target selects it and centres on it; its fix button picks the tool that fixes it. */
-const FIX_LABEL: Record<CheckFix, string> = { scale: 'Scale', route: 'Draw route', charger: 'Place charger', linkFlow: 'Link flow', flowsTab: 'Open Flows' }
-/** The status in words — the page head and the Validation tab say it the same way. */
+/** Chargers on the layout. */
+export const chargersPlaced = (layout: Pick<SimLayout, 'points'>) => layout.points.filter(p => p.type === 'charger').length
+/** Chargers against the suggestion, in words — the strip and the Chargers card say it the same way. */
+export const chargerStatus = (placed: number, suggested: number) => (placed >= suggested ? `${placed} placed · ${suggested} suggested` : `${placed} of ${suggested} chargers`)
+/** The drawing in words — the strip and the Setup panel say it the same way. */
+export const drawingStatus = (bg: { scale?: unknown } | undefined) => (!bg ? 'No drawing' : bg.scale ? 'Drawing scaled' : 'Drawing not scaled')
+
+/** Connect's validation list: blockers first, then warnings and notes, one row per thing. A row with a
+ *  target selects it and centres on it; its fix button picks the tool, or opens the stage, that fixes it. */
+const FIX_LABEL: Record<CheckFix, string> = { scale: 'Scale', route: 'Draw route', charger: 'Place charger', linkFlow: 'Link flow', flowsTab: 'Show flows' }
+/** The validation status in words — the page head and the strip's Connect say it the same way. */
 export const statusLabel = ({ blockers }: ReturnType<typeof checkStatus>) => (blockers ? `${blockers} blocker${blockers === 1 ? '' : 's'}` : 'Valid')
 export function ValidationList({ checks, status, onLocate, onDetails, onFix }: {
   checks: ReadinessCheck[]
@@ -146,7 +153,7 @@ export function ValidationList({ checks, status, onLocate, onDetails, onFix }: {
   )
 }
 
-/** The Flows tab: every flow as two lines — from → to, then vehicle · moves/h · distance — with the
+/** Connect's flows: every flow as two lines — from → to, then vehicle · moves/h · distance — with the
  *  layout distance and its Δ while a link is pending; the Fleet Engine line and "Use layout
  *  distances" (before → after confirmation) at its foot. */
 export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSystem, radiusFor, onFlows, onSelect, selectedId, simVehicleOf, onLinkOnMap, loads = [] }: {

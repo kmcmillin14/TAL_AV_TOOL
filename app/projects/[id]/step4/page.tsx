@@ -11,7 +11,7 @@ import { useFleetChecks } from '@/src/components/FleetCheckBadge'
 import { RomOperations } from '@/src/components/rom/RomView'
 import PersistentHeader from '@/src/components/PersistentHeader'
 import ProjectLoadState from '@/src/components/ProjectLoadState'
-import { FLEET_CHECK_LABEL } from '@/src/calc/sim/verification'
+import { fleetCheckLabel } from '@/src/calc/sim/verification'
 import SimulateShell from '@/src/components/simulate/SimulateShell'
 import { headerFromProject } from '@/src/lib/projectHeader'
 import { useFleetData } from '@/src/lib/useFleetData'
@@ -26,14 +26,12 @@ export default function SimulatePage() {
 
   if (loading || error || !project) return <ProjectLoadState loading={loading} error={error} what="simulation" />
 
-  const resultLabel = verify.state === 'suggested' && verify.checks.length === 1 ? `Suggested ${verify.checks[0].n}` : FLEET_CHECK_LABEL[verify.state]
-
   return (
     <div className="app-shell">
       <PersistentHeader project={headerFromProject(project)} currentStep={4} unitSystem={unitSystem} onUnitToggle={toggleUnitSystem} />
       <div className="workspace">
         <SimulateShell project={project} vehicles={data.vehicles} vehicleById={data.vehicleById} settings={data.settings} fleet={data.fleet} unitSystem={unitSystem}
-          overview={<RomOperations project={project} vehicleById={data.vehicleById} />} resultLabel={resultLabel} />
+          overview={<RomOperations project={project} vehicleById={data.vehicleById} />} resultLabel={fleetCheckLabel(verify.checks)} />
       </div>
     </div>
   )

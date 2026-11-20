@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-20 — Cleanup after review of the stage strip (/simplify, 4 reviewers)
+
+- The editor takes the stage directly (no panel-tab names or maps); validation's fix actions name the
+  stage they open (`FixAction` `{ stage }`); the run stages' fallback to Connect is one rule.
+- One wording per fact: the drawing (`drawingStatus`), validation (`statusLabel`), chargers
+  (`chargerStatus`), the fleet state (`fleetCheckLabel`, now in `verification.ts`).
+- Payload confirmation is a fingerprint of Step 1's loads: editing them there un-confirms them. Setup's
+  card is rendered by the editor and uses the panel's row style; the load label lives with the shared
+  display formatters (`loadDims` / `loadLabel`, `src/lib/vehicleDisplay.ts`).
+- `suggestedChargers` moves beside the charging model (`src/calc/fleet.ts`).
+- A phone shows the strip with Overview alone, so Next still leads on to Pricing (it was a dead end).
+- Dead CSS and comments from the old tabs removed.
+
 ## 2026-11-19 — Simulation: one strip, one way forward
 
 - Owner ("too busy"; "clear, intuitive direction… single options, not questions, double icons"): the

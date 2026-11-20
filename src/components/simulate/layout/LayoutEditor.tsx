@@ -1,10 +1,10 @@
 'use client'
 
 // Layout editor (spec v2 §5.1; path editor, owner 2026-11-16): a full-height canvas with the tool hint
-// under it, and one side panel — Layout (selection first, or the navigator; Drawing and Place on routes
-// folded), Flows and Validation. Tool bar: Path (P) · Endpoint (E) · Lasso (L) · Undo · Redo. Off the
-// bar, on their keys: Hand (H, or Space), Route (R), Flow (F, or the Flows tab), Scale (S, or the
-// Drawing card); V is Lasso. A selected path gets a bar (direction, lanes, length, delete) and lane
+// under it, and one side panel whose content is the stage strip's stage (2026-11-18): Setup (drawing,
+// payloads), Layout (selection first, or the navigator; Place on routes folded), Connect (validation,
+// flows) and Chargers. Tool bar: Path (P) · Endpoint (E) · Lasso (L) · Undo · Redo. Off the bar, on their
+// keys: Hand (H, or Space), Route (R), Flow (F), Scale (S, or Setup's drawing card); V is Lasso. A selected path gets a bar (direction, lanes, length, delete) and lane
 // grips; D steps direction; arrows nudge; Tab steps through stations; ⌘C / ⌘V copy points. The
 // Endpoint palette's Object draws walls and columns; "B56.5" shows the clearance path (§5.9).
 
@@ -28,11 +28,13 @@ import Icon from '@/src/design-system/components/Icon'
 import type { LoadedDrawing } from '@/src/lib/drawingImport'
 import { newFlowId } from '@/src/lib/ids'
 import { useByValue } from '@/src/lib/useByValue'
-import { getDrawingData, type StoredProject } from '@/src/lib/storage'
+import { getDrawingData, patchSimSettings, type StoredProject } from '@/src/lib/storage'
 import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import DrawingCard from './DrawingCard'
-import { ChargersCard, FlowsList, PlaceCard, placeProgress, ValidationList, type Armed } from './SimCards'
+import { ChargersCard, drawingStatus, FlowsList, PlaceCard, placeProgress, ValidationList, type Armed } from './SimCards'
+import SetupCard, { payloadsKey } from './SetupCard'
+import type { Stage } from '../ui/StageStrip'
 import { Section } from '../inspector/InspectorParts'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import LayoutCanvas, { POINT_HIT_PX, rackLabel, type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
@@ -42,9 +44,8 @@ import RackBar from './RackBar'
 import { flipRack, rackFromBox, rackGeometry, rackLengthFor, stretchRack } from '@/src/calc/sim/racks'
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
-/** The side panel's tabs. */
-/** The side panel's content, set by the stage strip (2026-11-18): Setup · Layout · Connect · Chargers. */
-export type PanelTab = 'setup' | 'edit' | 'connect' | 'chargers'
+/** The stages this editor's side panel shows (the rest are the run and the overview). */
+export type EditorStage = Extract<Stage, 'setup' | 'layout' | 'connect' | 'chargers'>
 
 type Tool = 'lasso' | 'hand' | 'points' | 'routes' | 'highway' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
@@ -128,9 +129,9 @@ interface Props {
   /** Hands the page a way to change the layout through this editor (its undo history), so the
    *  Assumptions drawer's point and route edits are undo steps too and never overwritten. */
   registerLayoutWriter?: (write: ((update: (L: EditorLayout) => EditorLayout) => void) | null) => void
-  /** The side panel's tab — owned by the page, so its Validation button can open it. */
-  tab: PanelTab
-  onTab: (t: PanelTab) => void
+  /** The stage — the side panel's content; owned by the page (its strip and validation status open it). */
+  stage: EditorStage
+  onStage: (s: Stage) => void
   /** The validation status (tone and counts), worked out once by the page. */
   status: ReturnType<typeof checkStatus>
   /** Shown at the top of the side panel (the sample banner). */
@@ -143,8 +144,6 @@ interface Props {
   /** The simulation's vehicle types (the flow inspector's Vehicle list) and a flow's choice among them. */
   vehicleTypes?: Vehicle[]
   onFlowVehicle?: (flowId: string, vehicleId: string) => void
-  /** Setup's payloads card (the shell owns the confirmation). */
-  setup: ReactNode
   /** Chargers to place (`suggestedChargers`). */
   suggestedChargers: number
 }
@@ -156,7 +155,7 @@ const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, tab, onTab: setTab, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, setup, suggestedChargers }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, stage, onStage, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers }: Props) {
   /** Step 1 loads — a rack's pallet. */
   const loads = useByValue(project.loads ?? NO_LOADS)
   /** A new rack's pallet, already confirmed upstream (owner, 2026-11-17): the simulation vehicles' first
@@ -264,7 +263,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   /** Stop whatever is half-drawn: a route, a flow, the scale marks. */
   const cancel = () => { setChainFrom(null); setMarks(null); setArmed(null) }
   const chooseTool = (t: Tool) => {
-    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); setTab('setup') } return }
+    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); onStage('setup') } return }
     setTool(t); cancel(); setDrag(null)
   }
   /** Undo/redo can remove what a half-drawn route or a selection points at: drop both. */
@@ -545,7 +544,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     setFlows([...flows, flow])
     setSelection({ kind: 'flow', id: flow.id })
     setJustAdded(focusRate ? flow.id : null)
-    setTab('edit')
+    onStage('layout')
   }
 
   const deleteSelection = () => {
@@ -579,8 +578,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const onFix = (c: ReadinessCheck) => {
     const a = fixAction(c)
     if (!a) return
-    if ('tab' in a) { setTab('connect'); return }
-    if ('arm' in a) { setTab('chargers'); armHome(a.arm); return }
+    if ('stage' in a) { onStage(a.stage); if ('arm' in a) armHome(a.arm); return }
     chooseTool(a.tool)                      // cancels any chain — so the route's start is set after it
     if (a.startFrom && byId.has(a.startFrom)) { locate({ kind: 'point', id: a.startFrom }); setChainFrom(a.startFrom) }
   }
@@ -874,14 +872,17 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
         <div className="sim-side">
           <div className="sim-side-body">
             {banner}
-            {tab === 'setup' ? (
+            {stage === 'setup' ? (
               <>
-                <Section title="Drawing" open status={!bg ? 'Optional' : bg.scale ? 'Scaled' : 'Not scaled'} tone={bg && !bg.scale ? 'warn' : undefined}>{drawingCard}</Section>
-                <Section title="Payloads" open>{setup}</Section>
+                <Section title="Drawing" open status={bg ? drawingStatus(bg).replace('Drawing ', '') : 'Optional'} tone={bg && !bg.scale ? 'warn' : undefined}>{drawingCard}</Section>
+                <Section title="Payloads" open>
+                  <SetupCard projectId={project.id} loads={loads} unitSystem={unitSystem} confirmed={project.simSettings?.payloadsConfirmed === payloadsKey(loads)}
+                    onConfirm={() => patchSimSettings(project.id, { payloadsConfirmed: payloadsKey(loads) })} />
+                </Section>
               </>
-            ) : tab === 'connect' ? (
+            ) : stage === 'connect' ? (
               <>
-                <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); setTab('edit') }} onFix={onFix} />
+                <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); onStage('layout') }} onFix={onFix} />
                 <Section title={`Flows on the layout · ${linked.length} of ${flows.length}`} open>
                   <FlowsList
                     layout={layout}
@@ -900,7 +901,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   />
                 </Section>
               </>
-            ) : tab === 'chargers' ? (
+            ) : stage === 'chargers' ? (
               <ChargersCard layout={layout} suggested={suggestedChargers} onArmHome={armHome} />
             ) : (
               <>

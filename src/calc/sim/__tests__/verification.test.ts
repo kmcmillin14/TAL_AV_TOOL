@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { fleetCheck, fleetCheckSummary, suggestedChargers } from '../verification'
+import { suggestedChargers } from '../../fleet'
+import { fleetCheck, fleetCheckLabel, fleetCheckSummary } from '../verification'
 
 const run = (fleet: number, verdict: 'meets' | 'short' | 'gridlock' | 'tight' | 'warming', key = 'k', smallest?: boolean) => ({ lastRun: { key, types: { cb18: { fleet, verdict, ...(smallest != null ? { smallest } : {}) } } } })
 
@@ -50,5 +51,10 @@ describe('fleet size verification state', () => {
     expect(suggestedChargers({ groups: [g(6, 1)] })).toBe(1)
     expect(suggestedChargers({ groups: [g(6, 0.7)] })).toBe(2)          // 1.8 on charge
     expect(suggestedChargers({ groups: [g(6, 0.7), g(4, 0.5)] })).toBe(4) // 1.8 + 2
+  })
+  it('labels one type by its own state, several by the worst', () => {
+    expect(fleetCheckLabel([{ state: 'suggested', n: 7 }])).toBe('Suggested 7')
+    expect(fleetCheckLabel([{ state: 'suggested', n: 7 }, { state: 'verified', n: 3 }])).toBe('Suggested')
+    expect(fleetCheckLabel([{ state: 'verified', n: 6 }])).toBe('Verified')
   })
 })

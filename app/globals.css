@@ -5370,7 +5370,7 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 @container (max-width: 900px) { :is(.sim-editor, .sim-run) .sim-stage { flex: none; height: 62vh; } }
 .sim-status { margin: 0; min-height: 18px; font-size: 12px; line-height: 18px; color: var(--text-tertiary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
-/* Side panel: tabs, then one scrolling body. */
+/* Side panel: one scrolling body (its content is the stage). */
 .sim-side-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 16px; }
 .sim-side-body .sim-banner { margin: 0; flex-wrap: wrap; gap: 4px 16px; padding: 8px 12px; }
 .sim-folds { display: flex; flex-direction: column; margin-top: 8px; }
@@ -5390,7 +5390,7 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-nav .sim-dot { flex: none; }
 .sim-nav .meta { font-size: 11px; color: var(--text-tertiary); white-space: nowrap; }
 
-/* Flows tab: two lines per flow; the Fleet Engine line and linking at the foot. */
+/* Connect's flows: two lines per flow; the Fleet Engine line and linking at the foot. */
 .sim-flow-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; }
 .sim-flow-list > li > button, .sim-flow-list > li > div { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 2px 8px; width: 100%; padding: 8px; border-radius: 8px; text-align: left; font-size: 13px; color: var(--text-primary); }
 .sim-flow-list > li > button:hover { background: var(--bg-hover); }
@@ -5410,7 +5410,7 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-zoomctl-sep { width: 1px; height: 20px; margin: 0 4px; background: var(--border); }
 
 /* Segmented choices on the Simulate page: the quiet blue, not the Run red. */
-:is(.sim-editor, .sim-run, .sim-drawer) .seg-btn.on, .sim-modes button.on { background: var(--sim-sel-soft); color: var(--sim-sel); }
+:is(.sim-editor, .sim-run, .sim-drawer) .seg-btn.on, .sim-stage-btn.is-on { background: var(--sim-sel-soft); color: var(--sim-sel); }
 
 /* Validation (owner, 2026-11-12): live checks — a status button in the head, a list in the panel. */
 .sim-valid-btn { display: inline-flex; align-items: center; gap: 8px; }
@@ -5422,8 +5422,6 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-valid-sub::before { content: "·"; margin-right: 8px; }
 .sim-valid { display: flex; flex-direction: column; gap: 8px; }
 .sim-valid-head { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); }
-/* The page's tabs, top of the side panel: Layout · Sim · Data (owner, 2026-11-16); Layout's own
-   Edit · Flows · Validation sit under them, smaller. Data widens the panel for its charts. */
 /* Racks (Milestone 7a): body, bays, pallets (face picked up toward the aisle), label, warning. */
 .sim-rack-body { fill: color-mix(in srgb, var(--sim-rack, #6d5a8c) 10%, var(--bg-surface)); stroke: var(--sim-rack, #6d5a8c); stroke-width: 1.25; }
 .sim-rack-bay { fill: none; stroke: var(--sim-rack, #6d5a8c); stroke-width: 0.75; opacity: 0.7; }
@@ -5461,8 +5459,6 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-run.is-datafull > .sim-canvas-wrap { display: none; }
 .sim-run.is-datafull .sim-kpis { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 .sim-shell:fullscreen .sim-run.is-datafull { min-height: calc(100vh / var(--root-zoom) - 120px); }
-.sim-subtabs { padding: 4px 8px; }
-.sim-subtabs button { height: 28px; font-size: 12px; }
 @container (min-width: 901px) { .sim-run.is-data { grid-template-columns: minmax(0, 1fr) 560px; } }
 /* Read by screen readers, not shown. */
 .sim-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
@@ -5688,7 +5684,6 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
   background: none; color: var(--text-secondary); font: 600 13px var(--tal-font-family); cursor: pointer; white-space: nowrap; }
 .sim-stage-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
 .sim-stage-btn:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 2px; }
-.sim-stage-btn.is-on { color: var(--sim-sel); background: var(--sim-sel-soft); }
 .sim-stage-btn.is-blocked { color: var(--text-tertiary); }
 .sim-stage-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font: 700 10px var(--tal-font-numeric);
   background: var(--bg-surface-3); color: var(--text-secondary); }
@@ -5696,7 +5691,3 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-stage-btn.is-done .sim-stage-n { background: var(--good-soft); color: var(--good); }
 .sim-stage-now { margin-left: auto; display: flex; align-items: center; gap: 12px; flex: none; }
 .sim-stage-status { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
-.sim-setup-loads { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 8px; font-size: 13px; }
-.sim-setup-loads li { display: flex; align-items: center; gap: 8px; }
-.sim-setup-act { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-.sim-setup-done { font-size: 13px; color: var(--text-secondary); }

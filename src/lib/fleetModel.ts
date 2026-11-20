@@ -42,7 +42,7 @@ export function projectFleetSettings(project: Pick<StoredProject, 'shiftsPerDay'
 }
 
 /** The Fleet Engine's own figure for these flows — without a simulated fleet applied to pricing
- *  (D-1): the Flows tab's before → after, and the switched vehicle's "Engine would size". */
+ *  (D-1): Simulation's flows list (Connect): before → after, and the switched vehicle's "Engine would size". */
 export function engineFleetFor(flows: Flow[], vehicleById: Map<string, Vehicle>, settings: FleetSettings): FleetSummary {
   return fleetFromFlows(flows, vehicleById, { ...settings, appliedFleet: undefined }).fleet
 }

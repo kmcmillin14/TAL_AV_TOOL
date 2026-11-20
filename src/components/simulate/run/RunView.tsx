@@ -386,7 +386,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           </div>
         </LayoutCanvas>
       </div>
-      {/* The side panel: the page's tabs, then Sim's fleet or the run's data. */}
+      {/* The side panel: Simulate's fleet, or Results' data. */}
       <div className="sim-side">
         <div className="sim-side-body">
           {banner}

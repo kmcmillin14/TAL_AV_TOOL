@@ -11,6 +11,7 @@ import type { ApplicationRequirements } from '@/src/calc/types'
 import { useDismiss } from '@/src/lib/useDismiss'
 import { units, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
+import { loadLabel, showIn } from '@/src/lib/vehicleDisplay'
 import VehiclePicker from './VehiclePicker'
 
 interface Load { id: string; unitType?: string; lengthIn?: number | null; widthIn?: number | null; heightIn?: number | null }
@@ -38,11 +39,6 @@ interface Props {
 const CUSTOM = 'custom'
 /** A new custom payload starts as a 48 × 40 in pallet. */
 const DEFAULT_CUSTOM: Extract<SimPayload, { lengthIn: number }> = { lengthIn: 48, widthIn: 40 }
-/** Inches as shown: mm (whole) or in (one decimal). */
-const showIn = (i: number, u: UnitSystem) => String(u === 'metric' ? Math.round(units.dimension.toMetric(i)) : Math.round(i * 10) / 10)
-const dims = (l: { lengthIn?: number | null; widthIn?: number | null; heightIn?: number | null }, u: UnitSystem) =>
-  [l.lengthIn, l.widthIn, l.heightIn].flatMap(i => (i ? [showIn(i, u)] : [])).join(' × ') + ` ${units.dimension.label(u)}`
-export const loadLabel = (l: Load, u: UnitSystem) => `${l.unitType || 'Load'} · ${dims(l, u)}`
 
 export default function VehicleBar(p: Props) {
   const [open, setOpen] = useState<string | null>(null)

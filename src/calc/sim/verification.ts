@@ -62,8 +62,14 @@ export function fleetCheck(vehicleId: string, staticN: number, stored: Stored | 
 const WORST: FleetCheckState[] = ['notVerified', 'suggested', 'estimated', 'verified']
 
 /** The headline state across types: the worst one (an empty fleet is Estimated). */
-export function fleetCheckSummary(checks: FleetCheck[]): FleetCheckState {
+export function fleetCheckSummary(checks: Pick<FleetCheck, 'state'>[]): FleetCheckState {
   return WORST.find(s => checks.some(c => c.state === s)) ?? 'estimated'
+}
+
+/** The state of a set of checks in words: one type's own ("Suggested 7"), or the worst across types. */
+export function fleetCheckLabel(checks: Pick<FleetCheck, 'state' | 'n'>[]): string {
+  if (checks.length === 1 && checks[0].state === 'suggested') return `Suggested ${checks[0].n}`
+  return FLEET_CHECK_LABEL[fleetCheckSummary(checks)]
 }
 
 export const FLEET_CHECK_LABEL: Record<FleetCheckState, string> = {
@@ -84,9 +90,3 @@ export function projectFleetChecks(project: (SimInputsLike & { simSettings?: Sto
   return { checks, state: fleetCheckSummary(checks), key }
 }
 
-/** Chargers to place (stage strip, 2026-11-18): the vehicles the static charging model has on a charger at
- *  once — Σ fleet × (1 − availability), rounded up — and at least one. */
-export function suggestedChargers(fleet: Pick<FleetSummary, 'groups'>): number {
-  const onCharge = fleet.groups.reduce((s, g) => s + g.fleetSold * (1 - (g.charging.availability ?? 1)), 0)
-  return Math.max(1, Math.ceil(onCharge - 1e-9))
-}

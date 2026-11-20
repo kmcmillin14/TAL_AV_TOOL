@@ -182,3 +182,12 @@ export function vehicleSpecSections(v: Vehicle, unit: UnitSystem): SpecSection[]
     },
   ]
 }
+
+/** Inches as shown: mm (whole) or in (one decimal). */
+export const showIn = (i: number, u: UnitSystem) => String(u === 'metric' ? Math.round(units.dimension.toMetric(i)) : Math.round(i * 10) / 10)
+/** A load's dimensions, as given: "48 × 40 × 48 in". */
+export const loadDims = (l: { lengthIn?: number | null; widthIn?: number | null; heightIn?: number | null }, u: UnitSystem) =>
+  [l.lengthIn, l.widthIn, l.heightIn].flatMap(i => (i ? [showIn(i, u)] : [])).join(' × ') + ` ${units.dimension.label(u)}`
+/** A Step 1 load in one line: "GMA pallet · 48 × 40 × 48 in". */
+export const loadLabel = (l: { unitType?: string | null; lengthIn?: number | null; widthIn?: number | null; heightIn?: number | null }, u: UnitSystem) =>
+  `${l.unitType || 'Load'} · ${loadDims(l, u)}`

@@ -687,7 +687,7 @@ bottom bar). Any stage can still be opened directly (not a wizard).
 | Stage | Opens | Status line | Done when |
 |---|---|---|---|
 | **Overview** | How the Sizing fleet operates, from the static model (the former Dashboard's operations tiles) | *6 vehicles estimated by Sizing* | — |
-| **Setup** | Side panel: the drawing (load, scale, opacity) and the payloads from Step 1, with **Confirm payloads** (`simSettings.payloadsConfirmed`) | *Drawing scaled · 2 payloads* | payloads confirmed (none in Step 1: not done — add them in Intake); the drawing is optional |
+| **Setup** | Side panel: the drawing (load, scale, opacity) and the payloads from Step 1, with **Confirm payloads** (`simSettings.payloadsConfirmed`: a fingerprint of the loads, so editing them in Step 1 un-confirms them) | *Drawing scaled · 2 payloads* | payloads confirmed (none in Step 1: not done — add them in Intake); the drawing is optional |
 | **Layout** | The editor and its panel (selection, *Place on routes*) | *12 of 16 flows placed* | every Sizing flow has both ends on the map |
 | **Connect** | Validation (blockers first), then the flows on the layout | *2 to fix* / *Connected* | no blockers |
 | **Chargers** | Chargers and parking to place, with a **suggested count** | *2 of 2 chargers* | at least the suggested count placed |
@@ -695,10 +695,11 @@ bottom bar). Any stage can still be opened directly (not a wizard).
 | **Results** | The Data view | the fleet state (*Verified*, *Suggested 7*, …) | — |
 
 - *Suggested chargers* = ⌈Σ over types of fleet × (1 − availability)⌉, at least 1 — the vehicles the
-  static charging model has on a charger at once (`suggestedChargers`, `src/calc/sim/verification.ts`).
+  static charging model has on a charger at once (`suggestedChargers`, `src/calc/fleet.ts`).
 - Simulate and Results need a runnable layout; pressed while it is not, they open Connect. A new
   blocker while in them drops back to Connect. The head's validation status opens Connect.
-- The stage opens on Overview while nothing is drawn, else on Layout. A phone shows Overview only. Validation's fix buttons open the
+- The stage opens on Overview while nothing is drawn, else on Layout. A phone shows Overview only, and
+  its Next goes on to Pricing. Validation's fix buttons open the
   stage that fixes them (a missing charger → Chargers).
 
 > **Status:** being built — engine, data model, page, layout editor and run view done (Milestones 1–4; the run view was pulled forward from Milestone 5 with the proof-of-concept features). Branch `feature/fleet-simulation`; full design in
