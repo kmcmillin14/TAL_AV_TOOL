@@ -11,7 +11,7 @@ import { loadDims } from '@/src/lib/vehicleDisplay'
 
 type Load = NonNullable<StoredProject['loads']>[number]
 
-/** The loads as confirmed: what changes the simulation (type and size), not their order. */
+/** The loads as confirmed: what changes the simulation and the vehicles that qualify (type, size, weight). */
 export const payloadsKey = (loads: Load[]) => JSON.stringify(loads.map(l => [l.id, l.unitType, l.lengthIn, l.widthIn, l.heightIn, l.weightLbs]))
 
 export default function SetupCard({ projectId, loads, confirmed, unitSystem, onConfirm }: {

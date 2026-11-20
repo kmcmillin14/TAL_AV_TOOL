@@ -29,7 +29,7 @@ import { payloadsKey } from './layout/SetupCard'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutEditor from './layout/LayoutEditor'
-import { chargersPlaced, chargerStatus, drawingStatus, statusLabel } from './layout/SimCards'
+import { chargerProgress, drawingStatus, statusLabel } from './layout/SimCards'
 import RunView from './run/RunView'
 import VehicleBar from './vehicles/VehicleBar'
 import AssumptionsDrawer from './inspector/AssumptionsDrawer'
@@ -187,18 +187,18 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   // runnable layout (pressed while blocked, they open Connect).
   const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix Validation first'} — opens Connect`
   const linkedN = inputs.flows.length, flowN = flowsV.length
-  const chargersN = simLayout ? chargersPlaced(simLayout) : 0
   const chargersWanted = useMemo(() => suggestedChargers(simFleet), [simFleet])
+  const homes = chargerProgress(simLayout ?? emptyLayout(), chargersWanted, fleetNeeded)
   const confirmed = !!loads.length && ss?.payloadsConfirmed === payloadsKey(loads)
   const stages: StageInfo[] = [
-    { id: 'overview', label: 'Overview', status: simFleet.totalFleetSold ? `${simFleet.totalFleetSold} vehicles estimated by Sizing` : 'No vehicles in Sizing yet' },
+    { id: 'overview', label: 'Overview', status: fleet.totalFleetSold ? `${fleet.totalFleetSold} vehicle${fleet.totalFleetSold === 1 ? '' : 's'} estimated by Sizing` : 'No vehicles in Sizing yet' },
     { id: 'setup', label: 'Setup', done: confirmed,
-      status: [drawingStatus(simLayout?.background), loads.length ? `${loads.length} payload${loads.length === 1 ? '' : 's'}${confirmed ? ' confirmed' : ' to confirm'}` : 'No payloads in Step 1'].join(' · ') },
+      status: [simLayout?.background ? `Drawing ${drawingStatus(simLayout.background).toLowerCase()}` : 'No drawing', loads.length ? `${loads.length} payload${loads.length === 1 ? '' : 's'}${confirmed ? ' confirmed' : ' to confirm'}` : 'No payloads in Step 1'].join(' · ') },
     { id: 'layout', label: 'Layout', done: flowN > 0 && linkedN === flowN,
       status: flowN ? `${linkedN} of ${flowN} flows placed` : empty ? 'Draw paths, place points' : 'No flows yet' },
     { id: 'connect', label: 'Connect', done: !empty && status.blockers === 0,
       status: empty ? '—' : statusLabel(status) },
-    { id: 'chargers', label: 'Chargers', done: chargersN >= chargersWanted, status: chargerStatus(chargersN, chargersWanted) },
+    { id: 'chargers', label: 'Chargers', done: homes.done, status: homes.status },
     { id: 'simulate', label: 'Simulate', blocked, status: canRun ? `${fleetNeeded} vehicle${fleetNeeded === 1 ? '' : 's'}` : 'Not ready' },
     { id: 'results', label: 'Results', blocked, status: resultLabel },
   ]
@@ -267,7 +267,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           overridden={overriddenIds}
           registerLayoutWriter={registerLayoutWriter}
-          stage={stage} onStage={setStage} status={status} banner={banner} runAs={runAs} payloads={payloads} suggestedChargers={chargersWanted}
+          stage={stage} onStage={setStage} status={status} banner={banner} runAs={runAs} payloads={payloads} suggestedChargers={chargersWanted} vehiclesPlaced={fleetNeeded}
           vehicleTypes={typeVehicles} onFlowVehicle={setFlowVehicle}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>

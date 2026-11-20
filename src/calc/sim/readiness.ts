@@ -25,7 +25,8 @@ export function linkedFlows(flows: ProjectFlowLike[] = []): SimFlow[] {
 }
 
 /** Chargers, and chargers plus parking spots ("homes") — every vehicle needs a home to run. */
-function homeCounts(layout: SimLayout): { chargers: number; homes: number } {
+/** Chargers, and homes — chargers plus parking spots: every vehicle needs one to rest at. */
+export function homeCounts(layout: Pick<SimLayout, 'points'>): { chargers: number; homes: number } {
   const chargers = layout.points.filter(p => p.type === 'charger').length
   return { chargers, homes: chargers + layout.points.filter(p => p.type === 'parking').length }
 }
@@ -95,15 +96,16 @@ const LEVEL_ORDER: Record<CheckLevel, number> = { bad: 0, warn: 1, info: 2 }
 const byLevel = (checks: ReadinessCheck[]) => [...checks].sort((a, b) => LEVEL_ORDER[a.level] - LEVEL_ORDER[b.level])
 
 /** What a check's fix button does in the editor: pick a tool (for a loose point, starting the route from
- *  it, `startFrom`), or open the stage that fixes it — Chargers with the charger armed, or Connect. */
-export type FixAction = { tool: 'scale' | 'routes' | 'flows'; startFrom?: string } | { stage: 'chargers'; arm: 'charger' } | { stage: 'connect' }
+ *  it, `startFrom`), or open the stage that fixes it — Chargers with the charger armed, or Layout, where
+ *  Sizing's unplaced flows are placed. */
+export type FixAction = { tool: 'scale' | 'routes' | 'flows'; startFrom?: string } | { stage: 'chargers'; arm: 'charger' } | { stage: 'layout' }
 export function fixAction({ fix, target }: ReadinessCheck): FixAction | null {
   switch (fix) {
     case 'scale': return { tool: 'scale' }
     case 'route': return { tool: 'routes', ...(target?.kind === 'point' ? { startFrom: target.id } : {}) }
     case 'linkFlow': return { tool: 'flows' }
     case 'charger': return { stage: 'chargers', arm: 'charger' }
-    case 'flowsTab': return { stage: 'connect' }
+    case 'flowsTab': return { stage: 'layout' }
     default: return null
   }
 }

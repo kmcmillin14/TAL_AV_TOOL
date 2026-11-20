@@ -45,7 +45,9 @@ export default function StageStrip({ stages, value, onChange, onBlocked, then }:
       </ol>
       <div className="sim-stage-now" aria-live="polite">
         <span className="sim-stage-status">{current?.status}</span>
-        {next ? (
+        {/* One way on: the next stage, or — when it cannot open (the run needs a valid layout) — the next step
+            of the workflow, since verification is optional. A blocked stage is still a click away in the row. */}
+        {next && !next.blocked ? (
           <button type="button" className="btn btn-sm primary" title={next.blocked} onClick={() => go(next)}>
             Next: {next.label} <Icon name="arrowR" size={12} />
           </button>

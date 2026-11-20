@@ -182,6 +182,7 @@ export const HELP: HelpSection[] = [
       'Select (V): click anything to edit it; drag a point to move it; Delete removes it. ⌘Z / ⌘⇧Z undo and redo.',
     ],
     tips: [
+      'Chargers: the suggested count is the vehicles Sizing’s charging model has on a charger at once. Every vehicle also needs somewhere to rest — a charger or a parking spot — before the run can start; place chargers near the busiest route.',
       'A flow drawn here is the same flow Sizing uses: its distance and lift height now come from the layout, so the Sizing fleet can change.',
       'Sizing flows not yet on the layout are listed under “Link to points” — a name match is offered as one click.',
       'The drawing image is kept in the exported project file, not in the browser. After a reload, re-select the same file to bring it back.',

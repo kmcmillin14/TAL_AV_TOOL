@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-20 — Fixes after /code-review of the stage strip (9 findings)
+
+- Chargers is done only when every vehicle has a charger or parking spot (the rule validation blocks the
+  run on) and the suggested chargers are placed; its status says which is missing. Before, it could tick
+  while Simulate stayed blocked. The card's explanation moved to Help.
+- When the next stage cannot open, **Next** goes on to Pricing — the strip could loop through Connect with
+  no way out of the optional step.
+- Validation's flows fix (*Place them*) opens Layout; it pointed at Connect, where it already was.
+- Overview counts Sizing's fleet (not the simulated one) and says "1 vehicle".
+- Scaling started on Setup keeps its drawing card in view on any stage. Section statuses are capitalised.
+  The payloads fingerprint covers weight (vehicle eligibility depends on it); the comment and spec say so.
+
 ## 2026-11-20 — Cleanup after review of the stage strip (/simplify, 4 reviewers)
 
 - The editor takes the stage directly (no panel-tab names or maps); validation's fix actions name the

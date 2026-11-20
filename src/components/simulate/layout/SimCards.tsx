@@ -13,7 +13,7 @@ import { useMemo, useState } from 'react'
 import { engineFleetTotal } from '@/src/calc/fleet'
 import { engineFleetFor } from '@/src/lib/fleetModel'
 import { FLOW_POINT_TYPES, linkFlow, linkSuggestions, measureFlows, pointById, sameName } from '@/src/calc/sim/layoutEdit'
-import type { checkStatus, CheckFix, ReadinessCheck } from '@/src/calc/sim/readiness'
+import { homeCounts, type checkStatus, type CheckFix, type ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimLayout, SimPointType, SimRole } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import { fmtLength, lengthToDisplay, type UnitSystem } from '@/src/lib/utils/units'
@@ -85,18 +85,18 @@ export function PlaceCard({ layout, names, armed, onArm }: {
 
 /** The Chargers stage: chargers against the suggested count (the static charging model's vehicles on a
  *  charger at once), then parking — each placed with one click. */
-export function ChargersCard({ layout, suggested, onArmHome }: {
+export function ChargersCard({ layout, suggested, needed, onArmHome }: {
   layout: SimLayout
   suggested: number
+  /** Vehicles the run places — each needs a charger or parking spot. */
+  needed: number
   onArmHome: (type: 'charger' | 'parking') => void
 }) {
-  const meta = { charger: chargerStatus(chargersPlaced(layout), suggested), parking: `${layout.points.filter(p => p.type === 'parking').length} placed` }
+  const p = chargerProgress(layout, suggested, needed)
+  const meta = { charger: `${p.chargers} placed · ${suggested} suggested`, parking: `${p.homes - p.chargers} placed` }
   return (
     <section className="sim-card" aria-label="Chargers">
-      <p className="sim-card-note">
-        Suggested: <b>{suggested}</b> charger{suggested === 1 ? '' : 's'} — the vehicles Sizing’s charging model has on charge at once.
-        Place them near the busiest route; parking is optional.
-      </p>
+      <p className="sim-card-note">{p.status}</p>
       {(['charger', 'parking'] as const).map(t => (
         <div key={t} className="sim-check-item">
           <span className={`sim-dot kind-${t} is-placed`} />
@@ -111,16 +111,22 @@ export function ChargersCard({ layout, suggested, onArmHome }: {
   )
 }
 
-/** Chargers on the layout. */
-export const chargersPlaced = (layout: Pick<SimLayout, 'points'>) => layout.points.filter(p => p.type === 'charger').length
-/** Chargers against the suggestion, in words — the strip and the Chargers card say it the same way. */
-export const chargerStatus = (placed: number, suggested: number) => (placed >= suggested ? `${placed} placed · ${suggested} suggested` : `${placed} of ${suggested} chargers`)
-/** The drawing in words — the strip and the Setup panel say it the same way. */
-export const drawingStatus = (bg: { scale?: unknown } | undefined) => (!bg ? 'No drawing' : bg.scale ? 'Drawing scaled' : 'Drawing not scaled')
+/** The Chargers stage in words — the strip and the card say it the same way. Every vehicle needs a home (a
+ *  charger or a parking spot: validation blocks the run until each has one), and at least the suggested
+ *  chargers; it is done when both hold. */
+export function chargerProgress(layout: Pick<SimLayout, 'points'>, suggested: number, needed: number) {
+  const { chargers, homes } = homeCounts(layout)
+  const status = homes < needed ? `${homes} of ${needed} charger or parking spots`
+    : chargers < suggested ? `${chargers} of ${suggested} chargers`
+    : `${chargers} charger${chargers === 1 ? '' : 's'} · ${homes - chargers} parking`
+  return { chargers, homes, status, done: homes >= needed && chargers >= suggested }
+}
+/** The drawing in words — the strip ("Drawing scaled") and the Setup panel ("Scaled") say it the same way. */
+export const drawingStatus = (bg: { scale?: unknown } | undefined) => (!bg ? 'None' : bg.scale ? 'Scaled' : 'Not scaled')
 
 /** Connect's validation list: blockers first, then warnings and notes, one row per thing. A row with a
  *  target selects it and centres on it; its fix button picks the tool, or opens the stage, that fixes it. */
-const FIX_LABEL: Record<CheckFix, string> = { scale: 'Scale', route: 'Draw route', charger: 'Place charger', linkFlow: 'Link flow', flowsTab: 'Show flows' }
+const FIX_LABEL: Record<CheckFix, string> = { scale: 'Scale', route: 'Draw route', charger: 'Place charger', linkFlow: 'Link flow', flowsTab: 'Place them' }
 /** The validation status in words — the page head and the strip's Connect say it the same way. */
 export const statusLabel = ({ blockers }: ReturnType<typeof checkStatus>) => (blockers ? `${blockers} blocker${blockers === 1 ? '' : 's'}` : 'Valid')
 export function ValidationList({ checks, status, onLocate, onDetails, onFix }: {

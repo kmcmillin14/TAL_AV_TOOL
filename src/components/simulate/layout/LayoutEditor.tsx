@@ -144,8 +144,9 @@ interface Props {
   /** The simulation's vehicle types (the flow inspector's Vehicle list) and a flow's choice among them. */
   vehicleTypes?: Vehicle[]
   onFlowVehicle?: (flowId: string, vehicleId: string) => void
-  /** Chargers to place (`suggestedChargers`). */
+  /** Chargers to place (`suggestedChargers`), and the vehicles the run places (each needs a home). */
   suggestedChargers: number
+  vehiclesPlaced: number
 }
 const PATH_KIND = { dir: 'two', lane: 'single' } as const
 /** A rack face this close to a path's centre line stands beside it (its endpoint in the aisle), ft. */
@@ -155,7 +156,7 @@ const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, stage, onStage, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, stage, onStage, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers, vehiclesPlaced }: Props) {
   /** Step 1 loads — a rack's pallet. */
   const loads = useByValue(project.loads ?? NO_LOADS)
   /** A new rack's pallet, already confirmed upstream (owner, 2026-11-17): the simulation vehicles' first
@@ -783,6 +784,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       />
   )
 
+  // Setup's drawing — shown wherever scaling is under way, so the typed length always has its card.
+  const drawingSection = (
+    <Section title="Drawing" open status={bg ? drawingStatus(bg) : 'Optional'} tone={bg && !bg.scale ? 'warn' : undefined}>{drawingCard}</Section>
+  )
+
   return (
     <div className="sim-editor">
       <div className="sim-work">
@@ -872,9 +878,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
         <div className="sim-side">
           <div className="sim-side-body">
             {banner}
+            {stage !== 'setup' && marks && drawingSection}
             {stage === 'setup' ? (
               <>
-                <Section title="Drawing" open status={bg ? drawingStatus(bg).replace('Drawing ', '') : 'Optional'} tone={bg && !bg.scale ? 'warn' : undefined}>{drawingCard}</Section>
+                {drawingSection}
                 <Section title="Payloads" open>
                   <SetupCard projectId={project.id} loads={loads} unitSystem={unitSystem} confirmed={project.simSettings?.payloadsConfirmed === payloadsKey(loads)}
                     onConfirm={() => patchSimSettings(project.id, { payloadsConfirmed: payloadsKey(loads) })} />
@@ -902,7 +909,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                 </Section>
               </>
             ) : stage === 'chargers' ? (
-              <ChargersCard layout={layout} suggested={suggestedChargers} onArmHome={armHome} />
+              <ChargersCard layout={layout} suggested={suggestedChargers} needed={vehiclesPlaced} onArmHome={armHome} />
             ) : (
               <>
                 <LayoutPanel
