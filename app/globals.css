@@ -5167,6 +5167,9 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-banner { display: flex; align-items: center; gap: 16px; padding: 8px 16px; margin: 0 0 16px; border-radius: 10px; background: var(--info-soft); color: var(--text-secondary); font-size: 13px; }
 .sim-banner b { color: var(--text-primary); }
 .sim-banner .link-btn { margin-left: auto; color: var(--info); font-weight: 700; }
+.sim-check-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 8px 0; border-top: 1px solid var(--border); }
+.sim-check-main .nm { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sim-check-main .meta { font-size: 12px; color: var(--text-tertiary); }
 .sim-card > .sim-check-item:first-child, .sim-card .sim-card-note + .sim-check-item { border-top: 0; }
 .sim-dot { width: 10px; height: 10px; border-radius: 3px; border: 1.5px solid var(--tone, var(--text-tertiary)); }
 .sim-dot.is-placed { background: var(--tone, var(--text-tertiary)); }
@@ -5691,6 +5694,7 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-guide-step.is-on .sim-guide-n { background: var(--sim-sel); color: #fff; }
 .sim-guide-step.is-done .sim-guide-n { background: var(--good-soft); color: var(--good); }
 .sim-guide-status { justify-self: end; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: 12px; color: var(--text-tertiary); }
+.sim-guide-lead { margin: 2px 8px 6px 34px; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
 .sim-guide-next { padding: 12px 16px; border-top: 1px solid var(--border); }
 .sim-guide-next .btn { width: 100%; justify-content: center; }
 

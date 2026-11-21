@@ -135,7 +135,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const empty = !hasLayout(simLayout)
   // Simulate and Results only while the run can happen. A new red item drops back to Connect and stays
   // there (no jump back into the run once it is fixed — it is a click away).
-  const wanted = picked ?? (empty ? 'setup' : 'layout')
+  const wanted = picked ?? (empty ? 'drawing' : 'layout')
   if (!canRun && RUN_STAGES.has(wanted)) setStage(FIX_STAGE)
   // A phone gets Overview only: the other stages need a desktop.
   const stage: Stage = !canRun && RUN_STAGES.has(wanted) ? FIX_STAGE : wanted
@@ -181,7 +181,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
       simLayout: emptyLayout(),
       flows: flows.filter(f => !isSample(f.id)).map(unlinked),
     })
-    setStage('setup')
+    setStage('drawing')
   }
 
   // The stage strip (owner, 2026-11-18): each stage's one-line status; Simulate and Results need a
@@ -192,17 +192,27 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const homes = chargerProgress(simLayout ?? emptyLayout(), chargersWanted, fleetNeeded)
   const confirmed = !!loads.length && ss?.payloadsConfirmed === payloadsKey(loads)
   const stages: StageInfo[] = [
-    { id: 'setup', label: 'Setup', done: confirmed,
-      status: [simLayout?.background ? `Drawing ${drawingStatus(simLayout.background).toLowerCase()}` : 'No drawing', loads.length ? `${loads.length} payload${loads.length === 1 ? '' : 's'}${confirmed ? ' confirmed' : ' to confirm'}` : 'No payloads in Step 1'].join(' · ') },
+    { id: 'drawing', label: 'Layout drawing', done: !!simLayout?.background?.scale, optional: true,
+      status: drawingStatus(simLayout?.background) === 'None' ? 'Optional' : drawingStatus(simLayout?.background),
+      lead: 'Import the site drawing (PDF or image) and set its scale. Optional: you can draw without one.' },
     { id: 'vehicles', label: 'Vehicles', done: types.length > 0,
-      status: types.length ? types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId} · ${placed[t.vehicleId] ?? staticN[t.vehicleId] ?? 0}`).join(', ') : 'None yet' },
+      status: types.length ? types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId} · ${placed[t.vehicleId] ?? staticN[t.vehicleId] ?? 0}`).join(', ') : 'None yet',
+      lead: 'The vehicles Sizing chose, with their payloads and counts. Add or swap a type here.' },
+    { id: 'payloads', label: 'Payloads', done: confirmed,
+      status: loads.length ? `${loads.length} ${confirmed ? 'confirmed' : 'to confirm'}` : 'None in Step 1',
+      lead: 'The loads from Step 1. Confirm them: racks size from them and only vehicles that carry them run.' },
     { id: 'layout', label: 'Layout', done: flowN > 0 && linkedN === flowN,
-      status: flowN ? `${linkedN} of ${flowN} flows placed` : empty ? 'Draw paths, place points' : 'No flows yet' },
+      status: flowN ? `${linkedN} of ${flowN} flows placed` : empty ? 'Nothing drawn' : 'No flows yet',
+      lead: 'Draw the aisles with Path, then drag Sizing’s stations from the tray onto them.' },
     { id: 'connect', label: 'Connect', done: !empty && status.blockers === 0,
-      status: empty ? '—' : statusLabel(status) },
-    { id: 'chargers', label: 'Chargers', done: homes.done, status: homes.status },
-    { id: 'simulate', label: 'Simulate', blocked, status: canRun ? `${fleetNeeded} vehicle${fleetNeeded === 1 ? '' : 's'}` : 'Not ready' },
-    { id: 'results', label: 'Results', blocked, status: resultLabel },
+      status: empty ? '—' : statusLabel(status),
+      lead: 'Fix what is listed, then link each flow to its pick and drop points.' },
+    { id: 'chargers', label: 'Chargers', done: homes.done, status: homes.status,
+      lead: 'Place chargers near the busiest route, and a charger or parking spot for every vehicle.' },
+    { id: 'simulate', label: 'Simulate', blocked, status: canRun ? `${fleetNeeded} vehicle${fleetNeeded === 1 ? '' : 's'}` : 'Not ready',
+      lead: 'The run plays on the map. Speed it up, or run a shift, a day or a week.' },
+    { id: 'results', label: 'Results', blocked, status: resultLabel,
+      lead: 'Orders, utilization and battery over the run, and the fleet that passes all three.' },
   ]
   const guideProps = { stages, value: stage, onChange: setStage, onBlocked: () => setStage(FIX_STAGE), then: { label: 'Pricing', href: `/projects/${project.id}/step5` } }
   const guide = { list: <GuideList {...guideProps} />, next: <GuideNext {...guideProps} /> }

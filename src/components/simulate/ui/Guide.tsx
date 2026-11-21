@@ -8,14 +8,18 @@
 import Link from 'next/link'
 import Icon from '@/src/design-system/components/Icon'
 
-export type Stage = 'setup' | 'vehicles' | 'layout' | 'connect' | 'chargers' | 'simulate' | 'results'
+export type Stage = 'drawing' | 'vehicles' | 'payloads' | 'layout' | 'connect' | 'chargers' | 'simulate' | 'results'
 
 export interface StageInfo {
   id: Stage
   label: string
   /** The step's one line: what it holds now. */
   status: string
+  /** What to do here, in one sentence — shown under the open step. */
+  lead: string
   done?: boolean
+  /** Optional (the drawing): Next stays the way on whether or not it is done. */
+  optional?: boolean
   /** Why it cannot open yet (the run's steps); pressing it opens `onBlocked` instead. */
   blocked?: string
 }
@@ -45,6 +49,7 @@ export function GuideList(p: Props) {
               <span className="sim-guide-label">{s.label}</span>
               <span className="sim-guide-status">{s.status}</span>
             </button>
+            {s.id === p.value && <p className="sim-guide-lead">{s.lead}</p>}
           </li>
         ))}
       </ol>
@@ -53,15 +58,17 @@ export function GuideList(p: Props) {
 }
 
 /** The one way on, foot of the side panel: the next step, or — when it cannot open (the run needs a valid
- *  layout) — the next step of the workflow, since verification is optional. */
+ *  layout) — the next step of the workflow, since verification is optional. It is the screen's one red
+ *  button only once the open step is done; until then the step's own action is, and Next stays quiet. */
 export function GuideNext(p: Props) {
-  const at = p.stages.findIndex(s => s.id === p.value), next = p.stages[at + 1]
+  const at = p.stages.findIndex(s => s.id === p.value), here = p.stages[at], next = p.stages[at + 1]
+  const cls = `btn ${here?.done || here?.optional || here?.done === undefined ? 'primary' : 'ghost'}`
   return (
     <div className="sim-guide-next">
       {next && !next.blocked ? (
-        <button type="button" className="btn primary" onClick={() => go(next, p)}>Next: {next.label} <Icon name="arrowR" size={13} /></button>
+        <button type="button" className={cls} onClick={() => go(next, p)}>Next: {next.label} <Icon name="arrowR" size={13} /></button>
       ) : (
-        <Link href={p.then.href} className="btn primary">Next: {p.then.label} <Icon name="arrowR" size={13} /></Link>
+        <Link href={p.then.href} className={cls}>Next: {p.then.label} <Icon name="arrowR" size={13} /></Link>
       )}
     </div>
   )

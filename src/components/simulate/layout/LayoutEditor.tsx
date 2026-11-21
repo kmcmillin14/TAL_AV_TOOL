@@ -47,7 +47,7 @@ import { flipRack, rackFromBox, rackGeometry, rackLengthFor, stretchRack } from 
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
 /** The stages this editor's side panel shows (the rest are the run and the overview). */
-export type EditorStage = Extract<Stage, 'setup' | 'vehicles' | 'layout' | 'connect' | 'chargers'>
+export type EditorStage = Extract<Stage, 'drawing' | 'vehicles' | 'payloads' | 'layout' | 'connect' | 'chargers'>
 
 type Tool = 'lasso' | 'hand' | 'points' | 'routes' | 'highway' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
@@ -273,7 +273,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   /** Stop whatever is half-drawn: a route, a flow, the scale marks. */
   const cancel = () => { setChainFrom(null); setMarks(null); setArmed(null) }
   const chooseTool = (t: Tool) => {
-    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); onStage('setup') } return }
+    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); onStage('drawing') } return }
     setTool(t); cancel(); setDrag(null)
   }
   /** Undo/redo can remove what a half-drawn route or a selection points at: drop both. */
@@ -909,15 +909,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           {guide.list}
           <div className="sim-side-body">
             {banner}
-            {stage !== 'setup' && marks && drawingSection}
-            {stage === 'vehicles' ? vehiclesStep : stage === 'setup' ? (
-              <>
-                {drawingSection}
-                <Section title="Payloads" open>
-                  <SetupCard projectId={project.id} loads={loads} unitSystem={unitSystem} confirmed={project.simSettings?.payloadsConfirmed === payloadsKey(loads)}
-                    onConfirm={() => patchSimSettings(project.id, { payloadsConfirmed: payloadsKey(loads) })} />
-                </Section>
-              </>
+            {stage !== 'drawing' && marks && drawingSection}
+            {stage === 'drawing' ? drawingSection : stage === 'vehicles' ? vehiclesStep : stage === 'payloads' ? (
+              <SetupCard projectId={project.id} loads={loads} unitSystem={unitSystem} confirmed={project.simSettings?.payloadsConfirmed === payloadsKey(loads)}
+                onConfirm={() => patchSimSettings(project.id, { payloadsConfirmed: payloadsKey(loads) })} />
             ) : stage === 'connect' ? (
               <>
                 <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); onStage('layout') }} onFix={onFix} />

@@ -681,18 +681,20 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 the window and never scrolls: a one-line head (title, validation status, Assumptions, Examples, ⋯), then the
 map on the left and one panel on the right. The panel opens with the **guide** — every step as one line
 (one mark: its number, or a tick when done; its status) — then the open step's content, and ends with
-**one** button, **Next: ‹step›** (after Results, or when the next step cannot open, **Next: Pricing**). Any
+**one** button, **Next: ‹step›** (after Results, or when the next step cannot open, **Next: Pricing**) — red
+only once the open step is done or optional; until then the step's own action is the red one. Any
 step opens with a click; the order is shown, never locked. Only long lists scroll, inside the panel.
 Vehicles is a step of its own (the vehicle types, their payloads and counts — no longer a row above the
 map). Sizing's static estimate (the former Overview) shows only after a run, under Results ("Estimate —
 Sizing's static model"); a phone gets that estimate and Next: Pricing. Plan:
 the one-window workspace (artifact *Simulation Workspace Plan*); next come the drill-downs on selection and
-the split of Setup into drawing and payloads.
+the split of Layout into Highways and Pick and drop points.
 
 | Stage | Opens | Status line | Done when |
 |---|---|---|---|
-| **Setup** | Side panel: the drawing (load, scale, opacity) and the payloads from Step 1, with **Confirm payloads** (`simSettings.payloadsConfirmed`: a fingerprint of the loads, so editing them in Step 1 un-confirms them) | *Drawing scaled · 2 payloads confirmed* / *… to confirm* | payloads confirmed (none in Step 1: not done — add them in Intake); the drawing is optional |
+| **Layout drawing** | The drawing: load a PDF page or image, set its scale, opacity (optional) | *Optional* / *Scaled* / *Not scaled* | scaled |
 | **Vehicles** | The run's vehicle types, each with its payload, and their counts (Sizing's until changed) | *CB18 AGF · 6* | at least one type |
+| **Payloads** | Step 1's loads, with **Confirm payloads** (`simSettings.payloadsConfirmed`: a fingerprint of the loads, so editing them in Step 1 un-confirms them) | *2 confirmed* / *2 to confirm* / *None in Step 1* | confirmed |
 | **Layout** | The editor and its panel (selection, the navigator); Sizing's unplaced stations in the **station tray** on the map | *12 of 16 flows placed* | every Sizing flow has both ends on the map |
 | **Connect** | Validation (blockers first), then the flows on the layout | *2 blockers* / *Valid* (the head's validation wording) | no blockers |
 | **Chargers** | Chargers and parking to place, with a **suggested count** | *4 of 6 charger or parking spots* → *1 of 2 chargers* → *2 chargers · 4 parking* | every vehicle the run places has a home (a charger or parking spot — the rule validation blocks on) and at least the suggested chargers are placed |
@@ -714,7 +716,8 @@ the split of Setup into drawing and payloads.
   blocker while in them drops back to Connect. The head's validation status opens Connect. When the next
   stage cannot open, **Next** goes on to Pricing instead (verification is optional), so there is always
   one way forward. Validation's *Place them* (Sizing flows not on the layout) opens Layout.
-- The guide opens on Setup while nothing is drawn, else on Layout. Validation's fix buttons open the
+- The guide opens on Layout drawing while nothing is drawn, else on Layout. The open step shows one
+  sentence of what to do there, under its line in the guide (the guide's only prose). Validation's fix buttons open the
   stage that fixes them (a missing charger → Chargers).
 
 > **Status:** being built — engine, data model, page, layout editor and run view done (Milestones 1–4; the run view was pulled forward from Milestone 5 with the proof-of-concept features). Branch `feature/fleet-simulation`; full design in

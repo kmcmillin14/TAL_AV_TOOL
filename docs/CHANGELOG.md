@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-21 — Simulation guide: Layout drawing · Vehicles · Payloads
+
+- Setup splits into **Layout drawing** and **Payloads**, around **Vehicles** — the plan's first three steps.
+- The open step shows one sentence of what to do, under its line in the guide.
+- One red button per screen: **Next** is red only once the open step is done (or the step is optional);
+  until then the step's own action is (e.g. Confirm payloads) and Next stays quiet.
+- Fixed: the panel's list rows (payloads, chargers) had lost their styles in an earlier cleanup.
+
 ## 2026-11-21 — Simulation: one window, the guide beside the map
 
 - Owner (plan agreed): the step fits the window and never scrolls. The map fills the left; the right panel
