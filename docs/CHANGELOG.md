@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-21 — Simulation: one window, the guide beside the map
+
+- Owner (plan agreed): the step fits the window and never scrolls. The map fills the left; the right panel
+  opens with the **guide** (every step as one line with its status), then the open step, then one **Next**.
+  It replaces the stage strip and the vehicles row; **Vehicles** is a step of its own.
+- Owner: the static estimate shows only after a run — under Results ("Estimate — Sizing's static model");
+  the Overview stage is gone. A phone shows the estimate and Next: Pricing.
+
 ## 2026-11-21 — Simulation: station tray; flows on demand
 
 - Layout's **station tray**: Sizing's stations not on the map yet, as chips at its foot — drag one onto the

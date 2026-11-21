@@ -36,7 +36,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import DrawingCard from './DrawingCard'
 import { ChargersCard, drawingStatus, FlowsList, placeProgress, StationTray, ValidationList, type Armed } from './SimCards'
 import SetupCard, { payloadsKey } from './SetupCard'
-import type { Stage } from '../ui/StageStrip'
+import type { Stage } from '../ui/Guide'
 import { Section } from '../inspector/InspectorParts'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import LayoutCanvas, { POINT_HIT_PX, rackLabel, type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
@@ -47,7 +47,7 @@ import { flipRack, rackFromBox, rackGeometry, rackLengthFor, stretchRack } from 
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
 /** The stages this editor's side panel shows (the rest are the run and the overview). */
-export type EditorStage = Extract<Stage, 'setup' | 'layout' | 'connect' | 'chargers'>
+export type EditorStage = Extract<Stage, 'setup' | 'vehicles' | 'layout' | 'connect' | 'chargers'>
 
 type Tool = 'lasso' | 'hand' | 'points' | 'routes' | 'highway' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
@@ -146,6 +146,10 @@ interface Props {
   /** The simulation's vehicle types (the flow inspector's Vehicle list) and a flow's choice among them. */
   vehicleTypes?: Vehicle[]
   onFlowVehicle?: (flowId: string, vehicleId: string) => void
+  /** The guide: the steps at the top of the side panel, and its one Next at the foot. */
+  guide: { list: ReactNode; next: ReactNode }
+  /** The Vehicles step's content (the shell owns the vehicle types and counts). */
+  vehiclesStep: ReactNode
   /** Chargers to place (`suggestedChargers`), and the vehicles the run places (each needs a home). */
   suggestedChargers: number
   vehiclesPlaced: number
@@ -158,7 +162,7 @@ const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, stage, onStage, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers, vehiclesPlaced }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, stage, onStage, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers, vehiclesPlaced, guide, vehiclesStep }: Props) {
   /** Step 1 loads — a rack's pallet. */
   const loads = useByValue(project.loads ?? NO_LOADS)
   /** A new rack's pallet, already confirmed upstream (owner, 2026-11-17): the simulation vehicles' first
@@ -902,10 +906,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           <p className="sim-status" aria-live="polite">{hint}</p>
         </div>
         <div className="sim-side">
+          {guide.list}
           <div className="sim-side-body">
             {banner}
             {stage !== 'setup' && marks && drawingSection}
-            {stage === 'setup' ? (
+            {stage === 'vehicles' ? vehiclesStep : stage === 'setup' ? (
               <>
                 {drawingSection}
                 <Section title="Payloads" open>
@@ -976,6 +981,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
               </>
             )}
           </div>
+          {guide.next}
         </div>
       </div>
     </div>

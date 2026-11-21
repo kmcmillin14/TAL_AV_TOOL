@@ -5410,7 +5410,7 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-zoomctl-sep { width: 1px; height: 20px; margin: 0 4px; background: var(--border); }
 
 /* Segmented choices on the Simulate page: the quiet blue, not the Run red. */
-:is(.sim-editor, .sim-run, .sim-drawer) .seg-btn.on, .sim-stage-btn.is-on { background: var(--sim-sel-soft); color: var(--sim-sel); }
+:is(.sim-editor, .sim-run, .sim-drawer) .seg-btn.on, .sim-guide-step.is-on { background: var(--sim-sel-soft); color: var(--sim-sel); }
 
 /* Validation (owner, 2026-11-12): live checks — a status button in the head, a list in the panel. */
 .sim-valid-btn { display: inline-flex; align-items: center; gap: 8px; }
@@ -5675,22 +5675,24 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .req-met { margin-top: 32px; }
 .rv-assume2-edit { margin: 0; width: 200px; }
 
-/* Stage strip (owner, 2026-11-18/19): one slim row, one way forward. Blue is the open stage, green a done
-   one; the open stage's status and the single Next button sit at the end. */
-.sim-stages { display: flex; align-items: center; gap: 16px; margin: 0 0 12px; padding: 6px 8px 6px 4px;
-  border-bottom: 1px solid var(--border); }
-.sim-stages ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px; min-width: 0; }
-.sim-stage-btn { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 10px; border: 0; border-radius: 8px;
-  background: none; color: var(--text-secondary); font: 600 13px var(--tal-font-family); cursor: pointer; white-space: nowrap; }
-.sim-stage-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
-.sim-stage-btn:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 2px; }
-.sim-stage-btn.is-blocked { color: var(--text-tertiary); }
-.sim-stage-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font: 700 10px var(--tal-font-numeric);
+/* The guide (owner, 2026-11-21): the steps as one compact list at the top of the side panel, one Next at its
+   foot. Blue is the open step, green a done one. */
+.sim-guide { padding: 8px; border-bottom: 1px solid var(--border); }
+.sim-guide ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
+.sim-guide-step { width: 100%; display: grid; grid-template-columns: 18px auto minmax(0, 1fr); align-items: center; gap: 8px; height: 30px;
+  padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-secondary); font: 600 13px var(--tal-font-family);
+  text-align: left; cursor: pointer; }
+.sim-guide-step:hover { background: var(--bg-hover); color: var(--text-primary); }
+.sim-guide-step:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 1px; }
+.sim-guide-step.is-on { color: var(--sim-sel); }
+.sim-guide-step.is-blocked { color: var(--text-tertiary); }
+.sim-guide-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font: 700 10px var(--tal-font-numeric);
   background: var(--bg-surface-3); color: var(--text-secondary); }
-.sim-stage-btn.is-on .sim-stage-n { background: var(--sim-sel); color: #fff; }
-.sim-stage-btn.is-done .sim-stage-n { background: var(--good-soft); color: var(--good); }
-.sim-stage-now { margin-left: auto; display: flex; align-items: center; gap: 12px; flex: none; }
-.sim-stage-status { font-size: 13px; color: var(--text-secondary); white-space: nowrap; }
+.sim-guide-step.is-on .sim-guide-n { background: var(--sim-sel); color: #fff; }
+.sim-guide-step.is-done .sim-guide-n { background: var(--good-soft); color: var(--good); }
+.sim-guide-status { justify-self: end; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: 12px; color: var(--text-tertiary); }
+.sim-guide-next { padding: 12px 16px; border-top: 1px solid var(--border); }
+.sim-guide-next .btn { width: 100%; justify-content: center; }
 
 /* Layout's station tray (owner plan, 2026-11-21): Sizing's unplaced stations as chips at the foot of the map,
    clear of the tool bar, the Endpoint palette and the zoom controls — drag one onto it, or click it and then the map. */
@@ -5705,3 +5707,15 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-tray-chip:active { cursor: grabbing; }
 .sim-tray-chip.on { border-color: var(--sim-sel); background: var(--sim-sel-soft); color: var(--sim-sel); }
 .sim-tray-chip:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 2px; }
+
+/* One window (owner, 2026-11-21): the Simulation step fits the viewport — a one-line head, then the map and
+   the guide panel filling the rest. The page never scrolls; only long lists scroll inside the panel. */
+.sim-shell { display: flex; flex-direction: column; height: calc(100vh / var(--root-zoom) - var(--sim-chrome, 150px)); min-height: 520px; }
+.sim-shell > .sim-head { flex: none; margin-bottom: 12px; }
+.sim-shell > .sim-head .eh-text { display: flex; align-items: baseline; gap: 12px; }
+.sim-shell > .sim-head .eh-title { font-size: 22px; }
+.sim-shell > .sim-editor, .sim-shell > .sim-run { flex: 1; min-height: 0; }
+.sim-shell .sim-editor { display: flex; flex-direction: column; }
+.sim-shell .sim-work { flex: 1; min-height: 0; height: auto; }
+.workspace:has(> .sim-shell) { padding-bottom: 16px; }
+@media (max-width: 700px) { .sim-shell { height: auto; } }

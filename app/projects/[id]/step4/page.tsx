@@ -31,7 +31,7 @@ export default function SimulatePage() {
       <PersistentHeader project={headerFromProject(project)} currentStep={4} unitSystem={unitSystem} onUnitToggle={toggleUnitSystem} />
       <div className="workspace">
         <SimulateShell project={project} vehicles={data.vehicles} vehicleById={data.vehicleById} settings={data.settings} fleet={data.fleet} unitSystem={unitSystem}
-          overview={<RomOperations project={project} vehicleById={data.vehicleById} />} resultLabel={fleetCheckLabel(verify.checks)} />
+          estimate={<RomOperations project={project} vehicleById={data.vehicleById} />} resultLabel={fleetCheckLabel(verify.checks)} />
       </div>
     </div>
   )
