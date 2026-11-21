@@ -2,11 +2,13 @@
 
 // Layout editor (spec v2 §5.1; path editor, owner 2026-11-16): a full-height canvas with the tool hint
 // under it, and one side panel whose content is the stage strip's stage (2026-11-18): Setup (drawing,
-// payloads), Layout (selection first, or the navigator; Place on routes folded), Connect (validation,
-// flows) and Chargers. Tool bar: Path (P) · Endpoint (E) · Lasso (L) · Undo · Redo. Off the bar, on their
-// keys: Hand (H, or Space), Route (R), Flow (F), Scale (S, or Setup's drawing card); V is Lasso. A selected path gets a bar (direction, lanes, length, delete) and lane
-// grips; D steps direction; arrows nudge; Tab steps through stations; ⌘C / ⌘V copy points. The
-// Endpoint palette's Object draws walls and columns; "B56.5" shows the clearance path (§5.9).
+// payloads), Layout (selection first, or the navigator), Connect (validation, flows) and Chargers. On
+// Layout, Sizing's unplaced stations wait in a tray on the map, dragged (or clicked) onto it; flows show
+// for the selection, or all with the Flows button. Tool bar: Path (P) · Endpoint (E) · Lasso (L) · Undo ·
+// Redo. Off the bar, on their keys: Hand (H, or Space), Route (R), Flow (F), Scale (S, or Setup's drawing
+// card); V is Lasso. A selected path gets a bar (direction, lanes, length, delete) and lane grips; D steps
+// direction; arrows nudge; Tab steps through stations; ⌘C / ⌘V copy points. The Endpoint palette's Object
+// draws walls and columns; "B56.5" shows the clearance path (§5.9).
 
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { linkedFlows } from '@/src/calc/sim/readiness'
@@ -32,7 +34,7 @@ import { getDrawingData, patchSimSettings, type StoredProject } from '@/src/lib/
 import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import DrawingCard from './DrawingCard'
-import { ChargersCard, drawingStatus, FlowsList, PlaceCard, placeProgress, ValidationList, type Armed } from './SimCards'
+import { ChargersCard, drawingStatus, FlowsList, placeProgress, StationTray, ValidationList, type Armed } from './SimCards'
 import SetupCard, { payloadsKey } from './SetupCard'
 import type { Stage } from '../ui/StageStrip'
 import { Section } from '../inspector/InspectorParts'
@@ -181,15 +183,18 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const [marks, setMarks] = useState<XY[] | null>(null)                 // null = not setting the scale
   const [drag, setDrag] = useState<Drag | null>(null)
   const [message, setMessage] = useState<string | null>(null)
-  const [showFlows, setShowFlows] = useState(true)
+  /** All flows on the map (the Flows button), or — by default — only the selection's (owner plan, 2026-11-21). */
+  const [showFlows, setShowFlows] = useState(false)
   const [showClearance, setShowClearance] = useState(false)
   const [fitKey, setFitKey] = useState(0)
   /** The side panel's tab. */
   /** Centre the view here (navigator, Tab); the key re-centres on the same spot. */
   const [center, setCenter] = useState<{ at: XY; key: number } | null>(null)
   const focusOn = (sel: NonNullable<Selection>, at: XY) => { setSelection(sel); setCenter(c => ({ at, key: (c?.key ?? 0) + 1 })) }
-  /** Place tool armed from "Place on routes": the next point gets this name, type and role. */
+  /** Place tool armed from the station tray: the next point gets this name, type and role. */
   const [armed, setArmed] = useState<Armed | null>(null)
+  /** The armed station was pressed in the tray and is being dragged: releasing over the map places it. */
+  const fromTray = useRef(false)
   const clipboard = useRef<string[]>([])
 
   const bg = layout.background
@@ -425,6 +430,22 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     }
   }
 
+  /** Place the armed point type at `at` — the same snap as routes: onto a route within reach (it joins).
+   *  An existing point there is selected instead (and the tool goes back to Lasso). Armed from the station
+   *  tray, the point takes the Sizing name, so the flows link by it. */
+  const placeAt = (at: XY, px: number, shift: boolean) => {
+    if (placeType === 'object') return   // objects are dragged out as boxes
+    const snap = placeSnap(at, px, shift)
+    if (snap.kind === 'point' && byId.has(snap.id)) { selectDrawn({ kind: 'point', id: snap.id }); return }
+    const role = FLOW_POINT_TYPES.includes(placeType) ? placeRole : undefined
+    const placed = (snap.kind === 'route' && placeOnSegment(layout, snap.id, snap.at, placeType, role))
+      || ('spur' in snap && snap.spur ? placeWithSpur(layout, snap.at, placeType, role, snap.spur) : addPoint(layout, snap.at, placeType, role))
+    setHover(null)
+    setLayout(armed ? updatePoint(placed.layout, placed.id, { name: armed.name }) : placed.layout)
+    setSelection({ kind: 'point', id: placed.id })
+    setArmed(null)
+  }
+
   const onPointer = ({ type, at, hit, shift, toggle, px }: CanvasPointer) => {
     if (marks) {
       if (type === 'down' && marks.length < 2) setMarks([...marks, at])
@@ -464,6 +485,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       return
     }
     if (type === 'up') {
+      // A station chip dragged from the tray and released over the map: placed where it lands.
+      if (fromTray.current && tool === 'points' && armed) { fromTray.current = false; placeAt(at, px, shift); return }
       if (drag) onRelease(drag)
       else if (tool === 'routes' && press.current && Math.hypot(at.x - press.current.x, at.y - press.current.y) > DRAG_PX * px) routeClick(at, shift, px)
       press.current = null
@@ -490,18 +513,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     if (tool === 'points') {
       if (placeType === 'object') { setDrag({ kind: 'box', from: at, at }); return }
       if (placeType === 'rack') { if (hit?.kind === 'point' && byId.has(hit.id)) { selectDrawn(hit); return } setDrag({ kind: 'rackDraw', from: at, at }); return }
-      // The same snap as routes: onto a route within reach (it joins); an existing point is selected
-      // and the tool goes back to Lasso.
-      const snap = placeSnap(at, px, shift)
-      if (snap.kind === 'point' && byId.has(snap.id)) { selectDrawn({ kind: 'point', id: snap.id }); return }
-      const role = FLOW_POINT_TYPES.includes(placeType) ? placeRole : undefined
-      const placed = (snap.kind === 'route' && placeOnSegment(layout, snap.id, snap.at, placeType, role))
-        || ('spur' in snap && snap.spur ? placeWithSpur(layout, snap.at, placeType, role, snap.spur) : addPoint(layout, snap.at, placeType, role))
-      setHover(null)
-      // Armed from "Place on routes": the point takes the Sizing name, so the flows link by it.
-      setLayout(armed ? updatePoint(placed.layout, placed.id, { name: armed.name }) : placed.layout)
-      setSelection({ kind: 'point', id: placed.id })
-      setArmed(null)
+      placeAt(at, px, shift)
     } else if (tool === 'highway') {
       const snap = hwSnap(at, shift, px, null)
       setDrag({ kind: 'hwDraw', from: snap.at, at: snap.at, snap, hit })
@@ -766,7 +778,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   })() : null
 
   // Side panel: Layout's folded cards, with a status word each; the drawing card is Setup's.
-  const { names } = place, toPlace = place.unplaced.length
   const drawingCard = (
       <DrawingCard
         background={bg}
@@ -789,6 +800,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     <Section title="Drawing" open status={bg ? drawingStatus(bg) : 'Optional'} tone={bg && !bg.scale ? 'warn' : undefined}>{drawingCard}</Section>
   )
 
+  // The flows drawn on the map: all of them, or those of the selected station(s) or flow.
+  const focus = selection?.kind === 'point' ? [selection.id] : selection?.kind === 'points' ? selection.ids : []
+  const flowsShown = showFlows ? flows
+    : flows.filter(f => (selection?.kind === 'flow' && f.id === selection.id) || focus.includes(f.fromPointId ?? '') || focus.includes(f.toPointId ?? ''))
+
   return (
     <div className="sim-editor">
       <div className="sim-work">
@@ -796,12 +812,12 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           <LayoutCanvas
             layout={shownLayout}
             driven={drag ? withHighways(shownLayout) : driven}
-            flows={flows}
+            flows={flowsShown}
             image={imageFt}
             highwayStatus={highwayStatus}
             selection={selection}
             notConnected={loose}
-            showFlows={showFlows}
+            showFlows
             clearances={clearances}
             panOnEmpty={false}
             panAlways={tool === 'hand' || spaceHeld}
@@ -833,7 +849,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             flowTargets={targetMarks}
             flowPreview={preview}
             viewControls={<>
-              <button type="button" className={showFlows ? 'on' : ''} aria-pressed={showFlows} onClick={() => setShowFlows(v => !v)} title="Show flows on the layout">Flows</button>
+              <button type="button" className={showFlows ? 'on' : ''} aria-pressed={showFlows} onClick={() => setShowFlows(v => !v)} title="Show every flow (otherwise only the selected station’s)">Flows</button>
               <button type="button" className={showClearance ? 'on' : ''} aria-pressed={showClearance} onClick={() => setShowClearance(v => !v)} title="B56.5 clearance overlay">B56.5</button>
               <i className="sim-zoomctl-sep" aria-hidden />
             </>}
@@ -850,6 +866,16 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
               <button type="button" className="sim-tool" disabled={!canUndo} onClick={undo} title="Undo (⌘Z)" aria-label="Undo"><ToolIcon d={UNDO_ICON} /></button>
               <button type="button" className="sim-tool" disabled={!canRedo} onClick={redo} title="Redo (⇧⌘Z)" aria-label="Redo"><ToolIcon d={REDO_ICON} /></button>
             </div>
+            {stage === 'layout' && !marks && (
+              <StationTray unplaced={place.unplaced} armed={armed} onPick={a => {
+                arm(a)
+                fromTray.current = true
+                // The drag ends with the next release, wherever it is (capture: before the tray or the map can
+                // stop it), just after the map has used it. Released anywhere but the map, the station stays
+                // armed — the next click on the map places it.
+                window.addEventListener('pointerup', () => window.setTimeout(() => { fromTray.current = false }), { once: true, capture: true })
+              }} />
+            )}
             {tool === 'points' && !marks && (
               <div className="sim-palette" aria-label="Point type" onPointerDown={e => e.stopPropagation()}>
                 {PALETTE.map(t => (
@@ -947,17 +973,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   focusRateOf={justAdded}
                   onRateFocused={() => setJustAdded(null)}
                 />
-                <div className="sim-folds">
-                  <Section title="Place on routes" open={toPlace > 0 || !!armed}
-                    status={names.length ? (toPlace ? `${toPlace} to place` : 'All placed') : undefined} tone={names.length && !toPlace ? 'good' : undefined}>
-                    <PlaceCard
-                      layout={layout}
-                      names={names}
-                      armed={armed}
-                      onArm={arm}
-                    />
-                  </Section>
-                </div>
               </>
             )}
           </div>

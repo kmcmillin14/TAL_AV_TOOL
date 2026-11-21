@@ -688,12 +688,21 @@ bottom bar). Any stage can still be opened directly (not a wizard).
 |---|---|---|---|
 | **Overview** | How the Sizing fleet operates, from the static model (the former Dashboard's operations tiles) | *6 vehicles estimated by Sizing* | — |
 | **Setup** | Side panel: the drawing (load, scale, opacity) and the payloads from Step 1, with **Confirm payloads** (`simSettings.payloadsConfirmed`: a fingerprint of the loads, so editing them in Step 1 un-confirms them) | *Drawing scaled · 2 payloads confirmed* / *… to confirm* | payloads confirmed (none in Step 1: not done — add them in Intake); the drawing is optional |
-| **Layout** | The editor and its panel (selection, *Place on routes*) | *12 of 16 flows placed* | every Sizing flow has both ends on the map |
+| **Layout** | The editor and its panel (selection, the navigator); Sizing's unplaced stations in the **station tray** on the map | *12 of 16 flows placed* | every Sizing flow has both ends on the map |
 | **Connect** | Validation (blockers first), then the flows on the layout | *2 blockers* / *Valid* (the head's validation wording) | no blockers |
 | **Chargers** | Chargers and parking to place, with a **suggested count** | *4 of 6 charger or parking spots* → *1 of 2 chargers* → *2 chargers · 4 parking* | every vehicle the run places has a home (a charger or parking spot — the rule validation blocks on) and at least the suggested chargers are placed |
 | **Simulate** | The Sim view | *6 vehicles* / *Not ready* | — |
 | **Results** | The Data view | the fleet state (*Verified*, *Suggested 7*, …) | — |
 
+- **Station tray (Layout; owner plan, 2026-11-21).** Sizing's stations not on the map yet — every flow's
+  origin and destination name — wait as chips at the foot of the map (`StationTray`). Drag a chip onto the
+  map to place it where it is released, or press it and then click the map; it snaps like a point (onto a
+  route within reach) and takes the Sizing name, so its flows link by it. Its type is suggested from the
+  name (*conveyor*, *infeed* → conveyor; else stand) and changed in the inspector after. The tray goes when
+  every station is placed; more positions for one name come from the inspector's Copy or Repeat. It
+  replaces the *Place on routes* card.
+- **Flows on the map** show for the selected station(s) or flow only; the map's **Flows** button shows
+  every flow. (They used to be on by default and crossed the whole map.)
 - *Suggested chargers* = ⌈Σ over types of fleet × (1 − availability)⌉, at least 1 — the vehicles the
   static charging model has on a charger at once (`suggestedChargers`, `src/calc/fleet.ts`).
 - Simulate and Results need a runnable layout; pressed while it is not, they open Connect. A new
@@ -817,8 +826,8 @@ step ribbon is unchanged.
     joins them (`mergePoints`; flows linked to it follow) with a live length; a Route options bar sets **Bidirectional / One-way** and
     **Two lanes / Single lane** for new routes (one-way routes are stored single-lane); Enter or double-click finishes; hint pill
     and messages on the canvas; Flows / B56.5 / Fit top right.
-  - *Side cards:* Drawing & scale · **Place on routes** (each Sizing location name with a suggested
-    type and Place / + Position; Charger, Parking) · Selected · **Ready to run?** (replaced by Validation, 2026-11-12) (red / amber / blue
+  - *Side cards:* Drawing & scale · **Place on routes** (superseded 2026-11-21 by Layout's station tray:
+    see the stage strip; chargers and parking are the Chargers stage) · Selected · **Ready to run?** (replaced by Validation, 2026-11-12) (red / amber / blue
     checklist: routes, scale, not connected, flows left off, no route, a home per vehicle, chargers).
   - *Flows — from Sizing* table: Sizing distance, distance on the layout, Δ, and the Fleet Engine;
     **Use layout distances** links name-matched flows after a confirmation showing Fleet Engine

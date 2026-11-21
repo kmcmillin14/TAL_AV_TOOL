@@ -1,7 +1,7 @@
 'use client'
 
 // The layout editor's side panel parts, by stage (stage strip, 2026-11-18):
-//   Place on routes — Layout: the Sizing flows' location names, each placed with one click
+//   Station tray    — Layout: Sizing's stations not on the map yet, dragged (or clicked) onto it
 //   Chargers        — Chargers: chargers and parking to place, against a suggested count
 //   Validation      — Connect: the live checks (src/calc/sim/readiness.ts): locate and fix each
 //   Flows           — Connect: every flow, its Sizing distance and its distance on the layout, the
@@ -12,13 +12,12 @@ import type { RackLoad } from '@/src/calc/sim/racks'
 import { useMemo, useState } from 'react'
 import { engineFleetTotal } from '@/src/calc/fleet'
 import { engineFleetFor } from '@/src/lib/fleetModel'
-import { FLOW_POINT_TYPES, linkFlow, linkSuggestions, measureFlows, pointById, sameName } from '@/src/calc/sim/layoutEdit'
+import { linkFlow, linkSuggestions, measureFlows, pointById, sameName } from '@/src/calc/sim/layoutEdit'
 import { homeCounts, type checkStatus, type CheckFix, type ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimLayout, SimPointType, SimRole } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import { fmtLength, lengthToDisplay, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
-import { POINT_LABEL } from './labels'
 import type { ProjectFlow } from './useLayoutEditor'
 
 /** A name suggests a type (proof of concept); the engineer confirms it in the list. */
@@ -47,39 +46,28 @@ export function placeProgress(layout: SimLayout, flows: ProjectFlow[]) {
   return { names, unplaced: names.filter(n => !layout.points.some(p => sameName(p.name, n.name))) }
 }
 
-export function PlaceCard({ layout, names, armed, onArm }: {
-  layout: SimLayout
-  names: FlowName[]
+/** Layout's station tray (owner plan, 2026-11-21): Sizing's stations not on the map yet, one chip each.
+ *  Drag a chip onto the map — or press it, then click the map — to place it; its type is suggested from
+ *  the name (change it in the inspector after). The tray is gone once every station is placed. */
+export function StationTray({ unplaced, armed, onPick }: {
+  unplaced: FlowName[]
   armed: Armed | null
-  onArm: (a: Armed) => void
+  /** Pressed: arm the Place tool with this station (the drag that follows places it where it is released). */
+  onPick: (a: Armed) => void
 }) {
-  const [types, setTypes] = useState<Record<string, SimPointType>>({})
-  const placed = (n: string) => layout.points.filter(p => sameName(p.name, n))
+  if (!unplaced.length) return null
+  // The tray sits on the map: its presses and releases are its own (a release on a chip is not a drop).
   return (
-    <section className="sim-card" aria-label="Place on routes">
-      {!names.length && <p className="sim-card-note">No Sizing flows yet — add them on Sizing, or draw flows with the Flow tool.</p>}
-      {names.map(n => {
-        const { name } = n, ps = placed(name)
-        const type = ps[0]?.type ?? types[name.toLowerCase()] ?? suggestType(name)
-        const role = roleOf(n)
-        const on = armed && sameName(armed.name, name)
-        return (
-          <div key={name} className="sim-check-item">
-            <span className={`sim-dot role-${role}${ps.length ? ' is-placed' : ''}`} />
-            <div className="sim-check-main">
-              <div className="nm" title={name}>{name}</div>
-              {ps.length
-                ? <div className="meta">{POINT_LABEL[type]} · {ps.length} position{ps.length > 1 ? 's' : ''}</div>
-                : <select className="sim-sel" value={type} title="Type — suggested from the name; confirm before placing"
-                    onChange={e => setTypes({ ...types, [name.toLowerCase()]: e.target.value as SimPointType })}>
-                    {FLOW_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}
-                  </select>}
-            </div>
-            <button type="button" className={`btn btn-sm${on ? ' primary' : ' ghost'}`} onClick={() => onArm({ name, type, role })}>{ps.length ? '+ Position' : 'Place'}</button>
-          </div>
-        )
-      })}
-    </section>
+    <div className="sim-tray" aria-label="Stations to place" onPointerDown={e => e.stopPropagation()} onPointerUp={e => e.stopPropagation()}>
+      <span className="sim-tray-label">To place · {unplaced.length}</span>
+      {unplaced.map(n => (
+        <button key={n.name} type="button" className={`sim-tray-chip${armed && sameName(armed.name, n.name) ? ' on' : ''}`}
+          title="Drag onto the map, or click and then click the map"
+          onPointerDown={e => { e.preventDefault(); onPick({ name: n.name, type: suggestType(n.name), role: roleOf(n) }) }}>
+          <span className={`sim-dot role-${roleOf(n)}`} />{n.name}
+        </button>
+      ))}
+    </div>
   )
 }
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-21 — Simulation: station tray; flows on demand
+
+- Layout's **station tray**: Sizing's stations not on the map yet, as chips at its foot — drag one onto the
+  map (or click it, then the map) and it is placed there with its Sizing name, so its flows link. Replaces
+  the *Place on routes* card (one way to place a station); extra positions come from Copy / Repeat.
+- **Flows on demand**: flow lines show for the selected station or flow; the Flows button shows them all.
+
 ## 2026-11-20 — Fixes after /code-review of the stage strip (9 findings)
 
 - Chargers is done only when every vehicle has a charger or parking spot (the rule validation blocks the
