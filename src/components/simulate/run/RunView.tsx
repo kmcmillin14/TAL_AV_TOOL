@@ -617,7 +617,7 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
   const over = u.simulated != null && u.simulated > 1
   const rows: { label: string; value: string; goal: string; pass: boolean | null; tone: Tone; grade: Grade | null; at: number | null; scale: ReturnType<typeof checkScale>; body: ReactNode }[] = [
     // Each line's figure is what its scale measures (owner, 2026-11-22: green left, red right on all three).
-    { label: 'Orders short', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}%`, goal: done == null ? `of ${h.perHr.target.toFixed(0)} / h` : `${done.toFixed(1)} / h`,
+    { label: 'Orders short', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}%`, goal: `${done == null ? '—' : done.toFixed(1)} of ${h.perHr.target.toFixed(0)} / h`,
       pass: h.perHr.pass, tone: h.perHr.tone, grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
       body: <p className="sim-kpi-sub">Moves the stations called for and did not get. {done == null ? '' : `${done.toFixed(1)} delivered each hour against ${h.perHr.target.toFixed(0)} needed.`}</p> },
     { label: 'Utilization', value: pctOf(u.simulated), goal: `≤ ${pctOf(u.target)}`, pass: u.pass, tone: u.tone,
@@ -636,7 +636,7 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
         </div>
         <p className="sim-kebab-note">Simulation only — Sizing keeps {Math.round(sizingTarget * 100)}%.</p>
       </> },
-    { label: 'Battery drop', value: b.sagPts == null ? '—' : `${Math.round(b.sagPts)} pts`, goal: b.grade == null ? 'over a week' : b.cause && b.cause !== 'sag' ? BATTERY_CAUSE[b.cause] : 'by morning',
+    { label: 'Battery drop', value: b.sagPts == null ? '—' : `${Math.round(b.sagPts)}%`, goal: b.grade == null ? 'over a week' : b.cause && b.cause !== 'sag' ? BATTERY_CAUSE[b.cause] : 'by morning',
       pass: b.pass, tone: b.tone, grade: b.grade, at: b.sagPts, scale: checkScale('battery'),
       body: <>
         <p className="sim-kpi-sub">How far the fleet's charge fell from this week's first morning to the next{b.sagPts == null ? ' — judged once the run covers a week with off-shift time' : ''}. Lowest charge:</p>

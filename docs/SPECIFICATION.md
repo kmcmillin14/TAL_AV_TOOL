@@ -763,8 +763,8 @@ the split of Layout into Highways and Pick and drop points.
   the verdict (*Right-sized · tight*), Sizing's Verified (its line says tight), the right-size search, one fewer
   and Use N. Simulate shows each check's scale (its bands, and a marker where the run landed). **Every scale runs
   the same way (owner, 2026-11-22, option A): green left, red right**, and each line shows the figure its scale
-  measures, so the marker moves with the number — *1 · Orders short 0.4%* (55.8 / h beside it), *2 · Utilization
-  92%* (≤ 90%), *3 · Battery drop 0 pts by morning* (the lowest charge in its fold). When the floor, the chargers'
+  measures, so the marker moves with the number — *1 · Orders short 0.4%* (*55.8 of 56 / h* beside it: delivered and
+  expected), *2 · Utilization 92%* (≤ 90%), *3 · Battery drop 0% by morning* (charge lost, in %) (the lowest charge in its fold). When the floor, the chargers'
   queue or nearing the floor set the battery's grade, its line says so in place of *by morning*.
 - **Words (owner, 2026-11-22):** a pick → drop move is a **material flow** everywhere a person reads it —
   Sizing, Simulation, help, the deck and the workbook (code keeps `flow`).
