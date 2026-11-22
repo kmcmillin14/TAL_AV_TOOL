@@ -544,7 +544,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
         return
       }
       const t = targetMarks.get(hit.id)
-      if (!t?.ok) { say(t?.reason ?? 'Not a flow end.'); return }
+      if (!t?.ok) { say(t?.reason ?? 'Not a material flow end.'); return }
       // Always Pick → Drop, whichever end was clicked first. Shift-click keeps the start (one Pick,
       // several Drops) and the focus on the canvas; a plain click ends here and opens Moves per hour.
       addFlow(t.pick, t.drop, !shift)
@@ -864,7 +864,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             flowTargets={targetMarks}
             flowPreview={preview}
             viewControls={<>
-              <button type="button" className={showFlows ? 'on' : ''} aria-pressed={showFlows} onClick={() => setShowFlows(v => !v)} title="Show every flow (otherwise only the selected station’s)">Flows</button>
+              <button type="button" className={showFlows ? 'on' : ''} aria-pressed={showFlows} onClick={() => setShowFlows(v => !v)} title="Show every material flow (otherwise only the selected station’s)">Material flows</button>
               <button type="button" className={showClearance ? 'on' : ''} aria-pressed={showClearance} onClick={() => setShowClearance(v => !v)} title="B56.5 clearance overlay">B56.5</button>
               <i className="sim-zoomctl-sep" aria-hidden />
             </>}
@@ -917,8 +917,9 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           <p className="sim-status" aria-live="polite">{hint}</p>
         </div>
         <div className="sim-side">
-          {guide.list}
-          <div className="sim-side-body">
+          {/* Two cards (owner, 2026-11-22): the checklist with its one Next, then the step's detail. */}
+          <div className="sim-guide-card">{guide.list}{guide.next}</div>
+          <div className="sim-side-body sim-detail-card">
             {banner}
             {stage !== 'layout' && marks && drawingSection}
             {stage === 'layout' ? (
@@ -934,7 +935,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             ) : stage === 'flows' ? (
               <>
                 <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); onStage('points') }} onFix={onFix} />
-                <Section title={`Flows on the layout · ${linked.length} of ${flows.length}`} open>
+                <Section title={`Material flows on the layout · ${linked.length} of ${flows.length}`} open>
                   <FlowsList
                     layout={layout}
                     flows={flows}
@@ -994,7 +995,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
               </>
             )}
           </div>
-          {guide.next}
         </div>
       </div>
     </div>

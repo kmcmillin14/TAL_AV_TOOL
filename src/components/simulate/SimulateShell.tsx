@@ -137,7 +137,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const empty = !hasLayout(simLayout)
   // The guide's steps and their progress (owner, 2026-11-22): green done, amber started, grey not yet; all
   // green before Simulate is ready to simulate.
-  const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix the layout first'} — opens Flows`
+  const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix the layout first'} — opens Material flows`
   const linkedN = inputs.flows.length, flowN = flowsV.length
   const chargersWanted = useMemo(() => suggestedChargers(simFleet), [simFleet])
   const homes = chargerProgress(simLayout ?? emptyLayout(), chargersWanted, fleetNeeded)
@@ -169,9 +169,9 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     { id: 'routes', label: 'Routes', done: paths > 0 && loose === 0 && !routeBlocked, started: paths > 0,
       status: !paths ? 'None drawn' : loose ? `${loose} loose end${loose === 1 ? '' : 's'}` : routeBlocked ? 'Not all reached' : `${paths} connected`,
       lead: 'Draw the aisles with Path and join their ends; every pick and drop point must sit on a route.' },
-    { id: 'flows', label: 'Flows', done: flowN > 0 && linkedN === flowN && !flowBlocked, started: linkedN > 0,
-      status: flowN ? `${linkedN} of ${flowN} linked` : 'No flows',
-      lead: 'Link each flow to its pick and drop points; its moves per hour come from Sizing. Fix what is listed.' },
+    { id: 'flows', label: 'Material flows', done: flowN > 0 && linkedN === flowN && !flowBlocked, started: linkedN > 0,
+      status: flowN ? `${linkedN} of ${flowN} linked` : 'No material flows',
+      lead: 'Link each material flow to its pick and drop points; its moves per hour come from Sizing. Fix what is listed.' },
     { id: 'chargers', label: 'Chargers', done: homes.done, started: homes.homes > 0, status: homes.status,
       lead: 'Place chargers near the busiest route, and a charger or parking spot for every vehicle.' },
   ]
@@ -226,7 +226,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   }
   /** Clear the layout; flows stay in Sizing, unlinked (their last measured distance kept). Sample flows go. */
   const clearLayout = () => {
-    if (!window.confirm('Clear the layout? Flows stay in Sizing with their current distances. The header’s Undo brings it back.')) return
+    if (!window.confirm('Clear the layout? Material flows stay in Sizing with their current distances. The header’s Undo brings it back.')) return
     updateProject(project.id, {
       simLayout: emptyLayout(),
       flows: flows.filter(f => !isSample(f.id)).map(unlinked),

@@ -145,8 +145,8 @@ const SAMPLE_RFQ_GUIDE: Guide = {
     {
       route: '/step3',
       target: '#engine-raw .form-section-header',
-      title: 'The DC moves, as flows',
-      body: 'Six flows in three zones: CB18 does the rack work, the M10 pin-tugger runs the long replenishment milk-runs, the 8HBC40A shuttles finished pallets outbound.',
+      title: 'The DC moves, as material flows',
+      body: 'Six material flows in three zones: CB18 does the rack work, the M10 pin-tugger runs the long replenishment milk-runs, the 8HBC40A shuttles finished pallets outbound.',
     },
     {
       route: '/step3',

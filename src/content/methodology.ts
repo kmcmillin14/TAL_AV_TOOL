@@ -44,12 +44,12 @@ export const METHODOLOGY: readonly MethodTopic[] = [
     title: 'Raw vehicle demand',
     formula: 'demand = (Q × cycle) ÷ 3600        base = ⌈ Σ demand ⌉',
     variables: [
-      { sym: 'Q', name: 'Throughput', def: 'Moves required per hour on this flow.', unit: 'moves/hr' },
+      { sym: 'Q', name: 'Throughput', def: 'Moves required per hour on this material flow.', unit: 'moves/hr' },
       { sym: 'cycle', name: 'Cycle time', def: 'Seconds per move (from step 01).', unit: 's' },
-      { sym: 'demand', name: 'Raw demand', def: 'Fractional vehicles a single flow needs running in parallel.', unit: 'veh' },
-      { sym: 'base', name: 'Base fleet', def: 'Whole vehicles per chassis — the ceiling of summed demand across its flows.', unit: 'veh' },
+      { sym: 'demand', name: 'Raw demand', def: 'Fractional vehicles a single material flow needs running in parallel.', unit: 'veh' },
+      { sym: 'base', name: 'Base fleet', def: 'Whole vehicles per chassis — the ceiling of summed demand across its material flows.', unit: 'veh' },
     ],
-    why: 'Throughput is per hour and cycle is in seconds, so ÷3600 converts to vehicle-hours of work per hour — i.e. how many vehicles must run at once. Demand is summed across every flow a chassis serves, then rounded up: you cannot buy a fraction of a vehicle, and rounding down would miss throughput.',
+    why: 'Throughput is per hour and cycle is in seconds, so ÷3600 converts to vehicle-hours of work per hour — i.e. how many vehicles must run at once. Demand is summed across every material flow a chassis serves, then rounded up: you cannot buy a fraction of a vehicle, and rounding down would miss throughput.',
   },
   {
     id: 'charging',

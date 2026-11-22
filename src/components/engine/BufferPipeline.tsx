@@ -98,12 +98,12 @@ export default function BufferPipeline({ flows, vehicleById, groupByVehicle, tar
       </div>
 
       {rows.length === 0 ? (
-        <div className="fs-empty">Assign vehicles to flows to size the fleet.</div>
+        <div className="fs-empty">Assign vehicles to material flows to size the fleet.</div>
       ) : (
         <table className="waterfall-table">
           <thead>
             <tr>
-              <th>Flow</th>
+              <th>Material flow</th>
               <th className="num">Base</th>
               <th className="num">+ Charging</th>
               <th className="num">Sized demand</th>

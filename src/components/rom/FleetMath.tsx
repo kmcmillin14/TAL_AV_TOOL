@@ -33,7 +33,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
   const [scope, setScope] = useState<string>('system') // 'system' | flowId
 
   if (fleet.groups.length === 0) {
-    return <div className="rv-empty">Assign vehicles to flows to see the sizing math.</div>
+    return <div className="rv-empty">Assign vehicles to material flows to see the sizing math.</div>
   }
 
   const groupFor = (vehicleId: string) => fleet.groups.find(g => g.vehicleId === vehicleId)
@@ -137,7 +137,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
   // ── FLOW scope ───────────────────────────────────────────────────────────
   const renderFlow = (flowId: string) => {
     const f = assigned.find(x => x.id === flowId)
-    if (!f || !f.vehicleId) return <div className="rv-empty">Flow not found.</div>
+    if (!f || !f.vehicleId) return <div className="rv-empty">Material flow not found.</div>
     const d = derivedByFlowId.get(f.id)!
     const g = groupFor(f.vehicleId)
     const b = d.breakdown
@@ -156,7 +156,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
           ) : <div className="fm-eq mono">Assign a vehicle to compute cycle time.</div>}
         </Step>
 
-        <Step n={2} tag="engineering" title="Base fleet" formula="raw = throughput × cycle ÷ 3600  →  base = ⌈Σ raw per type⌉" why="This flow's raw demand is its throughput times its cycle time. It then pools with every other flow that uses the same vehicle type before rounding up.">
+        <Step n={2} tag="engineering" title="Base fleet" formula="raw = throughput × cycle ÷ 3600  →  base = ⌈Σ raw per type⌉" why="This material flow's raw demand is its throughput times its cycle time. It then pools with every other material flow that uses the same vehicle type before rounding up.">
           <div className="fm-eq mono">
             {f.thruPerHr}/hr × {secs(d.cycleSeconds)} ÷ 3600 = <strong>{f2(d.rawVehicles ?? 0)}</strong> vehicles for this flow
           </div>
@@ -167,7 +167,7 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
           )}
         </Step>
 
-        <Step n={3} tag="physics" title="Charging" formula="availability = min(run ÷ (run + charge), weekly energy)  ·  +vehicles to cover the gap" why="Charging is modeled on the pooled vehicle type, not the single flow — the whole battery rotation shares chargers.">
+        <Step n={3} tag="physics" title="Charging" formula="availability = min(run ÷ (run + charge), weekly energy)  ·  +vehicles to cover the gap" why="Charging is modeled on the pooled vehicle type, not the single material flow — the whole battery rotation shares chargers.">
           {chargingLine(f.vehicleId)}
         </Step>
 
@@ -180,8 +180,8 @@ export default function FleetMath({ project, flows, derivedByFlowId, fleet, vehi
 
   return (
     <div className="fm-walk">
-      <div className="fm-subhead">Walk through a flow</div>
-      <p className="fm-intro">Pick a flow to see each sample formula with that flow&apos;s actual numbers substituted in — cycle time → base fleet → charging → buffer.</p>
+      <div className="fm-subhead">Walk through a material flow</div>
+      <p className="fm-intro">Pick a material flow to see each sample formula with that material flow&apos;s actual numbers substituted in — cycle time → base fleet → charging → buffer.</p>
 
       <div className="fm-toggle" role="tablist" aria-label="Math scope">
         <button type="button" role="tab" aria-selected={scope === 'system'} className={`fm-tab${scope === 'system' ? ' active' : ''}`} onClick={() => setScope('system')}>Full system</button>

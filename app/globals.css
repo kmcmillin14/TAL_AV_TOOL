@@ -5728,3 +5728,14 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-shell .sim-work { flex: 1; min-height: 0; height: auto; }
 .workspace:has(> .sim-shell) { padding-bottom: 16px; }
 @media (max-width: 700px) { .sim-shell { height: auto; } }
+
+/* The side column as two cards (owner, 2026-11-22): the checklist (tinted, with its one Next) and, below it,
+   the open step's detail or the selection's drill-down (white). Only the detail card scrolls, inside itself. */
+.sim-shell .sim-side { gap: 12px; border: 0; background: none; box-shadow: none; overflow: visible; }
+.sim-guide-card { flex: none; border: 1px solid var(--border); border-radius: 12px;
+  background: color-mix(in srgb, var(--sim-sel) 5%, var(--bg-surface-2)); }
+.sim-guide-card .sim-guide { border-bottom: 0; padding: 8px 8px 0; }
+.sim-guide-card .sim-guide-step.is-on { background: var(--bg-surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
+.sim-guide-card .sim-guide-next { border-top: 0; padding: 8px 12px 12px; }
+.sim-detail-card { flex: 1; min-height: 0; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg-surface); box-shadow: var(--sim-shadow-rest); }

@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-22 — "Material flows" everywhere; checklist and detail as two cards
+
+- Owner: what was a "flow" reads **material flow** wherever a person sees it — Sizing's table and KPIs,
+  Simulation's step, lists and map button, help and tour, the customer deck and the workbook. Code names
+  are unchanged; "cash flow", "gravity flow rack" and the workflow sense are left alone.
+- Owner: Simulation's right column is two cards — the **checklist** (tinted; steps, progress, the one Next)
+  and the **detail** below (white; the open step, or the drill-down of the selection). One screen, no page
+  scroll; only the detail card scrolls inside itself.
+
 ## 2026-11-22 — Simulation guide: seven steps with progress
 
 - Owner: **Layout** (sub-tasks Scale, Vehicle types, Payloads) · **Pick and drop points** · **Routes** · **Flows**

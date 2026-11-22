@@ -73,7 +73,7 @@ export default function PptxSectionPicker({ project, onClose }: Props) {
 
           <div className="pptx-pick-subhead">Product Overviews <span className="pptx-pick-always">· fleet chassis only</span></div>
           {vehIds.length === 0 ? (
-            <div className="pptx-pick-hint">No vehicles assigned to flows yet — no product slides will be included.</div>
+            <div className="pptx-pick-hint">No vehicles assigned to material flows yet — no product slides will be included.</div>
           ) : (
             <div className="pptx-pick-grid">
               {vehIds.map(id => (

@@ -119,7 +119,7 @@ export default function GroupHeader({
             aria-label="Group name"
           />
           <span className="fg-count">{count} {count === 1 ? 'flow' : 'flows'}</span>
-          <span className="fg-demand mono" title="Total vehicle demand for this group (Σ per-flow vehicle count)">
+          <span className="fg-demand mono" title="Total vehicle demand for this group (Σ per material flow vehicle count)">
             {vehicleDemand.toFixed(2)} {Math.abs(vehicleDemand - 1) < 0.005 ? 'vehicle' : 'vehicles'}
           </span>
           <button type="button" className="fg-add" onClick={onAddFlow}>
@@ -130,7 +130,7 @@ export default function GroupHeader({
             className="fg-del"
             onClick={onDelete}
             aria-label={`Delete group ${name}`}
-            title="Delete group (keeps its flows, ungrouped)"
+            title="Delete group (keeps its material flows, ungrouped)"
           >
             ×
           </button>

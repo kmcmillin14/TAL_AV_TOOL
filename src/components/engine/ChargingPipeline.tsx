@@ -91,7 +91,7 @@ export default function ChargingPipeline({
       </div>
 
       {poolIds.length === 0 ? (
-        <div className="fs-empty">Assign vehicles to flows to model charging.</div>
+        <div className="fs-empty">Assign vehicles to material flows to model charging.</div>
       ) : (
         <table className="charge-table">
           <thead>

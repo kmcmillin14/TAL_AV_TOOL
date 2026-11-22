@@ -735,7 +735,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 />
                 <div className="unit">{dLabel}</div>
               </div>
-              <div className="help">The main pick height — the tallest in the movement you&rsquo;re sizing for, not the average. One-off exceptions are handled per flow in Step 3. Drives the lift gate in Step 2.</div>
+              <div className="help">The main pick height — the tallest in the movement you&rsquo;re sizing for, not the average. One-off exceptions are handled per material flow in Step 3. Drives the lift gate in Step 2.</div>
             </div>
             <div className="fld">
               <label>Drop height, primary ({dLabel}) <Mark roles={['compat']} /></label>
@@ -754,7 +754,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 />
                 <div className="unit">{dLabel}</div>
               </div>
-              <div className="help">The main drop height — the tallest in the movement you&rsquo;re sizing for, not the average. One-off exceptions are handled per flow in Step 3. Drives the lift gate in Step 2.</div>
+              <div className="help">The main drop height — the tallest in the movement you&rsquo;re sizing for, not the average. One-off exceptions are handled per material flow in Step 3. Drives the lift gate in Step 2.</div>
             </div>
 
             <div className="fld">
@@ -768,7 +768,7 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                 defaultValue={initialData?.pickDropLocationCount ?? ''}
                 {...register('pickDropLocationCount', { valueAsNumber: true, onBlur: onBlurSave })}
               />
-              <div className="help">Distinct pick/drop stops in the flow.</div>
+              <div className="help">Distinct pick/drop stops in the material flow.</div>
             </div>
           </div>
         </FormSection>
@@ -1223,8 +1223,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                     <button
                       type="button"
                       className="tbtn-icon"
-                      aria-label="Duplicate flow"
-                      title="Duplicate flow"
+                      aria-label="Duplicate material flow"
+                      title="Duplicate material flow"
                       onClick={() => duplicateFlowRow(i)}
                     >
                       <Icon name="copy" size={13} />
@@ -1232,8 +1232,8 @@ export default function ApplicationForm({ initialData, projectId, unitSystem }: 
                     <button
                       type="button"
                       className="tbtn-icon"
-                      aria-label="Delete flow"
-                      title="Delete flow"
+                      aria-label="Delete material flow"
+                      title="Delete material flow"
                       onClick={() => { removeFlow(i); onBlurSave() }}
                     >
                       <Icon name="x" size={13} />

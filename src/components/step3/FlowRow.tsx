@@ -129,7 +129,7 @@ export default function FlowRow({
             if (e.key === 'ArrowUp') { e.preventDefault(); onMove(-1) }
             if (e.key === 'ArrowDown') { e.preventDefault(); onMove(1) }
           }}
-          aria-label="Reorder flow — drag, or focus and use arrow keys"
+          aria-label="Reorder material flow — drag, or focus and use arrow keys"
           title="Drag to reorder"
         >
           <Icon name="grip" size={14} />
@@ -263,7 +263,7 @@ export default function FlowRow({
                 rawVehicles: derived.rawVehicles,
               })}
               route={flow.origin || flow.destination ? `${flow.origin || '—'} → ${flow.destination || '—'}` : undefined}
-              label="Show the fleet math for this flow"
+              label="Show the fleet math for this material flow"
             />
           ) : (
             <button type="button" className="flow-act-btn flow-formula" disabled aria-label="Show fleet math">
@@ -274,8 +274,8 @@ export default function FlowRow({
             type="button"
             className="flow-act-btn flow-duplicate"
             onClick={onDuplicate}
-            aria-label="Duplicate flow"
-            title="Duplicate this flow"
+            aria-label="Duplicate material flow"
+            title="Duplicate this material flow"
           >
             <Icon name="copy" size={14} />
           </button>
@@ -283,8 +283,8 @@ export default function FlowRow({
             type="button"
             className="flow-act-btn flow-delete"
             onClick={onDelete}
-            aria-label="Delete flow"
-            title="Delete flow"
+            aria-label="Delete material flow"
+            title="Delete material flow"
           >
             <Icon name="x" size={14} />
           </button>

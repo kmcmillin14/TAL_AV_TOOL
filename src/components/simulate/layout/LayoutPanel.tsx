@@ -129,7 +129,7 @@ export default function LayoutPanel(p: Props) {
         <Summary items={[
           ['Type', pt.type === 'junction' ? 'Junction' : `${POINT_LABEL[pt.type]}${isFlowPoint ? ` · ${ROLE_OPTIONS.find(r => r.id === (pt.role ?? 'pick'))?.label}` : ''}`],
           ['Routes', routes || 'Not connected'],
-          ...(isFlowPoint ? [['Flows', flowsHere.length ? `${flowsHere.length} · ${flowsHere.reduce((t, f) => t + (f.thruPerHr || 0), 0)}/h` : 'None'] as [string, string]] : []),
+          ...(isFlowPoint ? [['Material flows', flowsHere.length ? `${flowsHere.length} · ${flowsHere.reduce((t, f) => t + (f.thruPerHr || 0), 0)}/h` : 'None'] as [string, string]] : []),
           ...(isFlowPoint && !pt.rack ? [['Height', pt.heightFt ? fmtLength(pt.heightFt, p.unitSystem, 1) : 'Floor'] as [string, string]] : []),
         ]} />
         <Section title="Settings" open>
@@ -140,7 +140,7 @@ export default function LayoutPanel(p: Props) {
                 if (type) p.onConvert(pt.id, type)
               }}>
                 <option value="">A junction (route node)</option>
-                <optgroup label="Flow points">{CONVERTIBLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
+                <optgroup label="Material flow points">{CONVERTIBLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
                 <optgroup label="Vehicle points">{VEHICLE_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
               </select>
             </label>
@@ -156,7 +156,7 @@ export default function LayoutPanel(p: Props) {
                   const type = e.target.value as SimPointType
                   p.onPoint(pt.id, { type, role: FLOW_POINT_TYPES.includes(type) ? pt.role ?? 'pick' : undefined })
                 }}>
-                  <optgroup label="Flow points">{CONVERTIBLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
+                  <optgroup label="Material flow points">{CONVERTIBLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
                   <optgroup label="Vehicle points">{VEHICLE_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
                 </select>
               </label>}
@@ -172,7 +172,7 @@ export default function LayoutPanel(p: Props) {
           )}
         </Section>
         {links && (
-          <Section title="Add flow to…" open={!flowsHere.length} status={`${links.reachable.length} reachable`}>
+          <Section title="Add material flow to…" open={!flowsHere.length} status={`${links.reachable.length} reachable`}>
             {links.reachable.length
               ? <ul className="sim-nav">
                   {links.reachable.map(t => (
@@ -404,7 +404,7 @@ export default function LayoutPanel(p: Props) {
   if (flow) {
     const simVid = p.simVehicleOf.get(flow.id)
     return (
-      <Inspector title="Flow">
+      <Inspector title="Material flow">
         <Summary items={[
           ['From → to', `${name(flow.fromPointId)} → ${name(flow.toPointId)}`],
           ['Moves/h', flow.thruPerHr || 0],
@@ -436,7 +436,7 @@ export default function LayoutPanel(p: Props) {
       <Summary items={[
         ['Points', stations.length],
         ['Routes', `${p.layout.segments.length} · ${fmtLength(nav.totalFt, p.unitSystem)}`],
-        ['Flows on layout', `${linkedFlows(p.flows).length} of ${p.flows.length}`],
+        ['Material flows on layout', `${linkedFlows(p.flows).length} of ${p.flows.length}`],
         ['Objects', (p.layout.objects ?? []).length],
       ]} />
       <Section title={`Stations · ${stations.length}`} open={stations.length > 0}>

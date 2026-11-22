@@ -267,7 +267,7 @@ export function fillFleetSizing(zip: PizZip, model: FleetModel, names: Record<st
   ], { h: WATERFALL_H })
   const mix = fleet.groups.map(g => `${names[g.vehicleId] ?? g.vehicleId} ×${g.fleetSold}`).join('   ·   ')
   f.caption([
-    mix ? `Fleet mix — ${mix}` : 'Assign vehicles to flows (Step 3) to size the fleet.',
+    mix ? `Fleet mix — ${mix}` : 'Assign vehicles to material flows (Step 3) to size the fleet.',
     `Sized from your throughput, distances, and shift pattern${verified ? ' · verified by a simulation of the site layout' : ''} · full derivation in appendix`,
   ])
 }
@@ -295,7 +295,7 @@ export function buildTierDerivations(
   const grpExample = grp ? `Example: ${names[grp.vehicleId] ?? grp.vehicleId}` : ''
   return [
     { name: 'RAW FLEET', deriv: rawDeriv,
-      meaning: 'Each flow’s cycle time → vehicles needed (throughput \xd7 cycle \xf7 3600), summed per chassis and rounded up = raw base fleet.',
+      meaning: 'Each material flow’s cycle time → vehicles needed (throughput \xd7 cycle \xf7 3600), summed per chassis and rounded up = raw base fleet.',
       example: rawFlow ? `Example: ${rawVeh?.name ?? rawFlow.vehicleId} \xb7 ${rawFlow.origin || '—'} → ${rawFlow.destination || '—'}` : '' },
     { name: 'CHARGING', deriv: grp && grpVeh ? chargingDerivation(grp, grpVeh, settings) : null,
       meaning: 'Battery capacity, average draw and charge input set availability — the duty ratio is charge ÷ (charge + draw), and the overnight charge is credited on top. Dividing demand by availability adds the vehicles that cover charging downtime.',
@@ -312,7 +312,7 @@ export function fillDerivation(zip: PizZip, slide: number, tier: TierDerivation)
   f.eyebrow('APPENDIX — SIZING DERIVATION')
   f.table(DERIV_COL,
     tier.deriv ? derivationRows(tier.deriv)
-      : [[{ t: 'How it’s calculated' }], [{ t: 'Assign vehicles to flows (Step 3) to show the worked calculation.' }]],
+      : [[{ t: 'How it’s calculated' }], [{ t: 'Assign vehicles to material flows (Step 3) to show the worked calculation.' }]],
     { rowH: 260000 })
   const lines = [tier.meaning + (tier.example ? `   \xb7   ${tier.example}` : '')]
   const inputs = (tier.deriv?.steps ?? []).filter(s => s.kind === 'input')
@@ -394,8 +394,8 @@ export function fillMaterialFlow(
       { t: n2(buffered), align: 'r', bold: true },
     ])
   })
-  if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No flows defined yet (Step 3).' }, ...Array(8).fill({ t: '' })])
-  if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(8).fill({ t: '' })])
+  if (flows.length === 0) rows.push([{ t: '—', align: 'ctr' }, { t: 'No material flows defined yet (Step 3).' }, ...Array(8).fill({ t: '' })])
+  if (flows.length > MAX) rows.push([{ t: '' }, { t: `+ ${flows.length - MAX} more material flow${flows.length - MAX === 1 ? '' : 's'}…` }, ...Array(8).fill({ t: '' })])
 
   // TOTAL row — the fleet build-up sits in the table, next to the per-flow
   // outputs it sums: Σ moves/hr · Σ raw · Σ charging · fleet sold (rounded
@@ -436,7 +436,7 @@ export function fillInvestment(zip: PizZip, model: FleetModel, names: Record<str
       { t: priced(blocked, `${money(l.lineMin)} – ${money(l.lineMax)}`), align: 'r' },
     ])
   }
-  if (rom.pricing.lines.length === 0) rows.push([{ t: '—' }, { t: '', align: 'ctr' }, { t: '' }, { t: 'Assign vehicles to flows (Step 3).', align: 'r' }])
+  if (rom.pricing.lines.length === 0) rows.push([{ t: '—' }, { t: '', align: 'ctr' }, { t: '' }, { t: 'Assign vehicles to material flows (Step 3).', align: 'r' }])
   const redCell = (t: string, align: TableCell['align'] = 'l'): TableCell => ({ t, align, fill: TAL_RED, color: 'FFFFFF', bold: true })
   rows.push([redCell('TOTAL'), redCell(String(fleet.totalFleetSold), 'ctr'), redCell(''),
     redCell(priced(blocked, `${money(rom.pricing.totalMin)} – ${money(rom.pricing.totalMax)}`), 'r')])
@@ -480,7 +480,7 @@ export function fillFlowMath(
   const vById = new Map(vehicles.map(v => [v.id, v]))
   const nm = (id: string) => names[id] ?? id
   const rows: TableCell[][] = [[
-    { t: 'Flow' }, { t: 'Cycle = out + back + load + unload + lift  (s)' },
+    { t: 'Material flow' }, { t: 'Cycle = out + back + load + unload + lift  (s)' },
     { t: 'Cycle', align: 'r' }, { t: 'Vehicles = Q \xd7 cycle \xf7 3600', align: 'r' },
   ]]
   for (const fl of flowsSubset) {
@@ -503,7 +503,7 @@ export function fillFlowMath(
       { t: cnt ? `${cnt.sub} = ${cnt.result}` : '—', align: 'r' },
     ])
   }
-  if (rows.length === 1) rows.push([{ t: 'No flows with an assigned vehicle.' }, { t: '' }, { t: '' }, { t: '' }])
+  if (rows.length === 1) rows.push([{ t: 'No material flows with an assigned vehicle.' }, { t: '' }, { t: '' }, { t: '' }])
   const f = frame(zip, slide)
   f.eyebrow('APPENDIX — CYCLE MATH')
   f.table([3000000, 4000000, 1000000, 2820400], rows, { rowH: 360000 })

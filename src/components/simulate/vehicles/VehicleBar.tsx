@@ -62,7 +62,7 @@ export default function VehicleBar(p: Props) {
               <span className="nm">{v?.name ?? t.vehicleId}</span>
               {t.vehicleId in p.placed
                 ? <span className="num sim-vchip-n" title="Static calc → simulated">{st}{sim !== st && <> <Icon name="arrowR" size={10} /> <b>{sim}</b></>}</span>
-                : <span className="sim-vchip-n is-idle">No flows</span>}
+                : <span className="sim-vchip-n is-idle">No material flows</span>}
             </button>
             {open === t.vehicleId && (
               <TypePopover t={t} v={v} st={st} sim={sim} stepped={p.stepped.has(t.vehicleId)} loads={p.loads} u={p.unitSystem}

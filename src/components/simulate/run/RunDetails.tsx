@@ -37,7 +37,7 @@ const SPLIT = STATES as [keyof TimeSplit, string][]
 /** Seconds in a shown state — repositioning at a pick/drop counts as "Pick / drop", so shares add to 100%. */
 const inState = (t: TimeSplit, k: keyof TimeSplit) => (k === 'handle' ? t.handle + t.reposition : t[k])
 const FLOW_COLS: Col[] = [
-  { label: 'Flow', left: true }, { label: 'Moves/h target' }, { label: 'Sizing distance' }, { label: 'Driven' }, { label: 'Engine cycle' },
+  { label: 'Material flow', left: true }, { label: 'Moves/h target' }, { label: 'Sizing distance' }, { label: 'Driven' }, { label: 'Engine cycle' },
   { label: 'Engine demand (veh)' }, { label: 'Sim moves/h', band: true }, { label: 'Sim mission', band: true }, { label: 'Avg wait', band: true },
 ]
 const TYPE_COLS: Col[] = [
@@ -68,9 +68,9 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
   return (
     <section className="sim-below">
       <details className="sim-disc">
-        <summary>Flows — engine vs simulated<span className="meta">{R ? flowSummary(R, linked.length, assume.demandPct, flows) : 'simulating…'}</span></summary>
+        <summary>Material flows — engine vs simulated<span className="meta">{R ? flowSummary(R, linked.length, assume.demandPct, flows) : 'simulating…'}</span></summary>
         <div className="sim-disc-body">
-          <DataTable label="Flows" cols={FLOW_COLS} rows={linked.map(f => {
+          <DataTable label="Material flows" cols={FLOW_COLS} rows={linked.map(f => {
             const sim = R?.flows.find(x => x.flowId === f.id)
             const why = R?.excluded.find(x => x.flowId === f.id)?.why
             const e = flowDerived(f, f.vehicleId ? vehicleById.get(f.vehicleId) : undefined)

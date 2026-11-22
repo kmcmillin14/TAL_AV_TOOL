@@ -392,8 +392,9 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
       </div>
       {/* The side panel: Simulate's fleet, or Results' data. */}
       <div className="sim-side">
-        {guide.list}
-        <div className="sim-side-body">
+        {/* Two cards (owner, 2026-11-22): the checklist with its one Next, then the step's detail. */}
+        <div className="sim-guide-card">{guide.list}{guide.next}</div>
+        <div className="sim-side-body sim-detail-card">
           {banner}
           <div hidden={view !== 'sim'} className="sim-sim-pane">{fleetPane}{summary}</div>
           <div hidden={view !== 'data'} className="sim-data-pane">
@@ -404,7 +405,6 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
             </details>
           </div>
         </div>
-        {guide.next}
       </div>
     </div>
   )

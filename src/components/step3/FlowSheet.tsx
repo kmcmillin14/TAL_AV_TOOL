@@ -115,7 +115,7 @@ export default function FlowSheet({ flow, index, vehicles, groups, derived, unit
                 rawVehicles: derived.rawVehicles,
               })}
               route={flow.origin || flow.destination ? `${flow.origin || '—'} → ${flow.destination || '—'}` : undefined}
-              label="Show the fleet math for this flow"
+              label="Show the fleet math for this material flow"
             />
           )}
         </div>

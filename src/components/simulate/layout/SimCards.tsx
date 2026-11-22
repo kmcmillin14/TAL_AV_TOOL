@@ -114,7 +114,7 @@ export const drawingStatus = (bg: { scale?: unknown } | undefined) => (!bg ? 'No
 
 /** Connect's validation list: blockers first, then warnings and notes, one row per thing. A row with a
  *  target selects it and centres on it; its fix button picks the tool, or opens the stage, that fixes it. */
-const FIX_LABEL: Record<CheckFix, string> = { scale: 'Scale', route: 'Draw route', charger: 'Place charger', linkFlow: 'Link flow', flowsTab: 'Place them' }
+const FIX_LABEL: Record<CheckFix, string> = { scale: 'Scale', route: 'Draw route', charger: 'Place charger', linkFlow: 'Link material flow', flowsTab: 'Place them' }
 /** The validation status in words — the page head and the strip's Connect say it the same way. */
 export const statusLabel = ({ blockers }: ReturnType<typeof checkStatus>) => (blockers ? `${blockers} blocker${blockers === 1 ? '' : 's'}` : 'Valid')
 export function ValidationList({ checks, status, onLocate, onDetails, onFix }: {
@@ -186,7 +186,7 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
   const raw = fleet.groups.reduce((t, g) => t + g.groupRaw, 0)
 
   return (
-    <section className="sim-flows" aria-label="Flows from Sizing">
+    <section className="sim-flows" aria-label="Material flows from Sizing">
       <ol className="sim-flow-list">
         {flows.map((f, i) => {
           const linked = !!(f.fromPointId && f.toPointId)
@@ -209,7 +209,7 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
             </li>
           )
         })}
-        {!flows.length && <li className="sim-card-note">No flows yet — add them on Sizing, or link a Pick point to a Drop point with Link on the map (F).</li>}
+        {!flows.length && <li className="sim-card-note">No material flows yet — add them on Sizing, or link a Pick point to a Drop point with Link on the map (F).</li>}
       </ol>
       <div className="sim-flows-foot">
         <span>Fleet Engine: raw <b className="num">{raw.toFixed(2)}</b> → <b className="num">{engineTotal}</b> vehicle{engineTotal === 1 ? '' : 's'}</span>

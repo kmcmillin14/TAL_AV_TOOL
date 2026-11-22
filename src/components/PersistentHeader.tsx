@@ -31,7 +31,7 @@ const STEPS: ReadonlyArray<{ id: StepId; label: string; desc: string }> = [
   { id: 0, label: 'Start',                   desc: 'Import or create' },
   { id: 1, label: 'Intake',                  desc: 'Load, transfer, environment' },
   { id: 2, label: 'Compatibility',           desc: 'Compatibility & qualification' },
-  { id: 3, label: 'Sizing',                  desc: 'Flows, charging & buffer' },
+  { id: 3, label: 'Sizing',                  desc: 'Material flows, charging & buffer' },
   { id: 4, label: 'Simulation',              desc: 'Verify the fleet size' },
   { id: 5, label: 'Pricing',                 desc: 'Sell price & return' },
   { id: 6, label: 'Export',                  desc: 'Customer presentation' },

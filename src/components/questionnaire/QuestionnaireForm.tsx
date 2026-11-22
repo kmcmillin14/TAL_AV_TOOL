@@ -71,7 +71,7 @@ const SECTIONS: readonly QSection[] = [
     fields: ['pickContext', 'dropContext', 'transferType', 'transferHeightFt', 'dwellTimeSec', 'chargingStrategyPreference', 'topOfRollerHeightFt', 'maxLiftHeightFt', 'specialtyApplications'] },
   { id: 'q-sec-site', num: '05', short: 'General Site Info', tier: TIER_APP,
     fields: ['driveAisleWidthFt', 'rackingAisleWidthFt', 'floorCondition', 'outdoorRequired', 'dustMoisture', 'sharedTrafficTypes', 'guidanceType', 'rampRequired', 'maxRampGrade', 'rampDistanceFt', 'temperatureEnvironment', 'tempMinF', 'tempMaxF', 'facilitySizeSqFt', 'dockDoors', 'networkReady', 'siteWalkthroughAvailable', 'cadAvailable', 'cadNotes'] },
-  { id: 'q-sec-throughput', num: '06', short: 'Throughput & flows', tier: TIER_APP,
+  { id: 'q-sec-throughput', num: '06', short: 'Throughput & material flows', tier: TIER_APP,
     fields: ['requiredThroughputPerHour', 'peakThroughputPerHour', 'avgDistanceFt', 'distanceType', 'flows'] },
   { id: 'q-sec-schedule', num: '07', short: 'Schedule', tier: TIER_APP,
     fields: ['shiftsPerDay', 'hoursPerShift', 'operatingDaysPattern', 'breaksPerShift', 'breakDurationMin'] },
@@ -874,7 +874,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
             </div>
           </Section>
 
-          <Section id="q-sec-throughput" title="Throughput & flows">
+          <Section id="q-sec-throughput" title="Throughput & material flows">
             <div className="fld-grid-4">
               <div className="fld span-4">
                 <label>How would you like to describe volume?</label>
@@ -882,7 +882,7 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   <button type="button" className={`seg-btn${thruMode === 'avg' ? ' on' : ''}`} onClick={() => setThruMode('avg')}>Overall averages</button>
                   <button type="button" className={`seg-btn${thruMode === 'flows' ? ' on' : ''}`} onClick={() => setThruMode('flows')}>Per-flow detail</button>
                 </div>
-                <div className="help">Give simple averages, or list each origin → destination flow — whichever is easier.</div>
+                <div className="help">Give simple averages, or list each origin → destination material flow — whichever is easier.</div>
               </div>
             </div>
             {thruMode === 'avg' && (
@@ -947,10 +947,10 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                         )} />
                       </div>
                       <div className="step1-flow-actions">
-                        <button type="button" className="tbtn-icon" aria-label="Copy flow" title="Copy flow" onClick={() => copyFlow(i)}>
+                        <button type="button" className="tbtn-icon" aria-label="Copy material flow" title="Copy material flow" onClick={() => copyFlow(i)}>
                           <Icon name="copy" size={13} />
                         </button>
-                        <button type="button" className="tbtn-icon" aria-label="Delete flow" title="Delete flow" onClick={() => removeFlow(i)}>
+                        <button type="button" className="tbtn-icon" aria-label="Delete material flow" title="Delete material flow" onClick={() => removeFlow(i)}>
                           <Icon name="x" size={13} />
                         </button>
                       </div>
@@ -958,8 +958,8 @@ function QuestionnaireFormInner({ onRequestRemount }: { onRequestRemount: () => 
                   ))}
                 </div>
               )}
-              <button type="button" className="btn ghost step1-flow-add" onClick={addFlow}>+ Add flow</button>
-              <div className="help" style={{ marginTop: 8 }}>One row per origin → destination move. These are the same flows your TAL engineer sizes in Step 3.</div>
+              <button type="button" className="btn ghost step1-flow-add" onClick={addFlow}>+ Add material flow</button>
+              <div className="help" style={{ marginTop: 8 }}>One row per origin → destination move. These are the same material flows your TAL engineer sizes in Step 3.</div>
             </div>
             )}
           </Section>

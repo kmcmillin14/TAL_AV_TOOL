@@ -25,7 +25,7 @@ const DEST_H = 44
  */
 export default function FlowDiagram({ series }: Props) {
   if (series.origins.length === 0) {
-    return <div className="rv-empty">Add flows with origins and vehicles to map the operation.</div>
+    return <div className="rv-empty">Add material flows with origins and vehicles to map the operation.</div>
   }
 
   // Lay groups out top-to-bottom; each origin owns a vertical band sized to its edges.

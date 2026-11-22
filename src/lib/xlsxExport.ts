@@ -39,7 +39,7 @@ export function buildFleetModelSheet(utils: XlsxUtils, project: StoredProject, v
 
   // ── FLOWS block (inputs → cycle → raw) ──────────────────────────────────
   const FLOW_NOTE_R = 4
-  put(0, FLOW_NOTE_R, S('FLOWS — edit any value; Cycle (s) and Raw veh are live formulas'))
+  put(0, FLOW_NOTE_R, S('MATERIAL FLOWS — edit any value; Cycle (s) and Raw veh are live formulas'))
   const FH = 5 // header row (0-based) → Excel row 6
   const flowHeaders = ['#', 'Origin', 'Destination', 'Vehicle', 'Dist (ft)', 'Moves/hr',
     'Spd loaded (fps)', 'Spd empty (fps)', 'Route factor', 'Load (s)', 'Unload (s)', 'Lift (s)', 'Cycle (s)', 'Raw veh']

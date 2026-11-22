@@ -178,7 +178,7 @@ export default function FleetEnginePage() {
               <div className="er-kpis">
                 <div className="er-kpi">
                   <span className="er-kpi-num mono">{flowCount}</span>
-                  <span className="er-kpi-lbl">{flowCount === 1 ? 'Flow' : 'Flows'}</span>
+                  <span className="er-kpi-lbl">{flowCount === 1 ? 'Material flow' : 'Material flows'}</span>
                 </div>
                 <div className="er-kpi">
                   <span className="er-kpi-num mono">{totalThruPerHr}</span>
@@ -205,7 +205,7 @@ export default function FleetEnginePage() {
               </div>
             </>
           ) : (
-            <div className="er-empty">Assign a vehicle to a flow to size the fleet.</div>
+            <div className="er-empty">Assign a vehicle to a material flow to size the fleet.</div>
           )}
         </section>
 
@@ -213,7 +213,7 @@ export default function FleetEnginePage() {
               id="engine-raw"
               num="01"
               title="Raw Fleet"
-              sub="Engineering — flows → cycle time → raw demand, no multipliers"
+              sub="Engineering — material flows → cycle time → raw demand, no multipliers"
             >
               <FlowsTab
                 flows={flows}
@@ -293,7 +293,7 @@ export default function FleetEnginePage() {
             )}
             <span className="hint">
               {fleet.groups.length === 0
-                ? 'Assign a vehicle to a flow to size the fleet'
+                ? 'Assign a vehicle to a material flow to size the fleet'
                 : `${fleet.totalFleetSold} ${fleet.totalFleetSold === 1 ? 'vehicle' : 'vehicles'} total`}
             </span>
             <Link href={`/projects/${id}/step4`} className="btn primary">

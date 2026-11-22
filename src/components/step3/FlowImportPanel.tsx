@@ -40,7 +40,7 @@ export default function FlowImportPanel({ onAdd, open, onClose }: Props) {
             onChange={e => setText(e.target.value)}
             placeholder={PLACEHOLDER}
             rows={5}
-            aria-label="Paste flow rows"
+            aria-label="Paste material flow rows"
           />
           <div className="flow-import-foot">
             <button type="button" className="btn ghost" onClick={() => fileRef.current?.click()}>

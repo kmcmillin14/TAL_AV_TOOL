@@ -54,7 +54,7 @@ export const HELP: HelpSection[] = [
     example: {
       title: 'The big picture, in one line',
       lines: [
-        'Requirements in (loads, flows, schedule) →',
+        'Requirements in (loads, material flows, schedule) →',
         'qualified vehicles + how many of each →',
         'a CAPEX range, payback, and a PowerPoint proposal out.',
       ],
@@ -98,7 +98,7 @@ export const HELP: HelpSection[] = [
     howTo: [
       'Work down the sections using the left nav; the meter tracks how many key qualification answers you’ve given.',
       'Answer what you’re moving (weight, unit type, size), how it transfers, the site/environment, your schedule, and the throughput & distances.',
-      'Add each material movement as a flow row (Origin · Destination · Distance · Moves/hr). These flows carry straight into the Fleet Engine.',
+      'Add each material flow as a row (Origin · Destination · Distance · Moves/hr). They carry straight into the Fleet Engine.',
       'Use the Imperial / Metric toggle for entry convenience — values store in imperial either way.',
     ],
     example: {
@@ -107,7 +107,7 @@ export const HELP: HelpSection[] = [
         'Moving: 2,500 lb pallets, 48×40 in.',
         'Transfer: Lift, floor-to-floor.',
         'Schedule: 2 shifts × 8 h, Mon–Fri.',
-        'Flow: Receiving → Rack, 300 ft one-way, 30 moves/hr.',
+        'Material flow: Receiving → Rack, 300 ft one-way, 30 moves/hr.',
       ],
     },
     figure: { mock: 'form', shot: '/images/help/step1.png', caption: 'Step 01 — the questionnaire. Fields marked * drive Step 02 matching; nothing is required to move on.' },
@@ -121,7 +121,7 @@ export const HELP: HelpSection[] = [
     eyebrow: 'Step 02',
     title: 'Vehicles',
     summary:
-      'A traffic-light matrix showing which library vehicles meet your Step 01 requirements. It’s informational — no vehicle is chosen here. Selection happens later, implicitly, when you assign vehicles to flows in the Fleet Engine.',
+      'A traffic-light matrix showing which library vehicles meet your Step 01 requirements. It’s informational — no vehicle is chosen here. Selection happens later, implicitly, when you assign vehicles to material flows in the Fleet Engine.',
     howTo: [
       'Read each card’s light: GREEN passes every hard requirement and soft preference; YELLOW passes the hard ones but misses a soft preference; RED fails a hard requirement (weight, lift, temperature) — no override.',
       'Use the filters and search to narrow by status, category, or manufacturer.',
@@ -146,9 +146,9 @@ export const HELP: HelpSection[] = [
     eyebrow: 'Step 03',
     title: 'Fleet Engine',
     summary:
-      'The whole sizing calculation on one page. You lay out each flow and assign a vehicle; the tool computes cycle time, the raw vehicle count, the extra vehicles charging needs, and a buffer — and shows the running total live as a waterfall: base → + charging → × buffer → total.',
+      'The whole sizing calculation on one page. You lay out each material flow and assign a vehicle; the tool computes cycle time, the raw vehicle count, the extra vehicles charging needs, and a buffer — and shows the running total live as a waterfall: base → + charging → × buffer → total.',
     howTo: [
-      'For each flow, pick the Vehicle, its Transfer type, the route speed, the round-trip Distance, and the Throughput (moves/hr).',
+      'For each material flow, pick the Vehicle, its Transfer type, the route speed, the round-trip Distance, and the Throughput (moves/hr).',
       'Open the Σ (sigma) on a row to see the exact cycle-time and vehicle-count math.',
       'Review the Charging section — runtime, recharge, and how many extra vehicles charging adds.',
       'Set the Buffer % — the one safety multiplier — and read the total fleet at the bottom.',
@@ -156,12 +156,12 @@ export const HELP: HelpSection[] = [
     example: {
       title: 'Example — the waterfall',
       lines: [
-        '4.2 raw vehicles needed for the flows → round up to 5 (base).',
+        '4.2 raw vehicles needed for the material flows → round up to 5 (base).',
         '+1 to cover charging downtime → 6.',
         '× 10% buffer → 7 vehicles sold.',
       ],
     },
-    figure: { mock: 'engine', shot: '/images/help/step3.png', caption: 'Step 03 — flows table and the live waterfall: base fleet → + charging → × buffer → total.' },
+    figure: { mock: 'engine', shot: '/images/help/step3.png', caption: 'Step 03 — material flows table and the live waterfall: base fleet → + charging → × buffer → total.' },
     tips: [
       'Vehicles are pooled per type across the whole project — grouping rows is just for organisation.',
       'Assigning a vehicle here is what “selects” it; Step 02 never picks for you.',
@@ -172,19 +172,19 @@ export const HELP: HelpSection[] = [
     eyebrow: 'Step 04',
     title: 'Fleet size verification',
     summary:
-      'An optional check of the Sizing fleet on a drawn layout. You draw the site — points, routes and flows — and the simulation runs the vehicles through it to show whether the fleet keeps up and where it gets stuck. Nothing is invented: what is not drawn or not in the vehicle data is flagged.',
+      'An optional check of the Sizing fleet on a drawn layout. You draw the site — points, routes and material flows — and the simulation runs the vehicles through it to show whether the fleet keeps up and where it gets stuck. Nothing is invented: what is not drawn or not in the vehicle data is flagged.',
     howTo: [
       'Drawing (optional): load a PDF page or a PNG/JPG, then Set scale — click both ends of a known dimension and type its length.',
       'Points (P): choose a type and a role (Pick, Drop, or both) and click to place it. Clicking on a route places it on the route.',
       'Routes (R): click from point to point to draw a route; Esc ends the route. Routes snap to points and to other routes.',
       'Direction (D): click a route to step through two-way, one-way either way, and single-lane (no passing).',
-      'Flows (F): click a Pick point, then a Drop point. Give the flow its moves per hour and vehicle on the right.',
+      'Material flows (F): click a Pick point, then a Drop point. Give the material flow its moves per hour and vehicle on the right.',
       'Select (V): click anything to edit it; drag a point to move it; Delete removes it. ⌘Z / ⌘⇧Z undo and redo.',
     ],
     tips: [
       'Chargers: the suggested count is the vehicles Sizing’s charging model has on a charger at once. Every vehicle also needs somewhere to rest — a charger or a parking spot — before the run can start; place chargers near the busiest route.',
-      'A flow drawn here is the same flow Sizing uses: its distance and lift height now come from the layout, so the Sizing fleet can change.',
-      'Sizing flows not yet on the layout are listed under “Link to points” — a name match is offered as one click.',
+      'A material flow drawn here is the same one Sizing uses: its distance and lift height now come from the layout, so the Sizing fleet can change.',
+      'Sizing material flows not yet on the layout are listed under “Link to points” — a name match is offered as one click.',
       'The drawing image is kept in the exported project file, not in the browser. After a reload, re-select the same file to bring it back.',
       'Run compares Sizing’s engine cycle (Sizing distance and route tier, a full loaded-out, empty-back cycle) with the simulated mission (the driven routes at the pace in Assumptions, with traffic, stations and charging, from dispatch to drop-off — its empty leg starts wherever the vehicle is).',
       'Check variability runs 10 seeds. With Regular arrivals only the start times change; set Random in Assumptions for real spread.',

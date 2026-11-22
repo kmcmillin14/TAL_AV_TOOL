@@ -69,7 +69,7 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
     // ── Fleet & flow ──
     { id: 'fleet', label: simulatedNote(fleet) ? `Total fleet — ${simulatedNote(fleet)}` : 'Total fleet', value: String(fleet.totalFleetSold), accent: true },
     { id: 'types', label: 'Vehicle types', value: String(fleet.groups.length) },
-    { id: 'flows', label: 'Flows', value: String(flows.length) },
+    { id: 'flows', label: 'Material flows', value: String(flows.length) },
     { id: 'throughput', label: 'Throughput', value: `${throughput} / hr` },
     // ── Financials ──
     // Shown only while the quote is priced: RomView withholds the whole Financials box otherwise.
@@ -118,7 +118,7 @@ export default function RomKpis({ fleet, rom, flows, settings, costs, serviceLif
     <>
       <div className="rom2-summary">
         <section className="rom2-hero">
-          <div className="rom2-hero-head">Fleet &amp; flow</div>
+          <div className="rom2-hero-head">Fleet &amp; material flows</div>
           <div className="rom2-hero-lead">{tile('fleet')}</div>
           <div className="rom2-hero-grid">
             {tile('types')}{tile('flows')}{tile('throughput')}
