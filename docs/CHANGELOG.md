@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-22 — Simulation guide: seven steps with progress
+
+- Owner: **Layout** (sub-tasks Scale, Vehicle types, Payloads) · **Pick and drop points** · **Routes** · **Flows**
+  · **Chargers** · **Simulate** · **Data**. Each step shows its progress — green done, amber started, grey
+  not yet — and all green before Simulate reads *Ready*. The guide opens on the first step not done;
+  Routes opens with the Path tool. Validation lives in Flows; *Place them* opens Pick and drop points.
+
 ## 2026-11-21 — Simulation guide: Layout drawing · Vehicles · Payloads
 
 - Setup splits into **Layout drawing** and **Payloads**, around **Vehicles** — the plan's first three steps.

@@ -47,7 +47,7 @@ import { flipRack, rackFromBox, rackGeometry, rackLengthFor, stretchRack } from 
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
 /** The stages this editor's side panel shows (the rest are the run and the overview). */
-export type EditorStage = Extract<Stage, 'drawing' | 'vehicles' | 'payloads' | 'layout' | 'connect' | 'chargers'>
+export type EditorStage = Extract<Stage, 'layout' | 'points' | 'routes' | 'flows' | 'chargers'>
 
 type Tool = 'lasso' | 'hand' | 'points' | 'routes' | 'highway' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
@@ -273,7 +273,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   /** Stop whatever is half-drawn: a route, a flow, the scale marks. */
   const cancel = () => { setChainFrom(null); setMarks(null); setArmed(null) }
   const chooseTool = (t: Tool) => {
-    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); onStage('drawing') } return }
+    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); onStage('layout') } return }
     setTool(t); cancel(); setDrag(null)
   }
   /** Undo/redo can remove what a half-drawn route or a selection points at: drop both. */
@@ -434,6 +434,17 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     }
   }
 
+  // Each step sets up the map (owner, 2026-11-22): Routes opens with the Path tool, the others with Lasso.
+  const lastStage = useRef(stage)
+  useEffect(() => {
+    if (lastStage.current === stage) return
+    lastStage.current = stage
+    if (stage === 'routes') chooseTool('highway')
+    else if (tool === 'highway') chooseTool('lasso')
+    // Only a change of step re-arms the tool; the user's own choice within a step stands.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stage])
+
   /** Place the armed point type at `at` — the same snap as routes: onto a route within reach (it joins).
    *  An existing point there is selected instead (and the tool goes back to Lasso). Armed from the station
    *  tray, the point takes the Sizing name, so the flows link by it. */
@@ -561,7 +572,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     setFlows([...flows, flow])
     setSelection({ kind: 'flow', id: flow.id })
     setJustAdded(focusRate ? flow.id : null)
-    onStage('layout')
+    onStage('points')
   }
 
   const deleteSelection = () => {
@@ -870,7 +881,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
               <button type="button" className="sim-tool" disabled={!canUndo} onClick={undo} title="Undo (⌘Z)" aria-label="Undo"><ToolIcon d={UNDO_ICON} /></button>
               <button type="button" className="sim-tool" disabled={!canRedo} onClick={redo} title="Redo (⇧⌘Z)" aria-label="Redo"><ToolIcon d={REDO_ICON} /></button>
             </div>
-            {stage === 'layout' && !marks && (
+            {stage === 'points' && !marks && (
               <StationTray unplaced={place.unplaced} armed={armed} onPick={a => {
                 arm(a)
                 fromTray.current = true
@@ -909,13 +920,20 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           {guide.list}
           <div className="sim-side-body">
             {banner}
-            {stage !== 'drawing' && marks && drawingSection}
-            {stage === 'drawing' ? drawingSection : stage === 'vehicles' ? vehiclesStep : stage === 'payloads' ? (
-              <SetupCard projectId={project.id} loads={loads} unitSystem={unitSystem} confirmed={project.simSettings?.payloadsConfirmed === payloadsKey(loads)}
-                onConfirm={() => patchSimSettings(project.id, { payloadsConfirmed: payloadsKey(loads) })} />
-            ) : stage === 'connect' ? (
+            {stage !== 'layout' && marks && drawingSection}
+            {stage === 'layout' ? (
+              // Layout's three sub-tasks: the drawing and its scale, the vehicle types, the payloads.
               <>
-                <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); onStage('layout') }} onFix={onFix} />
+                {drawingSection}
+                <Section title="Vehicle types" open>{vehiclesStep}</Section>
+                <Section title="Payloads" open>
+                  <SetupCard projectId={project.id} loads={loads} unitSystem={unitSystem} confirmed={project.simSettings?.payloadsConfirmed === payloadsKey(loads)}
+                    onConfirm={() => patchSimSettings(project.id, { payloadsConfirmed: payloadsKey(loads) })} />
+                </Section>
+              </>
+            ) : stage === 'flows' ? (
+              <>
+                <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); onStage('points') }} onFix={onFix} />
                 <Section title={`Flows on the layout · ${linked.length} of ${flows.length}`} open>
                   <FlowsList
                     layout={layout}

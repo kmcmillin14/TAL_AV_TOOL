@@ -108,7 +108,7 @@ describe('readinessChecks (validation)', () => {
     expect(fixAction({ level: 'bad', text: '', fix: 'scale' })).toEqual({ tool: 'scale' })
     expect(fixAction({ level: 'bad', text: '', fix: 'linkFlow' })).toEqual({ tool: 'flows' })
     expect(fixAction({ level: 'bad', text: '', fix: 'charger' })).toEqual({ stage: 'chargers', arm: 'charger' })
-    expect(fixAction({ level: 'warn', text: '', fix: 'flowsTab' })).toEqual({ stage: 'layout' })
+    expect(fixAction({ level: 'warn', text: '', fix: 'flowsTab' })).toEqual({ stage: 'points' })
     expect(fixAction({ level: 'warn', text: '' })).toBeNull()
   })
 })

@@ -5693,6 +5693,11 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
   background: var(--bg-surface-3); color: var(--text-secondary); }
 .sim-guide-step.is-on .sim-guide-n { background: var(--sim-sel); color: #fff; }
 .sim-guide-step.is-done .sim-guide-n { background: var(--good-soft); color: var(--good); }
+.sim-guide-step.is-started .sim-guide-n { background: var(--warn-soft); color: var(--warn); }
+.sim-guide-subs { list-style: none; margin: 2px 8px 4px 34px; padding: 0; display: grid; gap: 4px; font-size: 12px; color: var(--text-secondary); }
+.sim-guide-subs li { display: grid; grid-template-columns: 14px auto minmax(0, 1fr); align-items: center; gap: 8px; }
+.sim-guide-dot { display: inline-grid; place-items: center; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--text-tertiary); }
+.sim-guide-subs li.is-done .sim-guide-dot { border-color: var(--good); background: var(--good-soft); color: var(--good); }
 .sim-guide-status { justify-self: end; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: 12px; color: var(--text-tertiary); }
 .sim-guide-lead { margin: 2px 8px 6px 34px; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
 .sim-guide-next { padding: 12px 16px; border-top: 1px solid var(--border); }

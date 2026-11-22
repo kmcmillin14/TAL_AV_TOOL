@@ -12,6 +12,7 @@ import { payloadsByVehicle, simFlows, simVehicleTypes, type SimVehicleType } fro
 import { appRequirementsFromProject } from '@/src/lib/appRequirements'
 import { useCallback, useMemo, useRef, useState, type ReactNode } from 'react'
 import { emptyLayout, hasLayout, unlinked } from '@/src/calc/sim/layoutEdit'
+import { highwayConnections } from '@/src/calc/sim/highways'
 import { checkStatus, readinessChecks } from '@/src/calc/sim/readiness'
 import { withVehicleOverrides } from '@/src/calc/sim/vehicle'
 import { clearanceRule, runFleet, runInputs } from '@/src/calc/sim/runInputs'
@@ -30,7 +31,7 @@ import { payloadsKey } from './layout/SetupCard'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutEditor from './layout/LayoutEditor'
-import { chargerProgress, drawingStatus, statusLabel } from './layout/SimCards'
+import { chargerProgress, drawingStatus, placeProgress, statusLabel } from './layout/SimCards'
 import RunView from './run/RunView'
 import VehicleBar from './vehicles/VehicleBar'
 import AssumptionsDrawer from './inspector/AssumptionsDrawer'
@@ -62,9 +63,10 @@ interface Props {
   resultLabel: string
 }
 
-/** The run's stages — open only while the layout can run; otherwise Connect, where it is fixed. */
-const RUN_STAGES: ReadonlySet<Stage> = new Set(['simulate', 'results'])
-const FIX_STAGE = 'connect'
+/** The run's steps — open only while the layout can run; otherwise Flows, where its validation list is. */
+const RUN_STAGES: ReadonlySet<Stage> = new Set<Stage>(['simulate', 'data'])
+/** Where a blocker is fixed: Flows holds the validation list. */
+const FIX_STAGE: Stage = 'flows'
 
 export default function SimulateShell({ project, vehicles, vehicleById, settings, fleet, unitSystem, estimate, resultLabel }: Props) {
   const narrow = useIsNarrow()
@@ -133,11 +135,59 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const status = useMemo(() => checkStatus(checks), [checks])
   const canRun = status.blockers === 0
   const empty = !hasLayout(simLayout)
-  // Simulate and Results only while the run can happen. A new red item drops back to Connect and stays
-  // there (no jump back into the run once it is fixed — it is a click away).
-  const wanted = picked ?? (empty ? 'drawing' : 'layout')
+  // The guide's steps and their progress (owner, 2026-11-22): green done, amber started, grey not yet; all
+  // green before Simulate is ready to simulate.
+  const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix the layout first'} — opens Flows`
+  const linkedN = inputs.flows.length, flowN = flowsV.length
+  const chargersWanted = useMemo(() => suggestedChargers(simFleet), [simFleet])
+  const homes = chargerProgress(simLayout ?? emptyLayout(), chargersWanted, fleetNeeded)
+  const confirmed = !!loads.length && ss?.payloadsConfirmed === payloadsKey(loads)
+  const placing = useMemo(() => placeProgress(simLayout ?? emptyLayout(), flows), [simLayout, flows])
+  const loose = useMemo(() => (simLayout?.highways?.length ? highwayConnections(simLayout).loose.length : 0), [simLayout])
+  // Paths as drawn: highways (their routes are derived), or routes for a layout drawn the older way.
+  const paths = simLayout?.highways?.length || simLayout?.segments.length || 0
+  const scaled = !!simLayout?.background?.scale
+  const layoutSubs = [
+    { label: 'Scale', done: scaled, optional: true, status: simLayout?.background ? drawingStatus(simLayout.background) : 'No drawing (optional)' },
+    { label: 'Vehicle types', done: types.length > 0,
+      status: types.length ? types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId} · ${placed[t.vehicleId] ?? staticN[t.vehicleId] ?? 0}`).join(', ') : 'None yet' },
+    // No loads in Step 1: nothing to confirm — the run uses each vehicle's own payload, so it is optional.
+    { label: 'Payloads', done: confirmed, optional: !loads.length,
+      status: loads.length ? `${loads.length} ${confirmed ? 'confirmed' : 'to confirm'}` : 'Vehicle defaults (none in Step 1)' },
+  ]
+  const required = layoutSubs.filter(t => !t.optional)
+  const pointsDone = placing.names.length > 0 && placing.unplaced.length === 0
+  const routeBlocked = checks.some(c => c.level === 'bad' && c.fix === 'route')
+  const flowBlocked = checks.some(c => c.level === 'bad' && c.fix !== 'charger')
+  const before: StageInfo[] = [
+    { id: 'layout', label: 'Layout', done: required.every(t => t.done), started: layoutSubs.some(t => t.done),
+      status: required.every(t => t.done) ? 'Ready' : `${required.filter(t => !t.done).length} to do`, subs: layoutSubs,
+      lead: 'Import the site drawing and set its scale (optional), confirm the vehicle types and the payloads.' },
+    { id: 'points', label: 'Pick and drop points', done: pointsDone, started: placing.names.length - placing.unplaced.length > 0,
+      status: placing.names.length ? `${placing.names.length - placing.unplaced.length} of ${placing.names.length} placed` : 'No Sizing stations',
+      lead: 'Drag Sizing’s stations from the tray onto the map, or click one and then the map. Racks drag out as rectangles.' },
+    { id: 'routes', label: 'Routes', done: paths > 0 && loose === 0 && !routeBlocked, started: paths > 0,
+      status: !paths ? 'None drawn' : loose ? `${loose} loose end${loose === 1 ? '' : 's'}` : routeBlocked ? 'Not all reached' : `${paths} connected`,
+      lead: 'Draw the aisles with Path and join their ends; every pick and drop point must sit on a route.' },
+    { id: 'flows', label: 'Flows', done: flowN > 0 && linkedN === flowN && !flowBlocked, started: linkedN > 0,
+      status: flowN ? `${linkedN} of ${flowN} linked` : 'No flows',
+      lead: 'Link each flow to its pick and drop points; its moves per hour come from Sizing. Fix what is listed.' },
+    { id: 'chargers', label: 'Chargers', done: homes.done, started: homes.homes > 0, status: homes.status,
+      lead: 'Place chargers near the busiest route, and a charger or parking spot for every vehicle.' },
+  ]
+  const allGreen = before.every(s => s.done)
+  const stages: StageInfo[] = [
+    ...before,
+    { id: 'simulate', label: 'Simulate', blocked, done: undefined,
+      status: !canRun ? 'Not ready' : allGreen ? 'Ready' : 'Can run',
+      lead: allGreen ? 'Everything is green: run it. It plays on the map; speed it up, or run a shift, a day or a week.' : 'It can run, but some steps above are not green yet. Their results may be off.' },
+    { id: 'data', label: 'Data', blocked, status: resultLabel,
+      lead: 'Orders, utilization and battery over the run, and the fleet that passes all three.' },
+  ]
+  // The guide opens on the first step that is not done; Simulate and Data only while the run can happen.
+  // A new red item drops back to Flows and stays there (no jump back into the run once it is fixed).
+  const wanted = picked ?? (before.find(s => !s.done)?.id ?? 'simulate')
   if (!canRun && RUN_STAGES.has(wanted)) setStage(FIX_STAGE)
-  // A phone gets Overview only: the other stages need a desktop.
   const stage: Stage = !canRun && RUN_STAGES.has(wanted) ? FIX_STAGE : wanted
   const running = RUN_STAGES.has(stage)
   const sampleOn = flows.some(f => isSample(f.id))
@@ -181,39 +231,9 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
       simLayout: emptyLayout(),
       flows: flows.filter(f => !isSample(f.id)).map(unlinked),
     })
-    setStage('drawing')
+    setStage('layout')
   }
 
-  // The stage strip (owner, 2026-11-18): each stage's one-line status; Simulate and Results need a
-  // runnable layout (pressed while blocked, they open Connect).
-  const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix Validation first'} — opens Connect`
-  const linkedN = inputs.flows.length, flowN = flowsV.length
-  const chargersWanted = useMemo(() => suggestedChargers(simFleet), [simFleet])
-  const homes = chargerProgress(simLayout ?? emptyLayout(), chargersWanted, fleetNeeded)
-  const confirmed = !!loads.length && ss?.payloadsConfirmed === payloadsKey(loads)
-  const stages: StageInfo[] = [
-    { id: 'drawing', label: 'Layout drawing', done: !!simLayout?.background?.scale, optional: true,
-      status: drawingStatus(simLayout?.background) === 'None' ? 'Optional' : drawingStatus(simLayout?.background),
-      lead: 'Import the site drawing (PDF or image) and set its scale. Optional: you can draw without one.' },
-    { id: 'vehicles', label: 'Vehicles', done: types.length > 0,
-      status: types.length ? types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId} · ${placed[t.vehicleId] ?? staticN[t.vehicleId] ?? 0}`).join(', ') : 'None yet',
-      lead: 'The vehicles Sizing chose, with their payloads and counts. Add or swap a type here.' },
-    { id: 'payloads', label: 'Payloads', done: confirmed,
-      status: loads.length ? `${loads.length} ${confirmed ? 'confirmed' : 'to confirm'}` : 'None in Step 1',
-      lead: 'The loads from Step 1. Confirm them: racks size from them and only vehicles that carry them run.' },
-    { id: 'layout', label: 'Layout', done: flowN > 0 && linkedN === flowN,
-      status: flowN ? `${linkedN} of ${flowN} flows placed` : empty ? 'Nothing drawn' : 'No flows yet',
-      lead: 'Draw the aisles with Path, then drag Sizing’s stations from the tray onto them.' },
-    { id: 'connect', label: 'Connect', done: !empty && status.blockers === 0,
-      status: empty ? '—' : statusLabel(status),
-      lead: 'Fix what is listed, then link each flow to its pick and drop points.' },
-    { id: 'chargers', label: 'Chargers', done: homes.done, status: homes.status,
-      lead: 'Place chargers near the busiest route, and a charger or parking spot for every vehicle.' },
-    { id: 'simulate', label: 'Simulate', blocked, status: canRun ? `${fleetNeeded} vehicle${fleetNeeded === 1 ? '' : 's'}` : 'Not ready',
-      lead: 'The run plays on the map. Speed it up, or run a shift, a day or a week.' },
-    { id: 'results', label: 'Results', blocked, status: resultLabel,
-      lead: 'Orders, utilization and battery over the run, and the fleet that passes all three.' },
-  ]
   const guideProps = { stages, value: stage, onChange: setStage, onBlocked: () => setStage(FIX_STAGE), then: { label: 'Pricing', href: `/projects/${project.id}/step5` } }
   const guide = { list: <GuideList {...guideProps} />, next: <GuideNext {...guideProps} /> }
   // The Vehicles step: the run's types (each with a payload) and counts — Sizing's, until changed here.
@@ -277,8 +297,8 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <p className="rom-empty">Open on a desktop to check the fleet on a layout.</p>
           <Link href={`/projects/${project.id}/step5`} className="btn primary">Next: Pricing</Link>
         </>
-      ) : stage === 'simulate' || stage === 'results' ? (
-        <RunView view={stage === 'results' ? 'data' : 'sim'} guide={guide} estimate={estimate} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
+      ) : stage === 'simulate' || stage === 'data' ? (
+        <RunView view={stage === 'data' ? 'data' : 'sim'} guide={guide} estimate={estimate} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}

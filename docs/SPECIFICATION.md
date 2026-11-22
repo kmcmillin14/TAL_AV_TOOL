@@ -690,16 +690,15 @@ Sizing's static model"); a phone gets that estimate and Next: Pricing. Plan:
 the one-window workspace (artifact *Simulation Workspace Plan*); next come the drill-downs on selection and
 the split of Layout into Highways and Pick and drop points.
 
-| Stage | Opens | Status line | Done when |
+| Step | Opens | Status line | Done (green) when |
 |---|---|---|---|
-| **Layout drawing** | The drawing: load a PDF page or image, set its scale, opacity (optional) | *Optional* / *Scaled* / *Not scaled* | scaled |
-| **Vehicles** | The run's vehicle types, each with its payload, and their counts (Sizing's until changed) | *CB18 AGF · 6* | at least one type |
-| **Payloads** | Step 1's loads, with **Confirm payloads** (`simSettings.payloadsConfirmed`: a fingerprint of the loads, so editing them in Step 1 un-confirms them) | *2 confirmed* / *2 to confirm* / *None in Step 1* | confirmed |
-| **Layout** | The editor and its panel (selection, the navigator); Sizing's unplaced stations in the **station tray** on the map | *12 of 16 flows placed* | every Sizing flow has both ends on the map |
-| **Connect** | Validation (blockers first), then the flows on the layout | *2 blockers* / *Valid* (the head's validation wording) | no blockers |
-| **Chargers** | Chargers and parking to place, with a **suggested count** | *4 of 6 charger or parking spots* → *1 of 2 chargers* → *2 chargers · 4 parking* | every vehicle the run places has a home (a charger or parking spot — the rule validation blocks on) and at least the suggested chargers are placed |
-| **Simulate** | The Sim view | *6 vehicles* / *Not ready* | — |
-| **Results** | The Data view | the fleet state (*Verified*, *Suggested 7*, …) | — |
+| **Layout** — sub-tasks **Scale**, **Vehicle types**, **Payloads** | The drawing (load, scale, opacity), the run's vehicle types with their payloads and counts, Step 1's loads with **Confirm payloads** (`simSettings.payloadsConfirmed`: a fingerprint of the loads, so editing them in Step 1 un-confirms them) | *Ready* / *2 to do*; each sub-task its own line | vehicle types set and payloads confirmed. Scale is optional; so are payloads when Step 1 has none (the run uses each vehicle's own) |
+| **Pick and drop points** | The station tray on the map, and the inspector / navigator | *17 of 20 placed* | every Sizing station placed |
+| **Routes** | The map with the **Path** tool armed | *None drawn* / *2 loose ends* / *Not all reached* / *12 connected* | paths drawn, no loose ends, every flow has a route |
+| **Flows** | Validation (blockers first), then the flows on the layout with their moves per hour | *16 of 16 linked* | every flow linked and no blocker other than chargers |
+| **Chargers** | Chargers and parking to place, with a **suggested count** | *4 of 6 charger or parking spots* → *1 of 2 chargers* → *2 chargers · 4 parking* | a charger or parking spot for every vehicle (validation's rule) and the suggested chargers |
+| **Simulate** | The run on the map | *Not ready* / *Can run* / *Ready* | — (*Ready* when every step above is green) |
+| **Data** | The run's data, and Sizing's estimate beside it | the fleet state (*Verified*, *Suggested 7*, …) | — |
 
 - **Station tray (Layout; owner plan, 2026-11-21).** Sizing's stations not on the map yet — every flow's
   origin and destination name — wait as chips at the foot of the map (`StationTray`). Drag a chip onto the
@@ -713,11 +712,12 @@ the split of Layout into Highways and Pick and drop points.
 - *Suggested chargers* = ⌈Σ over types of fleet × (1 − availability)⌉, at least 1 — the vehicles the
   static charging model has on a charger at once (`suggestedChargers`, `src/calc/fleet.ts`).
 - Simulate and Results need a runnable layout; pressed while it is not, they open Connect. A new
-  blocker while in them drops back to Connect. The head's validation status opens Connect. When the next
+  blocker while in them drops back to Flows (where the validation list is). The head's validation status opens Flows. When the next
   stage cannot open, **Next** goes on to Pricing instead (verification is optional), so there is always
   one way forward. Validation's *Place them* (Sizing flows not on the layout) opens Layout.
-- The guide opens on Layout drawing while nothing is drawn, else on Layout. The open step shows one
-  sentence of what to do there, under its line in the guide (the guide's only prose). Validation's fix buttons open the
+- **Progress (owner, 2026-11-22):** each step's mark is green when done, amber when started, grey when not;
+  all green before Simulate means ready to simulate. The guide opens on the first step that is not done.
+  The open step shows its sub-tasks and one sentence of what to do (the guide's only prose). Validation's fix buttons open the
   stage that fixes them (a missing charger → Chargers).
 
 > **Status:** being built — engine, data model, page, layout editor and run view done (Milestones 1–4; the run view was pulled forward from Milestone 5 with the proof-of-concept features). Branch `feature/fleet-simulation`; full design in
