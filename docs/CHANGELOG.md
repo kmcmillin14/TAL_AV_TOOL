@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-22 — Checks on a scale; charger rotation fixed
+
+- Owner: the three checks are graded green / amber (*tight*, passes) / red, utilization also blue *spare*
+  (bands in the spec). Simulate shows each check's scale with a marker. **Verdicts move:** runs that failed
+  by a hair now pass as *Tight* (e.g. the medium example at 6 — 92% against 90% — reads *Right-sized · tight*,
+  where it read *Undersized*); Sizing's Verified, one fewer and Use N count tight as passing.
+- Fixed: off-shift rotation compared against the charge-until level, so a parked vehicle at 65% never
+  rotated (60% until) — it now aims at full charge, and only a full vehicle gives way (no all-night trading).
+  The medium example at 7 now starts every day full.
+- The right-size line is one row (*Right size 6 · 2 more* · **Try 6**); *Reset to engine* sits beside the verdict.
+
 ## 2026-11-22 — The right fleet size, found by the simulation; off-shift charger rotation
 
 - Owner: after a run, the simulation tries other counts of each type (the others held) until it knows the

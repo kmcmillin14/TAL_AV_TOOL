@@ -5,6 +5,7 @@
 // fleet and ROM before → after, from the same model Step 4, the Dashboard and the deck use.
 
 import { useMemo, useState } from 'react'
+import { verdictPasses } from '@/src/calc/sim/grades'
 import { appliedFleetStatus, withApplied, withoutApplied } from '@/src/calc/sim/runInputs'
 import type { Verdict } from '@/src/calc/sim/types'
 import { computeFleetModel } from '@/src/lib/fleetModel'
@@ -65,9 +66,9 @@ export default function PricingAction({ project, vehicles, vehicleId, n, engineN
       </span>
     )
   }
-  if (verdict !== 'meets' || n <= engineN) return null
+  if (!verdictPasses(verdict) || n <= engineN) return null
   if (lower === 'checking' || lower === undefined) return <span className="sim-vact sim-busy">Checking {n - 1}…</span>
-  if (lower === 'meets') {
+  if (verdictPasses(lower)) {
     return <span className="sim-vact"><button type="button" className="btn btn-sm ghost" onClick={onStepDown}>{n - 1} also meets</button></span>
   }
   return (

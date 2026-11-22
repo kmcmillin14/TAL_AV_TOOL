@@ -5,6 +5,7 @@
 import { engineFleetByType } from '../fleet'
 import type { FleetSummary } from '../types'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
+import { verdictPasses } from './grades'
 import { appliedFleetStatus, simInputsKey, type SimInputsLike } from './runInputs'
 import type { Verdict } from './types'
 
@@ -27,6 +28,8 @@ export interface FleetCheck {
   ranAt?: number
   /** Suggested: one fewer was run and does not meet, so `n` is the smallest — Use N may apply it. */
   confirmed?: boolean
+  /** Verified with an amber check — it passes, labelled tight (owner, 2026-11-22). */
+  tight?: boolean
   /** An applied count the static calc has caught up with: raise-only pricing ignores it; it can be cleared. */
   dormant?: number
 }
@@ -50,10 +53,10 @@ export function fleetCheck(vehicleId: string, staticN: number, stored: Stored | 
   if (!run) return { ...base, state: 'estimated' }
   if (stored!.lastRun!.key !== key) return { ...base, state: 'estimated', stale: true }
   const failed = run.verdict === 'short' || run.verdict === 'gridlock'
-  if (run.verdict === 'meets') {
+  if (verdictPasses(run.verdict)) {
     return run.fleet > staticN
       ? { ...base, state: 'suggested', n: run.fleet, confirmed: run.smallest === true }
-      : { ...base, state: 'verified', ...(run.fleet < staticN ? { ranAt: run.fleet } : {}) }
+      : { ...base, state: 'verified', ...(run.fleet < staticN ? { ranAt: run.fleet } : {}), ...(run.verdict === 'tight' ? { tight: true } : {}) }
   }
   if (failed && run.fleet >= staticN) return { ...base, state: 'notVerified', n: run.fleet, verdict: run.verdict }
   return { ...base, state: 'estimated', ranAt: run.fleet, verdict: run.verdict }

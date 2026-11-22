@@ -5741,7 +5741,7 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 /* Drill-down cards (owner, 2026-11-22 — Flighty-style): Back and actions, the name big with one status chip,
    a line of context, a picture where there is one, three big-number tiles (dashed = typed into in place),
    then folds that open one at a time. Closed, a card fits the detail card without scrolling. */
-.sim-side:has(.sim-dcard) .sim-guide-lead { display: none; }   /* the checklist gives the card its room */
+.sim-side:has(.sim-dcard) .sim-guide-lead, .sim-side:has(.sim-runchecks) .sim-guide-lead { display: none; }   /* the checklist gives the card (or the run's checks) its room */
 .sim-dcard { gap: 12px; }
 .sim-dcard-top { display: flex; align-items: center; min-height: 24px; margin: -4px 0 -6px; }
 .sim-back { background: none; border: 0; padding: 0; font: 600 13px var(--tal-font-family); color: var(--sim-sel); cursor: pointer; }
@@ -5828,11 +5828,22 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-crow-body { display: flex; flex-direction: column; gap: 6px; padding: 0 12px 12px 34px; }
 .sim-crow-body .sim-kebab-h { margin: 6px 0 0; }
 /* The fleet card, tighter in Simulate: the label and the verdict on one line. */
-.sim-sim-pane .sim-kpi-fleet { display: grid; grid-template-columns: auto 1fr; align-items: baseline; column-gap: 10px; row-gap: 8px; padding: 12px 14px; }
+.sim-sim-pane .sim-kpi-fleet { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; column-gap: 10px; row-gap: 8px; padding: 12px 14px; }
 .sim-sim-pane .sim-kpi-fleet > .sim-kpi-val { font-size: 18px; }
 .sim-sim-pane .sim-kpi-fleet > :not(.sim-kpi-lbl):not(.sim-kpi-val) { grid-column: 1 / -1; }
+.sim-sim-pane .sim-kpi-fleet > .link-btn.sim-kpi-sub { grid-row: 1; grid-column: 3; margin: 0; font-size: 12px; }
 /* The right size under a type (owner, 2026-11-22). */
 .sim-rightsize { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; width: 100%; font-size: 12px; color: var(--text-secondary); }
 .sim-rightsize.is-good { color: var(--good); } .sim-rightsize.is-bad { color: var(--bad); }
 .sim-rightsize.is-warn b { color: var(--text-primary); font-size: 14px; }
 .sim-rightsize .btn { margin-left: auto; }
+/* A check's scale (owner, 2026-11-22): its bands — blue spare, green, amber tight, red — and where the run landed. */
+.sim-crow > summary { flex-wrap: wrap; row-gap: 6px; }
+.sim-scale { position: relative; flex: 0 0 100%; height: 4px; margin: 0 0 2px 22px; max-width: calc(100% - 22px); border-radius: 2px; overflow: visible; }
+.sim-scale > i { position: absolute; top: 0; bottom: 0; opacity: 0.55; }
+.sim-scale > i:first-child { border-radius: 2px 0 0 2px; } .sim-scale > i:last-of-type { border-radius: 0 2px 2px 0; }
+.sim-scale .g-spare { background: var(--info); } .sim-scale .g-good { background: var(--good); }
+.sim-scale .g-tight { background: var(--warn); } .sim-scale .g-bad { background: var(--bad); }
+.sim-scale > em { position: absolute; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--bg-surface); border: 2px solid var(--text-primary); }
+.sim-crow.is-warn > summary b { color: var(--warn); }
+.sim-kpi-list li.warn { color: var(--warn); }

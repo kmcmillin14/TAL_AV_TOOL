@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runHeadline, type Headline, type Outcome, type Tone } from '@/src/calc/sim/headline'
+import { BANDS, batteryMarker, checkScale, verdictPasses as passes, type Grade } from '@/src/calc/sim/grades'
 import { nextRightSize, type Tried } from '@/src/calc/sim/rightSize'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
 import { RUN_DEFAULTS, step1DaysPerWeek } from '@/src/lib/simFields'
@@ -74,18 +75,17 @@ interface Props {
 interface RightSize { tried: Tried; trying: number | null; done?: number | null }
 /** Each try is a full week; stop after this many and say so. */
 const RIGHT_SIZE_MAX_RUNS = 8
-const passes = (v: Verdict | undefined) => v === 'meets'
 
 /** Under a type in the fleet card: the search going on, then the right size — with one tap to try it. */
 function RightSizeLine({ z, n, onTry }: { z: RightSize | undefined; n: number; onTry: (k: number) => void }) {
   if (!z) return null
   if (z.trying != null) return <span className="sim-rightsize sim-busy">Finding the right size · trying {z.trying}…</span>
-  if (z.done === n) return <span className="sim-rightsize is-good">✓ {n} is the right size — {n - 1} does not pass</span>
+  if (z.done === n) return <span className="sim-rightsize is-good" title={`${n - 1} does not pass all three checks`}>✓ {n} is the right size</span>
   if (z.done != null) {
     return (
       <span className="sim-rightsize is-warn">
-        Right size: <b className="num">{z.done}</b> ({z.done > n ? `${z.done - n} more` : `${n - z.done} fewer`}) — passes all three
-        <button type="button" className="btn btn-sm" onClick={() => onTry(z.done!)}>Try {z.done}</button>
+        <span title="The smallest count that passes all three checks">Right size <b className="num">{z.done}</b> · {z.done > n ? `${z.done - n} more` : `${n - z.done} fewer`}</span>
+        <button type="button" className="btn btn-sm ghost" onClick={() => onTry(z.done!)}>Try {z.done}</button>
       </span>
     )
   }
@@ -162,7 +162,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
 
   // ---- "Use N" needs the smallest fleet that Meets (the right-size search below finds it) ----
   /** Could one vehicle fewer still reach the target utilization? If not, it is not worth running. */
-  function oneFewerMayMeet(t: { utilization: number }, n: number) { return n > 1 && (t.utilization * n) / (n - 1) <= targetU }
+  function oneFewerMayMeet(t: { utilization: number }, n: number) { return n > 1 && (t.utilization * n) / (n - 1) <= targetU + BANDS.utilization.tightOver }
   /** Records on the stored run whether this type's count is the smallest that meets (Sizing's Use N). */
   function markSmallest(vid: string, smallest: boolean) {
     const fresh = getProject(project.id), run = fresh?.simSettings?.lastRun
@@ -178,14 +178,14 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     // (it is not run); otherwise written when the one-fewer run below finishes.
     const types = Object.fromEntries(R.res.types.map(t => {
       const n = fleetBy[t.vehicleId] ?? 0, verdict = R.res.gridlock ? 'gridlock' as const : t.verdict
-      return [t.vehicleId, { fleet: n, verdict, ...(verdict === 'meets' && !oneFewerMayMeet(t, n) ? { smallest: true } : {}) }]
+      return [t.vehicleId, { fleet: n, verdict, ...(passes(verdict) && !oneFewerMayMeet(t, n) ? { smallest: true } : {}) }]
     }))
     const fresh = getProject(project.id)
     if (!fresh) return
     const ss = fresh.simSettings ?? {}
     const lastRun = { key: inputsKey, types }
     const applied = Object.fromEntries(Object.entries(ss.appliedFleet ?? {}).map(([v, a]) =>
-      [v, types[v]?.verdict === 'meets' && types[v].fleet === a.fleet ? { ...a, key: inputsKey } : a]))
+      [v, passes(types[v]?.verdict) && types[v].fleet === a.fleet ? { ...a, key: inputsKey } : a]))
     const next = { ...ss, lastRun, ...(ss.appliedFleet ? { appliedFleet: applied } : {}) }
     if (JSON.stringify(next) !== JSON.stringify(ss)) patchSimSettings(project.id, next)
     // Only a new result writes; the project id and key are read with it.
@@ -210,7 +210,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         t.perHr > 0 && !t.checks.orders ? Math.ceil((n * t.target) / t.perHr) : 0,
         !t.checks.utilization ? Math.ceil((n * t.utilization) / targetU) : 0)
       // Below n, a count whose share of the same work would exceed the target cannot pass.
-      const cannotPass = (k: number) => k < n && (t.utilization * n) / k > targetU
+      const cannotPass = (k: number) => k < n && (t.utilization * n) / k > targetU + BANDS.utilization.tightOver
       let runs = 0
       const step = () => {
         if (tok !== token.current) return
@@ -480,7 +480,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
 function VariabilityChip({ out, arrivals }: { out: SimResults[]; arrivals: SimSettings['arrivals'] }) {
   const [open, setOpen] = useState(false)
   const rng = (f: (r: SimResults) => number) => [Math.min(...out.map(f)), Math.max(...out.map(f))]
-  const met = out.filter(r => r.verdict === 'meets' || r.verdict === 'tight').length
+  const met = out.filter(r => passes(r.verdict)).length
   const gl = out.filter(r => r.verdict === 'gridlock').length
   const ph = rng(r => r.types.reduce((a, t) => a + t.perHr, 0)), wt = rng(r => Math.max(0, ...r.types.map(t => t.avgWait))), bz = rng(r => Math.max(0, ...r.types.map(t => t.utilization)))
   return (
@@ -516,9 +516,11 @@ function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: 
   )
 }
 
+/** A check's band in words (its scale's colour). */
+const GRADE_WORD: Record<Grade, string> = { spare: 'Spare capacity — the fleet may be oversized', good: 'Comfortable', tight: 'Tight — passes, near its limit', bad: 'Fails' }
 const OUTCOME_WORD: Record<Outcome, string> = { right: 'Right-sized', over: 'Oversized', under: 'Undersized', gridlock: 'Gridlock', notRun: 'Not run' }
 /** The verdict in one word — Sim's fleet tile (Data says why, not the word again). */
-const verdictWord = (h: Headline) => (h.outcome ? OUTCOME_WORD[h.outcome] : 'Simulating…')
+const verdictWord = (h: Headline) => (h.outcome ? `${OUTCOME_WORD[h.outcome]}${h.outcome === 'right' && h.tight.length ? ' · tight' : ''}` : 'Simulating…')
 
 /** Data's checks tile: how many of the three pass, each stacked, and what sets the fleet; `why` is the
  *  line when there is no verdict to explain (stopped, not run, running). */
@@ -611,10 +613,12 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
   const pctN = (x: number | null) => (x == null ? '—' : `${Math.round(x)}%`)
   const targets = [...new Set([60, 65, 70, 75, 80, 85, 90, 95, Math.round(u.target * 100), Math.round(sizingTarget * 100)])].sort((x, y) => x - y)
   const over = u.simulated != null && u.simulated > 1
-  const rows: { label: string; value: string; goal: string; pass: boolean | null; tone: Tone; body: ReactNode }[] = [
+  const rows: { label: string; value: string; goal: string; pass: boolean | null; tone: Tone; grade: Grade | null; at: number | null; scale: ReturnType<typeof checkScale>; body: ReactNode }[] = [
     { label: 'Orders per hour', value: done == null ? '—' : done.toFixed(1), goal: `of ${h.perHr.target.toFixed(0)}`, pass: h.perHr.pass, tone: h.perHr.tone,
+      grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
       body: <p className="sim-kpi-sub">Moves delivered each hour against the demand the stations call for.</p> },
     { label: 'Utilization', value: pctOf(u.simulated), goal: `≤ ${pctOf(u.target)}`, pass: u.pass, tone: u.tone,
+      grade: u.grade, at: u.simulated, scale: checkScale('utilization', u.target),
       body: <>
         <p className="sim-kpi-sub">{over ? `Over capacity by ${Math.round((u.simulated! - 1) * 100)}% — the work needs more than the fleet has.`
           : u.pass === false ? `Over target by ${Math.round((u.simulated! - u.target) * 100)} pts.` : 'Busy share of the shift, not counting charging.'} Static calc {pctOf(u.static)}.</p>
@@ -629,13 +633,14 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
         </div>
         <p className="sim-kebab-note">Simulation only — Sizing keeps {Math.round(sizingTarget * 100)}%.</p>
       </> },
-    { label: 'Battery · lowest', value: pctN(b.lowest.run), goal: b.pass == null ? 'over a week' : b.pass ? 'keeps up' : 'falls behind', pass: b.pass, tone: b.tone,
+    { label: 'Battery · lowest', value: pctN(b.lowest.run), goal: b.grade == null ? 'over a week' : b.grade === 'bad' ? 'falls behind' : b.grade === 'tight' ? 'tight' : 'keeps up', pass: b.pass, tone: b.tone,
+      grade: b.grade, at: b.grade && batteryMarker(b.grade, b.sagPts), scale: checkScale('battery'),
       body: <>
         <ul className="sim-kpi-list">
           <li><span>Shift</span><b className="num">{pctN(b.lowest.shift)}</b></li>
           <li><span>Day</span><b className="num">{pctN(b.lowest.day)}</b></li>
           <li><span>Week</span><b className="num">{pctN(b.lowest.run)}</b></li>
-          {b.pass === false && <li className="bad">{b.why ?? 'Does not keep up'}</li>}
+          {b.why && <li className={b.grade === 'bad' ? 'bad' : 'warn'}>{b.why}</li>}
         </ul>
         <p className="sim-kebab-h">Shift coverage</p>
         <CoverageRow label="Days a week" value={coverage.daysPerWeek} options={[5, 6, 7]} base={coverage.step1.daysPerWeek} onPick={v => onCoverage('daysPerWeek', v)} />
@@ -648,11 +653,16 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
     <div className="sim-runchecks" role="group" aria-label="The three checks">
       {why && <p className="sim-why">{why}</p>}
       {rows.map((r, i) => (
-        <details key={r.label} name="sim-run-check" className={`sim-crow${r.tone ? ` is-${r.tone}` : ''}`}>
+        <details key={r.label} name="sim-run-check" className={`sim-crow${r.tone ? ` is-${r.tone}` : ''}`} title={r.grade ? GRADE_WORD[r.grade] : undefined}>
           <summary>
-            <i aria-hidden>{r.pass == null ? '–' : r.pass ? '✓' : '✗'}</i>
+            <i aria-hidden>{r.grade == null ? '–' : r.grade === 'bad' ? '✗' : r.grade === 'tight' ? '!' : '✓'}</i>
             <span className="lbl">{i + 1} · {r.label}</span>
             <b className="num">{r.value}</b><small>{r.goal}</small>
+            {/* The check's scale (owner, 2026-11-22): its bands, green to red, and where this run landed. */}
+            <span className="sim-scale" aria-hidden>
+              {r.scale.bands.map(bd => <i key={bd.grade} className={`g-${bd.grade}`} style={{ left: `${bd.from * 100}%`, width: `${(bd.to - bd.from) * 100}%` }} />)}
+              {r.at != null && r.grade && <em style={{ left: `${r.scale.pos(r.at) * 100}%` }} />}
+            </span>
           </summary>
           <div className="sim-crow-body">{r.body}</div>
         </details>

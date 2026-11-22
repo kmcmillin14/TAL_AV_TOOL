@@ -19,7 +19,8 @@ const DETAIL: Record<FleetCheckState, (c: FleetCheck) => string> = {
     : c.verdict === 'warming' ? 'The last run was too short to judge — run a full shift'
     : c.ranAt != null ? `The last run used ${c.ranAt} and fell short — ${c.staticN} has not been run`
     : 'Static calculation — not yet checked on a layout',
-  verified: c => c.applied ? `Simulation met all three checks at ${c.n}; in pricing`
+  verified: c => c.tight ? `Simulation passed all three checks at ${c.n}, tight — one is near its limit`
+    : c.applied ? `Simulation met all three checks at ${c.n}; in pricing`
     : c.ranAt != null ? `Simulation met all three checks with ${c.ranAt}, fewer than this count`
     : 'Simulation met all three checks at this count',
   suggested: c => c.confirmed ? `Simulation met all three checks only at ${c.n}`

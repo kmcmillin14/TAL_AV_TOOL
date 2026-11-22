@@ -749,8 +749,20 @@ the split of Layout into Highways and Pick and drop points.
   starting at about what the failing check needs (`nextRightSize`, `src/calc/sim/rightSize.ts`; at most 8
   runs; none found up to +20 or on gridlock says so). The fleet card shows the search, then *Right size: N*
   with **Try N** (sets the stepper and reruns) or *✓ N is the right size*.
-- **Off-shift rotation (owner, 2026-11-22):** off-shift, a parked vehicle more than 5 pts below full takes the
-  charger of a full, idle vehicle, which moves to a free parking spot (none free: no rotation).
+- **Off-shift rotation (owner, 2026-11-22):** off-shift, a parked vehicle more than 5 pts below its full charge
+  (`maxSocPct`) takes the charger of a vehicle at full charge, which moves to a free parking spot (none free:
+  no rotation — a direct swap is not built). Only a full vehicle gives way, so none trade chargers all night.
+- **Graded checks (owner, 2026-11-22; `src/calc/sim/grades.ts`):** each check lands in a band — green, amber
+  (*tight*: it passes, labelled tight), red (fails); utilization also has blue *spare*.
+  | Check | Green | Amber (tight) | Red |
+  |---|---|---|---|
+  | 1 · Orders | ≤ 0.5 pts short of the demand | ≤ 3 pts short | more, or a growing backlog |
+  | 2 · Utilization | at or under the target (*spare* below target − 15 pts) | ≤ 5 pts over | more, or over 100% |
+  | 3 · Battery | morning sag ≤ 2 pts, charger wait ≤ 1% | sag ≤ 5, wait ≤ 2%, or within 5 pts of the floor | sag > 5, wait > 2%, or the floor reached |
+  Verdict: any red *Falls short*; any amber *Tight*; else *Meets*. A tight run passes everywhere a pass counts —
+  the verdict (*Right-sized · tight*), Sizing's Verified (its line says tight), the right-size search, one fewer
+  and Use N. Simulate shows each check's scale (its bands, and a marker where the run landed); the battery
+  marker is the sag, or its band's middle when the floor or the chargers' queue set the grade.
 - **Words (owner, 2026-11-22):** a pick → drop move is a **material flow** everywhere a person reads it —
   Sizing, Simulation, help, the deck and the workbook (code keeps `flow`).
 - **Progress (owner, 2026-11-22):** each step's mark is green when done, amber when started, grey when not;

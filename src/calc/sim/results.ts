@@ -2,14 +2,13 @@
 // Verdict is utilization-based against the project's own target utilization (spec §6.7, D-9).
 
 import type { SimState } from './engine'
+import { BANDS, gradeBattery, gradeOrders, gradePasses, gradeUtilization, worstGrade, type Grade } from './grades'
 import { staffedSeconds } from './shift'
 import type { SimResults, TimeSplit, TypeResult, VehicleResult, Verdict } from './types'
 
 export const VERDICT = {
   /** Minimum simulated time before any verdict but "Warming up". */
   WARMUP_S: 1800,
-  /** Share of generated moves that must be delivered or under way. */
-  MIN_DELIVERED: 0.98,
   /** Waiting orders added per hour that count as a growing backlog. */
   BACKLOG_SHORT_PER_H: 1,
 } as const
@@ -44,18 +43,23 @@ export function results(S: SimState): SimResults {
     const last = ser.length - 1
     const backlogTrend = ser.length > 60 ? ser[last][1] - ser[last - 60][1] : 0
     const delivered = gen > 0 ? (done + inProgress) / gen : 1
-    // The three sizing checks (owner, 2026-11-13): orders delivered, utilization at or under the target,
-    // and charge keeping up. Any failure is "Falls short"; all three pass is "Meets".
+    // The three sizing checks (owner, 2026-11-13), graded (owner, 2026-11-22): orders delivered,
+    // utilization against the target, and charge keeping up — green, amber ("tight", still passing) or red.
+    // Any red is "Falls short"; any amber "Tight"; all green "Meets".
     const battery = batteryCheck(S, vid, veh)
-    const checks = {
-      orders: delivered >= VERDICT.MIN_DELIVERED && backlogTrend < VERDICT.BACKLOG_SHORT_PER_H,
-      utilization: utilization <= S.P.targetUtilization + 1e-9,
-      battery: battery.pass,
+    const grades = {
+      orders: gradeOrders(Math.max(0, (1 - delivered) * 100), backlogTrend >= VERDICT.BACKLOG_SHORT_PER_H),
+      utilization: gradeUtilization(utilization, S.P.targetUtilization),
+      battery: battery.grade,
     }
+    const checks = { orders: gradePasses(grades.orders), utilization: gradePasses(grades.utilization), battery: battery.grade && gradePasses(battery.grade) }
     let verdict: Verdict
     if (S.gridlock) verdict = 'gridlock'
     else if (S.t < VERDICT.WARMUP_S) verdict = 'warming'
-    else verdict = checks.orders && checks.utilization && checks.battery !== false ? 'meets' : 'short'
+    else {
+      const g = worstGrade([grades.orders, grades.utilization, ...(grades.battery ? [grades.battery] : [])])
+      verdict = g === 'bad' ? 'short' : g === 'tight' ? 'tight' : 'meets'
+    }
     const socs = veh.map(v => v.soc)
     types.push({
       vehicleId: vid, fleet: veh.length,
@@ -68,6 +72,7 @@ export function results(S: SimState): SimResults {
       socAvg: socs.length ? socs.reduce((a, b) => a + b, 0) / socs.length : 0,
       socMin: veh.length ? Math.min(...veh.map(v => v.socMin)) : 0,
       chargeTrips: veh.reduce((a, v) => a + v.chargeTrips, 0),
+      grades,
       checks, battery: battery.detail,
       avgSpeedFps: (() => { const mt = veh.reduce((a, v) => a + v.moveT, 0); return mt > 0 ? veh.reduce((a, v) => a + v.distFt, 0) / mt : null })(),
       backlogTrend, verdict,
@@ -100,11 +105,6 @@ export function results(S: SimState): SimResults {
   }
 }
 
-/** The week's last morning may sit this far below its first before it counts as not recharged, % points. */
-const WEEK_SAG_PCT = 2
-/** Waiting for a free charger beyond this share of the vehicles' staffed time fails the check. */
-const CHARGER_WAIT_SHARE = 0.02
-
 /**
  * Charge keeps up (owner, 2026-11-13): judged once the run covers two days. Charge may fall from day to
  * day through the working week — what matters is that vehicles charge when they reach the charge level
@@ -112,7 +112,7 @@ const CHARGER_WAIT_SHARE = 0.02
  * the next week. It fails when a vehicle reaches the cutsheet floor, when the next week's first morning
  * is below this week's, or when vehicles wait for a free charger more than 2% of their staffed time.
  */
-function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { pass: boolean | null; detail: TypeResult['battery'] } {
+function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { grade: Grade | null; detail: TypeResult['battery'] } {
   const b = S.profiles.get(vid)?.battery
   const ser = S.socSeries.get(vid) ?? []
   const days = Math.floor(S.t / 86400 + 1e-9)
@@ -124,21 +124,23 @@ function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { pass: b
   // The lowest charge within the first shift, the first day and the whole run.
   const lowIn = (until: number) => { const xs = ser.filter(([t]) => t <= until + 1e-6).map(([, m]) => m); return xs.length ? Math.min(...xs) : null }
   const lowest = { shift: lowIn((S.P.shiftHr ?? Math.min(24, S.P.staffedHr)) * 3600), day: S.t >= 86400 - 1e-6 ? lowIn(86400) : null, run: lowIn(S.t) }
-  const detail = (why: string | null) => ({ dayStarts, chargeWaitSec, floorPct, why, lowest })
-  if (!b || !veh.length || days < 2) return { pass: null, detail: detail(null) }
-  const low = Math.min(...veh.map(v => v.socMin))
-  // Below the charge level a vehicle heads to a charger, draining a little more on the way — normal.
-  // Reaching the cutsheet floor is not.
-  if (low <= b.minSocPct + 0.5) return { pass: false, detail: detail(`a vehicle reached the ${b.minSocPct}% floor`) }
   // With off-shift or days off the fleet should be back by next week's first morning; round the clock
-  // there is no such morning — staying above the charge level is the test.
+  // there is no such morning — staying clear of the floor and the chargers' queue is the test.
   const offTime = S.P.staffedHr < 24 || (S.P.daysPerWeek ?? 7) < 7
-  if (offTime && days >= 7 && dayStarts.length >= 8 && dayStarts[7] < dayStarts[0] - WEEK_SAG_PCT) {
-    return { pass: false, detail: detail(`not recharged by next week (${Math.round(dayStarts[0])}% → ${Math.round(dayStarts[7])}% on the first morning)`) }
-  }
+  const sagPts = offTime && days >= 7 && dayStarts.length >= 8 ? Math.max(0, dayStarts[0] - dayStarts[7]) : null
+  const detail = (why: string | null) => ({ dayStarts, chargeWaitSec, floorPct, why, lowest, sagPts })
+  if (!b || !veh.length || days < 2) return { grade: null, detail: detail(null) }
+  const low = Math.min(...veh.map(v => v.socMin))
   const staffed = staffedSeconds(S.P, S.t) * veh.length
-  if (staffed > 0 && chargeWaitSec / staffed > CHARGER_WAIT_SHARE) return { pass: false, detail: detail(`vehicles waited ${(chargeWaitSec / 3600).toFixed(1)} h for a free charger`) }
-  return { pass: true, detail: detail(null) }
+  const waitShare = staffed > 0 ? chargeWaitSec / staffed : 0
+  const grade = gradeBattery({ lowPct: low, floorPct: b.minSocPct, sagPts, waitShare })
+  // Why, for the worst factor: the floor, then the week's sag, then the chargers' queue, then nearing the floor.
+  const why = grade === 'good' ? null
+    : low <= b.minSocPct + 0.5 ? `a vehicle reached the ${b.minSocPct}% floor`
+    : sagPts != null && sagPts > BANDS.battery.sagGood ? `${grade === 'bad' ? 'not recharged' : 'nearly recharged'} by next week (${Math.round(dayStarts[0])}% → ${Math.round(dayStarts[7])}% on the first morning)`
+    : waitShare > BANDS.battery.waitGood ? `vehicles waited ${(chargeWaitSec / 3600).toFixed(1)} h for a free charger`
+    : `a vehicle came within ${BANDS.battery.nearFloor} pts of the ${b.minSocPct}% floor`
+  return { grade, detail: detail(why) }
 }
 
 /** How a verdict reads on screen — Simulate's verdict rows and Sizing's chips. */

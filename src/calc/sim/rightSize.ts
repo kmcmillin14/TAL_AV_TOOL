@@ -3,6 +3,7 @@
 // count that passes all three checks: down from a count that passes, up from one that does not. This file
 // only decides which count to try next from what has been tried; the run view runs them.
 
+import { verdictPasses as passes } from './grades'
 import type { Verdict } from './types'
 
 /** Counts tried so far and what each one did. */
@@ -10,8 +11,6 @@ export type Tried = Record<number, Verdict>
 
 /** Give up looking this far above the count run (the layout, not the fleet, is the limit there). */
 export const RIGHT_SIZE_MAX_UP = 20
-
-const passes = (v: Verdict | undefined) => v === 'meets'
 
 /**
  * The next count to try, or the answer. `n` is the count run (its verdict is in `tried`), `estimate` a

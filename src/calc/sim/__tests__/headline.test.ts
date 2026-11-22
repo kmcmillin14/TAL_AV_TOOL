@@ -7,10 +7,15 @@ const group = (vehicleId: string, groupRaw: number, fleetSold: number, availabil
   ({ vehicleId, groupRaw, fleetSold, charging: { availability, runHr } }) as unknown as FleetGroup
 const fleet: FleetSummary = { groups: [group('a', 2.4, 3, 0.9, 6), group('b', 1, 2, 1, 8)], targetUtilization: 0.85 } as unknown as FleetSummary
 const pass = { orders: true, utilization: true, battery: true as boolean | null }
-const type = (vehicleId: string, o: Partial<TypeResult>): TypeResult => ({
-  vehicleId, fleet: 3, target: 40, perHr: 40, done: 100, avgWait: 10, utilization: 0.8, socMin: 40, chargeTrips: 2,
-  checks: pass, battery: { dayStarts: [100, 98, 97], chargeWaitSec: 0, floorPct: 20, why: null, lowest: { shift: 60, day: 55, run: 50 } }, verdict: 'meets', ...o,
-}) as TypeResult
+/** A type's result; its grades follow its pass/fail checks unless given (green for pass, red for fail). */
+const type = (vehicleId: string, o: Partial<TypeResult>): TypeResult => {
+  const c = o.checks ?? pass, g = (b: boolean) => (b ? 'good' as const : 'bad' as const)
+  return {
+    vehicleId, fleet: 3, target: 40, perHr: 40, done: 100, delivered: 1, avgWait: 10, utilization: 0.8, socMin: 40, chargeTrips: 2,
+    checks: pass, battery: { dayStarts: [100, 98, 97], chargeWaitSec: 0, floorPct: 20, why: null, lowest: { shift: 60, day: 55, run: 50 }, sagPts: null }, verdict: 'meets',
+    grades: { orders: g(c.orders), utilization: g(c.utilization), battery: c.battery == null ? null : g(c.battery) }, ...o,
+  } as TypeResult
+}
 const run = (types: TypeResult[], o: Partial<SimResults> = {}) => ({ verdict: 'meets', gridlock: null, types, ...o }) as unknown as SimResults
 const flowsA = [{ vehicleId: 'a', thruPerHr: 40 }]
 
@@ -49,16 +54,18 @@ describe('Run headline: the static calc beside the simulation, and the three che
     expect(h.setsFleet).toEqual({ check: 'orders', n: 3 })                       // orders and utilization both need 3; the first named wins
   })
 
-  it('over the target utilization alone fails; the target can be changed for the simulation', () => {
-    const r = run([type('a', { utilization: 0.88 })])
-    expect(runHeadline(fleet, { a: 3 }, r, flowsA, 100).outcome).toBe('under')
-    expect(runHeadline(fleet, { a: 3 }, r, flowsA, 100, { targetUtilization: 0.9 }).outcome).toBe('right')
+  it('utilization is graded: up to 5 pts over the target is tight (passes, named); beyond fails; the target can change', () => {
+    const tight = runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.88 })]), flowsA, 100)
+    expect(tight).toMatchObject({ outcome: 'right', tight: ['utilization'], verdictTone: 'warn', utilization: { grade: 'tight', pass: true } })
+    expect(runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.92 })]), flowsA, 100)).toMatchObject({ outcome: 'under', utilization: { grade: 'bad' } })
+    expect(runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.92 })]), flowsA, 100, { targetUtilization: 0.9 })).toMatchObject({ outcome: 'right', tight: ['utilization'] })
+    expect(runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.6 })]), flowsA, 100).utilization.grade).toBe('spare')
   })
 
   it('battery: not judged under two days; a failure names why', () => {
     const short = run([type('a', { checks: { ...pass, battery: null } })])
     expect(runHeadline(fleet, { a: 3 }, short, flowsA, 100)).toMatchObject({ outcome: 'right', battery: { pass: null } })
-    const flat = run([type('a', { checks: { ...pass, battery: false }, battery: { dayStarts: [], chargeWaitSec: 0, floorPct: 20, why: 'a vehicle reached the 20% floor', lowest: { shift: 40, day: 30, run: 20 } } })])
+    const flat = run([type('a', { checks: { ...pass, battery: false }, battery: { dayStarts: [], chargeWaitSec: 0, floorPct: 20, why: 'a vehicle reached the 20% floor', lowest: { shift: 40, day: 30, run: 20 }, sagPts: null } })])
     const h = runHeadline(fleet, { a: 3 }, flat, flowsA, 100)
     expect(h).toMatchObject({ outcome: 'under', setsFleet: { check: 'battery', n: 4 }, battery: { why: 'a vehicle reached the 20% floor' } })
   })

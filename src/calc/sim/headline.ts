@@ -6,27 +6,33 @@
 
 import { engineFleetSold } from '@/src/calc/fleet'
 import type { FleetSummary } from '@/src/calc/types'
+import { gradePasses, gradeUtilization, verdictPasses, worstGrade, type CheckId, type Grade } from './grades'
 import type { SimResults, Verdict } from './types'
+
+export type { CheckId }
 
 /** A tile's colour against its check. */
 export type Tone = 'good' | 'warn' | 'bad' | ''
 /** How the fleet tested comes out: all three pass (right), one fails (under), one fewer passes too (over). */
 export type Outcome = 'right' | 'under' | 'over' | 'gridlock' | 'notRun'
-export type CheckId = 'orders' | 'utilization' | 'battery'
 
 export interface Headline {
   /** The static calc's fleet and the fleet the run places (the one being tested). */
   fleet: { static: number; tested: number }
   /** Check 1 — moves per hour delivered against the demand the run generates (all types). */
-  perHr: { simulated: number | null; target: number; pass: boolean | null; tone: Tone }
+  perHr: { simulated: number | null; target: number; pass: boolean | null; tone: Tone; grade: Grade | null
+    /** Moves short of the demand, % points, the worst type (its scale's value). */
+    shortPct: number | null }
   /** Check 2 — busy ÷ the shift's time not charging: what the static calc expects at its fleet, what the
    *  work needs (with overtime and unfinished orders — over 1 when the fleet is too small). */
-  utilization: { static: number | null; simulated: number | null; target: number; pass: boolean | null; tone: Tone
+  utilization: { static: number | null; simulated: number | null; target: number; pass: boolean | null; tone: Tone; grade: Grade | null
     /** Low enough to try one vehicle fewer: about what N − 1 would run at (≤ the target), else null. */
     fewerAt: number | null }
   /** Check 3 — charge keeps up (judged over two days or more; null before): lowest charge (%), charge
    *  trips, the average charge each morning, why it failed, and the static calc's hours per charge. */
-  battery: { socMin: number | null; chargeTrips: number | null; runHr: number | null; dayStarts: number[]; why: string | null; pass: boolean | null; tone: Tone
+  battery: { socMin: number | null; chargeTrips: number | null; runHr: number | null; dayStarts: number[]; why: string | null; pass: boolean | null; tone: Tone; grade: Grade | null
+    /** Next week's first morning below this week's, % points, the worst type (the battery scale's value). */
+    sagPts: number | null
     /** Lowest charge in the first shift, the first day and the whole run (%), the lowest of the types. */
     lowest: { shift: number | null; day: number | null; run: number | null } }
   /** Average speed while moving across the fleet, ft/s (feet driven ÷ seconds moving, all types). */
@@ -38,6 +44,8 @@ export interface Headline {
   /** The run's own verdict word (kept for Sizing's chip). */
   verdict: Verdict | null
   notRun: boolean
+  /** The checks that pass but are amber: a right-sized fleet with these reads "Right-sized · tight". */
+  tight: CheckId[]
   verdictTone: Tone
 }
 
@@ -46,7 +54,8 @@ const lowOf = (types: SimResults['types'], k: 'shift' | 'day' | 'run') => {
   const xs = types.flatMap(t => (t.battery.lowest[k] != null ? [t.battery.lowest[k]!] : []))
   return xs.length ? Math.min(...xs) : null
 }
-const toneOf = (pass: boolean | null): Tone => (pass == null ? '' : pass ? 'good' : 'bad')
+/** A grade's tile colour: amber for tight, red for bad; spare and good read green. */
+const toneOf = (g: Grade | null): Tone => (g == null ? '' : g === 'bad' ? 'bad' : g === 'tight' ? 'warn' : 'good')
 
 export function runHeadline(
   fleet: FleetSummary, placed: Record<string, number>, res: SimResults | null,
@@ -69,13 +78,18 @@ export function runHeadline(
   const socMin = types.length ? Math.min(...types.map(t => t.socMin)) : null
 
   const ran = !!res && types.length > 0
-  const ordersPass = ran ? types.every(t => t.checks.orders) : null
-  const utilPass = ran && util != null ? util <= target + 1e-9 : null
+  // Graded (owner, 2026-11-22): each check's worst band across types (utilization on the fleet's own figure);
+  // a check passes unless red.
+  const ordersGrade = ran ? worstGrade(types.map(t => t.grades.orders)) : null
+  const utilGrade = ran && util != null ? gradeUtilization(util, target) : null
+  const batteryGrades = types.flatMap(t => (t.grades.battery ? [t.grades.battery] : []))
+  const batteryGrade = ran && batteryGrades.length ? worstGrade(batteryGrades) : null
+  const ordersPass = ordersGrade && gradePasses(ordersGrade), utilPass = utilGrade && gradePasses(utilGrade), batteryPass = batteryGrade && gradePasses(batteryGrade)
   const fewer = utilPass && tested > 1 && util != null ? (util * tested) / (tested - 1) : null
   const fewerAt = fewer != null && fewer <= target ? fewer : null
-  const batteryJudged = types.filter(t => t.checks.battery != null)
-  const batteryPass = ran && batteryJudged.length ? batteryJudged.every(t => t.checks.battery) : null
-  const battWhy = types.find(t => t.checks.battery === false)?.battery.why ?? null
+  const battWhy = types.find(t => t.grades.battery && t.grades.battery !== 'good')?.battery.why ?? null
+  const shortPct = ran ? Math.max(...types.map(t => Math.max(0, (1 - t.delivered) * 100))) : null
+  const sags = types.flatMap(t => (t.battery.sagPts != null ? [t.battery.sagPts] : []))
 
   const notRun = !!opts.unrunnable || (!!res && !types.length && !res.gridlock)
   const verdict = notRun || !res ? null : res.gridlock ? 'gridlock' : res.verdict
@@ -86,7 +100,7 @@ export function runHeadline(
   else if (ran && verdict !== 'warming') {
     if (ordersPass && utilPass && batteryPass !== false) {
       const fewer = Object.values(opts.oneFewer ?? {})
-      outcome = fewer.some(v => v === 'meets') ? 'over' : 'right'
+      outcome = fewer.some(verdictPasses) ? 'over' : 'right'
     } else {
       outcome = 'under'
       // About how many vehicles each failing check needs; the largest sets the fleet.
@@ -97,21 +111,24 @@ export function runHeadline(
       setsFleet = need.sort((a, b) => b.n - a.n)[0] ?? null
     }
   }
+  const tightAny = [ordersGrade, utilGrade, batteryGrade].includes('tight')
   return {
     fleet: { static: sum(groups.map(engineFleetSold)), tested },
-    perHr: { simulated: perHr, target: demand, pass: ordersPass, tone: toneOf(ordersPass) },
+    perHr: { simulated: perHr, target: demand, pass: ordersPass, tone: toneOf(ordersGrade), grade: ordersGrade, shortPct },
     utilization: {
       static: cap > 0 ? sum(groups.map(g => g.groupRaw)) / cap : null, simulated: util, target, pass: utilPass,
       // The same work on one vehicle fewer: busy time spread over N − 1 (an estimate; the one-fewer run decides).
-      fewerAt, tone: fewerAt != null ? 'warn' : toneOf(utilPass),
+      fewerAt, tone: fewerAt != null ? 'warn' : toneOf(utilGrade), grade: utilGrade,
     },
     battery: {
       socMin, chargeTrips: res ? sum(types.map(t => t.chargeTrips)) : null, runHr: runHrs.length ? Math.min(...runHrs) : null,
-      dayStarts: types[0]?.battery.dayStarts ?? [], why: battWhy, pass: batteryPass, tone: toneOf(batteryPass),
+      dayStarts: types[0]?.battery.dayStarts ?? [], why: battWhy, pass: batteryPass, tone: toneOf(batteryGrade), grade: batteryGrade,
+      sagPts: sags.length ? Math.max(...sags) : null,
       lowest: { shift: lowOf(types, 'shift'), day: lowOf(types, 'day'), run: lowOf(types, 'run') },
     },
     speedFps: (() => { const ts = types.filter(t => t.avgSpeedFps != null); const w = sum(ts.map(t => t.fleet)); return w > 0 ? sum(ts.map(t => t.avgSpeedFps! * t.fleet)) / w : null })(),
     outcome, setsFleet, verdict, notRun,
-    verdictTone: outcome === 'right' ? 'good' : outcome === 'over' ? 'warn' : outcome ? 'bad' : '',
+    tight: ([['orders', ordersGrade], ['utilization', utilGrade], ['battery', batteryGrade]] as const).filter(([, g]) => g === 'tight').map(([c]) => c),
+    verdictTone: outcome === 'right' ? (tightAny ? 'warn' : 'good') : outcome === 'over' ? 'warn' : outcome ? 'bad' : '',
   }
 }

@@ -335,7 +335,8 @@ function nearestFree(S: SimState, v: SimVehicle, nodes: number[]) {
   return best
 }
 function reserve(S: SimState, v: SimVehicle, node: number) { const z = S.G.zone[node]!; S.locks.set(z, v.i); v.held.add(z) }
-/** Off-shift rotation: a parked vehicle this far below its full level takes a full one's charger, % points. */
+/** Off-shift rotation: a parked vehicle this far below its full charge (`maxSocPct`) takes the charger of one
+ *  that has reached its charge-until level, % points. */
 const ROTATE_BELOW_FULL_PCT = 5
 const needsCharge = (v: SimVehicle) => v.prof.battery != null && v.soc < v.prof.battery.chargeBelowPct
 
@@ -355,9 +356,11 @@ function goCharge(S: SimState, v: SimVehicle) {
 
 /** A full, idle vehicle on a charger gives it up to `needy`: it moves to a free parking spot (none
  *  free: it stays). The charger is free once it has left; `needy` takes it on the next check. */
-function bumpFullOffCharger(S: SimState, needy: SimVehicle) {
+function bumpFullOffCharger(S: SimState, needy: SimVehicle, topUp = false) {
+  // `topUp` (off-shift rotation): only a vehicle at its full charge gives way, never one merely past its
+  // charge-until level — otherwise vehicles trade chargers all night.
   const full = S.veh.filter(u => u !== needy && u.mode === 'home' && !u.mustCharge && u.prof.battery
-    && S.G.points[u.node].type === 'charger' && u.soc >= u.prof.battery.chargeUntilPct)
+    && S.G.points[u.node].type === 'charger' && u.soc >= (topUp ? u.prof.battery.maxSocPct - 0.5 : u.prof.battery.chargeUntilPct))
     .sort((a, b) => b.soc - a.soc)[0]
   if (!full) return
   const n = nearestFree(S, full, S.G.parking)
@@ -589,7 +592,8 @@ export function step(S: SimState) {
       if (v.mode !== 'home' || v.job || !v.prof.battery || G.points[v.node].type === 'charger') continue
       const n = nearestFree(S, v, G.chargers)
       if (n >= 0) { reserve(S, v, n); v.mode = v.mustCharge ? 'toCharge' : 'toHome'; setRoute(S, v, n); continue }
-      if (v.mustCharge || (!onShift && v.soc < v.prof.battery.chargeUntilPct - ROTATE_BELOW_FULL_PCT)) bumpFullOffCharger(S, v)
+      if (v.mustCharge) bumpFullOffCharger(S, v)
+      else if (!onShift && v.soc < v.prof.battery.maxSocPct - ROTATE_BELOW_FULL_PCT) bumpFullOffCharger(S, v, true)
     }
   }
 
