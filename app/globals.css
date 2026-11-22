@@ -5801,3 +5801,8 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-dcard-folds > .sim-section:last-child { border-bottom: 1px solid var(--border); }
 .sim-dcard-folds .sim-section-body h4 { margin: 4px 0 0; }
 .sim-detail-card:has(.sim-dcard) > .sim-banner { display: none; }   /* the sample note returns with Back */
+.sim-tile.is-warn b { color: var(--warn); } .sim-tile.is-bad b { color: var(--bad); }
+.sim-why { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--bg-surface-2, var(--bg-hover)); font-size: 12px; color: var(--text-secondary); }
+.sim-why.is-warn { background: var(--warn-soft); color: var(--warn); }
+.sim-state.is-mute { background: var(--bg-surface-3); color: var(--text-secondary); }
+.sim-state.is-info { background: color-mix(in srgb, var(--info) 14%, transparent); color: var(--info); }

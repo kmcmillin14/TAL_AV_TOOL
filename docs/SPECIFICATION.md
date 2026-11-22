@@ -734,8 +734,10 @@ the split of Layout into Highways and Pick and drop points.
   | Route | B56.5 | — | length · lanes · tightest clearance | Settings · Advanced |
   | Material flow | *Routed* / *No route* / *Not on the map* | pick → drop with each end's height | moves/h (typed) · distance on the map · lift | Vehicle (and Unlink) |
   | Object | — | — | width · depth · rotation (typed) | Settings |
-  | Vehicle (run; while followed) | its state, as the map legend | its leg: pick → drop, filled as it drives, distance to go | battery · moves · working % | — |
-  Back on the vehicle card stops following and returns to the fleet. Not yet: chargers' after-run figures.
+  | Vehicle (run; while followed) | its state, in the map legend's colour | the leg it is on — empty from where it set off to the pick, or loaded from the pick to the drop — filled as it drives, with distance to go and *arrives in about …* (distance ÷ cruise speed) | battery (amber below the charge threshold, red at the minimum) · moves · working % | So far (where its time went, driven, charge trips, lowest battery) · This order (material flow, raised, waited for a vehicle, under way) |
+  When it is not simply driving, one line says why: *Waiting for cb18-4* (head-on on a single lane), *Queued
+  for Rack 3*, *Charging · 71% · done about 14:20*, *Needs a charge · no charger free*, *Parked at P1 · no
+  orders waiting*. Back on the vehicle card stops following and returns to the fleet. Not yet: chargers' after-run figures.
 - **Words (owner, 2026-11-22):** a pick → drop move is a **material flow** everywhere a person reads it —
   Sizing, Simulation, help, the deck and the workbook (code keeps `flow`).
 - **Progress (owner, 2026-11-22):** each step's mark is green when done, amber when started, grey when not;

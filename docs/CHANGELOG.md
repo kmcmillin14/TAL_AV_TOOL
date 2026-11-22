@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-22 — The followed vehicle's card, in full
+
+- The leg it is on (empty to the pick, then loaded to the drop) with distance to go and the time to arrive;
+  one line on why when it is not driving — whom it waits for, which station it queues for, when its charge
+  is done, or that it is parked with no orders waiting; the battery tile turns amber or red when low.
+- Folds: **So far** (where its time went, distance, charges, lowest battery) and **This order** (raised,
+  waited for a vehicle, under way). The chip takes the map legend's colour. No figures change.
+
 ## 2026-11-22 — Drill-down cards (Flighty-style)
 
 - Owner: what you select in Simulation opens as a card — Back, the name big with one status chip, a line

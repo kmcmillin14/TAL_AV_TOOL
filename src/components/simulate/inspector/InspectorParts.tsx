@@ -8,7 +8,7 @@ import type { ReactNode, Ref } from 'react'
 import type { SimPointType } from '@/src/calc/sim/types'
 import Icon from '@/src/design-system/components/Icon'
 
-export type Tone = 'good' | 'warn' | 'bad' | 'sel'
+export type Tone = 'good' | 'warn' | 'bad' | 'sel' | 'info' | 'mute'
 
 /** The folds of one card share this name: opening one closes the others (an exclusive `<details>` group). */
 const FOLDS = 'sim-card-fold'
@@ -46,8 +46,9 @@ export function Tiles({ children }: { children: ReactNode }) {
   return <div className="sim-tiles">{children}</div>
 }
 
-export function Tile({ label, value, unit }: { label: string; value: ReactNode; unit?: string }) {
-  return <div className="sim-tile"><b className="num">{value}{unit && <small>{unit}</small>}</b><span>{label}</span></div>
+/** `tone`: the figure in that colour (e.g. a low battery). */
+export function Tile({ label, value, unit, tone }: { label: string; value: ReactNode; unit?: string; tone?: Tone }) {
+  return <div className={`sim-tile${tone ? ` is-${tone}` : ''}`}><b className="num">{value}{unit && <small>{unit}</small>}</b><span>{label}</span></div>
 }
 
 /** A tile typed into in place (dashed): the number is the input. Empty means none (undefined). */

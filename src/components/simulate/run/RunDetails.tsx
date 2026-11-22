@@ -36,6 +36,17 @@ interface Props {
 const SPLIT = STATES as [keyof TimeSplit, string][]
 /** Seconds in a shown state — repositioning at a pick/drop counts as "Pick / drop", so shares add to 100%. */
 const inState = (t: TimeSplit, k: keyof TimeSplit) => (k === 'handle' ? t.handle + t.reposition : t[k])
+/** Where the time went: a legend with shares and one stacked bar (Run details; the vehicle card). */
+export function TimeSplitBar({ time }: { time: TimeSplit }) {
+  const tot = SPLIT.reduce((a, [k]) => a + inState(time, k), 0) || 1
+  return (
+    <div className="sim-split-wrap">
+      <div className="sim-splitleg">{SPLIT.map(([k, l]) => <span key={k}><i className={`st-${k}`} />{l} {pct(inState(time, k) / tot)}</span>)}</div>
+      <div className="sim-split">{SPLIT.map(([k]) => <span key={k} className={`st-${k}`} style={{ width: `${(inState(time, k) / tot) * 100}%` }} />)}</div>
+    </div>
+  )
+}
+
 const FLOW_COLS: Col[] = [
   { label: 'Material flow', left: true }, { label: 'Moves/h target' }, { label: 'Sizing distance' }, { label: 'Driven' }, { label: 'Engine cycle' },
   { label: 'Engine demand (veh)' }, { label: 'Sim moves/h', band: true }, { label: 'Sim mission', band: true }, { label: 'Avg wait', band: true },
@@ -63,7 +74,6 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
   const name = (id?: string) => net?.points.find(p => p.id === id)?.name ?? '—'
   const time = R ? R.types.reduce((acc, t) => { for (const k of Object.keys(acc) as (keyof TimeSplit)[]) acc[k] += t.time[k]; return acc },
     { travel: 0, handle: 0, reposition: 0, wait: 0, charge: 0, idle: 0 } as TimeSplit) : null
-  const tot = time ? Object.values(time).reduce((a, b) => a + b, 0) || 1 : 1
 
   return (
     <section className="sim-below">
@@ -81,10 +91,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
               { v: sim ? sim.perHr.toFixed(1) : null, cls: sim && sim.perHr < target * 0.98 ? 'bad' : '' }, secs(sim?.mission), secs(sim?.wait)]
           })} />
           {time && (
-            <div className="sim-split-wrap">
-              <div className="sim-splitleg">{SPLIT.map(([k, l]) => <span key={k}><i className={`st-${k}`} />{l} {pct(inState(time, k) / tot)}</span>)}</div>
-              <div className="sim-split">{SPLIT.map(([k]) => <span key={k} className={`st-${k}`} style={{ width: `${(inState(time, k) / tot) * 100}%` }} />)}</div>
-            </div>
+<TimeSplitBar time={time} />
           )}
           {R && (
             <dl className="sim-kv">
