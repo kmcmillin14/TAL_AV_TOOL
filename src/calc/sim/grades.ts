@@ -1,5 +1,5 @@
 // src/calc/sim/grades.ts — the three sizing checks graded on a scale, not pass/fail (owner, 2026-11-22). PURE.
-// Each check lands in a band: green (good), amber (tight — it passes, labelled "tight"), red (bad — it
+// Each check lands in a band: green (good), amber (`tight` — it passes, with no spare capacity; the fleet still reads "Right-sized"), red (bad — it
 // fails); utilization also has a blue "spare" band well under the target (the fleet may be oversized).
 // One place for the band edges: the results, the headline, the verdict and the scales on screen read them.
 
@@ -22,7 +22,7 @@ const RANK: Record<Grade, number> = { spare: 0, good: 0, tight: 1, bad: 2 }
 export const worstGrade = (gs: Grade[]): Grade => gs.reduce((w, g) => (RANK[g] > RANK[w] ? g : w), gs[0] ?? 'good')
 /** A grade that passes: everything but red. */
 export const gradePasses = (g: Grade | null | undefined) => g != null && g !== 'bad'
-/** A verdict that passes all three checks — "Meets", or "Tight" (an amber check). */
+/** A verdict that passes all three checks — "Meets", or `tight` (an amber check; it reads "Right-sized", the amber in that check's colour). */
 export const verdictPasses = (v: Verdict | 'checking' | null | undefined): boolean => v === 'meets' || v === 'tight'
 
 /** Orders: `shortPct` = moves short of the demand, % points (0 = all delivered); a growing backlog fails. */

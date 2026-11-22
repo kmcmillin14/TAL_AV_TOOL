@@ -28,7 +28,7 @@ export interface FleetCheck {
   ranAt?: number
   /** Suggested: one fewer was run and does not meet, so `n` is the smallest — Use N may apply it. */
   confirmed?: boolean
-  /** Verified with an amber check — it passes, labelled tight (owner, 2026-11-22). */
+  /** Verified with an amber check — it passes, with no spare capacity in one check (owner, 2026-11-22). */
   tight?: boolean
   /** An applied count the static calc has caught up with: raise-only pricing ignores it; it can be cleared. */
   dormant?: number

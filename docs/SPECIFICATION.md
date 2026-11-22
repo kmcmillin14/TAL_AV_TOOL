@@ -759,12 +759,13 @@ the split of Layout into Highways and Pick and drop points.
   | 1 · Orders | ≤ 0.5 pts short of the demand | ≤ 3 pts short | more, or a growing backlog |
   | 2 · Utilization | at or under the target (*spare* below target − 15 pts) | ≤ 5 pts over | more, or over 100% |
   | 3 · Battery | morning sag ≤ 2 pts, charger wait ≤ 1% | sag ≤ 5, wait ≤ 2%, or within 5 pts of the floor | sag > 5, wait > 2%, or the floor reached |
-  Verdict: any red *Falls short*; any amber *Tight*; else *Meets*. A tight run passes everywhere a pass counts —
-  the verdict (*Right-sized · tight*), Sizing's Verified (its line says tight), the right-size search, one fewer
+  Verdict: any red *Falls short*; else *Meets*. An amber check passes everywhere a pass counts — the fleet's word
+  stays **Right-sized** (owner, 2026-11-22: one word — *Right-sized*, *Undersized*, *Oversized*; the amber shows in that
+  check's colour and marker only), Sizing's Verified (its line says one check has no spare capacity), the right-size search, one fewer
   and Use N. Simulate shows each check's scale (its bands, and a marker where the run landed). **Every scale runs
   the same way (owner, 2026-11-22, option A): green left, red right**, and each line shows the figure its scale
-  measures, so the marker moves with the number — *1 · Orders short 0.4%* (*55.8 of 56 / h* beside it: delivered and
-  expected), *2 · Utilization 92%* (≤ 90%), *3 · Battery drop 0% by morning* (charge lost, in %) (the lowest charge in its fold). When the floor, the chargers'
+  measures, so the marker moves with the number — *1 · Orders short 0.4%* (*3,122 of 3,136 moves* beside it: the run's
+  simulated deliveries against the demand; per hour in its fold), *2 · Utilization 92%* (≤ 90%), *3 · Battery drop 0% by morning* (charge lost, in %) (the lowest charge in its fold). When the floor, the chargers'
   queue or nearing the floor set the battery's grade, its line says so in place of *by morning*.
 - **Words (owner, 2026-11-22):** a pick → drop move is a **material flow** everywhere a person reads it —
   Sizing, Simulation, help, the deck and the workbook (code keeps `flow`).

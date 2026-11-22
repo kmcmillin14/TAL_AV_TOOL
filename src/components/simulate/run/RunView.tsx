@@ -1,7 +1,7 @@
 'use client'
 
 // Run mode (CB18 proof of concept; spec v2 §7). One verdict row per vehicle type — fleet stepper,
-// Meets / Tight / Falls short / Gridlock, moves/h against target, wait, busy — beside the Fleet
+// Meets / Falls short / Gridlock, moves/h against target, wait, busy — beside the Fleet
 // Engine's figure. The verdict comes from a full shift run off-screen; the map plays a second copy of
 // the same run (same seed) at ×1/×10/×100. Details sit one click away (progressive disclosure).
 // Nothing here changes the sized fleet or the quote except "Use N in pricing" (D-1, raise-only, confirmed).
@@ -517,12 +517,13 @@ function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: 
 }
 
 /** A check's band in words (its scale's colour). */
-const GRADE_WORD: Record<Grade, string> = { spare: 'Spare capacity — the fleet may be oversized', good: 'Comfortable', tight: 'Tight — passes, near its limit', bad: 'Fails' }
+const GRADE_WORD: Record<Grade, string> = { spare: 'Spare capacity — the fleet may be oversized', good: 'Comfortable', tight: 'Passes, with no spare capacity', bad: 'Fails' }
 /** The battery line's goal when something other than the morning drop set its grade. */
 const BATTERY_CAUSE: Record<BatteryCause, string> = { floor: 'floor reached', wait: 'charger waits', near: 'near the floor', sag: 'by morning' }
 const OUTCOME_WORD: Record<Outcome, string> = { right: 'Right-sized', over: 'Oversized', under: 'Undersized', gridlock: 'Gridlock', notRun: 'Not run' }
 /** The verdict in one word — Sim's fleet tile (Data says why, not the word again). */
-const verdictWord = (h: Headline) => (h.outcome ? `${OUTCOME_WORD[h.outcome]}${h.outcome === 'right' && h.tight.length ? ' · tight' : ''}` : 'Simulating…')
+/** One word (owner, 2026-11-22): Right-sized, Undersized or Oversized; an amber check shows in its own colour only. */
+const verdictWord = (h: Headline) => (h.outcome ? OUTCOME_WORD[h.outcome] : 'Simulating…')
 
 /** Data's checks tile: how many of the three pass, each stacked, and what sets the fleet; `why` is the
  *  line when there is no verdict to explain (stopped, not run, running). */
@@ -617,9 +618,9 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
   const over = u.simulated != null && u.simulated > 1
   const rows: { label: string; value: string; goal: string; pass: boolean | null; tone: Tone; grade: Grade | null; at: number | null; scale: ReturnType<typeof checkScale>; body: ReactNode }[] = [
     // Each line's figure is what its scale measures (owner, 2026-11-22: green left, red right on all three).
-    { label: 'Orders short', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}%`, goal: `${done == null ? '—' : done.toFixed(1)} of ${h.perHr.target.toFixed(0)} / h`,
+    { label: 'Orders short', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}%`, goal: h.perHr.moves ? `${h.perHr.moves.delivered.toLocaleString()} of ${h.perHr.moves.demanded.toLocaleString()} moves` : `of ${h.perHr.target.toFixed(0)} / h`,
       pass: h.perHr.pass, tone: h.perHr.tone, grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
-      body: <p className="sim-kpi-sub">Moves the stations called for and did not get. {done == null ? '' : `${done.toFixed(1)} delivered each hour against ${h.perHr.target.toFixed(0)} needed.`}</p> },
+      body: <p className="sim-kpi-sub">Simulated deliveries against the stations' demand over the run{h.perHr.moves ? ` — ${h.perHr.moves.delivered.toLocaleString()} of ${h.perHr.moves.demanded.toLocaleString()}` : ''}.{done == null ? '' : ` ${done.toFixed(1)} each hour against ${h.perHr.target.toFixed(0)} needed.`}</p> },
     { label: 'Utilization', value: pctOf(u.simulated), goal: `≤ ${pctOf(u.target)}`, pass: u.pass, tone: u.tone,
       grade: u.grade, at: u.simulated, scale: checkScale('utilization', u.target),
       body: <>

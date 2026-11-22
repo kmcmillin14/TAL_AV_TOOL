@@ -22,7 +22,9 @@ export interface Headline {
   /** Check 1 — moves per hour delivered against the demand the run generates (all types). */
   perHr: { simulated: number | null; target: number; pass: boolean | null; tone: Tone; grade: Grade | null
     /** Moves short of the demand, % points, the worst type (its scale's value). */
-    shortPct: number | null }
+    shortPct: number | null
+    /** The run's totals: moves delivered on time against the moves the stations called for. */
+    moves: { delivered: number; demanded: number } | null }
   /** Check 2 — busy ÷ the shift's time not charging: what the static calc expects at its fleet, what the
    *  work needs (with overtime and unfinished orders — over 1 when the fleet is too small). */
   utilization: { static: number | null; simulated: number | null; target: number; pass: boolean | null; tone: Tone; grade: Grade | null
@@ -46,7 +48,7 @@ export interface Headline {
   /** The run's own verdict word (kept for Sizing's chip). */
   verdict: Verdict | null
   notRun: boolean
-  /** The checks that pass but are amber: a right-sized fleet with these reads "Right-sized · tight". */
+  /** The checks that pass but are amber: a right-sized fleet with these has no spare capacity there (amber tone). */
   tight: CheckId[]
   verdictTone: Tone
 }
@@ -117,7 +119,8 @@ export function runHeadline(
   const tightAny = [ordersGrade, utilGrade, batteryGrade].includes('tight')
   return {
     fleet: { static: sum(groups.map(engineFleetSold)), tested },
-    perHr: { simulated: perHr, target: demand, pass: ordersPass, tone: toneOf(ordersGrade), grade: ordersGrade, shortPct },
+    perHr: { simulated: perHr, target: demand, pass: ordersPass, tone: toneOf(ordersGrade), grade: ordersGrade, shortPct,
+      moves: ran ? { delivered: sum(types.map(t => t.done)), demanded: sum(types.map(t => t.generated)) } : null },
     utilization: {
       static: cap > 0 ? sum(groups.map(g => g.groupRaw)) / cap : null, simulated: util, target, pass: utilPass,
       // The same work on one vehicle fewer: busy time spread over N − 1 (an estimate; the one-fewer run decides).

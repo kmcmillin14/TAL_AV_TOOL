@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-22 — Fleet verdict in one word; orders as totals
+
+- Owner: the fleet's word is one of **Right-sized**, **Undersized** or **Oversized** — no separate word for
+  an amber check (*tight* is gone); its colour and marker say it. Verdict labels read *Meets* for an amber run.
+- The orders line shows the run's totals beside its shortfall: simulated deliveries of the demand
+  (*3,122 of 3,136 moves*); the per-hour rate is in its fold.
+
 ## 2026-11-22 — Check scales run one way
 
 - Owner (option A): all three scales are green left, red right, and each line's figure is what its scale
@@ -10,7 +17,7 @@
 
 - Owner: the three checks are graded green / amber (*tight*, passes) / red, utilization also blue *spare*
   (bands in the spec). Simulate shows each check's scale with a marker. **Verdicts move:** runs that failed
-  by a hair now pass as *Tight* (e.g. the medium example at 6 — 92% against 90% — reads *Right-sized · tight*,
+  by a hair now pass, amber (e.g. the medium example at 6 — 92% against 90% — reads *Right-sized · tight*,
   where it read *Undersized*); Sizing's Verified, one fewer and Use N count tight as passing.
 - Fixed: off-shift rotation compared against the charge-until level, so a parked vehicle at 65% never
   rotated (60% until) — it now aims at full charge, and only a full vehicle gives way (no all-night trading).

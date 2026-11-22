@@ -44,8 +44,8 @@ export function results(S: SimState): SimResults {
     const backlogTrend = ser.length > 60 ? ser[last][1] - ser[last - 60][1] : 0
     const delivered = gen > 0 ? (done + inProgress) / gen : 1
     // The three sizing checks (owner, 2026-11-13), graded (owner, 2026-11-22): orders delivered,
-    // utilization against the target, and charge keeping up — green, amber ("tight", still passing) or red.
-    // Any red is "Falls short"; any amber "Tight"; all green "Meets".
+    // utilization against the target, and charge keeping up — green, amber (passes, no spare capacity) or
+    // red. Any red is "Falls short"; any amber `tight` (shown as "Meets", the amber in its check's colour; the fleet reads Right-sized); else "Meets".
     const battery = batteryCheck(S, vid, veh)
     const grades = {
       orders: gradeOrders(Math.max(0, (1 - delivered) * 100), backlogTrend >= VERDICT.BACKLOG_SHORT_PER_H),
@@ -147,4 +147,4 @@ function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { grade: 
 }
 
 /** How a verdict reads on screen — Simulate's verdict rows and Sizing's chips. */
-export const VERDICT_LABEL: Record<Verdict, string> = { meets: 'Meets', tight: 'Tight', short: 'Falls short', gridlock: 'Gridlock', warming: 'Warming up' }
+export const VERDICT_LABEL: Record<Verdict, string> = { meets: 'Meets', tight: 'Meets', short: 'Falls short', gridlock: 'Gridlock', warming: 'Warming up' }
