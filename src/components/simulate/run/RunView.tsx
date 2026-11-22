@@ -618,7 +618,7 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
   const over = u.simulated != null && u.simulated > 1
   const rows: { label: string; value: string; goal: string; pass: boolean | null; tone: Tone; grade: Grade | null; at: number | null; scale: ReturnType<typeof checkScale>; body: ReactNode }[] = [
     // Each line's figure is what its scale measures (owner, 2026-11-22: green left, red right on all three).
-    { label: 'Orders short', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}%`, goal: h.perHr.moves ? `${h.perHr.moves.delivered.toLocaleString()} of ${h.perHr.moves.demanded.toLocaleString()} moves` : `of ${h.perHr.target.toFixed(0)} / h`,
+    { label: 'Orders', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}% short`, goal: h.perHr.moves ? `${h.perHr.moves.delivered.toLocaleString()} / ${h.perHr.moves.demanded.toLocaleString()}` : `of ${h.perHr.target.toFixed(0)} / h`,
       pass: h.perHr.pass, tone: h.perHr.tone, grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
       body: <p className="sim-kpi-sub">Simulated deliveries against the stations' demand over the run{h.perHr.moves ? ` — ${h.perHr.moves.delivered.toLocaleString()} of ${h.perHr.moves.demanded.toLocaleString()}` : ''}.{done == null ? '' : ` ${done.toFixed(1)} each hour against ${h.perHr.target.toFixed(0)} needed.`}</p> },
     { label: 'Utilization', value: pctOf(u.simulated), goal: `≤ ${pctOf(u.target)}`, pass: u.pass, tone: u.tone,

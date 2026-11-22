@@ -4,8 +4,8 @@
 
 - Owner: the fleet's word is one of **Right-sized**, **Undersized** or **Oversized** — no separate word for
   an amber check (*tight* is gone); its colour and marker say it. Verdict labels read *Meets* for an amber run.
-- The orders line shows the run's totals beside its shortfall: simulated deliveries of the demand
-  (*3,122 of 3,136 moves*); the per-hour rate is in its fold.
+- The orders line reads *1 · Orders 0.4% short* and shows the run's totals beside its shortfall: simulated deliveries of the demand
+  (*3,122 / 3,136*); the per-hour rate is in its fold.
 
 ## 2026-11-22 — Check scales run one way
 

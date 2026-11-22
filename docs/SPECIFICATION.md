@@ -764,7 +764,7 @@ the split of Layout into Highways and Pick and drop points.
   check's colour and marker only), Sizing's Verified (its line says one check has no spare capacity), the right-size search, one fewer
   and Use N. Simulate shows each check's scale (its bands, and a marker where the run landed). **Every scale runs
   the same way (owner, 2026-11-22, option A): green left, red right**, and each line shows the figure its scale
-  measures, so the marker moves with the number — *1 · Orders short 0.4%* (*3,122 of 3,136 moves* beside it: the run's
+  measures, so the marker moves with the number — *1 · Orders 0.4% short* (*3,122 / 3,136* beside it: the run's
   simulated deliveries against the demand; per hour in its fold), *2 · Utilization 92%* (≤ 90%), *3 · Battery drop 0% by morning* (charge lost, in %) (the lowest charge in its fold). When the floor, the chargers'
   queue or nearing the floor set the battery's grade, its line says so in place of *by morning*.
 - **Words (owner, 2026-11-22):** a pick → drop move is a **material flow** everywhere a person reads it —
