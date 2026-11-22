@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-22 — Simulate fits without scrolling
+
+- Owner: Simulate's checks are one line each (mark, figure, goal), opening to their detail and setting;
+  the fleet card is tighter. The stacked tiles and average speed moved to the top of Data. Nothing
+  removed; no figures change.
+
 ## 2026-11-22 — Assumptions and Examples where they are used
 
 - Owner: **Assumptions** leave the page head for the **Simulate** step — one row under the fleet,

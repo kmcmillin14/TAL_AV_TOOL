@@ -320,7 +320,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     setDataFull(true)
     void self.current?.closest<HTMLElement>('.sim-shell')?.requestFullscreen?.().catch(() => {})
   }
-  // The hero summary under the fleet in Sim (owner, 2026-11-17): the checks, then each figure, stacked.
+  // Data's hero summary (owner, 2026-11-17): the checks, then each figure, stacked; Simulate lists the checks.
   const summary = (
     <div className="sim-kpis is-stack" role="group" aria-label="Static calc and simulation">
       <VerdictTile h={headline} why={verdictWhy} />
@@ -336,6 +336,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           <Icon name={dataFull ? 'collapse' : 'expand'} size={13} /> {dataFull ? 'Exit full screen' : 'Full screen'}
         </button>
       </div>
+      {summary}
       <div className="sim-vsub">
         {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
         {!differs && ownConditions && <span className="sim-as-note">Target or shifts set for the simulation only — the price uses Sizing&rsquo;s</span>}
@@ -396,16 +397,20 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         {/* Two cards (owner, 2026-11-22): the checklist with its one Next, then the step's detail. */}
         <div className="sim-guide-card">{guide.list}{guide.next}</div>
         <div className="sim-side-body sim-detail-card">
-          {banner}
+          {view === 'data' && banner}
           <div hidden={view !== 'sim'} className="sim-sim-pane">
             {S && followed ? <VehicleCard S={S} i={follow} unitSystem={unitSystem} onBack={() => setFollow(-1)} /> : <>
               {fleetPane}
+              {/* The three checks, one line each — the detail and their settings one tap down (owner, 2026-11-22:
+                  Simulate fits without scrolling; the full tiles are in Data). */}
+              <RunChecks h={headline} why={verdictWhy} sizingTarget={settings.targetUtilization}
+                onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
+                coverage={{ daysPerWeek, shiftsPerDay: shifts, shiftH, step1 }} onCoverage={setCoverage} />
               {/* The run's assumptions, where the run is set up (owner, 2026-11-22). */}
               <button type="button" className="sim-row-link" onClick={openAll}>
                 <span>Assumptions</span>
                 <span className={changed ? 'is-changed' : undefined}>{changed ? `${changed} changed` : 'Defaults'}</span>
               </button>
-              {summary}
             </>}
           </div>
           <div hidden={view !== 'data'} className="sim-data-pane">
@@ -529,12 +534,7 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
           <p className="sim-kebab-h">Shift coverage</p>
           <CoverageRow label="Days a week" value={coverage.daysPerWeek} options={[5, 6, 7]} base={coverage.step1.daysPerWeek} onPick={v => onCoverage('daysPerWeek', v)} />
           <CoverageRow label="Shifts a day" value={coverage.shiftsPerDay} options={[1, 2, 3]} base={coverage.step1.shiftsPerDay} onPick={v => onCoverage('shiftsPerDay', v)} />
-          <label className="sim-kebab-row"><span>Shift length</span>
-            {/* Committed on blur or Enter — each change reruns the week. */}
-            <span className="sim-input-unit"><input key={coverage.shiftH} type="number" min={1} max={24} step={0.5} defaultValue={coverage.shiftH}
-              onBlur={e => { const v = Number(e.target.value); if (v >= 0.5 && v <= 24 && v !== coverage.shiftH) onCoverage('shiftH', v) }}
-              onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }} /><span>h</span></span>
-          </label>
+          <ShiftLength value={coverage.shiftH} onCoverage={onCoverage} />
           <p className="sim-kebab-note">Simulation only — Step 1: {coverage.step1.daysPerWeek} days × {coverage.step1.shiftsPerDay} × {coverage.step1.shiftH} h. Off-shift and days off, vehicles charge.</p>
         </KebabMenu>
         <span className="sim-kpi-val num">{pctN(b.lowest.run)}</span>
@@ -548,6 +548,77 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
       </div>
       <Kpi value={speed} label="Average speed" sub="across the fleet, while moving" tone="" />
     </>
+  )
+}
+
+/** Simulate's checks (owner, 2026-11-22): one line each — the mark, the figure, its goal — opening (one at a
+ *  time) to the detail and the check's own setting: the target for utilization, shift coverage for battery. */
+function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
+  h: Headline; why: string | null; sizingTarget: number; onTarget: (u: number) => void
+  coverage: Coverage; onCoverage: (k: 'shiftH' | 'shiftsPerDay' | 'daysPerWeek', v: number) => void
+}) {
+  const u = h.utilization, b = h.battery, done = h.perHr.simulated
+  const pctN = (x: number | null) => (x == null ? '—' : `${Math.round(x)}%`)
+  const targets = [...new Set([60, 65, 70, 75, 80, 85, 90, 95, Math.round(u.target * 100), Math.round(sizingTarget * 100)])].sort((x, y) => x - y)
+  const over = u.simulated != null && u.simulated > 1
+  const rows: { label: string; value: string; goal: string; pass: boolean | null; tone: Tone; body: ReactNode }[] = [
+    { label: 'Orders per hour', value: done == null ? '—' : done.toFixed(1), goal: `of ${h.perHr.target.toFixed(0)}`, pass: h.perHr.pass, tone: h.perHr.tone,
+      body: <p className="sim-kpi-sub">Moves delivered each hour against the demand the stations call for.</p> },
+    { label: 'Utilization', value: pctOf(u.simulated), goal: `≤ ${pctOf(u.target)}`, pass: u.pass, tone: u.tone,
+      body: <>
+        <p className="sim-kpi-sub">{over ? `Over capacity by ${Math.round((u.simulated! - 1) * 100)}% — the work needs more than the fleet has.`
+          : u.pass === false ? `Over target by ${Math.round((u.simulated! - u.target) * 100)} pts.` : 'Busy share of the shift, not counting charging.'} Static calc {pctOf(u.static)}.</p>
+        {u.fewerAt != null && <p className="sim-kpi-sub sim-kpi-hint">Low — {h.fleet.tested - 1} would run at about {pctOf(u.fewerAt)}</p>}
+        <p className="sim-kebab-h">Target utilization</p>
+        <div className="sim-kebab-opts" role="radiogroup" aria-label="Target utilization">
+          {targets.map(p => (
+            <button key={p} type="button" role="radio" aria-checked={Math.round(u.target * 100) === p} className={Math.round(u.target * 100) === p ? 'on' : ''} onClick={() => onTarget(p / 100)}>
+              {p}%{p === Math.round(sizingTarget * 100) ? ' · Sizing' : ''}
+            </button>
+          ))}
+        </div>
+        <p className="sim-kebab-note">Simulation only — Sizing keeps {Math.round(sizingTarget * 100)}%.</p>
+      </> },
+    { label: 'Battery · lowest', value: pctN(b.lowest.run), goal: b.pass == null ? 'over a week' : b.pass ? 'keeps up' : 'falls behind', pass: b.pass, tone: b.tone,
+      body: <>
+        <ul className="sim-kpi-list">
+          <li><span>Shift</span><b className="num">{pctN(b.lowest.shift)}</b></li>
+          <li><span>Day</span><b className="num">{pctN(b.lowest.day)}</b></li>
+          <li><span>Week</span><b className="num">{pctN(b.lowest.run)}</b></li>
+          {b.pass === false && <li className="bad">{b.why ?? 'Does not keep up'}</li>}
+        </ul>
+        <p className="sim-kebab-h">Shift coverage</p>
+        <CoverageRow label="Days a week" value={coverage.daysPerWeek} options={[5, 6, 7]} base={coverage.step1.daysPerWeek} onPick={v => onCoverage('daysPerWeek', v)} />
+        <CoverageRow label="Shifts a day" value={coverage.shiftsPerDay} options={[1, 2, 3]} base={coverage.step1.shiftsPerDay} onPick={v => onCoverage('shiftsPerDay', v)} />
+        <ShiftLength value={coverage.shiftH} onCoverage={onCoverage} />
+        <p className="sim-kebab-note">Simulation only — Step 1: {coverage.step1.daysPerWeek} days × {coverage.step1.shiftsPerDay} × {coverage.step1.shiftH} h.</p>
+      </> },
+  ]
+  return (
+    <div className="sim-runchecks" role="group" aria-label="The three checks">
+      {why && <p className="sim-why">{why}</p>}
+      {rows.map((r, i) => (
+        <details key={r.label} name="sim-run-check" className={`sim-crow${r.tone ? ` is-${r.tone}` : ''}`}>
+          <summary>
+            <i aria-hidden>{r.pass == null ? '–' : r.pass ? '✓' : '✗'}</i>
+            <span className="lbl">{i + 1} · {r.label}</span>
+            <b className="num">{r.value}</b><small>{r.goal}</small>
+          </summary>
+          <div className="sim-crow-body">{r.body}</div>
+        </details>
+      ))}
+    </div>
+  )
+}
+
+/** Shift length, h — committed on blur or Enter (each change reruns the week). */
+function ShiftLength({ value, onCoverage }: { value: number; onCoverage: (k: 'shiftH', v: number) => void }) {
+  return (
+    <label className="sim-kebab-row"><span>Shift length</span>
+      <span className="sim-input-unit"><input key={value} type="number" min={1} max={24} step={0.5} defaultValue={value}
+        onBlur={e => { const v = Number(e.target.value); if (v >= 0.5 && v <= 24 && v !== value) onCoverage('shiftH', v) }}
+        onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }} /><span>h</span></span>
+    </label>
   )
 }
 
