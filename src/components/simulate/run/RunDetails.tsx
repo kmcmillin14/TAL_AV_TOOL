@@ -10,6 +10,7 @@ import { Bar, CartesianGrid, ComposedChart, Line, ReferenceLine, Tooltip, XAxis,
 import { AXIS_STROKE, ChartCaption, ChartFrame, ChartTooltip, GRID_STROKE, pct, TICK } from '@/src/components/charts/ChartKit'
 import DataTable, { type Cell, type Col } from './DataTable'
 import type { SimState } from '@/src/calc/sim/engine'
+import { gradeOrders } from '@/src/calc/sim/grades'
 import { withHighways } from '@/src/calc/sim/highways'
 import type { RunInputs } from '@/src/calc/sim/runInputs'
 import type { SimLayout, SimResults, SimSettings, TimeSplit } from '@/src/calc/sim/types'
@@ -88,7 +89,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
             const head: Cell[] = [`${name(f.fromPointId)} → ${name(f.toPointId)}`, Math.round(target), len(f.distanceFt)]
             if (why) return [...head, { v: `Left out of the run — ${why.toLowerCase()}`, cls: 'dim l' }, null, null, null, null, null]
             return [...head, len(sim?.measuredFt), secs(e.cycleSeconds), e.rawVehicles == null ? null : e.rawVehicles.toFixed(2),
-              { v: sim ? sim.perHr.toFixed(1) : null, cls: sim && sim.perHr < target * 0.98 ? 'bad' : '' }, secs(sim?.mission), secs(sim?.wait)]
+              { v: sim ? sim.perHr.toFixed(1) : null, cls: sim && target > 0 && gradeOrders(Math.max(0, (1 - sim.perHr / target) * 100)) === 'bad' ? 'bad' : '' }, secs(sim?.mission), secs(sim?.wait)]
           })} />
           {time && <TimeSplitBar time={time} />}
           {R && (
@@ -203,7 +204,7 @@ function HourChart({ S, target, hours }: { S: SimState; target: number; hours: n
     moves: S.hourly[i] ?? 0,
     waiting: Math.max(0, ...ser.filter(([t]) => t > i * 3600 && t <= (i + 1) * 3600).map(([, n]) => n)),
   }))
-  const short = data.filter(d => d.moves < target * 0.98).length
+  const short = data.filter(d => target > 0 && gradeOrders(Math.max(0, (1 - d.moves / target) * 100)) === 'bad').length
   return (
     <>
       <ChartFrame height={220}>

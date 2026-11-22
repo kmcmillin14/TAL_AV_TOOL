@@ -12,7 +12,7 @@ import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { chargerStats, results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runHeadline, type Headline, type Outcome, type Tone } from '@/src/calc/sim/headline'
 import { checkScale, fleetNeeds, mayPassUtilization, verdictPasses as passes, type Grade } from '@/src/calc/sim/grades'
-import { nextRightSize, type Tried } from '@/src/calc/sim/rightSize'
+import { nextRightSize, type OneFewer, type Tried } from '@/src/calc/sim/rightSize'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
 import { RUN_DEFAULTS, step1DaysPerWeek } from '@/src/lib/simFields'
 import KebabMenu from '../ui/KebabMenu'
@@ -238,10 +238,10 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [R])
   /** Does one fewer pass, per type, as pricing and the verdict read it: yes when the smallest passing count
-   *  is under the fleet ('checking' while the search runs). */
+   *  is under the fleet ('checking' while the search runs; 'unknown' when it stopped at its run limit). */
   const lower = useMemo(() => Object.fromEntries(Object.entries(sizes).map(([vid, z]) => {
     const n = fleetBy[vid] ?? 0
-    const v: Verdict | 'checking' = z.at !== 'stopped' && 'next' in z.at ? 'checking' : z.at !== 'stopped' && z.at.done != null && z.at.done < n ? 'meets' : 'short'
+    const v: OneFewer = z.at === 'stopped' ? 'unknown' : 'next' in z.at ? 'checking' : z.at.done != null && z.at.done < n ? 'meets' : 'short'
     return [vid, v]
   })), [sizes, fleetBy])
 
@@ -582,7 +582,7 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
         <span className="sim-kpi-val num">{pctN(b.lowest.run)}</span>
         <span className="sim-kpi-lbl">3 · Battery · lowest</span>
         <LowestList b={b}>
-          <li className={b.pass === false ? 'bad' : b.pass ? 'good' : ''}>{b.pass == null ? (h.outcome ? 'Judged over a week' : '') : b.pass ? `✓ Keeps up${mornings}` : `✗ ${b.why ?? 'Does not keep up'}`}</li>
+          <li className={b.grade === 'bad' ? 'bad' : b.grade === 'tight' ? 'warn' : b.grade ? 'good' : ''}>{b.grade == null ? (h.outcome ? 'Judged over a week' : '') : b.grade === 'bad' ? `✗ ${b.why ?? 'Does not keep up'}` : b.grade === 'tight' ? `! ${b.why ?? 'Keeps up, with no spare'}` : `✓ Keeps up${mornings}`}</li>
         </LowestList>
       </div>
       <Kpi value={speed} label="Average speed" sub="across the fleet, while moving" tone="" />
@@ -612,7 +612,7 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
         <TargetPicker target={u.target} sizingTarget={sizingTarget} onTarget={onTarget} />
       </> },
     { label: 'Battery drop', value: b.sagPts == null ? '—' : `${Math.round(b.sagPts)}%`, goal: b.grade == null ? 'over a week' : b.cause && b.cause !== 'sag' ? BATTERY_CAUSE[b.cause] : 'by morning',
-      tone: b.tone, grade: b.grade, at: b.sagPts, scale: checkScale('battery'),
+      tone: b.tone, grade: b.grade, at: b.cause && b.cause !== 'sag' ? null : b.sagPts, scale: checkScale('battery'),
       body: <>
         <p className="sim-kpi-sub">How far the fleet's charge fell from this week's first morning to the next{b.sagPts == null ? ' — judged once the run covers a week with off-shift time' : ''}. Lowest charge:</p>
         <LowestList b={b}>{b.why && <li className={b.grade === 'bad' ? 'bad' : 'warn'}>{b.why}</li>}</LowestList>

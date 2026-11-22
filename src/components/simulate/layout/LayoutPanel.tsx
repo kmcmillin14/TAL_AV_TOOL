@@ -178,7 +178,7 @@ export default function LayoutPanel(p: Props) {
             ? <Tiles>
                 <Tile label="docks/day" value={st.docksPerDay} />
                 <Tile label="charging/day" value={st.chargingHPerDay} unit="h" />
-                <Tile label="wait/day" value={st.waitMinPerDay} unit="min" />
+                <Tile label="queued/day" value={st.waitMinPerDay} unit="min" />
               </Tiles>
             : <Tiles>
                 <Tile label="placed" value={p.layout.points.filter(q => q.type === 'charger').length} />

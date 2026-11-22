@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-11-22 — Code-review fixes (9443eda..HEAD)
+
+- With several vehicle types, the battery line names the reason of the type that set its grade (was the
+  first amber one, even when another was red).
+- Sizing's Verified line names the count actually run when it was fewer, and says when one check had no
+  spare capacity.
+- A right-size search that stops at its run limit no longer reads as "one fewer fails": pricing shows
+  *N − 1 not checked* rather than offering Use N.
+- The charger card's third tile reads *queued/day* (vehicles queued for it on the way in); waiting parked
+  for any free charger stays in the battery check.
+- The orders total counts moves delivered or under way, as its shortfall does; Run details' flow and hourly
+  "short" marks use the orders bands (red over 3 pts short), not the old 98% line.
+- The battery marker shows only when the morning drop set the grade; Data's battery tile names an amber
+  reason; low utilization (spare) is no longer amber; a rack's card keeps its rack while it is dragged.
+
 ## 2026-11-22 — Cleanup pass (/simplify on 9443eda..HEAD)
 
 - One source per rule: `gradeBattery` returns its cause (the results only put it in words, so the cause

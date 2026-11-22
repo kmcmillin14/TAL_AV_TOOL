@@ -770,8 +770,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const measure = drag?.kind === 'rackDraw' && draftRack ? { at: drag.at, text: rackLabel(draftRack, loads) }
     : drag?.kind === 'rackEnd' ? (() => { const q = shownLayout.points.find(x => x.id === drag.id); return q ? { at: drag.at, text: rackLabel(q, loads) } : null })() : null
   // The rack bar: above a selected rack — its pallet, face, sizes, total and what is wrong.
-  const selRack = !drag && selection?.kind === 'point' ? layout.points.find(q => q.id === selection.id && q.rack) : undefined
-  const selRackGeo = selRack ? rackGeometry(selRack, loads) : null
+  // The selected rack: its card keeps it while dragging; the bar above it steps aside.
+  const cardRack = selection?.kind === 'point' ? layout.points.find(q => q.id === selection.id && q.rack) : undefined
+  const selRack = drag ? undefined : cardRack
+  const cardRackGeo = cardRack ? rackGeometry(cardRack, loads) : null
+  const selRackGeo = selRack ? cardRackGeo : null
   // The last run's day at each charger — only while the layout and flows still match that run (its key),
   // and worked out only while a charger is selected.
   const lastRun = project.simSettings?.lastRun
@@ -781,8 +784,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     [chargerSelected, lastRun, project, vehicleById],
   )
   // The lowest reach among the vehicles that work it (its flows), else the simulation's vehicles.
-  const selRackReach = selRack ? (() => {
-    const users = simFlows.filter(f => f.fromPointId === selRack.id || f.toPointId === selRack.id).map(f => f.vehicleId && simVehicleById.get(f.vehicleId))
+  const selRackReach = cardRack ? (() => {
+    const users = simFlows.filter(f => f.fromPointId === cardRack.id || f.toPointId === cardRack.id).map(f => f.vehicleId && simVehicleById.get(f.vehicleId))
     const pool = (users.length ? users : vehicleTypes).filter((v): v is Vehicle => !!v && v.calc.maxLiftHeightFt != null)
     const low = pool.reduce<Vehicle | null>((m, v) => (!m || v.calc.maxLiftHeightFt! < m.calc.maxLiftHeightFt! ? v : m), null)
     return low ? { name: low.name, ft: low.calc.maxLiftHeightFt! } : null
@@ -1009,7 +1012,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   onBack={() => setSelection(null)}
                   backLabel={stage === 'routes' ? 'Routes' : stage === 'chargers' ? 'Chargers' : 'Pick and drop points'}
                   onSelectFlow={id => setSelection({ kind: 'flow', id })}
-                  rack={selRack && selRackGeo ? { id: selRack.id, g: selRackGeo, reach: selRackReach } : null}
+                  rack={cardRack && cardRackGeo ? { id: cardRack.id, g: cardRackGeo, reach: selRackReach } : null}
                   onAddPoint={() => { onStage('points'); armType('stand') }}
                   chargers={{ suggested: suggestedChargers, stats: chargerRun }}
                 />

@@ -6,6 +6,10 @@
 import { verdictPasses as passes } from './grades'
 import type { Verdict } from './types'
 
+/** One fewer's verdict, as pricing and the headline read it: run, being found, or not known (the search
+ *  stopped at its run limit). */
+export type OneFewer = Verdict | 'checking' | 'unknown'
+
 /** Counts tried so far and what each one did. */
 export type Tried = Record<number, Verdict>
 

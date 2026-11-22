@@ -7,6 +7,7 @@
 import { engineFleetSold } from '@/src/calc/fleet'
 import type { FleetSummary } from '@/src/calc/types'
 import { fleetNeeds, gradePasses, gradeUtilization, utilizationAt, verdictPasses, worstGrade, type CheckId, type Grade } from './grades'
+import type { OneFewer } from './rightSize'
 import type { BatteryCause, SimResults, Verdict } from './types'
 
 export type { CheckId }
@@ -62,7 +63,7 @@ const toneOf = (g: Grade | null): Tone => (g == null ? '' : g === 'bad' ? 'bad' 
 export function runHeadline(
   fleet: FleetSummary, placed: Record<string, number>, res: SimResults | null,
   flows: { vehicleId: string; thruPerHr: number }[], demandPct: number,
-  opts: { unrunnable?: boolean; targetUtilization?: number; oneFewer?: Record<string, Verdict | 'checking'> } = {},
+  opts: { unrunnable?: boolean; targetUtilization?: number; oneFewer?: Record<string, OneFewer> } = {},
 ): Headline {
   const target = opts.targetUtilization ?? fleet.targetUtilization
   const groups = fleet.groups.filter(g => g.vehicleId in placed)
@@ -89,7 +90,8 @@ export function runHeadline(
   const ordersPass = ordersGrade && gradePasses(ordersGrade), utilPass = utilGrade && gradePasses(utilGrade), batteryPass = batteryGrade && gradePasses(batteryGrade)
   const fewer = utilPass && tested > 1 && util != null ? utilizationAt(util, tested, tested - 1) : null
   const fewerAt = fewer != null && fewer <= target ? fewer : null
-  const battFrom = types.find(t => t.grades.battery && t.grades.battery !== 'good')?.battery
+  // The reason comes from the type with the headline's (worst) battery grade.
+  const battFrom = batteryGrade && batteryGrade !== 'good' ? types.find(t => t.grades.battery === batteryGrade)?.battery : undefined
   const battWhy = battFrom?.why ?? null
   const shortPct = ran ? Math.max(...types.map(t => Math.max(0, (1 - t.delivered) * 100))) : null
   const sags = types.flatMap(t => (t.battery.sagPts != null ? [t.battery.sagPts] : []))
@@ -114,11 +116,12 @@ export function runHeadline(
   return {
     fleet: { static: sum(groups.map(engineFleetSold)), tested },
     perHr: { simulated: perHr, target: demand, pass: ordersPass, tone: toneOf(ordersGrade), grade: ordersGrade, shortPct,
-      moves: ran ? { delivered: sum(types.map(t => t.done)), demanded: sum(types.map(t => t.generated)) } : null },
+      // Delivered or under way at the end — the same count the shortfall is graded on.
+      moves: ran ? { delivered: sum(types.map(t => Math.round(t.delivered * t.generated))), demanded: sum(types.map(t => t.generated)) } : null },
     utilization: {
       static: cap > 0 ? sum(groups.map(g => g.groupRaw)) / cap : null, simulated: util, target, pass: utilPass,
       // The same work on one vehicle fewer: busy time spread over N − 1 (an estimate; the one-fewer run decides).
-      fewerAt, tone: fewerAt != null ? 'warn' : toneOf(utilGrade), grade: utilGrade,
+      fewerAt, tone: toneOf(utilGrade), grade: utilGrade,
     },
     battery: {
       socMin, chargeTrips: res ? sum(types.map(t => t.chargeTrips)) : null, runHr: runHrs.length ? Math.min(...runHrs) : null,

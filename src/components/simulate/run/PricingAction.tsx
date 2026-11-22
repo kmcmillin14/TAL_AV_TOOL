@@ -7,6 +7,7 @@
 import { useMemo, useState } from 'react'
 import { verdictPasses } from '@/src/calc/sim/grades'
 import { appliedFleetStatus, withApplied, withoutApplied } from '@/src/calc/sim/runInputs'
+import type { OneFewer } from '@/src/calc/sim/rightSize'
 import type { Verdict } from '@/src/calc/sim/types'
 import { computeFleetModel } from '@/src/lib/fleetModel'
 import type { StoredProject } from '@/src/lib/storage'
@@ -25,7 +26,7 @@ interface Props {
   /** This run's verdict for the type (null while running or not run). */
   verdict: Verdict | null
   /** The same run with one vehicle fewer: its verdict, or 'checking'. Undefined when not needed. */
-  lower: Verdict | 'checking' | undefined
+  lower: OneFewer | undefined
   /** The current inputs key (`simInputsKey`). */
   inputsKey: string
   onApplied: (next: Applied) => void
@@ -68,6 +69,8 @@ export default function PricingAction({ project, vehicles, vehicleId, n, engineN
   }
   if (!verdictPasses(verdict) || n <= engineN) return null
   if (lower === 'checking' || lower === undefined) return <span className="sim-vact sim-busy">Checking {n - 1}…</span>
+  // The search stopped before it knew whether one fewer passes: not confirmed as the smallest, so no Use N.
+  if (lower === 'unknown') return <span className="sim-vact sim-busy">{n - 1} not checked — try it with the stepper</span>
   if (verdictPasses(lower)) {
     return <span className="sim-vact"><button type="button" className="btn btn-sm ghost" onClick={onStepDown}>{n - 1} also meets</button></span>
   }

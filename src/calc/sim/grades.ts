@@ -23,7 +23,7 @@ export const worstGrade = (gs: Grade[]): Grade => gs.reduce((w, g) => (RANK[g] >
 /** A grade that passes: everything but red. */
 export const gradePasses = (g: Grade | null | undefined) => g != null && g !== 'bad'
 /** A verdict that passes all three checks — "Meets", or `tight` (an amber check; it reads "Right-sized", the amber in that check's colour). */
-export const verdictPasses = (v: Verdict | 'checking' | null | undefined): boolean => v === 'meets' || v === 'tight'
+export const verdictPasses = (v: Verdict | 'checking' | 'unknown' | null | undefined): boolean => v === 'meets' || v === 'tight'
 
 /** Orders: `shortPct` = moves short of the demand, % points (0 = all delivered); a growing backlog fails. */
 export function gradeOrders(shortPct: number, backlogGrowing = false): Grade {

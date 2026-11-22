@@ -142,7 +142,8 @@ function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { grade: 
 }
 
 /** Each charger's day in the run (owner, 2026-11-22 — the charger card): dockings, hours charging and minutes
- *  vehicles waited for it, per simulated day. Chargers no vehicle used read zero. */
+ *  vehicles queued for it on the way in, per simulated day (a vehicle parked waiting for any free charger is
+ *  in the battery check's charger wait, not here). Chargers no vehicle used read zero. */
 export interface ChargerStat { docksPerDay: number; chargingHPerDay: number; waitMinPerDay: number }
 export function chargerStats(S: SimState): Record<string, ChargerStat> {
   const days = Math.max(1, S.t / 86400)

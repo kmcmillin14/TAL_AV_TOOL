@@ -78,10 +78,20 @@ describe('Run headline: the static calc beside the simulation, and the three che
     expect(runHeadline(fleet, { a: 0, b: 2 }, run([type('a', { fleet: 0, socMin: 0 }), type('b', { fleet: 2, socMin: 55 })]), [], 100).battery.socMin).toBe(55)
   })
 
+  it('battery: the reason is the worst type\'s, not the first amber one', () => {
+    const bat = (grade: 'tight' | 'bad', why: string, cause: 'near' | 'floor') => ({
+      grades: { orders: 'good' as const, utilization: 'good' as const, battery: grade },
+      battery: { dayStarts: [], chargeWaitSec: 0, floorPct: 20, why, lowest: { shift: 40, day: 30, run: 20 }, sagPts: null, cause },
+    })
+    const h = runHeadline(fleet, { a: 3, b: 2 }, run([type('a', bat('tight', 'came within 5 pts', 'near')), type('b', bat('bad', 'reached the floor', 'floor'))]), [...flowsA, { vehicleId: 'b', thruPerHr: 10 }], 100)
+    expect(h.battery).toMatchObject({ grade: 'bad', why: 'reached the floor', cause: 'floor' })
+  })
+
   it('utilization low enough for one fewer: a hint with what N − 1 would run at', () => {
     const low = runHeadline(fleet, { a: 4 }, run([type('a', { fleet: 4, utilization: 0.5 })]), flowsA, 100)
     expect(low.utilization.fewerAt).toBeCloseTo(0.5 * 4 / 3)
-    expect(low.utilization.tone).toBe('warn')
+    // Spare capacity is the blue band, not amber (amber means no spare): the tile tone follows the grade.
+    expect(low.utilization).toMatchObject({ grade: 'spare', tone: 'good' })
     expect(runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.8 })]), flowsA, 100).utilization.fewerAt).toBeNull()
   })
 })
