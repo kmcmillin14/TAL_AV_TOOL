@@ -761,8 +761,11 @@ the split of Layout into Highways and Pick and drop points.
   | 3 · Battery | morning sag ≤ 2 pts, charger wait ≤ 1% | sag ≤ 5, wait ≤ 2%, or within 5 pts of the floor | sag > 5, wait > 2%, or the floor reached |
   Verdict: any red *Falls short*; any amber *Tight*; else *Meets*. A tight run passes everywhere a pass counts —
   the verdict (*Right-sized · tight*), Sizing's Verified (its line says tight), the right-size search, one fewer
-  and Use N. Simulate shows each check's scale (its bands, and a marker where the run landed); the battery
-  marker is the sag, or its band's middle when the floor or the chargers' queue set the grade.
+  and Use N. Simulate shows each check's scale (its bands, and a marker where the run landed). **Every scale runs
+  the same way (owner, 2026-11-22, option A): green left, red right**, and each line shows the figure its scale
+  measures, so the marker moves with the number — *1 · Orders short 0.4%* (55.8 / h beside it), *2 · Utilization
+  92%* (≤ 90%), *3 · Battery drop 0 pts by morning* (the lowest charge in its fold). When the floor, the chargers'
+  queue or nearing the floor set the battery's grade, its line says so in place of *by morning*.
 - **Words (owner, 2026-11-22):** a pick → drop move is a **material flow** everywhere a person reads it —
   Sizing, Simulation, help, the deck and the workbook (code keeps `flow`).
 - **Progress (owner, 2026-11-22):** each step's mark is green when done, amber when started, grey when not;

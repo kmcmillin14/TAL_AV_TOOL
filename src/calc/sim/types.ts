@@ -194,6 +194,10 @@ export interface FlowResult {
   wait: number | null
 }
 
+/** What set the battery check's grade: a vehicle reached the floor, the week's morning sag, waiting for a free
+ *  charger, or a vehicle nearing the floor. */
+export type BatteryCause = 'floor' | 'sag' | 'wait' | 'near'
+
 export interface TypeResult {
   vehicleId: string
   fleet: number
@@ -222,7 +226,9 @@ export interface TypeResult {
    *  waiting for a free charger; the cutsheet floor a vehicle must not reach, %; why the check failed. */
   battery: { dayStarts: number[]; chargeWaitSec: number; floorPct: number | null; why: string | null; lowest: { shift: number | null; day: number | null; run: number | null }
     /** Next week's first morning below this week's, % points (null without off-shift time or a full week). */
-    sagPts: number | null }
+    sagPts: number | null
+    /** What set a battery grade worse than green (null when green or not judged). */
+    cause: BatteryCause | null }
   backlogTrend: number
   verdict: Verdict
 }

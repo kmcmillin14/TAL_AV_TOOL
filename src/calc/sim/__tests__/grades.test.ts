@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { batteryMarker, checkScale, gradeBattery, gradeOrders, gradeUtilization, verdictPasses, worstGrade } from '../grades'
+import { checkScale, gradeBattery, gradeOrders, gradeUtilization, verdictPasses, worstGrade } from '../grades'
 
 describe('sizing checks graded (owner, 2026-11-22)', () => {
   it('orders: green to 0.5 pts short, amber to 3, red beyond or with a growing backlog', () => {
@@ -29,10 +29,5 @@ describe('sizing checks graded (owner, 2026-11-22)', () => {
     expect(s.bands.map(b => b.grade)).toEqual(['spare', 'good', 'tight', 'bad'])
     expect(s.bands[0].from).toBe(0); expect(s.bands.at(-1)!.to).toBeCloseTo(1)
     expect(s.pos(0.9)).toBeCloseTo(0.9 / 1.1); expect(s.pos(5)).toBe(1)
-  })
-  it('the battery marker: the sag when it set the grade, else the middle of the band of its grade', () => {
-    expect(batteryMarker('tight', 3)).toBe(3)
-    expect(batteryMarker('bad', 1)).toBe(7.5)
-    expect(batteryMarker('tight', null)).toBe(3.5)
   })
 })

@@ -11,13 +11,13 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runHeadline, type Headline, type Outcome, type Tone } from '@/src/calc/sim/headline'
-import { BANDS, batteryMarker, checkScale, verdictPasses as passes, type Grade } from '@/src/calc/sim/grades'
+import { BANDS, checkScale, verdictPasses as passes, type Grade } from '@/src/calc/sim/grades'
 import { nextRightSize, type Tried } from '@/src/calc/sim/rightSize'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
 import { RUN_DEFAULTS, step1DaysPerWeek } from '@/src/lib/simFields'
 import KebabMenu from '../ui/KebabMenu'
 import { engineFleetTotal } from '@/src/calc/fleet'
-import type { SimResults, SimSettings, Verdict } from '@/src/calc/sim/types'
+import type { BatteryCause, SimResults, SimSettings, Verdict } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import { getProject, patchSimSettings, type StoredProject } from '@/src/lib/storage'
 import { units, type UnitSystem } from '@/src/lib/utils/units'
@@ -518,6 +518,8 @@ function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: 
 
 /** A check's band in words (its scale's colour). */
 const GRADE_WORD: Record<Grade, string> = { spare: 'Spare capacity — the fleet may be oversized', good: 'Comfortable', tight: 'Tight — passes, near its limit', bad: 'Fails' }
+/** The battery line's goal when something other than the morning drop set its grade. */
+const BATTERY_CAUSE: Record<BatteryCause, string> = { floor: 'floor reached', wait: 'charger waits', near: 'near the floor', sag: 'by morning' }
 const OUTCOME_WORD: Record<Outcome, string> = { right: 'Right-sized', over: 'Oversized', under: 'Undersized', gridlock: 'Gridlock', notRun: 'Not run' }
 /** The verdict in one word — Sim's fleet tile (Data says why, not the word again). */
 const verdictWord = (h: Headline) => (h.outcome ? `${OUTCOME_WORD[h.outcome]}${h.outcome === 'right' && h.tight.length ? ' · tight' : ''}` : 'Simulating…')
@@ -614,9 +616,10 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
   const targets = [...new Set([60, 65, 70, 75, 80, 85, 90, 95, Math.round(u.target * 100), Math.round(sizingTarget * 100)])].sort((x, y) => x - y)
   const over = u.simulated != null && u.simulated > 1
   const rows: { label: string; value: string; goal: string; pass: boolean | null; tone: Tone; grade: Grade | null; at: number | null; scale: ReturnType<typeof checkScale>; body: ReactNode }[] = [
-    { label: 'Orders per hour', value: done == null ? '—' : done.toFixed(1), goal: `of ${h.perHr.target.toFixed(0)}`, pass: h.perHr.pass, tone: h.perHr.tone,
-      grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
-      body: <p className="sim-kpi-sub">Moves delivered each hour against the demand the stations call for.</p> },
+    // Each line's figure is what its scale measures (owner, 2026-11-22: green left, red right on all three).
+    { label: 'Orders short', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}%`, goal: done == null ? `of ${h.perHr.target.toFixed(0)} / h` : `${done.toFixed(1)} / h`,
+      pass: h.perHr.pass, tone: h.perHr.tone, grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
+      body: <p className="sim-kpi-sub">Moves the stations called for and did not get. {done == null ? '' : `${done.toFixed(1)} delivered each hour against ${h.perHr.target.toFixed(0)} needed.`}</p> },
     { label: 'Utilization', value: pctOf(u.simulated), goal: `≤ ${pctOf(u.target)}`, pass: u.pass, tone: u.tone,
       grade: u.grade, at: u.simulated, scale: checkScale('utilization', u.target),
       body: <>
@@ -633,9 +636,10 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
         </div>
         <p className="sim-kebab-note">Simulation only — Sizing keeps {Math.round(sizingTarget * 100)}%.</p>
       </> },
-    { label: 'Battery · lowest', value: pctN(b.lowest.run), goal: b.grade == null ? 'over a week' : b.grade === 'bad' ? 'falls behind' : b.grade === 'tight' ? 'tight' : 'keeps up', pass: b.pass, tone: b.tone,
-      grade: b.grade, at: b.grade && batteryMarker(b.grade, b.sagPts), scale: checkScale('battery'),
+    { label: 'Battery drop', value: b.sagPts == null ? '—' : `${Math.round(b.sagPts)} pts`, goal: b.grade == null ? 'over a week' : b.cause && b.cause !== 'sag' ? BATTERY_CAUSE[b.cause] : 'by morning',
+      pass: b.pass, tone: b.tone, grade: b.grade, at: b.sagPts, scale: checkScale('battery'),
       body: <>
+        <p className="sim-kpi-sub">How far the fleet's charge fell from this week's first morning to the next{b.sagPts == null ? ' — judged once the run covers a week with off-shift time' : ''}. Lowest charge:</p>
         <ul className="sim-kpi-list">
           <li><span>Shift</span><b className="num">{pctN(b.lowest.shift)}</b></li>
           <li><span>Day</span><b className="num">{pctN(b.lowest.day)}</b></li>

@@ -40,13 +40,6 @@ export function gradeUtilization(u: number, target: number): Grade {
 
 const sagGrade = (pts: number): Grade => (pts > BANDS.battery.sagTight ? 'bad' : pts > BANDS.battery.sagGood ? 'tight' : 'good')
 
-/** Where the battery's marker sits on its scale (the morning sag, 0–10 pts): the sag itself when it set the
- *  grade, else the middle of the grade's band (the floor or the chargers' queue set it). */
-export function batteryMarker(grade: Grade, sagPts: number | null): number {
-  if (sagPts != null && sagGrade(sagPts) === grade) return sagPts
-  return grade === 'bad' ? 7.5 : grade === 'tight' ? (BANDS.battery.sagGood + BANDS.battery.sagTight) / 2 : BANDS.battery.sagGood / 2
-}
-
 /** Battery: the worst of reaching the floor, how close the lowest came to it, the week's morning sag and
  *  the share of staffed time spent waiting for a free charger. */
 export function gradeBattery(f: { lowPct: number; floorPct: number; sagPts: number | null; waitShare: number }): Grade {

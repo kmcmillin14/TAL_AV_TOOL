@@ -7,7 +7,7 @@
 import { engineFleetSold } from '@/src/calc/fleet'
 import type { FleetSummary } from '@/src/calc/types'
 import { gradePasses, gradeUtilization, verdictPasses, worstGrade, type CheckId, type Grade } from './grades'
-import type { SimResults, Verdict } from './types'
+import type { BatteryCause, SimResults, Verdict } from './types'
 
 export type { CheckId }
 
@@ -33,6 +33,8 @@ export interface Headline {
   battery: { socMin: number | null; chargeTrips: number | null; runHr: number | null; dayStarts: number[]; why: string | null; pass: boolean | null; tone: Tone; grade: Grade | null
     /** Next week's first morning below this week's, % points, the worst type (the battery scale's value). */
     sagPts: number | null
+    /** What set a grade worse than green — named on Simulate's battery line when it is not the sag. */
+    cause: BatteryCause | null
     /** Lowest charge in the first shift, the first day and the whole run (%), the lowest of the types. */
     lowest: { shift: number | null; day: number | null; run: number | null } }
   /** Average speed while moving across the fleet, ft/s (feet driven ÷ seconds moving, all types). */
@@ -87,7 +89,8 @@ export function runHeadline(
   const ordersPass = ordersGrade && gradePasses(ordersGrade), utilPass = utilGrade && gradePasses(utilGrade), batteryPass = batteryGrade && gradePasses(batteryGrade)
   const fewer = utilPass && tested > 1 && util != null ? (util * tested) / (tested - 1) : null
   const fewerAt = fewer != null && fewer <= target ? fewer : null
-  const battWhy = types.find(t => t.grades.battery && t.grades.battery !== 'good')?.battery.why ?? null
+  const battFrom = types.find(t => t.grades.battery && t.grades.battery !== 'good')?.battery
+  const battWhy = battFrom?.why ?? null
   const shortPct = ran ? Math.max(...types.map(t => Math.max(0, (1 - t.delivered) * 100))) : null
   const sags = types.flatMap(t => (t.battery.sagPts != null ? [t.battery.sagPts] : []))
 
@@ -123,7 +126,7 @@ export function runHeadline(
     battery: {
       socMin, chargeTrips: res ? sum(types.map(t => t.chargeTrips)) : null, runHr: runHrs.length ? Math.min(...runHrs) : null,
       dayStarts: types[0]?.battery.dayStarts ?? [], why: battWhy, pass: batteryPass, tone: toneOf(batteryGrade), grade: batteryGrade,
-      sagPts: sags.length ? Math.max(...sags) : null,
+      sagPts: sags.length ? Math.max(...sags) : null, cause: battFrom?.cause ?? null,
       lowest: { shift: lowOf(types, 'shift'), day: lowOf(types, 'day'), run: lowOf(types, 'run') },
     },
     speedFps: (() => { const ts = types.filter(t => t.avgSpeedFps != null); const w = sum(ts.map(t => t.fleet)); return w > 0 ? sum(ts.map(t => t.avgSpeedFps! * t.fleet)) / w : null })(),

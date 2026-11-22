@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-22 — Check scales run one way
+
+- Owner (option A): all three scales are green left, red right, and each line's figure is what its scale
+  measures — *Orders short %* (moves per hour beside it), *Utilization %*, *Battery drop* (pts by morning; the
+  lowest charge moves into its fold). The battery line names the cause when the floor or charger waits set it.
+
 ## 2026-11-22 — Checks on a scale; charger rotation fixed
 
 - Owner: the three checks are graded green / amber (*tight*, passes) / red, utilization also blue *spare*

@@ -4,7 +4,7 @@
 import type { SimState } from './engine'
 import { BANDS, gradeBattery, gradeOrders, gradePasses, gradeUtilization, worstGrade, type Grade } from './grades'
 import { staffedSeconds } from './shift'
-import type { SimResults, TimeSplit, TypeResult, VehicleResult, Verdict } from './types'
+import type { BatteryCause, SimResults, TimeSplit, TypeResult, VehicleResult, Verdict } from './types'
 
 export const VERDICT = {
   /** Minimum simulated time before any verdict but "Warming up". */
@@ -128,19 +128,22 @@ function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { grade: 
   // there is no such morning — staying clear of the floor and the chargers' queue is the test.
   const offTime = S.P.staffedHr < 24 || (S.P.daysPerWeek ?? 7) < 7
   const sagPts = offTime && days >= 7 && dayStarts.length >= 8 ? Math.max(0, dayStarts[0] - dayStarts[7]) : null
-  const detail = (why: string | null) => ({ dayStarts, chargeWaitSec, floorPct, why, lowest, sagPts })
+  const detail = (why: string | null, cause: BatteryCause | null = null) => ({ dayStarts, chargeWaitSec, floorPct, why, cause, lowest, sagPts })
   if (!b || !veh.length || days < 2) return { grade: null, detail: detail(null) }
   const low = Math.min(...veh.map(v => v.socMin))
   const staffed = staffedSeconds(S.P, S.t) * veh.length
   const waitShare = staffed > 0 ? chargeWaitSec / staffed : 0
   const grade = gradeBattery({ lowPct: low, floorPct: b.minSocPct, sagPts, waitShare })
-  // Why, for the worst factor: the floor, then the week's sag, then the chargers' queue, then nearing the floor.
-  const why = grade === 'good' ? null
-    : low <= b.minSocPct + 0.5 ? `a vehicle reached the ${b.minSocPct}% floor`
-    : sagPts != null && sagPts > BANDS.battery.sagGood ? `${grade === 'bad' ? 'not recharged' : 'nearly recharged'} by next week (${Math.round(dayStarts[0])}% → ${Math.round(dayStarts[7])}% on the first morning)`
-    : waitShare > BANDS.battery.waitGood ? `vehicles waited ${(chargeWaitSec / 3600).toFixed(1)} h for a free charger`
-    : `a vehicle came within ${BANDS.battery.nearFloor} pts of the ${b.minSocPct}% floor`
-  return { grade, detail: detail(why) }
+  // What set the grade, and why in words: the floor, then the week's sag, then the chargers' queue, then nearing the floor.
+  const cause: BatteryCause | null = grade === 'good' ? null
+    : low <= b.minSocPct + 0.5 ? 'floor'
+    : sagPts != null && sagPts > BANDS.battery.sagGood ? 'sag'
+    : waitShare > BANDS.battery.waitGood ? 'wait' : 'near'
+  const why = cause === 'floor' ? `a vehicle reached the ${b.minSocPct}% floor`
+    : cause === 'sag' ? `${grade === 'bad' ? 'not recharged' : 'nearly recharged'} by next week (${Math.round(dayStarts[0])}% → ${Math.round(dayStarts[7])}% on the first morning)`
+    : cause === 'wait' ? `vehicles waited ${(chargeWaitSec / 3600).toFixed(1)} h for a free charger`
+    : cause === 'near' ? `a vehicle came within ${BANDS.battery.nearFloor} pts of the ${b.minSocPct}% floor` : null
+  return { grade, detail: detail(why, cause) }
 }
 
 /** How a verdict reads on screen — Simulate's verdict rows and Sizing's chips. */

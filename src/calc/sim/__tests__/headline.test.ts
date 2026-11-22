@@ -12,7 +12,7 @@ const type = (vehicleId: string, o: Partial<TypeResult>): TypeResult => {
   const c = o.checks ?? pass, g = (b: boolean) => (b ? 'good' as const : 'bad' as const)
   return {
     vehicleId, fleet: 3, target: 40, perHr: 40, done: 100, delivered: 1, avgWait: 10, utilization: 0.8, socMin: 40, chargeTrips: 2,
-    checks: pass, battery: { dayStarts: [100, 98, 97], chargeWaitSec: 0, floorPct: 20, why: null, lowest: { shift: 60, day: 55, run: 50 }, sagPts: null }, verdict: 'meets',
+    checks: pass, battery: { dayStarts: [100, 98, 97], chargeWaitSec: 0, floorPct: 20, why: null, lowest: { shift: 60, day: 55, run: 50 }, sagPts: null, cause: null }, verdict: 'meets',
     grades: { orders: g(c.orders), utilization: g(c.utilization), battery: c.battery == null ? null : g(c.battery) }, ...o,
   } as TypeResult
 }
@@ -65,9 +65,9 @@ describe('Run headline: the static calc beside the simulation, and the three che
   it('battery: not judged under two days; a failure names why', () => {
     const short = run([type('a', { checks: { ...pass, battery: null } })])
     expect(runHeadline(fleet, { a: 3 }, short, flowsA, 100)).toMatchObject({ outcome: 'right', battery: { pass: null } })
-    const flat = run([type('a', { checks: { ...pass, battery: false }, battery: { dayStarts: [], chargeWaitSec: 0, floorPct: 20, why: 'a vehicle reached the 20% floor', lowest: { shift: 40, day: 30, run: 20 }, sagPts: null } })])
+    const flat = run([type('a', { checks: { ...pass, battery: false }, battery: { dayStarts: [], chargeWaitSec: 0, floorPct: 20, why: 'a vehicle reached the 20% floor', lowest: { shift: 40, day: 30, run: 20 }, sagPts: null, cause: 'floor' } })])
     const h = runHeadline(fleet, { a: 3 }, flat, flowsA, 100)
-    expect(h).toMatchObject({ outcome: 'under', setsFleet: { check: 'battery', n: 4 }, battery: { why: 'a vehicle reached the 20% floor' } })
+    expect(h).toMatchObject({ outcome: 'under', setsFleet: { check: 'battery', n: 4 }, battery: { why: 'a vehicle reached the 20% floor', cause: 'floor' } })
   })
 
   it('nothing run reads as not run; a type placing no vehicle is left out', () => {
