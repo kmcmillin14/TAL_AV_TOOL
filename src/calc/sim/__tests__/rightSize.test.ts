@@ -16,9 +16,12 @@ function search(n: number, need: number, estimate?: number, cannotPass?: (k: num
 }
 
 describe('right fleet size: the smallest count that passes all three checks', () => {
-  it('steps down from a count that passes until one fails', () => {
-    expect(search(6, 4)).toEqual({ done: 4, ran: [5, 4, 3] })
-    expect(search(6, 6)).toEqual({ done: 6, ran: [5] })
+  it('goes down from a count that passes: the lowest count that might pass first, then halving', () => {
+    // An oversized fleet: utilization says fewer than 4 cannot pass — 4 is tried first, then 3 is ruled out.
+    expect(search(10, 4, undefined, k => k < 4)).toEqual({ done: 4, ran: [4] })
+    // Without a hint it halves the range under the pass.
+    expect(search(6, 4)).toEqual({ done: 4, ran: [1, 3, 4] })
+    expect(search(6, 6, undefined, k => k < 5)).toEqual({ done: 6, ran: [5] })
   })
   it('does not run a count that certainly fails', () => {
     expect(search(6, 6, undefined, k => k < 6)).toEqual({ done: 6, ran: [] })
@@ -28,7 +31,7 @@ describe('right fleet size: the smallest count that passes all three checks', ()
   })
   it('steps up from a count that fails, starting at the estimate, then confirms the one under', () => {
     expect(search(6, 8)).toEqual({ done: 8, ran: [7, 8] })
-    expect(search(6, 8, 9)).toEqual({ done: 8, ran: [9, 8, 7] })
+    expect(search(6, 8, 9)).toEqual({ done: 8, ran: [9, 7, 8] })
     expect(search(6, 8, 7)).toEqual({ done: 8, ran: [7, 8] })
   })
   it('gives up when nothing passes within reach, and on gridlock', () => {

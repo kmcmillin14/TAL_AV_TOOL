@@ -3243,8 +3243,6 @@ button.flow-drag-handle:focus-visible { outline: 2px solid var(--accent); outlin
 .sim-panel h4 { margin: 4px 0 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-tertiary); }
 .sim-panel-head { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); }
 .sim-panel-head h3 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sim-panel-head .icon-btn { background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 4px; }
-.sim-panel-head .icon-btn:hover { color: var(--bad); }
 .sim-card-note, .sim-card-step { margin: 0; font-size: 13px; color: var(--text-tertiary); }
 .sim-card-file { margin: 0; font-size: 13px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .sim-card-ok { margin: 0; font-size: 13px; color: var(--good); display: flex; gap: 8px; align-items: center; }
@@ -5759,6 +5757,8 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-state.is-warn { background: var(--warn-soft); color: var(--warn); }
 .sim-state.is-bad { background: var(--bad-soft); color: var(--bad); }
 .sim-state.is-sel { background: color-mix(in srgb, var(--sim-sel) 12%, transparent); color: var(--sim-sel); }
+.sim-state.is-mute { background: var(--bg-surface-3); color: var(--text-secondary); }
+.sim-state.is-info { background: color-mix(in srgb, var(--info) 14%, transparent); color: var(--info); }
 .sim-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
 .sim-tile { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px; border-radius: 10px; background: var(--bg-surface-2, var(--bg-hover)); border: 1px solid transparent; }
 .sim-tile b { display: flex; align-items: baseline; gap: 3px; min-width: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;
@@ -5770,6 +5770,7 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-tile.is-edit input { width: 100%; min-width: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; -moz-appearance: textfield; }
 .sim-tile.is-edit input::-webkit-inner-spin-button, .sim-tile.is-edit input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .sim-tile.is-edit input:focus { outline: none; }
+.sim-tile.is-warn b { color: var(--warn); } .sim-tile.is-bad b { color: var(--bad); }
 /* Pictures: a route bar (a material flow from its pick to its drop), a highway's stops, a rack's reach. */
 .sim-route { display: flex; flex-direction: column; gap: 6px; }
 .sim-route-ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 700; color: var(--text-primary); }
@@ -5796,14 +5797,9 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-dcard-act { align-self: stretch; }
 /* The folds: compact rows, one open at a time; an open one is the only thing that can make the card scroll. */
 .sim-dcard-folds > .sim-section > summary { padding: 8px 0; }
-.sim-dcard-folds > .sim-section:last-child { border-bottom: 1px solid var(--border); }
 .sim-dcard-folds .sim-section-body h4 { margin: 4px 0 0; }
-.sim-detail-card:has(.sim-dcard) > .sim-banner { display: none; }   /* the sample note returns with Back */
-.sim-tile.is-warn b { color: var(--warn); } .sim-tile.is-bad b { color: var(--bad); }
 .sim-why { margin: 0; padding: 8px 10px; border-radius: 8px; background: var(--bg-surface-2, var(--bg-hover)); font-size: 12px; color: var(--text-secondary); }
 .sim-why.is-warn { background: var(--warn-soft); color: var(--warn); }
-.sim-state.is-mute { background: var(--bg-surface-3); color: var(--text-secondary); }
-.sim-state.is-info { background: color-mix(in srgb, var(--info) 14%, transparent); color: var(--info); }
 /* A row that opens something (Simulate's Assumptions): label, its state, a chevron. */
 .sim-row-link { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
   background: var(--bg-surface); font: 600 13px var(--tal-font-family); color: var(--text-primary); cursor: pointer; text-align: left; }
@@ -5816,34 +5812,33 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-runchecks { display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); overflow: hidden; }
 .sim-runchecks > .sim-why { margin: 8px 8px 0; }
 .sim-crow + .sim-crow { border-top: 1px solid var(--border); }
-.sim-crow > summary { list-style: none; display: flex; align-items: baseline; gap: 8px; padding: 9px 12px; cursor: pointer; font-size: 13px; }
+.sim-crow > summary { list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 8px; padding: 9px 12px; cursor: pointer; font-size: 13px; }
 .sim-crow > summary::-webkit-details-marker { display: none; }
 .sim-crow > summary:hover { background: var(--bg-hover); }
 .sim-crow > summary i { width: 14px; font-style: normal; font-weight: 700; text-align: center; color: var(--text-tertiary); }
 .sim-crow.is-good > summary i { color: var(--good); } .sim-crow.is-bad > summary i, .sim-crow.is-bad > summary b { color: var(--bad); }
 .sim-crow.is-warn > summary i { color: var(--warn); }
+.sim-crow.is-warn > summary b { color: var(--warn); }
 .sim-crow > summary .lbl { flex: 1; min-width: 0; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sim-crow > summary b { font-size: 15px; font-weight: 800; color: var(--text-primary); }
 .sim-crow > summary small { min-width: 56px; white-space: nowrap; font-size: 11px; color: var(--text-tertiary); }
 .sim-crow-body { display: flex; flex-direction: column; gap: 6px; padding: 0 12px 12px 34px; }
 .sim-crow-body .sim-kebab-h { margin: 6px 0 0; }
 /* The fleet card, tighter in Simulate: the label and the verdict on one line. */
-.sim-sim-pane .sim-kpi-fleet { display: grid; grid-template-columns: auto 1fr auto; align-items: baseline; column-gap: 10px; row-gap: 8px; padding: 12px 14px; }
-.sim-sim-pane .sim-kpi-fleet > .sim-kpi-val { font-size: 18px; }
-.sim-sim-pane .sim-kpi-fleet > :not(.sim-kpi-lbl):not(.sim-kpi-val) { grid-column: 1 / -1; }
-.sim-sim-pane .sim-kpi-fleet > .link-btn.sim-kpi-sub { grid-row: 1; grid-column: 3; margin: 0; font-size: 12px; }
+.sim-kpi-fleet { padding: 12px 14px; }
+.sim-kpi-head { display: flex; align-items: baseline; gap: 10px; width: 100%; }
+.sim-kpi-head .sim-kpi-val { font-size: 18px; }
+.sim-kpi-head .link-btn { margin-left: auto; font-size: 12px; }
 /* The right size under a type (owner, 2026-11-22). */
 .sim-rightsize { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; width: 100%; font-size: 12px; color: var(--text-secondary); }
 .sim-rightsize.is-good { color: var(--good); } .sim-rightsize.is-bad { color: var(--bad); }
 .sim-rightsize.is-warn b { color: var(--text-primary); font-size: 14px; }
 .sim-rightsize .btn { margin-left: auto; }
 /* A check's scale (owner, 2026-11-22): its bands — blue spare, green, amber tight, red — and where the run landed. */
-.sim-crow > summary { flex-wrap: wrap; row-gap: 6px; }
-.sim-scale { position: relative; flex: 0 0 100%; height: 4px; margin: 0 0 2px 22px; max-width: calc(100% - 22px); border-radius: 2px; overflow: visible; }
+.sim-scale { position: relative; flex: 0 0 100%; height: 4px; margin: 0 0 2px 22px; max-width: calc(100% - 22px); border-radius: 2px; }
 .sim-scale > i { position: absolute; top: 0; bottom: 0; opacity: 0.55; }
 .sim-scale > i:first-child { border-radius: 2px 0 0 2px; } .sim-scale > i:last-of-type { border-radius: 0 2px 2px 0; }
 .sim-scale .g-spare { background: var(--info); } .sim-scale .g-good { background: var(--good); }
 .sim-scale .g-tight { background: var(--warn); } .sim-scale .g-bad { background: var(--bad); }
 .sim-scale > em { position: absolute; top: 50%; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--bg-surface); border: 2px solid var(--text-primary); }
-.sim-crow.is-warn > summary b { color: var(--warn); }
 .sim-kpi-list li.warn { color: var(--warn); }

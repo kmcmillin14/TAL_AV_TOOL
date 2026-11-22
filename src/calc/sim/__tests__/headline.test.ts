@@ -8,11 +8,12 @@ const group = (vehicleId: string, groupRaw: number, fleetSold: number, availabil
 const fleet: FleetSummary = { groups: [group('a', 2.4, 3, 0.9, 6), group('b', 1, 2, 1, 8)], targetUtilization: 0.85 } as unknown as FleetSummary
 const pass = { orders: true, utilization: true, battery: true as boolean | null }
 /** A type's result; its grades follow its pass/fail checks unless given (green for pass, red for fail). */
-const type = (vehicleId: string, o: Partial<TypeResult>): TypeResult => {
-  const c = o.checks ?? pass, g = (b: boolean) => (b ? 'good' as const : 'bad' as const)
+type Checks = typeof pass
+const type = (vehicleId: string, { checks, ...o }: Partial<TypeResult> & { checks?: Checks }): TypeResult => {
+  const c = checks ?? pass, g = (b: boolean) => (b ? 'good' as const : 'bad' as const)
   return {
     vehicleId, fleet: 3, target: 40, perHr: 40, done: 100, delivered: 1, avgWait: 10, utilization: 0.8, socMin: 40, chargeTrips: 2,
-    checks: pass, battery: { dayStarts: [100, 98, 97], chargeWaitSec: 0, floorPct: 20, why: null, lowest: { shift: 60, day: 55, run: 50 }, sagPts: null, cause: null }, verdict: 'meets',
+    battery: { dayStarts: [100, 98, 97], chargeWaitSec: 0, floorPct: 20, why: null, lowest: { shift: 60, day: 55, run: 50 }, sagPts: null, cause: null }, verdict: 'meets',
     grades: { orders: g(c.orders), utilization: g(c.utilization), battery: c.battery == null ? null : g(c.battery) }, ...o,
   } as TypeResult
 }
@@ -54,11 +55,11 @@ describe('Run headline: the static calc beside the simulation, and the three che
     expect(h.setsFleet).toEqual({ check: 'orders', n: 3 })                       // orders and utilization both need 3; the first named wins
   })
 
-  it('utilization is graded: up to 5 pts over the target is tight (passes, named); beyond fails; the target can change', () => {
+  it('utilization is graded: up to 5 pts over the target is amber (passes); beyond fails; the target can change', () => {
     const tight = runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.88 })]), flowsA, 100)
-    expect(tight).toMatchObject({ outcome: 'right', tight: ['utilization'], verdictTone: 'warn', utilization: { grade: 'tight', pass: true } })
+    expect(tight).toMatchObject({ outcome: 'right', verdictTone: 'warn', utilization: { grade: 'tight', pass: true } })
     expect(runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.92 })]), flowsA, 100)).toMatchObject({ outcome: 'under', utilization: { grade: 'bad' } })
-    expect(runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.92 })]), flowsA, 100, { targetUtilization: 0.9 })).toMatchObject({ outcome: 'right', tight: ['utilization'] })
+    expect(runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.92 })]), flowsA, 100, { targetUtilization: 0.9 })).toMatchObject({ outcome: 'right', utilization: { grade: 'tight' } })
     expect(runHeadline(fleet, { a: 3 }, run([type('a', { utilization: 0.6 })]), flowsA, 100).utilization.grade).toBe('spare')
   })
 

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { createSim, DT, runFor, step } from '../engine'
+import { gradePasses } from '../grades'
 import { results } from '../results'
 import { inShift, isLate, staffedSeconds } from '../shift'
 import { LIBRARY, sampleLayout, settings } from './fixtures'
@@ -51,20 +52,20 @@ describe('charge keeps up — the third sizing check', () => {
   it('is judged once a run covers two days; charge may fall through the week if it stays above the charge level and recovers', () => {
     const { layout, flows } = sampleLayout()
     const shift = runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 8 }))!, 8 * 3600)
-    expect(results(shift).types[0].checks.battery).toBeNull()
+    expect(results(shift).types[0].grades.battery).toBeNull()
     const week = runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 8 }))!, 7 * 86400)
     const t = results(week).types[0]
-    expect(t.checks.battery).toBe(true)
+    expect(gradePasses(t.grades.battery)).toBe(true)
     expect(t.battery.dayStarts.length).toBe(8)
     // Round the clock: charge cycles in its band, never below the charge level — it keeps up.
     const allDay = results(runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 4 }, staffedHr: 24, daysPerWeek: 7 }))!, 7 * 86400)).types[0]
     expect(allDay.battery.dayStarts.length).toBe(8)
     expect(allDay.battery.lowest.run!).toBeGreaterThan(29)
-    expect(allDay.checks.battery).toBe(true)
+    expect(gradePasses(allDay.grades.battery)).toBe(true)
     // Charge falling through a 5-day week, recovered over the weekend, passes.
     const wk = results(runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 16, daysPerWeek: 5 }))!, 7 * 86400)).types[0]
     expect(wk.battery.dayStarts[7]).toBeGreaterThanOrEqual(wk.battery.dayStarts[0] - 2)
-    expect(wk.checks.battery).toBe(true)
+    expect(gradePasses(wk.grades.battery)).toBe(true)
   }, 120000)
 })
 
@@ -75,9 +76,9 @@ describe('utilization over a week — an undersized fleet reads over 100% (owner
     const need = flows.reduce((a, f) => a + f.thruPerHr, 0)
     expect(one.utilization).toBeGreaterThan(1)                 // the work needs more than one vehicle's shift
     expect(one.perHr).toBeLessThan(need * 0.9)                 // late moves are not delivered on time
-    expect(one.checks.orders).toBe(false)
+    expect(gradePasses(one.grades.orders)).toBe(false)
     const three = results(runFor(createSim(layout, flows, LIBRARY, settings({ fleet: { cb18: 3 }, staffedHr: 8, daysPerWeek: 5 }))!, 7 * 86400)).types[0]
     expect(three.utilization).toBeLessThan(0.9)
-    expect(three.checks.orders).toBe(true)
+    expect(gradePasses(three.grades.orders)).toBe(true)
   }, 120000)
 })

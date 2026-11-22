@@ -82,6 +82,11 @@ const STATUS: Record<SegmentClearance['status'], string> = {
   clear: 'No object near', full: 'Full speed', capped: 'Below 1.2 m/s — B56.5 reduced clearance', violation: 'Blocked — under the minimum clearance',
 }
 
+/** A length as shown in a field or tile: the user's units, two decimals. */
+const shownLen = (ft: number, u: UnitSystem) => Math.round(lengthToDisplay(ft, u) * 100) / 100
+/** A point's dot: its kind and role colour. */
+const dotClass = (q: SimPoint) => `sim-dot is-placed kind-${q.type}${q.role ? ` role-${q.role}` : ''}`
+
 /** A route's or highway's B56.5 status as its card's chip. */
 const CLEAR_CHIP: Record<SegmentClearance['status'], { label: string; tone: Tone }> = {
   clear: { label: 'Full speed', tone: 'good' }, full: { label: 'Full speed', tone: 'good' },
@@ -108,10 +113,8 @@ export default function LayoutPanel(p: Props) {
     return { stations: p.layout.points.filter(q => q.type !== 'junction'), routes, totalFt: routes.reduce((t, r) => t + r.ft, 0) }
   }, [p.layout, byId])
   const flow = sel?.kind === 'flow' ? p.flows.find(q => q.id === sel.id) : undefined
-  const flowFt = useMemo(
-    () => (flow?.fromPointId && flow.toPointId ? routeDistanceFt(p.layout, flow.fromPointId, flow.toPointId) : Infinity),
-    [p.layout, flow?.fromPointId, flow?.toPointId],
-  )
+  const fromId = flow?.fromPointId, toId = flow?.toPointId
+  const flowFt = useMemo(() => (fromId && toId ? routeDistanceFt(p.layout, fromId, toId) : Infinity), [p.layout, fromId, toId])
 
   // A flow just linked opens with Moves per hour focused — a moment after the click that made it, which
   // otherwise takes the focus back to the canvas.
@@ -163,7 +166,7 @@ export default function LayoutPanel(p: Props) {
             {rack
               ? <Tile label="positions" value={rack.g.positions} />
               : <TileInput label="height" placeholder="Floor" unit={units.distance.label(p.unitSystem)} max={lengthToDisplay(fieldDef('point.heightFt').max ?? Infinity, p.unitSystem)}
-                  value={pt.heightFt ? Math.round(lengthToDisplay(pt.heightFt, p.unitSystem) * 100) / 100 : undefined}
+                  value={pt.heightFt ? shownLen(pt.heightFt, p.unitSystem) : undefined}
                   onChange={v => p.onPoint(pt.id, { heightFt: v ? lengthFromDisplay(v, p.unitSystem) : undefined })} />}
             <Tile label="flows" value={flowsHere.length} unit={rack ? `· ${moves}/h` : undefined} />
           </Tiles>
@@ -316,8 +319,8 @@ export default function LayoutPanel(p: Props) {
     return (
       <Inspector title={o.name || 'Object'} sub="Wall, column or guard" back={p.backLabel} onBack={p.onBack} onDelete={p.onDelete}>
         <Tiles>
-          <TileInput label="width" unit={units.distance.label(p.unitSystem)} value={Math.round(lengthToDisplay(o.w, p.unitSystem) * 100) / 100} onChange={v => v && p.onObject(o.id, { w: lengthFromDisplay(v, p.unitSystem) })} />
-          <TileInput label="depth" unit={units.distance.label(p.unitSystem)} value={Math.round(lengthToDisplay(o.h, p.unitSystem) * 100) / 100} onChange={v => v && p.onObject(o.id, { h: lengthFromDisplay(v, p.unitSystem) })} />
+          <TileInput label="width" unit={units.distance.label(p.unitSystem)} value={shownLen(o.w, p.unitSystem)} onChange={v => v && p.onObject(o.id, { w: lengthFromDisplay(v, p.unitSystem) })} />
+          <TileInput label="depth" unit={units.distance.label(p.unitSystem)} value={shownLen(o.h, p.unitSystem)} onChange={v => v && p.onObject(o.id, { h: lengthFromDisplay(v, p.unitSystem) })} />
           <TileInput label="rotation" unit="°" max={360} value={Math.round(o.rotationDeg ?? 0)} onChange={v => p.onObject(o.id, { rotationDeg: v ?? 0 })} />
         </Tiles>
         <Folds>
@@ -348,7 +351,7 @@ export default function LayoutPanel(p: Props) {
           ['Overall length', len(hs.reduce((a, h) => a + h.lengthFt, 0))],
           ['One-way', `${oneWay} of ${hs.length}`],
           ['Width', same('widthFt') != null ? len(same('widthFt')!) : 'Mixed'],
-          ['B56.5', worst ? <span className={`sim-hw-status is-${worst === 'violation' ? 'bad' : 'warn'}`}>{STATUS[worst].split(' — ')[0]}</span> : sts.length && sts.every(Boolean) ? 'Full speed' : '—'],
+          ['B56.5', worst ? <span className={`sim-hw-status is-${CLEAR_CHIP[worst].tone}`}>{STATUS[worst].split(' — ')[0]}</span> : sts.length && sts.every(Boolean) ? 'Full speed' : '—'],
         ]} />
         <Section title="Change all" open>
           <label className="sim-field"><span>Direction</span>
@@ -386,8 +389,8 @@ export default function LayoutPanel(p: Props) {
       ? (twoLanes ? `2 × ${inch(env)} envelope + ${p.rule.sharedBetweenVehicles ? 3 : 4} × ${inch(c)}` : `${inch(env)} envelope + 2 × ${inch(c)}`) + ` = ${inch(laneWidthFt(kind, env, p.rule))}`
       : 'No vehicle drives it yet — the default aisle'
     const st = env > 0 ? p.highwayStatus.get(h.id) : undefined
-    const status = st ? { word: st === 'clear' ? STATUS.full : STATUS[st], tone: st === 'violation' ? 'bad' : st === 'capped' ? 'warn' : 'good' } : null
-    const stops = highwayStops(p.layout, h.id).flatMap(q => { const pt = byId.get(q.id); return pt ? [{ pt, t: q.t }] : [] })
+    const status = st ? { word: st === 'clear' ? STATUS.full : STATUS[st], tone: CLEAR_CHIP[st].tone } : null
+    const stops = highwayStops(p.layout, h.id, expanded).flatMap(q => { const pt = byId.get(q.id); return pt ? [{ pt, t: q.t }] : [] })
     const lanes = twoLanes ? 2 : 1
     return (
       <Inspector title={h.name || 'Highway'} back={p.backLabel} onBack={p.onBack} onDelete={p.onDelete}
@@ -396,10 +399,10 @@ export default function LayoutPanel(p: Props) {
         <div className="sim-strip" aria-label={`${stops.length} stops along it`}>
           <span className="sim-strip-lane" />
           {h.dir !== 'two' && <span className="sim-strip-dir" aria-hidden="true">{h.dir === 'ab' ? '→' : '←'}</span>}
-          {stops.map(({ pt, t }) => <span key={pt.id} className={`sim-dot is-placed kind-${pt.type}${pt.role ? ` role-${pt.role}` : ''}`} style={{ left: `${t * 100}%` }} title={pt.name} />)}
+          {stops.map(({ pt, t }) => <span key={pt.id} className={dotClass(pt)} style={{ left: `${t * 100}%` }} title={pt.name} />)}
         </div>
         <Tiles>
-          <TileInput label="width" unit={units.distance.label(p.unitSystem)} value={Math.round(lengthToDisplay(h.widthFt, p.unitSystem) * 100) / 100} max={lengthToDisplay(200, p.unitSystem)}
+          <TileInput label="width" unit={units.distance.label(p.unitSystem)} value={shownLen(h.widthFt, p.unitSystem)} max={lengthToDisplay(200, p.unitSystem)}
             onChange={v => v && set({ widthFt: lengthFromDisplay(v, p.unitSystem) })} />
           <Tile label="long" value={len(h.lengthFt)} />
           <Tile label="stops" value={stops.length} />
@@ -411,7 +414,7 @@ export default function LayoutPanel(p: Props) {
               ? <ul className="sim-nav">
                   {stops.map(({ pt }) => (
                     <li key={pt.id}><button type="button" onClick={() => p.onFocus({ kind: 'point', id: pt.id }, pt)}>
-                      <span className={`sim-dot is-placed kind-${pt.type}${pt.role ? ` role-${pt.role}` : ''}`} /><span className="nm">{pt.name || POINT_LABEL[pt.type]}</span>
+                      <span className={dotClass(pt)} /><span className="nm">{pt.name || POINT_LABEL[pt.type]}</span>
                       <span className="meta num">{pt.rack ? 'Rack' : pt.heightFt ? len(pt.heightFt) : 'Floor'}</span>
                     </button></li>
                   ))}
@@ -555,7 +558,7 @@ export default function LayoutPanel(p: Props) {
         <ul className="sim-nav">
           {stations.map(q => (
             <li key={q.id}><button type="button" onClick={() => p.onFocus({ kind: 'point', id: q.id }, q)}>
-              <span className={`sim-dot is-placed kind-${q.type}${q.role ? ` role-${q.role}` : ''}`} /><span className="nm">{q.name || POINT_LABEL[q.type]}</span><span className="meta">{POINT_LABEL[q.type]}</span>
+              <span className={dotClass(q)} /><span className="nm">{q.name || POINT_LABEL[q.type]}</span><span className="meta">{POINT_LABEL[q.type]}</span>
             </button></li>
           ))}
         </ul>
@@ -600,7 +603,7 @@ function Len({ label, ft, max, u, signed, onFt }: { label: string; ft: number | 
   return (
     <label className="sim-field"><span>{label}</span>
       <span className="sim-input-unit">
-        <input type="number" min={signed ? undefined : 0} step="any" value={ft == null ? '' : Math.round(lengthToDisplay(ft, u) * 100) / 100}
+        <input type="number" min={signed ? undefined : 0} step="any" value={ft == null ? '' : shownLen(ft, u)}
           onChange={e => onFt(e.target.value === '' ? undefined : Math.min(max ?? Infinity, Math.max(signed ? -Infinity : 0, lengthFromDisplay(Number(e.target.value), u))))} />
         <span>{units.distance.label(u)}</span>
       </span>

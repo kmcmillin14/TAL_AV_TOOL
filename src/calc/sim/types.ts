@@ -217,10 +217,8 @@ export interface TypeResult {
   chargeTrips: number
   /** Average speed while moving across the type's fleet, ft/s (feet driven ÷ seconds moving). */
   avgSpeedFps: number | null
-  /** The three sizing checks (owner, 2026-11-13): the fleet is right-sized only if all pass.
+  /** The three sizing checks graded (owner, 2026-11-13/22): a check passes unless red (`gradePasses`).
    *  `battery` is null until the run has covered two days — charge is judged over days, not a shift. */
-  checks: { orders: boolean; utilization: boolean; battery: boolean | null }
-  /** The checks graded (owner, 2026-11-22): a check passes unless red (`checks` = not red). */
   grades: { orders: Grade; utilization: Grade; battery: Grade | null }
   /** Battery detail for the check: average charge at the start of each day, %; vehicle-seconds spent
    *  waiting for a free charger; the cutsheet floor a vehicle must not reach, %; why the check failed. */

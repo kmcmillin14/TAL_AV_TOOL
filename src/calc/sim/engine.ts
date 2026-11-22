@@ -356,20 +356,24 @@ function goCharge(S: SimState, v: SimVehicle) {
   reserve(S, v, n); v.mode = 'toCharge'; setRoute(S, v, n)
 }
 
-/** A full, idle vehicle on a charger gives it up to `needy`: it moves to a free parking spot (none
- *  free: it stays). The charger is free once it has left; `needy` takes it on the next check. */
-function bumpFullOffCharger(S: SimState, needy: SimVehicle, topUp = false) {
-  // `topUp` (off-shift rotation): only a vehicle at its full charge gives way, never one merely past its
-  // charge-until level — otherwise vehicles trade chargers all night.
+/** Charged enough to give way: one that must charge takes the charger of a vehicle past its charge-until
+ *  level; off-shift rotation only of one at its full charge — else vehicles would trade chargers all night. */
+const givesWayToCharge = (u: SimVehicle) => u.soc >= u.prof.battery!.chargeUntilPct
+const givesWayToTopUp = (u: SimVehicle) => u.soc >= u.prof.battery!.maxSocPct - 0.5
+
+/** An idle vehicle on a charger that `givesWay` gives it up to `needy`: it moves to a free parking spot.
+ *  The charger is free once it has left; `needy` takes it on the next check. False when no parking spot is
+ *  free (no rotation then: a direct swap was tried, owner 2026-11-22, and gridlocks — the two meet head-on
+ *  on the single-lane spurs, with nowhere to step aside). */
+function bumpFullOffCharger(S: SimState, needy: SimVehicle, givesWay: (u: SimVehicle) => boolean): boolean {
   const full = S.veh.filter(u => u !== needy && u.mode === 'home' && !u.mustCharge && u.prof.battery
-    && S.G.points[u.node].type === 'charger' && u.soc >= (topUp ? u.prof.battery.maxSocPct - 0.5 : u.prof.battery.chargeUntilPct))
+    && S.G.points[u.node].type === 'charger' && givesWay(u))
     .sort((a, b) => b.soc - a.soc)[0]
-  if (!full) return
+  if (!full) return true
   const n = nearestFree(S, full, S.G.parking)
-  // No free parking spot: no rotation. A direct swap was tried (owner, 2026-11-22) and gridlocks — the two
-  // meet head-on on the single-lane spurs, with nowhere to step aside.
-  if (n < 0) return
+  if (n < 0) return false
   reserve(S, full, n); full.mode = 'toHome'; setRoute(S, full, n)
+  return true
 }
 
 function dispatch(S: SimState) {
@@ -594,12 +598,13 @@ export function step(S: SimState) {
   // a parked vehicle below full does the same, so with more vehicles than chargers every one starts the
   // next shift charged.
   if (Math.floor(t / 10) > Math.floor((t - DT) / 10)) {
+    let parkingFull = false   // once no parking spot is free, no further rotation this check
     for (const v of S.veh) {
       if (v.mode !== 'home' || v.job || !v.prof.battery || G.points[v.node].type === 'charger') continue
       const n = nearestFree(S, v, G.chargers)
       if (n >= 0) { reserve(S, v, n); v.mode = v.mustCharge ? 'toCharge' : 'toHome'; setRoute(S, v, n); continue }
-      if (v.mustCharge) bumpFullOffCharger(S, v)
-      else if (!onShift && v.soc < v.prof.battery.maxSocPct - ROTATE_BELOW_FULL_PCT) bumpFullOffCharger(S, v, true)
+      if (v.mustCharge) bumpFullOffCharger(S, v, givesWayToCharge)
+      else if (!onShift && !parkingFull && v.soc < v.prof.battery.maxSocPct - ROTATE_BELOW_FULL_PCT) parkingFull = !bumpFullOffCharger(S, v, givesWayToTopUp)
     }
   }
 

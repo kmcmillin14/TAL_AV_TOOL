@@ -14,31 +14,29 @@ export const RIGHT_SIZE_MAX_UP = 20
 
 /**
  * The next count to try, or the answer. `n` is the count run (its verdict is in `tried`), `estimate` a
- * first guess when it does not pass (about how many the failing check needs), and `cannotPass(k)` says
- * that k certainly fails without running it (e.g. it could not reach the target utilization).
+ * first guess when it does not pass (about how many the failing checks need), and `cannotPass(k)` says
+ * that k certainly fails without running it (it could not reach the target utilization).
+ * Until a count passes, it goes up from the estimate; once one has, it tries the lowest count under it that
+ * might still pass, then halves the range — so an oversized fleet jumps straight down rather than stepping
+ * one vehicle at a time — until the count under the lowest pass is known to fail.
  * `done: null` — no count up to n + RIGHT_SIZE_MAX_UP passes (or n gridlocks: the layout is the problem).
  */
 export function nextRightSize(n: number, tried: Tried, estimate = n + 1, cannotPass: (k: number) => boolean = () => false):
   { next: number } | { done: number | null } {
-  const v = tried[n]
-  if (v === 'gridlock') return { done: null }
-  if (passes(v)) {
-    // Down: the lowest count in the unbroken run of passes below n.
-    let k = n
-    while (k > 1 && passes(tried[k - 1])) k--
-    const below = k - 1
-    if (below < 1 || (below in tried) || cannotPass(below)) return { done: k }
-    return { next: below }
+  if (tried[n] === 'gridlock') return { done: null }
+  const ks = Object.keys(tried).map(Number)
+  const lowestPass = ks.filter(k => passes(tried[k])).sort((a, b) => a - b)[0]
+  if (lowestPass == null) {
+    const highest = Math.max(...ks)
+    const next = highest > n ? highest + 1 : Math.max(n + 1, estimate)
+    return next > n + RIGHT_SIZE_MAX_UP ? { done: null } : { next }
   }
-  // Up: the smallest count above n that passes, once the one under it is known to fail (or is n).
-  const above = Object.keys(tried).map(Number).filter(k => k > n)
-  const lowestPass = above.filter(k => passes(tried[k])).sort((a, b) => a - b)[0]
-  if (lowestPass != null) {
-    const under = lowestPass - 1
-    if (under === n || (under in tried && !passes(tried[under]))) return { done: lowestPass }
-    return { next: under }
-  }
-  const highestFail = Math.max(n, ...above)
-  const next = above.length ? highestFail + 1 : Math.max(n + 1, estimate)
-  return next > n + RIGHT_SIZE_MAX_UP ? { done: null } : { next }
+  // Between the highest failure under the lowest pass and it: the lowest count that might pass first (the
+  // estimate when the run was well under its target), then halve what is left.
+  const fails = ks.filter(k => k < lowestPass && !passes(tried[k]))
+  let lo = Math.max(1, ...fails.map(f => f + 1))
+  while (lo < lowestPass && cannotPass(lo)) lo++
+  const hi = lowestPass - 1
+  if (lo > hi) return { done: lowestPass }
+  return { next: fails.length || lo === hi ? Math.floor((lo + hi) / 2) : lo }
 }

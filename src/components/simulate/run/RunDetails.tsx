@@ -90,9 +90,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
             return [...head, len(sim?.measuredFt), secs(e.cycleSeconds), e.rawVehicles == null ? null : e.rawVehicles.toFixed(2),
               { v: sim ? sim.perHr.toFixed(1) : null, cls: sim && sim.perHr < target * 0.98 ? 'bad' : '' }, secs(sim?.mission), secs(sim?.wait)]
           })} />
-          {time && (
-<TimeSplitBar time={time} />
-          )}
+          {time && <TimeSplitBar time={time} />}
           {R && (
             <dl className="sim-kv">
               <dt>Battery at the end (avg / lowest)</dt><dd>{R.types.map(t => `${Math.round(t.socAvg)}% / ${Math.round(t.socMin)}%`).join(' · ')}</dd>

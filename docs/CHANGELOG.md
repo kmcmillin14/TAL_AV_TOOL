@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-11-22 — Cleanup pass (/simplify on 9443eda..HEAD)
+
+- One source per rule: `gradeBattery` returns its cause (the results only put it in words, so the cause
+  always names what set the grade — a red charger wait now outranks an amber morning drop); one utilization
+  projection (`utilizationAt`, `mayPassUtilization`) for "one fewer", the right-size search and the headline's
+  hint; one fleet-need estimate (`fleetNeeds`) for "sets the fleet → about N" and the search's first count.
+- `TypeResult.checks` and `Headline.tight` removed (derived from `grades`).
+- The right-size search goes down by the lowest count that could pass, then halving — an oversized fleet
+  takes one or two runs, not one per vehicle; "one fewer" is read from its answer. Stopping at the run
+  limit now says so ("Stopped after 8 runs").
+- Engine: once no parking spot is free, off-shift rotation stops looking for the rest of that check (same
+  results, less work); the give-way rules are named.
+- Screens: the utilization target, shift coverage and lowest-charge list are shared components (Data and
+  Simulate); the fleet card's head is one row in markup (no CSS overrides); the sample note and length
+  rounding, dot colours and clearance tones each have one source; dead and duplicate CSS removed; the
+  followed vehicle's route length is summed once per route; times share one formatter.
+- No figures change.
+
 ## 2026-11-22 — Charger swap tried, not kept
 
 - Owner asked for a direct swap when no parking spot is free. Built and run on the medium example at 8

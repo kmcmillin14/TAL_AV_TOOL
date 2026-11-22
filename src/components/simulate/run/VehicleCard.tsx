@@ -6,26 +6,20 @@
 // share as tiles. Folds: where its time went, and the order it carries. Back stops following. Read from
 // the live state each frame.
 
+import { useMemo } from 'react'
 import type { SimState } from '@/src/calc/sim/engine'
 import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
 import { Folds, Inspector, Section, Tile, Tiles, type Tone } from '../inspector/InspectorParts'
 import { TimeSplitBar } from './RunDetails'
 import { STATES, vehicleState } from './RunScene'
+import { duration, hhmm } from './time'
 
 type V = SimState['veh'][number]
 /** The map legend's colours. */
 const TONE: Record<ReturnType<typeof vehicleState>, Tone> = { travel: 'good', handle: 'warn', wait: 'bad', charge: 'info', idle: 'mute' }
 
-/** "1 min 40 s", "45 s", "2 h 5 min". */
-function duration(sec: number): string {
-  const s = Math.max(0, Math.round(sec))
-  if (s < 60) return `${s} s`
-  const m = Math.floor(s / 60), h = Math.floor(m / 60)
-  return h ? `${h} h ${m % 60} min` : s % 60 && m < 10 ? `${m} min ${s % 60} s` : `${m} min`
-}
-
 /** The day's clock time `sec` from now, "14:20". */
-const at = (S: SimState, sec: number) => { const t = (S.t + sec) % 86400; return `${String(Math.floor(t / 3600)).padStart(2, '0')}:${String(Math.floor((t % 3600) / 60)).padStart(2, '0')}` }
+const at = (S: SimState, sec: number) => hhmm(S.t + sec)
 
 /** One line on what the vehicle is doing when it is not simply driving a job — null when it is. */
 function vehicleWhy(S: SimState, v: V): string | null {
@@ -52,8 +46,10 @@ export default function VehicleCard({ S, i, unitSystem, onBack }: { S: SimState;
   const name = (node?: number) => (node == null ? '—' : S.G.points[node]?.name || '—')
   const st = vehicleState(v)
   const driving = v.mode === 'toPick' || v.mode === 'toDrop'
-  const total = v.edges.reduce((t, e) => t + e.length, 0)
-  const done = Math.min(total, v.edges.slice(0, v.pi).reduce((t, e) => t + e.length, 0) + v.s)
+  // The route's lengths summed once per route (the card redraws every frame).
+  const before = useMemo(() => v.edges.reduce<number[]>((acc, e) => [...acc, acc[acc.length - 1] + e.length], [0]), [v.edges])
+  const total = before[before.length - 1]
+  const done = Math.min(total, (before[v.pi] ?? total) + v.s)
   const left = Math.max(0, total - done)
   const cruise = v.loaded ? v.prof.speedLoaded : v.prof.speedEmpty
   const working = S.t > 0 ? (v.tm.travel + v.tm.handle + v.tm.reposition) / S.t : 0

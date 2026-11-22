@@ -6,7 +6,7 @@
 
 import { engineFleetSold } from '@/src/calc/fleet'
 import type { FleetSummary } from '@/src/calc/types'
-import { gradePasses, gradeUtilization, verdictPasses, worstGrade, type CheckId, type Grade } from './grades'
+import { fleetNeeds, gradePasses, gradeUtilization, utilizationAt, verdictPasses, worstGrade, type CheckId, type Grade } from './grades'
 import type { BatteryCause, SimResults, Verdict } from './types'
 
 export type { CheckId }
@@ -48,8 +48,6 @@ export interface Headline {
   /** The run's own verdict word (kept for Sizing's chip). */
   verdict: Verdict | null
   notRun: boolean
-  /** The checks that pass but are amber: a right-sized fleet with these has no spare capacity there (amber tone). */
-  tight: CheckId[]
   verdictTone: Tone
 }
 
@@ -89,7 +87,7 @@ export function runHeadline(
   const batteryGrades = types.flatMap(t => (t.grades.battery ? [t.grades.battery] : []))
   const batteryGrade = ran && batteryGrades.length ? worstGrade(batteryGrades) : null
   const ordersPass = ordersGrade && gradePasses(ordersGrade), utilPass = utilGrade && gradePasses(utilGrade), batteryPass = batteryGrade && gradePasses(batteryGrade)
-  const fewer = utilPass && tested > 1 && util != null ? (util * tested) / (tested - 1) : null
+  const fewer = utilPass && tested > 1 && util != null ? utilizationAt(util, tested, tested - 1) : null
   const fewerAt = fewer != null && fewer <= target ? fewer : null
   const battFrom = types.find(t => t.grades.battery && t.grades.battery !== 'good')?.battery
   const battWhy = battFrom?.why ?? null
@@ -109,11 +107,7 @@ export function runHeadline(
     } else {
       outcome = 'under'
       // About how many vehicles each failing check needs; the largest sets the fleet.
-      const need: { check: CheckId; n: number }[] = []
-      if (!ordersPass && perHr) need.push({ check: 'orders', n: Math.ceil(tested * demand / perHr) })
-      if (!utilPass && util != null) need.push({ check: 'utilization', n: Math.ceil(tested * util / target) })
-      if (batteryPass === false) need.push({ check: 'battery', n: tested + 1 })
-      setsFleet = need.sort((a, b) => b.n - a.n)[0] ?? null
+      setsFleet = fleetNeeds(tested, { perHr: perHr ?? 0, demand, util: util ?? 0, target, fails: { orders: !ordersPass, utilization: !utilPass && util != null, battery: batteryPass === false } })[0] ?? null
     }
   }
   const tightAny = [ordersGrade, utilGrade, batteryGrade].includes('tight')
@@ -134,7 +128,6 @@ export function runHeadline(
     },
     speedFps: (() => { const ts = types.filter(t => t.avgSpeedFps != null); const w = sum(ts.map(t => t.fleet)); return w > 0 ? sum(ts.map(t => t.avgSpeedFps! * t.fleet)) / w : null })(),
     outcome, setsFleet, verdict, notRun,
-    tight: ([['orders', ordersGrade], ['utilization', utilGrade], ['battery', batteryGrade]] as const).filter(([, g]) => g === 'tight').map(([c]) => c),
     verdictTone: outcome === 'right' ? (tightAny ? 'warn' : 'good') : outcome === 'over' ? 'warn' : outcome ? 'bad' : '',
   }
 }

@@ -3,7 +3,7 @@
 // fails); utilization also has a blue "spare" band well under the target (the fleet may be oversized).
 // One place for the band edges: the results, the headline, the verdict and the scales on screen read them.
 
-import type { Verdict } from './types'
+import type { BatteryCause, Verdict } from './types'
 
 export type Grade = 'spare' | 'good' | 'tight' | 'bad'
 export type CheckId = 'orders' | 'utilization' | 'battery'
@@ -38,16 +38,35 @@ export function gradeUtilization(u: number, target: number): Grade {
   return u < target - BANDS.utilization.spareUnder ? 'spare' : 'good'
 }
 
+/** The same work on `k` vehicles instead of `n`: busy time spread over k (an estimate the run then decides). */
+export const utilizationAt = (u: number, n: number, k: number) => (k > 0 ? (u * n) / k : Infinity)
+/** Could `k` vehicles pass utilization, judging by the run at `n`? (No: k is not worth running.) */
+export const mayPassUtilization = (u: number, n: number, k: number, target: number) => gradePasses(gradeUtilization(utilizationAt(u, n, k), target))
+
+/** About how many vehicles each failing check needs, from a run of `n`: orders by moves per hour delivered
+ *  against the demand, utilization by spreading the work to the target, battery one more. The right-size
+ *  search starts from the largest; the headline names it ("utilization sets the fleet → about 8"). */
+export function fleetNeeds(n: number, f: { perHr: number; demand: number; util: number; target: number; fails: Partial<Record<CheckId, boolean>> }): { check: CheckId; n: number }[] {
+  const need: { check: CheckId; n: number }[] = []
+  if (f.fails.orders && f.perHr > 0) need.push({ check: 'orders', n: Math.ceil((n * f.demand) / f.perHr) })
+  if (f.fails.utilization) need.push({ check: 'utilization', n: Math.ceil((n * f.util) / f.target) })
+  if (f.fails.battery) need.push({ check: 'battery', n: n + 1 })
+  return need.sort((a, b) => b.n - a.n)
+}
+
 const sagGrade = (pts: number): Grade => (pts > BANDS.battery.sagTight ? 'bad' : pts > BANDS.battery.sagGood ? 'tight' : 'good')
 
 /** Battery: the worst of reaching the floor, how close the lowest came to it, the week's morning sag and
- *  the share of staffed time spent waiting for a free charger. */
-export function gradeBattery(f: { lowPct: number; floorPct: number; sagPts: number | null; waitShare: number }): Grade {
-  if (f.lowPct <= f.floorPct + 0.5) return 'bad'
-  const sag: Grade = f.sagPts == null ? 'good' : sagGrade(f.sagPts)
-  const wait: Grade = f.waitShare > BANDS.battery.waitTight ? 'bad' : f.waitShare > BANDS.battery.waitGood ? 'tight' : 'good'
-  const near: Grade = f.lowPct <= f.floorPct + BANDS.battery.nearFloor ? 'tight' : 'good'
-  return worstGrade([sag, wait, near])
+ *  the share of staffed time spent waiting for a free charger — and which of them set it (null when green). */
+export function gradeBattery(f: { lowPct: number; floorPct: number; sagPts: number | null; waitShare: number }): { grade: Grade; cause: BatteryCause | null } {
+  if (f.lowPct <= f.floorPct + 0.5) return { grade: 'bad', cause: 'floor' }
+  const parts: [Grade, BatteryCause][] = [
+    [f.sagPts == null ? 'good' : sagGrade(f.sagPts), 'sag'],
+    [f.waitShare > BANDS.battery.waitTight ? 'bad' : f.waitShare > BANDS.battery.waitGood ? 'tight' : 'good', 'wait'],
+    [f.lowPct <= f.floorPct + BANDS.battery.nearFloor ? 'tight' : 'good', 'near'],
+  ]
+  const grade = worstGrade(parts.map(([g]) => g))
+  return { grade, cause: grade === 'good' ? null : parts.find(([g]) => g === grade)![1] }
 }
 
 /** A check's scale on screen: its range and coloured bands, left to right, and where a value sits (0–1). */

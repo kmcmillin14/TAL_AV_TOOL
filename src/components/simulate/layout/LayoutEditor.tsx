@@ -772,12 +772,14 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   // The rack bar: above a selected rack — its pallet, face, sizes, total and what is wrong.
   const selRack = !drag && selection?.kind === 'point' ? layout.points.find(q => q.id === selection.id && q.rack) : undefined
   const selRackGeo = selRack ? rackGeometry(selRack, loads) : null
-  // The last run's day at each charger — only while the layout and flows still match that run (its key).
+  // The last run's day at each charger — only while the layout and flows still match that run (its key),
+  // and worked out only while a charger is selected.
   const lastRun = project.simSettings?.lastRun
-  const chargerRun = useMemo(() => {
-    if (!lastRun?.chargers) return null
-    return lastRun.key === simInputsKey(project, new Map(vehicles.map(v => [v.id, v]))) ? lastRun.chargers : null
-  }, [lastRun, project, vehicles])
+  const chargerSelected = selection?.kind === 'point' && byId.get(selection.id)?.type === 'charger'
+  const chargerRun = useMemo(
+    () => (chargerSelected && lastRun?.chargers && lastRun.key === simInputsKey(project, vehicleById) ? lastRun.chargers : null),
+    [chargerSelected, lastRun, project, vehicleById],
+  )
   // The lowest reach among the vehicles that work it (its flows), else the simulation's vehicles.
   const selRackReach = selRack ? (() => {
     const users = simFlows.filter(f => f.fromPointId === selRack.id || f.toPointId === selRack.id).map(f => f.vehicleId && simVehicleById.get(f.vehicleId))
@@ -931,7 +933,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           {/* Two cards (owner, 2026-11-22): the checklist with its one Next, then the step's detail. */}
           <div className="sim-guide-card">{guide.list}{guide.next}</div>
           <div className="sim-side-body sim-detail-card">
-            {banner}
+            {/* The sample note steps aside while a selection's card is open (it returns with Back). */}
+            {!(selection && stage !== 'layout' && stage !== 'flows') && banner}
             {stage !== 'layout' && marks && drawingSection}
             {stage === 'layout' ? (
               // Layout's three sub-tasks: the drawing and its scale, the vehicle types, the payloads.

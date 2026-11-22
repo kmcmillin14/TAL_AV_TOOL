@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { chargerStats, results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runHeadline, type Headline, type Outcome, type Tone } from '@/src/calc/sim/headline'
-import { BANDS, checkScale, verdictPasses as passes, type Grade } from '@/src/calc/sim/grades'
+import { checkScale, fleetNeeds, mayPassUtilization, verdictPasses as passes, type Grade } from '@/src/calc/sim/grades'
 import { nextRightSize, type Tried } from '@/src/calc/sim/rightSize'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
 import { RUN_DEFAULTS, step1DaysPerWeek } from '@/src/lib/simFields'
@@ -26,6 +26,7 @@ import LayoutCanvas from '../layout/LayoutCanvas'
 import PricingAction from './PricingAction'
 import RunDetails, { type Assumptions } from './RunDetails'
 import { RunScene, STATES } from './RunScene'
+import { clock } from './time'
 import VehicleCard from './VehicleCard'
 
 /** Background run slices stay under half a 60 fps frame, so playback keeps its pace. */
@@ -71,31 +72,30 @@ interface Props {
   estimate: ReactNode
 }
 
-/** A type's right-size search: the counts tried, the one running, and the answer once known (null: none found). */
-interface RightSize { tried: Tried; trying: number | null; done?: number | null }
+/** A type's right-size search: the counts tried, and where it is — trying a count, done (the smallest that
+ *  passes; null: none up to the limit, or gridlock), or stopped at the run limit. */
+interface RightSize { tried: Tried; at: { next: number } | { done: number | null } | 'stopped' }
 /** Each try is a full week; stop after this many and say so. */
 const RIGHT_SIZE_MAX_RUNS = 8
 
 /** Under a type in the fleet card: the search going on, then the right size — with one tap to try it. */
 function RightSizeLine({ z, n, onTry }: { z: RightSize | undefined; n: number; onTry: (k: number) => void }) {
   if (!z) return null
-  if (z.trying != null) return <span className="sim-rightsize sim-busy">Finding the right size · trying {z.trying}…</span>
-  if (z.done === n) return <span className="sim-rightsize is-good" title={`${n - 1} does not pass all three checks`}>✓ {n} is the right size</span>
-  if (z.done != null) {
+  if (z.at === 'stopped') return <span className="sim-rightsize sim-busy">Stopped after {RIGHT_SIZE_MAX_RUNS} runs — try a count with the stepper</span>
+  if ('next' in z.at) return <span className="sim-rightsize sim-busy">Finding the right size · trying {z.at.next}…</span>
+  const k = z.at.done
+  if (k === n) return <span className="sim-rightsize is-good" title={`${n - 1} does not pass all three checks`}>✓ {n} is the right size</span>
+  if (k != null) {
     return (
       <span className="sim-rightsize is-warn">
-        <span title="The smallest count that passes all three checks">Right size <b className="num">{z.done}</b> · {z.done > n ? `${z.done - n} more` : `${n - z.done} fewer`}</span>
-        <button type="button" className="btn btn-sm ghost" onClick={() => onTry(z.done!)}>Try {z.done}</button>
+        <span title="The smallest count that passes all three checks">Right size <b className="num">{k}</b> · {k > n ? `${k - n} more` : `${n - k} fewer`}</span>
+        <button type="button" className="btn btn-sm ghost" onClick={() => onTry(k)}>Try {k}</button>
       </span>
     )
   }
   return <span className="sim-rightsize is-bad">{z.tried[n] === 'gridlock' ? 'Gridlock — fix the layout before sizing' : 'No count tried passes — check the layout and the flows'}</span>
 }
 
-const clock = (t: number) => {
-  const d = Math.floor(t / 86400) + 1, s = Math.floor(t % 86400)
-  return `Day ${d} · ${String(Math.floor(s / 3600)).padStart(2, '0')}:${String(Math.floor((s % 3600) / 60)).padStart(2, '0')}`
-}
 
 /** Step a simulation off-screen in short slices so the page stays responsive. */
 function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () => boolean) {
@@ -162,7 +162,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
 
   // ---- "Use N" needs the smallest fleet that Meets (the right-size search below finds it) ----
   /** Could one vehicle fewer still reach the target utilization? If not, it is not worth running. */
-  function oneFewerMayMeet(t: { utilization: number }, n: number) { return n > 1 && (t.utilization * n) / (n - 1) <= targetU + BANDS.utilization.tightOver }
+  const oneFewerMayMeet = (t: { utilization: number }, n: number) => n > 1 && mayPassUtilization(t.utilization, n, n - 1, targetU)
   /** Records on the stored run whether this type's count is the smallest that meets (Sizing's Use N). */
   function markSmallest(vid: string, smallest: boolean) {
     const fresh = getProject(project.id), run = fresh?.simSettings?.lastRun
@@ -194,35 +194,36 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
 
   // ---- the right size (owner, 2026-11-22): per type, the smallest count that passes all three checks ----
   // Down from a count that passes, up from one that does not (the other types held); `nextRightSize` picks
-  // each count to try. Its first step down is the "one fewer" pricing and the verdict read.
+  // each count to try. Its answer is also the "one fewer" pricing and the verdict read (`lower`).
   const [sizes, setSizes] = useState<Record<string, RightSize>>({})
   useEffect(() => {
     setSizes({})
     if (!R) return
     const tok = token.current
+    // Only what the search needs from the run (the closure would otherwise keep the whole run alive).
+    const gridlock = !!R.res.gridlock
     const types = R.res.types.filter(t => (fleetBy[t.vehicleId] ?? 0) > 0)
+      .map(t => ({ vid: t.vehicleId, verdict: t.verdict, perHr: t.perHr, target: t.target, utilization: t.utilization, grades: t.grades }))
     const one = (i: number) => {
       if (i >= types.length || tok !== token.current) return
-      const t = types[i], vid = t.vehicleId, n = fleetBy[vid]
-      const tried: Tried = { [n]: R.res.gridlock ? 'gridlock' : t.verdict }
+      const t = types[i], vid = t.vid, n = fleetBy[vid]
+      const tried: Tried = { [n]: gridlock ? 'gridlock' : t.verdict }
       // About how many the failing checks need — the first count tried going up.
-      const estimate = Math.max(n + 1,
-        t.perHr > 0 && !t.checks.orders ? Math.ceil((n * t.target) / t.perHr) : 0,
-        !t.checks.utilization ? Math.ceil((n * t.utilization) / targetU) : 0)
-      // Below n, a count whose share of the same work would exceed the target cannot pass.
-      const cannotPass = (k: number) => k < n && (t.utilization * n) / k > targetU + BANDS.utilization.tightOver
+      const estimate = fleetNeeds(n, { perHr: t.perHr, demand: t.target, util: t.utilization, target: targetU,
+        fails: { orders: t.grades.orders === 'bad', utilization: t.grades.utilization === 'bad' } })[0]?.n ?? n + 1
+      // Below n, a count that could not reach the target utilization with the same work cannot pass.
+      const cannotPass = (k: number) => k < n && !mayPassUtilization(t.utilization, n, k, targetU)
       let runs = 0
       const step = () => {
         if (tok !== token.current) return
         const at = nextRightSize(n, tried, estimate, cannotPass)
         if ('done' in at || runs >= RIGHT_SIZE_MAX_RUNS) {
-          const done = 'done' in at ? at.done : null
-          setSizes(m => ({ ...m, [vid]: { tried: { ...tried }, trying: null, done } }))
-          if (passes(tried[n])) markSmallest(vid, done === n)
+          setSizes(m => ({ ...m, [vid]: { tried: { ...tried }, at: 'done' in at ? at : 'stopped' } }))
+          if (passes(tried[n])) markSmallest(vid, 'done' in at && at.done === n)
           return one(i + 1)
         }
         runs++
-        setSizes(m => ({ ...m, [vid]: { tried: { ...tried }, trying: at.next } }))
+        setSizes(m => ({ ...m, [vid]: { tried: { ...tried }, at } }))
         const S = createSim(inputs.layout, inputs.flows, simVehicles, { ...simConfig(assume.seed), fleet: { ...fleetBy, [vid]: at.next } })
         if (!S) { tried[at.next] = 'short'; return step() }   // that many cannot even be placed
         runInSlices(S, runSec, () => {
@@ -236,12 +237,13 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     one(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [R])
-  /** One fewer's verdict per type, as pricing and the verdict read it ('checking' until known). */
-  const lower = useMemo(() => Object.fromEntries(Object.entries(sizes).flatMap(([vid, z]) => {
+  /** Does one fewer pass, per type, as pricing and the verdict read it: yes when the smallest passing count
+   *  is under the fleet ('checking' while the search runs). */
+  const lower = useMemo(() => Object.fromEntries(Object.entries(sizes).map(([vid, z]) => {
     const n = fleetBy[vid] ?? 0
-    const v = z.tried[n - 1] ?? (z.trying == null && z.done !== undefined ? 'short' : z.trying === n - 1 ? 'checking' : undefined)
-    return v ? [[vid, v]] : []
-  })) as Record<string, Verdict | 'checking'>, [sizes, fleetBy])
+    const v: Verdict | 'checking' = z.at !== 'stopped' && 'next' in z.at ? 'checking' : z.at !== 'stopped' && z.at.done != null && z.at.done < n ? 'meets' : 'short'
+    return [vid, v]
+  })), [sizes, fleetBy])
 
   // ---- variability: 10 seeds, ranges and "met in k/10" ----
   const [vari, setVari] = useState<{ k: number; out: SimResults[] } | null>(null)
@@ -321,10 +323,13 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const typeIds = Object.keys(fleetBy).filter(vid => vehicleById.has(vid))
   const fleetPane = (
     <div className={`sim-kpi sim-kpi-fleet is-${headline.verdictTone}`}>
-      <span className="sim-kpi-lbl">Fleet</span>
-      {/* Right-sized needs no word of its own (owner, 2026-11-22): the line under the type says "✓ 6 is the
-          right size". Undersized, Oversized, Gridlock and the run's progress keep theirs. */}
-      {headline.outcome !== 'right' && <span className="sim-kpi-val">{verdictWord(headline)}</span>}
+      <div className="sim-kpi-head">
+        <span className="sim-kpi-lbl">Fleet</span>
+        {/* Right-sized needs no word of its own (owner, 2026-11-22): the line under the type says "✓ 6 is the
+            right size". Undersized, Oversized, Gridlock and the run's progress keep theirs. */}
+        {headline.outcome !== 'right' && <span className="sim-kpi-val">{verdictWord(headline)}</span>}
+        {Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <button type="button" className="link-btn" onClick={() => onResetFleet(typeIds)}>Reset to engine</button>}
+      </div>
       {typeIds.map(vid => {
         const v = vehicleById.get(vid)
         const n = fleetBy[vid] ?? 0
@@ -353,7 +358,6 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           </div>
         )
       })}
-      {Object.keys(simSettings.fleet ?? {}).some(vid => vid in fleetBy) && <button type="button" className="link-btn sim-kpi-sub" onClick={() => onResetFleet(typeIds)}>Reset to engine</button>}
     </div>
   )
 
@@ -523,7 +527,6 @@ const GRADE_WORD: Record<Grade, string> = { spare: 'Spare capacity — the fleet
 /** The battery line's goal when something other than the morning drop set its grade. */
 const BATTERY_CAUSE: Record<BatteryCause, string> = { floor: 'floor reached', wait: 'charger waits', near: 'near the floor', sag: 'by morning' }
 const OUTCOME_WORD: Record<Outcome, string> = { right: 'Right-sized', over: 'Oversized', under: 'Undersized', gridlock: 'Gridlock', notRun: 'Not run' }
-/** The verdict in one word — Sim's fleet tile (Data says why, not the word again). */
 /** One word (owner, 2026-11-22): Right-sized, Undersized or Oversized; an amber check shows in its own colour only. */
 const verdictWord = (h: Headline) => (h.outcome ? OUTCOME_WORD[h.outcome] : 'Simulating…')
 
@@ -559,26 +562,14 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
 }) {
   const u = h.utilization, done = h.perHr.simulated, b = h.battery
   const over = u.simulated != null && u.simulated > 1
-  const pctN = (x: number | null) => (x == null ? '—' : `${Math.round(x)}%`)
   const mornings = b.dayStarts.length > 2 ? ` · mornings ${Math.round(Math.min(...b.dayStarts.slice(1)))}%+` : ''
   const speed = h.speedFps == null ? '—' : unitSystem === 'metric' ? `${units.distance.toMetric(h.speedFps).toFixed(2)} m/s` : `${h.speedFps.toFixed(1)} ft/s`
-  const targets = [...new Set([60, 65, 70, 75, 80, 85, 90, 95, Math.round(u.target * 100), Math.round(sizingTarget * 100)])].sort((x, y) => x - y)
   return (
     <>
       <Kpi value={done == null ? '—' : done.toFixed(1)} label="1 · Orders per hour" sub={`of ${h.perHr.target.toFixed(0)} needed`} tone={h.perHr.tone} />
       {/* Too few vehicles: the utilization the work needs, over 100% — and by how much. */}
       <div className={`sim-kpi is-${u.tone}`}>
-        <KebabMenu label="Target utilization">
-          <p className="sim-kebab-h">Target utilization</p>
-          <div className="sim-kebab-opts" role="radiogroup" aria-label="Target utilization">
-            {targets.map(p => (
-              <button key={p} type="button" role="radio" aria-checked={Math.round(u.target * 100) === p} className={Math.round(u.target * 100) === p ? 'on' : ''} onClick={() => onTarget(p / 100)}>
-                {p}%{p === Math.round(sizingTarget * 100) ? ' · Sizing' : ''}
-              </button>
-            ))}
-          </div>
-          <p className="sim-kebab-note">Simulation only — Sizing keeps {Math.round(sizingTarget * 100)}%. Typical: 80–85% for opportunity-charged fleets.</p>
-        </KebabMenu>
+        <KebabMenu label="Target utilization"><TargetPicker target={u.target} sizingTarget={sizingTarget} onTarget={onTarget} /></KebabMenu>
         <span className="sim-kpi-val num">{pctOf(u.simulated)}</span>
         {/* Red says by how much: over the target (pts), or over capacity (the work needs more than the fleet has). */}
         <span className="sim-kpi-lbl">2 · Utilization{over ? ` · over capacity by ${Math.round((u.simulated! - 1) * 100)}%`
@@ -587,21 +578,12 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
         {u.fewerAt != null && <span className="sim-kpi-sub sim-kpi-hint">Low — {h.fleet.tested - 1} would run at about {pctOf(u.fewerAt)}</span>}
       </div>
       <div className={`sim-kpi is-${b.tone}`}>
-        <KebabMenu label="Shift coverage">
-          <p className="sim-kebab-h">Shift coverage</p>
-          <CoverageRow label="Days a week" value={coverage.daysPerWeek} options={[5, 6, 7]} base={coverage.step1.daysPerWeek} onPick={v => onCoverage('daysPerWeek', v)} />
-          <CoverageRow label="Shifts a day" value={coverage.shiftsPerDay} options={[1, 2, 3]} base={coverage.step1.shiftsPerDay} onPick={v => onCoverage('shiftsPerDay', v)} />
-          <ShiftLength value={coverage.shiftH} onCoverage={onCoverage} />
-          <p className="sim-kebab-note">Simulation only — Step 1: {coverage.step1.daysPerWeek} days × {coverage.step1.shiftsPerDay} × {coverage.step1.shiftH} h. Off-shift and days off, vehicles charge.</p>
-        </KebabMenu>
+        <KebabMenu label="Shift coverage"><CoverageControls coverage={coverage} onCoverage={onCoverage} /></KebabMenu>
         <span className="sim-kpi-val num">{pctN(b.lowest.run)}</span>
         <span className="sim-kpi-lbl">3 · Battery · lowest</span>
-        <ul className="sim-kpi-list">
-          <li><span>Shift</span><b className="num">{pctN(b.lowest.shift)}</b></li>
-          <li><span>Day</span><b className="num">{pctN(b.lowest.day)}</b></li>
-          <li><span>Week</span><b className="num">{pctN(b.lowest.run)}</b></li>
+        <LowestList b={b}>
           <li className={b.pass === false ? 'bad' : b.pass ? 'good' : ''}>{b.pass == null ? (h.outcome ? 'Judged over a week' : '') : b.pass ? `✓ Keeps up${mornings}` : `✗ ${b.why ?? 'Does not keep up'}`}</li>
-        </ul>
+        </LowestList>
       </div>
       <Kpi value={speed} label="Average speed" sub="across the fleet, while moving" tone="" />
     </>
@@ -615,45 +597,26 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
   coverage: Coverage; onCoverage: (k: 'shiftH' | 'shiftsPerDay' | 'daysPerWeek', v: number) => void
 }) {
   const u = h.utilization, b = h.battery, done = h.perHr.simulated
-  const pctN = (x: number | null) => (x == null ? '—' : `${Math.round(x)}%`)
-  const targets = [...new Set([60, 65, 70, 75, 80, 85, 90, 95, Math.round(u.target * 100), Math.round(sizingTarget * 100)])].sort((x, y) => x - y)
   const over = u.simulated != null && u.simulated > 1
-  const rows: { label: string; value: string; goal: string; pass: boolean | null; tone: Tone; grade: Grade | null; at: number | null; scale: ReturnType<typeof checkScale>; body: ReactNode }[] = [
+  const rows: { label: string; value: string; goal: string; tone: Tone; grade: Grade | null; at: number | null; scale: ReturnType<typeof checkScale>; body: ReactNode }[] = [
     // Each line's figure is what its scale measures (owner, 2026-11-22: green left, red right on all three).
     { label: 'Orders', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}% short`, goal: h.perHr.moves ? `${h.perHr.moves.delivered.toLocaleString()} / ${h.perHr.moves.demanded.toLocaleString()}` : `of ${h.perHr.target.toFixed(0)} / h`,
-      pass: h.perHr.pass, tone: h.perHr.tone, grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
+      tone: h.perHr.tone, grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
       body: <p className="sim-kpi-sub">Simulated deliveries against the stations' demand over the run{h.perHr.moves ? ` — ${h.perHr.moves.delivered.toLocaleString()} of ${h.perHr.moves.demanded.toLocaleString()}` : ''}.{done == null ? '' : ` ${done.toFixed(1)} each hour against ${h.perHr.target.toFixed(0)} needed.`}</p> },
-    { label: 'Utilization', value: pctOf(u.simulated), goal: `≤ ${pctOf(u.target)}`, pass: u.pass, tone: u.tone,
+    { label: 'Utilization', value: pctOf(u.simulated), goal: `≤ ${pctOf(u.target)}`, tone: u.tone,
       grade: u.grade, at: u.simulated, scale: checkScale('utilization', u.target),
       body: <>
         <p className="sim-kpi-sub">{over ? `Over capacity by ${Math.round((u.simulated! - 1) * 100)}% — the work needs more than the fleet has.`
           : u.pass === false ? `Over target by ${Math.round((u.simulated! - u.target) * 100)} pts.` : 'Busy share of the shift, not counting charging.'} Static calc {pctOf(u.static)}.</p>
         {u.fewerAt != null && <p className="sim-kpi-sub sim-kpi-hint">Low — {h.fleet.tested - 1} would run at about {pctOf(u.fewerAt)}</p>}
-        <p className="sim-kebab-h">Target utilization</p>
-        <div className="sim-kebab-opts" role="radiogroup" aria-label="Target utilization">
-          {targets.map(p => (
-            <button key={p} type="button" role="radio" aria-checked={Math.round(u.target * 100) === p} className={Math.round(u.target * 100) === p ? 'on' : ''} onClick={() => onTarget(p / 100)}>
-              {p}%{p === Math.round(sizingTarget * 100) ? ' · Sizing' : ''}
-            </button>
-          ))}
-        </div>
-        <p className="sim-kebab-note">Simulation only — Sizing keeps {Math.round(sizingTarget * 100)}%.</p>
+        <TargetPicker target={u.target} sizingTarget={sizingTarget} onTarget={onTarget} />
       </> },
     { label: 'Battery drop', value: b.sagPts == null ? '—' : `${Math.round(b.sagPts)}%`, goal: b.grade == null ? 'over a week' : b.cause && b.cause !== 'sag' ? BATTERY_CAUSE[b.cause] : 'by morning',
-      pass: b.pass, tone: b.tone, grade: b.grade, at: b.sagPts, scale: checkScale('battery'),
+      tone: b.tone, grade: b.grade, at: b.sagPts, scale: checkScale('battery'),
       body: <>
         <p className="sim-kpi-sub">How far the fleet's charge fell from this week's first morning to the next{b.sagPts == null ? ' — judged once the run covers a week with off-shift time' : ''}. Lowest charge:</p>
-        <ul className="sim-kpi-list">
-          <li><span>Shift</span><b className="num">{pctN(b.lowest.shift)}</b></li>
-          <li><span>Day</span><b className="num">{pctN(b.lowest.day)}</b></li>
-          <li><span>Week</span><b className="num">{pctN(b.lowest.run)}</b></li>
-          {b.why && <li className={b.grade === 'bad' ? 'bad' : 'warn'}>{b.why}</li>}
-        </ul>
-        <p className="sim-kebab-h">Shift coverage</p>
-        <CoverageRow label="Days a week" value={coverage.daysPerWeek} options={[5, 6, 7]} base={coverage.step1.daysPerWeek} onPick={v => onCoverage('daysPerWeek', v)} />
-        <CoverageRow label="Shifts a day" value={coverage.shiftsPerDay} options={[1, 2, 3]} base={coverage.step1.shiftsPerDay} onPick={v => onCoverage('shiftsPerDay', v)} />
-        <ShiftLength value={coverage.shiftH} onCoverage={onCoverage} />
-        <p className="sim-kebab-note">Simulation only — Step 1: {coverage.step1.daysPerWeek} days × {coverage.step1.shiftsPerDay} × {coverage.step1.shiftH} h.</p>
+        <LowestList b={b}>{b.why && <li className={b.grade === 'bad' ? 'bad' : 'warn'}>{b.why}</li>}</LowestList>
+        <CoverageControls coverage={coverage} onCoverage={onCoverage} />
       </> },
   ]
   return (
@@ -675,6 +638,52 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
         </details>
       ))}
     </div>
+  )
+}
+
+const pctN = (x: number | null) => (x == null ? '—' : `${Math.round(x)}%`)
+
+/** The utilization target for the simulation (Data's tile menu and Simulate's check). */
+function TargetPicker({ target, sizingTarget, onTarget }: { target: number; sizingTarget: number; onTarget: (u: number) => void }) {
+  const t = Math.round(target * 100), sizing = Math.round(sizingTarget * 100)
+  const options = [...new Set([60, 65, 70, 75, 80, 85, 90, 95, t, sizing])].sort((x, y) => x - y)
+  return (
+    <>
+      <p className="sim-kebab-h">Target utilization</p>
+      <div className="sim-kebab-opts" role="radiogroup" aria-label="Target utilization">
+        {options.map(p => (
+          <button key={p} type="button" role="radio" aria-checked={t === p} className={t === p ? 'on' : ''} onClick={() => onTarget(p / 100)}>
+            {p}%{p === sizing ? ' · Sizing' : ''}
+          </button>
+        ))}
+      </div>
+      <p className="sim-kebab-note">Simulation only — Sizing keeps {sizing}%. Typical: 80–85% for opportunity-charged fleets.</p>
+    </>
+  )
+}
+
+/** Shift coverage for the simulation: days a week, shifts a day, shift length. */
+function CoverageControls({ coverage, onCoverage }: { coverage: Coverage; onCoverage: (k: 'shiftH' | 'shiftsPerDay' | 'daysPerWeek', v: number) => void }) {
+  return (
+    <>
+      <p className="sim-kebab-h">Shift coverage</p>
+      <CoverageRow label="Days a week" value={coverage.daysPerWeek} options={[5, 6, 7]} base={coverage.step1.daysPerWeek} onPick={v => onCoverage('daysPerWeek', v)} />
+      <CoverageRow label="Shifts a day" value={coverage.shiftsPerDay} options={[1, 2, 3]} base={coverage.step1.shiftsPerDay} onPick={v => onCoverage('shiftsPerDay', v)} />
+      <ShiftLength value={coverage.shiftH} onCoverage={onCoverage} />
+      <p className="sim-kebab-note">Simulation only — Step 1: {coverage.step1.daysPerWeek} days × {coverage.step1.shiftsPerDay} × {coverage.step1.shiftH} h. Off-shift and days off, vehicles charge.</p>
+    </>
+  )
+}
+
+/** The lowest charge in the first shift, day and week, then a closing line. */
+function LowestList({ b, children }: { b: Headline['battery']; children?: ReactNode }) {
+  return (
+    <ul className="sim-kpi-list">
+      <li><span>Shift</span><b className="num">{pctN(b.lowest.shift)}</b></li>
+      <li><span>Day</span><b className="num">{pctN(b.lowest.day)}</b></li>
+      <li><span>Week</span><b className="num">{pctN(b.lowest.run)}</b></li>
+      {children}
+    </ul>
   )
 }
 
