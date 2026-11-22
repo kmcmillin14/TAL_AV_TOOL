@@ -14,7 +14,7 @@ type VehicleState = 'travel' | 'handle' | 'wait' | 'charge' | 'idle'
 export const STATES: [VehicleState, string][] = [['travel', 'Travelling'], ['handle', 'Pick / drop'], ['wait', 'Waiting'], ['charge', 'Charging'], ['idle', 'Idle']]
 
 type V = SimState['veh'][number]
-function vehicleState(v: V): VehicleState {
+export function vehicleState(v: V): VehicleState {
   if (v.mode === 'pick' || v.mode === 'drop') return 'handle'
   if (v.mode === 'charging' || v.mode === 'toCharge') return 'charge'
   if (v.mode === 'toPick' || v.mode === 'toDrop') return v.moved > 0 ? 'travel' : 'wait'

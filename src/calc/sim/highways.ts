@@ -207,3 +207,16 @@ export function highwayConnections(L: SimLayout): { joins: HighwayJoin[]; loose:
 
 /** Is `p` inside any of these junctions? (Arrows are not drawn inside a junction.) */
 export const inJunction = (joins: HighwayJoin[], p: XY) => joins.some(j => insidePolygon(j.poly, p))
+
+/** The points a highway serves, in order from its start (`t` 0..1 along it): those on its centre line and
+ *  those joined to it by a spur. Junctions are left out. Drill-down card (owner, 2026-11-22). */
+export function highwayStops(L: SimLayout, id: string): { id: string; t: number }[] {
+  const h = L.highways?.find(q => q.id === id)
+  if (!h) return []
+  const on = new Set(withHighways(L).segments.filter(s => s.highwayId === id).flatMap(s => [s.a, s.b]))
+  const spur = new Set(L.segments.flatMap(s => (on.has(s.a) ? [s.b] : on.has(s.b) ? [s.a] : [])))
+  const { a, b } = highwayEnds(h)
+  return L.points.filter(p => p.type !== 'junction' && (on.has(p.id) || spur.has(p.id)))
+    .map(p => ({ id: p.id, t: closestOnLine(a, b, p).t }))
+    .sort((x, y) => x.t - y.t)
+}

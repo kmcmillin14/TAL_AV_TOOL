@@ -718,6 +718,24 @@ the split of Layout into Highways and Pick and drop points.
 - **Two cards (owner, 2026-11-22):** the right column is the **checklist** (tinted: the steps, their progress
   and the one Next) and, below it, the **detail** (white: the open step's content, or the drill-down of what
   is selected). Only the detail card scrolls, inside itself; the page never does.
+- **Drill-down cards (owner, 2026-11-22 — Flighty-style; artifact *Drill-down Cards*):** what is selected
+  opens as a card in the detail card. Top to bottom: **‹ Back** to the step's list (clears the selection;
+  Duplicate and Delete beside it), the **name** big with **one status chip** — the card's only colour —
+  a line of context, a **picture** where there is one, **three big-number tiles** (dashed tiles are typed
+  into in place), then **folds** that open on request, one at a time (opening one closes the other).
+  Closed, every card fits the detail card without scrolling at 1280×720 and up; only an opened fold may
+  scroll it. While a card is open the checklist drops its one sentence and the sample note is hidden (both
+  return with Back). Nothing is removed: every field the inspector had is in a tile or a fold.
+  | Card | Chip | Picture | Tiles | Folds |
+  |---|---|---|---|---|
+  | Station | *Connected* / *Needs a route* | — | moves/h · height (typed) · material flows | Material flows (each as a pick → drop bar with rate and distance; *Add material flow to*) · Settings · Advanced (incl. Repeat) |
+  | Rack | *In reach* / *Out of reach* / *Needs a route* | top beam against the lowest reach of the vehicles that work it | long × high · positions · material flows | as Station |
+  | Highway | B56.5: *Full speed* / *Slowed* / *Blocked* | its stops along it, in order (`highwayStops`: on the centre line or on a spur) | width (typed) · length · stops; **Add pick / drop point here** arms placing a point | Stops · Settings · Advanced |
+  | Route | B56.5 | — | length · lanes · tightest clearance | Settings · Advanced |
+  | Material flow | *Routed* / *No route* / *Not on the map* | pick → drop with each end's height | moves/h (typed) · distance on the map · lift | Vehicle (and Unlink) |
+  | Object | — | — | width · depth · rotation (typed) | Settings |
+  | Vehicle (run; while followed) | its state, as the map legend | its leg: pick → drop, filled as it drives, distance to go | battery · moves · working % | — |
+  Back on the vehicle card stops following and returns to the fleet. Not yet: chargers' after-run figures.
 - **Words (owner, 2026-11-22):** a pick → drop move is a **material flow** everywhere a person reads it —
   Sizing, Simulation, help, the deck and the workbook (code keeps `flow`).
 - **Progress (owner, 2026-11-22):** each step's mark is green when done, amber when started, grey when not;

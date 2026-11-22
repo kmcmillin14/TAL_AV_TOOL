@@ -24,6 +24,7 @@ import LayoutCanvas from '../layout/LayoutCanvas'
 import PricingAction from './PricingAction'
 import RunDetails, { type Assumptions } from './RunDetails'
 import { RunScene, STATES } from './RunScene'
+import VehicleCard from './VehicleCard'
 
 /** Background run slices stay under half a 60 fps frame, so playback keeps its pace. */
 const SLICE_MS = 8
@@ -396,7 +397,9 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         <div className="sim-guide-card">{guide.list}{guide.next}</div>
         <div className="sim-side-body sim-detail-card">
           {banner}
-          <div hidden={view !== 'sim'} className="sim-sim-pane">{fleetPane}{summary}</div>
+          <div hidden={view !== 'sim'} className="sim-sim-pane">
+            {S && followed ? <VehicleCard S={S} i={follow} unitSystem={unitSystem} onBack={() => setFollow(-1)} /> : <>{fleetPane}{summary}</>}
+          </div>
           <div hidden={view !== 'data'} className="sim-data-pane">
             {dataPane}
             <details className="sim-disc">

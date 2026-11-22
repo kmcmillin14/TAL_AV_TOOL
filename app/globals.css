@@ -5739,3 +5739,65 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-guide-card .sim-guide-next { border-top: 0; padding: 8px 12px 12px; }
 .sim-detail-card { flex: 1; min-height: 0; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px;
   background: var(--bg-surface); box-shadow: var(--sim-shadow-rest); }
+
+/* Drill-down cards (owner, 2026-11-22 — Flighty-style): Back and actions, the name big with one status chip,
+   a line of context, a picture where there is one, three big-number tiles (dashed = typed into in place),
+   then folds that open one at a time. Closed, a card fits the detail card without scrolling. */
+.sim-side:has(.sim-dcard) .sim-guide-lead { display: none; }   /* the checklist gives the card its room */
+.sim-dcard { gap: 12px; }
+.sim-dcard-top { display: flex; align-items: center; min-height: 24px; margin: -4px 0 -6px; }
+.sim-back { background: none; border: 0; padding: 0; font: 600 13px var(--tal-font-family); color: var(--sim-sel); cursor: pointer; }
+.sim-back:hover { text-decoration: underline; }
+.sim-dcard-acts { margin-left: auto; display: flex; }
+.sim-dcard-acts .icon-btn { background: none; border: none; color: var(--text-tertiary); cursor: pointer; padding: 4px; }
+.sim-dcard-acts .icon-btn:hover { color: var(--bad); }
+.sim-dcard-head { display: flex; flex-direction: column; gap: 2px; }
+.sim-dcard-title { display: flex; align-items: center; gap: 8px; color: var(--text-secondary); min-width: 0; }
+.sim-panel .sim-dcard-title h3 { flex: 1; min-width: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-primary); }
+.sim-dcard-sub { margin: 0; font-size: 12px; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-state { flex: none; font: 700 11px var(--tal-font-numeric); padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+.sim-state.is-good { background: var(--good-soft); color: var(--good); }
+.sim-state.is-warn { background: var(--warn-soft); color: var(--warn); }
+.sim-state.is-bad { background: var(--bad-soft); color: var(--bad); }
+.sim-state.is-sel { background: color-mix(in srgb, var(--sim-sel) 12%, transparent); color: var(--sim-sel); }
+.sim-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+.sim-tile { display: flex; flex-direction: column; gap: 2px; min-width: 0; padding: 8px 10px; border-radius: 10px; background: var(--bg-surface-2, var(--bg-hover)); border: 1px solid transparent; }
+.sim-tile b { display: flex; align-items: baseline; gap: 3px; min-width: 0; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2;
+  color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-tile b small { font-size: 11px; font-weight: 600; color: var(--text-tertiary); }
+.sim-tile > span { font-size: 11px; font-weight: 600; color: var(--text-tertiary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-tile.is-edit { border: 1px dashed var(--border-strong, var(--border)); cursor: text; }
+.sim-tile.is-edit:focus-within { border: 1px solid var(--sim-sel); background: var(--bg-surface); }
+.sim-tile.is-edit input { width: 100%; min-width: 0; padding: 0; border: 0; background: none; font: inherit; color: inherit; -moz-appearance: textfield; }
+.sim-tile.is-edit input::-webkit-inner-spin-button, .sim-tile.is-edit input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+.sim-tile.is-edit input:focus { outline: none; }
+/* Pictures: a route bar (a material flow from its pick to its drop), a highway's stops, a rack's reach. */
+.sim-route { display: flex; flex-direction: column; gap: 6px; }
+.sim-route-ends { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; font-weight: 700; color: var(--text-primary); }
+.sim-route-ends > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-route-ends > span:last-child { text-align: right; }
+.sim-route-ends small { display: block; font-size: 11px; font-weight: 600; color: var(--text-tertiary); }
+.sim-bar { position: relative; display: block; height: 6px; border-radius: 3px; background: var(--border); }
+.sim-bar > i { position: absolute; inset: 0 auto 0 0; border-radius: 3px; background: var(--sim-sel); }
+.sim-bar.is-route > i { right: 0; }
+.sim-bar.is-route::before, .sim-bar.is-route::after { content: ""; position: absolute; top: 50%; width: 10px; height: 10px; margin-top: -5px; border-radius: 50%; background: var(--text-primary); z-index: 1; }
+.sim-bar.is-route::before { left: -2px; } .sim-bar.is-route::after { right: -2px; }
+.sim-bar.is-bad > i { background: var(--bad); }
+.sim-bar.is-route.is-bad > i { background: repeating-linear-gradient(90deg, var(--bad) 0 6px, transparent 6px 10px); }
+.sim-bar-meta { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; color: var(--text-tertiary); }
+.sim-reach { display: flex; flex-direction: column; gap: 6px; }
+.sim-routes { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.sim-routes button { display: flex; flex-direction: column; gap: 6px; width: 100%; padding: 8px; border-radius: 8px; text-align: left; }
+.sim-routes button:hover { background: var(--bg-hover); }
+.sim-routes .sim-route-ends { font-size: 12px; }
+.sim-strip { position: relative; height: 18px; margin: 0 6px; }
+.sim-strip-lane { position: absolute; inset: 5px 0; border-radius: 4px; background: var(--border); }
+.sim-strip-dir { position: absolute; right: -2px; top: -12px; font-size: 11px; color: var(--text-tertiary); }
+.sim-strip .sim-dot { position: absolute; top: 4px; margin-left: -5px; box-shadow: 0 0 0 2px var(--bg-surface); }
+.sim-dcard-act { align-self: stretch; }
+/* The folds: compact rows, one open at a time; an open one is the only thing that can make the card scroll. */
+.sim-dcard-folds > .sim-section > summary { padding: 8px 0; }
+.sim-dcard-folds > .sim-section:last-child { border-bottom: 1px solid var(--border); }
+.sim-dcard-folds .sim-section-body h4 { margin: 4px 0 0; }
+.sim-detail-card:has(.sim-dcard) > .sim-banner { display: none; }   /* the sample note returns with Back */

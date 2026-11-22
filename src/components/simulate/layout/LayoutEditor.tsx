@@ -606,7 +606,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const onFix = (c: ReadinessCheck) => {
     const a = fixAction(c)
     if (!a) return
-    if ('stage' in a) { onStage(a.stage); if ('arm' in a) armHome(a.arm); return }
+    if ('stage' in a) { onStage(a.stage); if ('arm' in a) armType(a.arm); return }
     chooseTool(a.tool)                      // cancels any chain — so the route's start is set after it
     if (a.startFrom && byId.has(a.startFrom)) { locate({ kind: 'point', id: a.startFrom }); setChainFrom(a.startFrom) }
   }
@@ -616,9 +616,9 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     const f = flows.find(q => q.id === t.id), a = byId.get(f?.fromPointId ?? ''), b = byId.get(f?.toPointId ?? '')
     if (f && a && b) focusOn({ kind: 'flow', id: f.id }, { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 })
   }
-  /** Arm the Place tool with a Sizing name (its type and role), or with a charger or parking spot. */
+  /** Arm the Place tool with a Sizing name (its type and role), or with a bare type (a charger, parking, a new stand). */
   const arm = (a: Armed) => { setTool('points'); setChainFrom(null); setMarks(null); setPlaceType(a.type); setPlaceRole(a.role); setArmed(a) }
-  const armHome = (t: 'charger' | 'parking') => { setTool('points'); setChainFrom(null); setMarks(null); setPlaceType(t); setArmed(null) }
+  const armType = (t: SimPointType) => { setTool('points'); setChainFrom(null); setMarks(null); setPlaceType(t); setArmed(null) }
   const place = useMemo(() => placeProgress(layout, flows), [layout, flows])
 
   const paste = () => {
@@ -770,15 +770,18 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   // The rack bar: above a selected rack — its pallet, face, sizes, total and what is wrong.
   const selRack = !drag && selection?.kind === 'point' ? layout.points.find(q => q.id === selection.id && q.rack) : undefined
   const selRackGeo = selRack ? rackGeometry(selRack, loads) : null
-  const rackBar = selRack && selRackGeo ? (() => {
-    // The lowest reach among the vehicles that work it (its flows), else the simulation's vehicles.
+  // The lowest reach among the vehicles that work it (its flows), else the simulation's vehicles.
+  const selRackReach = selRack ? (() => {
     const users = simFlows.filter(f => f.fromPointId === selRack.id || f.toPointId === selRack.id).map(f => f.vehicleId && simVehicleById.get(f.vehicleId))
     const pool = (users.length ? users : vehicleTypes).filter((v): v is Vehicle => !!v && v.calc.maxLiftHeightFt != null)
     const low = pool.reduce<Vehicle | null>((m, v) => (!m || v.calc.maxLiftHeightFt! < m.calc.maxLiftHeightFt! ? v : m), null)
+    return low ? { name: low.name, ft: low.calc.maxLiftHeightFt! } : null
+  })() : null
+  const rackBar = selRack && selRackGeo ? (() => {
     const setRack = (patch: Partial<SimRack>) => setLayout(updatePoint(layout, selRack.id, { rack: { ...selRack.rack!, ...patch } }), `rack:${selRack.id}:${Object.keys(patch).join()}`)
     return {
       at: { x: (Math.min(...selRackGeo.corners.map(c => c.x)) + Math.max(...selRackGeo.corners.map(c => c.x))) / 2, y: Math.min(...selRackGeo.corners.map(c => c.y)) },
-      node: <RackBar p={selRack} g={selRackGeo} loads={loads} reach={low ? { name: low.name, ft: low.calc.maxLiftHeightFt! } : null}
+      node: <RackBar p={selRack} g={selRackGeo} loads={loads} reach={selRackReach}
         onRack={setRack} onFlip={() => setLayout(updatePoint(layout, selRack.id, flipRack(selRack)))}
         onTotal={total => { const len = rackLengthFor(selRack, loads, total); if (len) setLayout(updatePoint(layout, selRack.id, stretchRack(selRack, 'b', (() => { const r = selRack.rack!, a = (r.angleDeg * Math.PI) / 180; return { x: selRack.x - Math.cos(a) * r.lengthFt / 2 + Math.cos(a) * len, y: selRack.y - Math.sin(a) * r.lengthFt / 2 + Math.sin(a) * len } })(), 0))) }}
         onDelete={deleteSelection} />,
@@ -954,10 +957,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                 </Section>
               </>
             ) : stage === 'chargers' ? (
-              <ChargersCard layout={layout} suggested={suggestedChargers} needed={vehiclesPlaced} onArmHome={armHome} />
+              <ChargersCard layout={layout} suggested={suggestedChargers} needed={vehiclesPlaced} onArmHome={armType} />
             ) : (
               <>
                 <LayoutPanel
+                  key={selection ? ('id' in selection ? selection.id : selection.ids.join()) : ''}
                   layout={layout}
                   flows={flows}
                   vehicles={vehicles}
@@ -991,6 +995,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   onAddFlow={addFlow}
                   focusRateOf={justAdded}
                   onRateFocused={() => setJustAdded(null)}
+                  onBack={() => setSelection(null)}
+                  backLabel={stage === 'routes' ? 'Routes' : 'Pick and drop points'}
+                  onSelectFlow={id => setSelection({ kind: 'flow', id })}
+                  rack={selRack && selRackGeo ? { id: selRack.id, g: selRackGeo, reach: selRackReach } : null}
+                  onAddPoint={() => { onStage('points'); armType('stand') }}
                 />
               </>
             )}

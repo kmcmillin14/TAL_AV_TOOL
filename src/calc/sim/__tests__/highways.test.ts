@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { DERIVED, highwayConnections, highwayCorners, highwayEnds, highwayFromEnds, highwaysTouching, inJunction, insideHighway, withHighways } from '../highways'
+import { DERIVED, highwayConnections, highwayCorners, highwayEnds, highwayFromEnds, highwaysTouching, highwayStops, inJunction, insideHighway, withHighways } from '../highways'
 import { addHighway, pointsInLoop, removeHighways, updateHighway, updateHighways, flowTargets, hitTest, notConnected, placeWithSpur, routeDistanceFt, spurTarget, splitSegment, snapDraw, highwayEndsAt, moveHighwayEnds, highwayLanes, laneKind } from '../layoutEdit'
 import { segmentClearances, B56_5_RULE } from '../clearance'
 import { runInputs } from '../runInputs'
@@ -10,6 +10,18 @@ const hw = (a: { x: number; y: number }, b: { x: number; y: number }, extra: Par
   highwayFromEnds(a, b, 10, { id: extra.id ?? 'h1', dir: 'two', ...extra })
 
 describe('highways: stored as rectangles, routes derived', () => {
+  it('stops: points on the centre line and those on a spur, in order from the start; junctions left out', () => {
+    const L: SimLayout = { highways: [hw({ x: 0, y: 0 }, { x: 100, y: 0 })], points: [
+      { id: 'b', x: 70, y: 0, type: 'stand' },
+      { id: 'a', x: 20, y: 0, type: 'dock' },
+      { id: 'j', x: 40, y: 0, type: 'junction' },
+      { id: 'c', x: 40, y: 12, type: 'machine' },          // on a spur from j
+      { id: 'far', x: 50, y: 60, type: 'stand' },          // not connected
+    ], segments: [{ id: 's', a: 'j', b: 'c', dir: 'two', lane: 'single' }] }
+    expect(highwayStops(L, 'h1').map(s => s.id)).toEqual(['a', 'c', 'b'])
+    expect(highwayStops(L, 'nope')).toEqual([])
+  })
+
   it('validation warns when the highways form separate networks', () => {
     const two: SimLayout = { points: [], segments: [], highways: [hw({ x: 0, y: 0 }, { x: 50, y: 0 }), hw({ x: 0, y: 100 }, { x: 50, y: 100 }, { id: 'h2' })] }
     const msg = (L: SimLayout) => readinessChecks({ layout: L, flows: [], vehicles: [], fleetNeeded: 0 }).map(c => c.text).join(' | ')

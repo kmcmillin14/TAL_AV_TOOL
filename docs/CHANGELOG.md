@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-22 — Drill-down cards (Flighty-style)
+
+- Owner: what you select in Simulation opens as a card — Back, the name big with one status chip, a line
+  of context, a picture (a material flow's pick → drop bar, a highway's stops, a rack's top beam against
+  the vehicle's reach), three big-number tiles (dashed ones typed into in place), and the rest in folds
+  that open one at a time. Closed, every card fits without scrolling; nothing was removed.
+- A highway's card lists its stops and has **Add pick / drop point here**; a station's card lists its
+  material flows as route bars and opens each one's card.
+- Following a vehicle in the run shows its card: state, the leg it is on, battery, moves, time working.
+- `highwayStops` (calc, pure): the points a highway serves, in order along it.
+
 ## 2026-11-22 — "Material flows" everywhere; checklist and detail as two cards
 
 - Owner: what was a "flow" reads **material flow** wherever a person sees it — Sizing's table and KPIs,
