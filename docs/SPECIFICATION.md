@@ -744,6 +744,13 @@ the split of Layout into Highways and Pick and drop points.
   the Assumptions row. A check opens, one at a time, to its detail and its own setting — the target for
   utilization, shift coverage for battery. The full tiles (with average speed) head Data; the sample note
   shows in Data, not Simulate. No scrolling at 1280×720 and up.
+- **Right size (owner, 2026-11-22):** after a run the simulation finds, per vehicle type (others held), the
+  smallest count that passes all three checks: down from a count that passes, up from one that does not,
+  starting at about what the failing check needs (`nextRightSize`, `src/calc/sim/rightSize.ts`; at most 8
+  runs; none found up to +20 or on gridlock says so). The fleet card shows the search, then *Right size: N*
+  with **Try N** (sets the stepper and reruns) or *✓ N is the right size*.
+- **Off-shift rotation (owner, 2026-11-22):** off-shift, a parked vehicle more than 5 pts below full takes the
+  charger of a full, idle vehicle, which moves to a free parking spot (none free: no rotation).
 - **Words (owner, 2026-11-22):** a pick → drop move is a **material flow** everywhere a person reads it —
   Sizing, Simulation, help, the deck and the workbook (code keeps `flow`).
 - **Progress (owner, 2026-11-22):** each step's mark is green when done, amber when started, grey when not;

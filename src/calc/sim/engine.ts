@@ -335,6 +335,8 @@ function nearestFree(S: SimState, v: SimVehicle, nodes: number[]) {
   return best
 }
 function reserve(S: SimState, v: SimVehicle, node: number) { const z = S.G.zone[node]!; S.locks.set(z, v.i); v.held.add(z) }
+/** Off-shift rotation: a parked vehicle this far below its full level takes a full one's charger, % points. */
+const ROTATE_BELOW_FULL_PCT = 5
 const needsCharge = (v: SimVehicle) => v.prof.battery != null && v.soc < v.prof.battery.chargeBelowPct
 
 function goHome(S: SimState, v: SimVehicle) {
@@ -579,13 +581,15 @@ export function step(S: SimState) {
   for (const v of S.veh) if (v.mustCharge && v.mode === 'home' && G.points[v.node].type !== 'charger') goCharge(S, v)
   // Charging rules (owner, 2026-11-13): a vehicle without a mission belongs on a charger — every 10 s
   // an idle one at parking takes a free charger; one that must charge and finds none moves a full,
-  // idle vehicle off a charger to a free parking spot.
+  // idle vehicle off a charger to a free parking spot. Off-shift the site rotates (owner, 2026-11-22):
+  // a parked vehicle below full does the same, so with more vehicles than chargers every one starts the
+  // next shift charged.
   if (Math.floor(t / 10) > Math.floor((t - DT) / 10)) {
     for (const v of S.veh) {
       if (v.mode !== 'home' || v.job || !v.prof.battery || G.points[v.node].type === 'charger') continue
       const n = nearestFree(S, v, G.chargers)
       if (n >= 0) { reserve(S, v, n); v.mode = v.mustCharge ? 'toCharge' : 'toHome'; setRoute(S, v, n); continue }
-      if (v.mustCharge) bumpFullOffCharger(S, v)
+      if (v.mustCharge || (!onShift && v.soc < v.prof.battery.chargeUntilPct - ROTATE_BELOW_FULL_PCT)) bumpFullOffCharger(S, v)
     }
   }
 

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-11-22 — The right fleet size, found by the simulation; off-shift charger rotation
+
+- Owner: after a run, the simulation tries other counts of each type (the others held) until it knows the
+  smallest that passes all three checks — down from a count that passes, up from one that does not
+  (`nextRightSize`, pure; at most 8 week-long runs). The fleet card shows *Right size: 7 (1 more)* with
+  **Try 7**, or *✓ 6 is the right size*. Its first step down is the "one fewer" pricing reads.
+- Owner: off-shift, a parked vehicle more than 5 pts below full takes a full vehicle's charger (that one
+  moves to a free parking spot), so fleets with more vehicles than chargers start the next shift charged.
+  Run figures move for such fleets (charge trips, mornings' charge). With no free parking spot there is no
+  rotation yet.
+- Known: the binary checks fail by hairs (90.04% against 90%); a graded scale is proposed.
+
 ## 2026-11-22 — Simulate fits without scrolling
 
 - Owner: Simulate's checks are one line each (mark, figure, goal), opening to their detail and setting;

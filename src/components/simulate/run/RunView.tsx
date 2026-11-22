@@ -11,6 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runHeadline, type Headline, type Outcome, type Tone } from '@/src/calc/sim/headline'
+import { nextRightSize, type Tried } from '@/src/calc/sim/rightSize'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
 import { RUN_DEFAULTS, step1DaysPerWeek } from '@/src/lib/simFields'
 import KebabMenu from '../ui/KebabMenu'
@@ -67,6 +68,28 @@ interface Props {
   guide: { list: ReactNode; next: ReactNode }
   /** Sizing's static estimate (how the fleet operates), shown under Results beside the run's data. */
   estimate: ReactNode
+}
+
+/** A type's right-size search: the counts tried, the one running, and the answer once known (null: none found). */
+interface RightSize { tried: Tried; trying: number | null; done?: number | null }
+/** Each try is a full week; stop after this many and say so. */
+const RIGHT_SIZE_MAX_RUNS = 8
+const passes = (v: Verdict | undefined) => v === 'meets'
+
+/** Under a type in the fleet card: the search going on, then the right size — with one tap to try it. */
+function RightSizeLine({ z, n, onTry }: { z: RightSize | undefined; n: number; onTry: (k: number) => void }) {
+  if (!z) return null
+  if (z.trying != null) return <span className="sim-rightsize sim-busy">Finding the right size · trying {z.trying}…</span>
+  if (z.done === n) return <span className="sim-rightsize is-good">✓ {n} is the right size — {n - 1} does not pass</span>
+  if (z.done != null) {
+    return (
+      <span className="sim-rightsize is-warn">
+        Right size: <b className="num">{z.done}</b> ({z.done > n ? `${z.done - n} more` : `${n - z.done} fewer`}) — passes all three
+        <button type="button" className="btn btn-sm" onClick={() => onTry(z.done!)}>Try {z.done}</button>
+      </span>
+    )
+  }
+  return <span className="sim-rightsize is-bad">{z.tried[n] === 'gridlock' ? 'Gridlock — fix the layout before sizing' : 'No count tried passes — check the layout and the flows'}</span>
 }
 
 const clock = (t: number) => {
@@ -137,6 +160,17 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     runInSlices(S, runSec, () => setR({ res: results(S), S }), () => tok === token.current)
   }, [inputs, simVehicles, simConfig, assume.seed, runSec])
 
+  // ---- "Use N" needs the smallest fleet that Meets (the right-size search below finds it) ----
+  /** Could one vehicle fewer still reach the target utilization? If not, it is not worth running. */
+  function oneFewerMayMeet(t: { utilization: number }, n: number) { return n > 1 && (t.utilization * n) / (n - 1) <= targetU }
+  /** Records on the stored run whether this type's count is the smallest that meets (Sizing's Use N). */
+  function markSmallest(vid: string, smallest: boolean) {
+    const fresh = getProject(project.id), run = fresh?.simSettings?.lastRun
+    const t = run?.types[vid]
+    if (!fresh || !run || run.key !== inputsKey || !t || t.fleet !== fleetBy[vid] || t.smallest === smallest) return
+    patchSimSettings(project.id, { lastRun: { ...run, types: { ...run.types, [vid]: { ...t, smallest } } } })
+  }
+
   // ---- the result is kept for Sizing's verdict chip; an applied fleet it confirms is refreshed ----
   useEffect(() => {
     if (!R || !forSizing) return
@@ -158,41 +192,56 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [R])
 
-  // ---- "Use N" needs the smallest fleet that Meets: run one fewer, per type that Meets ----
-  /** Could one vehicle fewer still reach the target utilization? If not, it is not worth running. */
-  function oneFewerMayMeet(t: { utilization: number }, n: number) { return n > 1 && (t.utilization * n) / (n - 1) <= targetU }
-  /** Records on the stored run whether this type's count is the smallest that meets (Sizing's Use N). */
-  function markSmallest(vid: string, smallest: boolean) {
-    const fresh = getProject(project.id), run = fresh?.simSettings?.lastRun
-    const t = run?.types[vid]
-    if (!fresh || !run || run.key !== inputsKey || !t || t.fleet !== fleetBy[vid] || t.smallest === smallest) return
-    patchSimSettings(project.id, { lastRun: { ...run, types: { ...run.types, [vid]: { ...t, smallest } } } })
-  }
-
-  const [lower, setLower] = useState<Record<string, Verdict | 'checking'>>({})
+  // ---- the right size (owner, 2026-11-22): per type, the smallest count that passes all three checks ----
+  // Down from a count that passes, up from one that does not (the other types held); `nextRightSize` picks
+  // each count to try. Its first step down is the "one fewer" pricing and the verdict read.
+  const [sizes, setSizes] = useState<Record<string, RightSize>>({})
   useEffect(() => {
-    setLower({})
-    if (!R || R.res.gridlock) return
-    // Oversized when one fewer passes all three checks too; pricing reads it as well.
-    const todo = R.res.types.filter(t => t.verdict === 'meets' && oneFewerMayMeet(t, fleetBy[t.vehicleId] ?? 0)).map(t => t.vehicleId)
+    setSizes({})
+    if (!R) return
     const tok = token.current
-    const next = (i: number) => {
-      if (i >= todo.length || tok !== token.current) return
-      const vid = todo[i]
-      setLower(m => ({ ...m, [vid]: 'checking' }))
-      const S = createSim(inputs.layout, inputs.flows, simVehicles, { ...simConfig(assume.seed), fleet: { ...fleetBy, [vid]: fleetBy[vid] - 1 } })
-      if (!S) { setLower(m => ({ ...m, [vid]: 'short' })); markSmallest(vid, true); return next(i + 1) }   // one fewer cannot even be placed
-      runInSlices(S, runSec, () => {
-        const r = results(S)
-        const v = r.gridlock ? 'gridlock' : r.types.find(t => t.vehicleId === vid)?.verdict ?? 'short'
-        setLower(m => ({ ...m, [vid]: v }))
-        markSmallest(vid, v !== 'meets')
-        next(i + 1)
-      }, () => tok === token.current)
+    const types = R.res.types.filter(t => (fleetBy[t.vehicleId] ?? 0) > 0)
+    const one = (i: number) => {
+      if (i >= types.length || tok !== token.current) return
+      const t = types[i], vid = t.vehicleId, n = fleetBy[vid]
+      const tried: Tried = { [n]: R.res.gridlock ? 'gridlock' : t.verdict }
+      // About how many the failing checks need — the first count tried going up.
+      const estimate = Math.max(n + 1,
+        t.perHr > 0 && !t.checks.orders ? Math.ceil((n * t.target) / t.perHr) : 0,
+        !t.checks.utilization ? Math.ceil((n * t.utilization) / targetU) : 0)
+      // Below n, a count whose share of the same work would exceed the target cannot pass.
+      const cannotPass = (k: number) => k < n && (t.utilization * n) / k > targetU
+      let runs = 0
+      const step = () => {
+        if (tok !== token.current) return
+        const at = nextRightSize(n, tried, estimate, cannotPass)
+        if ('done' in at || runs >= RIGHT_SIZE_MAX_RUNS) {
+          const done = 'done' in at ? at.done : null
+          setSizes(m => ({ ...m, [vid]: { tried: { ...tried }, trying: null, done } }))
+          if (passes(tried[n])) markSmallest(vid, done === n)
+          return one(i + 1)
+        }
+        runs++
+        setSizes(m => ({ ...m, [vid]: { tried: { ...tried }, trying: at.next } }))
+        const S = createSim(inputs.layout, inputs.flows, simVehicles, { ...simConfig(assume.seed), fleet: { ...fleetBy, [vid]: at.next } })
+        if (!S) { tried[at.next] = 'short'; return step() }   // that many cannot even be placed
+        runInSlices(S, runSec, () => {
+          const r = results(S)
+          tried[at.next] = r.gridlock ? 'gridlock' : r.types.find(x => x.vehicleId === vid)?.verdict ?? 'short'
+          step()
+        }, () => tok === token.current)
+      }
+      step()
     }
-    next(0)
+    one(0)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [R])
+  /** One fewer's verdict per type, as pricing and the verdict read it ('checking' until known). */
+  const lower = useMemo(() => Object.fromEntries(Object.entries(sizes).flatMap(([vid, z]) => {
+    const n = fleetBy[vid] ?? 0
+    const v = z.tried[n - 1] ?? (z.trying == null && z.done !== undefined ? 'short' : z.trying === n - 1 ? 'checking' : undefined)
+    return v ? [[vid, v]] : []
+  })) as Record<string, Verdict | 'checking'>, [sizes, fleetBy])
 
   // ---- variability: 10 seeds, ranges and "met in k/10" ----
   const [vari, setVari] = useState<{ k: number; out: SimResults[] } | null>(null)
@@ -290,6 +339,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
               <button type="button" aria-label="More vehicles" onClick={() => setFleet(vid, n + 1)}>+</button>
             </div>
             {typeIds.length > 1 && res && !R?.res.gridlock && <span className={`sim-chip sm ${res.verdict}`} title={`${res.perHr.toFixed(1)} / ${res.target.toFixed(0)} moves/h · ${Math.round(res.utilization * 100)}% busy`}>{VERDICT_LABEL[res.verdict]}</span>}
+            <RightSizeLine z={sizes[vid]} n={n} onTry={k => setFleet(vid, k)} />
             {R && forSizing && (
               <PricingAction
                 project={project} vehicles={vehicles} vehicleId={vid} n={n} engineN={engineFleet[vid] ?? 0}
