@@ -322,7 +322,9 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const fleetPane = (
     <div className={`sim-kpi sim-kpi-fleet is-${headline.verdictTone}`}>
       <span className="sim-kpi-lbl">Fleet</span>
-      <span className="sim-kpi-val">{verdictWord(headline)}</span>
+      {/* Right-sized needs no word of its own (owner, 2026-11-22): the line under the type says "✓ 6 is the
+          right size". Undersized, Oversized, Gridlock and the run's progress keep theirs. */}
+      {headline.outcome !== 'right' && <span className="sim-kpi-val">{verdictWord(headline)}</span>}
       {typeIds.map(vid => {
         const v = vehicleById.get(vid)
         const n = fleetBy[vid] ?? 0

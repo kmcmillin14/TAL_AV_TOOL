@@ -738,7 +738,7 @@ the split of Layout into Highways and Pick and drop points.
   When it is not simply driving, one line says why: *Waiting for cb18-4* (head-on on a single lane), *Queued
   for Rack 3*, *Charging · 71% · done about 14:20*, *Needs a charge · no charger free*, *Parked at P1 · no
   orders waiting*. Back on the vehicle card stops following and returns to the fleet. Not yet: chargers' after-run figures.
-- **Simulate fits (owner, 2026-11-22):** Simulate's detail card is the fleet (its word — *Right-sized*,
+- **Simulate fits (owner, 2026-11-22):** Simulate's detail card is the fleet (its word when it is not right-sized — *Undersized*, *Oversized*, … — a right-sized fleet says only *✓ 6 is the right size* under its type; was *Right-sized*,
   *Undersized* … — and each type's stepper), the **three checks as one line each** (mark, figure, goal:
   *1 · Orders per hour 55.8 of 56*, *2 · Utilization 92% ≤ 90%*, *3 · Battery · lowest 64% keeps up*) and
   the Assumptions row. A check opens, one at a time, to its detail and its own setting — the target for

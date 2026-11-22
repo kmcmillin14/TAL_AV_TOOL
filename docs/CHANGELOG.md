@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-22 — No repeated "Right-sized"
+
+- Owner: in Simulate a right-sized fleet shows only *✓ 6 is the right size* under its type — the word
+  *Right-sized* above it repeated it. Undersized, Oversized, Gridlock and the run's progress keep their word.
+
 ## 2026-11-22 — Fleet verdict in one word; orders as totals
 
 - Owner: the fleet's word is one of **Right-sized**, **Undersized** or **Oversized** — no separate word for
