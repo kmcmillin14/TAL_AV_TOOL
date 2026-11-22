@@ -398,7 +398,15 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         <div className="sim-side-body sim-detail-card">
           {banner}
           <div hidden={view !== 'sim'} className="sim-sim-pane">
-            {S && followed ? <VehicleCard S={S} i={follow} unitSystem={unitSystem} onBack={() => setFollow(-1)} /> : <>{fleetPane}{summary}</>}
+            {S && followed ? <VehicleCard S={S} i={follow} unitSystem={unitSystem} onBack={() => setFollow(-1)} /> : <>
+              {fleetPane}
+              {/* The run's assumptions, where the run is set up (owner, 2026-11-22). */}
+              <button type="button" className="sim-row-link" onClick={openAll}>
+                <span>Assumptions</span>
+                <span className={changed ? 'is-changed' : undefined}>{changed ? `${changed} changed` : 'Defaults'}</span>
+              </button>
+              {summary}
+            </>}
           </div>
           <div hidden={view !== 'data'} className="sim-data-pane">
             {dataPane}

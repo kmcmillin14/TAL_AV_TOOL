@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-22 — Assumptions and Examples where they are used
+
+- Owner: **Assumptions** leave the page head for the **Simulate** step — one row under the fleet,
+  *Assumptions · N changed ›*, opening the same drawer (Data's run-setup chip still opens it too).
+- **Examples** leave the page head for **Layout › Drawing**: *or start from an example — Small · Medium ·
+  Large* while the layout is empty. The head's **⋯** lists every example at all times, beside Clear layout.
+- The head is the title, the validation status and ⋯. Nothing removed; no figures change.
+
 ## 2026-11-22 — The followed vehicle's card, in full
 
 - The leg it is on (empty to the pick, then loaded to the drop) with distance to go and the time to arrive;

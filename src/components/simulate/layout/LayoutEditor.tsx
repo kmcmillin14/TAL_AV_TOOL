@@ -126,6 +126,8 @@ interface Props {
   checks: ReadinessCheck[]
   unitSystem: UnitSystem
   emptyPrompt?: ReactNode
+  /** Layout › Drawing's "or start from an example" (an empty layout only). */
+  examples?: ReactNode
   /** Points and routes with an overridden assumption — marked with a dot on the map (acceptance 36). */
   overridden?: Set<string>
   /** Hands the page a way to change the layout through this editor (its undo history), so the
@@ -162,7 +164,7 @@ const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, overridden, registerLayoutWriter, stage, onStage, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers, vehiclesPlaced, guide, vehiclesStep }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, examples, overridden, registerLayoutWriter, stage, onStage, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers, vehiclesPlaced, guide, vehiclesStep }: Props) {
   /** Step 1 loads — a rack's pallet. */
   const loads = useByValue(project.loads ?? NO_LOADS)
   /** A new rack's pallet, already confirmed upstream (owner, 2026-11-17): the simulation vehicles' first
@@ -815,7 +817,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
 
   // Setup's drawing — shown wherever scaling is under way, so the typed length always has its card.
   const drawingSection = (
-    <Section title="Drawing" open status={bg ? drawingStatus(bg) : 'Optional'} tone={bg && !bg.scale ? 'warn' : undefined}>{drawingCard}</Section>
+    <Section title="Drawing" open status={bg ? drawingStatus(bg) : 'Optional'} tone={bg && !bg.scale ? 'warn' : undefined}>{drawingCard}{examples}</Section>
   )
 
   // The flows drawn on the map: all of them, or those of the selected station(s) or flow.

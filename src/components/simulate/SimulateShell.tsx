@@ -267,25 +267,16 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
               {status.warnings > 0 && <span className="sim-valid-sub">{status.warnings} warning{status.warnings === 1 ? '' : 's'}</span>}
             </button>
           )}
-          <button type="button" className={`btn ghost sim-assume-btn${drawer ? ' on' : ''}`} aria-pressed={!!drawer} onClick={() => setDrawer(d => (d ? null : { focus: null }))}>
-            Assumptions{overrideCount > 0 && <span className="sim-count"><i className="sim-odot" />{overrideCount} override{overrideCount === 1 ? '' : 's'}</span>}
-          </button>
-          {/* The example sites, always (owner, 2026-11-17). */}
+          {/* ⋯: the examples at all times, and Clear layout. Assumptions live in Simulate, examples also in
+              Layout › Drawing (owner, 2026-11-22). */}
           <details className="sim-more-menu" onClick={e => { if ((e.target as HTMLElement).closest('[role=menuitem]')) e.currentTarget.open = false }}>
-            <summary className="btn ghost">Examples</summary>
+            <summary className="btn ghost" aria-label="More actions">⋯</summary>
             <div className="sim-menu" role="menu">
+              <p className="sim-menu-note">Open an example{canSample ? '' : ' — in a new project; this one stays as it is'}</p>
               {SAMPLES.map(s => <button key={s.key} type="button" role="menuitem" onClick={() => openSample(s)}>{s.label} <small>{s.note}</small></button>)}
-              {!canSample && <p className="sim-menu-note">Opens in a new project — this one stays as it is.</p>}
+              {!empty && <button type="button" role="menuitem" className="danger" onClick={clearLayout}>Clear layout…</button>}
             </div>
           </details>
-          {!empty && (
-            <details className="sim-more-menu" onClick={e => { if ((e.target as HTMLElement).closest('[role=menuitem]')) e.currentTarget.open = false }}>
-              <summary className="btn ghost" aria-label="More actions">⋯</summary>
-              <div className="sim-menu" role="menu">
-                <button type="button" role="menuitem" className="danger" onClick={clearLayout}>Clear layout…</button>
-              </div>
-            </details>
-          )}
         </div>
       </div>
 
@@ -306,6 +297,11 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           registerLayoutWriter={registerLayoutWriter}
           stage={stage} onStage={setStage} guide={guide} vehiclesStep={vehiclesStep} status={status} banner={banner} runAs={runAs} payloads={payloads} suggestedChargers={chargersWanted} vehiclesPlaced={fleetNeeded}
           vehicleTypes={typeVehicles} onFlowVehicle={setFlowVehicle}
+          examples={empty ? (
+            <p className="sim-examples">or start from an example —{' '}
+              {SAMPLES.slice(0, 3).map((s, i) => <span key={s.key}>{i ? ' · ' : ''}<button type="button" className="link-btn" title={s.note} onClick={() => openSample(s)}>{s.label}</button></span>)}
+            </p>
+          ) : null}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
               <p>Draw paths along the aisles — or start from an example site.</p>

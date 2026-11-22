@@ -5348,8 +5348,6 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-assume-chip { border: 0; cursor: pointer; }
 .sim-assume-chip::before { display: none; }
 /* Page head: Assumptions with the override count. */
-.sim-assume-btn .sim-count { display: inline-flex; align-items: center; margin-left: 8px; font-size: 11px; font-weight: 600; color: var(--sim-sel); }
-.sim-assume-btn.on { border-color: var(--sim-sel); }
 /* Overridden points and routes on the map. */
 .sim-ov-dot { fill: var(--sim-sel); stroke: var(--bg-surface); stroke-width: 0.6; vector-effect: non-scaling-stroke; }
 /* Assumptions drawer: beside the page, not over it — never a modal. */
@@ -5806,3 +5804,11 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-why.is-warn { background: var(--warn-soft); color: var(--warn); }
 .sim-state.is-mute { background: var(--bg-surface-3); color: var(--text-secondary); }
 .sim-state.is-info { background: color-mix(in srgb, var(--info) 14%, transparent); color: var(--info); }
+/* A row that opens something (Simulate's Assumptions): label, its state, a chevron. */
+.sim-row-link { display: flex; align-items: center; gap: 8px; width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg-surface); font: 600 13px var(--tal-font-family); color: var(--text-primary); cursor: pointer; text-align: left; }
+.sim-row-link:hover { background: var(--bg-hover); }
+.sim-row-link > span:nth-child(2) { margin-left: auto; font: 500 11px var(--tal-font-numeric); color: var(--text-tertiary); }
+.sim-row-link > span.is-changed { color: var(--warn); }
+.sim-row-link::after { content: "›"; font-size: 16px; line-height: 1; color: var(--text-tertiary); }
+.sim-examples { margin: 8px 0 0; font-size: 12px; color: var(--text-tertiary); }

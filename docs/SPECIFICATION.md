@@ -678,7 +678,7 @@ CB18 is effectively at capacity (~0.1% headroom — a hair from needing an 11th)
 > *Workflow — seven steps* above. It stays optional: skipping it leaves the fleet *Estimated*.
 
 **One window and the guide (owner, 2026-11-21; replaces the stage strip of 2026-11-18/19).** The step fits
-the window and never scrolls: a one-line head (title, validation status, Assumptions, Examples, ⋯), then the
+the window and never scrolls: a one-line head (title, validation status, ⋯), then the
 map on the left and one panel on the right. The panel opens with the **guide** — every step as one line
 (one mark: its number, or a tick when done; its status) — then the open step's content, and ends with
 **one** button, **Next: ‹step›** (after Results, or when the next step cannot open, **Next: Pricing**) — red
@@ -953,8 +953,9 @@ step ribbon is unchanged.
   a one-way loop round them, docks in and out, chargers and parking; CB18 putaway and retrieval sized
   by the Fleet Engine to that fleet), and the proof-of-concept site; the ⋯ menu offers the same. The small site's run
   agrees with the static count; the medium and large runs find it one short — the case a simulation is
-  for. An **Examples** menu in the page head offers them at all times (owner, 2026-11-17): on a project with
-  no flows the example loads in place ("Clear and draw your own" removes it); otherwise it opens in a
+  for. They are offered where a layout starts (owner, 2026-11-22): **Layout › Drawing** reads *or start
+  from an example — Small · Medium · Large* while the layout is empty, and the page head's **⋯** offers
+  every example at all times (owner, 2026-11-17): on a project with no flows the example loads in place ("Clear and draw your own" removes it); otherwise it opens in a
   **new project** of its own ("Example — medium site"), so this project's layout, flows and quote are
   never touched.
 - **Data full screen (owner, 2026-11-17).** The Data tab has a **Full screen** button: the data fills the
@@ -989,8 +990,9 @@ step ribbon is unchanged.
     only "Use N in pricing" moves a quote.
   - *Every field* shows its value and unit, a source chip, a reset (↺) when overridden, and its
     one-line help. An overridden field has a dot. Points and routes with an overridden assumption
-    show a dot on the map. The page head shows a count ("3 overrides") that opens the Assumptions
-    view (acceptance 36).
+    show a dot on the map. **Simulate** shows one row, *Assumptions · 3 changed ›*, under the fleet, that
+    opens the Assumptions view (acceptance 36; owner, 2026-11-22: it moved from the page head to the
+    step where the run is set up).
   - *Inspector:* a header with the object's name, Duplicate and Delete; a summary card with the few
     numbers that matter (a point: type and role, routes, flows and moves/h, height; a route: length,
     direction, lanes, tightest clearance; an object: size and rotation; a flow: from → to, moves/h,
@@ -1001,8 +1003,8 @@ step ribbon is unchanged.
     size, charging. Every assumption is within two clicks of its object (acceptance 34).
   - *Assumptions view:* a side drawer (not a modal; Esc closes) with every field grouped Vehicle ·
     Motion · Traffic · Handling · Charging · Demand · Safety · Run. It has a **Changed only** filter
-    and **Reset all**. Run's verdict row shows a one-line chip ("Assumptions · 2 changed") that opens
-    it. It replaces the inputs that were in Run details › Assumptions; that disclosure keeps the
+    and **Reset all**. It opens from Simulate's row, from Data's run-setup line (the chip *Assumptions ·
+    2 changed*), and focused on a vehicle type from that type's tile. It replaces the inputs that were in Run details › Assumptions; that disclosure keeps the
     vehicle data and the fallbacks used.
   - *Same in Layout and Run.* No modal dialogs except the destructive confirmations (acceptance 37).
   - *Drawing, taken as ideas from a comparable layout tool (owner, 2026-11-11; no vendor code or
