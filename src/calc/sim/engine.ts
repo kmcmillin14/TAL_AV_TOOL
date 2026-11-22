@@ -366,6 +366,8 @@ function bumpFullOffCharger(S: SimState, needy: SimVehicle, topUp = false) {
     .sort((a, b) => b.soc - a.soc)[0]
   if (!full) return
   const n = nearestFree(S, full, S.G.parking)
+  // No free parking spot: no rotation. A direct swap was tried (owner, 2026-11-22) and gridlocks — the two
+  // meet head-on on the single-lane spurs, with nowhere to step aside.
   if (n < 0) return
   reserve(S, full, n); full.mode = 'toHome'; setRoute(S, full, n)
 }

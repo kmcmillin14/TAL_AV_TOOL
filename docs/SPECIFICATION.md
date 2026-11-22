@@ -753,7 +753,8 @@ the split of Layout into Highways and Pick and drop points.
   with **Try N** (sets the stepper and reruns) or *✓ N is the right size*.
 - **Off-shift rotation (owner, 2026-11-22):** off-shift, a parked vehicle more than 5 pts below its full charge
   (`maxSocPct`) takes the charger of a vehicle at full charge, which moves to a free parking spot (none free:
-  no rotation — a direct swap is not built). Only a full vehicle gives way, so none trade chargers all night.
+  no rotation — a direct swap was tried, 2026-11-22, and gridlocks: the two meet head-on on the single-lane
+  spurs with nowhere to step aside). Only a full vehicle gives way, so none trade chargers all night.
 - **Graded checks (owner, 2026-11-22; `src/calc/sim/grades.ts`):** each check lands in a band — green, amber
   (*tight*: it passes, labelled tight), red (fails); utilization also has blue *spare*.
   | Check | Green | Amber (tight) | Red |

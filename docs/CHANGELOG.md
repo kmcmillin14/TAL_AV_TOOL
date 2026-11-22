@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-22 — Charger swap tried, not kept
+
+- Owner asked for a direct swap when no parking spot is free. Built and run on the medium example at 8
+  vehicles (6 chargers, 2 parking): it gridlocks on day 2 — the two vehicles meet head-on on the single-lane
+  spurs. Reverted; the engine notes why. No figures change.
+
 ## 2026-11-22 — The charger card
 
 - A charger's card shows its day in the last run — docks, hours charging and minutes vehicles waited for it,
