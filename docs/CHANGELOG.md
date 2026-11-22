@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-22 — The charger card
+
+- A charger's card shows its day in the last run — docks, hours charging and minutes vehicles waited for it,
+  per day — while the layout still matches that run; before a run, chargers placed against suggested.
+  Selecting a charger in the Chargers step opens its card.
+- Engine statistics (read only): a charger counts each vehicle docking and the seconds it charges a vehicle.
+  The last run saves each charger's day (`simSettings.lastRun.chargers`). No run figures change.
+
 ## 2026-11-22 — No repeated "Right-sized"
 
 - Owner: in Simulate a right-sized fleet shows only *✓ 6 is the right size* under its type — the word

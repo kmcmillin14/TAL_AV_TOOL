@@ -169,6 +169,10 @@ export const simSettingsSchema = z.object({
       /** One vehicle fewer was run and does not meet (or cannot) — the count is the smallest that meets. */
       smallest: z.boolean().optional(),
     })),
+    /** Per charger point id, the run's day at it (owner, 2026-11-22 — the charger card). */
+    chargers: z.record(z.string(), z.object({
+      docksPerDay: z.number().min(0), chargingHPerDay: z.number().min(0), waitMinPerDay: z.number().min(0),
+    })).optional(),
   }).optional(),
 })
 

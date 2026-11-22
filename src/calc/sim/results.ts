@@ -146,5 +146,20 @@ function batteryCheck(S: SimState, vid: string, veh: SimState['veh']): { grade: 
   return { grade, detail: detail(why, cause) }
 }
 
+/** Each charger's day in the run (owner, 2026-11-22 — the charger card): dockings, hours charging and minutes
+ *  vehicles waited for it, per simulated day. Chargers no vehicle used read zero. */
+export interface ChargerStat { docksPerDay: number; chargingHPerDay: number; waitMinPerDay: number }
+export function chargerStats(S: SimState): Record<string, ChargerStat> {
+  const days = Math.max(1, S.t / 86400)
+  return Object.fromEntries(S.G.points.filter(p => p.type === 'charger').map(p => {
+    const st = S.zoneStats.get(p.id)
+    return [p.id, {
+      docksPerDay: Math.round(((st?.visits ?? 0) / days) * 10) / 10,
+      chargingHPerDay: Math.round(((st?.chargeT ?? 0) / 3600 / days) * 10) / 10,
+      waitMinPerDay: Math.round((st?.waitT ?? 0) / 60 / days),
+    }]
+  }))
+}
+
 /** How a verdict reads on screen — Simulate's verdict rows and Sizing's chips. */
 export const VERDICT_LABEL: Record<Verdict, string> = { meets: 'Meets', tight: 'Meets', short: 'Falls short', gridlock: 'Gridlock', warming: 'Warming up' }

@@ -4,7 +4,7 @@ import { cycleBreakdown } from '../../flowMetrics'
 import { createSim, DT, jobLegs, layoutReady, runFor, step, type SimState } from '../engine'
 import { resolveProfile } from '../vehicle'
 import { angleDiff, distanceToGeometry } from '../geometry'
-import { results } from '../results'
+import { chargerStats, results } from '../results'
 import type { SimFlow, SimLayout, VehicleSimData } from '../types'
 import { LIBRARY, cb18, corridor, sampleLayout, settings } from './fixtures'
 
@@ -442,13 +442,26 @@ describe('following is envelope to envelope (spec §5.9, §6.5.5)', () => {
 })
 
 describe('run-view statistics agree with the results', () => {
+  it('charger card: each charger gets its dockings, hours charging and waits per day', () => {
+    const { layout, flows } = sampleLayout()
+    const S = sim(layout, flows, { fleet: { cb18: 4 } })
+    runFor(S, 26 * 3600)
+    const st = chargerStats(S)
+    const ids = S.G.points.filter(p => p.type === 'charger').map(p => p.id)
+    expect(Object.keys(st).sort()).toEqual([...ids].sort())
+    expect(Object.values(st).reduce((a, c) => a + c.docksPerDay, 0)).toBeGreaterThan(0)
+    expect(Object.values(st).every(c => c.chargingHPerDay >= 0 && c.chargingHPerDay <= 24)).toBe(true)
+  })
+
   it('hourly deliveries add up, every handling is a visit, and wait heat equals waiting time', () => {
     const { layout, flows } = sampleLayout()
     const S = sim(layout, flows, { fleet: { cb18: 4 } })
     runFor(S, 4 * 3600)
     const done = S.flows.reduce((a, F) => a + F.done, 0)
     expect(S.hourly.reduce((a, b) => a + (b ?? 0), 0)).toBe(done)
-    const visits = [...S.zoneStats.values()].reduce((a, z) => a + z.visits, 0)
+    // Flow points count handlings; a charger counts dockings (the charger card's figure).
+    const chargers = new Set(S.G.points.filter(p => p.type === 'charger').map(p => p.id))
+    const visits = [...S.zoneStats].filter(([z]) => !chargers.has(z)).reduce((a, [, z]) => a + z.visits, 0)
     const handled = S.veh.reduce((a, v) => a + v.handlingLog.length, 0)
     expect(visits).toBe(handled)
     const heat = S.heat.reduce((a, b) => a + b, 0)

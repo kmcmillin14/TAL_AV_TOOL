@@ -16,7 +16,7 @@ import { pathPoints } from '@/src/calc/sim/engine'
 import { buildGraph } from '@/src/calc/sim/graph'
 import { highwayConnections, highwayCorners, highwayEnds, highwayFromEnds, highwaysTouching, withHighways } from '@/src/calc/sim/highways'
 import { suggestedWidthFt, type SegmentClearance } from '@/src/calc/sim/clearance'
-import { clearanceRule, runInputs } from '@/src/calc/sim/runInputs'
+import { clearanceRule, runInputs, simInputsKey } from '@/src/calc/sim/runInputs'
 import { roundCorners } from '@/src/calc/sim/corners'
 import {
   addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowStartRefusal, flowTargets, hitTest, FLOW_POINT_TYPES, linkFlow, movePoints,
@@ -772,6 +772,12 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   // The rack bar: above a selected rack — its pallet, face, sizes, total and what is wrong.
   const selRack = !drag && selection?.kind === 'point' ? layout.points.find(q => q.id === selection.id && q.rack) : undefined
   const selRackGeo = selRack ? rackGeometry(selRack, loads) : null
+  // The last run's day at each charger — only while the layout and flows still match that run (its key).
+  const lastRun = project.simSettings?.lastRun
+  const chargerRun = useMemo(() => {
+    if (!lastRun?.chargers) return null
+    return lastRun.key === simInputsKey(project, new Map(vehicles.map(v => [v.id, v]))) ? lastRun.chargers : null
+  }, [lastRun, project, vehicles])
   // The lowest reach among the vehicles that work it (its flows), else the simulation's vehicles.
   const selRackReach = selRack ? (() => {
     const users = simFlows.filter(f => f.fromPointId === selRack.id || f.toPointId === selRack.id).map(f => f.vehicleId && simVehicleById.get(f.vehicleId))
@@ -958,7 +964,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   />
                 </Section>
               </>
-            ) : stage === 'chargers' ? (
+            ) : stage === 'chargers' && !selection ? (
               <ChargersCard layout={layout} suggested={suggestedChargers} needed={vehiclesPlaced} onArmHome={armType} />
             ) : (
               <>
@@ -998,10 +1004,11 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   focusRateOf={justAdded}
                   onRateFocused={() => setJustAdded(null)}
                   onBack={() => setSelection(null)}
-                  backLabel={stage === 'routes' ? 'Routes' : 'Pick and drop points'}
+                  backLabel={stage === 'routes' ? 'Routes' : stage === 'chargers' ? 'Chargers' : 'Pick and drop points'}
                   onSelectFlow={id => setSelection({ kind: 'flow', id })}
                   rack={selRack && selRackGeo ? { id: selRack.id, g: selRackGeo, reach: selRackReach } : null}
                   onAddPoint={() => { onStage('points'); armType('stand') }}
+                  chargers={{ suggested: suggestedChargers, stats: chargerRun }}
                 />
               </>
             )}

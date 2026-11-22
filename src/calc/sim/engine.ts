@@ -153,7 +153,9 @@ export interface SimState {
   heat: Float64Array
 }
 
-export interface ZoneStat { occT: number; waitT: number; visits: number; maxQ: number }
+/** Per zone: seconds occupied, seconds vehicles waited for it, visits (handling at a flow point; docking at a
+ *  charger), the longest queue, and — at a charger — seconds power was flowing into a vehicle. */
+export interface ZoneStat { occT: number; waitT: number; visits: number; maxQ: number; chargeT: number }
 
 /** No routes drawn → nothing to simulate (spec §2.2, acceptance 1). */
 export function layoutReady(layout: SimLayout): boolean {
@@ -454,12 +456,14 @@ function startHandling(S: SimState, v: SimVehicle, picking: boolean) {
 
 const zoneStat = (S: SimState, z: string): ZoneStat => {
   let st = S.zoneStats.get(z)
-  if (!st) { st = { occT: 0, waitT: 0, visits: 0, maxQ: 0 }; S.zoneStats.set(z, st) }
+  if (!st) { st = { occT: 0, waitT: 0, visits: 0, maxQ: 0, chargeT: 0 }; S.zoneStats.set(z, st) }
   return st
 }
 
 function arrive(S: SimState, v: SimVehicle) {
   v.speed = 0
+  // Docking at a charger (to charge, or to wait there): one visit for the charger card.
+  if ((v.mode === 'toHome' || v.mode === 'toCharge') && S.G.points[v.node].type === 'charger' && S.G.zone[v.node]) zoneStat(S, S.G.zone[v.node]!).visits++
   if (v.mode === 'toPick') startHandling(S, v, true)
   else if (v.mode === 'toDrop') startHandling(S, v, false)
   else if (v.mode === 'toHome') v.mode = 'home'
@@ -800,6 +804,7 @@ export function step(S: SimState) {
     else if (onShift) v.tm.idle += DT     // off-shift waiting is not idle time
     if (b) {
       const atCharger = v.atNode && G.points[v.node].type === 'charger' && (v.mode === 'home' || v.mode === 'charging')
+      if (atCharger && v.soc < b.maxSocPct - 1e-9 && G.zone[v.node]) zoneStat(S, G.zone[v.node]!).chargeT += DT
       const dSoc = ((atCharger ? b.chargerKw : 0) - kw) * DT * b.pctPerKwSec
       v.soc = Math.max(0, Math.min(b.maxSocPct, v.soc + dSoc))
       v.socMin = Math.min(v.socMin, v.soc)

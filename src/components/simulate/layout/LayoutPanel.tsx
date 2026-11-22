@@ -13,6 +13,7 @@ import {
   FLOW_POINT_TYPES, flowTargets, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import type { RackGeometry } from '@/src/calc/sim/racks'
+import type { ChargerStat } from '@/src/calc/sim/results'
 import type { SimHighway, SimLayout, SimObject, SimPoint, SimPointType, SimSegment } from '@/src/calc/sim/types'
 import { fieldDef, fieldsFor, fieldPatch, fieldState, type SimFieldDef } from '@/src/lib/simFields'
 import { fmtLength, lengthFromDisplay, lengthToDisplay, units, type UnitSystem } from '@/src/lib/utils/units'
@@ -71,6 +72,8 @@ interface Props {
   rack: { id: string; g: RackGeometry; reach: { name: string; ft: number } | null } | null
   /** Arm placing a pick / drop point (from a highway's card). */
   onAddPoint: () => void
+  /** Chargers: how many the static model suggests, and each one's day in the last run (null: no current run). */
+  chargers: { suggested: number; stats: Record<string, ChargerStat> | null }
 }
 
 
@@ -165,6 +168,21 @@ export default function LayoutPanel(p: Props) {
             <Tile label="flows" value={flowsHere.length} unit={rack ? `· ${moves}/h` : undefined} />
           </Tiles>
         )}
+        {pt.type === 'charger' && (() => {
+          // The charger card (owner, 2026-11-22): its day in the last run; before one, placed against suggested.
+          const st = p.chargers.stats?.[pt.id]
+          return st
+            ? <Tiles>
+                <Tile label="docks/day" value={st.docksPerDay} />
+                <Tile label="charging/day" value={st.chargingHPerDay} unit="h" />
+                <Tile label="wait/day" value={st.waitMinPerDay} unit="min" />
+              </Tiles>
+            : <Tiles>
+                <Tile label="placed" value={p.layout.points.filter(q => q.type === 'charger').length} />
+                <Tile label="suggested" value={p.chargers.suggested} />
+                <Tile label="last run" value="—" />
+              </Tiles>
+        })()}
         {rack?.reach && rack.g.pallet && (
           <div className="sim-reach" aria-label="Top beam against the vehicle's reach">
             <div className={`sim-bar${over ? ' is-bad' : ''}`}><i style={{ width: `${Math.min(100, (rack.g.topBeamFt / Math.max(rack.reach.ft, rack.g.topBeamFt)) * 100)}%` }} /></div>

@@ -9,7 +9,7 @@
 import Icon from '@/src/design-system/components/Icon'
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
-import { results, VERDICT_LABEL } from '@/src/calc/sim/results'
+import { chargerStats, results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runHeadline, type Headline, type Outcome, type Tone } from '@/src/calc/sim/headline'
 import { BANDS, checkScale, verdictPasses as passes, type Grade } from '@/src/calc/sim/grades'
 import { nextRightSize, type Tried } from '@/src/calc/sim/rightSize'
@@ -183,7 +183,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
     const fresh = getProject(project.id)
     if (!fresh) return
     const ss = fresh.simSettings ?? {}
-    const lastRun = { key: inputsKey, types }
+    const lastRun = { key: inputsKey, types, chargers: chargerStats(R.S) }
     const applied = Object.fromEntries(Object.entries(ss.appliedFleet ?? {}).map(([v, a]) =>
       [v, passes(types[v]?.verdict) && types[v].fleet === a.fleet ? { ...a, key: inputsKey } : a]))
     const next = { ...ss, lastRun, ...(ss.appliedFleet ? { appliedFleet: applied } : {}) }
