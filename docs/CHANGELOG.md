@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-26 — Data as a dashboard; the steps in the app's style
+
+- Owner: Data is a dashboard in the app's own style — a head with the verdict and fleet, tabs (Overview ·
+  Material flows · Vehicles · Locations · Battery · Setup), and cards. Overview leads with the four headline
+  tiles. The cards fill the height; long tables scroll inside their card with the header held. Nothing
+  scrolls the page at 1280×720 and up.
+- B56.5 clearance lists each place and reason once, with how many segments it covers (was a line per
+  segment).
+- The step list matches the app's step bar and is symmetric: number · name · status · dot in one grid (every
+  dot in one column), a *Steps · n of 6 done* head with « opposite. The open step's sub-steps are nested
+  under it in the list (3.1, 3.2 …), no longer in the detail card.
+- No figures change.
+
 ## 2026-11-26 — One sidebar: steps and detail, nothing scrolls
 
 - Owner: one sidebar on the left — the steps card (always in view, with Next) and, apart, the detail card

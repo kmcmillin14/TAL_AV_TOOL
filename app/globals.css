@@ -5246,7 +5246,6 @@ button.q-sec-head:focus-visible { outline: 2px solid var(--accent); outline-offs
 .sim-veh-follow { fill: none; stroke: var(--sim-sel); stroke-width: 0.3; }
 .sim-veh-label { font: 700 11px var(--tal-font-numeric); text-anchor: middle; fill: var(--text-primary); paint-order: stroke; stroke: var(--scene-bg); stroke-width: 3px; }
 .sim-gridlock { fill: none; stroke: var(--bad); stroke-width: 3; }
-.sim-below { display: grid; gap: 8px; }
 .sim-disc { border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); }
 .sim-disc > summary { list-style: none; cursor: pointer; display: flex; align-items: center; gap: 8px; padding: 16px 16px; font-weight: 700; font-size: 13px; color: var(--text-primary); }
 .sim-disc > summary::-webkit-details-marker { display: none; }
@@ -5444,7 +5443,6 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 .sim-measure { position: absolute; transform: translate(14px, calc(-100% - 8px)); padding: 4px 8px; border-radius: 6px; background: var(--text-primary); color: var(--bg-surface);
   font: 600 12px var(--tal-font-numeric); white-space: nowrap; pointer-events: none; z-index: 4; }
 .sim-data-pane:not([hidden]) { display: flex; flex-direction: column; gap: 12px; }
-.sim-data-head { display: flex; justify-content: flex-end; }
 .sim-sim-pane:not([hidden]) { display: flex; flex-direction: column; gap: 8px; }
 .sim-kpis.is-stack { grid-template-columns: minmax(0, 1fr); }
 /* Data full screen: the data fills the workspace; the map steps aside (it keeps playing). */
@@ -5543,12 +5541,6 @@ button.sim-valid-text:focus-visible { outline: 2px solid var(--sim-sel); outline
 .sim-shell:fullscreen { background: var(--bg-base); padding: 16px 24px; overflow: auto; }
 .sim-shell:fullscreen .sim-work { height: max(560px, calc(100vh / var(--root-zoom) - 200px)); }
 /* The verdict's three checks, and the editable target on the utilization tile. */
-.sim-kpi-verdict .sim-kpi-val { font-size: 20px; }
-.sim-checks { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: var(--text-secondary); }
-.sim-checks li { display: flex; align-items: center; gap: 8px; }
-.sim-checks i { font-style: normal; width: 16px; text-align: center; font-weight: 700; }
-.sim-checks .good i { color: var(--good); }
-.sim-checks .bad { color: var(--bad); font-weight: 600; }
 
 /* Tile menus (⋮): settings for the tile they sit on. */
 .sim-kebab { position: absolute; top: 8px; right: 8px; }
@@ -5669,62 +5661,73 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 
 /* The one sidebar (owner, 2026-11-26): the steps on top — full, or one row of icons while a card is open —
    then the step's detail or the selection's card, and Next at the foot. « folds it to a rail of step icons.
-   Blue is the open step, green a done one, amber a started one. The map takes the rest of the width. */
+   Red marks the open step; a green dot a done one, amber a started one. The map takes the rest of the width. */
 .sim-shell .sim-work { grid-template-columns: auto minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); gap: 12px; }
 .sim-pane { display: flex; flex-direction: column; gap: 12px; width: 300px; min-width: 0; min-height: 0; transition: width 0.18s ease; }
 .sim-pane.is-rail { width: 56px; }
-.sim-pane-top { position: relative; flex: none; border: 1px solid var(--border); border-radius: 12px;
-  background: color-mix(in srgb, var(--sim-sel) 5%, var(--bg-surface-2)); }
+.sim-pane-top { flex: none; border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg-surface-2, var(--bg-hover)); }
 .sim-pane.is-rail .sim-pane-top { flex: 1; display: flex; flex-direction: column; }
 .sim-pane.is-rail .sim-guide-next { margin-top: auto; }
 .sim-pane-body { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; padding: 14px;
   border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); box-shadow: var(--sim-shadow-rest); }
 .sim-pane-body .sim-banner { margin: 0; flex-wrap: wrap; gap: 4px 16px; padding: 8px 12px; }
-.sim-steps-toggle { position: absolute; top: 8px; right: 8px; z-index: 1; width: 22px; height: 22px; border: 0; border-radius: 6px;
+/* The steps card's head: what it is and how far along, the fold toggle opposite. */
+.sim-steps-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 12px 4px 16px; }
+.sim-pane.is-rail .sim-steps-head { justify-content: center; padding: 8px 0 0; }
+.sim-steps-toggle { width: 22px; height: 22px; border: 0; border-radius: 6px;
   background: none; color: var(--text-tertiary); font: 600 13px var(--tal-font-family); cursor: pointer; }
 .sim-steps-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
-.sim-pane.is-rail .sim-steps-toggle { position: static; order: -1; margin: 8px auto 0; }
-.sim-guide { list-style: none; margin: 0; padding: 8px 34px 4px 8px; display: grid; gap: 1px; align-content: start; }
-.sim-guide.is-rail { padding: 4px 8px; }
-.sim-guide-step { width: 100%; display: grid; grid-template-columns: 24px auto minmax(0, 1fr); align-items: center; gap: 8px; height: 32px;
-  padding: 0 6px; border: 0; border-radius: 8px; background: none; color: var(--text-secondary); font: 600 13px var(--tal-font-family);
-  text-align: left; cursor: pointer; }
+/* One symmetric grid for steps and sub-steps: number · name · status · dot, so every dot sits in one column
+   and the card's two sides mirror (8px in on each). */
+.sim-guide { list-style: none; margin: 0; padding: 4px 8px; display: grid; gap: 1px; align-content: start; }
+.sim-guide-step, .sim-guide-sub { display: grid; grid-template-columns: 26px minmax(0, 1fr) auto 7px; align-items: center; column-gap: 8px; }
+.sim-guide-step { position: relative; width: 100%; height: 32px;
+  padding: 0 10px; border: 0; border-radius: 6px; background: none; color: var(--text-tertiary); cursor: pointer; text-align: left;
+  font: 600 11px var(--tal-font-numeric); letter-spacing: 0.05em; text-transform: uppercase; }
 .sim-guide.is-rail .sim-guide-step { grid-template-columns: 24px; justify-content: center; height: 36px; padding: 0; }
-.sim-guide-step:hover { background: var(--bg-hover); color: var(--text-primary); }
-.sim-guide-step:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 1px; }
-.sim-guide-step.is-on { color: var(--sim-sel); background: var(--bg-surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
-.sim-guide-step.is-blocked { color: var(--text-tertiary); }
+.sim-guide-step:hover { background: var(--bg-surface); color: var(--text-primary); }
+.sim-guide-step:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* The open step: the step bar's red mark, its number red, its name dark. */
+.sim-guide-step.is-on { background: var(--bg-surface); color: var(--text-primary); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
+.sim-guide-step.is-on::before { content: ""; position: absolute; left: 0; top: 6px; bottom: 6px; width: 2px; border-radius: 2px; background: var(--accent); }
+.sim-guide-step.is-done, .sim-guide-step.is-started { color: var(--text-secondary); }
+.sim-guide-step.is-blocked { opacity: 0.55; }
+.sim-guide-num { font: 700 10px var(--tal-font-numeric); color: var(--text-tertiary); }
+.sim-guide-step.is-on .sim-guide-num { color: var(--accent); }
+.sim-guide-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-guide-status { justify-self: end; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font: 500 11px var(--tal-font-family); letter-spacing: 0; text-transform: none; color: var(--text-tertiary); }
+.sim-guide-pip { width: 7px; height: 7px; border-radius: 50%; background: var(--border-strong, var(--border)); }
+:is(.sim-guide-step, .sim-guide-sub).is-done .sim-guide-pip { background: var(--good); }
+:is(.sim-guide-step, .sim-guide-sub).is-started .sim-guide-pip { background: var(--warn); }
+/* Sub-steps under the open step: the same columns, one level in — a leading line from the step's number,
+   the number as 2.1, the name in sentence case. */
+.sim-guide-subs { list-style: none; position: relative; margin: 2px 0 6px; padding: 0; display: grid; gap: 2px; }
+.sim-guide-subs::before { content: ""; position: absolute; left: 15px; top: -2px; bottom: 12px; border-left: 1px solid var(--border-strong, var(--border)); }
+.sim-guide-sub { position: relative; height: 26px; padding: 0 10px; font: 500 12px var(--tal-font-family); color: var(--text-secondary); }
+.sim-guide-sub::before { content: ""; position: absolute; left: 15px; top: 50%; width: 9px; border-top: 1px solid var(--border-strong, var(--border)); }
+.sim-guide-sub .sim-guide-num { padding-left: 17px; font-size: 9px; }
+.sim-guide-sub .sim-guide-label { padding-left: 8px; }
+.sim-guide-sub.is-done { color: var(--text-primary); }
+/* The rail (folded): the step icons, the open one red. */
 .sim-guide-n { position: relative; display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 7px;
   background: var(--bg-surface-3); color: var(--text-secondary); }
-.sim-guide-step.is-on .sim-guide-n { background: var(--sim-sel); color: #fff; }
+.sim-guide-step.is-on .sim-guide-n { background: var(--accent); color: #fff; }
 .sim-guide-step.is-done .sim-guide-n { background: var(--good-soft); color: var(--good); }
 .sim-guide-step.is-started .sim-guide-n { background: var(--warn-soft); color: var(--warn); }
-.sim-guide-step.is-on.is-done .sim-guide-n, .sim-guide-step.is-on.is-started .sim-guide-n { background: var(--sim-sel); color: #fff; }
+.sim-guide-step.is-on.is-done .sim-guide-n, .sim-guide-step.is-on.is-started .sim-guide-n { background: var(--accent); color: #fff; }
 .sim-guide-tick { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 12px; height: 12px; border-radius: 50%;
   background: var(--good); color: #fff; box-shadow: 0 0 0 2px var(--bg-surface-2); }
-.sim-guide-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sim-guide-status { justify-self: end; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: 11px; color: var(--text-tertiary); }
-/* The open step at the top of the detail card: its sub-tasks, and what to do while it is not done. */
-.sim-stephead { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; border-bottom: 1px solid var(--border); }
-.sim-stephead .sim-guide-subs { margin: 0; }
-.sim-stephead .sim-guide-lead { margin: 0; }
-/* Sub-tasks one level down, on leading lines (the open step only). */
-.sim-guide-subs { list-style: none; margin: 2px 8px 4px 22px; padding: 0 0 0 14px; display: grid; gap: 6px; border-left: 1px solid var(--border-strong, var(--border));
-  font-size: 12px; color: var(--text-secondary); }
-.sim-guide-subs li { position: relative; display: grid; grid-template-columns: 12px minmax(0, 1fr); align-items: center; column-gap: 8px; }
-.sim-guide-subs li::before { content: ""; position: absolute; left: -14px; top: 50%; width: 10px; border-top: 1px solid var(--border-strong, var(--border)); }
-.sim-guide-subs .sim-guide-status { grid-column: 2; }
-.sim-guide-dot { grid-row: span 2; display: inline-grid; place-items: center; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--text-tertiary); }
-.sim-guide-subs li.is-done .sim-guide-dot { border-color: var(--good); background: var(--good-soft); color: var(--good); }
-.sim-guide-subs li.is-started .sim-guide-dot { border-color: var(--warn); }
-.sim-guide-sublabel { font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.sim-guide-lead { margin: 4px 8px 8px 22px; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
+.sim-guide.is-rail .sim-guide-step.is-on::before { left: -6px; }
+/* What to do in the open step, at the top of the detail card while it is not done. */
+.sim-stephead { margin: 0; padding-bottom: 10px; border-bottom: 1px solid var(--border); font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
 .sim-guide-next { flex: none; padding: 4px 8px 8px; }
 .sim-guide-next .btn { width: 100%; justify-content: center; }
 .sim-pane.is-rail .sim-guide-next .btn { padding: 0; min-width: 0; height: 36px; }
 /* Data (owner, 2026-11-26): the tables and charts take the map's place, full width. */
-.sim-data-main { min-width: 0; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; padding: 16px;
-  border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); box-shadow: var(--sim-shadow-rest); }
+.sim-data-main { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 12px; padding: 16px;
+  border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface-2, var(--bg-base)); }
 .sim-run.is-datafull > .sim-pane { display: none; }
 
 /* Layout's station tray (owner plan, 2026-11-21): Sizing's unplaced stations as chips at the foot of the map,
@@ -5879,3 +5882,38 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-pane .sim-kpi-veh > .sim-rightsize, .sim-pane .sim-kpi-veh > .sim-vact, .sim-pane .sim-kpi-veh > .sim-chip { flex: 1 0 100%; }
 /* Data in the map's place: the verdict and the figures side by side, then the details. */
 .sim-data-main .sim-kpis, .sim-data-main .sim-kpis.is-stack { grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+
+/* Data as a dashboard (owner, 2026-11-26; the app's own style): an eyebrow and the verdict, tabs underlined
+   in TAL red, the figures as a row of tiles, then cards two to a row — a title, one line, the chart or table. */
+.sim-data-main { gap: 14px; }
+.sim-dash-head { display: flex; align-items: flex-start; gap: 16px; }
+.sim-dash-title { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.sim-dash-title .eh-eyebrow { color: var(--accent); }
+.sim-dash-title h2 { margin: 0; font-size: 20px; font-weight: 700; color: var(--text-primary); }
+.sim-dash-title h2 .num { font-weight: 600; color: var(--text-secondary); }
+.sim-dash-sub { margin: 0; font-size: 13px; color: var(--text-tertiary); }
+.sim-dash-actions { display: flex; gap: 8px; flex: none; }
+.sim-dash-tabs { display: flex; gap: 20px; border-bottom: 1px solid var(--border); overflow-x: auto; }
+.sim-dash-tabs button { position: relative; padding: 8px 0 10px; border: 0; background: none; cursor: pointer; white-space: nowrap;
+  font: 600 11px var(--tal-font-numeric); letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-tertiary); }
+.sim-dash-tabs button:hover { color: var(--text-primary); }
+.sim-dash-tabs button.on { color: var(--text-primary); }
+.sim-dash-tabs button.on::after { content: ""; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; background: var(--accent); }
+.sim-data-main .sim-kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+/* The cards fill what is left under the head and tabs; a long table scrolls inside its card (header held),
+   never the page (owner: one screen, no scroll). */
+.sim-dash-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); gap: 12px; }
+.sim-dash-grid.is-vehicles { grid-template-rows: auto minmax(0, 1fr); }
+.sim-dash-grid.is-setup { grid-template-rows: auto minmax(0, 1fr); }
+.sim-dash-card { min-width: 0; min-height: 0; overflow: hidden; display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--bg-surface); }
+.sim-dash-card > :not(header) { min-height: 0; overflow: auto; }
+.sim-dash-card.is-side { grid-column: 2; grid-row: 1 / span 2; }
+.sim-dash-card .sim-tbl-block { flex: 1; min-height: 0; }
+.sim-dash-card .sim-tbl-wrap { flex: 1 1 auto; min-height: 0; overflow: auto; }
+.sim-dash-card .sim-tbl thead th { position: sticky; top: 0; z-index: 1; }
+.sim-dash-card .sim-tbl td { padding-top: 6px; padding-bottom: 6px; }
+.sim-dash-card.is-wide { grid-column: 1 / -1; }
+.sim-dash-card > header { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.sim-dash-card > header h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary); }
+.sim-dash-card > header .meta { font-size: 12px; color: var(--text-tertiary); }
+@container (max-width: 900px) { .sim-dash-grid { grid-template-columns: minmax(0, 1fr); } .sim-data-main .sim-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

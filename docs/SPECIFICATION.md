@@ -695,8 +695,19 @@ sidebar on the left (about 300 px) and the map across the rest. The sidebar is t
 the **steps** (tinted; always in view, one line each — icon, name, status — and the one **Next**) and the
 **detail** (white): the open step's sub-tasks, its sentence while it is not done, and its content — or the
 selected item's card, in its simplest form (name, one chip, three numbers; picture and settings under one
-**More**). Long lists (points, routes, connections, material flows, Data's tables) sit in folds. **Data**
-takes the map's place, full width, with *‹ Back to the map*. The sample note sits in the page head. Nothing
+**More**). Long lists (points, routes, connections, material flows) sit in folds. The steps read as the
+app's step bar, in one symmetric grid — number · name · status · progress dot (green done, amber started, grey
+not yet), every dot in one column — under a head (*Steps · 4 of 6 done*, **«** opposite). The open step is
+white with a red bar and number; its sub-steps sit nested under it on a leading line, numbered 3.1, 3.2 …,
+with the same status and dot columns. Its one sentence of what to do heads the detail card while it is not
+done. **Data** takes the map's place, full width,
+as a dashboard in the app's own style: a head (*Data* eyebrow, the verdict and fleet, the checks line,
+*‹ Back to the map* and *Full screen*), tabs — **Overview** (the four headline tiles, the run line, moves
+hour by hour, where the time went) · **Material flows** · **Vehicles** (by type, by vehicle) · **Locations**
+(per location, B56.5 clearance — one line per place and reason, with its segment count) · **Battery** ·
+**Setup** (assumptions and vehicle data, Sizing's estimate, fallbacks used) — and cards (a title, one line of
+context, then the chart or table). The cards fill the height left; a long table or list scrolls inside its
+card with its header held, never the page. The sample note sits in the page head. Nothing
 scrolls at 1280×720 and up with its folds closed. The sidebar lists each step with its icon, name and status, the open step's
 sub-tasks one level down on leading lines and its one sentence, and the one **Next** at its foot; **«**
 collapses it to an icon rail (names and status on hover; remembered in this browser). The head is the

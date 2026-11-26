@@ -2,8 +2,8 @@
 
 // The steps of fleet size verification, always in view at the top of the one sidebar (owner, 2026-11-26): Pallets & vehicles · Routes ·
 // Points · Flows · Simulate · Data. Each shows its progress — green done, amber started, grey not yet; when
-// every step before Simulate is green, it is ready to simulate. The open step shows its sub-tasks one level
-// down (leading lines) and one sentence of what to do; the one Next sits at the foot. Any step opens with a
+// every step before Simulate is green, it is ready to simulate. The open step shows its sub-steps nested
+// under it in the list, and one sentence of what to do in the detail card; the one Next sits at the foot. Any step opens with a
 // click (Routes and Points in either order); the order is suggested, never locked. « collapses the sidebar
 // to an icon rail (remembered in this browser), giving the map the room.
 
@@ -47,43 +47,44 @@ export interface StepsProps {
   then: { label: string; href: string }
 }
 
-/** The steps, always in view (owner, 2026-11-26): each one line — its icon, name and status. `rail`: icons
- *  only (the sidebar folded with «). */
+/** The steps, always in view (owner, 2026-11-26): one symmetric grid — number · name · status · progress dot,
+ *  every dot in one column — with the open step's sub-steps nested under it (2.1, 2.2 …) on a leading line.
+ *  `rail`: icons only (the sidebar folded with «). */
 export function Tracker(p: StepsProps & { mode: 'list' | 'rail' }) {
+  const list = p.mode === 'list'
   return (
     <ol className={`sim-guide is-${p.mode}`} aria-label="Steps">
-      {p.stages.map(s => (
+      {p.stages.map((s, i) => (
         <li key={s.id}>
-          <button type="button" aria-label={s.label} aria-current={s.id === p.value ? 'step' : undefined} title={p.mode === 'list' ? s.blocked : `${s.label} · ${s.status}`}
+          <button type="button" aria-label={s.label} aria-current={s.id === p.value ? 'step' : undefined} title={list ? s.blocked : `${s.label} · ${s.status}`}
             className={`sim-guide-step${s.id === p.value ? ' is-on' : ''}${tone(s)}${s.blocked ? ' is-blocked' : ''}`}
             onClick={() => go(s, p)}>
-            <span className="sim-guide-n" aria-hidden><Icon name={s.icon} size={14} />{s.done && <i className="sim-guide-tick"><Icon name="check" size={8} /></i>}</span>
-            {p.mode === 'list' && <><span className="sim-guide-label">{s.label}</span><span className="sim-guide-status">{s.status}</span></>}
+            {list ? (
+              <><span className="sim-guide-num">{String(i + 1).padStart(2, '0')}</span><span className="sim-guide-label">{s.label}</span>
+                <span className="sim-guide-status">{s.status}</span><i className="sim-guide-pip" aria-hidden /></>
+            ) : (
+              <span className="sim-guide-n" aria-hidden><Icon name={s.icon} size={14} />{s.done && <i className="sim-guide-tick"><Icon name="check" size={8} /></i>}</span>
+            )}
           </button>
+          {list && s.id === p.value && s.subs && (
+            <ul className="sim-guide-subs" aria-label={`${s.label} sub-steps`}>
+              {s.subs.map((t, j) => (
+                <li key={t.label} className={`sim-guide-sub${tone(t)}`} title={`${t.label} · ${t.status}`}>
+                  <span className="sim-guide-num">{i + 1}.{j + 1}</span><span className="sim-guide-label">{t.label}</span>
+                  <span className="sim-guide-status">{t.status}</span><i className="sim-guide-pip" aria-hidden />
+                </li>
+              ))}
+            </ul>
+          )}
         </li>
       ))}
     </ol>
   )
 }
 
-/** The open step at the top of the detail card: its sub-tasks, and what to do while it is not done. */
+/** What to do in the open step, while it is not done — at the top of the detail card. */
 function StepHead({ s }: { s: StageInfo }) {
-  if (!s.subs && s.done !== false) return null
-  return (
-    <div className="sim-stephead">
-      {s.subs && (
-        <ul className="sim-guide-subs">
-          {s.subs.map(t => (
-            <li key={t.label} className={tone(t)}>
-              <span className="sim-guide-dot" aria-hidden>{t.done && <Icon name="check" size={9} />}</span>
-              <span className="sim-guide-sublabel">{t.label}</span><span className="sim-guide-status">{t.status}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-      {s.done === false && <p className="sim-guide-lead">{s.lead}</p>}
-    </div>
-  )
+  return s.done === false ? <p className="sim-guide-lead sim-stephead">{s.lead}</p> : null
 }
 
 /** The one way on: the next step, or — when it cannot open — the next step of the workflow. The screen's one
@@ -111,8 +112,11 @@ export function SimSidebar({ steps, card, children }: { steps: StepsProps; card:
   return (
     <aside className={`sim-pane${rail ? ' is-rail' : ''}`} aria-label="Fleet size verification">
       <div className="sim-pane-top">
+        <div className="sim-steps-head">
+          {!rail && <span className="eh-eyebrow mono">Steps · {steps.stages.filter(s => s.done).length} of {steps.stages.length} done</span>}
+          {!card && <button type="button" className="sim-steps-toggle" onClick={toggle} aria-expanded={!rail} title={rail ? 'Show the panel' : 'Fold to icons'}>{rail ? '»' : '«'}</button>}
+        </div>
         <Tracker {...steps} mode={rail ? 'rail' : 'list'} />
-        {!card && <button type="button" className="sim-steps-toggle" onClick={toggle} aria-expanded={!rail} title={rail ? 'Show the panel' : 'Fold to icons'}>{rail ? '»' : '«'}</button>}
         <div className="sim-guide-next"><NextButton {...steps} short={rail} /></div>
       </div>
       {!rail && (

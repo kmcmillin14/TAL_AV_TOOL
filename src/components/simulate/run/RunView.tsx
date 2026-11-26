@@ -24,7 +24,7 @@ import { units, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutCanvas from '../layout/LayoutCanvas'
 import PricingAction from './PricingAction'
-import RunDetails, { type Assumptions } from './RunDetails'
+import RunDetails, { DATA_TABS, type Assumptions, type DataTab } from './RunDetails'
 import { RunScene, STATES } from './RunScene'
 import { clock } from './time'
 import { SimSidebar, type StepsProps } from '../ui/Guide'
@@ -364,6 +364,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   // Data full screen (owner, 2026-11-17): the data fills the screen, the map steps aside; the button or
   // Esc brings it back. Where the browser refuses full screen, it still fills the page.
   const [dataFull, setDataFull] = useState(false)
+  const [dataTab, setDataTab] = useState<DataTab>('overview')
   const self = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const on = () => { if (!document.fullscreenElement) setDataFull(false) }
@@ -377,8 +378,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   }
   // Data's hero summary (owner, 2026-11-17): the checks, then each figure, stacked; Simulate lists the checks.
   const summary = (
-    <div className="sim-kpis is-stack" role="group" aria-label="Static calc and simulation">
-      <VerdictTile h={headline} why={verdictWhy} />
+    <div className="sim-kpis" role="group" aria-label="Static calc and simulation">
       <HeadlineTiles h={headline} unitSystem={unitSystem} sizingTarget={settings.targetUtilization}
         onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
         coverage={{ daysPerWeek, shiftsPerDay: shifts, shiftH, step1 }} onCoverage={setCoverage} />
@@ -386,14 +386,25 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   )
   const dataPane = (
     <>
-      <div className="sim-data-head">
-        <button type="button" className="btn btn-sm ghost" onClick={() => steps.onChange('simulate')}>‹ Back to the map</button>
-        <button type="button" className="btn btn-sm ghost" aria-pressed={dataFull} onClick={toggleDataFull} title={dataFull ? 'Back to the map (Esc)' : 'Fill the screen with the data'}>
-          <Icon name={dataFull ? 'collapse' : 'expand'} size={13} /> {dataFull ? 'Exit full screen' : 'Full screen'}
-        </button>
-      </div>
-      {summary}
-      <div className="sim-vsub">
+      {/* Data as a dashboard (owner, 2026-11-26): the verdict and the run in one head, the tabs, then the cards. */}
+      <header className="sim-dash-head">
+        <div className="sim-dash-title">
+          <span className="eh-eyebrow mono">Data</span>
+          <h2>{headline.outcome === 'right' ? 'Right-sized' : verdictWord(headline)}<span className="num"> · {Object.entries(fleetBy).map(([vid, n]) => `${n} ${vehicleById.get(vid)?.name ?? vid}`).join(' · ')}</span></h2>
+          <p className="sim-dash-sub">{verdictLine(headline, verdictWhy)}</p>
+        </div>
+        <div className="sim-dash-actions">
+          <button type="button" className="btn btn-sm ghost" onClick={() => steps.onChange('simulate')}>‹ Back to the map</button>
+          <button type="button" className="btn btn-sm ghost" aria-pressed={dataFull} onClick={toggleDataFull} title={dataFull ? 'Back to the map (Esc)' : 'Fill the screen with the data'}>
+            <Icon name={dataFull ? 'collapse' : 'expand'} size={13} /> {dataFull ? 'Exit full screen' : 'Full screen'}
+          </button>
+        </div>
+      </header>
+      <nav className="sim-dash-tabs" role="tablist" aria-label="Data">
+        {DATA_TABS.map(t => <button key={t.id} type="button" role="tab" aria-selected={dataTab === t.id} className={dataTab === t.id ? 'on' : ''} onClick={() => setDataTab(t.id)}>{t.label}</button>)}
+      </nav>
+      {dataTab === 'overview' && summary}
+      {dataTab === 'overview' && <div className="sim-vsub">
         {differs && <span className="sim-as-note">Simulated vehicles differ from Sizing — the price uses Sizing&rsquo;s</span>}
         {!differs && ownConditions && <span className="sim-as-note">Target or shifts set for the simulation only — the price uses Sizing&rsquo;s</span>}
         <span>{forSizing ? 'Engine sized' : 'Engine would size'} <b className="num">{engineFleetTotal(fleet)}</b></span>
@@ -402,10 +413,11 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
         {vari && vari.k < VARIABILITY_RUNS && <span className="sim-busy">Variability {vari.k}/{VARIABILITY_RUNS}…</span>}
         {vari && vari.k >= VARIABILITY_RUNS && <VariabilityChip out={vari.out} arrivals={assume.arrivals} />}
         {!vari && <button type="button" className="btn btn-sm ghost" onClick={runVariability}>Check variability</button>}
-      </div>
+      </div>}
       <RunDetails
         R={R?.res ?? null} S={R?.S ?? null} project={project} vehicleById={vehicleById} unitSystem={unitSystem}
-        inputs={inputs} assume={assume} onOpenAssumptions={openAll}
+        inputs={inputs} assume={assume} onOpenAssumptions={openAll} tab={dataTab}
+        extra={<section className="sim-dash-card"><header><h3>Estimate — Sizing’s static model</h3><span className="meta">The fleet Sizing’s engine sized, before any run</span></header>{estimate}</section>}
       />
     </>
   )
@@ -467,13 +479,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
       </div>
       {/* Data (owner, 2026-11-26): the tables and charts take the map's place, full width; the map is one step back. */}
       {view === 'data' && (
-        <div className="sim-data-main">
-          {dataPane}
-          <details className="sim-disc" name="sim-data-fold">
-            <summary>Estimate — Sizing’s static model</summary>
-            <div className="sim-disc-body">{estimate}</div>
-          </details>
-        </div>
+        <div className="sim-data-main">{dataPane}</div>
       )}
       {/* The side panel: Simulate's fleet, or Results' data. */}
     </div>
@@ -530,24 +536,18 @@ const verdictWord = (h: Headline) => (h.outcome ? OUTCOME_WORD[h.outcome] : 'Sim
 
 /** Data's checks tile: how many of the three pass, each stacked, and what sets the fleet; `why` is the
  *  line when there is no verdict to explain (stopped, not run, running). */
-function VerdictTile({ h, why }: { h: Headline; why: string | null }) {
-  const n = h.fleet.tested
-  const checks: [string, boolean | null][] = [['Orders', h.perHr.pass], ['Utilization', h.utilization.pass], ['Battery', h.battery.pass]]
+/** Data's head line under the verdict: why when there is no verdict (stopped, not run, running), else how many
+ *  checks pass and what follows — the check that sets the fleet, one fewer passing, or the static count. */
+function verdictLine(h: Headline, why: string | null): string {
+  if (why) return why
   const judged = h.outcome && h.outcome !== 'notRun' && h.outcome !== 'gridlock'
-  return (
-    <div className={`sim-kpi sim-kpi-verdict is-${h.verdictTone}`}>
-      <span className="sim-kpi-lbl">Checks</span>
-      <span className="sim-kpi-val">{judged ? `${checks.filter(([, p]) => p).length} of 3 pass` : verdictWord(h)}</span>
-      {why ? <span className="sim-kpi-sub">{why}</span> : judged && (
-        <ul className="sim-checks">
-          {checks.map(([l, p], i) => <li key={l} className={p === false ? 'bad' : p ? 'good' : ''}><i aria-hidden>{p == null ? '–' : p ? '✓' : '✗'}</i>{i + 1} · {l}</li>)}
-        </ul>
-      )}
-      {h.setsFleet && <span className="sim-kpi-sub">{h.setsFleet.check === 'orders' ? 'Orders' : h.setsFleet.check === 'utilization' ? 'Utilization' : 'Battery'} sets the fleet → about {h.setsFleet.n}</span>}
-      {h.outcome === 'over' && <span className="sim-kpi-sub">{n - 1} also passes all three</span>}
-      {h.outcome === 'right' && n !== h.fleet.static && <span className="sim-kpi-sub">static calc {h.fleet.static}</span>}
-    </div>
-  )
+  if (!judged) return verdictWord(h)
+  const pass = [h.perHr.pass, h.utilization.pass, h.battery.pass].filter(Boolean).length
+  const n = h.fleet.tested
+  const then = h.setsFleet ? ` · ${h.setsFleet.check === 'orders' ? 'orders' : h.setsFleet.check === 'utilization' ? 'utilization' : 'battery'} sets the fleet → about ${h.setsFleet.n}`
+    : h.outcome === 'over' ? ` · ${n - 1} also passes all three`
+    : n !== h.fleet.static ? ` · static calc ${h.fleet.static}` : ''
+  return `${pass} of 3 checks pass${then}`
 }
 
 type CoverageValues = { shiftH: number; shiftsPerDay: number; daysPerWeek: number }

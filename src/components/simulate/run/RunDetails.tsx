@@ -5,7 +5,7 @@
 // with the vehicle data behind them. Fallbacks the engine used for missing data are listed — nothing
 // is silently invented.
 
-import { memo } from 'react'
+import { memo, type ReactNode } from 'react'
 import { Bar, CartesianGrid, ComposedChart, Line, ReferenceLine, Tooltip, XAxis, YAxis } from 'recharts'
 import { AXIS_STROKE, ChartCaption, ChartFrame, ChartTooltip, GRID_STROKE, pct, TICK } from '@/src/components/charts/ChartKit'
 import DataTable, { type Cell, type Col } from './DataTable'
@@ -32,6 +32,27 @@ interface Props {
   assume: Assumptions
   /** Open the Assumptions drawer (Milestone 6) — where run assumptions are set. */
   onOpenAssumptions: () => void
+  /** The Data tab shown. */
+  tab: DataTab
+  /** More cards for the Setup tab (Sizing's static estimate). */
+  extra?: ReactNode
+}
+
+export type DataTab = 'overview' | 'flows' | 'vehicles' | 'locations' | 'battery' | 'setup'
+export const DATA_TABS: { id: DataTab; label: string }[] = [
+  { id: 'overview', label: 'Overview' }, { id: 'flows', label: 'Material flows' }, { id: 'vehicles', label: 'Vehicles' },
+  { id: 'locations', label: 'Locations' }, { id: 'battery', label: 'Battery' }, { id: 'setup', label: 'Setup' },
+]
+
+/** A dashboard card: a title, one line of context, then its chart or table. `wide` spans the row; `side`
+ *  takes the right column's full height (a long list beside short cards). */
+function Card({ title, meta, wide, side, children }: { title: string; meta?: ReactNode; wide?: boolean; side?: boolean; children: ReactNode }) {
+  return (
+    <section className={`sim-dash-card${wide ? ' is-wide' : side ? ' is-side' : ''}`}>
+      <header><h3>{title}</h3>{meta && <span className="meta">{meta}</span>}</header>
+      {children}
+    </section>
+  )
 }
 
 const SPLIT = STATES as [keyof TimeSplit, string][]
@@ -65,7 +86,7 @@ const LOC_COLS: Col[] = [
 ]
 const secs = (s: number | null | undefined) => (s == null || !isFinite(s) ? '—' : `${Math.round(s)} s`)
 
-export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem, inputs, assume, onOpenAssumptions }: Props) {
+export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem, inputs, assume, onOpenAssumptions, tab, extra }: Props) {
   const len = (ft?: number) => fmtLength(ft, unitSystem)
   const total = R ? R.types.reduce((a, t) => a + t.target, 0) : 0
   const flows = project.flows ?? []
@@ -76,90 +97,84 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
   const time = R ? R.types.reduce((acc, t) => { for (const k of Object.keys(acc) as (keyof TimeSplit)[]) acc[k] += t.time[k]; return acc },
     { travel: 0, handle: 0, reposition: 0, wait: 0, charge: 0, idle: 0 } as TimeSplit) : null
 
+  const flowsTable = (
+    <DataTable label="Material flows" cols={FLOW_COLS} rows={linked.map(f => {
+      const sim = R?.flows.find(x => x.flowId === f.id)
+      const why = R?.excluded.find(x => x.flowId === f.id)?.why
+      const e = flowDerived(f, f.vehicleId ? vehicleById.get(f.vehicleId) : undefined)
+      const target = f.thruPerHr * assume.demandPct / 100
+      const head: Cell[] = [`${name(f.fromPointId)} → ${name(f.toPointId)}`, Math.round(target), len(f.distanceFt)]
+      if (why) return [...head, { v: `Left out of the run — ${why.toLowerCase()}`, cls: 'dim l' }, null, null, null, null, null]
+      return [...head, len(sim?.measuredFt), secs(e.cycleSeconds), e.rawVehicles == null ? null : e.rawVehicles.toFixed(2),
+        { v: sim ? sim.perHr.toFixed(1) : null, cls: sim && target > 0 && gradeOrders(Math.max(0, (1 - sim.perHr / target) * 100)) === 'bad' ? 'bad' : '' }, secs(sim?.mission), secs(sim?.wait)]
+    })} />
+  )
+  const blocked = inputs.clearances.filter(c => c.status === 'capped' || c.status === 'violation')
+  const waiting = <p className="sim-card-note">Simulating…</p>
+
+  // Data as a dashboard (owner, 2026-11-26; the app's own style): one tab at a time, each a grid of cards —
+  // a title, one line of context, then the chart or table.
   return (
-    <section className="sim-below">
-      <details className="sim-disc" name="sim-data-fold">
-        <summary>Material flows — engine vs simulated<span className="meta">{R ? flowSummary(R, linked.length, assume.demandPct, flows) : 'simulating…'}</span></summary>
-        <div className="sim-disc-body">
-          <DataTable label="Material flows" cols={FLOW_COLS} rows={linked.map(f => {
-            const sim = R?.flows.find(x => x.flowId === f.id)
-            const why = R?.excluded.find(x => x.flowId === f.id)?.why
-            const e = flowDerived(f, f.vehicleId ? vehicleById.get(f.vehicleId) : undefined)
-            const target = f.thruPerHr * assume.demandPct / 100
-            const head: Cell[] = [`${name(f.fromPointId)} → ${name(f.toPointId)}`, Math.round(target), len(f.distanceFt)]
-            if (why) return [...head, { v: `Left out of the run — ${why.toLowerCase()}`, cls: 'dim l' }, null, null, null, null, null]
-            return [...head, len(sim?.measuredFt), secs(e.cycleSeconds), e.rawVehicles == null ? null : e.rawVehicles.toFixed(2),
-              { v: sim ? sim.perHr.toFixed(1) : null, cls: sim && target > 0 && gradeOrders(Math.max(0, (1 - sim.perHr / target) * 100)) === 'bad' ? 'bad' : '' }, secs(sim?.mission), secs(sim?.wait)]
-          })} />
-          {time && <TimeSplitBar time={time} />}
+    <div className={`sim-dash-grid is-${tab}`}>
+      {tab === 'overview' && <>
+        <Card title="Moves delivered, hour by hour" meta={R ? `${total.toFixed(0)} needed each hour` : null}>{S && R ? <HourChart S={S} target={total} hours={Math.ceil(R.t / 3600)} /> : waiting}</Card>
+        <Card title="Where the time went" meta={R ? `${R.orders.delivered.toLocaleString()} moves · ${R.orders.waiting} waiting at the end` : null}>
+          {time ? <TimeSplitBar time={time} /> : waiting}
           {R && (
             <dl className="sim-kv">
               <dt>Battery at the end (avg / lowest)</dt><dd>{R.types.map(t => `${Math.round(t.socAvg)}% / ${Math.round(t.socMin)}%`).join(' · ')}</dd>
               <dt>Trips to charge</dt><dd>{R.types.reduce((a, t) => a + t.chargeTrips, 0)}</dd>
-              <dt>Orders waiting at the end</dt><dd>{R.orders.waiting}</dd>
             </dl>
           )}
-        </div>
-      </details>
-
-      <details className="sim-disc" name="sim-data-fold">
-        <summary>Battery<span className="meta">{R ? R.types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId}: lowest ${Math.round(t.socMin)}% · ${t.chargeTrips} charges`).join(' · ') : 'simulating…'}</span></summary>
-        <div className="sim-disc-body">{S && R ? <BatteryChart S={S} vehicleById={vehicleById} /> : <p className="sim-card-note">Simulating…</p>}</div>
-      </details>
-
-      <details className="sim-disc" name="sim-data-fold">
-        <summary>Vehicles<span className="meta">{R ? `${R.vehicles.length} vehicle${R.vehicles.length === 1 ? '' : 's'} · ${R.orders.delivered} moves` : 'simulating…'}</span></summary>
-        <div className="sim-disc-body">
-          {R && <>
-            <DataTable label="By vehicle type" cols={TYPE_COLS} rows={R.types.map(t => [
-              vehicleById.get(t.vehicleId)?.name ?? t.vehicleId, t.fleet, t.done, t.perHr.toFixed(1), t.target.toFixed(0),
-              pct(t.utilization), secs(t.avgWait), `${Math.round(t.socAvg)}% / ${Math.round(t.socMin)}%`, t.chargeTrips,
-            ])} />
-            <DataTable label="By vehicle" cols={VEH_COLS} rows={R.vehicles.map(v => {
-              const all = Object.values(v.time).reduce((a, b) => a + b, 0) || 1
-              return [v.id, vehicleById.get(v.vehicleId)?.name ?? v.vehicleId, v.done, v.perHr.toFixed(1), pct(v.utilization),
-                ...SPLIT.map(([k]) => pct(inState(v.time, k) / all)), `${Math.round(v.soc)}%`, `${Math.round(v.socMin)}%`, v.chargeTrips]
-            })} foot={(() => {
-              const sum = (f: (v: SimResults['vehicles'][number]) => number) => R.vehicles.reduce((a, v) => a + f(v), 0)
-              const all = sum(v => Object.values(v.time).reduce((a, b) => a + b, 0)) || 1
-              return ['Total', '', sum(v => v.done), sum(v => v.perHr).toFixed(1), '',
-                ...SPLIT.map(([k]) => pct(sum(v => inState(v.time, k)) / all)), '', '', sum(v => v.chargeTrips)]
-            })()} />
-          </>}
-        </div>
-      </details>
-
-      <details className="sim-disc" name="sim-data-fold">
-        <summary>Hour by hour</summary>
-        <div className="sim-disc-body">{S && R ? <HourChart S={S} target={total} hours={Math.ceil(R.t / 3600)} /> : <p className="sim-card-note">Simulating…</p>}</div>
-      </details>
-
-      <details className="sim-disc" name="sim-data-fold">
-        <summary>Locations<span className="meta">{S?.zoneStats.size ?? 0}</span></summary>
-        <div className="sim-disc-body">
+        </Card>
+      </>}
+      {tab === 'flows' && <Card wide title="Material flows — engine vs simulated" meta={R ? flowSummary(R, linked.length, assume.demandPct, flows) : null}>{flowsTable}</Card>}
+      {tab === 'vehicles' && (R ? <>
+        <Card wide title="By vehicle type" meta={`${R.vehicles.length} vehicle${R.vehicles.length === 1 ? '' : 's'} · ${R.orders.delivered.toLocaleString()} moves`}>
+          <DataTable label="By vehicle type" cols={TYPE_COLS} rows={R.types.map(t => [
+            vehicleById.get(t.vehicleId)?.name ?? t.vehicleId, t.fleet, t.done, t.perHr.toFixed(1), t.target.toFixed(0),
+            pct(t.utilization), secs(t.avgWait), `${Math.round(t.socAvg)}% / ${Math.round(t.socMin)}%`, t.chargeTrips,
+          ])} />
+        </Card>
+        <Card wide title="By vehicle" meta="Where each vehicle's time went">
+          <DataTable label="By vehicle" cols={VEH_COLS} rows={R.vehicles.map(v => {
+            const all = Object.values(v.time).reduce((a, b) => a + b, 0) || 1
+            return [v.id, vehicleById.get(v.vehicleId)?.name ?? v.vehicleId, v.done, v.perHr.toFixed(1), pct(v.utilization),
+              ...SPLIT.map(([k]) => pct(inState(v.time, k) / all)), `${Math.round(v.soc)}%`, `${Math.round(v.socMin)}%`, v.chargeTrips]
+          })} foot={(() => {
+            const sum = (f: (v: SimResults['vehicles'][number]) => number) => R.vehicles.reduce((a, v) => a + f(v), 0)
+            const all = sum(v => Object.values(v.time).reduce((a, b) => a + b, 0)) || 1
+            return ['Total', '', sum(v => v.done), sum(v => v.perHr).toFixed(1), '',
+              ...SPLIT.map(([k]) => pct(sum(v => inState(v.time, k)) / all)), '', '', sum(v => v.chargeTrips)]
+          })()} />
+        </Card>
+      </> : <Card wide title="Vehicles">{waiting}</Card>)}
+      {tab === 'locations' && <>
+        <Card title="Locations" meta={`${S?.zoneStats.size ?? 0} — visits, time occupied, queues`}>
           <DataTable label="Locations" cols={LOC_COLS} rows={S && R ? [...S.zoneStats].map(([z, st]) => {
             const p = S.G.points[S.G.zoneNode.get(z) ?? -1]
             return [p?.name ?? z, p?.type ?? '', st.visits, pct(st.occT / Math.max(1, R.t)), st.maxQ, st.visits ? secs(st.waitT / st.visits) : null]
           }) : []} />
-        </div>
-      </details>
-
-      <details className="sim-disc" name="sim-data-fold">
-        <summary>B56.5 clearance<span className="meta">{inputs.clearances.filter(c => c.status === 'capped').length} slowed · {inputs.clearances.filter(c => c.status === 'violation').length} blocked</span></summary>
-        <div className="sim-disc-body">
-          {inputs.clearances.some(c => c.status === 'capped' || c.status === 'violation')
-            ? <ul className="sim-list">{inputs.clearances.filter(c => c.status === 'capped' || c.status === 'violation').map(c => {
+        </Card>
+        <Card title="B56.5 clearance" meta={`${inputs.clearances.filter(c => c.status === 'capped').length} slowed · ${inputs.clearances.filter(c => c.status === 'violation').length} blocked`}>
+          {blocked.length
+            // One line per place and reason — a route's segments share one, with how many it covers.
+            ? <ul className="sim-list">{[...blocked.reduce((m, c) => {
                 const seg = net?.segments.find(s => s.id === c.segId)
-                const where = seg?.highwayId ? project.simLayout?.highways?.find(h => h.id === seg.highwayId)?.name || 'Highway' : `${name(seg?.a)} – ${name(seg?.b)}`
-                return <li key={c.segId}>{where}: {c.tightestIn?.toFixed(1)} in · {c.reason}</li>
-              })}</ul>
+                const where = seg?.highwayId ? project.simLayout?.highways?.find(h => h.id === seg.highwayId)?.name || 'Route' : `${name(seg?.a)} – ${name(seg?.b)}`
+                const line = `${where}: ${c.tightestIn?.toFixed(1)} in · ${c.reason}`
+                return m.set(line, (m.get(line) ?? 0) + 1)
+              }, new Map<string, number>())].map(([line, n]) => <li key={line}>{line}{n > 1 ? ` · ${n} segments` : ''}</li>)}</ul>
             : <p className="sim-card-note">No route is slowed or blocked.</p>}
-        </div>
-      </details>
-
-      <details className="sim-disc" name="sim-data-fold">
-        <summary>Assumptions<span className="meta">pace {assume.pacePct}% · {assume.trafficPct ? `traffic ${assume.trafficPct}% · ` : ''}safety {fmtLength(assume.safetyFt, unitSystem, 1)} · demand {assume.demandPct}%</span></summary>
-        <div className="sim-disc-body">
+        </Card>
+      </>}
+      {tab === 'battery' && (
+        <Card wide title="Battery over the run" meta={R ? R.types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId}: lowest ${Math.round(t.socMin)}% · ${t.chargeTrips} charges`).join(' · ') : null}>
+          {S && R ? <BatteryChart S={S} vehicleById={vehicleById} /> : waiting}
+        </Card>
+      )}
+      {tab === 'setup' && <>
+        <Card title="Assumptions" meta={`pace ${assume.pacePct}% · ${assume.trafficPct ? `traffic ${assume.trafficPct}% · ` : ''}safety ${fmtLength(assume.safetyFt, unitSystem, 1)} · demand ${assume.demandPct}%`}>
           <p className="sim-readout"><button type="button" className="link-btn" onClick={onOpenAssumptions}>Open assumptions</button></p>
           {S && [...S.profiles.values()].map(p => {
             const c = p.vehicle.calc, b = p.battery
@@ -176,15 +191,15 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
               </div>
             )
           })}
-          {R && R.flags.length > 0 && (
-            <>
-              <h4 className="sim-h4">Missing data — fallbacks used</h4>
-              <ul className="sim-list">{[...new Map(R.flags.map(f => [f.field + f.message, f])).values()].map((f, i) => <li key={i}>{f.message}</li>)}</ul>
-            </>
-          )}
-        </div>
-      </details>
-    </section>
+        </Card>
+        {R && R.flags.length > 0 && (
+          <Card side title="Missing data — fallbacks used" meta={`${new Set(R.flags.map(f => f.field + f.message)).size} used`}>
+            <ul className="sim-list">{[...new Map(R.flags.map(f => [f.field + f.message, f])).values()].map((f, i) => <li key={i}>{f.message}</li>)}</ul>
+          </Card>
+        )}
+        {extra}
+      </>}
+    </div>
   )
 })
 
