@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { DERIVED, highwayConnections, highwayCorners, highwayEnds, highwayFromEnds, highwaysTouching, highwayStops, inJunction, insideHighway, withHighways } from '../highways'
-import { addHighway, pointsInLoop, removeHighways, updateHighway, updateHighways, flowTargets, hitTest, notConnected, placeWithSpur, routeDistanceFt, spurTarget, splitSegment, snapDraw, highwayEndsAt, moveHighwayEnds, highwayLanes, laneKind } from '../layoutEdit'
+import { addHighway, pointsInLoop, removeHighways, updateHighway, updateHighways, flowTargets, hitTest, notConnected, placeWithSpur, connectLoose, routeDistanceFt, spurTarget, splitSegment, snapDraw, highwayEndsAt, moveHighwayEnds, highwayLanes, laneKind } from '../layoutEdit'
 import { segmentClearances, B56_5_RULE } from '../clearance'
 import { runInputs } from '../runInputs'
 import type { SimHighway, SimLayout } from '../types'
@@ -141,6 +141,20 @@ describe('highways: stored as rectangles, routes derived', () => {
     // A point just past an end (within reach) is the end — no gap at the highway's end.
     const past: SimLayout = { points: [{ id: 'P', x: -0.5, y: 0, type: 'stand', role: 'pick' }], segments: [], highways: [hw({ x: 0, y: 0 }, { x: 30, y: 0 })] }
     expect(notConnected(past)).toEqual([])
+  })
+
+  it('points then routes: a route drawn later joins the loose points within reach by a spur', () => {
+    const pts: SimLayout = { points: [
+      { id: 'A', x: 10, y: 15, type: 'stand', role: 'pick' },     // 15 ft off the aisle: joins
+      { id: 'B', x: 30, y: -12, type: 'dock', role: 'drop' },     // 12 ft the other side: joins
+      { id: 'F', x: 20, y: 200, type: 'stand', role: 'pick' },    // far away: stays loose
+    ], segments: [] }
+    const drawn = addHighway(pts, { x: 0, y: 0 }, { x: 40, y: 0 }, 10)
+    const joined = connectLoose(drawn.layout)
+    expect(notConnected(joined).map(p => p.id)).toEqual(['F'])
+    expect(joined.segments).toHaveLength(2)                                  // two spurs, nothing else stored
+    expect(routeDistanceFt(joined, 'A', 'B')).toBeCloseTo(15 + 20 + 12)
+    expect(connectLoose(joined)).toBe(joined)                                // nothing left to join: unchanged
   })
 
   it('spurs, splits and hit tests treat a highway like a route — and store only a junction on it', () => {

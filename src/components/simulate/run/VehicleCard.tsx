@@ -34,7 +34,7 @@ function vehicleWhy(S: SimState, v: V): string | null {
   const st = vehicleState(v)
   if (st === 'wait') {
     if (v.blockedBy) return `Waiting for ${v.blockedBy.id}${v.headOn ? ' · head-on on a single lane' : ''}`
-    if (v.waitZone) return `Queued for ${S.G.points[S.G.zoneNode.get(v.waitZone) ?? -1]?.name ?? 'a station'}`
+    if (v.waitZone) return `Queued for ${S.G.points[S.G.zoneNode.get(v.waitZone) ?? -1]?.name ?? 'a point'}`
     return 'Waiting for the way ahead'
   }
   if (st === 'idle') return `Parked at ${name(v.node)} · ${S.waiting ? `${S.waiting} order${S.waiting === 1 ? '' : 's'} waiting` : 'no orders waiting'}`

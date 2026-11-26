@@ -174,11 +174,12 @@ export const HELP: HelpSection[] = [
     summary:
       'An optional check of the Sizing fleet on a drawn layout. You draw the site — points, routes and material flows — and the simulation runs the vehicles through it to show whether the fleet keeps up and where it gets stuck. Nothing is invented: what is not drawn or not in the vehicle data is flagged.',
     howTo: [
-      'Drawing (optional): load a PDF page or a PNG/JPG, then Set scale — click both ends of a known dimension and type its length.',
-      'Points (P): choose a type and a role (Pick, Drop, or both) and click to place it. Clicking on a route places it on the route.',
-      'Routes (R): click from point to point to draw a route; Esc ends the route. Routes snap to points and to other routes.',
+      'Steps, on the left: Pallets & vehicles · Routes · Points · Flows · Simulate · Data. « folds the list to icons. Routes and Points work in either order.',
+      'Site drawing (optional, on the map\'s tool bar): load a PDF page or a PNG/JPG, then Set scale — click both ends of a known dimension and type its length.',
+      'Routes (P): drag along an aisle to draw a route; join the ends. Points already placed nearby connect to it.',
+      'Points (E): drag Sizing\'s stations from the tray, or choose a type (chargers and parking too) and click beside a route — it connects.',
       'Direction (D): click a route to step through two-way, one-way either way, and single-lane (no passing).',
-      'Material flows (F): click a Pick point, then a Drop point. Give the material flow its moves per hour and vehicle on the right.',
+      'Flows (F): click a Pick point, then a Drop point. Give the material flow its moves per hour and vehicle on the right.',
       'Select (V): click anything to edit it; drag a point to move it; Delete removes it. ⌘Z / ⌘⇧Z undo and redo.',
     ],
     tips: [

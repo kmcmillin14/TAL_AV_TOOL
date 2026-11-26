@@ -25,13 +25,13 @@ import { createProject, getProject, patchSimSettings, updateProject, type Stored
 import { useRouter } from 'next/navigation'
 import { useByValue } from '@/src/lib/useByValue'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
-import { GuideList, GuideNext, type Stage, type StageInfo } from './ui/Guide'
+import GuideSidebar, { type Stage, type StageInfo } from './ui/Guide'
 import Link from 'next/link'
 import { payloadsKey } from './layout/SetupCard'
 import type { UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutEditor from './layout/LayoutEditor'
-import { chargerProgress, drawingStatus, placeProgress, statusLabel } from './layout/SimCards'
+import { chargerProgress, placeProgress } from './layout/SimCards'
 import RunView from './run/RunView'
 import VehicleBar from './vehicles/VehicleBar'
 import AssumptionsDrawer from './inspector/AssumptionsDrawer'
@@ -137,7 +137,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const empty = !hasLayout(simLayout)
   // The guide's steps and their progress (owner, 2026-11-22): green done, amber started, grey not yet; all
   // green before Simulate is ready to simulate.
-  const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix the layout first'} — opens Material flows`
+  const blocked = canRun ? undefined : `${checks[0]?.text ?? 'Fix the layout first'} — opens Flows`
   const linkedN = inputs.flows.length, flowN = flowsV.length
   const chargersWanted = useMemo(() => suggestedChargers(simFleet), [simFleet])
   const homes = chargerProgress(simLayout ?? emptyLayout(), chargersWanted, fleetNeeded)
@@ -146,42 +146,45 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const loose = useMemo(() => (simLayout?.highways?.length ? highwayConnections(simLayout).loose.length : 0), [simLayout])
   // Paths as drawn: highways (their routes are derived), or routes for a layout drawn the older way.
   const paths = simLayout?.highways?.length || simLayout?.segments.length || 0
-  const scaled = !!simLayout?.background?.scale
-  const layoutSubs = [
-    { label: 'Scale', done: scaled, optional: true, status: simLayout?.background ? drawingStatus(simLayout.background) : 'No drawing (optional)' },
+  // Pallet sizes first (the order the owner reads them), then the vehicle types that carry them.
+  const vehicleSubs = [
+    // No loads in Step 1: nothing to confirm — the run uses each vehicle's own payload, so it is optional.
+    { label: 'Pallet sizes', done: confirmed, optional: !loads.length,
+      status: loads.length ? `${loads.length} ${confirmed ? 'confirmed' : 'to confirm'}` : 'Vehicle defaults' },
     { label: 'Vehicle types', done: types.length > 0,
       status: types.length ? types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId} · ${placed[t.vehicleId] ?? staticN[t.vehicleId] ?? 0}`).join(', ') : 'None yet' },
-    // No loads in Step 1: nothing to confirm — the run uses each vehicle's own payload, so it is optional.
-    { label: 'Payloads', done: confirmed, optional: !loads.length,
-      status: loads.length ? `${loads.length} ${confirmed ? 'confirmed' : 'to confirm'}` : 'Vehicle defaults (none in Step 1)' },
   ]
-  const required = layoutSubs.filter(t => !t.optional)
-  const pointsDone = placing.names.length > 0 && placing.unplaced.length === 0
+  const required = vehicleSubs.filter(t => !t.optional)
+  const stationsDone = placing.names.length > 0 && placing.unplaced.length === 0
+  // Chargers and parking are points too (owner, 2026-11-26): one step places all of them.
+  const pointSubs = [
+    { label: 'From Sizing', done: stationsDone,
+      status: placing.names.length ? `${placing.names.length - placing.unplaced.length} of ${placing.names.length} placed` : 'No Sizing stations' },
+    { label: 'Chargers & parking', done: homes.done, status: homes.status },
+  ]
   const routeBlocked = checks.some(c => c.level === 'bad' && c.fix === 'route')
   const flowBlocked = checks.some(c => c.level === 'bad' && c.fix !== 'charger')
   const before: StageInfo[] = [
-    { id: 'layout', label: 'Layout', done: required.every(t => t.done), started: layoutSubs.some(t => t.done),
-      status: required.every(t => t.done) ? 'Ready' : `${required.filter(t => !t.done).length} to do`, subs: layoutSubs,
-      lead: 'Import the site drawing and set its scale (optional), confirm the vehicle types and the payloads.' },
-    { id: 'points', label: 'Pick and drop points', done: pointsDone, started: placing.names.length - placing.unplaced.length > 0,
-      status: placing.names.length ? `${placing.names.length - placing.unplaced.length} of ${placing.names.length} placed` : 'No Sizing stations',
-      lead: 'Drag Sizing’s stations from the tray onto the map, or click one and then the map. Racks drag out as rectangles.' },
-    { id: 'routes', label: 'Routes', done: paths > 0 && loose === 0 && !routeBlocked, started: paths > 0,
+    { id: 'vehicles', label: 'Pallets & vehicles', icon: 'rack', done: required.every(t => t.done), started: vehicleSubs.some(t => t.done),
+      status: required.every(t => t.done) ? 'Ready' : `${required.filter(t => !t.done).length} to do`, subs: vehicleSubs,
+      lead: 'Confirm the pallet sizes from Step 1 and the vehicle types that carry them.' },
+    { id: 'routes', label: 'Routes', icon: 'lanes', done: paths > 0 && loose === 0 && !routeBlocked, started: paths > 0,
       status: !paths ? 'None drawn' : loose ? `${loose} loose end${loose === 1 ? '' : 's'}` : routeBlocked ? 'Not all reached' : `${paths} connected`,
-      lead: 'Draw the aisles with Path and join their ends; every pick and drop point must sit on a route.' },
-    { id: 'flows', label: 'Material flows', done: flowN > 0 && linkedN === flowN && !flowBlocked, started: linkedN > 0,
+      lead: 'Draw the aisles with Route and join their ends. Trace them over the site drawing if you have one (Drawing, on the map).' },
+    { id: 'points', label: 'Points', icon: 'pick', done: stationsDone && homes.done, started: pointSubs.some(t => t.done) || placing.names.length > placing.unplaced.length,
+      status: stationsDone && homes.done ? 'Ready' : `${pointSubs.filter(t => !t.done).length} to do`, subs: pointSubs,
+      lead: 'Drag Sizing’s stations from the tray onto the map, then chargers and parking. A point near a route joins it — before or after the route is drawn.' },
+    { id: 'flows', label: 'Flows', icon: 'swap', done: flowN > 0 && linkedN === flowN && !flowBlocked, started: linkedN > 0,
       status: flowN ? `${linkedN} of ${flowN} linked` : 'No material flows',
-      lead: 'Link each material flow to its pick and drop points; its moves per hour come from Sizing. Fix what is listed.' },
-    { id: 'chargers', label: 'Chargers', done: homes.done, started: homes.homes > 0, status: homes.status,
-      lead: 'Place chargers near the busiest route, and a charger or parking spot for every vehicle.' },
+      lead: 'Every material flow linked to its pick and drop points, and nothing in the list below. Its moves per hour come from Sizing.' },
   ]
   const allGreen = before.every(s => s.done)
   const stages: StageInfo[] = [
     ...before,
-    { id: 'simulate', label: 'Simulate', blocked, done: undefined,
+    { id: 'simulate', label: 'Simulate', icon: 'clock', blocked, done: undefined,
       status: !canRun ? 'Not ready' : allGreen ? 'Ready' : 'Can run',
       lead: allGreen ? 'Everything is green: run it. It plays on the map; speed it up, or run a shift, a day or a week.' : 'It can run, but some steps above are not green yet. Their results may be off.' },
-    { id: 'data', label: 'Data', blocked, status: resultLabel,
+    { id: 'data', label: 'Data', icon: 'formula', blocked, status: resultLabel,
       lead: 'Orders, utilization and battery over the run, and the fleet that passes all three.' },
   ]
   // The guide opens on the first step that is not done; Simulate and Data only while the run can happen.
@@ -189,7 +192,6 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
   const wanted = picked ?? (before.find(s => !s.done)?.id ?? 'simulate')
   if (!canRun && RUN_STAGES.has(wanted)) setStage(FIX_STAGE)
   const stage: Stage = !canRun && RUN_STAGES.has(wanted) ? FIX_STAGE : wanted
-  const running = RUN_STAGES.has(stage)
   const sampleOn = flows.some(f => isSample(f.id))
   // The sample brings its own flows, so it is offered only where it cannot change a real quote.
   const canSample = empty && flows.length === 0
@@ -231,11 +233,10 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
       simLayout: emptyLayout(),
       flows: flows.filter(f => !isSample(f.id)).map(unlinked),
     })
-    setStage('layout')
+    setStage('vehicles')
   }
 
-  const guideProps = { stages, value: stage, onChange: setStage, onBlocked: () => setStage(FIX_STAGE), then: { label: 'Pricing', href: `/projects/${project.id}/step5` } }
-  const guide = { list: <GuideList {...guideProps} />, next: <GuideNext {...guideProps} /> }
+  const sidebar = <GuideSidebar stages={stages} value={stage} onChange={setStage} onBlocked={() => setStage(FIX_STAGE)} then={{ label: 'Pricing', href: `/projects/${project.id}/step5` }} />
   // The Vehicles step: the run's types (each with a payload) and counts — Sizing's, until changed here.
   const vehiclesStep = (
     <VehicleBar types={types} vehicleById={vehicleById} vehicles={vehicles} app={app} sizingIds={sizingIds} loads={loads} staticN={staticN}
@@ -259,16 +260,8 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <h1 className="eh-title">Fleet size verification</h1>
         </div>
         <div className="eh-actions">
-          {!running && (
-            /* Validation, live: one status, a click opens the list in the side panel. */
-            <button type="button" id="sim-valid" className="btn ghost sim-valid-btn"
-              onClick={() => setStage(FIX_STAGE)} title={checks[0]?.level === 'bad' ? checks[0].text : 'Open the validation list'}>
-              <i className={`sim-vdot is-${status.tone}`} aria-hidden />{statusLabel(status)}
-              {status.warnings > 0 && <span className="sim-valid-sub">{status.warnings} warning{status.warnings === 1 ? '' : 's'}</span>}
-            </button>
-          )}
-          {/* ⋯: the examples at all times, and Clear layout. Assumptions live in Simulate, examples also in
-              Layout › Drawing (owner, 2026-11-22). */}
+          {/* ⋯: the examples at all times, and Clear layout. Validation lives in Flows (its blockers turn the
+              step amber), Assumptions in Simulate, examples also in Routes › Drawing (owner, 2026-11-22/26). */}
           <details className="sim-more-menu" onClick={e => { if ((e.target as HTMLElement).closest('[role=menuitem]')) e.currentTarget.open = false }}>
             <summary className="btn ghost" aria-label="More actions">⋯</summary>
             <div className="sim-menu" role="menu">
@@ -288,14 +281,18 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <p className="rom-empty">Open on a desktop to check the fleet on a layout.</p>
           <Link href={`/projects/${project.id}/step5`} className="btn primary">Next: Pricing</Link>
         </>
-      ) : stage === 'simulate' || stage === 'data' ? (
-        <RunView view={stage === 'data' ? 'data' : 'sim'} guide={guide} estimate={estimate} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
+      ) : (
+        // The sidebar of steps on the left (owner, 2026-11-26); the map, then the step's detail on the right.
+        <div className="sim-body">
+          {sidebar}
+          {stage === 'simulate' || stage === 'data' ? (
+        <RunView view={stage === 'data' ? 'data' : 'sim'} estimate={estimate} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           overridden={overriddenIds}
           registerLayoutWriter={registerLayoutWriter}
-          stage={stage} onStage={setStage} guide={guide} vehiclesStep={vehiclesStep} status={status} banner={banner} runAs={runAs} payloads={payloads} suggestedChargers={chargersWanted} vehiclesPlaced={fleetNeeded}
+          stage={stage} onStage={setStage} vehiclesStep={vehiclesStep} status={status} banner={banner} runAs={runAs} payloads={payloads} suggestedChargers={chargersWanted} vehiclesPlaced={fleetNeeded}
           vehicleTypes={typeVehicles} onFlowVehicle={setFlowVehicle}
           examples={empty ? (
             <p className="sim-examples">or start from an example —{' '}
@@ -304,7 +301,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           ) : null}
           emptyPrompt={!empty ? undefined : canSample ? (
             <div className="sim-empty-cta" onPointerDown={e => e.stopPropagation()}>
-              <p>Draw paths along the aisles — or start from an example site.</p>
+              <p>Draw routes along the aisles — or start from an example site.</p>
               <div className="sim-samples">
                 {SAMPLES.slice(0, 3).map(s => (
                   <button key={s.key} type="button" className="sim-sample" onClick={() => loadSample(s)}>
@@ -316,6 +313,8 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
             </div>
           ) : 'Draw routes along the aisles.'}
         />
+          )}
+        </div>
       )}
       {drawer && <AssumptionsDrawer key={drawer.focus ?? 'all'} project={project} vehicles={runTypes} changed={changed} writeLayout={writeLayout} unitSystem={unitSystem} focus={drawer.focus} onClose={closeDrawer} />}
     </div>

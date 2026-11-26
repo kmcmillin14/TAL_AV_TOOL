@@ -690,13 +690,26 @@ Sizing's static model"); a phone gets that estimate and Next: Pricing. Plan:
 the one-window workspace (artifact *Simulation Workspace Plan*); next come the drill-downs on selection and
 the split of Layout into Highways and Pick and drop points.
 
+**Six steps in a left sidebar (owner, 2026-11-26; replaces the seven-step guide above).** The page is the
+sidebar of steps on the left, the map in the middle and one card on the right (the open step's detail, or
+the selected item's card). The sidebar lists each step with its icon, name and status, the open step's
+sub-tasks one level down on leading lines and its one sentence, and the one **Next** at its foot; **«**
+collapses it to an icon rail (names and status on hover; remembered in this browser). The head is the
+title and **⋯** only — the validation status button is gone (Flows holds the list; a blocker turns the step
+amber). The site drawing is optional, so it is a **Site drawing** button on the map's tool bar (load, scale,
+opacity; *‹ Done* returns), not a step. The bar shows only the tools the open step uses — Route in Routes,
+Point in Points, Lasso throughout (every tool keeps its key). One name per thing: **points** (not stations or
+endpoints), **routes** (the **Route** tool, was Path), **Flows** in the steps (Sizing keeps *material flows*).
+**Routes and Points in either order:** a route drawn after points joins every unconnected point within
+40 ft by a spur, as if the point had been placed after it (`connectLoose`); the sidebar suggests Routes
+first, and neither step blocks the other.
+
 | Step | Opens | Status line | Done (green) when |
 |---|---|---|---|
-| **Layout** — sub-tasks **Scale**, **Vehicle types**, **Payloads** | The drawing (load, scale, opacity), the run's vehicle types with their payloads and counts, Step 1's loads with **Confirm payloads** (`simSettings.payloadsConfirmed`: a fingerprint of the loads, so editing them in Step 1 un-confirms them) | *Ready* / *2 to do*; each sub-task its own line | vehicle types set and payloads confirmed. Scale is optional; so are payloads when Step 1 has none (the run uses each vehicle's own) |
-| **Pick and drop points** | The station tray on the map, and the inspector / navigator | *17 of 20 placed* | every Sizing station placed |
-| **Routes** | The map with the **Path** tool armed | *None drawn* / *2 loose ends* / *Not all reached* / *12 connected* | paths drawn, no loose ends, every flow has a route |
-| **Material flows** | Validation (blockers first), then the material flows on the layout — each row: from → to, moves per hour, vehicle, distance on the map | *16 of 16 linked* | every flow linked and no blocker other than chargers |
-| **Chargers** | Chargers and parking to place, with a **suggested count** | *4 of 6 charger or parking spots* → *1 of 2 chargers* → *2 chargers · 4 parking* | a charger or parking spot for every vehicle (validation's rule) and the suggested chargers |
+| **Pallets & vehicles** — sub-tasks **Pallet sizes**, **Vehicle types** | Step 1's loads with **Confirm payloads** (`simSettings.payloadsConfirmed`: a fingerprint of the loads), then the run's vehicle types with their payloads and counts | *Ready* / *1 to do* | vehicle types set and pallet sizes confirmed (optional when Step 1 has no loads — the run uses each vehicle's own) |
+| **Routes** | The map with the **Route** tool armed; the examples while the layout is empty | *None drawn* / *2 loose ends* / *Not all reached* / *12 connected* | routes drawn, no loose ends, every flow has a route |
+| **Points** — sub-tasks **From Sizing**, **Chargers & parking** | The station tray on the map; with nothing selected, Chargers & parking (placed against the **suggested count**) and the points list | *Ready* / *1 to do* | every Sizing station placed, and a charger or parking spot for every vehicle plus the suggested chargers |
+| **Flows** | Validation (blockers first), then the material flows on the layout — each row: from → to, moves per hour, vehicle, distance on the map | *16 of 16 linked* | every flow linked and no blocker other than chargers |
 | **Simulate** | The run on the map | *Not ready* / *Can run* / *Ready* | — (*Ready* when every step above is green) |
 | **Data** | The run's data, and Sizing's estimate beside it | the fleet state (*Verified*, *Suggested 7*, …) | — |
 

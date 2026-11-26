@@ -660,15 +660,29 @@ export function spurTarget(L: SimLayout, at: XY): { id: string; at: XY } | null 
  */
 export function placeWithSpur<T extends SimLayout>(L: T, at: XY, type: SimPointType, role: SimRole | undefined, join: { id: string; at: XY }): { layout: T; id: string } {
   const placed = addPoint(L, at, type, role)
+  return { layout: joinBySpur(placed.layout, placed.id, join), id: placed.id }
+}
+
+/** Join an existing point to a route with a spur (two-way, single-lane): at the route's end when the nearest
+ *  spot is one (no zero-length route), else the route is split there. Unchanged when the route is gone. */
+export function joinBySpur<T extends SimLayout>(L: T, pointId: string, join: { id: string; at: XY }): T {
   const spur = { dir: 'two', lane: 'single' } as const
-  // Nearest spot is a route's end (the point was placed past it): join that end — no split, no
-  // zero-length route.
   const s = L.segments.find(q => q.id === join.id)
   const end = s && [s.a, s.b].find(id => { const q = L.points.find(p => p.id === id); return q && Math.hypot(q.x - join.at.x, q.y - join.at.y) < 1e-6 })
-  if (end) return { layout: addSegment(placed.layout, end, placed.id, spur).layout, id: placed.id }
-  const split = splitSegment(placed.layout, join.id, join.at)
-  if (!split) return placed
-  return { layout: addSegment(split.layout, split.id, placed.id, spur).layout, id: placed.id }
+  if (end) return addSegment(L, end, pointId, spur).layout
+  const split = splitSegment(L, join.id, join.at)
+  return split ? addSegment(split.layout, split.id, pointId, spur).layout : L
+}
+
+/** Points and routes in either order (owner, 2026-11-26): every point with no route that has one within
+ *  spur reach is joined to it, as if it had been placed after the route. Called when a route is drawn. */
+export function connectLoose<T extends SimLayout>(L: T): T {
+  let out = L
+  for (const p of notConnected(L)) {
+    const join = spurTarget(out, p)
+    if (join) out = joinBySpur(out, p.id, join)
+  }
+  return out
 }
 
 /** Highway ends within reach of `at` (a corner) other than `skip`'s — dragged together with it. */

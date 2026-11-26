@@ -554,7 +554,7 @@ export default function LayoutPanel(p: Props) {
         ['Material flows on layout', `${linkedFlows(p.flows).length} of ${p.flows.length}`],
         ['Objects', (p.layout.objects ?? []).length],
       ]} />
-      <Section title={`Stations · ${stations.length}`} open={stations.length > 0}>
+      <Section title={`Points · ${stations.length}`} open={stations.length > 0}>
         <ul className="sim-nav">
           {stations.map(q => (
             <li key={q.id}><button type="button" onClick={() => p.onFocus({ kind: 'point', id: q.id }, q)}>

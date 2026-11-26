@@ -21,7 +21,7 @@ import { roundCorners } from '@/src/calc/sim/corners'
 import {
   addObject, addPoint, addSegment, convertPoint, copyPoints, flowRefusal, flowStartRefusal, flowTargets, hitTest, FLOW_POINT_TYPES, linkFlow, movePoints,
   notConnected, placeOnSegment, removeObject, removePoints, removeSegment, repeatPoint, rescaleLayout, setCurve,
-  mergePoints, nextDirection, placeWithSpur, addHighway, highwayEndsAt, highwayLanes, laneKind, moveHighwayEnds, removeHighways, updateHighways, pointsInLoop, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
+  connectLoose, mergePoints, nextDirection, placeWithSpur, addHighway, highwayEndsAt, highwayLanes, laneKind, moveHighwayEnds, removeHighways, updateHighways, pointsInLoop, pointById, snapDraw, spurTarget, unlinked, splineHandles, type DrawSnap, splitSegment, updateObject, updatePoint, updateSegment, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
 import { fixAction, type checkStatus, type ReadinessCheck } from '@/src/calc/sim/readiness'
 import type { SimHighway, SimLayout, SimPoint, SimPointType, SimRack, SimRole, SimSegment } from '@/src/calc/sim/types'
@@ -47,7 +47,7 @@ import { flipRack, rackFromBox, rackGeometry, rackLengthFor, stretchRack } from 
 import { useLayoutEditor, type EditorLayout, type ProjectFlow } from './useLayoutEditor'
 
 /** The stages this editor's side panel shows (the rest are the run and the overview). */
-export type EditorStage = Extract<Stage, 'layout' | 'points' | 'routes' | 'flows' | 'chargers'>
+export type EditorStage = Extract<Stage, 'vehicles' | 'routes' | 'points' | 'flows'>
 
 type Tool = 'lasso' | 'hand' | 'points' | 'routes' | 'highway' | 'flows' | 'scale'
 /** A press that moves further than this before release is a drag (Route tool: drag to draw), screen px. */
@@ -55,15 +55,18 @@ const DRAG_PX = 8
 /** Every tool, once (owner, 2026-11-16: the bar is "Paths, endpoints, lasso, undo, redo"; the rest
  *  stay on their keys — spec "Kept, off the bar"). The first key is the one shown. */
 const TOOL_DEFS: Record<Tool, { keys: string[]; hint: string; bar?: { label: string; icon: string } }> = {
-  highway: { keys: ['p', 'w'], hint: 'Drag to draw a path · click a path to edit it · Enter to select', bar: { label: 'Path', icon: 'M3 6h18M3 18h18M8 12h8M14 10l2 2-2 2M10 10l-2 2 2 2' } },
-  points: { keys: ['e'], hint: 'Click beside a path to add an endpoint · Shift places it unconnected · Enter to select', bar: { label: 'Endpoint', icon: 'M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z' } },
-  lasso: { keys: ['l', 'v'], hint: 'Click to select · draw a loop for several · drag a path end to turn it', bar: { label: 'Lasso', icon: 'M8 17.5C4.5 16.5 3 14 3 11.5 3 7 7 4 12 4s9 3 9 7.5-4 7.5-9 7.5c-1.5 0-3-.2-4-.5M8 17.5c-1 1-1 3 1 3.5' } },
+  highway: { keys: ['p', 'w'], hint: 'Drag to draw a route · click a route to edit it · Enter to select', bar: { label: 'Route', icon: 'M3 6h18M3 18h18M8 12h8M14 10l2 2-2 2M10 10l-2 2 2 2' } },
+  points: { keys: ['e'], hint: 'Click beside a route to add a point · Shift places it unconnected · Enter to select', bar: { label: 'Point', icon: 'M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z' } },
+  lasso: { keys: ['l', 'v'], hint: 'Click to select · draw a loop for several · drag a route end to turn it', bar: { label: 'Lasso', icon: 'M8 17.5C4.5 16.5 3 14 3 11.5 3 7 7 4 12 4s9 3 9 7.5-4 7.5-9 7.5c-1.5 0-3-.2-4-.5M8 17.5c-1 1-1 3 1 3.5' } },
   hand: { keys: ['h'], hint: 'Drag to move around · hold Space to pan in any tool' },
   routes: { keys: ['r'], hint: 'Click or drag to draw a route · the + shows where it lands · start on a route to branch from it' },
   flows: { keys: ['f'], hint: 'Click a Pick (or a Drop) — the points it can link to light up' },
   scale: { keys: ['s'], hint: 'Click both ends of a known dimension' },
 }
 const BAR = (Object.entries(TOOL_DEFS) as [Tool, (typeof TOOL_DEFS)[Tool]][]).flatMap(([id, t]) => (t.bar ? [{ id, key: t.keys[0].toUpperCase(), ...t.bar }] : []))
+/** The bar shows only the tools the open step uses (owner, 2026-11-26); every tool stays on its key. */
+const BAR_FOR: Record<EditorStage, Tool[]> = { vehicles: ['lasso'], routes: ['highway', 'lasso'], points: ['points', 'lasso'], flows: ['lasso'] }
+const DRAWING_ICON = 'M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6M15 9.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3z'
 const KEYS = Object.fromEntries((Object.entries(TOOL_DEFS) as [Tool, (typeof TOOL_DEFS)[Tool]][]).flatMap(([id, t]) => t.keys.map(k => [k, id]))) as Record<string, Tool>
 const UNDO_ICON = 'M9 14L4 9l5-5M4 9h11a5 5 0 010 10h-3', REDO_ICON = 'M15 14l5-5-5-5M20 9H9a5 5 0 000 10h3'
 function ToolIcon({ d }: { d: string }) {
@@ -148,8 +151,6 @@ interface Props {
   /** The simulation's vehicle types (the flow inspector's Vehicle list) and a flow's choice among them. */
   vehicleTypes?: Vehicle[]
   onFlowVehicle?: (flowId: string, vehicleId: string) => void
-  /** The guide: the steps at the top of the side panel, and its one Next at the foot. */
-  guide: { list: ReactNode; next: ReactNode }
   /** The Vehicles step's content (the shell owns the vehicle types and counts). */
   vehiclesStep: ReactNode
   /** Chargers to place (`suggestedChargers`), and the vehicles the run places (each needs a home). */
@@ -164,7 +165,7 @@ const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, examples, overridden, registerLayoutWriter, stage, onStage, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers, vehiclesPlaced, guide, vehiclesStep }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, examples, overridden, registerLayoutWriter, stage, onStage, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers, vehiclesPlaced, vehiclesStep }: Props) {
   /** Step 1 loads — a rack's pallet. */
   const loads = useByValue(project.loads ?? NO_LOADS)
   /** A new rack's pallet, already confirmed upstream (owner, 2026-11-17): the simulation vehicles' first
@@ -185,6 +186,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const [placeType, setPlaceType] = useState<Placeable>('stand')
   const [placeRole, setPlaceRole] = useState<SimRole>('pick')
   const [selection, setSelection] = useState<Selection>(null)
+  /** The site drawing's panel, opened from the map's tool bar. */
+  const [drawingOpen, setDrawingOpen] = useState(false)
   const [chainFrom, setChainFrom] = useState<string | null>(null)       // route or flow being drawn
   const [marks, setMarks] = useState<XY[] | null>(null)                 // null = not setting the scale
   const [drag, setDrag] = useState<Drag | null>(null)
@@ -275,7 +278,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   /** Stop whatever is half-drawn: a route, a flow, the scale marks. */
   const cancel = () => { setChainFrom(null); setMarks(null); setArmed(null) }
   const chooseTool = (t: Tool) => {
-    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); onStage('layout') } return }
+    if (t === 'scale') { if (bg) { setChainFrom(null); setMarks([]); setDrawingOpen(true) } return }
     setTool(t); cancel(); setDrag(null)
   }
   /** Undo/redo can remove what a half-drawn route or a selection points at: drop both. */
@@ -429,7 +432,8 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       if (made.id) { setLayout(made.layout); setSelection({ kind: 'object', id: made.id }) }
     } else if (d.kind === 'hwDraw') {
       const made = addHighway(layout, d.from, d.at, pathWidthFt, PATH_KIND)
-      if (made.id) { setLayout(made.layout); setSelection({ kind: 'highway', id: made.id }) }
+      // Points placed before the route join it by a spur (owner, 2026-11-26: routes and points in either order).
+      if (made.id) { setLayout(connectLoose(made.layout)); setSelection({ kind: 'highway', id: made.id }) }
       else selectDrawn(d.hit)
     } else if (d.kind === 'highway' || d.kind === 'hwEnd') {
       if ((d.kind === 'hwEnd' && d.snap) || dx || dy) setLayout(draggedHighway(d))   // a plain click only selects
@@ -724,7 +728,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
     : tool === 'routes' && chainFrom ? 'Click where the + is to continue · it joins points and routes it touches · Shift keeps it straight · right-click or Enter to finish'
     : tool === 'points' && armed ? `Click on a route to place “${armed.name}”`
     : tool === 'points' && placeType === 'object' ? 'Drag out a wall, column or rack face'
-    : tool === 'points' && placeType === 'rack' ? 'Drag out the rack · its long side nearest a path is served · Enter to select'
+    : tool === 'points' && placeType === 'rack' ? 'Drag out the rack · its long side nearest a route is served · Enter to select'
     : TOOL_DEFS[tool].hint
   const imageFt = bg && image ? { href: image, widthFt: (bg.widthPx ?? 0) * scale, heightFt: (bg.heightPx ?? 0) * scale, opacity: bg.opacity } : null
   // What the canvas shows mid-drag: moved points/objects, a bent handle, a box being dragged out.
@@ -749,7 +753,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const selHw = drag ? [] : (layout.highways ?? []).filter(h => selectedHighways.includes(h.id))
   /** A stored route (not a highway's derived one). */
   const byIdSeg = (id: string) => layout.segments.some(q => q.id === id)
-  /** A rack dragged out from `from` to `at`: its long side nearest a path is served (null when too small). */
+  /** A rack dragged out from `from` to `at`: its long side nearest a route is served (null when too small). */
   function draftRackFrom(d: { from: XY; at: XY }): (SimPoint & { rack: SimRack; join?: { id: string; at: XY } }) | null {
     const near = (f: [XY, XY]) => { const m = { x: (f[0].x + f[1].x) / 2, y: (f[0].y + f[1].y) / 2 }, t = spurTarget(net, m); return t ? Math.hypot(t.at.x - m.x, t.at.y - m.y) : Infinity }
     const made = rackFromBox(d.from, d.at, near, { levels: 3, perBay: 2, face: 'short', pallet: defaultPallet })
@@ -826,9 +830,10 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
       />
   )
 
-  // Setup's drawing — shown wherever scaling is under way, so the typed length always has its card.
+  // The site drawing — open from the tool bar, and whenever its scale is being set (the typed length needs it).
+  const drawingShown = drawingOpen || !!marks
   const drawingSection = (
-    <Section title="Drawing" open status={bg ? drawingStatus(bg) : 'Optional'} tone={bg && !bg.scale ? 'warn' : undefined}>{drawingCard}{examples}</Section>
+    <Section title="Site drawing" open status={bg ? drawingStatus(bg) : 'Optional'} tone={bg && !bg.scale ? 'warn' : undefined}>{drawingCard}</Section>
   )
 
   // The flows drawn on the map: all of them, or those of the selected station(s) or flow.
@@ -887,12 +892,15 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           >
             {/* Floating tool bar (proof-of-concept look): tools, then undo/redo. */}
             <div className="sim-tools" role="toolbar" aria-label="Layout tools" onPointerDown={e => e.stopPropagation()}>
-              {BAR.map(t => (
+              {BAR.filter(t => BAR_FOR[stage].includes(t.id)).map(t => (
                 <button key={t.id} type="button" className={`sim-tool${tool === t.id && !marks ? ' on' : ''}`} aria-pressed={tool === t.id}
                   title={`${t.label} (${t.key}) — ${TOOL_DEFS[t.id].hint}`} aria-label={t.label} onClick={() => chooseTool(t.id)}>
                   <ToolIcon d={t.icon} />
                 </button>
               ))}
+              {/* The site drawing (owner, 2026-11-26): optional, so it sits on the map, not in a step. */}
+              <button type="button" className={`sim-tool${drawingOpen ? ' on' : ''}`} aria-pressed={drawingOpen} onClick={() => setDrawingOpen(o => !o)}
+                title={bg ? 'Site drawing — scale, opacity, replace' : 'Import a site drawing (PDF or image) — optional'} aria-label="Site drawing"><ToolIcon d={DRAWING_ICON} /></button>
               <div className="sim-tool-sep" />
               <button type="button" className="sim-tool" disabled={!canUndo} onClick={undo} title="Undo (⌘Z)" aria-label="Undo"><ToolIcon d={UNDO_ICON} /></button>
               <button type="button" className="sim-tool" disabled={!canRedo} onClick={redo} title="Redo (⇧⌘Z)" aria-label="Redo"><ToolIcon d={REDO_ICON} /></button>
@@ -933,21 +941,24 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
           <p className="sim-status" aria-live="polite">{hint}</p>
         </div>
         <div className="sim-side">
-          {/* Two cards (owner, 2026-11-22): the checklist with its one Next, then the step's detail. */}
-          <div className="sim-guide-card">{guide.list}{guide.next}</div>
+          {/* The step's detail, or the selection's card (owner, 2026-11-26: the steps are the left sidebar). */}
           <div className="sim-side-body sim-detail-card">
             {/* The sample note steps aside while a selection's card is open (it returns with Back). */}
-            {!(selection && stage !== 'layout' && stage !== 'flows') && banner}
-            {stage !== 'layout' && marks && drawingSection}
-            {stage === 'layout' ? (
-              // Layout's three sub-tasks: the drawing and its scale, the vehicle types, the payloads.
-              <>
+            {!(selection && stage !== 'vehicles' && stage !== 'flows') && !drawingShown && banner}
+            {drawingShown ? (
+              // The site drawing, opened from the map's tool bar (and while its scale is being set).
+              <div className="sim-dcard">
+                <button type="button" className="sim-back" onClick={() => { setDrawingOpen(false); setMarks(null) }}>‹ Done</button>
                 {drawingSection}
-                <Section title="Vehicle types" open>{vehiclesStep}</Section>
-                <Section title="Payloads" open>
+              </div>
+            ) : stage === 'vehicles' ? (
+              // Pallet sizes, then the vehicle types that carry them.
+              <>
+                <Section title="Pallet sizes" open>
                   <SetupCard projectId={project.id} loads={loads} unitSystem={unitSystem} confirmed={project.simSettings?.payloadsConfirmed === payloadsKey(loads)}
                     onConfirm={() => patchSimSettings(project.id, { payloadsConfirmed: payloadsKey(loads) })} />
                 </Section>
+                <Section title="Vehicle types" open>{vehiclesStep}</Section>
               </>
             ) : stage === 'flows' ? (
               <>
@@ -970,10 +981,15 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   />
                 </Section>
               </>
-            ) : stage === 'chargers' && !selection ? (
-              <ChargersCard layout={layout} suggested={suggestedChargers} needed={vehiclesPlaced} onArmHome={armType} />
             ) : (
               <>
+                {/* Points with nothing selected: chargers and parking are points too (owner, 2026-11-26). */}
+                {stage === 'points' && !selection && (
+                  <Section title="Chargers & parking" open>
+                    <ChargersCard layout={layout} suggested={suggestedChargers} needed={vehiclesPlaced} onArmHome={armType} />
+                  </Section>
+                )}
+                {stage === 'routes' && !selection && examples}
                 <LayoutPanel
                   key={selection ? ('id' in selection ? selection.id : selection.ids.join()) : ''}
                   layout={layout}
@@ -1010,7 +1026,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   focusRateOf={justAdded}
                   onRateFocused={() => setJustAdded(null)}
                   onBack={() => setSelection(null)}
-                  backLabel={stage === 'routes' ? 'Routes' : stage === 'chargers' ? 'Chargers' : 'Pick and drop points'}
+                  backLabel={stage === 'routes' ? 'Routes' : 'Points'}
                   onSelectFlow={id => setSelection({ kind: 'flow', id })}
                   rack={cardRack && cardRackGeo ? { id: cardRack.id, g: cardRackGeo, reach: selRackReach } : null}
                   onAddPoint={() => { onStage('points'); armType('stand') }}

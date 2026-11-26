@@ -66,8 +66,6 @@ interface Props {
   view: 'sim' | 'data'
   /** The sample banner, at the top of the side panel. */
   banner?: ReactNode
-  /** The guide: the steps at the top of the side panel, and its one Next at the foot. */
-  guide: { list: ReactNode; next: ReactNode }
   /** Sizing's static estimate (how the fleet operates), shown under Results beside the run's data. */
   estimate: ReactNode
 }
@@ -112,7 +110,7 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 const NO_LOADS: NonNullable<StoredProject['loads']> = []
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view, banner, guide, estimate }: Props) {
+export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view, banner, estimate }: Props) {
   const simSettings = project.simSettings ?? {}
   /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
   const ownConditions = ownConditionsOf(simSettings), forSizing = !differs && !ownConditions
@@ -450,8 +448,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
       </div>
       {/* The side panel: Simulate's fleet, or Results' data. */}
       <div className="sim-side">
-        {/* Two cards (owner, 2026-11-22): the checklist with its one Next, then the step's detail. */}
-        <div className="sim-guide-card">{guide.list}{guide.next}</div>
+        {/* The step's detail (owner, 2026-11-26: the steps are the left sidebar). */}
         <div className="sim-side-body sim-detail-card">
           {view === 'data' && banner}
           <div hidden={view !== 'sim'} className="sim-sim-pane">

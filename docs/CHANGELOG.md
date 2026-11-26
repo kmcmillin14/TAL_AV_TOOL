@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-11-26 — Six steps in a left sidebar
+
+- Owner: the simulator's steps are **Pallets & vehicles · Routes · Points · Flows · Simulate · Data**, in a
+  sidebar on the left (icon, name, status; sub-tasks one level down on leading lines; « collapses it to an
+  icon rail). The map is in the middle; the step's detail or the selection's card on the right.
+- Chargers and parking are part of **Points** (one step fewer). The site drawing is a **Site drawing** button
+  on the map's tool bar (optional, so not a step). The header's validation button is gone — Flows holds the
+  list. The tool bar shows only the open step's tools.
+- **Routes and points in either order:** a route drawn after points joins the unconnected points within
+  40 ft by a spur (`connectLoose`, pure, tested).
+- Names: points (not stations/endpoints), routes (the Route tool, was Path), Flows in the steps.
+- No figures change.
+
 ## 2026-11-22 — Code-review fixes (9443eda..HEAD)
 
 - With several vehicle types, the battery line names the reason of the type that set its grade (was the

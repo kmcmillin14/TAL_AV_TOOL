@@ -98,13 +98,13 @@ const byLevel = (checks: ReadinessCheck[]) => [...checks].sort((a, b) => LEVEL_O
 /** What a check's fix button does in the editor: pick a tool (for a loose point, starting the route from
  *  it, `startFrom`), or open the step that fixes it — Chargers with the charger armed, or Pick and drop
  *  points, where Sizing's unplaced stations are placed. */
-export type FixAction = { tool: 'scale' | 'routes' | 'flows'; startFrom?: string } | { stage: 'chargers'; arm: 'charger' } | { stage: 'points' }
+export type FixAction = { tool: 'scale' | 'routes' | 'flows'; startFrom?: string } | { stage: 'points'; arm: 'charger' } | { stage: 'points' }
 export function fixAction({ fix, target }: ReadinessCheck): FixAction | null {
   switch (fix) {
     case 'scale': return { tool: 'scale' }
     case 'route': return { tool: 'routes', ...(target?.kind === 'point' ? { startFrom: target.id } : {}) }
     case 'linkFlow': return { tool: 'flows' }
-    case 'charger': return { stage: 'chargers', arm: 'charger' }
+    case 'charger': return { stage: 'points', arm: 'charger' }
     case 'flowsTab': return { stage: 'points' }
     default: return null
   }

@@ -5412,13 +5412,10 @@ button.sim-vveh:hover .nm { color: var(--sim-sel); }
 :is(.sim-editor, .sim-run, .sim-drawer) .seg-btn.on, .sim-guide-step.is-on { background: var(--sim-sel-soft); color: var(--sim-sel); }
 
 /* Validation (owner, 2026-11-12): live checks — a status button in the head, a list in the panel. */
-.sim-valid-btn { display: inline-flex; align-items: center; gap: 8px; }
 .sim-vdot { flex: none; display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--good); }
 .sim-vdot.is-warn { background: var(--warn); }
 .sim-vdot.is-bad { background: var(--bad); }
 .sim-vdot.is-info { background: var(--info); }
-.sim-valid-sub { font-weight: 500; color: var(--text-tertiary); }
-.sim-valid-sub::before { content: "·"; margin-right: 8px; }
 .sim-valid { display: flex; flex-direction: column; gap: 8px; }
 .sim-valid-head { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); }
 /* Racks (Milestone 7a): body, bays, pallets (face picked up toward the aisle), label, warning. */
@@ -5674,30 +5671,55 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .req-met { margin-top: 32px; }
 .rv-assume2-edit { margin: 0; width: 200px; }
 
-/* The guide (owner, 2026-11-21): the steps as one compact list at the top of the side panel, one Next at its
-   foot. Blue is the open step, green a done one. */
-.sim-guide { padding: 8px; border-bottom: 1px solid var(--border); }
-.sim-guide ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; }
-.sim-guide-step { width: 100%; display: grid; grid-template-columns: 18px auto minmax(0, 1fr); align-items: center; gap: 8px; height: 30px;
-  padding: 0 8px; border: 0; border-radius: 8px; background: none; color: var(--text-secondary); font: 600 13px var(--tal-font-family);
+/* The steps as a left sidebar (owner, 2026-11-26): icon, name and status per step; the open step's sub-tasks
+   one level down on leading lines and its one sentence; the one Next at the foot. « collapses it to an icon
+   rail. Blue is the open step, green a done one, amber a started one. */
+.sim-body { flex: 1; min-height: 0; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 12px; }
+.sim-body > .sim-editor, .sim-body > .sim-run { min-height: 0; }
+.sim-steps { position: relative; display: flex; flex-direction: column; width: 232px; min-height: 0; overflow: hidden auto;
+  border: 1px solid var(--border); border-radius: 12px; background: color-mix(in srgb, var(--sim-sel) 5%, var(--bg-surface-2));
+  transition: width 0.18s ease; }
+.sim-steps.is-collapsed { width: 56px; }
+.sim-steps-toggle { position: absolute; top: 8px; right: 8px; z-index: 1; width: 22px; height: 22px; border: 0; border-radius: 6px;
+  background: none; color: var(--text-tertiary); font: 600 13px var(--tal-font-family); cursor: pointer; }
+.sim-steps-toggle:hover { background: var(--bg-hover); color: var(--text-primary); }
+.sim-steps.is-collapsed .sim-steps-toggle { position: static; margin: 8px auto 0; }
+.sim-guide { list-style: none; margin: 0; padding: 36px 8px 8px; display: grid; gap: 2px; align-content: start; flex: 1; }
+.sim-steps.is-collapsed .sim-guide { padding-top: 4px; }
+.sim-guide-step { width: 100%; display: grid; grid-template-columns: 28px minmax(0, 1fr); align-items: center; gap: 10px; min-height: 44px;
+  padding: 6px 8px; border: 0; border-radius: 8px; background: none; color: var(--text-secondary); font: 600 13px var(--tal-font-family);
   text-align: left; cursor: pointer; }
 .sim-guide-step:hover { background: var(--bg-hover); color: var(--text-primary); }
 .sim-guide-step:focus-visible { outline: 2px solid var(--sim-sel); outline-offset: 1px; }
-.sim-guide-step.is-on { color: var(--sim-sel); }
+.sim-guide-step.is-on { color: var(--sim-sel); background: var(--bg-surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
 .sim-guide-step.is-blocked { color: var(--text-tertiary); }
-.sim-guide-n { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; font: 700 10px var(--tal-font-numeric);
+.sim-guide-n { position: relative; display: inline-grid; place-items: center; width: 28px; height: 28px; border-radius: 8px;
   background: var(--bg-surface-3); color: var(--text-secondary); }
 .sim-guide-step.is-on .sim-guide-n { background: var(--sim-sel); color: #fff; }
 .sim-guide-step.is-done .sim-guide-n { background: var(--good-soft); color: var(--good); }
 .sim-guide-step.is-started .sim-guide-n { background: var(--warn-soft); color: var(--warn); }
-.sim-guide-subs { list-style: none; margin: 2px 8px 4px 34px; padding: 0; display: grid; gap: 4px; font-size: 12px; color: var(--text-secondary); }
-.sim-guide-subs li { display: grid; grid-template-columns: 14px auto minmax(0, 1fr); align-items: center; gap: 8px; }
-.sim-guide-dot { display: inline-grid; place-items: center; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--text-tertiary); }
+.sim-guide-step.is-on.is-done .sim-guide-n, .sim-guide-step.is-on.is-started .sim-guide-n { background: var(--sim-sel); color: #fff; }
+.sim-guide-tick { position: absolute; right: -4px; bottom: -4px; display: grid; place-items: center; width: 13px; height: 13px; border-radius: 50%;
+  background: var(--good); color: #fff; box-shadow: 0 0 0 2px var(--bg-surface-2); }
+.sim-guide-text { display: flex; flex-direction: column; min-width: 0; }
+.sim-guide-label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-guide-status { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: 11px; color: var(--text-tertiary); }
+.sim-steps.is-collapsed .sim-guide-step { grid-template-columns: 28px; justify-content: center; padding: 6px 0; }
+.sim-steps.is-collapsed .sim-guide-text, .sim-steps.is-collapsed .sim-guide-nexttext { display: none; }
+/* Sub-tasks one level down, on leading lines (the open step only). */
+.sim-guide-subs { list-style: none; margin: 2px 8px 4px 22px; padding: 0 0 0 14px; display: grid; gap: 6px; border-left: 1px solid var(--border-strong, var(--border));
+  font-size: 12px; color: var(--text-secondary); }
+.sim-guide-subs li { position: relative; display: grid; grid-template-columns: 12px minmax(0, 1fr); align-items: center; column-gap: 8px; }
+.sim-guide-subs li::before { content: ""; position: absolute; left: -14px; top: 50%; width: 10px; border-top: 1px solid var(--border-strong, var(--border)); }
+.sim-guide-subs .sim-guide-status { grid-column: 2; }
+.sim-guide-dot { grid-row: span 2; display: inline-grid; place-items: center; width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--text-tertiary); }
 .sim-guide-subs li.is-done .sim-guide-dot { border-color: var(--good); background: var(--good-soft); color: var(--good); }
-.sim-guide-status { justify-self: end; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; font-size: 12px; color: var(--text-tertiary); }
-.sim-guide-lead { margin: 2px 8px 6px 34px; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
-.sim-guide-next { padding: 12px 16px; border-top: 1px solid var(--border); }
+.sim-guide-subs li.is-started .sim-guide-dot { border-color: var(--warn); }
+.sim-guide-sublabel { font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sim-guide-lead { margin: 4px 8px 8px 22px; font-size: 12px; line-height: 1.45; color: var(--text-secondary); }
+.sim-guide-next { flex: none; padding: 8px; }
 .sim-guide-next .btn { width: 100%; justify-content: center; }
+.sim-steps.is-collapsed .sim-guide-next .btn { padding: 0; min-width: 0; height: 36px; }
 
 /* Layout's station tray (owner plan, 2026-11-21): Sizing's unplaced stations as chips at the foot of the map,
    clear of the tool bar, the Endpoint palette and the zoom controls — drag one onto it, or click it and then the map. */
@@ -5719,27 +5741,20 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-shell > .sim-head { flex: none; margin-bottom: 12px; }
 .sim-shell > .sim-head .eh-text { display: flex; align-items: baseline; gap: 12px; }
 .sim-shell > .sim-head .eh-title { font-size: 22px; }
-.sim-shell > .sim-editor, .sim-shell > .sim-run { flex: 1; min-height: 0; }
 .sim-shell .sim-editor { display: flex; flex-direction: column; }
 .sim-shell .sim-work { flex: 1; min-height: 0; height: auto; }
 .workspace:has(> .sim-shell) { padding-bottom: 16px; }
 @media (max-width: 700px) { .sim-shell { height: auto; } }
 
-/* The side column as two cards (owner, 2026-11-22): the checklist (tinted, with its one Next) and, below it,
-   the open step's detail or the selection's drill-down (white). Only the detail card scrolls, inside itself. */
+/* The right column: the open step's detail or the selection's drill-down, one card (the steps are the left
+   sidebar, owner 2026-11-26). Only the card scrolls, inside itself. */
 .sim-shell .sim-side { gap: 12px; border: 0; background: none; box-shadow: none; overflow: visible; }
-.sim-guide-card { flex: none; border: 1px solid var(--border); border-radius: 12px;
-  background: color-mix(in srgb, var(--sim-sel) 5%, var(--bg-surface-2)); }
-.sim-guide-card .sim-guide { border-bottom: 0; padding: 8px 8px 0; }
-.sim-guide-card .sim-guide-step.is-on { background: var(--bg-surface); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06); }
-.sim-guide-card .sim-guide-next { border-top: 0; padding: 8px 12px 12px; }
 .sim-detail-card { flex: 1; min-height: 0; overflow-y: auto; border: 1px solid var(--border); border-radius: 12px;
   background: var(--bg-surface); box-shadow: var(--sim-shadow-rest); }
 
 /* Drill-down cards (owner, 2026-11-22 — Flighty-style): Back and actions, the name big with one status chip,
    a line of context, a picture where there is one, three big-number tiles (dashed = typed into in place),
    then folds that open one at a time. Closed, a card fits the detail card without scrolling. */
-.sim-side:has(.sim-dcard) .sim-guide-lead, .sim-side:has(.sim-runchecks) .sim-guide-lead { display: none; }   /* the checklist gives the card (or the run's checks) its room */
 .sim-dcard { gap: 12px; }
 .sim-dcard-top { display: flex; align-items: center; min-height: 24px; margin: -4px 0 -6px; }
 .sim-back { background: none; border: 0; padding: 0; font: 600 13px var(--tal-font-family); color: var(--sim-sel); cursor: pointer; }
