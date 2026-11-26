@@ -8,7 +8,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { laneWidthFt, suggestedWidthFt, type ClearanceRule, type SegmentClearance } from '@/src/calc/sim/clearance'
 import { highwayLanes, highwayStops, withHighways } from '@/src/calc/sim/highways'
-import { linkedFlows } from '@/src/calc/sim/readiness'
 import {
   FLOW_POINT_TYPES, flowTargets, pointById, routeDistanceFt, segmentLengthFt, VEHICLE_POINT_TYPES,
 } from '@/src/calc/sim/layoutEdit'
@@ -22,7 +21,7 @@ import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import { segMid, type Selection, type XY } from './LayoutCanvas'
 import type { ProjectFlow } from './useLayoutEditor'
 import FieldRow from '../inspector/FieldRow'
-import { ApproachArrows, Folds, Inspector, Section, Summary, Tile, TileInput, Tiles, type Tone } from '../inspector/InspectorParts'
+import { ApproachArrows, Folds, Inspector, More, Section, Summary, Tile, TileInput, Tiles, type Tone } from '../inspector/InspectorParts'
 
 interface Props {
   layout: SimLayout
@@ -186,6 +185,7 @@ export default function LayoutPanel(p: Props) {
                 <Tile label="last run" value="—" />
               </Tiles>
         })()}
+        <More>
         {rack?.reach && rack.g.pallet && (
           <div className="sim-reach" aria-label="Top beam against the vehicle's reach">
             <div className={`sim-bar${over ? ' is-bad' : ''}`}><i style={{ width: `${Math.min(100, (rack.g.topBeamFt / Math.max(rack.reach.ft, rack.g.topBeamFt)) * 100)}%` }} /></div>
@@ -290,7 +290,7 @@ export default function LayoutPanel(p: Props) {
               </>
             )}
           </Section>
-        </Folds>
+        </Folds></More>
       </Inspector>
     )
   }
@@ -323,13 +323,13 @@ export default function LayoutPanel(p: Props) {
           <TileInput label="depth" unit={units.distance.label(p.unitSystem)} value={shownLen(o.h, p.unitSystem)} onChange={v => v && p.onObject(o.id, { h: lengthFromDisplay(v, p.unitSystem) })} />
           <TileInput label="rotation" unit="°" max={360} value={Math.round(o.rotationDeg ?? 0)} onChange={v => p.onObject(o.id, { rotationDeg: v ?? 0 })} />
         </Tiles>
-        <Folds>
+        <More><Folds>
           <Section fold title="Settings">
             <label className="sim-field"><span>Name</span>
               <input value={o.name ?? ''} maxLength={80} onChange={e => p.onObject(o.id, { name: e.target.value })} />
             </label>
           </Section>
-        </Folds>
+        </Folds></More>
       </Inspector>
     )
   }
@@ -396,11 +396,6 @@ export default function LayoutPanel(p: Props) {
       <Inspector title={h.name || 'Highway'} back={p.backLabel} onBack={p.onBack} onDelete={p.onDelete}
         chip={st ? CLEAR_CHIP[st] : null}
         sub={`${h.dir === 'two' ? 'Two-way' : 'One-way'} · ${lanes} lane${lanes === 1 ? '' : 's'}`}>
-        <div className="sim-strip" aria-label={`${stops.length} stops along it`}>
-          <span className="sim-strip-lane" />
-          {h.dir !== 'two' && <span className="sim-strip-dir" aria-hidden="true">{h.dir === 'ab' ? '→' : '←'}</span>}
-          {stops.map(({ pt, t }) => <span key={pt.id} className={dotClass(pt)} style={{ left: `${t * 100}%` }} title={pt.name} />)}
-        </div>
         <Tiles>
           <TileInput label="width" unit={units.distance.label(p.unitSystem)} value={shownLen(h.widthFt, p.unitSystem)} max={lengthToDisplay(200, p.unitSystem)}
             onChange={v => v && set({ widthFt: lengthFromDisplay(v, p.unitSystem) })} />
@@ -408,6 +403,12 @@ export default function LayoutPanel(p: Props) {
           <Tile label="stops" value={stops.length} />
         </Tiles>
         <button type="button" className="btn ghost btn-sm sim-dcard-act" onClick={p.onAddPoint}>Add pick / drop point here</button>
+        <More>
+        <div className="sim-strip" aria-label={`${stops.length} stops along it`}>
+          <span className="sim-strip-lane" />
+          {h.dir !== 'two' && <span className="sim-strip-dir" aria-hidden="true">{h.dir === 'ab' ? '→' : '←'}</span>}
+          {stops.map(({ pt, t }) => <span key={pt.id} className={dotClass(pt)} style={{ left: `${t * 100}%` }} title={pt.name} />)}
+        </div>
         <Folds>
           <Section fold title="Stops" status={stops.length || 'None'}>
             {stops.length
@@ -449,7 +450,7 @@ export default function LayoutPanel(p: Props) {
               <Len u={p.unitSystem} label="Centre y" ft={h.y} signed onFt={y => y != null && set({ y })} />
             </div>
           </Section>
-        </Folds>
+        </Folds></More>
       </Inspector>
     )
   }
@@ -468,7 +469,7 @@ export default function LayoutPanel(p: Props) {
           <Tile label="lanes" value={(s.lane ?? 'two') === 'two' ? 2 : 1} />
           <Tile label="tightest" value={clr?.tightestIn != null ? `${clr.tightestIn.toFixed(1)} in` : '—'} />
         </Tiles>
-        <Folds>
+        <More><Folds>
           <Section fold title="Settings">
             <div className="sim-field"><span>Direction</span>
               <Segmented value={s.dir} onChange={dir => p.onSegment(s.id, { dir })}
@@ -500,7 +501,7 @@ export default function LayoutPanel(p: Props) {
               </section>
             ) : null}
           </Section>
-        </Folds>
+        </Folds></More>
       </Inspector>
     )
   }
@@ -514,17 +515,18 @@ export default function LayoutPanel(p: Props) {
       <Inspector title={`${name(flow.fromPointId)} → ${name(flow.toPointId)}`} back={p.backLabel} onBack={p.onBack}
         chip={from && to ? { label: routed ? 'Routed' : 'No route', tone: routed ? 'good' : 'bad' } : { label: 'Not on the map', tone: 'warn' }}
         sub={p.vehicles.find(v => v.id === simVid)?.name ?? 'No vehicle'}>
+        <Tiles>
+          <TileInput label="moves / h" value={flow.thruPerHr || undefined} inputRef={rateRef} onChange={v => p.onFlow(flow.id, { thruPerHr: v ?? 0 })} />
+          <Tile label="on the map" value={routed ? len(flowFt) : '—'} />
+          <Tile label="lift" value={flow.liftHeightFt != null ? len(flow.liftHeightFt) : '—'} />
+        </Tiles>
+        <More>
         {from && to && (
           <div className="sim-route">
             <span className="sim-route-ends"><span>{from.name}<small>pick · {height(from)}</small></span><span>{to.name}<small>drop · {height(to)}</small></span></span>
             <span className={`sim-bar is-route${routed ? '' : ' is-bad'}`}><i /></span>
           </div>
         )}
-        <Tiles>
-          <TileInput label="moves / h" value={flow.thruPerHr || undefined} inputRef={rateRef} onChange={v => p.onFlow(flow.id, { thruPerHr: v ?? 0 })} />
-          <Tile label="on the map" value={routed ? len(flowFt) : '—'} />
-          <Tile label="lift" value={flow.liftHeightFt != null ? len(flow.liftHeightFt) : '—'} />
-        </Tiles>
         <Folds>
           <Section fold title="Vehicle" status={p.vehicles.find(v => v.id === simVid)?.name ?? '—'}>
             {/* The types the simulation runs. A flow with a Sizing vehicle keeps it (the choice is the
@@ -538,7 +540,7 @@ export default function LayoutPanel(p: Props) {
             </label>
             <button type="button" className="link-btn" onClick={() => p.onUnlink(flow.id)}>Unlink from points</button>
           </Section>
-        </Folds>
+        </Folds></More>
       </Inspector>
     )
   }
@@ -547,14 +549,8 @@ export default function LayoutPanel(p: Props) {
   const { stations } = nav
   return (
     <aside className="sim-panel is-empty" aria-label="Layout">
-      <div className="sim-panel-head"><h3>Layout</h3></div>
-      <Summary items={[
-        ['Points', stations.length],
-        ['Routes', `${p.layout.segments.length} · ${fmtLength(nav.totalFt, p.unitSystem)}`],
-        ['Material flows on layout', `${linkedFlows(p.flows).length} of ${p.flows.length}`],
-        ['Objects', (p.layout.objects ?? []).length],
-      ]} />
-      <Section title={`Points · ${stations.length}`} open={stations.length > 0}>
+      {/* The lists only: the totals are the steps' own status lines (owner, 2026-11-26: one screen, no repeats). */}
+      <Section title={`Points · ${stations.length}`}>
         <ul className="sim-nav">
           {stations.map(q => (
             <li key={q.id}><button type="button" onClick={() => p.onFocus({ kind: 'point', id: q.id }, q)}>
@@ -564,7 +560,7 @@ export default function LayoutPanel(p: Props) {
         </ul>
       </Section>
       {(p.layout.highways ?? []).length > 0 && (
-        <Section title={`Highways · ${p.layout.highways!.length}`} open>
+        <Section title={`Routes · ${p.layout.highways!.length}`} status={fmtLength(p.layout.highways!.reduce((t, h) => t + h.lengthFt, 0), p.unitSystem)}>
           <ul className="sim-nav">
             {p.layout.highways!.map(h => (
               <li key={h.id}><button type="button" onClick={() => p.onFocus({ kind: 'highway', id: h.id }, h)}>
@@ -574,7 +570,7 @@ export default function LayoutPanel(p: Props) {
           </ul>
         </Section>
       )}
-      <Section title={`Routes · ${p.layout.segments.length}`}>
+      <Section title={`Connections · ${p.layout.segments.length}`}>
         <ul className="sim-nav">
           {nav.routes.map(({ q, a, b, ft, mid }) => (
             <li key={q.id}><button type="button" onClick={() => p.onFocus({ kind: 'segment', id: q.id }, mid)}>

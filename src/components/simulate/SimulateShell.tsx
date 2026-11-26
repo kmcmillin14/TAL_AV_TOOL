@@ -25,7 +25,7 @@ import { createProject, getProject, patchSimSettings, updateProject, type Stored
 import { useRouter } from 'next/navigation'
 import { useByValue } from '@/src/lib/useByValue'
 import { useIsNarrow } from '@/src/lib/useIsNarrow'
-import GuideSidebar, { type Stage, type StageInfo } from './ui/Guide'
+import type { Stage, StageInfo, StepsProps } from './ui/Guide'
 import Link from 'next/link'
 import { payloadsKey } from './layout/SetupCard'
 import type { UnitSystem } from '@/src/lib/utils/units'
@@ -236,17 +236,17 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     setStage('vehicles')
   }
 
-  const sidebar = <GuideSidebar stages={stages} value={stage} onChange={setStage} onBlocked={() => setStage(FIX_STAGE)} then={{ label: 'Pricing', href: `/projects/${project.id}/step5` }} />
+  const steps: StepsProps = { stages, value: stage, onChange: setStage, onBlocked: () => setStage(FIX_STAGE), then: { label: 'Pricing', href: `/projects/${project.id}/step5` } }
   // The Vehicles step: the run's types (each with a payload) and counts — Sizing's, until changed here.
   const vehiclesStep = (
     <VehicleBar types={types} vehicleById={vehicleById} vehicles={vehicles} app={app} sizingIds={sizingIds} loads={loads} staticN={staticN}
       placed={placed} stepped={stepped} unitSystem={unitSystem} onTypes={setTypes} onFleet={setFleet} />
   )
 
-  // The banner sits at the top of the side panel (on a phone, above the page).
+  // The sample note sits in the page head, beside the title (owner, 2026-11-26: the sidebar keeps its room).
   const shownSample = sampleOn ? sampleOf(flows.find(f => isSample(f.id))!.id) : null
   const banner = shownSample && (
-    <div className="sim-banner">
+    <div className="sim-banner sim-head-note">
       <span><b>Sample layout</b> — {shownSample.key === 'poc' ? 'the CB18 proof-of-concept site' : `${shownSample.label.toLowerCase()} site with racking (${shownSample.note})`}.</span>
       <button type="button" className="link-btn" onClick={clearLayout}>Clear and draw your own</button>
     </div>
@@ -258,6 +258,7 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
         <div className="eh-text">
           <span className="eh-eyebrow mono">Step 04 / 06</span>
           <h1 className="eh-title">Fleet size verification</h1>
+          {!narrow && banner}
         </div>
         <div className="eh-actions">
           {/* ⋯: the examples at all times, and Clear layout. Validation lives in Flows (its blockers turn the
@@ -281,18 +282,14 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
           <p className="rom-empty">Open on a desktop to check the fleet on a layout.</p>
           <Link href={`/projects/${project.id}/step5`} className="btn primary">Next: Pricing</Link>
         </>
-      ) : (
-        // The sidebar of steps on the left (owner, 2026-11-26); the map, then the step's detail on the right.
-        <div className="sim-body">
-          {sidebar}
-          {stage === 'simulate' || stage === 'data' ? (
-        <RunView view={stage === 'data' ? 'data' : 'sim'} estimate={estimate} banner={banner} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
+      ) : stage === 'simulate' || stage === 'data' ? (
+        <RunView view={stage === 'data' ? 'data' : 'sim'} steps={steps} estimate={estimate} onAssumptions={openAssumptions} changed={overrideCount} project={project} vehicles={vehicles} simVehicles={simVehicles} vehicleById={simVehicleById} settings={settings} fleet={simFleet} unitSystem={unitSystem} inputs={inputs} payloads={payloads} differs={sim.changed} onFleet={setFleet} onResetFleet={resetFleet} engineFleet={staticN} fleetBy={placed} />
       ) : (
         <LayoutEditor
           project={project} vehicles={vehicles} vehicleById={vehicleById} simVehicleById={simVehicleById} settings={settings} fleet={fleet} checks={checks} unitSystem={unitSystem}
           overridden={overriddenIds}
           registerLayoutWriter={registerLayoutWriter}
-          stage={stage} onStage={setStage} vehiclesStep={vehiclesStep} status={status} banner={banner} runAs={runAs} payloads={payloads} suggestedChargers={chargersWanted} vehiclesPlaced={fleetNeeded}
+          stage={stage} onStage={setStage} steps={steps} vehiclesStep={vehiclesStep} status={status} runAs={runAs} payloads={payloads} suggestedChargers={chargersWanted} vehiclesPlaced={fleetNeeded}
           vehicleTypes={typeVehicles} onFlowVehicle={setFlowVehicle}
           examples={empty ? (
             <p className="sim-examples">or start from an example —{' '}
@@ -313,8 +310,6 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
             </div>
           ) : 'Draw routes along the aisles.'}
         />
-          )}
-        </div>
       )}
       {drawer && <AssumptionsDrawer key={drawer.focus ?? 'all'} project={project} vehicles={runTypes} changed={changed} writeLayout={writeLayout} unitSystem={unitSystem} focus={drawer.focus} onClose={closeDrawer} />}
     </div>

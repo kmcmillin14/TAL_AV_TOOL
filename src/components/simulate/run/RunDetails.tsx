@@ -78,7 +78,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
 
   return (
     <section className="sim-below">
-      <details className="sim-disc">
+      <details className="sim-disc" name="sim-data-fold">
         <summary>Material flows — engine vs simulated<span className="meta">{R ? flowSummary(R, linked.length, assume.demandPct, flows) : 'simulating…'}</span></summary>
         <div className="sim-disc-body">
           <DataTable label="Material flows" cols={FLOW_COLS} rows={linked.map(f => {
@@ -102,12 +102,12 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
         </div>
       </details>
 
-      <details className="sim-disc" open={!!R && R.t > 86400}>
+      <details className="sim-disc" name="sim-data-fold">
         <summary>Battery<span className="meta">{R ? R.types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId}: lowest ${Math.round(t.socMin)}% · ${t.chargeTrips} charges`).join(' · ') : 'simulating…'}</span></summary>
         <div className="sim-disc-body">{S && R ? <BatteryChart S={S} vehicleById={vehicleById} /> : <p className="sim-card-note">Simulating…</p>}</div>
       </details>
 
-      <details className="sim-disc">
+      <details className="sim-disc" name="sim-data-fold">
         <summary>Vehicles<span className="meta">{R ? `${R.vehicles.length} vehicle${R.vehicles.length === 1 ? '' : 's'} · ${R.orders.delivered} moves` : 'simulating…'}</span></summary>
         <div className="sim-disc-body">
           {R && <>
@@ -129,12 +129,12 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
         </div>
       </details>
 
-      <details className="sim-disc">
+      <details className="sim-disc" name="sim-data-fold">
         <summary>Hour by hour</summary>
         <div className="sim-disc-body">{S && R ? <HourChart S={S} target={total} hours={Math.ceil(R.t / 3600)} /> : <p className="sim-card-note">Simulating…</p>}</div>
       </details>
 
-      <details className="sim-disc">
+      <details className="sim-disc" name="sim-data-fold">
         <summary>Locations<span className="meta">{S?.zoneStats.size ?? 0}</span></summary>
         <div className="sim-disc-body">
           <DataTable label="Locations" cols={LOC_COLS} rows={S && R ? [...S.zoneStats].map(([z, st]) => {
@@ -144,7 +144,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
         </div>
       </details>
 
-      <details className="sim-disc">
+      <details className="sim-disc" name="sim-data-fold">
         <summary>B56.5 clearance<span className="meta">{inputs.clearances.filter(c => c.status === 'capped').length} slowed · {inputs.clearances.filter(c => c.status === 'violation').length} blocked</span></summary>
         <div className="sim-disc-body">
           {inputs.clearances.some(c => c.status === 'capped' || c.status === 'violation')
@@ -157,7 +157,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
         </div>
       </details>
 
-      <details className="sim-disc">
+      <details className="sim-disc" name="sim-data-fold">
         <summary>Assumptions<span className="meta">pace {assume.pacePct}% · {assume.trafficPct ? `traffic ${assume.trafficPct}% · ` : ''}safety {fmtLength(assume.safetyFt, unitSystem, 1)} · demand {assume.demandPct}%</span></summary>
         <div className="sim-disc-body">
           <p className="sim-readout"><button type="button" className="link-btn" onClick={onOpenAssumptions}>Open assumptions</button></p>

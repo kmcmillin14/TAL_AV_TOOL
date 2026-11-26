@@ -83,8 +83,8 @@ export function ChargersCard({ layout, suggested, needed, onArmHome }: {
   const p = chargerProgress(layout, suggested, needed)
   const meta = { charger: `${p.chargers} placed · ${suggested} suggested`, parking: `${p.homes - p.chargers} placed` }
   return (
+    // Its status is the Points step's sub-task line (owner, 2026-11-26: said once).
     <section className="sim-card" aria-label="Chargers">
-      <p className="sim-card-note">{p.status}</p>
       {(['charger', 'parking'] as const).map(t => (
         <div key={t} className="sim-check-item">
           <span className={`sim-dot kind-${t} is-placed`} />

@@ -9,7 +9,7 @@
 import { useMemo } from 'react'
 import type { SimState } from '@/src/calc/sim/engine'
 import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
-import { Folds, Inspector, Section, Tile, Tiles, type Tone } from '../inspector/InspectorParts'
+import { Folds, Inspector, More, Section, Tile, Tiles, type Tone } from '../inspector/InspectorParts'
 import { TimeSplitBar } from './RunDetails'
 import { STATES, vehicleState } from './RunScene'
 import { duration, hhmm } from './time'
@@ -60,26 +60,27 @@ export default function VehicleCard({ S, i, unitSystem, onBack }: { S: SimState;
   return (
     <Inspector title={v.id} back="Fleet" onBack={onBack} chip={{ label: STATES.find(([k]) => k === st)![1], tone: TONE[st] }}
       sub={`${v.prof.vehicle.name} · ${v.loaded ? 'Loaded' : 'Empty'}`}>
-      {/* The leg it is on: empty from where it set off to the pick, or loaded from the pick to the drop. */}
-      {driving && (
-        <div className="sim-route">
-          <span className="sim-route-ends">
-            <span>{S.G.points[v.nodes[0]]?.name || 'Start'}<small>{v.loaded ? 'pick' : 'from'}</small></span>
-            <span>{name(v.nodes[v.nodes.length - 1])}<small>{v.loaded ? 'drop' : 'pick'}</small></span>
-          </span>
-          <span className="sim-bar"><i style={{ width: `${total ? (done / total) * 100 : 0}%` }} /></span>
-          <span className="sim-bar-meta num">
-            <span>{fmtLength(left, unitSystem)} to go</span>
-            {cruise > 0 && <span>arrives in about {duration(left / cruise)}</span>}
-          </span>
-        </div>
-      )}
       {why && <p className={`sim-why${st === 'wait' || low ? ' is-warn' : ''}`}>{why}</p>}
       <Tiles>
         <Tile label="battery" value={b ? `${Math.round(v.soc)}%` : '—'} tone={low} />
         <Tile label="moves" value={v.done} />
         <Tile label="working" value={`${Math.round(working * 100)}%`} />
       </Tiles>
+      <More>
+        {/* The leg it is on: empty from where it set off to the pick, or loaded from the pick to the drop. */}
+        {driving && (
+          <div className="sim-route">
+            <span className="sim-route-ends">
+              <span>{S.G.points[v.nodes[0]]?.name || 'Start'}<small>{v.loaded ? 'pick' : 'from'}</small></span>
+              <span>{name(v.nodes[v.nodes.length - 1])}<small>{v.loaded ? 'drop' : 'pick'}</small></span>
+            </span>
+            <span className="sim-bar"><i style={{ width: `${total ? (done / total) * 100 : 0}%` }} /></span>
+            <span className="sim-bar-meta num">
+              <span>{fmtLength(left, unitSystem)} to go</span>
+              {cruise > 0 && <span>arrives in about {duration(left / cruise)}</span>}
+            </span>
+          </div>
+        )}
       <Folds>
         <Section fold title="So far" status={`${fmtLength(v.distFt, unitSystem)} · ${v.chargeTrips} charge${v.chargeTrips === 1 ? '' : 's'}`}>
           <TimeSplitBar time={v.tm} />
@@ -100,6 +101,7 @@ export default function VehicleCard({ S, i, unitSystem, onBack }: { S: SimState;
           </Section>
         )}
       </Folds>
+      </More>
     </Inspector>
   )
 }

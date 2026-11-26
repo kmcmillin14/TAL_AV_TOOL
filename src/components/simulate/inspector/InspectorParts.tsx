@@ -68,6 +68,17 @@ export function TileInput({ label, value, unit, max, placeholder = '0', inputRef
   )
 }
 
+/** Everything past a card's name, chip and three numbers (owner, 2026-11-26): its picture and its folds, one
+ *  tap away. */
+export function More({ children }: { children: ReactNode }) {
+  return (
+    <details className="sim-more">
+      <summary>More</summary>
+      <div className="sim-more-body">{children}</div>
+    </details>
+  )
+}
+
 /** The card's folds, in one group (one open at a time). */
 export function Folds({ children }: { children: ReactNode }) {
   return <div className="sim-folds sim-dcard-folds">{children}</div>

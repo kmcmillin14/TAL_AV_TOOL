@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-11-26 — One sidebar: steps and detail, nothing scrolls
+
+- Owner: one sidebar on the left — the steps card (always in view, with Next) and, apart, the detail card
+  (the open step's sub-tasks and content, or the selection's card). The map takes the rest (about 950 px at
+  1280 wide, was about 650).
+- Cards show name, chip and three numbers; the picture and every fold sit under **More**. Chargers' status
+  is said once (the Points sub-task). The layout's totals box is gone (the steps' status lines say it).
+- Data takes the map's place, full width, with Back to the map; its sections fold, one open at a time.
+- The sample note moved to the page head.
+
 ## 2026-11-26 — Six steps in a left sidebar
 
 - Owner: the simulator's steps are **Pallets & vehicles · Routes · Points · Flows · Simulate · Data**, in a

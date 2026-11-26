@@ -27,6 +27,7 @@ import PricingAction from './PricingAction'
 import RunDetails, { type Assumptions } from './RunDetails'
 import { RunScene, STATES } from './RunScene'
 import { clock } from './time'
+import { SimSidebar, type StepsProps } from '../ui/Guide'
 import VehicleCard from './VehicleCard'
 
 /** Background run slices stay under half a 60 fps frame, so playback keeps its pace. */
@@ -64,8 +65,8 @@ interface Props {
   /** The stage (Simulate or Results, 2026-11-18): the map playing the run, or the run's
    *  data (charts and tables). Both share this run and its verdict tiles. */
   view: 'sim' | 'data'
-  /** The sample banner, at the top of the side panel. */
-  banner?: ReactNode
+  /** The steps, for the one sidebar. */
+  steps: StepsProps
   /** Sizing's static estimate (how the fleet operates), shown under Results beside the run's data. */
   estimate: ReactNode
 }
@@ -110,7 +111,7 @@ function runInSlices(S: SimState, endT: number, onDone: () => void, alive: () =>
 const NO_LOADS: NonNullable<StoredProject['loads']> = []
 const RUN_INSET = { top: 40, right: 24, bottom: 64, left: 24 }
 
-export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view, banner, estimate }: Props) {
+export default function RunView({ onAssumptions, changed, project, vehicles, simVehicles, vehicleById, settings, fleet, unitSystem, inputs, payloads, differs, onFleet: setFleet, onResetFleet, engineFleet, fleetBy, view, estimate, steps }: Props) {
   const simSettings = project.simSettings ?? {}
   /** The run drives Sizing's flows as they are: it may save Sizing's verdict and offer pricing. */
   const ownConditions = ownConditionsOf(simSettings), forSizing = !differs && !ownConditions
@@ -386,6 +387,7 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   const dataPane = (
     <>
       <div className="sim-data-head">
+        <button type="button" className="btn btn-sm ghost" onClick={() => steps.onChange('simulate')}>‹ Back to the map</button>
         <button type="button" className="btn btn-sm ghost" aria-pressed={dataFull} onClick={toggleDataFull} title={dataFull ? 'Back to the map (Esc)' : 'Fill the screen with the data'}>
           <Icon name={dataFull ? 'collapse' : 'expand'} size={13} /> {dataFull ? 'Exit full screen' : 'Full screen'}
         </button>
@@ -411,7 +413,24 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   return (
     <div ref={self} className={`sim-work sim-run is-${view}${dataFull && view === 'data' ? ' is-datafull' : ''}`}>
       {/* The map, always: playing the run. */}
-      <div className="sim-canvas-wrap">
+      {/* The one sidebar (owner, 2026-11-26): the steps, the fleet and its checks (or the followed vehicle). */}
+      <SimSidebar steps={steps} card={!!(S && followed)}>
+        <div className="sim-sim-pane">
+          {S && followed ? <VehicleCard S={S} i={follow} unitSystem={unitSystem} onBack={() => setFollow(-1)} /> : <>
+            {fleetPane}
+            {/* The three checks, one line each — the detail and their settings one tap down (owner, 2026-11-22). */}
+            <RunChecks h={headline} why={verdictWhy} sizingTarget={settings.targetUtilization}
+              onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
+              coverage={{ daysPerWeek, shiftsPerDay: shifts, shiftH, step1 }} onCoverage={setCoverage} />
+            {/* The run's assumptions, where the run is set up (owner, 2026-11-22). */}
+            <button type="button" className="sim-row-link" onClick={openAll}>
+              <span>Assumptions</span>
+              <span className={changed ? 'is-changed' : undefined}>{changed ? `${changed} changed` : 'Defaults'}</span>
+            </button>
+          </>}
+        </div>
+      </SimSidebar>
+      <div className="sim-canvas-wrap" hidden={view === 'data'}>
         <LayoutCanvas
           layout={inputs.layout}
           laneWidths={inputs.laneWidths}
@@ -446,35 +465,17 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
           </div>
         </LayoutCanvas>
       </div>
-      {/* The side panel: Simulate's fleet, or Results' data. */}
-      <div className="sim-side">
-        {/* The step's detail (owner, 2026-11-26: the steps are the left sidebar). */}
-        <div className="sim-side-body sim-detail-card">
-          {view === 'data' && banner}
-          <div hidden={view !== 'sim'} className="sim-sim-pane">
-            {S && followed ? <VehicleCard S={S} i={follow} unitSystem={unitSystem} onBack={() => setFollow(-1)} /> : <>
-              {fleetPane}
-              {/* The three checks, one line each — the detail and their settings one tap down (owner, 2026-11-22:
-                  Simulate fits without scrolling; the full tiles are in Data). */}
-              <RunChecks h={headline} why={verdictWhy} sizingTarget={settings.targetUtilization}
-                onTarget={u => patchSimSettings(project.id, { targetUtilization: Math.abs(u - settings.targetUtilization) < 1e-9 ? undefined : u })}
-                coverage={{ daysPerWeek, shiftsPerDay: shifts, shiftH, step1 }} onCoverage={setCoverage} />
-              {/* The run's assumptions, where the run is set up (owner, 2026-11-22). */}
-              <button type="button" className="sim-row-link" onClick={openAll}>
-                <span>Assumptions</span>
-                <span className={changed ? 'is-changed' : undefined}>{changed ? `${changed} changed` : 'Defaults'}</span>
-              </button>
-            </>}
-          </div>
-          <div hidden={view !== 'data'} className="sim-data-pane">
-            {dataPane}
-            <details className="sim-disc">
-              <summary>Estimate — Sizing’s static model</summary>
-              <div className="sim-disc-body">{estimate}</div>
-            </details>
-          </div>
+      {/* Data (owner, 2026-11-26): the tables and charts take the map's place, full width; the map is one step back. */}
+      {view === 'data' && (
+        <div className="sim-data-main">
+          {dataPane}
+          <details className="sim-disc" name="sim-data-fold">
+            <summary>Estimate — Sizing’s static model</summary>
+            <div className="sim-disc-body">{estimate}</div>
+          </details>
         </div>
-      </div>
+      )}
+      {/* The side panel: Simulate's fleet, or Results' data. */}
     </div>
   )
 }

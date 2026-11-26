@@ -690,9 +690,14 @@ Sizing's static model"); a phone gets that estimate and Next: Pricing. Plan:
 the one-window workspace (artifact *Simulation Workspace Plan*); next come the drill-downs on selection and
 the split of Layout into Highways and Pick and drop points.
 
-**Six steps in a left sidebar (owner, 2026-11-26; replaces the seven-step guide above).** The page is the
-sidebar of steps on the left, the map in the middle and one card on the right (the open step's detail, or
-the selected item's card). The sidebar lists each step with its icon, name and status, the open step's
+**Six steps in one sidebar (owner, 2026-11-26; replaces the seven-step guide above).** The page is one
+sidebar on the left (about 300 px) and the map across the rest. The sidebar is two cards, clearly apart:
+the **steps** (tinted; always in view, one line each — icon, name, status — and the one **Next**) and the
+**detail** (white): the open step's sub-tasks, its sentence while it is not done, and its content — or the
+selected item's card, in its simplest form (name, one chip, three numbers; picture and settings under one
+**More**). Long lists (points, routes, connections, material flows, Data's tables) sit in folds. **Data**
+takes the map's place, full width, with *‹ Back to the map*. The sample note sits in the page head. Nothing
+scrolls at 1280×720 and up with its folds closed. The sidebar lists each step with its icon, name and status, the open step's
 sub-tasks one level down on leading lines and its one sentence, and the one **Next** at its foot; **«**
 collapses it to an icon rail (names and status on hover; remembered in this browser). The head is the
 title and **⋯** only — the validation status button is gone (Flows holds the list; a blocker turns the step

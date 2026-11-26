@@ -36,7 +36,7 @@ import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import DrawingCard from './DrawingCard'
 import { ChargersCard, drawingStatus, FlowsList, placeProgress, StationTray, ValidationList, type Armed } from './SimCards'
 import SetupCard, { payloadsKey } from './SetupCard'
-import type { Stage } from '../ui/Guide'
+import { SimSidebar, type Stage, type StepsProps } from '../ui/Guide'
 import { Section } from '../inspector/InspectorParts'
 import { POINT_LABEL, ROLE_OPTIONS } from './labels'
 import LayoutCanvas, { POINT_HIT_PX, rackLabel, type CanvasPointer, type Handle, type Selection, type XY } from './LayoutCanvas'
@@ -138,11 +138,11 @@ interface Props {
   registerLayoutWriter?: (write: ((update: (L: EditorLayout) => EditorLayout) => void) | null) => void
   /** The stage — the side panel's content; owned by the page (its strip and validation status open it). */
   stage: EditorStage
+  /** The steps, for the one sidebar. */
+  steps: StepsProps
   onStage: (s: Stage) => void
   /** The validation status (tone and counts), worked out once by the page. */
   status: ReturnType<typeof checkStatus>
-  /** Shown at the top of the side panel (the sample banner). */
-  banner?: ReactNode
   /** Simulation vehicles: the flows as the run drives them — lanes, corners and B56.5 follow.
    *  Sizing's flows (and new flows drawn here) keep their own vehicle. */
   runAs?: <F extends { id: string; vehicleId?: string }>(flows: F[]) => { flows: F[] }
@@ -165,7 +165,7 @@ const NO_PAYLOADS: Record<string, { length: number; width: number }> = {}
 /** Arrow keys move the selection this far, ft (Shift: ×10). */
 const NUDGE_FT = 1
 
-export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, examples, overridden, registerLayoutWriter, stage, onStage, status, banner, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers, vehiclesPlaced, vehiclesStep }: Props) {
+export default function LayoutEditor({ project, vehicles, vehicleById, simVehicleById, settings, fleet, checks, unitSystem, emptyPrompt, examples, overridden, registerLayoutWriter, stage, onStage, status, runAs, payloads = NO_PAYLOADS, vehicleTypes = [], onFlowVehicle, suggestedChargers, vehiclesPlaced, vehiclesStep, steps }: Props) {
   /** Step 1 loads — a rack's pallet. */
   const loads = useByValue(project.loads ?? NO_LOADS)
   /** A new rack's pallet, already confirmed upstream (owner, 2026-11-17): the simulation vehicles' first
@@ -844,6 +844,95 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   return (
     <div className="sim-editor">
       <div className="sim-work">
+        <SimSidebar steps={steps} card={drawingShown || (!!selection && (stage === 'routes' || stage === 'points'))}>
+          {/* The one sidebar (owner, 2026-11-26): the steps, then the step's detail or the selection's card. */}
+            {/* The sample note steps aside while a selection's card is open (it returns with Back). */}
+            {drawingShown ? (
+              // The site drawing, opened from the map's tool bar (and while its scale is being set).
+              <div className="sim-dcard">
+                <button type="button" className="sim-back" onClick={() => { setDrawingOpen(false); setMarks(null) }}>‹ Done</button>
+                {drawingSection}
+              </div>
+            ) : stage === 'vehicles' ? (
+              // Pallet sizes, then the vehicle types that carry them.
+              <>
+                <Section title="Pallet sizes" open>
+                  <SetupCard projectId={project.id} loads={loads} unitSystem={unitSystem} confirmed={project.simSettings?.payloadsConfirmed === payloadsKey(loads)}
+                    onConfirm={() => patchSimSettings(project.id, { payloadsConfirmed: payloadsKey(loads) })} />
+                </Section>
+                <Section title="Vehicle types" open>{vehiclesStep}</Section>
+              </>
+            ) : stage === 'flows' ? (
+              <>
+                <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); onStage('points') }} onFix={onFix} />
+                <Section title={`Material flows on the layout · ${linked.length} of ${flows.length}`}>
+                  <FlowsList
+                    layout={layout}
+                    flows={flows}
+                    simVehicleOf={simVehicleOf}
+                    vehicleById={vehicleById}
+                    settings={settings}
+                    fleet={fleet}
+                    unitSystem={unitSystem}
+                    radiusFor={radiusFor}
+                    onFlows={setFlows}
+                    selectedId={selection?.kind === 'flow' ? selection.id : undefined}
+                    onSelect={id => { setTool('lasso'); setSelection({ kind: 'flow', id }) }}
+                    onLinkOnMap={() => chooseTool('flows')}
+                    loads={loads}
+                  />
+                </Section>
+              </>
+            ) : (
+              <>
+                {/* Points with nothing selected: chargers and parking are points too (owner, 2026-11-26). */}
+                {stage === 'points' && !selection && <ChargersCard layout={layout} suggested={suggestedChargers} needed={vehiclesPlaced} onArmHome={armType} />}
+                {stage === 'routes' && !selection && examples}
+                <LayoutPanel
+                  key={selection ? ('id' in selection ? selection.id : selection.ids.join()) : ''}
+                  layout={layout}
+                  flows={flows}
+                  vehicles={vehicles}
+                  selection={selection}
+                  unitSystem={unitSystem}
+                  clearances={clearances}
+                  rule={rule}
+                  onPoint={(id, patch) => setLayout(updatePoint(layout, id, patch), `point:${id}:${Object.keys(patch).join()}`)}
+                  onConvert={(id, type) => setLayout(convertPoint(layout, id, type, FLOW_POINT_TYPES.includes(type) ? placeRole : undefined))}
+                  onPoints={(ids, patch) => setLayout(ids.reduce((L, id) => updatePoint(L, id, patch), layout), `points:${Object.keys(patch).join()}`)}
+                  onSegment={(id, patch) => setLayout(updateSegment(layout, id, patch))}
+                  onCurve={(id, kind) => setLayout(setCurve(layout, id, kind === 'spline' ? splineHandles(layout, id) ?? undefined : undefined))}
+                  onObject={(id, patch) => setLayout(updateObject(layout, id, patch), `object:${id}:${Object.keys(patch).join()}`)}
+                  onHighways={(ids, patch, what) => setLayout(updateHighways(layout, ids, h => ('lane' in patch(h) ? withLaneWidth(h, patch(h)) : patch(h))), `highways:${ids.join()}:${what}`)}
+                  onHighway={(id, patch) => setLayout(updateHighways(layout, [id], h => ('lane' in patch ? withLaneWidth(h, patch) : patch)), `highway:${id}:${Object.keys(patch).join()}`)}
+                  envelopeFt={inputs.envelopeFt}
+                  highwayStatus={highwayStatus}
+                  simVehicleOf={simVehicleOf}
+                  vehicleTypes={vehicleTypes}
+                  onFlowVehicle={onFlowVehicle}
+                  onRepeat={(id, count, stepFt, dir) => {
+                    const made = repeatPoint(layout, id, count, stepFt, dir)
+                    setLayout(made.layout)
+                    setSelection({ kind: 'points', ids: made.ids })
+                  }}
+                  onCopy={() => { clipboard.current = selectedPoints; paste() }}
+                  onFlow={(id, patch) => setFlows(flows.map(f => (f.id === id ? { ...f, ...patch } : f)), `flow:${id}:${Object.keys(patch).join()}`)}
+                  onUnlink={flowId => setFlows(flows.map(f => (f.id === flowId ? unlinked(f) : f)))}
+                  onDelete={deleteSelection}
+                  onFocus={focusOn}
+                  onAddFlow={addFlow}
+                  focusRateOf={justAdded}
+                  onRateFocused={() => setJustAdded(null)}
+                  onBack={() => setSelection(null)}
+                  backLabel={stage === 'routes' ? 'Routes' : 'Points'}
+                  onSelectFlow={id => setSelection({ kind: 'flow', id })}
+                  rack={cardRack && cardRackGeo ? { id: cardRack.id, g: cardRackGeo, reach: selRackReach } : null}
+                  onAddPoint={() => { onStage('points'); armType('stand') }}
+                  chargers={{ suggested: suggestedChargers, stats: chargerRun }}
+                />
+              </>
+            )}
+        </SimSidebar>
         <div className="sim-canvas-wrap">
           <LayoutCanvas
             layout={shownLayout}
@@ -939,102 +1028,6 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
             {message && <p className="sim-toast" role="status">{message}</p>}
           </LayoutCanvas>
           <p className="sim-status" aria-live="polite">{hint}</p>
-        </div>
-        <div className="sim-side">
-          {/* The step's detail, or the selection's card (owner, 2026-11-26: the steps are the left sidebar). */}
-          <div className="sim-side-body sim-detail-card">
-            {/* The sample note steps aside while a selection's card is open (it returns with Back). */}
-            {!(selection && stage !== 'vehicles' && stage !== 'flows') && !drawingShown && banner}
-            {drawingShown ? (
-              // The site drawing, opened from the map's tool bar (and while its scale is being set).
-              <div className="sim-dcard">
-                <button type="button" className="sim-back" onClick={() => { setDrawingOpen(false); setMarks(null) }}>‹ Done</button>
-                {drawingSection}
-              </div>
-            ) : stage === 'vehicles' ? (
-              // Pallet sizes, then the vehicle types that carry them.
-              <>
-                <Section title="Pallet sizes" open>
-                  <SetupCard projectId={project.id} loads={loads} unitSystem={unitSystem} confirmed={project.simSettings?.payloadsConfirmed === payloadsKey(loads)}
-                    onConfirm={() => patchSimSettings(project.id, { payloadsConfirmed: payloadsKey(loads) })} />
-                </Section>
-                <Section title="Vehicle types" open>{vehiclesStep}</Section>
-              </>
-            ) : stage === 'flows' ? (
-              <>
-                <ValidationList checks={checks} status={status} onLocate={locate} onDetails={t => { locate(t); onStage('points') }} onFix={onFix} />
-                <Section title={`Material flows on the layout · ${linked.length} of ${flows.length}`} open>
-                  <FlowsList
-                    layout={layout}
-                    flows={flows}
-                    simVehicleOf={simVehicleOf}
-                    vehicleById={vehicleById}
-                    settings={settings}
-                    fleet={fleet}
-                    unitSystem={unitSystem}
-                    radiusFor={radiusFor}
-                    onFlows={setFlows}
-                    selectedId={selection?.kind === 'flow' ? selection.id : undefined}
-                    onSelect={id => { setTool('lasso'); setSelection({ kind: 'flow', id }) }}
-                    onLinkOnMap={() => chooseTool('flows')}
-                    loads={loads}
-                  />
-                </Section>
-              </>
-            ) : (
-              <>
-                {/* Points with nothing selected: chargers and parking are points too (owner, 2026-11-26). */}
-                {stage === 'points' && !selection && (
-                  <Section title="Chargers & parking" open>
-                    <ChargersCard layout={layout} suggested={suggestedChargers} needed={vehiclesPlaced} onArmHome={armType} />
-                  </Section>
-                )}
-                {stage === 'routes' && !selection && examples}
-                <LayoutPanel
-                  key={selection ? ('id' in selection ? selection.id : selection.ids.join()) : ''}
-                  layout={layout}
-                  flows={flows}
-                  vehicles={vehicles}
-                  selection={selection}
-                  unitSystem={unitSystem}
-                  clearances={clearances}
-                  rule={rule}
-                  onPoint={(id, patch) => setLayout(updatePoint(layout, id, patch), `point:${id}:${Object.keys(patch).join()}`)}
-                  onConvert={(id, type) => setLayout(convertPoint(layout, id, type, FLOW_POINT_TYPES.includes(type) ? placeRole : undefined))}
-                  onPoints={(ids, patch) => setLayout(ids.reduce((L, id) => updatePoint(L, id, patch), layout), `points:${Object.keys(patch).join()}`)}
-                  onSegment={(id, patch) => setLayout(updateSegment(layout, id, patch))}
-                  onCurve={(id, kind) => setLayout(setCurve(layout, id, kind === 'spline' ? splineHandles(layout, id) ?? undefined : undefined))}
-                  onObject={(id, patch) => setLayout(updateObject(layout, id, patch), `object:${id}:${Object.keys(patch).join()}`)}
-                  onHighways={(ids, patch, what) => setLayout(updateHighways(layout, ids, h => ('lane' in patch(h) ? withLaneWidth(h, patch(h)) : patch(h))), `highways:${ids.join()}:${what}`)}
-                  onHighway={(id, patch) => setLayout(updateHighways(layout, [id], h => ('lane' in patch ? withLaneWidth(h, patch) : patch)), `highway:${id}:${Object.keys(patch).join()}`)}
-                  envelopeFt={inputs.envelopeFt}
-                  highwayStatus={highwayStatus}
-                  simVehicleOf={simVehicleOf}
-                  vehicleTypes={vehicleTypes}
-                  onFlowVehicle={onFlowVehicle}
-                  onRepeat={(id, count, stepFt, dir) => {
-                    const made = repeatPoint(layout, id, count, stepFt, dir)
-                    setLayout(made.layout)
-                    setSelection({ kind: 'points', ids: made.ids })
-                  }}
-                  onCopy={() => { clipboard.current = selectedPoints; paste() }}
-                  onFlow={(id, patch) => setFlows(flows.map(f => (f.id === id ? { ...f, ...patch } : f)), `flow:${id}:${Object.keys(patch).join()}`)}
-                  onUnlink={flowId => setFlows(flows.map(f => (f.id === flowId ? unlinked(f) : f)))}
-                  onDelete={deleteSelection}
-                  onFocus={focusOn}
-                  onAddFlow={addFlow}
-                  focusRateOf={justAdded}
-                  onRateFocused={() => setJustAdded(null)}
-                  onBack={() => setSelection(null)}
-                  backLabel={stage === 'routes' ? 'Routes' : 'Points'}
-                  onSelectFlow={id => setSelection({ kind: 'flow', id })}
-                  rack={cardRack && cardRackGeo ? { id: cardRack.id, g: cardRackGeo, reach: selRackReach } : null}
-                  onAddPoint={() => { onStage('points'); armType('stand') }}
-                  chargers={{ suggested: suggestedChargers, stats: chargerRun }}
-                />
-              </>
-            )}
-          </div>
         </div>
       </div>
     </div>
