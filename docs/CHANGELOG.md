@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-11-26 — Pick & drop locations; tighter Data dashboard
+
+- Owner: **Points** is now **Pick & drop locations** — the step, the tool (*Location*), hints, cards, lists
+  and help. The data keeps its `points` name; saved projects load unchanged.
+- Data: the head is one line (no *Data* eyebrow); charts grow to fill their card instead of a fixed 220px;
+  tables are as tall as their rows (no empty box). Overview puts moves hour by hour across two thirds, with
+  where the time went and battery over the run beside it — one card for each check.
+- No figures change.
+
 ## 2026-11-26 — Data as a dashboard; the steps in the app's style
 
 - Owner: Data is a dashboard in the app's own style — a head with the verdict and fleet, tabs (Overview ·

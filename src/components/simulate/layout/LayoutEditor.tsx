@@ -56,11 +56,11 @@ const DRAG_PX = 8
  *  stay on their keys — spec "Kept, off the bar"). The first key is the one shown. */
 const TOOL_DEFS: Record<Tool, { keys: string[]; hint: string; bar?: { label: string; icon: string } }> = {
   highway: { keys: ['p', 'w'], hint: 'Drag to draw a route · click a route to edit it · Enter to select', bar: { label: 'Route', icon: 'M3 6h18M3 18h18M8 12h8M14 10l2 2-2 2M10 10l-2 2 2 2' } },
-  points: { keys: ['e'], hint: 'Click beside a route to add a point · Shift places it unconnected · Enter to select', bar: { label: 'Point', icon: 'M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z' } },
+  points: { keys: ['e'], hint: 'Click beside a route to add a pick or drop location · Shift places it unconnected · Enter to select', bar: { label: 'Location', icon: 'M12 21s-7-6-7-11a7 7 0 0114 0c0 5-7 11-7 11zM12 12.5a2.5 2.5 0 100-5 2.5 2.5 0 000 5z' } },
   lasso: { keys: ['l', 'v'], hint: 'Click to select · draw a loop for several · drag a route end to turn it', bar: { label: 'Lasso', icon: 'M8 17.5C4.5 16.5 3 14 3 11.5 3 7 7 4 12 4s9 3 9 7.5-4 7.5-9 7.5c-1.5 0-3-.2-4-.5M8 17.5c-1 1-1 3 1 3.5' } },
   hand: { keys: ['h'], hint: 'Drag to move around · hold Space to pan in any tool' },
   routes: { keys: ['r'], hint: 'Click or drag to draw a route · the + shows where it lands · start on a route to branch from it' },
-  flows: { keys: ['f'], hint: 'Click a Pick (or a Drop) — the points it can link to light up' },
+  flows: { keys: ['f'], hint: 'Click a Pick (or a Drop) — the locations it can link to light up' },
   scale: { keys: ['s'], hint: 'Click both ends of a known dimension' },
 }
 const BAR = (Object.entries(TOOL_DEFS) as [Tool, (typeof TOOL_DEFS)[Tool]][]).flatMap(([id, t]) => (t.bar ? [{ id, key: t.keys[0].toUpperCase(), ...t.bar }] : []))
@@ -725,7 +725,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
   const hint = marks
     ? (marks.length < 2 ? (marks.length ? 'Click the end of the dimension' : 'Click the start of a known dimension') : 'Enter the real length in the Drawing card')
     : tool === 'flows' && chainFrom ? `Click a lit ${targets?.end ?? 'point'} to link · Shift-click to link several · Esc or a click on the start to stop`
-    : tool === 'routes' && chainFrom ? 'Click where the + is to continue · it joins points and routes it touches · Shift keeps it straight · right-click or Enter to finish'
+    : tool === 'routes' && chainFrom ? 'Click where the + is to continue · it joins locations and routes it touches · Shift keeps it straight · right-click or Enter to finish'
     : tool === 'points' && armed ? `Click on a route to place “${armed.name}”`
     : tool === 'points' && placeType === 'object' ? 'Drag out a wall, column or rack face'
     : tool === 'points' && placeType === 'rack' ? 'Drag out the rack · its long side nearest a route is served · Enter to select'
@@ -924,7 +924,7 @@ export default function LayoutEditor({ project, vehicles, vehicleById, simVehicl
                   focusRateOf={justAdded}
                   onRateFocused={() => setJustAdded(null)}
                   onBack={() => setSelection(null)}
-                  backLabel={stage === 'routes' ? 'Routes' : 'Points'}
+                  backLabel={stage === 'routes' ? 'Routes' : 'Locations'}
                   onSelectFlow={id => setSelection({ kind: 'flow', id })}
                   rack={cardRack && cardRackGeo ? { id: cardRack.id, g: cardRackGeo, reach: selRackReach } : null}
                   onAddPoint={() => { onStage('points'); armType('stand') }}

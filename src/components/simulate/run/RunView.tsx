@@ -386,10 +386,9 @@ export default function RunView({ onAssumptions, changed, project, vehicles, sim
   )
   const dataPane = (
     <>
-      {/* Data as a dashboard (owner, 2026-11-26): the verdict and the run in one head, the tabs, then the cards. */}
+      {/* Data as a dashboard (owner, 2026-11-26): the verdict and the run on one line, the tabs, then the cards. */}
       <header className="sim-dash-head">
         <div className="sim-dash-title">
-          <span className="eh-eyebrow mono">Data</span>
           <h2>{headline.outcome === 'right' ? 'Right-sized' : verdictWord(headline)}<span className="num"> · {Object.entries(fleetBy).map(([vid, n]) => `${n} ${vehicleById.get(vid)?.name ?? vid}`).join(' · ')}</span></h2>
           <p className="sim-dash-sub">{verdictLine(headline, verdictWhy)}</p>
         </div>

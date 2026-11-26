@@ -209,7 +209,7 @@ export function FlowsList({ layout, flows, vehicleById, settings, fleet, unitSys
             </li>
           )
         })}
-        {!flows.length && <li className="sim-card-note">No material flows yet — add them on Sizing, or link a Pick point to a Drop point with Link on the map (F).</li>}
+        {!flows.length && <li className="sim-card-note">No material flows yet — add them on Sizing, or link a pick location to a drop location with Link on the map (F).</li>}
       </ol>
       <div className="sim-flows-foot">
         <span>Fleet Engine: raw <b className="num">{raw.toFixed(2)}</b> → <b className="num">{engineTotal}</b> vehicle{engineTotal === 1 ? '' : 's'}</span>

@@ -44,11 +44,11 @@ export const DATA_TABS: { id: DataTab; label: string }[] = [
   { id: 'locations', label: 'Locations' }, { id: 'battery', label: 'Battery' }, { id: 'setup', label: 'Setup' },
 ]
 
-/** A dashboard card: a title, one line of context, then its chart or table. `wide` spans the row; `side`
- *  takes the right column's full height (a long list beside short cards). */
-function Card({ title, meta, wide, side, children }: { title: string; meta?: ReactNode; wide?: boolean; side?: boolean; children: ReactNode }) {
+/** A dashboard card: a title, one line of context, then its chart or table. `place`: `wide` spans the row;
+ *  `side` the right column's full height (a long list beside short cards); `tall` the left column's. */
+function Card({ title, meta, place, children }: { title: string; meta?: ReactNode; place?: 'wide' | 'side' | 'tall'; children: ReactNode }) {
   return (
-    <section className={`sim-dash-card${wide ? ' is-wide' : side ? ' is-side' : ''}`}>
+    <section className={`sim-dash-card${place ? ` is-${place}` : ''}`}>
       <header><h3>{title}</h3>{meta && <span className="meta">{meta}</span>}</header>
       {children}
     </section>
@@ -111,13 +111,18 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
   )
   const blocked = inputs.clearances.filter(c => c.status === 'capped' || c.status === 'violation')
   const waiting = <p className="sim-card-note">Simulating…</p>
+  const batteryCard = (place?: 'wide') => (
+    <Card place={place} title="Battery over the run" meta={R ? R.types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId}: lowest ${Math.round(t.socMin)}% · ${t.chargeTrips} charges`).join(' · ') : null}>
+      {S && R ? <BatteryChart S={S} vehicleById={vehicleById} /> : waiting}
+    </Card>
+  )
 
   // Data as a dashboard (owner, 2026-11-26; the app's own style): one tab at a time, each a grid of cards —
   // a title, one line of context, then the chart or table.
   return (
     <div className={`sim-dash-grid is-${tab}`}>
       {tab === 'overview' && <>
-        <Card title="Moves delivered, hour by hour" meta={R ? `${total.toFixed(0)} needed each hour` : null}>{S && R ? <HourChart S={S} target={total} hours={Math.ceil(R.t / 3600)} /> : waiting}</Card>
+        <Card place="tall" title="Moves delivered, hour by hour" meta={R ? `${total.toFixed(0)} needed each hour` : null}>{S && R ? <HourChart S={S} target={total} hours={Math.ceil(R.t / 3600)} /> : waiting}</Card>
         <Card title="Where the time went" meta={R ? `${R.orders.delivered.toLocaleString()} moves · ${R.orders.waiting} waiting at the end` : null}>
           {time ? <TimeSplitBar time={time} /> : waiting}
           {R && (
@@ -127,16 +132,17 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
             </dl>
           )}
         </Card>
+        {batteryCard()}
       </>}
-      {tab === 'flows' && <Card wide title="Material flows — engine vs simulated" meta={R ? flowSummary(R, linked.length, assume.demandPct, flows) : null}>{flowsTable}</Card>}
+      {tab === 'flows' && <Card place="wide" title="Material flows — engine vs simulated" meta={R ? flowSummary(R, linked.length, assume.demandPct, flows) : null}>{flowsTable}</Card>}
       {tab === 'vehicles' && (R ? <>
-        <Card wide title="By vehicle type" meta={`${R.vehicles.length} vehicle${R.vehicles.length === 1 ? '' : 's'} · ${R.orders.delivered.toLocaleString()} moves`}>
+        <Card place="wide" title="By vehicle type" meta={`${R.vehicles.length} vehicle${R.vehicles.length === 1 ? '' : 's'} · ${R.orders.delivered.toLocaleString()} moves`}>
           <DataTable label="By vehicle type" cols={TYPE_COLS} rows={R.types.map(t => [
             vehicleById.get(t.vehicleId)?.name ?? t.vehicleId, t.fleet, t.done, t.perHr.toFixed(1), t.target.toFixed(0),
             pct(t.utilization), secs(t.avgWait), `${Math.round(t.socAvg)}% / ${Math.round(t.socMin)}%`, t.chargeTrips,
           ])} />
         </Card>
-        <Card wide title="By vehicle" meta="Where each vehicle's time went">
+        <Card place="wide" title="By vehicle" meta="Where each vehicle's time went">
           <DataTable label="By vehicle" cols={VEH_COLS} rows={R.vehicles.map(v => {
             const all = Object.values(v.time).reduce((a, b) => a + b, 0) || 1
             return [v.id, vehicleById.get(v.vehicleId)?.name ?? v.vehicleId, v.done, v.perHr.toFixed(1), pct(v.utilization),
@@ -148,7 +154,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
               ...SPLIT.map(([k]) => pct(sum(v => inState(v.time, k)) / all)), '', '', sum(v => v.chargeTrips)]
           })()} />
         </Card>
-      </> : <Card wide title="Vehicles">{waiting}</Card>)}
+      </> : <Card place="wide" title="Vehicles">{waiting}</Card>)}
       {tab === 'locations' && <>
         <Card title="Locations" meta={`${S?.zoneStats.size ?? 0} — visits, time occupied, queues`}>
           <DataTable label="Locations" cols={LOC_COLS} rows={S && R ? [...S.zoneStats].map(([z, st]) => {
@@ -168,11 +174,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
             : <p className="sim-card-note">No route is slowed or blocked.</p>}
         </Card>
       </>}
-      {tab === 'battery' && (
-        <Card wide title="Battery over the run" meta={R ? R.types.map(t => `${vehicleById.get(t.vehicleId)?.name ?? t.vehicleId}: lowest ${Math.round(t.socMin)}% · ${t.chargeTrips} charges`).join(' · ') : null}>
-          {S && R ? <BatteryChart S={S} vehicleById={vehicleById} /> : waiting}
-        </Card>
-      )}
+      {tab === 'battery' && batteryCard('wide')}
       {tab === 'setup' && <>
         <Card title="Assumptions" meta={`pace ${assume.pacePct}% · ${assume.trafficPct ? `traffic ${assume.trafficPct}% · ` : ''}safety ${fmtLength(assume.safetyFt, unitSystem, 1)} · demand ${assume.demandPct}%`}>
           <p className="sim-readout"><button type="button" className="link-btn" onClick={onOpenAssumptions}>Open assumptions</button></p>
@@ -193,7 +195,7 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
           })}
         </Card>
         {R && R.flags.length > 0 && (
-          <Card side title="Missing data — fallbacks used" meta={`${new Set(R.flags.map(f => f.field + f.message)).size} used`}>
+          <Card place="side" title="Missing data — fallbacks used" meta={`${new Set(R.flags.map(f => f.field + f.message)).size} used`}>
             <ul className="sim-list">{[...new Map(R.flags.map(f => [f.field + f.message, f])).values()].map((f, i) => <li key={i}>{f.message}</li>)}</ul>
           </Card>
         )}

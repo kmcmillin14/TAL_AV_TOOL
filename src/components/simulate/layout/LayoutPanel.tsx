@@ -217,7 +217,7 @@ export default function LayoutPanel(p: Props) {
                       ))}
                     </ul>
                   </>
-                : <p className="sim-card-note">No {links.end} point it can link to yet.</p>)}
+                : <p className="sim-card-note">No {links.end} location it can link to yet.</p>)}
             </Section>
           )}
           <Section fold title="Settings">
@@ -228,8 +228,8 @@ export default function LayoutPanel(p: Props) {
                   if (type) p.onConvert(pt.id, type)
                 }}>
                   <option value="">A junction (route node)</option>
-                  <optgroup label="Material flow points">{CONVERTIBLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
-                  <optgroup label="Vehicle points">{VEHICLE_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
+                  <optgroup label="Pick & drop locations">{CONVERTIBLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
+                  <optgroup label="Chargers & parking">{VEHICLE_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
                 </select>
               </label>
             )}
@@ -244,8 +244,8 @@ export default function LayoutPanel(p: Props) {
                     const type = e.target.value as SimPointType
                     p.onPoint(pt.id, { type, role: FLOW_POINT_TYPES.includes(type) ? pt.role ?? 'pick' : undefined })
                   }}>
-                    <optgroup label="Material flow points">{CONVERTIBLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
-                    <optgroup label="Vehicle points">{VEHICLE_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
+                    <optgroup label="Pick & drop locations">{CONVERTIBLE.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
+                    <optgroup label="Chargers & parking">{VEHICLE_POINT_TYPES.map(t => <option key={t} value={t}>{POINT_LABEL[t]}</option>)}</optgroup>
                   </select>
                 </label>}
               </>
@@ -300,7 +300,7 @@ export default function LayoutPanel(p: Props) {
     const allFlow = pts.every(q => FLOW_POINT_TYPES.includes(q.type))
     const same = <K extends keyof SimPoint>(k: K) => (pts.every(q => q[k] === pts[0]?.[k]) ? pts[0]?.[k] : undefined)
     return (
-      <Inspector title={`${pts.length} points`} back={p.backLabel} onBack={p.onBack} onCopy={p.onCopy} onDelete={p.onDelete}>
+      <Inspector title={`${pts.length} locations`} back={p.backLabel} onBack={p.onBack} onCopy={p.onCopy} onDelete={p.onDelete}>
         {allFlow && (
           <>
             <div className="sim-field"><span>Role</span>
@@ -402,7 +402,7 @@ export default function LayoutPanel(p: Props) {
           <Tile label="long" value={len(h.lengthFt)} />
           <Tile label="stops" value={stops.length} />
         </Tiles>
-        <button type="button" className="btn ghost btn-sm sim-dcard-act" onClick={p.onAddPoint}>Add pick / drop point here</button>
+        <button type="button" className="btn ghost btn-sm sim-dcard-act" onClick={p.onAddPoint}>Add pick / drop location here</button>
         <More>
         <div className="sim-strip" aria-label={`${stops.length} stops along it`}>
           <span className="sim-strip-lane" />
@@ -538,7 +538,7 @@ export default function LayoutPanel(p: Props) {
               </select>
               {flow.vehicleId && simVid !== flow.vehicleId && <small className="sim-field-note">Sizing: {p.vehicles.find(v => v.id === flow.vehicleId)?.name ?? 'no vehicle'}</small>}
             </label>
-            <button type="button" className="link-btn" onClick={() => p.onUnlink(flow.id)}>Unlink from points</button>
+            <button type="button" className="link-btn" onClick={() => p.onUnlink(flow.id)}>Unlink from locations</button>
           </Section>
         </Folds></More>
       </Inspector>
@@ -550,7 +550,7 @@ export default function LayoutPanel(p: Props) {
   return (
     <aside className="sim-panel is-empty" aria-label="Layout">
       {/* The lists only: the totals are the steps' own status lines (owner, 2026-11-26: one screen, no repeats). */}
-      <Section title={`Points · ${stations.length}`}>
+      <Section title={`Locations · ${stations.length}`}>
         <ul className="sim-nav">
           {stations.map(q => (
             <li key={q.id}><button type="button" onClick={() => p.onFocus({ kind: 'point', id: q.id }, q)}>

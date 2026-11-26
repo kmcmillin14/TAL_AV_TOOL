@@ -1,7 +1,7 @@
 'use client'
 
 // The steps of fleet size verification, always in view at the top of the one sidebar (owner, 2026-11-26): Pallets & vehicles · Routes ·
-// Points · Flows · Simulate · Data. Each shows its progress — green done, amber started, grey not yet; when
+// Pick & drop locations · Flows · Simulate · Data. Each shows its progress — green done, amber started, grey not yet; when
 // every step before Simulate is green, it is ready to simulate. The open step shows its sub-steps nested
 // under it in the list, and one sentence of what to do in the detail card; the one Next sits at the foot. Any step opens with a
 // click (Routes and Points in either order); the order is suggested, never locked. « collapses the sidebar

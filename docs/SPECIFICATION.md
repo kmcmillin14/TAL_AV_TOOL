@@ -701,22 +701,23 @@ not yet), every dot in one column — under a head (*Steps · 4 of 6 done*, **«
 white with a red bar and number; its sub-steps sit nested under it on a leading line, numbered 3.1, 3.2 …,
 with the same status and dot columns. Its one sentence of what to do heads the detail card while it is not
 done. **Data** takes the map's place, full width,
-as a dashboard in the app's own style: a head (*Data* eyebrow, the verdict and fleet, the checks line,
-*‹ Back to the map* and *Full screen*), tabs — **Overview** (the four headline tiles, the run line, moves
-hour by hour, where the time went) · **Material flows** · **Vehicles** (by type, by vehicle) · **Locations**
+as a dashboard in the app's own style: a one-line head (the verdict and fleet, the checks line, *‹ Back to
+the map* and *Full screen*), tabs — **Overview** (the four headline tiles, the run line; then moves hour by
+hour across two thirds, where the time went and battery over the run stacked beside it — one card per check) · **Material flows** · **Vehicles** (by type, by vehicle) · **Locations**
 (per location, B56.5 clearance — one line per place and reason, with its segment count) · **Battery** ·
 **Setup** (assumptions and vehicle data, Sizing's estimate, fallbacks used) — and cards (a title, one line of
-context, then the chart or table). The cards fill the height left; a long table or list scrolls inside its
-card with its header held, never the page. The sample note sits in the page head. Nothing
+context, then the chart or table). The cards fill the height left and charts grow with them; a table is only as tall as its rows,
+and a long table or list scrolls inside its card with its header held, never the page. The sample note sits in the page head. Nothing
 scrolls at 1280×720 and up with its folds closed. The sidebar lists each step with its icon, name and status, the open step's
 sub-tasks one level down on leading lines and its one sentence, and the one **Next** at its foot; **«**
 collapses it to an icon rail (names and status on hover; remembered in this browser). The head is the
 title and **⋯** only — the validation status button is gone (Flows holds the list; a blocker turns the step
 amber). The site drawing is optional, so it is a **Site drawing** button on the map's tool bar (load, scale,
 opacity; *‹ Done* returns), not a step. The bar shows only the tools the open step uses — Route in Routes,
-Point in Points, Lasso throughout (every tool keeps its key). One name per thing: **points** (not stations or
-endpoints), **routes** (the **Route** tool, was Path), **Flows** in the steps (Sizing keeps *material flows*).
-**Routes and Points in either order:** a route drawn after points joins every unconnected point within
+Location in Pick & drop locations, Lasso throughout (every tool keeps its key). One name per thing: **pick and
+drop locations** — *locations* for short (owner, 2026-11-26; were *points*, and before that stations or
+endpoints; the data keeps `points`), **routes** (the **Route** tool, was Path), **Flows** in the steps (Sizing keeps *material flows*).
+**Routes and locations in either order:** a route drawn after points joins every unconnected point within
 40 ft by a spur, as if the point had been placed after it (`connectLoose`); the sidebar suggests Routes
 first, and neither step blocks the other.
 
@@ -724,7 +725,7 @@ first, and neither step blocks the other.
 |---|---|---|---|
 | **Pallets & vehicles** — sub-tasks **Pallet sizes**, **Vehicle types** | Step 1's loads with **Confirm payloads** (`simSettings.payloadsConfirmed`: a fingerprint of the loads), then the run's vehicle types with their payloads and counts | *Ready* / *1 to do* | vehicle types set and pallet sizes confirmed (optional when Step 1 has no loads — the run uses each vehicle's own) |
 | **Routes** | The map with the **Route** tool armed; the examples while the layout is empty | *None drawn* / *2 loose ends* / *Not all reached* / *12 connected* | routes drawn, no loose ends, every flow has a route |
-| **Points** — sub-tasks **From Sizing**, **Chargers & parking** | The station tray on the map; with nothing selected, Chargers & parking (placed against the **suggested count**) and the points list | *Ready* / *1 to do* | every Sizing station placed, and a charger or parking spot for every vehicle plus the suggested chargers |
+| **Pick & drop locations** — sub-tasks **From Sizing**, **Chargers & parking** | The station tray on the map; with nothing selected, Chargers & parking (placed against the **suggested count**) and the points list | *Ready* / *1 to do* | every Sizing station placed, and a charger or parking spot for every vehicle plus the suggested chargers |
 | **Flows** | Validation (blockers first), then the material flows on the layout — each row: from → to, moves per hour, vehicle, distance on the map | *16 of 16 linked* | every flow linked and no blocker other than chargers |
 | **Simulate** | The run on the map | *Not ready* / *Can run* / *Ready* | — (*Ready* when every step above is green) |
 | **Data** | The run's data, and Sizing's estimate beside it | the fleet state (*Verified*, *Suggested 7*, …) | — |

@@ -171,12 +171,12 @@ export default function SimulateShell({ project, vehicles, vehicleById, settings
     { id: 'routes', label: 'Routes', icon: 'lanes', done: paths > 0 && loose === 0 && !routeBlocked, started: paths > 0,
       status: !paths ? 'None drawn' : loose ? `${loose} loose end${loose === 1 ? '' : 's'}` : routeBlocked ? 'Not all reached' : `${paths} connected`,
       lead: 'Draw the aisles with Route and join their ends. Trace them over the site drawing if you have one (Drawing, on the map).' },
-    { id: 'points', label: 'Points', icon: 'pick', done: stationsDone && homes.done, started: pointSubs.some(t => t.done) || placing.names.length > placing.unplaced.length,
+    { id: 'points', label: 'Pick & drop locations', icon: 'pick', done: stationsDone && homes.done, started: pointSubs.some(t => t.done) || placing.names.length > placing.unplaced.length,
       status: stationsDone && homes.done ? 'Ready' : `${pointSubs.filter(t => !t.done).length} to do`, subs: pointSubs,
-      lead: 'Drag Sizing’s stations from the tray onto the map, then chargers and parking. A point near a route joins it — before or after the route is drawn.' },
+      lead: 'Drag Sizing’s stations from the tray onto the map, then chargers and parking. A location near a route joins it — before or after the route is drawn.' },
     { id: 'flows', label: 'Flows', icon: 'swap', done: flowN > 0 && linkedN === flowN && !flowBlocked, started: linkedN > 0,
       status: flowN ? `${linkedN} of ${flowN} linked` : 'No material flows',
-      lead: 'Every material flow linked to its pick and drop points, and nothing in the list below. Its moves per hour come from Sizing.' },
+      lead: 'Every material flow linked to its pick and drop locations, and nothing in the list below. Its moves per hour come from Sizing.' },
   ]
   const allGreen = before.every(s => s.done)
   const stages: StageInfo[] = [
