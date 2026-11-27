@@ -33,6 +33,10 @@ export const lengthToDisplay = (ft: number, s: UnitSystem) => (s === 'metric' ? 
 export const lengthFromDisplay = (v: number, s: UnitSystem) => (s === 'metric' ? units.distance.toImperial(v) : v)
 
 /** A length stored in feet, written in the user's units — "235 ft" / "71.6 m"; "—" when unknown. */
+/** A speed stored in ft/s, shown in ft/s or m/s. */
+export const fmtSpeed = (fps: number | null | undefined, s: UnitSystem, digits = 2) =>
+  fps == null || !isFinite(fps) ? '—' : `${(s === 'metric' ? units.distance.toMetric(fps) : fps).toFixed(digits)} ${units.distance.label(s)}/s`
+
 export const fmtLength = (ft: number | null | undefined, s: UnitSystem, digits = 0) =>
   ft == null || !isFinite(ft) ? '—' : `${lengthToDisplay(ft, s).toFixed(s === 'metric' ? Math.max(digits, 1) : digits)} ${units.distance.label(s)}`
 

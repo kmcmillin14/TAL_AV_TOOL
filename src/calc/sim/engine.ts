@@ -792,7 +792,7 @@ export function step(S: SimState) {
         } else {
           const o = v.job!, F = o.F
           F.done++; v.done++; F.misSum += S.t - o.td
-          if (isLate(P, o.t0, t)) F.late++   // carried past its shift, or finished off-shift
+          if (isLate(P, o.t0, t)) F.late++   // carried past its shift's grace
           const hr = Math.floor(S.t / 3600); S.hourly[hr] = (S.hourly[hr] ?? 0) + 1
           S.orders.splice(S.orders.indexOf(o), 1)
           afterDrop(S, v)

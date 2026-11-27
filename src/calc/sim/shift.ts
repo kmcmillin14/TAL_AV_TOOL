@@ -34,6 +34,7 @@ export function shiftEnd(P: Shifts, t: number): number {
   return day + (Math.floor((t - day) / len) + 1) * len
 }
 
-/** Is a move ordered at `ordered` and finished at `t` late? Finished off-shift, or more than the grace
- *  after the end of the shift it was ordered in — a backlog carried into the next shift. */
-export const isLate = (P: Shifts, ordered: number, t: number) => !inShift(P, t) || t > shiftEnd(P, ordered) + LATE_GRACE_S
+/** Is a move ordered at `ordered` and finished at `t` late? More than the grace after the end of the shift
+ *  it was ordered in — a backlog carried into the next shift, or overnight. The grace holds after the day's
+ *  last shift too (code review, 2026-11-27: off-shift finishes inside it were counted late). */
+export const isLate = (P: Shifts, ordered: number, t: number) => t > shiftEnd(P, ordered) + LATE_GRACE_S

@@ -11,7 +11,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { createSim, DT, step, type SimState } from '@/src/calc/sim/engine'
 import { chargerStats, results, VERDICT_LABEL } from '@/src/calc/sim/results'
 import { runHeadline, type Headline, type Outcome, type Tone } from '@/src/calc/sim/headline'
-import { checkScale, fleetNeeds, mayPassUtilization, verdictPasses as passes, type Grade } from '@/src/calc/sim/grades'
+import { BANDS, checkScale, fleetNeeds, mayPassUtilization, verdictPasses as passes, type Grade } from '@/src/calc/sim/grades'
 import { nextRightSize, type OneFewer, type Tried } from '@/src/calc/sim/rightSize'
 import { simInputsKey, type RunInputs } from '@/src/calc/sim/runInputs'
 import { RUN_DEFAULTS, step1DaysPerWeek } from '@/src/lib/simFields'
@@ -20,7 +20,7 @@ import { engineFleetTotal } from '@/src/calc/fleet'
 import type { BatteryCause, SimResults, SimSettings, Verdict } from '@/src/calc/sim/types'
 import type { FleetSettings, FleetSummary } from '@/src/calc/types'
 import { getProject, patchSimSettings, type StoredProject } from '@/src/lib/storage'
-import { units, type UnitSystem } from '@/src/lib/utils/units'
+import { fmtSpeed, type UnitSystem } from '@/src/lib/utils/units'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 import LayoutCanvas from '../layout/LayoutCanvas'
 import PricingAction from './PricingAction'
@@ -529,6 +529,10 @@ function Kpi({ value, label, sub, tone }: { value: string; label: string; sub?: 
 const GRADE_WORD: Record<Grade, string> = { spare: 'Spare capacity — the fleet may be oversized', good: 'Comfortable', tight: 'Passes, with no spare capacity', bad: 'Fails' }
 /** The battery line's goal when something other than the morning drop set its grade. */
 const BATTERY_CAUSE: Record<BatteryCause, string> = { floor: 'floor reached', wait: 'charger waits', near: 'near the floor', sag: 'by morning' }
+/** Orders failed on a growing backlog, not on moves short: its marker would sit in green (code review,
+ *  2026-11-27), so the line says why and the marker is left off — as Battery does for its other causes. */
+const backlogGrowing = (h: Headline) => h.perHr.grade === 'bad' && (h.perHr.shortPct ?? 0) <= BANDS.orders.tight
+const ordersAt = (h: Headline) => (backlogGrowing(h) ? null : h.perHr.shortPct)
 const OUTCOME_WORD: Record<Outcome, string> = { right: 'Right-sized', over: 'Oversized', under: 'Undersized', gridlock: 'Gridlock', notRun: 'Not run' }
 /** One word (owner, 2026-11-22): Right-sized, Undersized or Oversized; an amber check shows in its own colour only. */
 const verdictWord = (h: Headline) => (h.outcome ? OUTCOME_WORD[h.outcome] : 'Simulating…')
@@ -560,14 +564,14 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
   const u = h.utilization, done = h.perHr.simulated, b = h.battery
   const over = u.simulated != null && u.simulated > 1
   const mornings = b.dayStarts.length > 2 ? ` · mornings ${Math.round(Math.min(...b.dayStarts.slice(1)))}%+` : ''
-  const speed = h.speedFps == null ? '—' : unitSystem === 'metric' ? `${units.distance.toMetric(h.speedFps).toFixed(2)} m/s` : `${h.speedFps.toFixed(1)} ft/s`
+  const speed = fmtSpeed(h.speedFps, unitSystem, unitSystem === 'metric' ? 2 : 1)
   const kept = b.grade == null ? (h.outcome ? 'Judged over a week' : '') : b.grade === 'bad' ? `✗ ${b.why ?? 'Does not keep up'}` : b.grade === 'tight' ? `! ${b.why ?? 'Keeps up, with no spare'}` : `✓ Keeps up${mornings}`
-  // The three checks lead with their scale, good to fail, and where this run landed (owner, 2026-11-27); the
+  // The three checks lead with their scale, fail to good (further right is better), and where this run landed (owner, 2026-11-27); the
   // figure labels the marker and the detail sits small underneath.
   return (
     <>
-      <CheckTile n={1} label="Orders" tone={h.perHr.tone} grade={h.perHr.grade} scale={checkScale('orders')} at={h.perHr.shortPct}
-        figure={h.perHr.shortPct == null ? null : `${h.perHr.shortPct.toFixed(1)}% short`}>
+      <CheckTile n={1} label="Orders" tone={h.perHr.tone} grade={h.perHr.grade} scale={checkScale('orders')} at={ordersAt(h)}
+        figure={backlogGrowing(h) ? 'backlog growing' : h.perHr.shortPct == null ? null : `${h.perHr.shortPct.toFixed(1)}% short`}>
         {done == null ? '—' : done.toFixed(1)} / h of {h.perHr.target.toFixed(0)} needed{h.perHr.moves ? ` · ${h.perHr.moves.delivered.toLocaleString()} / ${h.perHr.moves.demanded.toLocaleString()} moves` : ''}
       </CheckTile>
       <CheckTile n={2} label="Utilization" tone={u.tone} grade={u.grade} scale={checkScale('utilization', u.target)} at={u.simulated} figure={pctOf(u.simulated)}
@@ -602,7 +606,7 @@ function ScaleBar({ scale, at, grade, figure, big }: { scale: ReturnType<typeof 
   )
 }
 
-/** Data's check tile (owner, 2026-11-27): the check and its grade, the scale from good to fail with the
+/** Data's check tile (owner, 2026-11-27): the check and its grade, the scale from fail to good (further right is better) with the
  *  figure on its marker, then the detail, small. */
 function CheckTile({ n, label, tone, grade, scale, at, figure, menu, children }: {
   n: number; label: string; tone: Tone; grade: Grade | null; scale: ReturnType<typeof checkScale>; at: number | null
@@ -630,8 +634,8 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
   const over = u.simulated != null && u.simulated > 1
   const rows: { label: string; value: string; goal: string; tone: Tone; grade: Grade | null; at: number | null; scale: ReturnType<typeof checkScale>; body: ReactNode }[] = [
     // Each line's figure is what its scale measures (owner, 2026-11-27: red left, green right on all three).
-    { label: 'Orders', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}% short`, goal: h.perHr.moves ? `${h.perHr.moves.delivered.toLocaleString()} / ${h.perHr.moves.demanded.toLocaleString()}` : `of ${h.perHr.target.toFixed(0)} / h`,
-      tone: h.perHr.tone, grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
+    { label: 'Orders', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}% short`, goal: backlogGrowing(h) ? 'backlog growing' : h.perHr.moves ? `${h.perHr.moves.delivered.toLocaleString()} / ${h.perHr.moves.demanded.toLocaleString()}` : `of ${h.perHr.target.toFixed(0)} / h`,
+      tone: h.perHr.tone, grade: h.perHr.grade, at: ordersAt(h), scale: checkScale('orders'),
       body: done == null ? null : <p className="sim-kpi-sub">{done.toFixed(1)} / h of {h.perHr.target.toFixed(0)} needed</p> },
     { label: 'Utilization', value: pctOf(u.simulated), goal: `≤ ${pctOf(u.target)}`, tone: u.tone,
       grade: u.grade, at: u.simulated, scale: checkScale('utilization', u.target),
@@ -716,7 +720,7 @@ function LowestList({ b, children }: { b: Headline['battery']; children?: ReactN
 function ShiftLength({ value, onCoverage }: { value: number; onCoverage: (k: 'shiftH', v: number) => void }) {
   return (
     <label className="sim-kebab-row"><span>Shift length</span>
-      <span className="sim-input-unit"><input key={value} type="number" min={1} max={24} step={0.5} defaultValue={value}
+      <span className="sim-input-unit"><input key={value} type="number" min={0.5} max={24} step={0.5} defaultValue={value}
         onBlur={e => { const v = Number(e.target.value); if (v >= 0.5 && v <= 24 && v !== value) onCoverage('shiftH', v) }}
         onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur() }} /><span>h</span></span>
     </label>

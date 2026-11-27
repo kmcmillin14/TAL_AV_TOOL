@@ -1134,8 +1134,9 @@ step ribbon is unchanged.
     (Draw route · Place charger · Link flow · Scale · Open Flows).
   - *Utilization, measured (owner, 2026-11-16).* Busy time (travelling, handling, repositioning,
     waiting in traffic) ÷ the shift's working time not spent charging. Work done off-shift — a backlog
-    worked off after hours — counts as busy but adds no capacity (overtime), and moves finished
-    off-shift are late (not counted as delivered); orders still unfinished at the end scale the busy
+    worked off after hours — counts as busy but adds no capacity (overtime), and a move finished more
+    than 30 min after the end of the shift it was ordered in is late (not counted as delivered) — after
+    the day's last shift too (2026-11-27; it had counted every off-shift finish late); orders still unfinished at the end scale the busy
     time up in proportion. So a fleet that is too small reads over 100% ("over capacity by X%").
     Colours: **green** at or under the target with no room for one fewer; **amber** "Low — N−1 would
     run at about X%" (one fewer would still be at or under the target); **red** over the target ("over

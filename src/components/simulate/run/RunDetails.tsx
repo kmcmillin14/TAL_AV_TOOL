@@ -16,7 +16,7 @@ import type { RunInputs } from '@/src/calc/sim/runInputs'
 import type { SimLayout, SimResults, SimSettings, TimeSplit } from '@/src/calc/sim/types'
 import { flowDerived } from '@/src/calc/flowMetrics'
 import type { StoredProject } from '@/src/lib/storage'
-import { fmtLength, type UnitSystem } from '@/src/lib/utils/units'
+import { fmtLength, fmtSpeed, type UnitSystem } from '@/src/lib/utils/units'
 import { STATES } from './RunScene'
 import type { Vehicle } from '@/src/lib/vehicleLibrary'
 
@@ -184,10 +184,10 @@ export default memo(function RunDetails({ R, S, project, vehicleById, unitSystem
               <div key={p.vehicle.id} className="sim-vehdata">
                 <h4>Vehicle data · {p.vehicle.name}</h4>
                 <dl className="sim-kv">
-                  <dt>Speed loaded / empty (rated)</dt><dd>{c.speedLoadedFps ?? '—'} / {c.speedUnloadedFps ?? '—'} ft/s</dd>
-                  <dt>Lift speed · max lift</dt><dd>{c.liftSpeedFps ?? '—'} ft/s · {c.maxLiftHeightFt ?? '—'} ft</dd>
-                  <dt>Width · overall length</dt><dd>{c.widthFt} · {p.lengthFt.toFixed(2)} ft</dd>
-                  <dt>Turning radius</dt><dd>{c.turningRadiusFt ?? '—'} ft</dd>
+                  <dt>Speed loaded / empty (rated)</dt><dd>{fmtSpeed(c.speedLoadedFps, unitSystem)} / {fmtSpeed(c.speedUnloadedFps, unitSystem)}</dd>
+                  <dt>Lift speed · max lift</dt><dd>{fmtSpeed(c.liftSpeedFps, unitSystem)} · {fmtLength(c.maxLiftHeightFt, unitSystem, 2)}</dd>
+                  <dt>Width · overall length</dt><dd>{fmtLength(c.widthFt, unitSystem, 2)} · {fmtLength(p.lengthFt, unitSystem, 2)}</dd>
+                  <dt>Turning radius</dt><dd>{fmtLength(c.turningRadiusFt, unitSystem, 2)}</dd>
                   <dt>Charging</dt><dd>{b ? `below ${b.chargeBelowPct}% until ${b.chargeUntilPct}% · ${b.chargerKw} kW charger` : 'no battery data — charging off'}</dd>
                 </dl>
               </div>

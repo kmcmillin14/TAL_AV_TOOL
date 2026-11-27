@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-11-27 — Code-review fixes (all simulation code)
+
+- **Late moves:** a move finished within 30 min of its shift's end is on time after the day's last shift too
+  (every off-shift finish counted late). *Orders' delivered count can rise slightly; its grade with it.*
+- **Orders' marker:** when Orders fails on a growing backlog (not moves short), the line says *backlog
+  growing* and the marker is left off — it had sat in green beside a red grade.
+- **Battery mornings:** from the vehicle type that set the battery grade (else the one whose charge fell
+  most), not the first type.
+- Data → Setup's vehicle data in metric when metric is on (`fmtSpeed` added to the unit helpers).
+- Shift length accepts 0.5 h in the field as it already did on save; two scale comments say fail → good.
+
 ## 2026-11-27 — Fewer words in the checks' details
 
 - Owner: "too many words". Opening a check shows figures only — Orders: *55.8 / h of 56 needed*;

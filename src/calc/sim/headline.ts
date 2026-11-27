@@ -125,7 +125,8 @@ export function runHeadline(
     },
     battery: {
       socMin, chargeTrips: res ? sum(types.map(t => t.chargeTrips)) : null, runHr: runHrs.length ? Math.min(...runHrs) : null,
-      dayStarts: types[0]?.battery.dayStarts ?? [], why: battWhy, pass: batteryPass, tone: toneOf(batteryGrade), grade: batteryGrade,
+      // Mornings from the type that set the grade, else the one whose charge fell most.
+      dayStarts: (battFrom ?? [...types].sort((a, b) => (b.battery.sagPts ?? -1) - (a.battery.sagPts ?? -1))[0]?.battery)?.dayStarts ?? [], why: battWhy, pass: batteryPass, tone: toneOf(batteryGrade), grade: batteryGrade,
       sagPts: sags.length ? Math.max(...sags) : null, cause: battFrom?.cause ?? null,
       lowest: { shift: lowOf(types, 'shift'), day: lowOf(types, 'day'), run: lowOf(types, 'run') },
     },
