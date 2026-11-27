@@ -71,13 +71,16 @@ export function gradeBattery(f: { lowPct: number; floorPct: number; sagPts: numb
 
 /** A check's scale on screen: its range and coloured bands, left to right, and where a value sits (0–1). */
 export interface Scale { bands: { from: number; to: number; grade: Grade }[]; pos: (v: number) => number }
+/** `edges` run from the good end of the value; on screen the scale is mirrored — failing on the left, good on
+ *  the right — so further right is always better (owner, 2026-11-27). */
 const scale = (min: number, max: number, edges: [number, Grade][]): Scale => {
   let from = min
-  const bands = edges.map(([to, grade]) => { const b = { from: (from - min) / (max - min), to: (Math.min(to, max) - min) / (max - min), grade }; from = to; return b })
-  return { bands, pos: v => Math.max(0, Math.min(1, (v - min) / (max - min))) }
+  const flip = (v: number) => 1 - (Math.min(v, max) - min) / (max - min)
+  const bands = edges.map(([to, grade]) => { const b = { from: flip(to), to: flip(from), grade }; from = to; return b }).reverse()
+  return { bands, pos: v => Math.max(0, Math.min(1, flip(v))) }
 }
 
-/** Every scale runs good on the left to failing on the right (owner, 2026-11-27): orders by moves short
+/** Every scale runs failing on the left to good on the right (owner, 2026-11-27): orders by moves short
  *  (% points, 0–10); utilization 0–110%, good up to its target (spare capacity is a fleet-size question —
  *  the fleet's needs line shows it); battery by the morning sag (0–10 points). */
 export function checkScale(check: CheckId, target = 0.85): Scale {

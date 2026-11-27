@@ -701,8 +701,8 @@ not yet), every dot in one column — under a head (*Steps · 4 of 6 done*, **«
 white with a red bar and number; its sub-steps sit nested under it on a leading line, numbered 3.1, 3.2 …,
 with the same status and dot columns. Its one sentence of what to do heads the detail card while it is not
 done. **Data** takes the map's place, full width,
-as a dashboard in the app's own style (the check tiles, owner 2026-11-27: each leads with its scale from good
-to fail — the same bands as the sidebar's checks — with the figure on the marker, a one-word grade beside the
+as a dashboard in the app's own style (the check tiles, owner 2026-11-27: each leads with its scale from fail
+to good — the same bands as the sidebar's checks — with the figure on the marker, a one-word grade beside the
 check's name (*Good* · *Passes* · *Fails* · *Spare*), the scale's end words under it, and the detail small
 below): a one-line head (the verdict and fleet, the checks line, *‹ Back to
 the map* and *Full screen*), tabs — **Overview** (the three check tiles and average speed, the run line; then moves hour by
@@ -790,8 +790,8 @@ first, and neither step blocks the other.
   no rotation — a direct swap was tried, 2026-11-22, and gridlocks: the two meet head-on on the single-lane
   spurs with nowhere to step aside). Only a full vehicle gives way, so none trade chargers all night.
 - **Graded checks (owner, 2026-11-22; `src/calc/sim/grades.ts`):** each check lands in a band — green, amber
-  (*tight*: it passes, labelled tight), red (fails); utilization also has blue *spare*. Every scale runs good
-  on the left to failing on the right (owner, 2026-11-27): utilization's scale is green up to its target, so
+  (*tight*: it passes, labelled tight), red (fails); utilization also has blue *spare*. Every scale runs failing
+  on the left to good on the right (owner, 2026-11-27): utilization's scale is green up to its target, so
   *spare* colours the grade (blue chip and marker) but has no band of its own.
   | Check | Green | Amber (tight) | Red |
   |---|---|---|---|
@@ -802,7 +802,7 @@ first, and neither step blocks the other.
   stays **Right-sized** (owner, 2026-11-22: one word — *Right-sized*, *Undersized*, *Oversized*; the amber shows in that
   check's colour and marker only), Sizing's Verified (its line says one check has no spare capacity), the right-size search, one fewer
   and Use N. Simulate shows each check's scale (its bands, and a marker where the run landed). **Every scale runs
-  the same way (owner, 2026-11-22, option A): green left, red right**, and each line shows the figure its scale
+  the same way (owner, 2026-11-27; was green left, 2026-11-22): red left, green right — further right is better**, and each line shows the figure its scale
   measures, so the marker moves with the number — *1 · Orders 0.4% short* (*3,122 / 3,136* beside it: the run's
   simulated deliveries against the demand; per hour in its fold), *2 · Utilization 92%* (≤ 90%), *3 · Battery drop 0% by morning* (charge lost, in %) (the lowest charge in its fold). When the floor, the chargers'
   queue or nearing the floor set the battery's grade, its line says so in place of *by morning*.

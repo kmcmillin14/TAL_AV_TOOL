@@ -1,5 +1,10 @@
 # Changelog
 
+## 2026-11-27 — Every check scale: red on the left, green on the right
+
+- Owner: green is good, red is bad, and further right is better on all three scales (sidebar checks and Data's
+  tiles) — they were green on the left. One place mirrors them (`checkScale` in `grades.ts`).
+
 ## 2026-11-27 — Every check scale runs good to fail, left to right
 
 - Owner: utilization's scale no longer starts with a blue *spare* band — it is green up to the target, amber

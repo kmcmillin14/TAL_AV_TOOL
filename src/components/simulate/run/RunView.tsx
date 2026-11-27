@@ -589,7 +589,7 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
 /** One word for a band — the Data tile's chip and the scale's ends. */
 const BAND_WORD: Record<Grade, string> = { spare: 'Spare', good: 'Good', tight: 'Passes', bad: 'Fails' }
 
-/** A check's scale (owner, 2026-11-22): its bands, green to red, and where this run landed. `figure` labels
+/** A check's scale (owner, 2026-11-27): its bands, red to green — further right is better — and where this run landed. `figure` labels
  *  the marker (Data's tiles, `big`). */
 function ScaleBar({ scale, at, grade, figure, big }: { scale: ReturnType<typeof checkScale>; at: number | null; grade: Grade | null; figure?: string | null; big?: boolean }) {
   const x = at != null && grade ? scale.pos(at) : null
@@ -629,7 +629,7 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
   const u = h.utilization, b = h.battery, done = h.perHr.simulated
   const over = u.simulated != null && u.simulated > 1
   const rows: { label: string; value: string; goal: string; tone: Tone; grade: Grade | null; at: number | null; scale: ReturnType<typeof checkScale>; body: ReactNode }[] = [
-    // Each line's figure is what its scale measures (owner, 2026-11-22: green left, red right on all three).
+    // Each line's figure is what its scale measures (owner, 2026-11-27: red left, green right on all three).
     { label: 'Orders', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}% short`, goal: h.perHr.moves ? `${h.perHr.moves.delivered.toLocaleString()} / ${h.perHr.moves.demanded.toLocaleString()}` : `of ${h.perHr.target.toFixed(0)} / h`,
       tone: h.perHr.tone, grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
       body: <p className="sim-kpi-sub">Simulated deliveries against the stations' demand over the run{h.perHr.moves ? ` — ${h.perHr.moves.delivered.toLocaleString()} of ${h.perHr.moves.demanded.toLocaleString()}` : ''}.{done == null ? '' : ` ${done.toFixed(1)} each hour against ${h.perHr.target.toFixed(0)} needed.`}</p> },
