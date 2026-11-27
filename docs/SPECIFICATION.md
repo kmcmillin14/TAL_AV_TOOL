@@ -701,8 +701,11 @@ not yet), every dot in one column — under a head (*Steps · 4 of 6 done*, **«
 white with a red bar and number; its sub-steps sit nested under it on a leading line, numbered 3.1, 3.2 …,
 with the same status and dot columns. Its one sentence of what to do heads the detail card while it is not
 done. **Data** takes the map's place, full width,
-as a dashboard in the app's own style: a one-line head (the verdict and fleet, the checks line, *‹ Back to
-the map* and *Full screen*), tabs — **Overview** (the four headline tiles, the run line; then moves hour by
+as a dashboard in the app's own style (the check tiles, owner 2026-11-27: each leads with its scale from good
+to fail — the same bands as the sidebar's checks — with the figure on the marker, a one-word grade beside the
+check's name (*Good* · *Passes* · *Fails* · *Spare*), the scale's end words under it, and the detail small
+below): a one-line head (the verdict and fleet, the checks line, *‹ Back to
+the map* and *Full screen*), tabs — **Overview** (the three check tiles and average speed, the run line; then moves hour by
 hour across two thirds, where the time went and battery over the run stacked beside it — one card per check; together at most
 400px tall) · **Material flows** · **Vehicles** (by type, by vehicle) · **Locations**
 (per location, B56.5 clearance — one line per place and reason, with its segment count) · **Battery** ·

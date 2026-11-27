@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-11-27 — Data's checks lead with their scale
+
+- Owner: on Data's Overview, Orders, Utilization and Battery each show a scale from good to fail (the sidebar's
+  bands) with the figure on its marker, a one-word grade (Good · Passes · Fails · Spare) and the detail small
+  underneath — in place of a big raw number. Battery's shift / day / week lows are one line.
+- One scale component draws both the sidebar's checks and these tiles.
+- No figures change.
+
 ## 2026-11-26 — Pick & drop locations; tighter Data dashboard
 
 - Owner: **Points** is now **Pick & drop locations** — the step, the tool (*Location*), hints, cards, lists

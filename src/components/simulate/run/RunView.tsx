@@ -561,29 +561,62 @@ function HeadlineTiles({ h, unitSystem, sizingTarget, onTarget, coverage, onCove
   const over = u.simulated != null && u.simulated > 1
   const mornings = b.dayStarts.length > 2 ? ` · mornings ${Math.round(Math.min(...b.dayStarts.slice(1)))}%+` : ''
   const speed = h.speedFps == null ? '—' : unitSystem === 'metric' ? `${units.distance.toMetric(h.speedFps).toFixed(2)} m/s` : `${h.speedFps.toFixed(1)} ft/s`
+  const kept = b.grade == null ? (h.outcome ? 'Judged over a week' : '') : b.grade === 'bad' ? `✗ ${b.why ?? 'Does not keep up'}` : b.grade === 'tight' ? `! ${b.why ?? 'Keeps up, with no spare'}` : `✓ Keeps up${mornings}`
+  // The three checks lead with their scale, good to fail, and where this run landed (owner, 2026-11-27); the
+  // figure labels the marker and the detail sits small underneath.
   return (
     <>
-      <Kpi value={done == null ? '—' : done.toFixed(1)} label="1 · Orders per hour" sub={`of ${h.perHr.target.toFixed(0)} needed`} tone={h.perHr.tone} />
-      {/* Too few vehicles: the utilization the work needs, over 100% — and by how much. */}
-      <div className={`sim-kpi is-${u.tone}`}>
-        <KebabMenu label="Target utilization"><TargetPicker target={u.target} sizingTarget={sizingTarget} onTarget={onTarget} /></KebabMenu>
-        <span className="sim-kpi-val num">{pctOf(u.simulated)}</span>
+      <CheckTile n={1} label="Orders" tone={h.perHr.tone} grade={h.perHr.grade} scale={checkScale('orders')} at={h.perHr.shortPct}
+        figure={h.perHr.shortPct == null ? null : `${h.perHr.shortPct.toFixed(1)}% short`}>
+        {done == null ? '—' : done.toFixed(1)} / h of {h.perHr.target.toFixed(0)} needed{h.perHr.moves ? ` · ${h.perHr.moves.delivered.toLocaleString()} / ${h.perHr.moves.demanded.toLocaleString()} moves` : ''}
+      </CheckTile>
+      <CheckTile n={2} label="Utilization" tone={u.tone} grade={u.grade} scale={checkScale('utilization', u.target)} at={u.simulated} figure={pctOf(u.simulated)}
+        menu={<KebabMenu label="Target utilization"><TargetPicker target={u.target} sizingTarget={sizingTarget} onTarget={onTarget} /></KebabMenu>}>
         {/* Red says by how much: over the target (pts), or over capacity (the work needs more than the fleet has). */}
-        <span className="sim-kpi-lbl">2 · Utilization{over ? ` · over capacity by ${Math.round((u.simulated! - 1) * 100)}%`
-          : u.pass === false ? ` · over target by ${Math.round((u.simulated! - u.target) * 100)} pts` : ''}</span>
-        <span className="sim-kpi-sub">target {pctOf(u.target)} · static {pctOf(u.static)}</span>
-        {u.fewerAt != null && <span className="sim-kpi-sub sim-kpi-hint">Low — {h.fleet.tested - 1} would run at about {pctOf(u.fewerAt)}</span>}
-      </div>
-      <div className={`sim-kpi is-${b.tone}`}>
-        <KebabMenu label="Shift coverage"><CoverageControls coverage={coverage} onCoverage={onCoverage} /></KebabMenu>
-        <span className="sim-kpi-val num">{pctN(b.lowest.run)}</span>
-        <span className="sim-kpi-lbl">3 · Battery · lowest</span>
-        <LowestList b={b}>
-          <li className={b.grade === 'bad' ? 'bad' : b.grade === 'tight' ? 'warn' : b.grade ? 'good' : ''}>{b.grade == null ? (h.outcome ? 'Judged over a week' : '') : b.grade === 'bad' ? `✗ ${b.why ?? 'Does not keep up'}` : b.grade === 'tight' ? `! ${b.why ?? 'Keeps up, with no spare'}` : `✓ Keeps up${mornings}`}</li>
-        </LowestList>
-      </div>
+        {over ? `Over capacity by ${Math.round((u.simulated! - 1) * 100)}% · ` : u.pass === false ? `Over target by ${Math.round((u.simulated! - u.target) * 100)} pts · ` : ''}target {pctOf(u.target)} · static {pctOf(u.static)}
+        {u.fewerAt != null && <span className="sim-kpi-hint"> · {h.fleet.tested - 1} would run at about {pctOf(u.fewerAt)}</span>}
+      </CheckTile>
+      <CheckTile n={3} label="Battery" tone={b.tone} grade={b.grade} scale={checkScale('battery')} at={b.cause && b.cause !== 'sag' ? null : b.sagPts}
+        figure={b.sagPts == null ? null : `${Math.round(b.sagPts)}% drop`}
+        menu={<KebabMenu label="Shift coverage"><CoverageControls coverage={coverage} onCoverage={onCoverage} /></KebabMenu>}>
+        Lowest: shift {pctN(b.lowest.shift)} · day {pctN(b.lowest.day)} · week {pctN(b.lowest.run)}{kept && <><br />{kept}</>}
+      </CheckTile>
       <Kpi value={speed} label="Average speed" sub="across the fleet, while moving" tone="" />
     </>
+  )
+}
+
+/** One word for a band — the Data tile's chip and the scale's ends. */
+const BAND_WORD: Record<Grade, string> = { spare: 'Spare', good: 'Good', tight: 'Passes', bad: 'Fails' }
+
+/** A check's scale (owner, 2026-11-22): its bands, green to red, and where this run landed. `figure` labels
+ *  the marker (Data's tiles, `big`). */
+function ScaleBar({ scale, at, grade, figure, big }: { scale: ReturnType<typeof checkScale>; at: number | null; grade: Grade | null; figure?: string | null; big?: boolean }) {
+  const x = at != null && grade ? scale.pos(at) : null
+  return (
+    <span className={`sim-scale${big ? ' is-big' : ''}`} aria-hidden>
+      {scale.bands.map(bd => <i key={bd.grade} className={`g-${bd.grade}`} style={{ left: `${bd.from * 100}%`, width: `${(bd.to - bd.from) * 100}%` }} />)}
+      {x != null && <em style={{ left: `${x * 100}%` }} />}
+      {x != null && figure && <b className={`num${x < 0.12 ? ' at-start' : x > 0.88 ? ' at-end' : ''}`} style={{ left: `${x * 100}%` }}>{figure}</b>}
+    </span>
+  )
+}
+
+/** Data's check tile (owner, 2026-11-27): the check and its grade, the scale from good to fail with the
+ *  figure on its marker, then the detail, small. */
+function CheckTile({ n, label, tone, grade, scale, at, figure, menu, children }: {
+  n: number; label: string; tone: Tone; grade: Grade | null; scale: ReturnType<typeof checkScale>; at: number | null
+  figure: string | null; menu?: ReactNode; children: ReactNode
+}) {
+  const ends = [scale.bands[0].grade, scale.bands[scale.bands.length - 1].grade]
+  return (
+    <div className={`sim-kpi sim-ctile is-${tone}`} title={grade ? GRADE_WORD[grade] : undefined}>
+      {menu}
+      <span className="sim-ctile-head"><span className="sim-kpi-lbl">{n} · {label}</span>{grade && <span className={`sim-ctile-word g-${grade}`}>{BAND_WORD[grade]}</span>}</span>
+      <ScaleBar scale={scale} at={at} grade={grade} figure={figure} big />
+      <span className="sim-ctile-ends"><span>{BAND_WORD[ends[0]]}</span><span>{BAND_WORD[ends[1]]}</span></span>
+      <span className="sim-kpi-sub">{at == null && figure ? `${figure} · ` : ''}{children}</span>
+    </div>
   )
 }
 
@@ -625,11 +658,7 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
             <i aria-hidden>{r.grade == null ? '–' : r.grade === 'bad' ? '✗' : r.grade === 'tight' ? '!' : '✓'}</i>
             <span className="lbl">{i + 1} · {r.label}</span>
             <b className="num">{r.value}</b><small>{r.goal}</small>
-            {/* The check's scale (owner, 2026-11-22): its bands, green to red, and where this run landed. */}
-            <span className="sim-scale" aria-hidden>
-              {r.scale.bands.map(bd => <i key={bd.grade} className={`g-${bd.grade}`} style={{ left: `${bd.from * 100}%`, width: `${(bd.to - bd.from) * 100}%` }} />)}
-              {r.at != null && r.grade && <em style={{ left: `${r.scale.pos(r.at) * 100}%` }} />}
-            </span>
+            <ScaleBar scale={r.scale} at={r.at} grade={r.grade} />
           </summary>
           <div className="sim-crow-body">{r.body}</div>
         </details>

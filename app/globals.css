@@ -5924,3 +5924,24 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-dash-card > header h3 { margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary); }
 .sim-dash-card > header .meta { font-size: 12px; color: var(--text-tertiary); }
 @container (max-width: 900px) { .sim-dash-grid, .sim-dash-grid.is-overview { grid-template-columns: minmax(0, 1fr); } .sim-dash-card:is(.is-side, .is-tall) { grid-column: auto; grid-row: auto; } .sim-data-main .sim-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* Data's check tiles (owner, 2026-11-27): the scale, good to fail, leads — the figure rides its marker; the
+   grade is one word beside the check's name; the detail is small underneath. */
+.sim-ctile { align-items: stretch; gap: 6px; }
+.sim-ctile-head { display: flex; align-items: center; gap: 8px; padding-right: 24px; }
+.sim-ctile-word { padding: 1px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; }
+.sim-ctile-word.g-good { background: var(--good-soft); color: var(--good); }
+.sim-ctile-word.g-tight { background: var(--warn-soft); color: var(--warn); }
+.sim-ctile-word.g-bad { background: var(--bad-soft, var(--warn-soft)); color: var(--bad); }
+.sim-ctile-word.g-spare { background: var(--info-soft, var(--bg-hover)); color: var(--info); }
+.sim-scale.is-big { flex: none; height: 10px; margin: 30px 0 0; max-width: none; border-radius: 5px; }
+.sim-scale.is-big > i { opacity: 0.75; }
+.sim-scale.is-big > i:first-child { border-radius: 5px 0 0 5px; } .sim-scale.is-big > i:last-of-type { border-radius: 0 5px 5px 0; }
+.sim-scale.is-big > em { width: 16px; height: 16px; margin: -8px 0 0 -8px; border-width: 3px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); }
+.sim-scale.is-big > b { position: absolute; bottom: 16px; transform: translateX(-50%); padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+  background: var(--text-primary); color: var(--bg-surface); font-size: 12px; font-weight: 700; }
+.sim-scale.is-big > b.at-start { transform: translateX(-12px); } .sim-scale.is-big > b.at-end { transform: translateX(calc(-100% + 12px)); }
+.sim-ctile.is-good .sim-scale.is-big > b { background: var(--good); color: #fff; }
+.sim-ctile.is-warn .sim-scale.is-big > b { background: var(--warn); color: #fff; }
+.sim-ctile.is-bad .sim-scale.is-big > b { background: var(--bad); color: #fff; }
+.sim-ctile-ends { display: flex; justify-content: space-between; font: 600 9.5px var(--tal-font-numeric); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-tertiary); }
+.sim-ctile .sim-kpi-sub { font-size: 11.5px; line-height: 1.4; }
