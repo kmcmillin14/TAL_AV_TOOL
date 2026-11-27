@@ -28,7 +28,7 @@ describe('sizing checks graded (owner, 2026-11-22)', () => {
   })
   it('scales place a value along bands that cover 0–1', () => {
     const s = checkScale('utilization', 0.9)
-    expect(s.bands.map(b => b.grade)).toEqual(['spare', 'good', 'tight', 'bad'])
+    expect(s.bands.map(b => b.grade)).toEqual(['good', 'tight', 'bad'])
     expect(s.bands[0].from).toBe(0); expect(s.bands.at(-1)!.to).toBeCloseTo(1)
     expect(s.pos(0.9)).toBeCloseTo(0.9 / 1.1); expect(s.pos(5)).toBe(1)
   })

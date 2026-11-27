@@ -790,7 +790,9 @@ first, and neither step blocks the other.
   no rotation — a direct swap was tried, 2026-11-22, and gridlocks: the two meet head-on on the single-lane
   spurs with nowhere to step aside). Only a full vehicle gives way, so none trade chargers all night.
 - **Graded checks (owner, 2026-11-22; `src/calc/sim/grades.ts`):** each check lands in a band — green, amber
-  (*tight*: it passes, labelled tight), red (fails); utilization also has blue *spare*.
+  (*tight*: it passes, labelled tight), red (fails); utilization also has blue *spare*. Every scale runs good
+  on the left to failing on the right (owner, 2026-11-27): utilization's scale is green up to its target, so
+  *spare* colours the grade (blue chip and marker) but has no band of its own.
   | Check | Green | Amber (tight) | Red |
   |---|---|---|---|
   | 1 · Orders | ≤ 0.5 pts short of the demand | ≤ 3 pts short | more, or a growing backlog |

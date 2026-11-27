@@ -1,5 +1,12 @@
 # Changelog
 
+## 2026-11-27 — Every check scale runs good to fail, left to right
+
+- Owner: utilization's scale no longer starts with a blue *spare* band — it is green up to the target, amber
+  just over, red beyond — so all three scales read the same way. A spare grade still shows blue (chip, tile).
+- (A fleet-size scale under the stepper was tried and removed: too complicated.)
+- No figures change.
+
 ## 2026-11-27 — Data's checks lead with their scale
 
 - Owner: on Data's Overview, Orders, Utilization and Battery each show a scale from good to fail (the sidebar's
