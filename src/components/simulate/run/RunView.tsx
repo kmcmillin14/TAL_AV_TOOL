@@ -632,19 +632,18 @@ function RunChecks({ h, why, sizingTarget, onTarget, coverage, onCoverage }: {
     // Each line's figure is what its scale measures (owner, 2026-11-27: red left, green right on all three).
     { label: 'Orders', value: h.perHr.shortPct == null ? '—' : `${h.perHr.shortPct.toFixed(1)}% short`, goal: h.perHr.moves ? `${h.perHr.moves.delivered.toLocaleString()} / ${h.perHr.moves.demanded.toLocaleString()}` : `of ${h.perHr.target.toFixed(0)} / h`,
       tone: h.perHr.tone, grade: h.perHr.grade, at: h.perHr.shortPct, scale: checkScale('orders'),
-      body: <p className="sim-kpi-sub">Simulated deliveries against the stations' demand over the run{h.perHr.moves ? ` — ${h.perHr.moves.delivered.toLocaleString()} of ${h.perHr.moves.demanded.toLocaleString()}` : ''}.{done == null ? '' : ` ${done.toFixed(1)} each hour against ${h.perHr.target.toFixed(0)} needed.`}</p> },
+      body: done == null ? null : <p className="sim-kpi-sub">{done.toFixed(1)} / h of {h.perHr.target.toFixed(0)} needed</p> },
     { label: 'Utilization', value: pctOf(u.simulated), goal: `≤ ${pctOf(u.target)}`, tone: u.tone,
       grade: u.grade, at: u.simulated, scale: checkScale('utilization', u.target),
       body: <>
-        <p className="sim-kpi-sub">{over ? `Over capacity by ${Math.round((u.simulated! - 1) * 100)}% — the work needs more than the fleet has.`
-          : u.pass === false ? `Over target by ${Math.round((u.simulated! - u.target) * 100)} pts.` : 'Busy share of the shift, not counting charging.'} Static calc {pctOf(u.static)}.</p>
+        <p className="sim-kpi-sub">{over ? `Over capacity by ${Math.round((u.simulated! - 1) * 100)}% · ` : u.pass === false ? `Over target by ${Math.round((u.simulated! - u.target) * 100)} pts · ` : ''}static {pctOf(u.static)}</p>
         {u.fewerAt != null && <p className="sim-kpi-sub sim-kpi-hint">Low — {h.fleet.tested - 1} would run at about {pctOf(u.fewerAt)}</p>}
         <TargetPicker target={u.target} sizingTarget={sizingTarget} onTarget={onTarget} />
       </> },
     { label: 'Battery drop', value: b.sagPts == null ? '—' : `${Math.round(b.sagPts)}%`, goal: b.grade == null ? 'over a week' : b.cause && b.cause !== 'sag' ? BATTERY_CAUSE[b.cause] : 'by morning',
       tone: b.tone, grade: b.grade, at: b.cause && b.cause !== 'sag' ? null : b.sagPts, scale: checkScale('battery'),
       body: <>
-        <p className="sim-kpi-sub">How far the fleet's charge fell from this week's first morning to the next{b.sagPts == null ? ' — judged once the run covers a week with off-shift time' : ''}. Lowest charge:</p>
+        {b.sagPts == null && <p className="sim-kpi-sub">Judged over a week</p>}
         <LowestList b={b}>{b.why && <li className={b.grade === 'bad' ? 'bad' : 'warn'}>{b.why}</li>}</LowestList>
         <CoverageControls coverage={coverage} onCoverage={onCoverage} />
       </> },

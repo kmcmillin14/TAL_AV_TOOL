@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-27 — Fewer words in the checks' details
+
+- Owner: "too many words". Opening a check shows figures only — Orders: *55.8 / h of 56 needed*;
+  Utilization: *static 76%* (with *over target / over capacity by …* when red), the target picker; Battery:
+  the lowest charge list and shift coverage (*Judged over a week* only before a week has run).
+
 ## 2026-11-27 — Every check scale: red on the left, green on the right
 
 - Owner: green is good, red is bad, and further right is better on all three scales (sidebar checks and Data's
