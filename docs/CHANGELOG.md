@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-11-27 — Utilization's scale spans its target
+
+- Owner: right and green is good. Utilization's scale runs from 25 pts over the target (red, left) to 5 under
+  (green, right), as Orders and Battery span their bands — 92% on a 90% target now sits in amber right of
+  centre (it sat near the red end on a 0–110% scale). At or under target: the green right end.
+
 ## 2026-11-27 — Code-review fixes (all simulation code)
 
 - **Late moves:** a move finished within 30 min of its shift's end is on time after the day's last shift too

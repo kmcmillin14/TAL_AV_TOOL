@@ -81,11 +81,13 @@ const scale = (min: number, max: number, edges: [number, Grade][]): Scale => {
 }
 
 /** Every scale runs failing on the left to good on the right (owner, 2026-11-27): orders by moves short
- *  (% points, 0–10); utilization 0–110%, good up to its target (spare capacity is a fleet-size question —
+ *  (% points, 0–10); utilization from 5 pts under its target to 25 over, good up to the target (spare capacity is a fleet-size question —
  *  the fleet's needs line shows it); battery by the morning sag (0–10 points). */
 export function checkScale(check: CheckId, target = 0.85): Scale {
   if (check === 'orders') return scale(0, 10, [[BANDS.orders.good, 'good'], [BANDS.orders.tight, 'tight'], [10, 'bad']])
   if (check === 'battery') return scale(0, 10, [[BANDS.battery.sagGood, 'good'], [BANDS.battery.sagTight, 'tight'], [10, 'bad']])
   const tight = Math.min(1, target + BANDS.utilization.tightOver)
-  return scale(0, 1.1, [[target, 'good'], [tight, 'tight'], [1.1, 'bad']])
+  // Around the target, as Orders and Battery are around their bands (owner, 2026-11-27): at or under it sits
+  // at the green right end, 5 pts over in amber, beyond in red (over capacity at the far left).
+  return scale(target - 0.05, target + 0.25, [[target, 'good'], [tight, 'tight'], [target + 0.25, 'bad']])
 }

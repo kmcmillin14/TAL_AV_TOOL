@@ -31,7 +31,10 @@ describe('sizing checks graded (owner, 2026-11-22)', () => {
     // Failing on the left, good on the right: further right is better.
     expect(s.bands.map(b => b.grade)).toEqual(['bad', 'tight', 'good'])
     expect(s.bands[0].from).toBe(0); expect(s.bands.at(-1)!.to).toBeCloseTo(1)
-    expect(s.pos(0.9)).toBeCloseTo(1 - 0.9 / 1.1); expect(s.pos(5)).toBe(0); expect(s.pos(0)).toBe(1)
+    expect(s.pos(0.9)).toBeCloseTo(1 - 0.05 / 0.3); expect(s.pos(5)).toBe(0); expect(s.pos(0)).toBe(1)
+    // 2 pts over a 90% target lands in amber, right of centre
+    const at = s.pos(0.92), amber = s.bands.find(b => b.grade === 'tight')!
+    expect(at).toBeGreaterThan(amber.from); expect(at).toBeLessThan(amber.to); expect(at).toBeGreaterThan(0.5)
   })
   it('one helper for "could k vehicles pass utilization" and one for what each failing check needs', () => {
     expect(mayPassUtilization(0.8, 6, 5, 0.9)).toBe(false)    // 96% on 5: over 90% + 5 pts
