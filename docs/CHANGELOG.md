@@ -7,6 +7,7 @@
 - Data: the head is one line (no *Data* eyebrow); charts grow to fill their card instead of a fixed 220px;
   tables are as tall as their rows (no empty box). Overview puts moves hour by hour across two thirds, with
   where the time went and battery over the run beside it — one card for each check.
+- Overview's charts stop at 400px tall on a large screen (the hour chart had stretched to fill it).
 - No figures change.
 
 ## 2026-11-26 — Data as a dashboard; the steps in the app's style

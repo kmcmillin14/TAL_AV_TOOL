@@ -5911,8 +5911,9 @@ a.fv-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px
 .sim-dash-card .sim-tbl-wrap { flex: 0 1 auto; min-height: 0; overflow: auto; }
 /* Charts take the card's height (at least 160px) rather than a fixed 220px. */
 .sim-dash-card .rom-chart-frame { flex: 1 1 auto; height: auto !important; min-height: 160px; }
-/* Overview: the hour chart gets two thirds, where the time went one. */
-.sim-dash-grid.is-overview { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+/* Overview: the hour chart gets two thirds, where the time went and battery stacked beside it. It fills the
+   height left on a small screen and stops at 400px on a large one (owner: the chart was too tall). */
+.sim-dash-grid.is-overview { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); max-height: 400px; }
 .sim-dash-card.is-tall { grid-column: 1; grid-row: 1 / span 2; }
 .sim-dash-grid.is-overview .rom-chart-frame { min-height: 90px; }
 .sim-dash-card .rom2-caption { flex: none; margin: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

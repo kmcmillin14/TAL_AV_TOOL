@@ -703,7 +703,8 @@ with the same status and dot columns. Its one sentence of what to do heads the d
 done. **Data** takes the map's place, full width,
 as a dashboard in the app's own style: a one-line head (the verdict and fleet, the checks line, *‹ Back to
 the map* and *Full screen*), tabs — **Overview** (the four headline tiles, the run line; then moves hour by
-hour across two thirds, where the time went and battery over the run stacked beside it — one card per check) · **Material flows** · **Vehicles** (by type, by vehicle) · **Locations**
+hour across two thirds, where the time went and battery over the run stacked beside it — one card per check; together at most
+400px tall) · **Material flows** · **Vehicles** (by type, by vehicle) · **Locations**
 (per location, B56.5 clearance — one line per place and reason, with its segment count) · **Battery** ·
 **Setup** (assumptions and vehicle data, Sizing's estimate, fallbacks used) — and cards (a title, one line of
 context, then the chart or table). The cards fill the height left and charts grow with them; a table is only as tall as its rows,
